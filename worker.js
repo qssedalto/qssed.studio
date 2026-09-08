@@ -40,7 +40,7 @@ const LEGACY_REDIRECTS = new Map([
 ]);
 const TEXT = {
   en: {
-    studioName: "Qssed_A's Studio",
+    studioName: "QssedA Studio",
     signIn: "Sign In",
     signUp: "Sign Up",
     continue: "Continue",
@@ -73,7 +73,7 @@ const TEXT = {
     account: "Account",
   },
   zh: {
-    studioName: "Qssed_A's Studio",
+    studioName: "QssedA Studio",
     signIn: "登录",
     signUp: "注册",
     continue: "继续",
@@ -990,6 +990,38 @@ function auditClientScript(ipInfo) {
         return user.last_sign_in_at || identityTime || null;
       }
 
+      async function hydrateProfileSummary(user) {
+        const root = document.getElementById("profile-summary");
+        if (!root || !user) return;
+
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("username, display_name, avatar_url, role, status")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        const displayName =
+          profile?.display_name ||
+          profile?.username ||
+          user.user_metadata?.display_name ||
+          user.user_metadata?.username ||
+          user.email ||
+          "User";
+
+        const avatar = document.getElementById("profile-avatar");
+        const name = document.getElementById("profile-display-name");
+        const email = document.getElementById("profile-email");
+        const tags = document.getElementById("profile-tags");
+
+        if (avatar) avatar.innerText = String(displayName).slice(0, 1).toUpperCase();
+        if (name) name.innerText = displayName;
+        if (email) email.innerText = user.email || "-";
+        if (tags) {
+          const values = [profile?.role, profile?.status].filter(Boolean);
+          tags.innerHTML = values.map(value => "<span>" + auditEscape(value) + "</span>").join("");
+        }
+      }
+
       async function hydrateProfileAudit(user) {
         if (!document.getElementById("audit-created-at") && !document.getElementById("audit-current-device")) return;
         const [eventsResult, devicesResult] = await Promise.all([
@@ -1144,6 +1176,7 @@ function adminClientScript(ipInfo) {
         if (!adminIsZh()) return action || "-";
         return ({
           "login": "登录",
+          "auth.login.failed": "登录失败",
           "user.role.update": "修改用户角色",
           "user.ban": "封禁用户",
           "user.unban": "解除封禁",
@@ -1156,6 +1189,7 @@ function adminClientScript(ipInfo) {
       function adminLogDescription(log) {
         const text = log?.description || log?.target_label || "-";
         if (!adminIsZh()) return text;
+        if (log?.action === "auth.login.failed") return "密码登录失败。";
         if (log?.action === "user.role.update") return "用户角色已更新。";
         if (log?.action === "user.ban") return "用户已被封禁。";
         if (log?.action === "user.unban") return "用户已解除封禁。";
@@ -1367,7 +1401,7 @@ function adminClientScript(ipInfo) {
       }
 
       function renderAdminOverview(data) {
-        const values = [data.user_count, data.admin_count, data.note_count, data.project_count, data.link_count];
+        const values = [data.user_count, data.admin_count];
         document.querySelectorAll("[data-admin-metric]").forEach((el, index) => {
           el.closest("article")?.classList.remove("admin-skeleton");
           animateNumber(el, values[index] || 0);
@@ -1790,7 +1824,7 @@ function themeToggle() {
 
 function languageToggle(links, t) {
   const targetUrl = t === TEXT.zh ? links.enCurrent : links.zhCurrent;
-  const label = t === TEXT.zh ? "CN" : "EN";
+  const label = t === TEXT.zh ? "EN" : "中";
 
   return `
     <a class="language-toggle" href="${targetUrl}" aria-label="Switch language" title="Switch language">${label}</a>
@@ -1906,6 +1940,7 @@ function osPage(t, links, pathname, ipInfo) {
       const name = data.user.user_metadata.username || data.user.user_metadata.display_name || data.user.email;
       document.getElementById("os-user-name").innerText = "@" + name;
       await updateCurrentDevice(data.user);
+      await hydrateProfileSummary(data.user);
       await hydrateProfileAudit(data.user);
 
       if (isAdminPath) {
@@ -1932,8 +1967,8 @@ function buildOsCopy(zh) {
     return {
       platform: "个人 AI 知识工作平台",
       kicker: "Personal AI Operating System",
-      aiLabel: "AI 助手",
-      aiTitle: "打开工作流入口",
+      aiLabel: "工作流",
+      aiTitle: "实验与工具入口",
       aiHref: `${prefix}/workspace/experiments`,
       adminLock: "只有 Supabase 中唯一的 admin 用户可以查看这里。",
       nav: [
@@ -1981,8 +2016,8 @@ function buildOsCopy(zh) {
   return {
     platform: "Personal AI Knowledge Platform",
     kicker: "Personal AI Operating System",
-    aiLabel: "AI Assistant",
-    aiTitle: "Open workflow entry",
+    aiLabel: "Workflow",
+    aiTitle: "Experiments & tools",
     aiHref: `${prefix}/workspace/experiments`,
     adminLock: "Only the single admin user stored in Supabase can view this area.",
     nav: [
@@ -2029,60 +2064,60 @@ function buildOsCopy(zh) {
 
 function buildOsPages(zh) {
   const z = {
-    dashboard: ["仪表盘", "欢迎信息、最近活动、今日摘要、AI 助手入口和最近编辑内容集中在这里。"],
-    info: ["信息中心", "像 Obsidian 一样沉淀笔记，像收藏夹一样整理链接，像 ChatGPT 一样留住思考过程。"],
-    links: ["收藏链接", "集中管理文档、网页、来源和标签，让链接变成可检索的知识资产。"],
-    notes: ["研究笔记", "内置 Markdown 编辑区，适合统计学、AI、开发和生活主题。"],
-    summaries: ["内容摘要", "沉淀 B 站、YouTube、网页和 PDF 的摘要。"],
-    search: ["全局搜索", "搜索笔记、链接、项目和聊天记录。"],
-    profile: ["个人主页", "头像、昵称、简介、学校和技能标签。"],
-    account: ["账户信息", "用户名、邮箱、创建时间和登录记录。"],
-    security: ["安全中心", "修改密码、二步验证、登录设备和登录历史。"],
-    preferences: ["偏好设置", "主题、语言、字体和通知。"],
-    workspace: ["工作区", "进行中的项目与最近打开内容。"],
-    projects: ["项目管理", "QssedA Studio、博客系统、统计学习项目等项目卡片。"],
-    experiments: ["实验室", "Prompt 测试、Agent 测试和 API 测试。"],
-    drafts: ["草稿箱", "保存文章草稿、想法草稿和代码片段。"],
-    tasks: ["任务中心", "Todo 与 Kanban 视图。"],
-    admin: ["管理首页", "用户数、笔记数、项目数和收藏数。"],
+    dashboard: ["仪表盘", "显示当前已接入模块与账号状态；未接入的数据不会使用示例内容伪装。"],
+    info: ["信息中心", "知识模块尚未建立持久化数据表；当前仅保留清晰的模块入口。"],
+    links: ["收藏链接", "尚未接入收藏链接数据表。"],
+    notes: ["研究笔记", "尚未接入笔记存储与 Markdown 保存接口。"],
+    summaries: ["内容摘要", "尚未接入摘要数据源。"],
+    search: ["全局搜索", "尚未接入跨模块搜索索引。"],
+    profile: ["个人主页", "显示当前登录账号在 Supabase 中的资料。"],
+    account: ["账户信息", "账号 ID、邮箱、创建时间、最近登录和登录记录。"],
+    security: ["安全中心", "查看登录设备、登录历史和风险记录。"],
+    preferences: ["偏好设置", "主题与语言可直接切换；字体和通知设置尚未实现。"],
+    workspace: ["工作区", "工作区数据模型尚未建立；当前仅保留模块入口。"],
+    projects: ["项目管理", "尚未接入项目数据表。"],
+    experiments: ["实验室", "实验工具尚未接入持久化数据。"],
+    drafts: ["草稿箱", "尚未接入草稿数据表。"],
+    tasks: ["任务中心", "尚未接入任务数据表。"],
+    admin: ["管理首页", "显示真实用户与管理员数量、最近用户、操作日志和风险事件。"],
     users: ["用户管理", "用户列表、权限管理和封禁管理。"],
     roles: ["角色权限", "Admin、Editor、User 的 RBAC 模型。"],
     logs: ["操作日志", "登录日志、修改日志和删除日志。"],
-    system: ["系统状态", "Supabase、Cloudflare、存储占用和数据库大小。"],
+    system: ["系统状态", "当前没有用于读取 Cloudflare、存储或数据库容量的系统状态接口。"],
     settings: ["设置首页", "集中管理外观、语言、AI、集成和存储。"],
-    appearance: ["外观", "浅色、深色和跟随系统。"],
-    language: ["语言", "中文、English、日本語。"],
-    ai: ["AI 设置", "OpenAI、Gemini、DeepSeek Key。"],
-    integrations: ["第三方集成", "GitHub、Cloudflare、Supabase、Telegram。"],
-    storage: ["存储管理", "文件数量和空间占用。"]
+    appearance: ["外观", "当前支持浅色与深色主题，可使用右上角主题按钮切换。"],
+    language: ["语言", "当前支持中文与 English。"],
+    ai: ["AI 设置", "当前没有浏览器端 API Key 配置功能；敏感密钥不应保存在前端。"],
+    integrations: ["第三方集成", "当前站点运行依赖 Cloudflare 与 Supabase；此页尚无用户级集成配置。"],
+    storage: ["存储管理", "当前没有文件存储模块。"]
   };
   const e = {
-    dashboard: ["Dashboard", "Welcome, recent activity, today's brief, AI assistant entry, and recent edits live here."],
-    info: ["Information Center", "Keep notes like Obsidian, links like bookmarks, and thinking traces like ChatGPT."],
-    links: ["Saved Links", "Manage docs, pages, sources, tags, and collection time."],
-    notes: ["Research Notes", "A Markdown workspace for statistics, AI, development, and life."],
-    summaries: ["Summaries", "Store Bilibili, YouTube, webpage, and PDF summaries."],
-    search: ["Global Search", "Search notes, links, projects, and chat records."],
-    profile: ["Profile", "Avatar, nickname, bio, school, and skill tags."],
-    account: ["Account", "Username, email, creation time, and login records."],
-    security: ["Security", "Password, two-factor authentication, devices, and login history."],
-    preferences: ["Preferences", "Theme, language, font, and notifications."],
-    workspace: ["Workspace", "Active projects and recently opened content."],
-    projects: ["Projects", "Project cards for QssedA Studio, blog system, and statistics learning."],
-    experiments: ["Lab", "Prompt testing, agent testing, and API testing."],
-    drafts: ["Drafts", "Article drafts, idea drafts, and code snippets."],
-    tasks: ["Tasks", "Todo and Kanban."],
-    admin: ["Admin Overview", "Users, notes, projects, and saved links."],
+    dashboard: ["Dashboard", "Shows connected modules and account state without fabricating data for modules that are not implemented."],
+    info: ["Information Center", "Persistent knowledge tables are not implemented yet; this area currently provides module entry points."],
+    links: ["Saved Links", "No saved-links table is connected yet."],
+    notes: ["Research Notes", "Note storage and Markdown persistence are not connected yet."],
+    summaries: ["Summaries", "No summary data source is connected yet."],
+    search: ["Global Search", "No cross-module search index is connected yet."],
+    profile: ["Profile", "Shows the current signed-in account profile stored in Supabase."],
+    account: ["Account", "Account ID, email, creation time, last sign-in, and login records."],
+    security: ["Security", "Review login devices, login history, and risk records."],
+    preferences: ["Preferences", "Theme and language can be switched now; font and notification preferences are not implemented."],
+    workspace: ["Workspace", "The workspace data model is not implemented yet; this area currently provides module entry points."],
+    projects: ["Projects", "No projects table is connected yet."],
+    experiments: ["Lab", "Experiment tools are not connected to persistent data yet."],
+    drafts: ["Drafts", "No drafts table is connected yet."],
+    tasks: ["Tasks", "No tasks table is connected yet."],
+    admin: ["Admin Overview", "Shows live user/admin counts, recent users, operation logs, and risk events."],
     users: ["User Management", "User list, permissions, and bans."],
     roles: ["Roles", "Admin, Editor, and User RBAC model."],
     logs: ["Logs", "Login logs, modification logs, and deletion logs."],
-    system: ["System Status", "Supabase, Cloudflare, storage, and database size."],
+    system: ["System Status", "There is no system-status API for Cloudflare, storage, or database capacity yet."],
     settings: ["Settings", "Appearance, language, AI, integrations, and storage."],
-    appearance: ["Appearance", "Light, dark, and system mode."],
-    language: ["Language", "Chinese, English, Japanese."],
-    ai: ["AI Settings", "OpenAI, Gemini, and DeepSeek keys."],
-    integrations: ["Integrations", "GitHub, Cloudflare, Supabase, Telegram."],
-    storage: ["Storage", "File count and space usage."]
+    appearance: ["Appearance", "Light and dark themes are available through the theme button in the top-right corner."],
+    language: ["Language", "Chinese and English are currently supported."],
+    ai: ["AI Settings", "There is no browser-side API-key configuration. Sensitive keys should not be stored in frontend code."],
+    integrations: ["Integrations", "The site currently depends on Cloudflare and Supabase; user-configurable integrations are not implemented."],
+    storage: ["Storage", "No file-storage module is implemented yet."]
   };
   const s = zh ? z : e;
   return {
@@ -2151,40 +2186,32 @@ function metricCards(items) {
 
 function overviewContent(zh, zhItems, enItems) {
   const items = zh ? zhItems : enItems;
-  return `<section class="os-grid">${items.map((item, index) => `<article class="os-card"><small>0${index + 1}</small><h2>${item}</h2><p>${zh ? "等待接入真实数据源，当前作为模块入口。" : "Ready for live data; currently acts as a module entry."}</p></article>`).join("")}</section>`;
+  return `<section class="os-grid">${items.map((item, index) => `<article class="os-card"><small>0${index + 1}</small><h2>${item}</h2><p>${zh ? "该模块尚未接入可持久化的数据源。" : "This module is not connected to a persistent data source yet."}</p></article>`).join("")}</section>`;
 }
 
 function dashboardContent(zh) {
-  const metrics = zh ? [["今日笔记"], ["收藏链接"], ["实验项目"], ["草稿"]] : [["Today's notes"], ["Saved links"], ["Experiments"], ["Drafts"]];
-  const activities = zh ? ["整理 OpenAI API 文档", "更新 QssedA Studio 项目卡片", "生成 Cloudflare 部署摘要", "记录统计学习想法"] : ["Organized OpenAI API docs", "Updated QssedA Studio project card", "Generated Cloudflare deploy brief", "Captured a statistics learning idea"];
-  return `
-    ${metricCards(metrics)}
-    <section class="os-split">
-      <article class="os-card is-large">
-        <h2>${zh ? "今日摘要" : "Today's Brief"}</h2>
-        <p>${zh ? "把笔记、链接、项目和 AI 对话收束到一个工作面板，减少切换成本。" : "Notes, links, projects, and AI chats are gathered into one operating surface."}</p>
-        <div class="os-command">${zh ? "启动 AI 助手，生成今日行动清单" : "Ask AI to generate today's action list"}</div>
-      </article>
-      <article class="os-card">
-        <h2>${zh ? "最近活动" : "Recent Activity"}</h2>
-        <ul class="os-list">${activities.map(item => `<li>${item}</li>`).join("")}</ul>
-      </article>
-    </section>
-  `;
+  const modules = zh
+    ? [
+        ["账户与安全", "已接入", "Supabase Auth、登录事件和设备记录使用真实数据。"],
+        ["管理后台", "已接入", "用户、角色、权限和审计日志从 Supabase 读取。"],
+        ["知识与工作区", "未接入", "笔记、链接、摘要、项目、草稿和任务目前没有对应数据表。"],
+        ["设置与集成", "部分接入", "主题和中英切换可用；AI、存储和用户级第三方配置尚未实现。"]
+      ]
+    : [
+        ["Account & Security", "Connected", "Supabase Auth, login events, and device records use live data."],
+        ["Admin", "Connected", "Users, roles, permissions, and audit logs are read from Supabase."],
+        ["Knowledge & Workspace", "Not connected", "Notes, links, summaries, projects, drafts, and tasks do not have backing tables yet."],
+        ["Settings & Integrations", "Partial", "Theme and Chinese/English switching work; AI, storage, and user-level integrations are not implemented."]
+      ];
+  return `<section class="os-grid">${modules.map(item => `<article class="os-card"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p></article>`).join("")}</section>`;
 }
 
 function linksContent(zh) {
-  const rows = [
-    ["OpenAI API 文档", "https://platform.openai.com/docs", "AI, API", "Docs", "2026-06-06"],
-    ["Cloudflare Docs", "https://developers.cloudflare.com", "Deploy, Worker", "Docs", "2026-06-06"],
-    ["Supabase Docs", "https://supabase.com/docs", "Database, Auth", "Docs", "2026-06-06"]
-  ];
-  return `<section class="os-table"><div class="os-row os-head">${["标题","网址","标签","来源","收藏时间"].map(h => `<strong>${zh ? h : ({标题:"Title",网址:"URL",标签:"Tags",来源:"Source",收藏时间:"Saved"}[h])}</strong>`).join("")}</div>${rows.map(row => `<div class="os-row">${row.map(cell => `<span>${cell}</span>`).join("")}</div>`).join("")}</section>`;
+  return `<section class="os-card is-large"><h2>${zh ? "尚未接入收藏链接" : "Saved links are not connected yet"}</h2><p>${zh ? "当前数据库没有收藏链接表，因此这里不再展示固定示例链接或伪造收藏时间。" : "There is no saved-links table in the current database, so this page no longer shows fixed sample links or fabricated saved dates."}</p></section>`;
 }
 
 function notesContent(zh) {
-  const cats = zh ? ["统计学", "AI", "开发", "生活"] : ["Statistics", "AI", "Development", "Life"];
-  return `<section class="os-editor"><div><h2>${zh ? "Markdown 编辑器" : "Markdown Editor"}</h2><textarea># ${zh ? "研究笔记" : "Research Notes"}\n\n- ${zh ? "记录一个问题" : "Capture a question"}\n- ${zh ? "整理关键来源" : "Collect key sources"}\n- ${zh ? "生成下一步" : "Generate next steps"}</textarea></div><aside>${cats.map(cat => `<button class="os-chip">${cat}</button>`).join("")}</aside></section>`;
+  return `<section class="os-card is-large"><h2>${zh ? "笔记存储尚未接入" : "Note storage is not connected yet"}</h2><p>${zh ? "当前没有 notes 数据表或保存接口，因此这里不再显示一个看似可编辑但无法持久化的 Markdown 编辑器。" : "There is no notes table or save API, so this page no longer presents an editor that looks functional but cannot persist changes."}</p></section>`;
 }
 
 function summariesContent(zh) {
@@ -2192,15 +2219,14 @@ function summariesContent(zh) {
 }
 
 function searchContent(zh) {
-  const scopes = zh ? ["笔记", "链接", "项目", "聊天记录"] : ["Notes", "Links", "Projects", "Chat records"];
-  return `<section class="os-card is-large"><input class="os-search" placeholder="${zh ? "搜索整个 QssedA Studio..." : "Search all of QssedA Studio..."}"><div class="os-chip-row">${scopes.map(scope => `<span>${scope}</span>`).join("")}</div></section>`;
+  return `<section class="os-card is-large"><h2>${zh ? "全局搜索尚未接入" : "Global search is not connected yet"}</h2><p>${zh ? "当前没有笔记、链接、项目或聊天记录的数据索引，因此不展示无实际搜索行为的输入框。" : "There is no index for notes, links, projects, or chat records yet, so this page does not show a search box with no real search behavior."}</p></section>`;
 }
 
 function profileContent(path, zh) {
   if (path.endsWith("/account")) return accountAuditContent(zh);
   if (path.endsWith("/security")) return securityAuditContent(zh);
-  if (path.endsWith("/preferences")) return overviewContent(zh, ["主题", "语言", "字体", "通知"], ["Theme", "Language", "Font", "Notifications"]);
-  return `<section class="os-profile-card"><div class="os-avatar">Q</div><div><h2>Qssed_A</h2><p>${zh ? "学生 / 开发者 / AI 工作流探索者" : "Student / Developer / AI workflow explorer"}</p><div class="os-chip-row">${(zh ? ["统计学","AI","Cloudflare","Supabase"] : ["Statistics","AI","Cloudflare","Supabase"]).map(tag => `<span>${tag}</span>`).join("")}</div></div></section>`;
+  if (path.endsWith("/preferences")) return `<section class="os-card is-large"><h2>${zh ? "偏好设置" : "Preferences"}</h2><p>${zh ? "主题和语言可通过页面右上角按钮切换。字体和通知偏好目前没有保存或配置接口。" : "Theme and language can be switched with the controls in the top-right corner. Font and notification preferences do not currently have configuration or persistence APIs."}</p></section>`;
+  return `<section id="profile-summary" class="os-profile-card"><div id="profile-avatar" class="os-avatar">...</div><div><h2 id="profile-display-name">${zh ? "正在读取账号资料..." : "Loading account profile..."}</h2><p id="profile-email">...</p><div id="profile-tags" class="os-chip-row"></div></div></section>`;
 }
 
 function accountAuditContent(zh) {
@@ -2216,11 +2242,11 @@ function accountAuditContent(zh) {
         </dl>
       </article>
       <article class="os-card">
-        <h2>${zh ? "登录统计" : "Login Stats"}</h2>
+        <h2>${zh ? "最近审计统计" : "Recent Audit Stats"}</h2>
         <div class="audit-stats">
-          <span><strong id="audit-login-count">0</strong>${zh ? "登录记录" : "events"}</span>
-          <span><strong id="audit-device-count">0</strong>${zh ? "登录设备" : "devices"}</span>
-          <span><strong id="audit-risk-count">0</strong>${zh ? "风险提示" : "risks"}</span>
+          <span><strong id="audit-login-count">0</strong>${zh ? "最近登录记录" : "recent events"}</span>
+          <span><strong id="audit-device-count">0</strong>${zh ? "最近设备" : "recent devices"}</span>
+          <span><strong id="audit-risk-count">0</strong>${zh ? "最近风险" : "recent risks"}</span>
         </div>
       </article>
     </section>
@@ -2261,13 +2287,11 @@ function workspaceContent(path, zh) {
 }
 
 function projectCards(zh) {
-  const projects = zh ? [["QssedA Studio","进行中","78%"],["博客系统","规划中","24%"],["统计学习项目","研究中","41%"]] : [["QssedA Studio","Active","78%"],["Blog system","Planning","24%"],["Statistics learning","Research","41%"]];
-  return `<section class="os-grid">${projects.map(p => `<article class="os-card"><h2>${p[0]}</h2><p>${p[1]}</p><div class="os-progress"><span style="width:${p[2]}"></span></div><small>${p[2]}</small></article>`).join("")}</section>`;
+  return `<section class="os-card is-large"><h2>${zh ? "项目数据尚未接入" : "Project data is not connected yet"}</h2><p>${zh ? "当前数据库没有 projects 表，因此不再展示固定项目名称、状态或虚构完成百分比。" : "There is no projects table in the current database, so this page no longer shows fixed project names, statuses, or fabricated completion percentages."}</p></section>`;
 }
 
 function kanbanContent(zh) {
-  const cols = zh ? [["待办", ["整理信息中心", "设计 AI 设置页"]], ["进行中", ["Supabase 权限模型"]], ["已完成", ["唯一 admin 约束", "中英切换"]]] : [["Todo", ["Organize info center", "Design AI settings"]], ["Doing", ["Supabase permissions"]], ["Done", ["Single admin", "Language switch"]]];
-  return `<section class="os-kanban">${cols.map(col => `<article><h2>${col[0]}</h2>${col[1].map(task => `<p>${task}</p>`).join("")}</article>`).join("")}</section>`;
+  return `<section class="os-card is-large"><h2>${zh ? "任务数据尚未接入" : "Task data is not connected yet"}</h2><p>${zh ? "当前数据库没有 tasks 表，因此不再把开发过程中的固定事项显示成真实 Todo / Kanban 数据。" : "There is no tasks table in the current database, so development notes are no longer presented as real Todo or Kanban data."}</p></section>`;
 }
 
 function adminContent(path, zh) {
@@ -2280,8 +2304,8 @@ function adminContent(path, zh) {
 
 function adminOverviewContent(zh) {
   const labels = zh
-    ? ["用户总数", "管理员数量", "笔记数量", "项目数量", "收藏链接数量"]
-    : ["Total Users", "Admins", "Notes", "Projects", "Saved Links"];
+    ? ["用户总数", "管理员数量"]
+    : ["Total Users", "Admins"];
   return `
     <section class="admin-scan">
       <span></span>
@@ -2301,7 +2325,7 @@ function adminOverviewContent(zh) {
         <div id="admin-recent-logs" class="admin-log-list admin-list-skeleton"></div>
       </article>
       <article class="os-card admin-section-card danger-event-card">
-        <div class="admin-section-head"><h2>${zh ? "系统风险提示" : "System Risk Signals"}</h2><span>${zh ? "AI 分析" : "AI scan"}</span></div>
+        <div class="admin-section-head"><h2>${zh ? "系统风险提示" : "System Risk Signals"}</h2><span>${zh ? "审计规则" : "Audit rules"}</span></div>
         <div id="admin-risk-list" class="admin-risk-list admin-list-skeleton"></div>
       </article>
     </section>
@@ -2348,8 +2372,8 @@ function adminRolesContent(zh) {
 
 function adminLogsContent(zh) {
   const actions = zh
-    ? [["", "全部动作"], ["login", "登录"], ["user.role.update", "修改用户角色"], ["user.ban", "封禁用户"], ["user.unban", "解除封禁"], ["user.suspend", "停用用户"], ["role.permissions.update", "修改角色权限"]]
-    : [["", "All actions"], ["login", "login"], ["user.role.update", "user.role.update"], ["user.ban", "user.ban"], ["user.unban", "user.unban"], ["user.suspend", "user.suspend"], ["role.permissions.update", "role.permissions.update"]];
+    ? [["", "全部动作"], ["auth.login.failed", "登录失败"], ["user.role.update", "修改用户角色"], ["user.ban", "封禁用户"], ["user.unban", "解除封禁"], ["user.suspend", "停用用户"], ["role.permissions.update", "修改角色权限"]]
+    : [["", "All actions"], ["auth.login.failed", "auth.login.failed"], ["user.role.update", "user.role.update"], ["user.ban", "user.ban"], ["user.unban", "user.unban"], ["user.suspend", "user.suspend"], ["role.permissions.update", "role.permissions.update"]];
   const severities = zh ? [["", "全部级别"], ["info", "信息"], ["warning", "警告"], ["danger", "危险"]] : [["", "All severity"], ["info", "info"], ["warning", "warning"], ["danger", "danger"]];
   return `
     <section class="admin-toolbar os-card">
@@ -2372,12 +2396,27 @@ function adminLogsContent(zh) {
 }
 
 function settingsContent(path, zh) {
-  if (path.endsWith("/appearance")) return overviewContent(zh, ["浅色", "深色", "跟随系统"], ["Light", "Dark", "System"]);
-  if (path.endsWith("/language")) return overviewContent(zh, ["中文", "English", "日本語"], ["Chinese", "English", "Japanese"]);
-  if (path.endsWith("/ai")) return overviewContent(zh, ["OpenAI Key", "Gemini Key", "DeepSeek Key"], ["OpenAI Key", "Gemini Key", "DeepSeek Key"]);
-  if (path.endsWith("/integrations")) return overviewContent(zh, ["GitHub", "Cloudflare", "Supabase", "Telegram"], ["GitHub", "Cloudflare", "Supabase", "Telegram"]);
-  if (path.endsWith("/storage")) return overviewContent(zh, ["文件数量", "空间占用"], ["File count", "Space usage"]);
-  return overviewContent(zh, ["外观", "语言", "AI 设置", "第三方集成", "存储管理"], ["Appearance", "Language", "AI settings", "Integrations", "Storage"]);
+  if (path.endsWith("/appearance")) return `<section class="os-card is-large"><h2>${zh ? "外观" : "Appearance"}</h2><p>${zh ? "当前支持浅色与深色主题。请使用右上角主题按钮切换；尚未实现“跟随系统”的独立设置项。" : "Light and dark themes are available through the top-right theme button. A separate system-following preference is not implemented."}</p></section>`;
+  if (path.endsWith("/language")) return `<section class="os-card is-large"><h2>${zh ? "语言" : "Language"}</h2><p>${zh ? "当前仅支持中文与 English；页面右上角语言按钮会在两者之间切换。" : "Chinese and English are currently supported; use the language button in the top-right corner to switch between them."}</p></section>`;
+  if (path.endsWith("/ai")) return `<section class="os-card is-large"><h2>${zh ? "AI 设置" : "AI Settings"}</h2><p>${zh ? "当前没有用户级 AI Provider 或 API Key 配置。任何服务端密钥都应保存在 Cloudflare Secret 等受保护环境中，而不是浏览器页面。" : "There is no user-level AI provider or API-key configuration. Server-side secrets should live in protected environments such as Cloudflare Secrets, not in browser UI."}</p></section>`;
+  if (path.endsWith("/integrations")) return `<section class="os-card is-large"><h2>${zh ? "第三方集成" : "Integrations"}</h2><p>${zh ? "Cloudflare 与 Supabase 是站点运行依赖，不是当前用户可配置的集成。其他用户级集成尚未实现。" : "Cloudflare and Supabase are runtime dependencies, not user-configurable integrations. Other user-level integrations are not implemented yet."}</p></section>`;
+  if (path.endsWith("/storage")) return `<section class="os-card is-large"><h2>${zh ? "存储管理" : "Storage"}</h2><p>${zh ? "当前没有文件表、存储桶管理界面或容量统计数据源。" : "There is currently no file table, storage-bucket management UI, or capacity data source."}</p></section>`;
+  const items = zh
+    ? [
+        ["外观", "可用", "浅色与深色主题可通过右上角按钮切换。"],
+        ["语言", "可用", "当前支持中文与 English。"],
+        ["AI 设置", "未实现", "当前没有用户级 AI Provider 或 API Key 配置。"],
+        ["第三方集成", "未实现", "当前没有用户可配置的第三方集成界面。"],
+        ["存储管理", "未实现", "当前没有文件存储模块或容量统计数据源。"]
+      ]
+    : [
+        ["Appearance", "Available", "Light and dark themes can be switched from the top-right control."],
+        ["Language", "Available", "Chinese and English are currently supported."],
+        ["AI Settings", "Not implemented", "There is no user-level AI provider or API-key configuration."],
+        ["Integrations", "Not implemented", "There is no user-configurable integrations UI yet."],
+        ["Storage", "Not implemented", "There is no file-storage module or capacity data source yet."]
+      ];
+  return `<section class="os-grid">${items.map(item => `<article class="os-card"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p></article>`).join("")}</section>`;
 }
 
 function osStyles() {
