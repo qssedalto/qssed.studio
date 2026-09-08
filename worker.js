@@ -2373,9 +2373,10 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
 <body class="os-shell" data-admin-path="${adminPath ? "true" : "false"}">
   ${topControls(links, t)}
   <div id="compact-back-zone" class="compact-back-zone">
-    <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${zh ? "返回导航" : "Back to navigation"}" title="${zh ? "返回导航" : "Back to navigation"}">
-      <span aria-hidden="true">←</span>
-      <strong>${zh ? "返回" : "Back"}</strong>
+    <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${zh ? "返回导航" : "Back to navigation"}">
+      <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+        <path d="M14.5 5.5 8 12l6.5 6.5"/>
+      </svg>
     </button>
   </div>
   <div class="os-layout">
@@ -3104,13 +3105,47 @@ function osStyles() {
       html:not(.compact-content-view):not(.compact-menu-view) .os-main{display:none}
       html.compact-content-view .os-sidebar{display:none}
       html.compact-content-view .os-main{display:block;padding-top:72px}
-      .compact-back-zone{display:none;position:fixed;top:0;left:0;width:138px;height:92px;z-index:85}
+      .compact-back-zone{display:none;position:fixed;top:0;left:0;width:92px;height:92px;z-index:85}
       html.compact-content-view .compact-back-zone{display:block}
-      .compact-back-button{position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px;width:auto;min-height:42px;padding:0 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--text);box-shadow:var(--shadow-soft);opacity:0;transform:translateY(-8px);pointer-events:none;transition:opacity .16s ease,transform .16s ease}
-      .compact-back-button span{font-size:20px;line-height:1}
-      .compact-back-button strong{font-size:14px}
+      .compact-back-button{
+        position:absolute;
+        top:14px;
+        left:14px;
+        display:grid;
+        place-items:center;
+        width:48px;
+        height:48px;
+        min-width:48px;
+        min-height:48px;
+        padding:0;
+        border:1px solid rgba(255,255,255,.58);
+        border-radius:50%;
+        background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(255,255,255,.34));
+        -webkit-backdrop-filter:blur(22px) saturate(180%);
+        backdrop-filter:blur(22px) saturate(180%);
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.82),
+          inset 0 -1px 0 rgba(255,255,255,.18),
+          0 8px 24px rgba(15,23,42,.16);
+        color:#111;
+        opacity:0;
+        transform:translateY(-6px) scale(.94);
+        pointer-events:none;
+        cursor:pointer;
+        transition:opacity .16s ease,transform .18s cubic-bezier(.2,.8,.2,1),background .18s ease,box-shadow .18s ease;
+      }
+      .compact-back-button svg{width:24px;height:24px;fill:none;stroke:#111;stroke-width:2.35;stroke-linecap:round;stroke-linejoin:round}
       .compact-back-zone:hover .compact-back-button,
-      .compact-back-zone:focus-within .compact-back-button{opacity:1;transform:translateY(0);pointer-events:auto}
+      .compact-back-zone:focus-within .compact-back-button{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+      .compact-back-button:hover{
+        background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(255,255,255,.44));
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.9),
+          inset 0 -1px 0 rgba(255,255,255,.22),
+          0 10px 28px rgba(15,23,42,.2);
+        transform:translateY(0) scale(1.04);
+      }
+      .compact-back-button:active{transform:translateY(0) scale(.94)}
       .os-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .os-hero{grid-template-columns:1fr;display:grid}
       .os-ai{min-width:0}
