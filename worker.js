@@ -3037,6 +3037,7 @@ function osStyles() {
     }
     .os-sidebar{padding:18px;animation:panel-enter .55s cubic-bezier(.2,.8,.2,1) both;}
     .os-main{padding:30px;animation:panel-enter .62s cubic-bezier(.2,.8,.2,1) .08s both;}
+    .compact-back-zone{display:none;}
     @media (min-width:901px){
       body.os-shell{height:100vh;overflow:hidden;box-sizing:border-box;}
       .os-layout{height:calc(100vh - 48px);min-height:0;}
