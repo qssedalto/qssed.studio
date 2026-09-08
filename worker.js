@@ -1294,6 +1294,8 @@ function adminClientScript(ipInfo) {
 
       const ADMIN_OVERVIEW_CACHE_KEY = "qssed-admin-overview-v1";
       const ADMIN_USERS_CACHE_KEY = "qssed-admin-users-v1";
+      const ADMIN_ROLES_CACHE_KEY = "qssed-admin-roles-v1";
+      const ADMIN_LOGS_CACHE_KEY = "qssed-admin-logs-v1";
 
       function readAdminCache(key) {
         try {
@@ -1314,12 +1316,8 @@ function adminClientScript(ipInfo) {
         try {
           sessionStorage.removeItem(ADMIN_OVERVIEW_CACHE_KEY);
           sessionStorage.removeItem(ADMIN_USERS_CACHE_KEY);
-        } catch {}
-      }
-
-      function invalidateAdminOverviewCache() {
-        try {
-          sessionStorage.removeItem(ADMIN_OVERVIEW_CACHE_KEY);
+          sessionStorage.removeItem(ADMIN_ROLES_CACHE_KEY);
+          sessionStorage.removeItem(ADMIN_LOGS_CACHE_KEY);
         } catch {}
       }
 
@@ -1383,6 +1381,48 @@ function adminClientScript(ipInfo) {
           user_id: adminState.currentUser?.id || "",
           fingerprint: adminUsersFingerprint(adminState.users),
           users: adminState.users
+        });
+      }
+
+      function adminRolesFingerprint(data) {
+        const normalized = normalizeRolePermissions(data || {});
+        return JSON.stringify({
+          roles: normalized.roles.map(role => [role.name || "", role.description || ""]).sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
+          permissions: normalized.permissions.map(permission => [permission.key || "", permission.category || "", permission.description || ""]).sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
+          role_permissions: normalized.role_permissions.map(item => [item.role || "", item.permission || ""]).sort((a, b) => (String(a[0]) + ":" + String(a[1])).localeCompare(String(b[0]) + ":" + String(b[1]))),
+          user_counts: Object.entries(normalized.user_counts || {}).sort(([a], [b]) => a.localeCompare(b))
+        });
+      }
+
+      function cacheAdminRoles() {
+        if (!adminState.roles) return;
+        writeAdminCache(ADMIN_ROLES_CACHE_KEY, {
+          user_id: adminState.currentUser?.id || "",
+          fingerprint: adminRolesFingerprint(adminState.roles),
+          data: adminState.roles
+        });
+      }
+
+      function adminLogsFingerprint(logs) {
+        return JSON.stringify((logs || []).map(log => [
+          log.id || "",
+          log.action || "",
+          log.severity || "",
+          log.created_at || "",
+          log.actor_user_id || "",
+          log.actor_email || "",
+          log.target_type || "",
+          log.target_id || "",
+          log.target_label || "",
+          log.description || ""
+        ]).sort((a, b) => String(a[0]).localeCompare(String(b[0]))));
+      }
+
+      function cacheAdminLogs(logs) {
+        writeAdminCache(ADMIN_LOGS_CACHE_KEY, {
+          user_id: adminState.currentUser?.id || "",
+          fingerprint: adminLogsFingerprint(logs),
+          logs
         });
       }
 
@@ -1610,7 +1650,6 @@ function adminClientScript(ipInfo) {
         adminState.currentUser = user;
         adminRequestContext.user_agent = navigator.userAgent || "";
         const path = location.pathname.replace(/^\\/(zh-cn|en)/, "") || "/dashboard";
-        document.querySelector(".os-main")?.classList.add("admin-motion-page");
         if (path === "/admin") await loadAdminOverview();
         if (path === "/admin/users") await loadAdminUsers();
         if (path === "/admin/roles") await loadAdminRoles();
@@ -1634,10 +1673,15 @@ function adminClientScript(ipInfo) {
         if (cached?.data) {
           adminState.overview = cached.data;
           renderAdminOverview(cached.data);
-        } else {
-          ["admin-recent-users", "admin-recent-logs", "admin-risk-list"].forEach(id => adminSkeleton(document.getElementById(id), 4));
+          void refreshAdminOverview(cached);
+          return;
         }
 
+        ["admin-recent-users", "admin-recent-logs", "admin-risk-list"].forEach(id => adminSkeleton(document.getElementById(id), 4));
+        await refreshAdminOverview(null);
+      }
+
+      async function refreshAdminOverview(cached) {
         const result = await adminRpc("get_admin_overview", {});
         if (result.error) {
           if (cached?.data) {
@@ -1706,14 +1750,21 @@ function adminClientScript(ipInfo) {
         const stored = readAdminCache(ADMIN_USERS_CACHE_KEY);
         const cached = stored?.user_id === adminState.currentUser?.id ? stored : null;
 
+        bindAdminUserFilters();
+
         if (cached?.users) {
           adminState.users = cached.users;
-          bindAdminUserFilters();
           renderAdminUsers();
-        } else {
-          adminSkeleton(table, 6);
+          void refreshAdminUsers(cached);
+          return;
         }
 
+        adminSkeleton(table, 6);
+        await refreshAdminUsers(null);
+      }
+
+      async function refreshAdminUsers(cached) {
+        const table = document.getElementById("admin-users-table");
         const result = await adminRpc("get_admin_users", {});
         if (result.error) {
           if (cached?.users) {
@@ -1732,7 +1783,6 @@ function adminClientScript(ipInfo) {
         const fresh = result.data || [];
         const fingerprint = adminUsersFingerprint(fresh);
         adminState.users = fresh;
-        bindAdminUserFilters();
 
         if (cached?.fingerprint === fingerprint) return;
 
@@ -1840,7 +1890,7 @@ function adminClientScript(ipInfo) {
         }
         user.role = role;
         cacheAdminUsers();
-        invalidateAdminOverviewCache();
+
         pulseAdminRow(userId, "warning");
         adminToast(adminText(adminIsZh(), "角色已更新。", "Role updated."), "warning");
         renderAdminUsers();
@@ -1874,7 +1924,7 @@ function adminClientScript(ipInfo) {
         }
         user.status = status;
         cacheAdminUsers();
-        invalidateAdminOverviewCache();
+
         pulseAdminRow(userId, status === "active" ? "success" : "warning");
         adminToast(adminText(adminIsZh(), status === "active" ? "用户已解除封禁。" : "用户状态已更新。", status === "active" ? "User restored." : "User status updated."), status === "banned" ? "danger" : "success");
         renderAdminUsers();
@@ -1891,10 +1941,32 @@ function adminClientScript(ipInfo) {
       async function loadAdminRoles() {
         const cards = document.getElementById("admin-role-cards");
         const matrix = document.getElementById("admin-permission-matrix");
+        const stored = readAdminCache(ADMIN_ROLES_CACHE_KEY);
+        const cached = stored?.user_id === adminState.currentUser?.id ? stored : null;
+
+        if (cached?.data) {
+          adminState.roles = normalizeRolePermissions(cached.data);
+          adminState.pendingPermissions = JSON.parse(JSON.stringify(adminState.roles.role_permissions));
+          adminState.permissionDirty = false;
+          renderAdminRoles();
+          void refreshAdminRoles(cached);
+          return;
+        }
+
         adminSkeleton(cards, 3);
         adminSkeleton(matrix, 8);
+        await refreshAdminRoles(null);
+      }
+
+      async function refreshAdminRoles(cached) {
+        const cards = document.getElementById("admin-role-cards");
+        const matrix = document.getElementById("admin-permission-matrix");
         const result = await adminRpc("get_role_permissions", {});
         if (result.error) {
+          if (cached?.data) {
+            console.warn("Admin roles refresh failed; keeping cached data.");
+            return;
+          }
           [cards, matrix].forEach(target => {
             if (!target) return;
             target.classList.remove("admin-list-skeleton");
@@ -1903,9 +1975,16 @@ function adminClientScript(ipInfo) {
           adminToast(adminText(adminIsZh(), "角色权限读取失败。", "Role permissions failed to load."), "danger");
           return;
         }
-        adminState.roles = normalizeRolePermissions(result.data || {});
-        adminState.pendingPermissions = JSON.parse(JSON.stringify(adminState.roles.role_permissions));
+
+        const fresh = normalizeRolePermissions(result.data || {});
+        const fingerprint = adminRolesFingerprint(fresh);
+
+        if (cached?.fingerprint === fingerprint) return;
+
+        adminState.roles = fresh;
+        adminState.pendingPermissions = JSON.parse(JSON.stringify(fresh.role_permissions));
         adminState.permissionDirty = false;
+        cacheAdminRoles();
         renderAdminRoles();
       }
 
@@ -1998,6 +2077,7 @@ function adminClientScript(ipInfo) {
           adminState.pendingPermissions = JSON.parse(JSON.stringify(adminState.roles.role_permissions));
         }
         adminState.permissionDirty = false;
+        cacheAdminRoles();
         document.getElementById("admin-unsaved-bar").hidden = true;
         const save = document.getElementById("admin-save-permissions");
         save.disabled = true;
@@ -2010,7 +2090,7 @@ function adminClientScript(ipInfo) {
 
       async function loadAdminLogs() {
         bindAdminLogFilters();
-        await refreshAdminLogs();
+        await refreshAdminLogs({ useCache: true });
       }
 
       function bindAdminLogFilters() {
@@ -2018,8 +2098,8 @@ function adminClientScript(ipInfo) {
           const el = document.getElementById(id);
           if (el && !el.dataset.bound) {
             el.dataset.bound = "true";
-            el.addEventListener("input", debounce(refreshAdminLogs, 180));
-            el.addEventListener("change", refreshAdminLogs);
+            el.addEventListener("input", debounce(() => refreshAdminLogs({ useCache: false }), 180));
+            el.addEventListener("change", () => refreshAdminLogs({ useCache: false }));
           }
         });
         const close = document.getElementById("admin-log-drawer-close");
@@ -2037,9 +2117,8 @@ function adminClientScript(ipInfo) {
         };
       }
 
-      async function refreshAdminLogs() {
+      async function refreshAdminLogs(options = {}) {
         const list = document.getElementById("admin-logs-list");
-        adminSkeleton(list, 8);
         const params = {
           p_action: document.getElementById("admin-log-action")?.value || null,
           p_severity: document.getElementById("admin-log-severity")?.value || null,
@@ -2049,8 +2128,29 @@ function adminClientScript(ipInfo) {
           p_to: document.getElementById("admin-log-to")?.value ? document.getElementById("admin-log-to").value + "T23:59:59" : null,
           p_limit: 120
         };
+        const isDefault = !params.p_action && !params.p_severity && !params.p_actor && !params.p_search && !params.p_from && !params.p_to;
+        const stored = options.useCache && isDefault ? readAdminCache(ADMIN_LOGS_CACHE_KEY) : null;
+        const cached = stored?.user_id === adminState.currentUser?.id ? stored : null;
+
+        if (cached?.logs) {
+          adminState.logs = cached.logs;
+          renderAdminLogs();
+          void fetchAdminLogs(params, cached, true);
+          return;
+        }
+
+        if (!list?.children.length) adminSkeleton(list, 8);
+        await fetchAdminLogs(params, null, isDefault);
+      }
+
+      async function fetchAdminLogs(params, cached, cacheDefault) {
+        const list = document.getElementById("admin-logs-list");
         const result = await adminRpc("get_audit_logs", params);
         if (result.error) {
+          if (cached?.logs) {
+            console.warn("Admin logs refresh failed; keeping cached data.");
+            return;
+          }
           adminState.logs = [];
           list?.classList.remove("admin-list-skeleton");
           if (list) list.innerHTML = adminLoadError();
@@ -2059,7 +2159,14 @@ function adminClientScript(ipInfo) {
           adminToast(adminText(adminIsZh(), "操作日志读取失败。", "Audit logs failed to load."), "danger");
           return;
         }
-        adminState.logs = result.data || [];
+
+        const fresh = result.data || [];
+        const fingerprint = adminLogsFingerprint(fresh);
+
+        if (cached?.fingerprint === fingerprint) return;
+
+        adminState.logs = fresh;
+        if (cacheDefault) cacheAdminLogs(fresh);
         renderAdminLogs();
       }
 
@@ -2267,7 +2374,7 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
         <p>${copy.adminLock}</p>
       </section>
 
-      <section id="os-content">
+      <section id="os-content"${adminPath ? ' style="visibility:hidden"' : ""}>
         ${renderOsContent(path, copy)}
       </section>
     </main>
@@ -2281,7 +2388,20 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
     const isAdminPath = document.body.dataset.adminPath === "true";
 
     async function hydrateOsUser() {
-      const { data } = await supabaseClient.auth.getUser();
+      let data;
+      let adminCheck = null;
+
+      if (isAdminPath) {
+        const [userResult, adminResult] = await Promise.all([
+          supabaseClient.auth.getUser(),
+          supabaseClient.rpc("is_admin")
+        ]);
+        data = userResult.data;
+        adminCheck = adminResult;
+      } else {
+        const userResult = await supabaseClient.auth.getUser();
+        data = userResult.data;
+      }
 
       if (!data.user) {
         try {
@@ -2301,17 +2421,30 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
         document.cookie = "qssed-os-user-name=" + encodeURIComponent(userLabel) + "; Path=/; Max-Age=2592000; SameSite=Lax; Secure";
         sessionStorage.removeItem("qssed-os-user-name");
       } catch {}
+
+      if (isAdminPath) {
+        const allowed = !adminCheck?.error && adminCheck?.data === true;
+        const lock = document.getElementById("admin-lock");
+        const content = document.getElementById("os-content");
+        lock.style.display = allowed ? "none" : "block";
+
+        if (!allowed) {
+          content.style.display = "none";
+          content.style.visibility = "hidden";
+          void updateCurrentDevice(data.user);
+          return;
+        }
+
+        await hydrateAdminModule(data.user);
+        content.style.display = "block";
+        content.style.visibility = "visible";
+        void updateCurrentDevice(data.user);
+        return;
+      }
+
       await updateCurrentDevice(data.user);
       await hydrateProfileSummary(data.user);
       await hydrateProfileAudit(data.user);
-
-      if (isAdminPath) {
-        const { data: isAdmin, error } = await supabaseClient.rpc("is_admin");
-        const allowed = !error && isAdmin === true;
-        document.getElementById("admin-lock").style.display = allowed ? "none" : "block";
-        document.getElementById("os-content").style.display = allowed ? "block" : "none";
-        if (allowed) await hydrateAdminModule(data.user);
-      }
     }
 
     hydrateOsUser();
@@ -2786,6 +2919,12 @@ function osStyles() {
     }
     .os-sidebar{padding:18px;animation:panel-enter .55s cubic-bezier(.2,.8,.2,1) both;}
     .os-main{padding:30px;animation:panel-enter .62s cubic-bezier(.2,.8,.2,1) .08s both;}
+    @media (min-width:901px){
+      body.os-shell{height:100vh;overflow:hidden;box-sizing:border-box;}
+      .os-layout{height:calc(100vh - 48px);min-height:0;}
+      .os-sidebar,.os-main{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;}
+      .os-main{min-width:0;}
+    }
     .os-brand{display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none;margin-bottom:16px;}
     .os-brand-mark,.os-avatar{display:grid;place-items:center;width:42px;height:42px;border-radius:var(--radius);background:var(--primary);color:var(--primary-ink);font-weight:900;}
     .os-brand strong,.os-brand small{display:block}.os-brand small{color:var(--muted);font-size:12px;margin-top:2px;}
@@ -2812,9 +2951,9 @@ function osStyles() {
     .admin-dashboard-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:14px}.admin-dashboard-grid .danger-event-card{grid-column:1/-1}.admin-section-card{min-height:260px}.admin-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.admin-section-head h2{margin:0}.admin-section-head span{color:var(--muted);font-size:13px}.status-pulse{width:10px;height:10px;border-radius:50%;background:var(--primary);animation:none}
     .admin-mini-row,.admin-log-row,.admin-risk{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);transition:background .18s ease,border-color .18s ease,transform .18s ease}.admin-mini-row+.admin-mini-row,.admin-log-row+.admin-log-row,.admin-risk+.admin-risk{margin-top:8px}.admin-mini-row:hover,.admin-log-row:hover{background:color-mix(in srgb,var(--surface-soft) 70%,var(--primary) 5%);border-color:var(--border-strong)}.admin-mini-row strong,.admin-log-row strong,.admin-risk strong{display:block;color:var(--text)}.admin-mini-row small,.admin-log-row small,.admin-risk small{color:var(--muted)}.admin-avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:var(--radius);background:var(--primary);color:var(--primary-ink);font-weight:900}.admin-badge{display:inline-flex;align-items:center;justify-content:center;min-width:70px;padding:6px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-soft);color:var(--muted);font-style:normal;font-size:12px;font-weight:800;transition:background .18s ease,color .18s ease,border-color .18s ease}.admin-badge.active,.admin-badge.info{color:var(--primary);border-color:color-mix(in srgb,var(--primary) 40%,var(--border))}.admin-badge.suspended,.admin-badge.warning{color:#d99a2b;border-color:color-mix(in srgb,#d99a2b 46%,var(--border))}.admin-badge.banned,.admin-badge.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 46%,var(--border))}
     .admin-risk.warning{border-color:color-mix(in srgb,#d99a2b 44%,var(--border))}.admin-risk.danger,.danger-event-card.pulse-once{border-color:color-mix(in srgb,var(--danger) 58%,var(--border));box-shadow:0 0 0 1px color-mix(in srgb,var(--danger) 18%,transparent),var(--shadow-soft)}.pulse-once{animation:danger-glow 1.1s ease 1}.log-dot{width:10px;height:10px;border-radius:99px;background:var(--primary)}.admin-log-row.warning .log-dot{background:#d99a2b}.admin-log-row.danger .log-dot{background:var(--danger)}
-    .admin-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) repeat(5,minmax(120px,.35fr));gap:10px;margin-bottom:14px}.admin-toolbar .os-search{margin:0}.admin-toolbar input,.admin-toolbar select,.admin-table-row select{width:100%;min-height:42px;background:var(--surface-soft);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px}.admin-toolbar input:focus,.admin-toolbar select:focus{border-color:var(--primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 14%,transparent)}
+    .admin-toolbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px}.admin-toolbar .os-search{margin:0}.admin-toolbar input,.admin-toolbar select{width:100%;height:56px;min-height:56px;box-sizing:border-box;background:var(--surface-soft);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:0 14px;font-size:16px}.admin-table-row select{width:100%;min-height:42px;background:var(--surface-soft);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px}.admin-toolbar input:focus,.admin-toolbar select:focus{border-color:var(--primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 14%,transparent)}
     .admin-table-card{overflow:hidden}.admin-data-table{overflow:auto}.admin-table-row{display:grid;grid-template-columns:.8fr 1fr 1.45fr .55fr .8fr .9fr 1fr 1fr 1fr .8fr;gap:10px;align-items:center;min-width:1180px;padding:12px;border-top:1px solid var(--border);transition:background .18s ease}.admin-table-row:first-child{border-top:0}.admin-table-row:hover{background:color-mix(in srgb,var(--surface-soft) 68%,var(--primary) 5%)}.admin-table-head{position:sticky;top:0;z-index:1;background:var(--surface-soft)}.admin-table-row span{color:var(--muted);overflow-wrap:anywhere}.admin-table-row .mono{font-family:ui-monospace,Consolas,monospace;color:var(--quiet)}
-    .animated-row{animation:admin-row-enter .24s ease both;animation-delay:calc(var(--stagger,0) * 28ms)}.row-flash-warning{animation:row-flash-warning .8s ease 1}.row-flash-success{animation:row-flash-success .8s ease 1}.admin-detail-card{margin-top:14px}.admin-detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.admin-detail-grid>div{padding:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.admin-detail-grid p{margin:6px 0;color:var(--muted);overflow-wrap:anywhere}
+    .animated-row{animation:admin-row-enter .24s ease both;animation-delay:calc(var(--stagger,0) * 28ms)}[data-admin-path="true"] .admin-motion-card,[data-admin-path="true"] .admin-metrics article,[data-admin-path="true"] .admin-user-table .animated-row,[data-admin-path="true"] .admin-log-timeline .animated-row{animation:none!important}.row-flash-warning{animation:row-flash-warning .8s ease 1}.row-flash-success{animation:row-flash-success .8s ease 1}.admin-detail-card{margin-top:14px}.admin-detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.admin-detail-grid>div{padding:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.admin-detail-grid p{margin:6px 0;color:var(--muted);overflow-wrap:anywhere}
     .admin-role-summary{margin-bottom:14px}.admin-role-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px}.admin-role-cards strong{display:block;margin-top:12px;color:var(--text)}.admin-unsaved{padding:10px 12px;margin-top:12px;border:1px solid color-mix(in srgb,#d99a2b 50%,var(--border));border-radius:var(--radius);background:color-mix(in srgb,#d99a2b 12%,transparent);color:var(--text);animation:admin-item-enter .18s ease both}.permission-group{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);margin-top:10px;overflow:hidden}.permission-group summary{cursor:pointer;padding:13px 14px;color:var(--text);font-weight:900}.permission-grid{display:grid;grid-template-columns:minmax(220px,1fr) repeat(3,110px);gap:1px;background:var(--border);border-top:1px solid var(--border)}.permission-grid>*{background:var(--card);padding:12px}.permission-key strong,.permission-key small{display:block}.permission-key small{margin-top:4px;color:var(--muted)}.switch-cell{display:grid;place-items:center}.switch-cell input{position:absolute;opacity:0;pointer-events:none}.switch-cell span{width:42px;height:24px;border-radius:99px;border:1px solid var(--border);background:var(--surface-soft);position:relative;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease}.switch-cell span:before{content:"";position:absolute;width:18px;height:18px;left:2px;top:2px;border-radius:50%;background:var(--muted);transition:transform .18s ease,background .18s ease}.switch-cell input:checked+span{background:color-mix(in srgb,var(--primary) 30%,var(--surface-soft));border-color:var(--primary)}.switch-cell input:checked+span:before{transform:translateX(18px);background:var(--primary)}.switch-cell.updated span{box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 18%,transparent)}
     #admin-recent-users,#admin-recent-users *,#admin-recent-logs,#admin-recent-logs *,#admin-risk-list,#admin-risk-list *{cursor:default!important}#admin-recent-logs .animated-row,.admin-user-table .animated-row{animation:none!important}.danger-event-card.pulse-once{animation:none!important}
     .admin-log-timeline{display:grid;gap:8px}.admin-log-row{cursor:pointer;grid-template-columns:auto minmax(0,1fr) auto}#admin-recent-logs .admin-log-row{cursor:default}.admin-drawer{position:fixed;inset:0 0 0 auto;width:min(520px,calc(100vw - 24px));padding:22px;background:var(--card);border-left:1px solid var(--border);box-shadow:var(--shadow);transform:translateX(104%);transition:transform .22s ease;z-index:40;overflow:auto}.admin-drawer.is-open{transform:translateX(0)}.admin-drawer h2{margin-top:34px}.admin-drawer-facts{display:grid;gap:8px}.admin-drawer-facts div{padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.admin-drawer-facts dt{color:var(--muted);font-size:12px}.admin-drawer-facts dd{margin:4px 0 0;color:var(--text);overflow-wrap:anywhere}.admin-drawer pre{white-space:pre-wrap;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--muted)}
