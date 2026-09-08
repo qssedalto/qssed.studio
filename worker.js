@@ -1012,15 +1012,98 @@ function auditClientScript(ipInfo) {
         return user.last_sign_in_at || identityTime || null;
       }
 
+      const PROFILE_SUMMARY_CACHE_KEY = "qssed-profile-summary-v2";
+      const PROFILE_AUDIT_CACHE_KEY = "qssed-profile-audit-v2";
+
+      function readProfileCache(key) {
+        try {
+          const raw = sessionStorage.getItem(key);
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function writeProfileCache(key, value) {
+        try {
+          sessionStorage.setItem(key, JSON.stringify(value));
+        } catch {}
+      }
+
+      function clearProfileUiCaches() {
+        try {
+          sessionStorage.removeItem(PROFILE_SUMMARY_CACHE_KEY);
+          sessionStorage.removeItem(PROFILE_AUDIT_CACHE_KEY);
+        } catch {}
+      }
+
+      function renderProfileSummarySnapshot(snapshot) {
+        if (!snapshot) return;
+        const root = document.getElementById("profile-summary");
+        if (!root) return;
+        const avatar = document.getElementById("profile-avatar");
+        const name = document.getElementById("profile-display-name");
+        const email = document.getElementById("profile-email");
+        const tags = document.getElementById("profile-tags");
+        if (avatar) avatar.innerText = String(snapshot.displayName || "User").slice(0, 1).toUpperCase();
+        if (name) name.innerText = snapshot.displayName || "User";
+        if (email) email.innerText = snapshot.email || "-";
+        if (tags) {
+          const values = [snapshot.role, snapshot.status].filter(Boolean);
+          tags.innerHTML = values.map(value => "<span>" + auditEscape(value) + "</span>").join("");
+        }
+      }
+
+      function buildAuditFingerprint(user, events, devices) {
+        const eventKeys = events.map(event => [
+          event.id || "",
+          event.created_at || "",
+          Boolean(event.success),
+          event.risk_level || ""
+        ]).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+        const deviceKeys = devices.map(device => [
+          device.id || "",
+          device.device_id || "",
+          device.revoked_at || "",
+          device.browser || "",
+          device.os || "",
+          device.device_type || ""
+        ]).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+        return JSON.stringify({
+          user: [user?.id || "", user?.email || "", user?.created_at || "", getLastSignIn(user) || ""],
+          events: eventKeys,
+          devices: deviceKeys
+        });
+      }
+
+      function restoreProfileUiCaches() {
+        const summary = readProfileCache(PROFILE_SUMMARY_CACHE_KEY);
+        if (summary) renderProfileSummarySnapshot(summary);
+
+        const audit = readProfileCache(PROFILE_AUDIT_CACHE_KEY);
+        if (!audit || !audit.user) return;
+        if (document.getElementById("audit-created-at")) {
+          renderAccountAudit(audit.user, audit.events || [], audit.devices || [], false, false);
+        }
+        if (document.getElementById("audit-current-device")) {
+          renderSecurityAudit(audit.events || [], audit.devices || [], false, false);
+        }
+      }
+
       async function hydrateProfileSummary(user) {
         const root = document.getElementById("profile-summary");
         if (!root || !user) return;
 
-        const { data: profile } = await supabaseClient
+        const { data: profile, error: profileError } = await supabaseClient
           .from("profiles")
           .select("username, display_name, role, status")
           .eq("id", user.id)
           .maybeSingle();
+
+        if (profileError) {
+          console.error("Profile query failed", profileError.message);
+          if (readProfileCache(PROFILE_SUMMARY_CACHE_KEY)) return;
+        }
 
         const displayName =
           profile?.display_name ||
@@ -1030,22 +1113,21 @@ function auditClientScript(ipInfo) {
           user.email ||
           "User";
 
-        const avatar = document.getElementById("profile-avatar");
-        const name = document.getElementById("profile-display-name");
-        const email = document.getElementById("profile-email");
-        const tags = document.getElementById("profile-tags");
-
-        if (avatar) avatar.innerText = String(displayName).slice(0, 1).toUpperCase();
-        if (name) name.innerText = displayName;
-        if (email) email.innerText = user.email || "-";
-        if (tags) {
-          const values = [profile?.role, profile?.status].filter(Boolean);
-          tags.innerHTML = values.map(value => "<span>" + auditEscape(value) + "</span>").join("");
-        }
+        const snapshot = {
+          user_id: user.id,
+          displayName,
+          email: user.email || "",
+          role: profile?.role || "",
+          status: profile?.status || ""
+        };
+        renderProfileSummarySnapshot(snapshot);
+        writeProfileCache(PROFILE_SUMMARY_CACHE_KEY, snapshot);
       }
 
       async function hydrateProfileAudit(user) {
         if (!document.getElementById("audit-created-at") && !document.getElementById("audit-current-device")) return;
+
+        const cached = readProfileCache(PROFILE_AUDIT_CACHE_KEY);
         const [eventsResult, devicesResult] = await Promise.all([
           supabaseClient.from("login_events").select("*").order("created_at", { ascending: false }).limit(50),
           supabaseClient.from("user_devices").select("*").order("last_seen_at", { ascending: false }).limit(20)
@@ -1054,11 +1136,39 @@ function auditClientScript(ipInfo) {
         const devicesError = Boolean(devicesResult.error);
         const events = eventsError ? [] : eventsResult.data || [];
         const devices = devicesError ? [] : devicesResult.data || [];
+
         if (eventsError) console.error("Login event query failed", eventsResult.error.message);
         if (devicesError) console.error("Device query failed", devicesResult.error.message);
-        renderAccountAudit(user, events, devices, eventsError, devicesError);
-        renderSecurityAudit(events, devices, eventsError, devicesError);
+
+        if (eventsError || devicesError) {
+          if (!cached) {
+            renderAccountAudit(user, events, devices, eventsError, devicesError);
+            renderSecurityAudit(events, devices, eventsError, devicesError);
+          }
+          return;
+        }
+
+        const cachedUser = {
+          id: user.id,
+          email: user.email || "",
+          created_at: user.created_at || null,
+          last_sign_in_at: getLastSignIn(user)
+        };
+        const fingerprint = buildAuditFingerprint(cachedUser, events, devices);
+        if (cached?.user?.id === user.id && cached.fingerprint === fingerprint) return;
+
+        const snapshot = {
+          user: cachedUser,
+          events,
+          devices,
+          fingerprint
+        };
+        writeProfileCache(PROFILE_AUDIT_CACHE_KEY, snapshot);
+        renderAccountAudit(cachedUser, events, devices, false, false);
+        renderSecurityAudit(events, devices, false, false);
       }
+
+      restoreProfileUiCaches();
 
       function renderAccountAudit(user, events, devices, eventsError, devicesError) {
         const set = (id, value) => { const el = document.getElementById(id); if (el) el.innerText = value || "-"; };
@@ -1868,17 +1978,70 @@ function themeToggle() {
 
 function languageToggle(links, t) {
   const targetUrl = t === TEXT.zh ? links.enCurrent : links.zhCurrent;
-  const label = t === TEXT.zh ? "EN" : "中";
+  const label = t === TEXT.zh ? "ZH" : "EN";
+  const title = t === TEXT.zh ? "Switch to English" : "切换到中文";
 
   return `
-    <a class="language-toggle" href="${targetUrl}" aria-label="Switch language" title="Switch language">${label}</a>
+    <a class="language-toggle" href="${targetUrl}" aria-label="${title}" title="${title}">${label}</a>
   `;
 }
 
 function topControls(links, t) {
   return `
-    ${languageToggle(links, t)}
-    ${themeToggle()}
+    <div class="top-controls-zone">
+      <div class="top-controls">
+        ${languageToggle(links, t)}
+        ${themeToggle()}
+      </div>
+    </div>
+    <style>
+      .top-controls-zone{
+        position:fixed;
+        top:0;
+        right:0;
+        width:176px;
+        height:92px;
+        z-index:80;
+      }
+      .top-controls{
+        position:absolute;
+        top:14px;
+        right:14px;
+        display:flex;
+        align-items:center;
+        gap:10px;
+        opacity:0;
+        transform:translateY(-8px);
+        pointer-events:none;
+        transition:opacity .16s ease, transform .16s ease;
+      }
+      .top-controls-zone:hover .top-controls,
+      .top-controls-zone:focus-within .top-controls{
+        opacity:1;
+        transform:translateY(0);
+        pointer-events:auto;
+      }
+      .top-controls .language-toggle,
+      .top-controls .theme-toggle{
+        position:static !important;
+        top:auto !important;
+        right:auto !important;
+        margin:0 !important;
+      }
+      @media (hover:none), (max-width:760px){
+        .top-controls-zone{
+          width:176px;
+          height:76px;
+        }
+        .top-controls{
+          top:12px;
+          right:12px;
+          opacity:1;
+          transform:none;
+          pointer-events:auto;
+        }
+      }
+    </style>
   `;
 }
 
@@ -1916,6 +2079,7 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
   const page = copy.pages[path] || copy.pages["/dashboard"];
   const activeSection = page.section;
   const adminPath = path.startsWith("/admin");
+  const dashboardPath = path === "/dashboard";
 
   return `
 <!DOCTYPE html>
@@ -1945,14 +2109,14 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
     <main class="os-main">
       <section class="os-hero">
         <div>
-          <p class="os-kicker">${copy.kicker}</p>
+          ${dashboardPath ? `<p class="os-kicker">${copy.kicker}</p>` : ""}
           <h1>${page.title}</h1>
-          <p>${page.description}</p>
+          ${page.description ? `<p>${page.description}</p>` : ""}
         </div>
-        <a class="os-ai" href="${copy.aiHref}">
+        ${dashboardPath ? `<a class="os-ai" href="${copy.aiHref}">
           <span>${copy.aiLabel}</span>
           <strong>${copy.aiTitle}</strong>
-        </a>
+        </a>` : ""}
       </section>
 
       <section id="admin-lock" class="os-lock" style="display:none;">
@@ -1981,6 +2145,7 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
           document.cookie = "qssed-os-user-name=; Path=/; Max-Age=0; SameSite=Lax; Secure";
           sessionStorage.removeItem("qssed-os-user-name");
         } catch {}
+        try { if (typeof clearProfileUiCaches === "function") clearProfileUiCaches(); } catch {}
         window.location.href = loginUrl;
         return;
       }
@@ -2019,7 +2184,7 @@ function buildOsCopy(zh) {
   if (zh) {
     return {
       platform: "个人 AI 知识工作平台",
-      kicker: "Personal AI Operating System",
+      kicker: "个人 AI 操作系统",
       aiLabel: "工作流",
       aiTitle: "实验与工具入口",
       aiHref: `${prefix}/workspace/experiments`,
@@ -2117,13 +2282,13 @@ function buildOsCopy(zh) {
 
 function buildOsPages(zh) {
   const z = {
-    dashboard: ["仪表盘", "显示当前已接入模块与账号状态；未接入的数据不会使用示例内容伪装。"],
+    dashboard: ["仪表盘", "汇总账号状态与核心模块，快速查看当前可用功能。"],
     info: ["信息中心", "知识模块尚未建立持久化数据表；当前仅保留清晰的模块入口。"],
     links: ["收藏链接", "尚未接入收藏链接数据表。"],
     notes: ["研究笔记", "尚未接入笔记存储与 Markdown 保存接口。"],
     summaries: ["内容摘要", "尚未接入摘要数据源。"],
     search: ["全局搜索", "尚未接入跨模块搜索索引。"],
-    profile: ["个人主页", "显示当前登录账号在 Supabase 中的资料。"],
+    profile: ["个人主页", ""],
     account: ["账户信息", "账号 ID、邮箱、创建时间、最近登录和登录记录。"],
     security: ["安全中心", "查看登录设备、登录历史和风险记录。"],
     preferences: ["偏好设置", "主题与语言可直接切换；字体和通知设置尚未实现。"],
@@ -2145,13 +2310,13 @@ function buildOsPages(zh) {
     storage: ["存储管理", "当前没有文件存储模块。"]
   };
   const e = {
-    dashboard: ["Dashboard", "Shows connected modules and account state without fabricating data for modules that are not implemented."],
+    dashboard: ["Dashboard", "Overview of your account status and core modules, with quick access to currently available features."],
     info: ["Information Center", "Persistent knowledge tables are not implemented yet; this area currently provides module entry points."],
     links: ["Saved Links", "No saved-links table is connected yet."],
     notes: ["Research Notes", "Note storage and Markdown persistence are not connected yet."],
     summaries: ["Summaries", "No summary data source is connected yet."],
     search: ["Global Search", "No cross-module search index is connected yet."],
-    profile: ["Profile", "Shows the current signed-in account profile stored in Supabase."],
+    profile: ["Profile", ""],
     account: ["Account", "Account ID, email, creation time, last sign-in, and login records."],
     security: ["Security", "Review login devices, login history, and risk records."],
     preferences: ["Preferences", "Theme and language can be switched now; font and notification preferences are not implemented."],
@@ -2961,6 +3126,7 @@ function loginPage(t, links, ipInfo) {
           document.cookie = "qssed-os-user-name=" + encodeURIComponent("@" + loginName) + "; Path=/; Max-Age=2592000; SameSite=Lax; Secure";
         } catch {}
       }
+      try { if (typeof clearProfileUiCaches === "function") clearProfileUiCaches(); } catch {}
       await updateCurrentDevice(authData.user);
       window.location.href = dashboardUrl;
     });
