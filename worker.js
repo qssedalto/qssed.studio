@@ -1292,6 +1292,100 @@ function adminClientScript(ipInfo) {
         permissionDirty: false
       };
 
+      const ADMIN_OVERVIEW_CACHE_KEY = "qssed-admin-overview-v1";
+      const ADMIN_USERS_CACHE_KEY = "qssed-admin-users-v1";
+
+      function readAdminCache(key) {
+        try {
+          const raw = sessionStorage.getItem(key);
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function writeAdminCache(key, value) {
+        try {
+          sessionStorage.setItem(key, JSON.stringify(value));
+        } catch {}
+      }
+
+      function clearAdminUiCaches() {
+        try {
+          sessionStorage.removeItem(ADMIN_OVERVIEW_CACHE_KEY);
+          sessionStorage.removeItem(ADMIN_USERS_CACHE_KEY);
+        } catch {}
+      }
+
+      function invalidateAdminOverviewCache() {
+        try {
+          sessionStorage.removeItem(ADMIN_OVERVIEW_CACHE_KEY);
+        } catch {}
+      }
+
+      function adminOverviewFingerprint(data) {
+        const normalizeUsers = (data?.recent_users || []).map(user => [
+          user.user_id || user.id || "",
+          user.username || "",
+          user.display_name || "",
+          user.email || "",
+          user.role || "",
+          user.status || "",
+          user.last_sign_in_at || ""
+        ]).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+
+        const normalizeLogs = items => (items || []).map(log => [
+          log.id || "",
+          log.action || "",
+          log.severity || "",
+          log.created_at || "",
+          log.actor_email || "",
+          log.target_id || "",
+          log.target_label || ""
+        ]).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+
+        return JSON.stringify({
+          user_count: Number(data?.user_count) || 0,
+          admin_count: Number(data?.admin_count) || 0,
+          recent_users: normalizeUsers,
+          recent_logs: normalizeLogs(data?.recent_logs),
+          risks: normalizeLogs(data?.risks)
+        });
+      }
+
+      function adminUsersFingerprint(users) {
+        return JSON.stringify((users || []).map(user => [
+          user.user_id || "",
+          user.username || "",
+          user.display_name || "",
+          user.email || "",
+          user.role || "",
+          user.status || "",
+          user.created_at || "",
+          user.last_sign_in_at || "",
+          (user.recent_logins || []).map(login => [
+            login.id || "",
+            login.created_at || "",
+            Boolean(login.success),
+            login.risk_level || ""
+          ]),
+          (user.recent_actions || []).map(log => [
+            log.id || "",
+            log.created_at || "",
+            log.action || "",
+            log.severity || ""
+          ])
+        ]).sort((a, b) => String(a[0]).localeCompare(String(b[0]))));
+      }
+
+      function cacheAdminUsers() {
+        writeAdminCache(ADMIN_USERS_CACHE_KEY, {
+          user_id: adminState.currentUser?.id || "",
+          fingerprint: adminUsersFingerprint(adminState.users),
+          users: adminState.users
+        });
+      }
+
       function adminIsZh() {
         return location.pathname.startsWith("/zh-cn");
       }
@@ -1534,9 +1628,22 @@ function adminClientScript(ipInfo) {
       }
 
       async function loadAdminOverview() {
-        ["admin-recent-users", "admin-recent-logs", "admin-risk-list"].forEach(id => adminSkeleton(document.getElementById(id), 4));
+        const stored = readAdminCache(ADMIN_OVERVIEW_CACHE_KEY);
+        const cached = stored?.user_id === adminState.currentUser?.id ? stored : null;
+
+        if (cached?.data) {
+          adminState.overview = cached.data;
+          renderAdminOverview(cached.data);
+        } else {
+          ["admin-recent-users", "admin-recent-logs", "admin-risk-list"].forEach(id => adminSkeleton(document.getElementById(id), 4));
+        }
+
         const result = await adminRpc("get_admin_overview", {});
         if (result.error) {
+          if (cached?.data) {
+            console.warn("Admin overview refresh failed; keeping cached data.");
+            return;
+          }
           document.querySelectorAll("[data-admin-metric]").forEach(el => {
             el.closest("article")?.classList.remove("admin-skeleton");
             el.innerText = "—";
@@ -1550,15 +1657,26 @@ function adminClientScript(ipInfo) {
           adminToast(adminText(adminIsZh(), "管理数据读取失败。", "Admin data failed to load."), "danger");
           return;
         }
-        adminState.overview = result.data || {};
-        renderAdminOverview(adminState.overview);
+
+        const fresh = result.data || {};
+        const fingerprint = adminOverviewFingerprint(fresh);
+        adminState.overview = fresh;
+
+        if (cached?.fingerprint === fingerprint) return;
+
+        writeAdminCache(ADMIN_OVERVIEW_CACHE_KEY, {
+          user_id: adminState.currentUser?.id || "",
+          fingerprint,
+          data: fresh
+        });
+        renderAdminOverview(fresh);
       }
 
       function renderAdminOverview(data) {
         const values = [data.user_count, data.admin_count];
         document.querySelectorAll("[data-admin-metric]").forEach((el, index) => {
           el.closest("article")?.classList.remove("admin-skeleton");
-          animateNumber(el, values[index] || 0);
+          el.innerText = String(Number(values[index]) || 0);
         });
         const users = document.getElementById("admin-recent-users");
         if (users) {
@@ -1585,9 +1703,23 @@ function adminClientScript(ipInfo) {
 
       async function loadAdminUsers() {
         const table = document.getElementById("admin-users-table");
-        adminSkeleton(table, 6);
+        const stored = readAdminCache(ADMIN_USERS_CACHE_KEY);
+        const cached = stored?.user_id === adminState.currentUser?.id ? stored : null;
+
+        if (cached?.users) {
+          adminState.users = cached.users;
+          bindAdminUserFilters();
+          renderAdminUsers();
+        } else {
+          adminSkeleton(table, 6);
+        }
+
         const result = await adminRpc("get_admin_users", {});
         if (result.error) {
+          if (cached?.users) {
+            console.warn("Admin users refresh failed; keeping cached data.");
+            return;
+          }
           adminState.users = [];
           table?.classList.remove("admin-list-skeleton");
           if (table) table.innerHTML = adminLoadError();
@@ -1596,8 +1728,15 @@ function adminClientScript(ipInfo) {
           adminToast(adminText(adminIsZh(), "用户列表读取失败。", "User list failed to load."), "danger");
           return;
         }
-        adminState.users = result.data || [];
+
+        const fresh = result.data || [];
+        const fingerprint = adminUsersFingerprint(fresh);
+        adminState.users = fresh;
         bindAdminUserFilters();
+
+        if (cached?.fingerprint === fingerprint) return;
+
+        cacheAdminUsers();
         renderAdminUsers();
       }
 
@@ -1700,6 +1839,8 @@ function adminClientScript(ipInfo) {
           return;
         }
         user.role = role;
+        cacheAdminUsers();
+        invalidateAdminOverviewCache();
         pulseAdminRow(userId, "warning");
         adminToast(adminText(adminIsZh(), "角色已更新。", "Role updated."), "warning");
         renderAdminUsers();
@@ -1732,6 +1873,8 @@ function adminClientScript(ipInfo) {
           return;
         }
         user.status = status;
+        cacheAdminUsers();
+        invalidateAdminOverviewCache();
         pulseAdminRow(userId, status === "active" ? "success" : "warning");
         adminToast(adminText(adminIsZh(), status === "active" ? "用户已解除封禁。" : "用户状态已更新。", status === "active" ? "User restored." : "User status updated."), status === "banned" ? "danger" : "success");
         renderAdminUsers();
@@ -2146,6 +2289,7 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
           sessionStorage.removeItem("qssed-os-user-name");
         } catch {}
         try { if (typeof clearProfileUiCaches === "function") clearProfileUiCaches(); } catch {}
+        try { if (typeof clearAdminUiCaches === "function") clearAdminUiCaches(); } catch {}
         window.location.href = loginUrl;
         return;
       }
@@ -2184,7 +2328,7 @@ function buildOsCopy(zh) {
   if (zh) {
     return {
       platform: "个人 AI 知识工作平台",
-      kicker: "个人 AI 操作系统",
+      kicker: "个人智能工作台",
       aiLabel: "工作流",
       aiTitle: "实验与工具入口",
       aiHref: `${prefix}/workspace/experiments`,
@@ -2233,7 +2377,7 @@ function buildOsCopy(zh) {
 
   return {
     platform: "Personal AI Knowledge Platform",
-    kicker: "Personal AI Operating System",
+    kicker: "Personal Intelligence Workspace",
     aiLabel: "Workflow",
     aiTitle: "Experiments & tools",
     aiHref: `${prefix}/workspace/experiments`,
@@ -2406,13 +2550,13 @@ function dashboardContent(zh) {
   const modules = zh
     ? [
         ["账户与安全", "已接入", "Supabase Auth、登录事件和设备记录使用真实数据。"],
-        ["管理后台", "已接入", "用户、角色、权限和审计日志从 Supabase 读取。"],
+        ["管理后台", "已接入", "集中管理用户、角色、权限与安全审计。"],
         ["知识与工作区", "未接入", "笔记、链接、摘要、项目、草稿和任务目前没有对应数据表。"],
         ["设置与集成", "部分接入", "主题和中英切换可用；AI、存储和用户级第三方配置尚未实现。"]
       ]
     : [
         ["Account & Security", "Connected", "Supabase Auth, login events, and device records use live data."],
-        ["Admin", "Connected", "Users, roles, permissions, and audit logs are read from Supabase."],
+        ["Admin", "Connected", "Manage users, roles, permissions, and security audits in one place."],
         ["Knowledge & Workspace", "Not connected", "Notes, links, summaries, projects, drafts, and tasks do not have backing tables yet."],
         ["Settings & Integrations", "Partial", "Theme and Chinese/English switching work; AI, storage, and user-level integrations are not implemented."]
       ];
@@ -2515,7 +2659,7 @@ function adminOverviewContent(zh) {
     <section class="admin-scan">
       <span></span>
       <strong>${zh ? "管理数据概览" : "Admin Data Overview"}</strong>
-      <p>${zh ? "正在读取 Supabase 用户、角色、权限和操作日志。" : "Reading Supabase users, roles, permissions, and operation logs."}</p>
+      <p>${zh ? "汇总用户、角色、权限和操作日志。" : "Overview of users, roles, permissions, and operation logs."}</p>
     </section>
     <section class="admin-metrics" id="admin-overview-metrics">
       ${labels.map((label, index) => `<article class="admin-motion-card admin-skeleton" style="--stagger:${index}"><span>${label}</span><strong data-admin-metric="${index}">0</strong></article>`).join("")}
@@ -2663,16 +2807,17 @@ function osStyles() {
     .audit-stats{display:grid;gap:10px}.audit-stats span{display:flex;align-items:center;justify-content:space-between;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--muted)}.audit-stats strong{color:var(--text);font-size:26px}
     .audit-section{margin-top:14px}.audit-table{overflow:auto}.audit-row{display:grid;grid-template-columns:1.1fr .8fr 1fr .8fr .8fr .8fr .8fr .7fr .8fr;gap:10px;padding:12px;border-top:1px solid var(--border);min-width:980px}.audit-row:first-child{border-top:0}.audit-head{background:var(--surface-soft)}.audit-row span{color:var(--muted);overflow-wrap:anywhere}
     .audit-current,.audit-devices,.audit-timeline,.audit-alerts{display:grid;gap:10px;color:var(--muted)}.audit-device-card{display:grid;gap:6px;padding:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.audit-device-card strong{color:var(--text)}.audit-device-card em{color:var(--primary);font-style:normal;font-weight:800}.audit-timeline section{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.audit-timeline h3{margin:0 0 8px}.audit-timeline p,.audit-alerts p{margin:0;padding:8px 0;border-top:1px solid var(--border)}.audit-timeline p:first-of-type{border-top:0}
-    .admin-motion-page{animation:admin-page-enter .25s ease both}.admin-scan{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;margin-bottom:16px;padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:linear-gradient(135deg,var(--card),var(--surface-soft));overflow:hidden;position:relative}.admin-scan:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--primary) 14%,transparent),transparent);transform:translateX(-100%);animation:admin-scan 2.4s ease-in-out infinite}.admin-scan span{width:12px;height:12px;border-radius:99px;background:var(--primary);box-shadow:0 0 0 6px color-mix(in srgb,var(--primary) 12%,transparent);animation:status-pulse 1.9s ease-in-out infinite}.admin-scan strong{position:relative;color:var(--text)}.admin-scan p{position:relative;grid-column:2;margin:0;color:var(--muted)}
+    .admin-motion-page{animation:admin-page-enter .25s ease both}.admin-scan{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;margin-bottom:16px;padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:linear-gradient(135deg,var(--card),var(--surface-soft));overflow:hidden;position:relative}.admin-scan:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--primary) 14%,transparent),transparent);transform:translateX(-100%);animation:none}.admin-scan span{width:12px;height:12px;border-radius:99px;background:var(--primary);box-shadow:0 0 0 6px color-mix(in srgb,var(--primary) 12%,transparent);animation:none}.admin-scan strong{position:relative;color:var(--text)}.admin-scan p{position:relative;grid-column:2;margin:0;color:var(--muted)}
     .admin-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:16px}.admin-motion-card,.admin-metrics article{padding:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow-soft);animation:admin-item-enter .34s ease both;animation-delay:calc(var(--stagger,0) * 54ms);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.admin-motion-card:hover,.admin-metrics article:hover{transform:translateY(-3px);border-color:var(--border-strong);box-shadow:var(--shadow)}.admin-metrics span,.admin-motion-card small{display:block;color:var(--muted);font-weight:750}.admin-metrics strong{display:block;margin-top:8px;font-size:34px;color:var(--text)}
-    .admin-dashboard-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:14px}.admin-dashboard-grid .danger-event-card{grid-column:1/-1}.admin-section-card{min-height:260px}.admin-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.admin-section-head h2{margin:0}.admin-section-head span{color:var(--muted);font-size:13px}.status-pulse{width:10px;height:10px;border-radius:50%;background:var(--primary);animation:status-pulse 2.2s ease-in-out infinite}
+    .admin-dashboard-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:14px}.admin-dashboard-grid .danger-event-card{grid-column:1/-1}.admin-section-card{min-height:260px}.admin-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.admin-section-head h2{margin:0}.admin-section-head span{color:var(--muted);font-size:13px}.status-pulse{width:10px;height:10px;border-radius:50%;background:var(--primary);animation:none}
     .admin-mini-row,.admin-log-row,.admin-risk{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);transition:background .18s ease,border-color .18s ease,transform .18s ease}.admin-mini-row+.admin-mini-row,.admin-log-row+.admin-log-row,.admin-risk+.admin-risk{margin-top:8px}.admin-mini-row:hover,.admin-log-row:hover{background:color-mix(in srgb,var(--surface-soft) 70%,var(--primary) 5%);border-color:var(--border-strong)}.admin-mini-row strong,.admin-log-row strong,.admin-risk strong{display:block;color:var(--text)}.admin-mini-row small,.admin-log-row small,.admin-risk small{color:var(--muted)}.admin-avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:var(--radius);background:var(--primary);color:var(--primary-ink);font-weight:900}.admin-badge{display:inline-flex;align-items:center;justify-content:center;min-width:70px;padding:6px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-soft);color:var(--muted);font-style:normal;font-size:12px;font-weight:800;transition:background .18s ease,color .18s ease,border-color .18s ease}.admin-badge.active,.admin-badge.info{color:var(--primary);border-color:color-mix(in srgb,var(--primary) 40%,var(--border))}.admin-badge.suspended,.admin-badge.warning{color:#d99a2b;border-color:color-mix(in srgb,#d99a2b 46%,var(--border))}.admin-badge.banned,.admin-badge.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 46%,var(--border))}
     .admin-risk.warning{border-color:color-mix(in srgb,#d99a2b 44%,var(--border))}.admin-risk.danger,.danger-event-card.pulse-once{border-color:color-mix(in srgb,var(--danger) 58%,var(--border));box-shadow:0 0 0 1px color-mix(in srgb,var(--danger) 18%,transparent),var(--shadow-soft)}.pulse-once{animation:danger-glow 1.1s ease 1}.log-dot{width:10px;height:10px;border-radius:99px;background:var(--primary)}.admin-log-row.warning .log-dot{background:#d99a2b}.admin-log-row.danger .log-dot{background:var(--danger)}
     .admin-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) repeat(5,minmax(120px,.35fr));gap:10px;margin-bottom:14px}.admin-toolbar .os-search{margin:0}.admin-toolbar input,.admin-toolbar select,.admin-table-row select{width:100%;min-height:42px;background:var(--surface-soft);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px}.admin-toolbar input:focus,.admin-toolbar select:focus{border-color:var(--primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 14%,transparent)}
     .admin-table-card{overflow:hidden}.admin-data-table{overflow:auto}.admin-table-row{display:grid;grid-template-columns:.8fr 1fr 1.45fr .55fr .8fr .9fr 1fr 1fr 1fr .8fr;gap:10px;align-items:center;min-width:1180px;padding:12px;border-top:1px solid var(--border);transition:background .18s ease}.admin-table-row:first-child{border-top:0}.admin-table-row:hover{background:color-mix(in srgb,var(--surface-soft) 68%,var(--primary) 5%)}.admin-table-head{position:sticky;top:0;z-index:1;background:var(--surface-soft)}.admin-table-row span{color:var(--muted);overflow-wrap:anywhere}.admin-table-row .mono{font-family:ui-monospace,Consolas,monospace;color:var(--quiet)}
     .animated-row{animation:admin-row-enter .24s ease both;animation-delay:calc(var(--stagger,0) * 28ms)}.row-flash-warning{animation:row-flash-warning .8s ease 1}.row-flash-success{animation:row-flash-success .8s ease 1}.admin-detail-card{margin-top:14px}.admin-detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.admin-detail-grid>div{padding:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.admin-detail-grid p{margin:6px 0;color:var(--muted);overflow-wrap:anywhere}
     .admin-role-summary{margin-bottom:14px}.admin-role-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px}.admin-role-cards strong{display:block;margin-top:12px;color:var(--text)}.admin-unsaved{padding:10px 12px;margin-top:12px;border:1px solid color-mix(in srgb,#d99a2b 50%,var(--border));border-radius:var(--radius);background:color-mix(in srgb,#d99a2b 12%,transparent);color:var(--text);animation:admin-item-enter .18s ease both}.permission-group{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);margin-top:10px;overflow:hidden}.permission-group summary{cursor:pointer;padding:13px 14px;color:var(--text);font-weight:900}.permission-grid{display:grid;grid-template-columns:minmax(220px,1fr) repeat(3,110px);gap:1px;background:var(--border);border-top:1px solid var(--border)}.permission-grid>*{background:var(--card);padding:12px}.permission-key strong,.permission-key small{display:block}.permission-key small{margin-top:4px;color:var(--muted)}.switch-cell{display:grid;place-items:center}.switch-cell input{position:absolute;opacity:0;pointer-events:none}.switch-cell span{width:42px;height:24px;border-radius:99px;border:1px solid var(--border);background:var(--surface-soft);position:relative;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease}.switch-cell span:before{content:"";position:absolute;width:18px;height:18px;left:2px;top:2px;border-radius:50%;background:var(--muted);transition:transform .18s ease,background .18s ease}.switch-cell input:checked+span{background:color-mix(in srgb,var(--primary) 30%,var(--surface-soft));border-color:var(--primary)}.switch-cell input:checked+span:before{transform:translateX(18px);background:var(--primary)}.switch-cell.updated span{box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 18%,transparent)}
-    .admin-log-timeline{display:grid;gap:8px}.admin-log-row{cursor:pointer;grid-template-columns:auto minmax(0,1fr) auto}.admin-drawer{position:fixed;inset:0 0 0 auto;width:min(520px,calc(100vw - 24px));padding:22px;background:var(--card);border-left:1px solid var(--border);box-shadow:var(--shadow);transform:translateX(104%);transition:transform .22s ease;z-index:40;overflow:auto}.admin-drawer.is-open{transform:translateX(0)}.admin-drawer h2{margin-top:34px}.admin-drawer-facts{display:grid;gap:8px}.admin-drawer-facts div{padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.admin-drawer-facts dt{color:var(--muted);font-size:12px}.admin-drawer-facts dd{margin:4px 0 0;color:var(--text);overflow-wrap:anywhere}.admin-drawer pre{white-space:pre-wrap;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--muted)}
+    #admin-recent-users,#admin-recent-users *,#admin-recent-logs,#admin-recent-logs *,#admin-risk-list,#admin-risk-list *{cursor:default!important}#admin-recent-logs .animated-row,.admin-user-table .animated-row{animation:none!important}.danger-event-card.pulse-once{animation:none!important}
+    .admin-log-timeline{display:grid;gap:8px}.admin-log-row{cursor:pointer;grid-template-columns:auto minmax(0,1fr) auto}#admin-recent-logs .admin-log-row{cursor:default}.admin-drawer{position:fixed;inset:0 0 0 auto;width:min(520px,calc(100vw - 24px));padding:22px;background:var(--card);border-left:1px solid var(--border);box-shadow:var(--shadow);transform:translateX(104%);transition:transform .22s ease;z-index:40;overflow:auto}.admin-drawer.is-open{transform:translateX(0)}.admin-drawer h2{margin-top:34px}.admin-drawer-facts{display:grid;gap:8px}.admin-drawer-facts div{padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.admin-drawer-facts dt{color:var(--muted);font-size:12px}.admin-drawer-facts dd{margin:4px 0 0;color:var(--text);overflow-wrap:anywhere}.admin-drawer pre{white-space:pre-wrap;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--muted)}
     .admin-primary,.admin-ghost,.admin-danger{min-height:38px;width:auto;border-radius:var(--radius);font-weight:850;transition:transform .14s ease,box-shadow .14s ease,background .14s ease,border-color .14s ease}.admin-primary{background:var(--primary);color:var(--primary-ink);border:1px solid var(--primary)}.admin-primary:disabled{opacity:.48;cursor:not-allowed}.admin-ghost{background:var(--surface-soft);color:var(--text);border:1px solid var(--border)}.admin-danger{background:linear-gradient(135deg,color-mix(in srgb,var(--danger) 85%,#111),var(--danger));color:#fff;border:1px solid color-mix(in srgb,var(--danger) 70%,var(--border))}.admin-ghost:hover,.admin-primary:hover,.admin-danger:hover{transform:translateY(-1px);box-shadow:var(--shadow-soft)}.admin-danger:hover{box-shadow:0 12px 26px color-mix(in srgb,var(--danger) 24%,transparent)}.admin-ghost:active,.admin-primary:active,.admin-danger:active{transform:scale(.96)}
     .admin-empty-state{display:grid;place-items:center;gap:10px;min-height:150px;padding:22px;border:1px dashed var(--border-strong);border-radius:var(--radius);background:var(--surface-soft);text-align:center;animation:admin-item-enter .24s ease both}.admin-empty-orb{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--primary);color:var(--primary-ink);font-weight:900;animation:empty-float 2.8s ease-in-out infinite}.admin-empty{color:var(--muted)}
     .skeleton-line{height:44px;border-radius:var(--radius);background:linear-gradient(90deg,var(--surface-soft),color-mix(in srgb,var(--primary) 10%,var(--surface-soft)),var(--surface-soft));background-size:240% 100%;animation:skeleton-shimmer 1.2s ease-in-out infinite;margin-bottom:10px}.admin-skeleton strong{color:transparent;border-radius:var(--radius);background:linear-gradient(90deg,var(--surface-soft),color-mix(in srgb,var(--primary) 10%,var(--surface-soft)),var(--surface-soft));background-size:240% 100%;animation:skeleton-shimmer 1.2s ease-in-out infinite}
