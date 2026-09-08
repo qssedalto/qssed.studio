@@ -5,7 +5,6 @@ const ADMIN_EMAILS = [
   "qssed_a@icloud.com"
 ];
 const OS_PATHS = new Set([
-  "/",
   "/dashboard",
   "/info",
   "/info/links",
@@ -31,15 +30,17 @@ const OS_PATHS = new Set([
   "/settings/language",
   "/settings/ai",
   "/settings/integrations",
-  "/settings/storage",
-  "/general",
-  "/general/infohub",
-  "/personal"
+  "/settings/storage"
+]);
+const LEGACY_REDIRECTS = new Map([
+  ["/", "/dashboard"],
+  ["/general", "/dashboard"],
+  ["/general/infohub", "/info"],
+  ["/personal", "/profile"]
 ]);
 const TEXT = {
   en: {
     studioName: "Qssed_A's Studio",
-    homeDescription: "Your private studio for getting information from Tianguo.",
     signIn: "Sign In",
     signUp: "Sign Up",
     continue: "Continue",
@@ -73,7 +74,6 @@ const TEXT = {
   },
   zh: {
     studioName: "Qssed_A's Studio",
-    homeDescription: "从这获取你想知道的",
     signIn: "登录",
     signUp: "注册",
     continue: "继续",
@@ -110,6 +110,12 @@ const TEXT = {
 export default {
   async fetch(request) {
     const { pathname, locale, ipInfo } = getRouteInfo(request);
+    const legacyTarget = LEGACY_REDIRECTS.get(pathname);
+
+    if (legacyTarget) {
+      return localizedRedirect(request, locale, legacyTarget);
+    }
+
     const t = TEXT[locale];
     const links = buildLinks(locale, pathname);
 
@@ -126,7 +132,7 @@ export default {
     }
 
 
-    return html(homePage(t, links));
+    return html(notFoundPage(t, links), 404);
   },
 };
 
@@ -184,19 +190,26 @@ function buildLinks(locale, pathname) {
   return {
     login: `${prefix}/login`,
     signUp: `${prefix}/sign-up`,
-    personal: `${prefix}/personal`,
     dashboard: `${prefix}/dashboard`,
     zhCurrent: `/zh-cn${currentPath}`,
     enCurrent: `/en${currentPath}`
   };
 }
 
-function html(content) {
+function html(content, status = 200) {
   return new Response(content, {
+    status,
     headers: {
       "content-type": "text/html;charset=UTF-8",
     },
   });
+}
+
+function localizedRedirect(request, locale, pathname) {
+  const url = new URL(request.url);
+  const prefix = locale === "zh" ? "/zh-cn" : "/en";
+  url.pathname = `${prefix}${pathname}`;
+  return Response.redirect(url.toString(), 302);
 }
 
 function baseHead(title) {
@@ -1589,15 +1602,8 @@ function themeScript() {
   `;
 }
 
-function normalizeOsPath(pathname) {
-  if (pathname === "/" || pathname === "/general") return "/dashboard";
-  if (pathname === "/general/infohub") return "/info";
-  if (pathname === "/personal") return "/profile";
-  return pathname;
-}
-
 function osPage(t, links, pathname, ipInfo) {
-  const path = normalizeOsPath(pathname);
+  const path = pathname;
   const zh = t === TEXT.zh;
   const copy = buildOsCopy(zh);
   const page = copy.pages[path] || copy.pages["/dashboard"];
@@ -2213,21 +2219,21 @@ function osStyles() {
   </style>`;
 }
 
-function homePage(t, links) {
+function notFoundPage(t, links) {
+  const zh = t === TEXT.zh;
   return `
 <!DOCTYPE html>
 <html>
 <head>
-  ${baseHead(t.studioName)}
+  ${baseHead("404 · " + t.studioName)}
 </head>
 <body>
   ${topControls(links, t)}
   <div class="card">
-    <h1 class="brand-title">${t.studioName}</h1>
-    <p>${t.homeDescription}</p>
-
-    <a class="button" href="${links.login}">${t.signIn}</a>
-    <a class="button secondary" href="${links.signUp}">${t.signUp}</a>
+    <h1 class="brand-title">404</h1>
+    <p>${zh ? "没有找到这个页面。" : "This page could not be found."}</p>
+    <a class="button" href="${links.dashboard}">${zh ? "返回首页" : "Back to dashboard"}</a>
+    <a class="button secondary" href="${links.login}">${t.signIn}</a>
   </div>
   ${themeScript()}
 </body>
@@ -2603,7 +2609,7 @@ function loginPage(t, links, ipInfo) {
   ${auditClientScript(ipInfo)}
 
   <script>
-    const personalUrl = ${JSON.stringify(links.personal)};
+    const dashboardUrl = ${JSON.stringify(links.dashboard)};
     const emptyCredentialsMessage = ${JSON.stringify(
       t === TEXT.zh ? "请输入邮箱和密码。" : "Please enter email and password."
     )};
@@ -2634,14 +2640,14 @@ function loginPage(t, links, ipInfo) {
 
       await recordLoginEvent(data.user, true, "password", "login");
       await updateCurrentDevice(data.user);
-      window.location.href = personalUrl;
+      window.location.href = dashboardUrl;
     });
 
     async function redirectIfLoggedIn() {
       const { data } = await supabaseClient.auth.getUser();
 
       if (data.user) {
-        window.location.href = personalUrl;
+        window.location.href = dashboardUrl;
       }
     }
 
