@@ -959,8 +959,7 @@ function auditClientScript(ipInfo) {
           country: auditRequestContext.country,
           region: auditRequestContext.region,
           city: auditRequestContext.city,
-          last_seen_at: new Date().toISOString(),
-          is_current: true
+          last_seen_at: new Date().toISOString()
         };
 
         const { data: existing } = await supabaseClient
@@ -975,7 +974,7 @@ function auditClientScript(ipInfo) {
           : await supabaseClient.from("user_devices").insert(payload);
 
         if (error) {
-          localStorage.setItem("qssed-device-fallback", JSON.stringify({ ...payload, first_seen_at: existing?.first_seen_at || new Date().toISOString() }));
+          console.error("Device persistence failed", error.message);
           return null;
         }
         return { ...payload, first_seen_at: existing?.first_seen_at || new Date().toISOString() };
@@ -1028,26 +1027,31 @@ function auditClientScript(ipInfo) {
           supabaseClient.from("login_events").select("*").order("created_at", { ascending: false }).limit(50),
           supabaseClient.from("user_devices").select("*").order("last_seen_at", { ascending: false }).limit(20)
         ]);
-        const events = eventsResult.error ? [] : eventsResult.data || [];
-        const fallbackDevice = JSON.parse(localStorage.getItem("qssed-device-fallback") || "null");
-        const devices = devicesResult.error ? (fallbackDevice ? [fallbackDevice] : []) : devicesResult.data || [];
-        renderAccountAudit(user, events, devices);
-        renderSecurityAudit(events, devices);
+        const eventsError = Boolean(eventsResult.error);
+        const devicesError = Boolean(devicesResult.error);
+        const events = eventsError ? [] : eventsResult.data || [];
+        const devices = devicesError ? [] : devicesResult.data || [];
+        if (eventsError) console.error("Login event query failed", eventsResult.error.message);
+        if (devicesError) console.error("Device query failed", devicesResult.error.message);
+        renderAccountAudit(user, events, devices, eventsError, devicesError);
+        renderSecurityAudit(events, devices, eventsError, devicesError);
       }
 
-      function renderAccountAudit(user, events, devices) {
+      function renderAccountAudit(user, events, devices, eventsError, devicesError) {
         const set = (id, value) => { const el = document.getElementById(id); if (el) el.innerText = value || "-"; };
         set("audit-created-at", formatAuditDate(user.created_at));
         set("audit-user-id", user.id);
         set("audit-email", user.email);
         set("audit-last-sign-in", formatAuditDate(getLastSignIn(user)));
-        set("audit-login-count", String(events.length));
-        set("audit-device-count", String(devices.length));
-        set("audit-risk-count", String(events.filter(event => event.risk_level && event.risk_level !== "正常").length));
+        set("audit-login-count", eventsError ? "—" : String(events.length));
+        set("audit-device-count", devicesError ? "—" : String(devices.length));
+        set("audit-risk-count", eventsError ? "—" : String(events.filter(event => event.risk_level && event.risk_level !== "正常").length));
 
         const table = document.getElementById("audit-login-table");
         if (table) {
-          table.innerHTML = renderAuditRows(events);
+          table.innerHTML = eventsError
+            ? '<div class="audit-row"><span>无法读取登录记录 / Unable to load login records</span></div>'
+            : renderAuditRows(events);
         }
       }
 
@@ -1068,22 +1072,32 @@ function auditClientScript(ipInfo) {
         ].map(item => '<span>' + auditEscape(item) + '</span>').join("") + '</div>').join("");
       }
 
-      function renderSecurityAudit(events, devices) {
+      function renderSecurityAudit(events, devices, eventsError, devicesError) {
         const currentId = getAuditDeviceId();
-        const current = devices.find(device => device.device_id === currentId) || JSON.parse(localStorage.getItem("qssed-device-fallback") || "null");
+        const current = devices.find(device => device.device_id === currentId) || null;
         const currentBox = document.getElementById("audit-current-device");
-        if (currentBox) currentBox.innerHTML = current ? renderDeviceCard(current, true) : "暂无当前设备数据";
+        if (currentBox) currentBox.innerHTML = devicesError
+          ? "无法读取设备数据 / Unable to load device data"
+          : current ? renderDeviceCard(current, true) : "暂无当前设备数据";
 
         const list = document.getElementById("audit-device-list");
-        if (list) list.innerHTML = devices.length ? devices.map(device => renderDeviceCard(device, device.device_id === currentId)).join("") : "暂无登录设备";
+        if (list) list.innerHTML = devicesError
+          ? "无法读取设备数据 / Unable to load device data"
+          : devices.length ? devices.map(device => renderDeviceCard(device, device.device_id === currentId)).join("") : "暂无登录设备";
 
         const timeline = document.getElementById("audit-login-timeline");
-        if (timeline) timeline.innerHTML = renderTimeline(events);
+        if (timeline) timeline.innerHTML = eventsError
+          ? "无法读取登录历史 / Unable to load login history"
+          : renderTimeline(events);
 
         const alerts = document.getElementById("audit-risk-alerts");
         if (alerts) {
-          const risks = events.filter(event => event.risk_level && event.risk_level !== "正常");
-          alerts.innerHTML = risks.length ? risks.map(event => '<p>' + auditEscape(formatAuditDate(event.created_at)) + " · " + auditEscape(event.risk_level) + " · " + auditEscape(event.ip_address || "-") + '</p>').join("") : "<p>暂无异常登录提示</p>";
+          if (eventsError) {
+            alerts.innerHTML = "<p>无法读取风险数据 / Unable to load risk data</p>";
+          } else {
+            const risks = events.filter(event => event.risk_level && event.risk_level !== "正常");
+            alerts.innerHTML = risks.length ? risks.map(event => '<p>' + auditEscape(formatAuditDate(event.created_at)) + " · " + auditEscape(event.risk_level) + " · " + auditEscape(event.ip_address || "-") + '</p>').join("") : "<p>暂无异常登录提示</p>";
+          }
         }
       }
 
@@ -2184,7 +2198,7 @@ function renderOsContent(path, copy) {
   if (path.startsWith("/workspace")) return workspaceContent(path, zh);
   if (path.startsWith("/admin")) return adminContent(path, zh);
   if (path.startsWith("/settings")) return settingsContent(path, zh);
-  return dashboardContent(zh);
+  throw new Error("Unhandled OS path: " + path);
 }
 
 function statusContent(zh, zhTitle, zhBody, enTitle, enBody) {
