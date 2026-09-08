@@ -996,7 +996,7 @@ function auditClientScript(ipInfo) {
 
         const { data: profile } = await supabaseClient
           .from("profiles")
-          .select("username, display_name, avatar_url, role, status")
+          .select("username, display_name, role, status")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -1240,12 +1240,19 @@ function adminClientScript(ipInfo) {
       }
 
       function adminRoleDescription(role) {
-        if (!adminIsZh()) return role.description || "-";
-        return ({
-          admin: "拥有全部权限，可管理用户、角色、日志和系统设置。",
-          editor: "可以创建、编辑、删除自己的内容，并查看部分工作区内容。",
-          user: "只能管理自己的资料、笔记、收藏和任务。"
-        })[role.name] || role.description || "-";
+        const zh = adminIsZh();
+        const descriptions = zh
+          ? {
+              admin: "可管理当前已实现的用户、角色、权限和审计日志。",
+              editor: "当前保留编辑者角色与权限定义；内容模块尚未接入持久化数据。",
+              user: "当前可使用账号与安全相关功能；笔记、收藏和任务等内容模块尚未接入。"
+            }
+          : {
+              admin: "Can manage the currently implemented users, roles, permissions, and audit logs.",
+              editor: "The editor role and permission definitions exist, while content modules are not connected to persistent data yet.",
+              user: "Can use account and security features; notes, links, tasks, and other content modules are not connected yet."
+            };
+        return descriptions[role.name] || role.description || "-";
       }
 
       function adminEscape(value) {
@@ -2082,9 +2089,9 @@ function buildOsPages(zh) {
     admin: ["管理首页", "显示真实用户与管理员数量、最近用户、操作日志和风险事件。"],
     users: ["用户管理", "用户列表、权限管理和封禁管理。"],
     roles: ["角色权限", "Admin、Editor、User 的 RBAC 模型。"],
-    logs: ["操作日志", "登录日志、修改日志和删除日志。"],
+    logs: ["操作日志", "查看账户与管理操作的审计记录。"],
     system: ["系统状态", "当前没有用于读取 Cloudflare、存储或数据库容量的系统状态接口。"],
-    settings: ["设置首页", "集中管理外观、语言、AI、集成和存储。"],
+    settings: ["设置首页", "查看当前可用设置，以及尚未实现的配置模块。"],
     appearance: ["外观", "当前支持浅色与深色主题，可使用右上角主题按钮切换。"],
     language: ["语言", "当前支持中文与 English。"],
     ai: ["AI 设置", "当前没有浏览器端 API Key 配置功能；敏感密钥不应保存在前端。"],
@@ -2110,9 +2117,9 @@ function buildOsPages(zh) {
     admin: ["Admin Overview", "Shows live user/admin counts, recent users, operation logs, and risk events."],
     users: ["User Management", "User list, permissions, and bans."],
     roles: ["Roles", "Admin, Editor, and User RBAC model."],
-    logs: ["Logs", "Login logs, modification logs, and deletion logs."],
+    logs: ["Logs", "Review audit records for account and administrative actions."],
     system: ["System Status", "There is no system-status API for Cloudflare, storage, or database capacity yet."],
-    settings: ["Settings", "Appearance, language, AI, integrations, and storage."],
+    settings: ["Settings", "Review available settings and configuration modules that are not implemented yet."],
     appearance: ["Appearance", "Light and dark themes are available through the theme button in the top-right corner."],
     language: ["Language", "Chinese and English are currently supported."],
     ai: ["AI Settings", "There is no browser-side API-key configuration. Sensitive keys should not be stored in frontend code."],
@@ -2298,7 +2305,7 @@ function adminContent(path, zh) {
   if (path.endsWith("/users")) return adminUsersContent(zh);
   if (path.endsWith("/roles")) return adminRolesContent(zh);
   if (path.endsWith("/logs")) return adminLogsContent(zh);
-  if (path.endsWith("/system")) return overviewContent(zh, ["Supabase 状态", "Cloudflare 状态", "存储占用", "数据库大小"], ["Supabase status", "Cloudflare status", "Storage usage", "Database size"]);
+  if (path.endsWith("/system")) return `<section class="os-card is-large"><h2>${zh ? "系统状态接口尚未接入" : "System status API is not connected yet"}</h2><p>${zh ? "当前网页没有用于读取 Supabase 服务状态、Cloudflare 状态、存储占用或数据库大小的服务端接口。" : "The site does not currently have server-side APIs for Supabase service health, Cloudflare status, storage usage, or database size."}</p></section>`;
   return adminOverviewContent(zh);
 }
 
@@ -2309,8 +2316,8 @@ function adminOverviewContent(zh) {
   return `
     <section class="admin-scan">
       <span></span>
-      <strong>${zh ? "系统状态扫描" : "System Scan"}</strong>
-      <p>${zh ? "正在读取 Supabase 权限、用户和操作日志。" : "Reading Supabase access, users, and operation logs."}</p>
+      <strong>${zh ? "管理数据概览" : "Admin Data Overview"}</strong>
+      <p>${zh ? "正在读取 Supabase 用户、角色、权限和操作日志。" : "Reading Supabase users, roles, permissions, and operation logs."}</p>
     </section>
     <section class="admin-metrics" id="admin-overview-metrics">
       ${labels.map((label, index) => `<article class="admin-motion-card admin-skeleton" style="--stagger:${index}"><span>${label}</span><strong data-admin-metric="${index}">0</strong></article>`).join("")}
@@ -2359,7 +2366,7 @@ function adminRolesContent(zh) {
         <h2>${zh ? "RBAC 角色权限" : "RBAC Roles"}</h2>
         <button id="admin-save-permissions" class="admin-primary" disabled>${zh ? "保存权限" : "Save permissions"}</button>
       </div>
-      <p>${zh ? "默认角色：管理员、编辑者、普通用户。关键权限变更会写入警告级别日志。" : "Default roles: admin, editor, user. Critical changes are written as warning logs."}</p>
+      <p>${zh ? "默认角色：管理员、编辑者、普通用户。关键权限变更会写入警告级别日志；笔记、链接、项目等内容类权限目前属于预留定义。" : "Default roles: admin, editor, user. Critical changes are written as warning logs; content permissions for notes, links, projects, and similar modules are currently reserved definitions."}</p>
       <div id="admin-unsaved-bar" class="admin-unsaved" hidden>${zh ? "有未保存的权限变更" : "Unsaved permission changes"}</div>
     </section>
     <section id="admin-role-cards" class="admin-role-cards admin-list-skeleton"></section>
@@ -2464,7 +2471,7 @@ function osStyles() {
     .audit-section{margin-top:14px}.audit-table{overflow:auto}.audit-row{display:grid;grid-template-columns:1.1fr .8fr 1fr .8fr .8fr .8fr .8fr .7fr .8fr;gap:10px;padding:12px;border-top:1px solid var(--border);min-width:980px}.audit-row:first-child{border-top:0}.audit-head{background:var(--surface-soft)}.audit-row span{color:var(--muted);overflow-wrap:anywhere}
     .audit-current,.audit-devices,.audit-timeline,.audit-alerts{display:grid;gap:10px;color:var(--muted)}.audit-device-card{display:grid;gap:6px;padding:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.audit-device-card strong{color:var(--text)}.audit-device-card em{color:var(--primary);font-style:normal;font-weight:800}.audit-timeline section{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.audit-timeline h3{margin:0 0 8px}.audit-timeline p,.audit-alerts p{margin:0;padding:8px 0;border-top:1px solid var(--border)}.audit-timeline p:first-of-type{border-top:0}
     .admin-motion-page{animation:admin-page-enter .25s ease both}.admin-scan{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;margin-bottom:16px;padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:linear-gradient(135deg,var(--card),var(--surface-soft));overflow:hidden;position:relative}.admin-scan:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--primary) 14%,transparent),transparent);transform:translateX(-100%);animation:admin-scan 2.4s ease-in-out infinite}.admin-scan span{width:12px;height:12px;border-radius:99px;background:var(--primary);box-shadow:0 0 0 6px color-mix(in srgb,var(--primary) 12%,transparent);animation:status-pulse 1.9s ease-in-out infinite}.admin-scan strong{position:relative;color:var(--text)}.admin-scan p{position:relative;grid-column:2;margin:0;color:var(--muted)}
-    .admin-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:16px}.admin-motion-card,.admin-metrics article{padding:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow-soft);animation:admin-item-enter .34s ease both;animation-delay:calc(var(--stagger,0) * 54ms);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.admin-motion-card:hover,.admin-metrics article:hover{transform:translateY(-3px);border-color:var(--border-strong);box-shadow:var(--shadow)}.admin-metrics span,.admin-motion-card small{display:block;color:var(--muted);font-weight:750}.admin-metrics strong{display:block;margin-top:8px;font-size:34px;color:var(--text)}
+    .admin-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:16px}.admin-motion-card,.admin-metrics article{padding:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow-soft);animation:admin-item-enter .34s ease both;animation-delay:calc(var(--stagger,0) * 54ms);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.admin-motion-card:hover,.admin-metrics article:hover{transform:translateY(-3px);border-color:var(--border-strong);box-shadow:var(--shadow)}.admin-metrics span,.admin-motion-card small{display:block;color:var(--muted);font-weight:750}.admin-metrics strong{display:block;margin-top:8px;font-size:34px;color:var(--text)}
     .admin-dashboard-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:14px}.admin-dashboard-grid .danger-event-card{grid-column:1/-1}.admin-section-card{min-height:260px}.admin-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.admin-section-head h2{margin:0}.admin-section-head span{color:var(--muted);font-size:13px}.status-pulse{width:10px;height:10px;border-radius:50%;background:var(--primary);animation:status-pulse 2.2s ease-in-out infinite}
     .admin-mini-row,.admin-log-row,.admin-risk{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);transition:background .18s ease,border-color .18s ease,transform .18s ease}.admin-mini-row+.admin-mini-row,.admin-log-row+.admin-log-row,.admin-risk+.admin-risk{margin-top:8px}.admin-mini-row:hover,.admin-log-row:hover{background:color-mix(in srgb,var(--surface-soft) 70%,var(--primary) 5%);border-color:var(--border-strong)}.admin-mini-row strong,.admin-log-row strong,.admin-risk strong{display:block;color:var(--text)}.admin-mini-row small,.admin-log-row small,.admin-risk small{color:var(--muted)}.admin-avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:var(--radius);background:var(--primary);color:var(--primary-ink);font-weight:900}.admin-badge{display:inline-flex;align-items:center;justify-content:center;min-width:70px;padding:6px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-soft);color:var(--muted);font-style:normal;font-size:12px;font-weight:800;transition:background .18s ease,color .18s ease,border-color .18s ease}.admin-badge.active,.admin-badge.info{color:var(--primary);border-color:color-mix(in srgb,var(--primary) 40%,var(--border))}.admin-badge.suspended,.admin-badge.warning{color:#d99a2b;border-color:color-mix(in srgb,#d99a2b 46%,var(--border))}.admin-badge.banned,.admin-badge.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 46%,var(--border))}
     .admin-risk.warning{border-color:color-mix(in srgb,#d99a2b 44%,var(--border))}.admin-risk.danger,.danger-event-card.pulse-once{border-color:color-mix(in srgb,var(--danger) 58%,var(--border));box-shadow:0 0 0 1px color-mix(in srgb,var(--danger) 18%,transparent),var(--shadow-soft)}.pulse-once{animation:danger-glow 1.1s ease 1}.log-dot{width:10px;height:10px;border-radius:99px;background:var(--primary)}.admin-log-row.warning .log-dot{background:#d99a2b}.admin-log-row.danger .log-dot{background:var(--danger)}
