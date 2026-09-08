@@ -108,8 +108,14 @@ const TEXT = {
 };
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const { pathname, locale, ipInfo } = getRouteInfo(request);
+
+    if (pathname === "/api/auth/login") {
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+      return handlePasswordLogin(request, env, ipInfo);
+    }
+
     const legacyTarget = LEGACY_REDIRECTS.get(pathname);
 
     if (legacyTarget) {
@@ -210,6 +216,251 @@ function localizedRedirect(request, locale, pathname) {
   const prefix = locale === "zh" ? "/zh-cn" : "/en";
   url.pathname = `${prefix}${pathname}`;
   return Response.redirect(url.toString(), 302);
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "content-type": "application/json;charset=UTF-8",
+      "cache-control": "no-store"
+    }
+  });
+}
+
+function getSupabaseSecret(env) {
+  return env?.SUPABASE_SECRET_KEY || env?.SUPABASE_SERVICE_ROLE_KEY || "";
+}
+
+function getWorkerRequestId(request) {
+  return request.headers.get("CF-Ray") || crypto.randomUUID();
+}
+
+function workerLog(level, event, details = {}) {
+  const payload = JSON.stringify({
+    source: "qsseda-worker",
+    event,
+    ...details
+  });
+  const method = level === "error" ? "error" : level === "warn" ? "warn" : "info";
+  console[method](payload);
+}
+
+function parseServerUserAgent(userAgent) {
+  const ua = userAgent || "";
+  const browser = ua.includes("Edg/") ? "Edge" : ua.includes("Chrome/") ? "Chrome" : ua.includes("Firefox/") ? "Firefox" : ua.includes("Safari/") ? "Safari" : "Unknown";
+  const os = ua.includes("Windows") ? "Windows" : ua.includes("Mac OS") ? "macOS" : ua.includes("Android") ? "Android" : ua.includes("iPhone") || ua.includes("iPad") ? "iOS" : ua.includes("Linux") ? "Linux" : "Unknown";
+  const device_type = /Mobile|Android|iPhone|iPad/i.test(ua) ? "mobile" : "desktop";
+  return { user_agent: ua, browser, os, device_type };
+}
+
+async function recentFailedLoginCount(env, ipAddress, logContext) {
+  const secret = getSupabaseSecret(env);
+  if (!secret || !ipAddress || ipAddress === "Unknown") return 0;
+  const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const url = new URL(`${SUPABASE_URL}/rest/v1/login_events`);
+  url.searchParams.set("select", "id");
+  url.searchParams.set("success", "eq.false");
+  url.searchParams.set("ip_address", `eq.${ipAddress}`);
+  url.searchParams.set("created_at", `gte.${since}`);
+  url.searchParams.set("limit", "20");
+  try {
+    const response = await fetch(url.toString(), { headers: { apikey: secret } });
+    if (!response.ok) {
+      workerLog("warn", "auth.risk_query_failed", { ...logContext, upstream_status: response.status });
+      return 0;
+    }
+    const rows = await response.json();
+    return Array.isArray(rows) ? rows.length : 0;
+  } catch (error) {
+    workerLog("error", "auth.risk_query_error", { ...logContext, error_type: error?.name || "Error" });
+    return 0;
+  }
+}
+
+async function recordServerLoginEvent(env, request, ipInfo, user, success, deviceId, logContext) {
+  const secret = getSupabaseSecret(env);
+  if (!secret) {
+    workerLog("warn", "auth.audit.disabled", { ...logContext, reason: "missing_supabase_secret" });
+    return {
+      loginEventWritten: false,
+      auditLogWritten: false,
+      riskLevel: success ? "正常" : "注意",
+      recentFailures: success ? 0 : 1
+    };
+  }
+
+  const userAgent = request.headers.get("User-Agent") || "";
+  const device = parseServerUserAgent(userAgent);
+  const previousFailures = success ? 0 : await recentFailedLoginCount(env, ipInfo?.ip || "", logContext);
+  const riskLevel = success ? "正常" : previousFailures >= 4 ? "高风险" : "注意";
+  const severity = riskLevel === "高风险" ? "danger" : riskLevel === "注意" ? "warning" : "info";
+  const safeDeviceId = typeof deviceId === "string" ? deviceId.slice(0, 160) : "";
+  let loginEventWritten = false;
+  let auditLogWritten = success;
+
+  const event = {
+    user_id: user?.id || null,
+    event_type: "login",
+    success: Boolean(success),
+    provider: "password",
+    ip_address: ipInfo?.ip || "",
+    country: ipInfo?.country || "",
+    region: ipInfo?.region || "",
+    city: ipInfo?.city || "",
+    user_agent: userAgent.slice(0, 1024),
+    browser: device.browser,
+    os: device.os,
+    device_type: device.device_type,
+    device_id: safeDeviceId,
+    risk_level: riskLevel
+  };
+
+  try {
+    const eventResponse = await fetch(`${SUPABASE_URL}/rest/v1/login_events`, {
+      method: "POST",
+      headers: {
+        apikey: secret,
+        "content-type": "application/json",
+        prefer: "return=minimal"
+      },
+      body: JSON.stringify(event)
+    });
+    loginEventWritten = eventResponse.ok;
+    if (!eventResponse.ok) {
+      workerLog("error", "auth.audit.write_failed", {
+        ...logContext,
+        target: "login_events",
+        upstream_status: eventResponse.status
+      });
+    }
+
+    if (!success) {
+      const auditResponse = await fetch(`${SUPABASE_URL}/rest/v1/audit_logs`, {
+        method: "POST",
+        headers: {
+          apikey: secret,
+          "content-type": "application/json",
+          prefer: "return=minimal"
+        },
+        body: JSON.stringify({
+          actor_user_id: null,
+          actor_email: null,
+          action: "auth.login.failed",
+          target_type: "auth",
+          target_id: null,
+          target_label: "Password login",
+          description: "Failed password login attempt",
+          ip_address: ipInfo?.ip || "",
+          user_agent: userAgent.slice(0, 1024),
+          severity,
+          metadata: {
+            country: ipInfo?.country || "",
+            region: ipInfo?.region || "",
+            city: ipInfo?.city || "",
+            browser: device.browser,
+            os: device.os,
+            device_type: device.device_type,
+            risk_level: riskLevel,
+            recent_failures_15m: previousFailures + 1
+          }
+        })
+      });
+      auditLogWritten = auditResponse.ok;
+      if (!auditResponse.ok) {
+        workerLog("error", "auth.audit.write_failed", {
+          ...logContext,
+          target: "audit_logs",
+          upstream_status: auditResponse.status
+        });
+      }
+    }
+  } catch (error) {
+    workerLog("error", "auth.audit.error", { ...logContext, error_type: error?.name || "Error" });
+  }
+
+  return {
+    loginEventWritten,
+    auditLogWritten,
+    riskLevel,
+    recentFailures: success ? 0 : previousFailures + 1
+  };
+}
+
+async function handlePasswordLogin(request, env, ipInfo) {
+  const startedAt = Date.now();
+  const logContext = {
+    request_id: getWorkerRequestId(request),
+    country: ipInfo?.country || "Unknown"
+  };
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    workerLog("warn", "auth.login.invalid_request", { ...logContext, reason: "invalid_json" });
+    return json({ error: "Invalid request body" }, 400);
+  }
+
+  const email = typeof body?.email === "string" ? body.email.trim() : "";
+  const password = typeof body?.password === "string" ? body.password : "";
+  const deviceId = typeof body?.device_id === "string" ? body.device_id : "";
+  if (!email || !password) {
+    workerLog("warn", "auth.login.invalid_request", { ...logContext, reason: "missing_credentials" });
+    return json({ error: "Email and password are required" }, 400);
+  }
+
+  let authResponse;
+  try {
+    authResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+  } catch (error) {
+    workerLog("error", "auth.login.upstream_error", {
+      ...logContext,
+      error_type: error?.name || "Error",
+      duration_ms: Date.now() - startedAt
+    });
+    return json({ error: "Authentication service unavailable" }, 502);
+  }
+
+  let authData;
+  try {
+    authData = await authResponse.json();
+  } catch {
+    workerLog("error", "auth.login.invalid_upstream_response", {
+      ...logContext,
+      upstream_status: authResponse.status,
+      duration_ms: Date.now() - startedAt
+    });
+    return json({ error: "Authentication service returned an invalid response" }, 502);
+  }
+
+  const audit = await recordServerLoginEvent(
+    env,
+    request,
+    ipInfo,
+    authData?.user || null,
+    authResponse.ok,
+    deviceId,
+    logContext
+  );
+
+  workerLog(authResponse.ok ? "info" : "warn", authResponse.ok ? "auth.login.success" : "auth.login.failed", {
+    ...logContext,
+    upstream_status: authResponse.status,
+    risk_level: audit.riskLevel,
+    recent_failures_15m: audit.recentFailures,
+    login_event_written: audit.loginEventWritten,
+    audit_log_written: audit.auditLogWritten,
+    duration_ms: Date.now() - startedAt
+  });
+
+  return json(authData, authResponse.status);
 }
 
 function baseHead(title) {
@@ -669,6 +920,10 @@ function auditClientScript(ipInfo) {
         return yyyy + "-" + mm + "-" + dd + " " + hh + ":" + min;
       }
 
+      function auditEscape(value) {
+        return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+      }
+
       function getAuditDeviceId() {
         const key = "qssed-device-id";
         let id = localStorage.getItem(key);
@@ -685,42 +940,6 @@ function auditClientScript(ipInfo) {
         const os = ua.includes("Windows") ? "Windows" : ua.includes("Mac OS") ? "macOS" : ua.includes("Android") ? "Android" : ua.includes("iPhone") || ua.includes("iPad") ? "iOS" : ua.includes("Linux") ? "Linux" : "Unknown";
         const device_type = /Mobile|Android|iPhone|iPad/i.test(ua) ? "mobile" : "desktop";
         return { user_agent: ua, browser, os, device_type, device_name: browser + " on " + os };
-      }
-
-      function getAuditPayload(user, success, provider, eventType) {
-        const device = parseAuditUserAgent();
-        return {
-          user_id: user?.id || null,
-          event_type: eventType || "login",
-          success: Boolean(success),
-          provider: provider || "password",
-          ip_address: auditRequestContext.ip_address,
-          country: auditRequestContext.country,
-          region: auditRequestContext.region,
-          city: auditRequestContext.city,
-          user_agent: device.user_agent,
-          browser: device.browser,
-          os: device.os,
-          device_type: device.device_type,
-          device_id: getAuditDeviceId(),
-          risk_level: "正常"
-        };
-      }
-
-      async function recordLoginEvent(user, success, provider, eventType) {
-        const payload = getAuditPayload(user, success, provider, eventType);
-        if (!payload.user_id) {
-          const failed = JSON.parse(localStorage.getItem("qssed-login-event-fallback") || "[]");
-          failed.unshift({ ...payload, created_at: new Date().toISOString() });
-          localStorage.setItem("qssed-login-event-fallback", JSON.stringify(failed.slice(0, 20)));
-          return;
-        }
-        const { error } = await supabaseClient.from("login_events").insert(payload);
-        if (error) {
-          const fallback = JSON.parse(localStorage.getItem("qssed-login-event-fallback") || "[]");
-          fallback.unshift({ ...payload, created_at: new Date().toISOString(), fallback_error: error.message });
-          localStorage.setItem("qssed-login-event-fallback", JSON.stringify(fallback.slice(0, 20)));
-        }
       }
 
       async function updateCurrentDevice(user) {
@@ -775,8 +994,7 @@ function auditClientScript(ipInfo) {
           supabaseClient.from("login_events").select("*").order("created_at", { ascending: false }).limit(50),
           supabaseClient.from("user_devices").select("*").order("last_seen_at", { ascending: false }).limit(20)
         ]);
-        const fallbackEvents = JSON.parse(localStorage.getItem("qssed-login-event-fallback") || "[]");
-        const events = eventsResult.error ? fallbackEvents : eventsResult.data || [];
+        const events = eventsResult.error ? [] : eventsResult.data || [];
         const fallbackDevice = JSON.parse(localStorage.getItem("qssed-device-fallback") || "null");
         const devices = devicesResult.error ? (fallbackDevice ? [fallbackDevice] : []) : devicesResult.data || [];
         renderAccountAudit(user, events, devices);
@@ -801,19 +1019,19 @@ function auditClientScript(ipInfo) {
 
       function renderAuditRows(events) {
         const head = ["登录时间", "IP 地址", "地区", "浏览器", "操作系统", "设备类型", "登录方式", "登录结果", "风险提示"];
-        const rows = events.length ? events : [getAuditPayload(null, true, "password", "login")];
-        return '<div class="audit-row audit-head">' + head.map(item => '<strong>' + item + '</strong>').join("") + '</div>' +
-          rows.map(event => '<div class="audit-row">' + [
-            formatAuditDate(event.created_at),
-            event.ip_address || "-",
-            [event.country, event.region, event.city].filter(Boolean).join(" / ") || "-",
-            event.browser || "-",
-            event.os || "-",
-            event.device_type || "-",
-            event.provider || "password",
-            event.success ? "成功" : "失败",
-            event.risk_level || "正常"
-          ].map(item => '<span>' + item + '</span>').join("") + '</div>').join("");
+        const header = '<div class="audit-row audit-head">' + head.map(item => '<strong>' + item + '</strong>').join("") + '</div>';
+        if (!events.length) return header + '<div class="audit-row"><span>暂无登录记录</span></div>';
+        return header + events.map(event => '<div class="audit-row">' + [
+          formatAuditDate(event.created_at),
+          event.ip_address || "-",
+          [event.country, event.region, event.city].filter(Boolean).join(" / ") || "-",
+          event.browser || "-",
+          event.os || "-",
+          event.device_type || "-",
+          event.provider || "password",
+          event.success ? "成功" : "失败",
+          event.risk_level || "正常"
+        ].map(item => '<span>' + auditEscape(item) + '</span>').join("") + '</div>').join("");
       }
 
       function renderSecurityAudit(events, devices) {
@@ -831,18 +1049,19 @@ function auditClientScript(ipInfo) {
         const alerts = document.getElementById("audit-risk-alerts");
         if (alerts) {
           const risks = events.filter(event => event.risk_level && event.risk_level !== "正常");
-          alerts.innerHTML = risks.length ? risks.map(event => '<p>' + formatAuditDate(event.created_at) + " · " + event.risk_level + " · " + (event.ip_address || "-") + '</p>').join("") : "<p>暂无异常登录提示</p>";
+          alerts.innerHTML = risks.length ? risks.map(event => '<p>' + auditEscape(formatAuditDate(event.created_at)) + " · " + auditEscape(event.risk_level) + " · " + auditEscape(event.ip_address || "-") + '</p>').join("") : "<p>暂无异常登录提示</p>";
         }
       }
 
       function renderDeviceCard(device, current) {
         const status = device.revoked_at ? "已退出" : "活跃";
+        const name = device.device_name || ((device.browser || "Browser") + " on " + (device.os || "OS"));
         return '<article class="audit-device-card">' +
-          '<strong>' + (device.device_name || ((device.browser || "Browser") + " on " + (device.os || "OS"))) + (current ? " · 当前设备" : "") + '</strong>' +
-          '<span>' + [device.browser, device.os, device.device_type].filter(Boolean).join(" / ") + '</span>' +
-          '<span>' + [device.last_ip, device.country, device.region, device.city].filter(Boolean).join(" · ") + '</span>' +
-          '<span>首次登录 ' + formatAuditDate(device.first_seen_at) + ' · 最近活跃 ' + formatAuditDate(device.last_seen_at) + '</span>' +
-          '<em>' + status + '</em>' +
+          '<strong>' + auditEscape(name + (current ? " · 当前设备" : "")) + '</strong>' +
+          '<span>' + auditEscape([device.browser, device.os, device.device_type].filter(Boolean).join(" / ")) + '</span>' +
+          '<span>' + auditEscape([device.last_ip, device.country, device.region, device.city].filter(Boolean).join(" · ")) + '</span>' +
+          '<span>首次登录 ' + auditEscape(formatAuditDate(device.first_seen_at)) + ' · 最近活跃 ' + auditEscape(formatAuditDate(device.last_seen_at)) + '</span>' +
+          '<em>' + auditEscape(status) + '</em>' +
         '</article>';
       }
 
@@ -856,8 +1075,16 @@ function auditClientScript(ipInfo) {
           groups[key].push(event);
         });
         return Object.entries(groups).filter(([, items]) => items.length).map(([label, items]) =>
-          '<section><h3>' + label + '</h3>' + items.map(event =>
-            '<p>' + formatAuditDate(event.created_at) + ' · ' + ([event.city, event.region, event.country].filter(Boolean).join(" / ") || "-") + ' · ' + (event.ip_address || "-") + ' · ' + (event.browser || "-") + ' on ' + (event.os || "-") + ' · ' + (event.provider || "password") + ' · ' + (event.success ? "成功" : "失败") + ' · ' + (event.risk_level || "正常") + '</p>'
+          '<section><h3>' + auditEscape(label) + '</h3>' + items.map(event =>
+            '<p>' + [
+              formatAuditDate(event.created_at),
+              [event.city, event.region, event.country].filter(Boolean).join(" / ") || "-",
+              event.ip_address || "-",
+              (event.browser || "-") + " on " + (event.os || "-"),
+              event.provider || "password",
+              event.success ? "成功" : "失败",
+              event.risk_level || "正常"
+            ].map(auditEscape).join(" · ") + '</p>'
           ).join("") + '</section>'
         ).join("") || "<p>暂无登录历史</p>";
       }
@@ -2627,19 +2854,32 @@ function loginPage(t, links, ipInfo) {
         return;
       }
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
+      const authResponse = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          device_id: getAuditDeviceId()
+        })
       });
+      const authData = await authResponse.json().catch(() => ({}));
 
-      if (error) {
-        await recordLoginEvent(null, false, "password", "login");
-        message.innerText = error.message;
+      if (!authResponse.ok) {
+        message.innerText = authData.error_description || authData.msg || authData.error || "Login failed.";
         return;
       }
 
-      await recordLoginEvent(data.user, true, "password", "login");
-      await updateCurrentDevice(data.user);
+      const { error: sessionError } = await supabaseClient.auth.setSession({
+        access_token: authData.access_token,
+        refresh_token: authData.refresh_token
+      });
+      if (sessionError) {
+        message.innerText = sessionError.message;
+        return;
+      }
+
+      await updateCurrentDevice(authData.user);
       window.location.href = dashboardUrl;
     });
 
