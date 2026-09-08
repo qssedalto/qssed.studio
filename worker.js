@@ -265,7 +265,7 @@ async function recentFailedLoginCount(env, ipAddress, logContext) {
   url.searchParams.set("created_at", `gte.${since}`);
   url.searchParams.set("limit", "20");
   try {
-    const response = await fetch(url.toString(), { headers: { apikey: secret } });
+    const response = await fetch(url.toString(), { headers: { apikey: secret, ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {}) } });
     if (!response.ok) {
       workerLog("warn", "auth.risk_query_failed", { ...logContext, upstream_status: response.status });
       return 0;
@@ -321,6 +321,7 @@ async function recordServerLoginEvent(env, request, ipInfo, user, success, devic
       method: "POST",
       headers: {
         apikey: secret,
+        ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {}),
         "content-type": "application/json",
         prefer: "return=minimal"
       },
@@ -340,6 +341,7 @@ async function recordServerLoginEvent(env, request, ipInfo, user, success, devic
         method: "POST",
         headers: {
           apikey: secret,
+          ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {}),
           "content-type": "application/json",
           prefer: "return=minimal"
         },
