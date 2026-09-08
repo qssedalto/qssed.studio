@@ -126,7 +126,8 @@ export default {
     const links = buildLinks(locale, pathname);
 
     if (OS_PATHS.has(pathname)) {
-      return html(osPage(t, links, pathname, ipInfo));
+      const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
+      return html(osPage(t, links, pathname, ipInfo, cachedOsUserLabel));
     }
 
     if (pathname === "/sign-up") {
@@ -226,6 +227,28 @@ function json(data, status = 200) {
       "cache-control": "no-store"
     }
   });
+}
+
+function getRequestCookie(request, name) {
+  const header = request.headers.get("Cookie") || "";
+  const prefix = name + "=";
+  const item = header.split(";").map(part => part.trim()).find(part => part.startsWith(prefix));
+  if (!item) return "";
+  try {
+    return decodeURIComponent(item.slice(prefix.length));
+  } catch {
+    return "";
+  }
+}
+
+function escapeHtmlText(value) {
+  return String(value || "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
 }
 
 function getSupabaseSecret(env) {
@@ -1886,7 +1909,7 @@ function themeScript() {
   `;
 }
 
-function osPage(t, links, pathname, ipInfo) {
+function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
   const path = pathname;
   const zh = t === TEXT.zh;
   const copy = buildOsCopy(zh);
@@ -1914,13 +1937,7 @@ function osPage(t, links, pathname, ipInfo) {
       </a>
       <div class="os-user">
         <strong>${t.account}</strong>
-        <span id="os-user-name">&nbsp;</span>
-        <script>
-          try {
-            const cachedOsUserName = sessionStorage.getItem("qssed-os-user-name");
-            if (cachedOsUserName) document.getElementById("os-user-name").innerText = cachedOsUserName;
-          } catch {}
-        </script>
+        <span id="os-user-name">${escapeHtmlText(cachedOsUserLabel)}</span>
       </div>
       ${renderOsNav(copy, activeSection)}
     </aside>
@@ -1960,7 +1977,10 @@ function osPage(t, links, pathname, ipInfo) {
       const { data } = await supabaseClient.auth.getUser();
 
       if (!data.user) {
-        try { sessionStorage.removeItem("qssed-os-user-name"); } catch {}
+        try {
+          document.cookie = "qssed-os-user-name=; Path=/; Max-Age=0; SameSite=Lax; Secure";
+          sessionStorage.removeItem("qssed-os-user-name");
+        } catch {}
         window.location.href = loginUrl;
         return;
       }
@@ -1968,7 +1988,10 @@ function osPage(t, links, pathname, ipInfo) {
       const name = data.user.user_metadata.username || data.user.user_metadata.display_name || data.user.email;
       const userLabel = "@" + name;
       document.getElementById("os-user-name").innerText = userLabel;
-      try { sessionStorage.setItem("qssed-os-user-name", userLabel); } catch {}
+      try {
+        document.cookie = "qssed-os-user-name=" + encodeURIComponent(userLabel) + "; Path=/; Max-Age=2592000; SameSite=Lax; Secure";
+        sessionStorage.removeItem("qssed-os-user-name");
+      } catch {}
       await updateCurrentDevice(data.user);
       await hydrateProfileSummary(data.user);
       await hydrateProfileAudit(data.user);
@@ -2932,6 +2955,12 @@ function loginPage(t, links, ipInfo) {
         return;
       }
 
+      const loginName = authData.user?.user_metadata?.username || authData.user?.user_metadata?.display_name || authData.user?.email;
+      if (loginName) {
+        try {
+          document.cookie = "qssed-os-user-name=" + encodeURIComponent("@" + loginName) + "; Path=/; Max-Age=2592000; SameSite=Lax; Secure";
+        } catch {}
+      }
       await updateCurrentDevice(authData.user);
       window.location.href = dashboardUrl;
     });
@@ -2940,6 +2969,12 @@ function loginPage(t, links, ipInfo) {
       const { data } = await supabaseClient.auth.getUser();
 
       if (data.user) {
+        const existingName = data.user.user_metadata.username || data.user.user_metadata.display_name || data.user.email;
+        if (existingName) {
+          try {
+            document.cookie = "qssed-os-user-name=" + encodeURIComponent("@" + existingName) + "; Path=/; Max-Age=2592000; SameSite=Lax; Secure";
+          } catch {}
+        }
         window.location.href = dashboardUrl;
       }
     }
