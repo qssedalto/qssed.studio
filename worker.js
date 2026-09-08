@@ -2611,6 +2611,13 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
       <div class="os-user">
         <strong>${t.account}</strong>
         <span id="os-user-name">${escapeHtmlText(cachedOsUserLabel)}</span>
+        <button id="os-signout-button" class="os-signout-button" type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M10 5H6.8A1.8 1.8 0 0 0 5 6.8v10.4A1.8 1.8 0 0 0 6.8 19H10"/>
+            <path d="M14.5 8.5 18 12l-3.5 3.5M18 12H9"/>
+          </svg>
+          <span id="os-signout-label">${zh ? "退出登录" : "Sign Out"}</span>
+        </button>
       </div>
       ${renderOsNav(copy, activeSection)}
     </aside>
@@ -2697,6 +2704,48 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
     }
 
     document.getElementById("compact-back-button")?.addEventListener("click", showCompactNavigation);
+
+    const signOutButton = document.getElementById("os-signout-button");
+    const signOutLabel = document.getElementById("os-signout-label");
+
+    async function signOutCurrentSession() {
+      if (!signOutButton || signOutButton.disabled) return;
+
+      const idleLabel = ${JSON.stringify(zh ? "退出登录" : "Sign Out")};
+      signOutButton.disabled = true;
+      if (signOutLabel) signOutLabel.textContent = ${JSON.stringify(zh ? "正在退出…" : "Signing out…")};
+
+      try {
+        const { error } = await supabaseClient.auth.signOut({ scope: "local" });
+        if (error) throw error;
+      } catch (error) {
+        console.error("Sign out failed", error);
+        if (signOutLabel) signOutLabel.textContent = ${JSON.stringify(zh ? "退出失败" : "Sign out failed")};
+        window.setTimeout(() => {
+          signOutButton.disabled = false;
+          if (signOutLabel) signOutLabel.textContent = idleLabel;
+        }, 1600);
+        return;
+      }
+
+      try {
+        document.cookie = "qssed-os-user-name=; Path=/; Max-Age=0; SameSite=Lax; Secure";
+      } catch {}
+      try { if (typeof clearProfileUiCaches === "function") clearProfileUiCaches(); } catch {}
+      try { if (typeof clearAdminUiCaches === "function") clearAdminUiCaches(); } catch {}
+      try {
+        [
+          "qssed-os-user-name",
+          "qssed-sidebar-scroll-v1",
+          "qssed-compact-view-v1"
+        ].forEach(key => sessionStorage.removeItem(key));
+      } catch {}
+
+      window.location.replace(loginUrl);
+    }
+
+    signOutButton?.addEventListener("click", signOutCurrentSession);
+
     if (typeof compactMedia.addEventListener === "function") {
       compactMedia.addEventListener("change", applyCompactViewMode);
     } else if (typeof compactMedia.addListener === "function") {
@@ -3275,7 +3324,13 @@ function osStyles() {
     .os-brand-mark,.os-avatar{display:grid;place-items:center;width:42px;height:42px;border-radius:var(--radius);background:var(--primary);color:var(--primary-ink);font-weight:900;}
     .os-brand strong,.os-brand small{display:block}.os-brand small{color:var(--muted);font-size:12px;margin-top:2px;}
     .os-user{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);margin-bottom:16px;}
-    .os-user strong,.os-user span{display:block}.os-user strong{color:var(--quiet);font-size:12px;text-transform:uppercase}.os-user span{margin-top:5px;color:var(--text);overflow-wrap:anywhere;}
+    .os-user strong,.os-user>span{display:block}.os-user strong{color:var(--quiet);font-size:12px;text-transform:uppercase}.os-user>span{margin-top:5px;color:var(--text);overflow-wrap:anywhere;}
+    .os-signout-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:40px;margin:12px 0 0;padding:0 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--muted);box-shadow:none;font-size:13px;font-weight:750;}
+    .os-signout-button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;}
+    .os-signout-button span{display:inline;margin:0;color:inherit;overflow:visible;}
+    .os-signout-button:hover{background:color-mix(in srgb,var(--danger) 8%,var(--card));border-color:color-mix(in srgb,var(--danger) 38%,var(--border));color:var(--danger);box-shadow:none;transform:none;}
+    .os-signout-button:active{transform:scale(.985);}
+    .os-signout-button:disabled{cursor:wait;opacity:.62;}
     .os-nav{display:grid;gap:10px}.os-nav-group{border:1px solid var(--border);border-radius:var(--radius);padding:8px;background:color-mix(in srgb,var(--surface-soft) 42%,transparent);}
     .os-nav-group.is-active{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 12%,transparent);}
     .os-nav-title{display:block;color:var(--text);text-decoration:none;font-weight:800;padding:8px;}
