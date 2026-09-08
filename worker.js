@@ -2297,7 +2297,7 @@ function topControls(links, t) {
         right:auto !important;
         margin:0 !important;
       }
-      @media (hover:none), (max-width:760px){
+      @media (max-width:760px) and (hover:none) and (pointer:coarse){
         .top-controls-zone{
           width:176px;
           height:76px;
@@ -2356,9 +2356,28 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
 <head>
   ${baseHead(page.title + " · " + t.studioName)}
   ${osStyles()}
+  <script>
+    (() => {
+      try {
+        const compactMedia = window.matchMedia("(max-width:1050px)");
+        if (!compactMedia.matches) return;
+        const state = sessionStorage.getItem("qssed-compact-view-v1");
+        const currentPath = ${JSON.stringify(path)};
+        const showContent = state === "content" || (state !== "menu" && currentPath !== "/dashboard");
+        document.documentElement.classList.toggle("compact-content-view", showContent);
+        document.documentElement.classList.toggle("compact-menu-view", !showContent);
+      } catch {}
+    })();
+  </script>
 </head>
 <body class="os-shell" data-admin-path="${adminPath ? "true" : "false"}">
   ${topControls(links, t)}
+  <div id="compact-back-zone" class="compact-back-zone">
+    <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${zh ? "返回导航" : "Back to navigation"}" title="${zh ? "返回导航" : "Back to navigation"}">
+      <span aria-hidden="true">←</span>
+      <strong>${zh ? "返回" : "Back"}</strong>
+    </button>
+  </div>
   <div class="os-layout">
     <aside id="os-sidebar" class="os-sidebar">
       <a class="os-brand" href="${links.dashboard}">
@@ -2378,6 +2397,8 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
       try {
         const sidebar = document.getElementById("os-sidebar");
         const sidebarKey = "qssed-sidebar-scroll-v1";
+        const compactViewKey = "qssed-compact-view-v1";
+        const compactMedia = window.matchMedia("(max-width:1050px)");
         const savedSidebarScroll = Number(sessionStorage.getItem(sidebarKey) || "0");
         if (sidebar && Number.isFinite(savedSidebarScroll)) {
           sidebar.scrollTop = savedSidebarScroll;
@@ -2386,7 +2407,12 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
             try { sessionStorage.setItem(sidebarKey, String(sidebar.scrollTop)); } catch {}
           };
           sidebar.addEventListener("scroll", saveSidebarScroll, { passive: true });
-          sidebar.querySelectorAll("a").forEach(link => link.addEventListener("click", saveSidebarScroll, { capture: true }));
+          sidebar.querySelectorAll("a").forEach(link => link.addEventListener("click", () => {
+            saveSidebarScroll();
+            if (compactMedia.matches) {
+              try { sessionStorage.setItem(compactViewKey, "content"); } catch {}
+            }
+          }, { capture: true }));
         }
       } catch {}
     </script>
@@ -2421,6 +2447,40 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
   <script>
     const loginUrl = ${JSON.stringify(links.login)};
     const isAdminPath = document.body.dataset.adminPath === "true";
+    const compactViewKey = "qssed-compact-view-v1";
+    const compactSidebarKey = "qssed-sidebar-scroll-v1";
+    const compactMedia = window.matchMedia("(max-width:1050px)");
+
+    function applyCompactViewMode() {
+      if (!compactMedia.matches) {
+        document.documentElement.classList.remove("compact-content-view", "compact-menu-view");
+        return;
+      }
+      let state = null;
+      try { state = sessionStorage.getItem(compactViewKey); } catch {}
+      const showContent = state === "content" || (state !== "menu" && ${JSON.stringify(path)} !== "/dashboard");
+      document.documentElement.classList.toggle("compact-content-view", showContent);
+      document.documentElement.classList.toggle("compact-menu-view", !showContent);
+    }
+
+    function showCompactNavigation() {
+      if (!compactMedia.matches) return;
+      try { sessionStorage.setItem(compactViewKey, "menu"); } catch {}
+      document.documentElement.classList.remove("compact-content-view");
+      document.documentElement.classList.add("compact-menu-view");
+      const sidebar = document.getElementById("os-sidebar");
+      const saved = Number(sessionStorage.getItem(compactSidebarKey) || "0");
+      requestAnimationFrame(() => {
+        if (sidebar && Number.isFinite(saved)) sidebar.scrollTop = saved;
+      });
+    }
+
+    document.getElementById("compact-back-button")?.addEventListener("click", showCompactNavigation);
+    if (typeof compactMedia.addEventListener === "function") {
+      compactMedia.addEventListener("change", applyCompactViewMode);
+    } else if (typeof compactMedia.addListener === "function") {
+      compactMedia.addListener(applyCompactViewMode);
+    }
 
     async function restoreWarmAdminSnapshot() {
       if (!isAdminPath) return;
@@ -2977,6 +3037,7 @@ function osStyles() {
     }
     .os-sidebar{padding:18px;animation:panel-enter .55s cubic-bezier(.2,.8,.2,1) both;}
     .os-main{padding:30px;animation:panel-enter .62s cubic-bezier(.2,.8,.2,1) .08s both;}
+    .compact-back-zone{display:none;}
     @media (min-width:901px){
       body.os-shell{height:100vh;overflow:hidden;box-sizing:border-box;}
       .os-layout{height:calc(100vh - 48px);min-height:0;}
@@ -3027,10 +3088,52 @@ function osStyles() {
     #admin-toast-host{position:fixed;right:18px;top:18px;z-index:60;display:grid;gap:10px;max-width:min(360px,calc(100vw - 36px))}.admin-toast{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow);color:var(--text);animation:toast-in .2s ease both}.admin-toast strong{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--primary);color:var(--primary-ink)}.admin-toast.warning strong{background:#d99a2b;color:#121212}.admin-toast.danger strong{background:var(--danger);color:#fff}.admin-toast.is-hiding{animation:toast-out .25s ease both}
     .admin-confirm-backdrop{position:fixed;inset:0;z-index:55;display:grid;place-items:center;background:rgba(0,0,0,.42);opacity:0;pointer-events:none;transition:opacity .18s ease}.admin-confirm-backdrop.is-open{opacity:1;pointer-events:auto}.admin-confirm{width:min(440px,calc(100vw - 32px));padding:20px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow);transform:scale(.95);opacity:0;transition:transform .18s ease,opacity .18s ease}.admin-confirm-backdrop.is-open .admin-confirm{transform:scale(1);opacity:1}.admin-confirm.is-danger{border-color:color-mix(in srgb,var(--danger) 48%,var(--border))}.admin-confirm h3{margin:0 0 8px}.admin-confirm p{margin:0 0 14px;color:var(--muted)}.admin-confirm input{margin-bottom:10px;background:var(--surface-soft)}.admin-confirm input.is-error{border-color:var(--danger);box-shadow:0 0 0 4px color-mix(in srgb,var(--danger) 16%,transparent)}.admin-confirm-actions{display:flex;justify-content:flex-end;gap:10px}
     @keyframes admin-page-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes admin-item-enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes admin-row-enter{from{opacity:0}to{opacity:1}}@keyframes admin-scan{0%{transform:translateX(-100%)}45%,100%{transform:translateX(100%)}}@keyframes status-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--primary) 28%,transparent)}50%{box-shadow:0 0 0 8px transparent}}@keyframes skeleton-shimmer{from{background-position:120% 0}to{background-position:-120% 0}}@keyframes toast-in{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:translateX(0)}}@keyframes toast-out{to{opacity:0;transform:translateX(22px)}}@keyframes danger-glow{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--danger) 34%,transparent)}100%{box-shadow:0 0 0 16px transparent}}@keyframes row-flash-warning{0%{background:color-mix(in srgb,#d99a2b 20%,transparent)}100%{background:transparent}}@keyframes row-flash-success{0%{background:color-mix(in srgb,#22c55e 18%,transparent)}100%{background:transparent}}@keyframes empty-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes confirm-shake{0%,100%{transform:translateX(0) scale(1)}25%{transform:translateX(-6px) scale(1)}75%{transform:translateX(6px) scale(1)}}.shake-once{animation:confirm-shake .25s ease 1}
-    @media (max-width:1050px){.os-layout{grid-template-columns:1fr}.os-sidebar{position:static}.os-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.os-hero{grid-template-columns:1fr;display:grid}.os-ai{min-width:0}}
-    @media (max-width:1050px){.admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-dashboard-grid,.admin-role-cards,.admin-detail-grid{grid-template-columns:1fr}.admin-toolbar{grid-template-columns:1fr 1fr}.permission-grid{grid-template-columns:minmax(190px,1fr) repeat(3,86px)}}
-    @media (max-width:1050px){.audit-grid{grid-template-columns:1fr}}
-    @media (max-width:560px){body.os-shell{padding:14px}.os-main{padding:20px 16px}.os-grid,.admin-metrics{grid-template-columns:1fr}.os-profile-card{align-items:flex-start;flex-direction:column}.admin-toolbar{grid-template-columns:1fr}.permission-grid{grid-template-columns:minmax(150px,1fr) repeat(3,70px)}.admin-drawer{width:calc(100vw - 12px)}}
+    @media (max-width:1050px){
+      body.os-shell{height:100dvh;overflow:hidden;box-sizing:border-box}
+      .os-layout{height:calc(100dvh - 48px);min-height:0;display:block}
+      .os-sidebar,.os-main{height:100%;min-height:0;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain}
+      .os-sidebar{position:static;scrollbar-width:thin;scrollbar-color:transparent transparent}
+      .os-sidebar::-webkit-scrollbar{width:8px}
+      .os-sidebar::-webkit-scrollbar-track{background:transparent}
+      .os-sidebar::-webkit-scrollbar-thumb{background:transparent;border-radius:999px}
+      .os-sidebar:hover{scrollbar-color:var(--border-strong) transparent}
+      .os-sidebar:hover::-webkit-scrollbar-thumb{background:var(--border-strong)}
+      html.compact-menu-view .os-sidebar,
+      html:not(.compact-content-view):not(.compact-menu-view) .os-sidebar{display:block}
+      html.compact-menu-view .os-main,
+      html:not(.compact-content-view):not(.compact-menu-view) .os-main{display:none}
+      html.compact-content-view .os-sidebar{display:none}
+      html.compact-content-view .os-main{display:block;padding-top:72px}
+      .compact-back-zone{display:none;position:fixed;top:0;left:0;width:138px;height:92px;z-index:85}
+      html.compact-content-view .compact-back-zone{display:block}
+      .compact-back-button{position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px;width:auto;min-height:42px;padding:0 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--text);box-shadow:var(--shadow-soft);opacity:0;transform:translateY(-8px);pointer-events:none;transition:opacity .16s ease,transform .16s ease}
+      .compact-back-button span{font-size:20px;line-height:1}
+      .compact-back-button strong{font-size:14px}
+      .compact-back-zone:hover .compact-back-button,
+      .compact-back-zone:focus-within .compact-back-button{opacity:1;transform:translateY(0);pointer-events:auto}
+      .os-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .os-hero{grid-template-columns:1fr;display:grid}
+      .os-ai{min-width:0}
+      .admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .admin-dashboard-grid,.admin-role-cards,.admin-detail-grid{grid-template-columns:1fr}
+      .admin-toolbar{grid-template-columns:1fr 1fr}
+      .permission-grid{grid-template-columns:minmax(190px,1fr) repeat(3,86px)}
+      .audit-grid{grid-template-columns:1fr}
+    }
+    @media (max-width:1050px) and (hover:none) and (pointer:coarse){
+      .compact-back-button{opacity:1;transform:none;pointer-events:auto}
+    }
+    @media (max-width:560px){
+      body.os-shell{padding:14px}
+      .os-layout{height:calc(100dvh - 28px)}
+      .os-main{padding:20px 16px}
+      html.compact-content-view .os-main{padding-top:64px}
+      .os-grid,.admin-metrics{grid-template-columns:1fr}
+      .os-profile-card{align-items:flex-start;flex-direction:column}
+      .admin-toolbar{grid-template-columns:1fr}
+      .permission-grid{grid-template-columns:minmax(150px,1fr) repeat(3,70px)}
+      .admin-drawer{width:calc(100vw - 12px)}
+    }
     @media (prefers-reduced-motion:reduce){body.os-shell,.os-sidebar,.os-main,.os-card,.admin-motion-page,.admin-motion-card,.admin-metrics article,.animated-row,.admin-scan:before,.status-pulse,.admin-empty-orb,.skeleton-line,.admin-skeleton strong{animation:none !important;transition:none !important}.admin-motion-card:hover,.admin-metrics article:hover,.admin-ghost:hover,.admin-primary:hover,.admin-danger:hover{transform:none !important}}
   </style>`;
 }
