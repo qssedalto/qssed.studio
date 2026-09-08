@@ -1670,8 +1670,10 @@ function adminClientScript(ipInfo) {
 
       // i18n marker: keep database/API canonical keys in English; localize labels only at render time.
       function adminRoleLabel(role) {
-        if (!adminIsZh()) return role || "-";
-        return ({ admin: "管理员", editor: "编辑者", user: "普通用户" })[role] || role || "-";
+        const labels = adminIsZh()
+          ? { admin: "管理员", editor: "编辑者", user: "普通成员" }
+          : { admin: "Administrator", editor: "Editor", user: "Member" };
+        return labels[role] || role || "-";
       }
 
       // i18n marker: status values remain active/suspended/banned for RPC filters and updates.
@@ -1755,17 +1757,16 @@ function adminClientScript(ipInfo) {
       }
 
       function adminRoleDescription(role) {
-        const zh = adminIsZh();
-        const descriptions = zh
+        const descriptions = adminIsZh()
           ? {
-              admin: "可管理当前已实现的用户、角色、权限和审计日志。",
-              editor: "当前保留编辑者角色与权限定义；内容模块尚未接入持久化数据。",
-              user: "当前可使用账号与安全相关功能；笔记、收藏和任务等内容模块尚未接入。"
+              admin: "拥有完整管理权限，可管理成员、角色权限与审计记录。仅应授予承担管理职责的账号。",
+              editor: "适用于需要扩展工作区操作能力的成员，不包含用户管理、角色权限调整等管理员能力。",
+              user: "普通成员，用于日常个人使用。可以访问获准的个人功能，但不能管理其他成员、修改角色权限或访问仅限管理员的审计信息。"
             }
           : {
-              admin: "Can manage the currently implemented users, roles, permissions, and audit logs.",
-              editor: "The editor role and permission definitions exist, while content modules are not connected to persistent data yet.",
-              user: "Can use account and security features; notes, links, tasks, and other content modules are not connected yet."
+              admin: "Full administrative access for member management, role permissions, and audit records. Grant this role only to accounts with administrative responsibilities.",
+              editor: "For members who need broader workspace capabilities without user management or role-permission administration.",
+              user: "Standard member for everyday personal use. Can use permitted personal features but cannot manage other members, change role permissions, or access administrator-only audit information."
             };
         return descriptions[role.name] || role.description || "-";
       }
@@ -1877,7 +1878,7 @@ function adminClientScript(ipInfo) {
       }
 
       function adminLoadError(message) {
-        return adminEmpty(message || adminText(adminIsZh(), "无法读取 Supabase 管理数据。", "Unable to load Supabase admin data."));
+        return adminEmpty(message || adminText(adminIsZh(), "无法读取管理数据，请稍后重试。", "Unable to load management data. Please try again later."));
       }
 
       async function hydrateAdminModule(user) {
@@ -2853,7 +2854,7 @@ function buildOsCopy(zh) {
       aiLabel: "工作流",
       aiTitle: "实验与工具入口",
       aiHref: `${prefix}/workspace/experiments`,
-      adminLock: "只有 Supabase 中唯一的 admin 用户可以查看这里。",
+      adminLock: "当前账号没有管理权限。管理功能仅对授权管理员开放；如认为权限异常，请联系管理员确认账号角色。",
       nav: [
         { id: "dashboard", label: "首页", href: `${prefix}/dashboard`, items: [] },
         { id: "info", label: "信息中心", href: `${prefix}/info`, items: [
@@ -2902,7 +2903,7 @@ function buildOsCopy(zh) {
     aiLabel: "Workflow",
     aiTitle: "Experiments & tools",
     aiHref: `${prefix}/workspace/experiments`,
-    adminLock: "Only the single admin user stored in Supabase can view this area.",
+    adminLock: "This account does not have management access. Administrative tools are available only to authorized administrators. If this seems incorrect, contact an administrator to verify your role.",
     nav: [
       { id: "dashboard", label: "Dashboard", href: `${prefix}/dashboard`, items: [] },
       { id: "info", label: "Information", href: `${prefix}/info`, items: [
@@ -2964,9 +2965,9 @@ function buildOsPages(zh) {
     tasks: ["任务中心", "尚未接入任务数据表。"],
     admin: ["管理首页", "显示真实用户与管理员数量、最近用户、操作日志和风险事件。"],
     users: ["用户管理", "用户列表、权限管理和封禁管理。"],
-    roles: ["角色权限", "Admin、Editor、User 的 RBAC 模型。"],
+    roles: ["角色权限", "查看管理员、编辑者与普通成员的权限范围，并管理角色授权。"],
     logs: ["操作日志", "查看账户与管理操作的审计记录。"],
-    system: ["系统状态", "当前没有用于读取 Cloudflare、存储或数据库容量的系统状态接口。"],
+    system: ["系统状态", "查看管理功能、数据读取与审计能力的当前状态。"],
     settings: ["设置首页", "查看当前可用设置，以及尚未实现的配置模块。"],
     appearance: ["外观", "当前支持浅色与深色主题，可使用右上角主题按钮切换。"],
     language: ["语言", "当前支持中文与 English。"],
@@ -2992,9 +2993,9 @@ function buildOsPages(zh) {
     tasks: ["Tasks", "No tasks table is connected yet."],
     admin: ["Admin Overview", "Shows live user/admin counts, recent users, operation logs, and risk events."],
     users: ["User Management", "User list, permissions, and bans."],
-    roles: ["Roles", "Admin, Editor, and User RBAC model."],
+    roles: ["Roles", "Review the access scope for administrators, editors, and members, and manage role permissions."],
     logs: ["Logs", "Review audit records for account and administrative actions."],
-    system: ["System Status", "There is no system-status API for Cloudflare, storage, or database capacity yet."],
+    system: ["System Status", "Review the current availability of management features, data access, and auditing capabilities."],
     settings: ["Settings", "Review available settings and configuration modules that are not implemented yet."],
     appearance: ["Appearance", "Light and dark themes are available through the theme button in the top-right corner."],
     language: ["Language", "Chinese and English are currently supported."],
@@ -3168,7 +3169,7 @@ function adminContent(path, zh) {
   if (path.endsWith("/users")) return adminUsersContent(zh);
   if (path.endsWith("/roles")) return adminRolesContent(zh);
   if (path.endsWith("/logs")) return adminLogsContent(zh);
-  if (path.endsWith("/system")) return `<section class="os-card is-large"><h2>${zh ? "系统状态接口尚未接入" : "System status API is not connected yet"}</h2><p>${zh ? "当前网页没有用于读取 Supabase 服务状态、Cloudflare 状态、存储占用或数据库大小的服务端接口。" : "The site does not currently have server-side APIs for Supabase service health, Cloudflare status, storage usage, or database size."}</p></section>`;
+  if (path.endsWith("/system")) return `<section class="os-card is-large"><h2>${zh ? "系统状态" : "System Status"}</h2><p>${zh ? "当前管理界面尚未接入运行状态、存储占用与容量统计等监控数据；账户、权限与审计相关信息仍可在对应管理页面查看。" : "Runtime health, storage usage, and capacity metrics are not yet available in the management interface. Account, permission, and audit information remains available in the corresponding administration pages."}</p></section>`;
   return adminOverviewContent(zh);
 }
 
@@ -3203,7 +3204,7 @@ function adminOverviewContent(zh) {
 }
 
 function adminUsersContent(zh) {
-  const roleOptions = zh ? [["", "全部角色"], ["admin", "管理员"], ["editor", "编辑者"], ["user", "普通用户"]] : [["", "All roles"], ["admin", "admin"], ["editor", "editor"], ["user", "user"]];
+  const roleOptions = zh ? [["", "全部角色"], ["admin", "管理员"], ["editor", "编辑者"], ["user", "普通成员"]] : [["", "All roles"], ["admin", "Administrator"], ["editor", "Editor"], ["user", "Member"]];
   const statusOptions = zh ? [["", "全部状态"], ["active", "正常"], ["suspended", "已停用"], ["banned", "已封禁"]] : [["", "All status"], ["active", "active"], ["suspended", "suspended"], ["banned", "banned"]];
   return `
     <section class="admin-toolbar os-card">
@@ -3229,7 +3230,7 @@ function adminRolesContent(zh) {
         <h2>${zh ? "RBAC 角色权限" : "RBAC Roles"}</h2>
         <button id="admin-save-permissions" class="admin-primary" disabled>${zh ? "保存权限" : "Save permissions"}</button>
       </div>
-      <p>${zh ? "默认角色：管理员、编辑者、普通用户。关键权限变更会写入警告级别日志；笔记、链接、项目等内容类权限目前属于预留定义。" : "Default roles: admin, editor, user. Critical changes are written as warning logs; content permissions for notes, links, projects, and similar modules are currently reserved definitions."}</p>
+      <p>${zh ? "角色用于控制成员可访问的功能。普通成员适合日常使用，不具备用户管理、角色权限调整或管理级审计访问能力；管理员与编辑者应仅授予确有需要的账号。所有权限调整都会保留操作记录。" : "Roles control which features members can access. Members are intended for everyday use and cannot manage users, change role permissions, or access administrator-only audit data. Administrator and editor roles should be granted only when needed. Permission changes are recorded."}</p>
       <div id="admin-unsaved-bar" class="admin-unsaved" hidden>${zh ? "有未保存的权限变更" : "Unsaved permission changes"}</div>
     </section>
     <section id="admin-role-cards" class="admin-role-cards admin-list-skeleton"></section>
