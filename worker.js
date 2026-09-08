@@ -1,13 +1,3 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run "npm run dev" in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run "npm run deploy" to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 const ZH_COUNTRIES = ["CN", "HK", "MO", "TW", "SG"];
@@ -54,43 +44,12 @@ const TEXT = {
     signUp: "Sign Up",
     continue: "Continue",
     getStarted: "Get Started",
-    logout: "Logout",
-    enterHomepage: "Enter Homepage",
-    signInSuccessfully: "Sign In Successfully",
-    loggedAs: "Logged as:",
-    welcomeBack: "Welcome back, ",
-    information: "Information",
-    profile: "Profile",
-    settings: "Settings",
-    admin: "Admin",
-    adminConsole: "Admin Console",
-    adminDescription: "Review access status, keep the idea board tidy, and remove duplicates before they turn into noise.",
     adminOnly: "This area is reserved for listed administrators.",
-    ideaBoard: "Idea Board",
-    ideaTitlePlaceholder: "Idea title",
-    ideaDetailPlaceholder: "Short note",
-    addIdea: "Add idea",
-    cleanIdeas: "Remove duplicates",
-    noIdeas: "No ideas yet.",
-    duplicateRemoved: "Duplicate ideas removed:",
-    accessAllowed: "Admin access verified.",
-    informationHub: "Information Hub",
-    personalProfile: "Personal Profile",
-    workspace: "Workspace",
-    infoHubEmptyTitle: "No content yet.",
-    infoHubDescription: "Curated notes, references, and discoveries will live here.",
-    informationCenter: "Information Center",
-    informationCenterDescription: "A calm place to sort useful signals before they become scattered tabs.",
-    collection: "Collection",
-    notes: "Notes",
-    sources: "Sources",
     enterBirthDate: "Enter your birth date.",
-    birthDatePlaceholder: "Birth date",
     birthYear: "Year",
     birthMonth: "Month",
     birthDay: "Day",
     adminApprovalMessage: "Registration successful. An administrator will grant your account permissions later. Please tell the administrator that your account has been registered successfully. Click the button below to sign in. If you need to contact us, please email:",
-    age: "Age:",
     selectGender: "Select your gender.",
     male: "Male",
     female: "Female",
@@ -102,9 +61,6 @@ const TEXT = {
     setPassword: "Set your password to finish.",
     alreadyHaveAccount: "Already have an account? Sign in",
     dontHaveAccount: "Don't have an account? Sign up",
-    ip: "IP:",
-    region: "Region:",
-    language: "Language: English",
     loginDescription: "Sign in to continue to get information from Tianguo.",
     signUpDescription: "Get started with studio access flow.",
     usernamePlaceholder: "Username",
@@ -114,10 +70,6 @@ const TEXT = {
     passwordPlaceholder: "Password",
     loading: "Loading...",
     account: "Account",
-    setupComplete: "Setup complete. Redirecting to login...",
-    informationHubDescription: "Collect useful links, summaries, and research notes in one place.",
-    personalProfileDescription: "Keep identity, profile visibility, and account details clear.",
-    workspaceDescription: "Plan small experiments, drafts, and future studio tools."
   },
   zh: {
     studioName: "Qssed_A's Studio",
@@ -126,43 +78,12 @@ const TEXT = {
     signUp: "注册",
     continue: "继续",
     getStarted: "开始使用",
-    logout: "退出登录",
-    enterHomepage: "进入主页",
-    signInSuccessfully: "登录成功",
-    loggedAs: "当前用户：",
-    welcomeBack: "欢迎回来，",
-    information: "信息",
-    profile: "个人主页",
-    settings: "设置",
-    admin: "管理",
-    adminConsole: "管理后台",
-    adminDescription: "检查访问状态，整理想法面板，并在冗余内容变成噪音前清理掉。",
     adminOnly: "此区域仅限已列入名单的管理员使用。",
-    ideaBoard: "想法面板",
-    ideaTitlePlaceholder: "想法标题",
-    ideaDetailPlaceholder: "简短备注",
-    addIdea: "加入想法",
-    cleanIdeas: "删除冗余想法",
-    noIdeas: "暂无想法",
-    duplicateRemoved: "已删除冗余想法：",
-    accessAllowed: "管理员身份已确认。",
-    informationHub: "信息中心",
-    personalProfile: "个人资料",
-    workspace: "工作区",
-    infoHubEmptyTitle: "暂无内容",
-    infoHubDescription: "这里会集中放置已整理的信息、笔记和来源。",
-    informationCenter: "信息中心",
-    informationCenterDescription: "你保存的信息将显示在这里",
-    collection: "收藏",
-    notes: "笔记",
-    sources: "来源",
     enterBirthDate: "请输入你的出生日期。",
-    birthDatePlaceholder: "出生日期",
     birthYear: "年",
     birthMonth: "月",
     birthDay: "日",
     adminApprovalMessage: "注册成功。管理员稍后会给予你相应权限。请告知管理员你的账号已注册成功。点击下方按钮即可登录。如需联系管理员，请发邮件至：",
-    age: "年龄：",
     selectGender: "请选择你的性别",
     male: "男",
     female: "女",
@@ -174,9 +95,6 @@ const TEXT = {
     setPassword: "请设置密码以完成注册",
     alreadyHaveAccount: "已有账号？登录",
     dontHaveAccount: "还没有账号？注册",
-    ip: "IP：",
-    region: "地区：",
-    language: "语言：中文",
     loginDescription: "登录后继续获取 Tianguo 的信息",
     signUpDescription: "开始使用 Studio 注册流程",
     usernamePlaceholder: "用户名",
@@ -186,10 +104,6 @@ const TEXT = {
     passwordPlaceholder: "密码",
     loading: "加载中...",
     account: "账号",
-    setupComplete: "注册完成，正在跳转到登录页...",
-    informationHubDescription: "集中收藏有价值的链接、摘要和研究笔记。",
-    personalProfileDescription: "清楚管理身份资料、展示偏好和账号信息。",
-    workspaceDescription: "规划小实验、草稿和未来的 Studio 工具。"
   }
 };
 
@@ -253,7 +167,6 @@ function getRouteInfo(request) {
   return {
     pathname,
     locale,
-    langPrefix: locale === "zh" ? "/zh-cn" : "/en",
     ipInfo: {
       ip,
       country,
@@ -269,18 +182,10 @@ function buildLinks(locale, pathname) {
   const currentPath = pathname === "/" ? "" : pathname;
 
   return {
-    home: prefix,
     login: `${prefix}/login`,
     signUp: `${prefix}/sign-up`,
     personal: `${prefix}/personal`,
-    general: `${prefix}/general`,
-    infoHub: `${prefix}/general/infohub`,
     dashboard: `${prefix}/dashboard`,
-    info: `${prefix}/info`,
-    profileRoot: `${prefix}/profile`,
-    workspaceRoot: `${prefix}/workspace`,
-    settingsRoot: `${prefix}/settings`,
-    admin: `${prefix}/admin`,
     zhCurrent: `/zh-cn${currentPath}`,
     enCurrent: `/en${currentPath}`
   };
@@ -441,10 +346,6 @@ function baseHead(title) {
       .brand-title{
         white-space:nowrap;
         overflow-wrap:normal;
-      }
-
-      .success-title{
-        font-size:clamp(28px, 4.8vw, 48px);
       }
 
       p{
@@ -652,10 +553,7 @@ function baseHead(title) {
       }
 
       :root.theme-switching body,
-      :root.theme-switching .card,
-      :root.theme-switching .sidebar,
-      :root.theme-switching .main-panel,
-      :root.theme-switching .admin-panel{
+      :root.theme-switching .card{
         transition:background .28s ease, color .28s ease, border-color .28s ease, box-shadow .28s ease;
       }
 
@@ -962,41 +860,6 @@ function adminClientScript(ipInfo) {
         user_agent: ""
       })};
 
-      const adminMock = {
-        overview: {
-          user_count: 1,
-          admin_count: 1,
-          note_count: 0,
-          project_count: 0,
-          link_count: 0,
-          recent_users: [
-            { id: "mock-admin", display_name: "Qssed_A", username: "qssed_a", email: "qssed_a@icloud.com", role: "admin", status: "active", last_seen_at: new Date().toISOString() }
-          ],
-          recent_logs: [
-            { id: "mock-log", actor_email: "system", action: "system.mock", target_label: "Admin module", description: "Mock fallback is visible until Supabase admin SQL is applied.", severity: "info", created_at: new Date().toISOString() }
-          ],
-          risks: []
-        },
-        users: [
-          { user_id: "mock-admin", username: "qssed_a", display_name: "Qssed_A", email: "qssed_a@icloud.com", avatar_url: "", role: "admin", status: "active", created_at: new Date().toISOString(), last_sign_in_at: new Date().toISOString(), last_seen_at: new Date().toISOString(), recent_logins: [], recent_actions: [] }
-        ],
-        roles: {
-          roles: [
-            { id: "role-admin", name: "admin", description: "Full access." },
-            { id: "role-editor", name: "editor", description: "Own content editor." },
-            { id: "role-user", name: "user", description: "Personal workspace user." }
-          ],
-          permissions: [
-            "users.read","users.update","users.ban","roles.read","roles.update","logs.read","system.read","notes.read","notes.create","notes.update","notes.delete","links.read","links.create","links.update","links.delete","projects.read","projects.create","projects.update","projects.delete"
-          ].map(key => ({ id: key, key, category: key.split(".")[0], description: key })),
-          role_permissions: [],
-          user_counts: { admin: 1, editor: 0, user: 0 }
-        },
-        logs: []
-      };
-      adminMock.roles.role_permissions = adminMock.roles.permissions.map(permission => ({ role: "admin", permission: permission.key }))
-        .concat(adminMock.roles.permissions.filter(permission => !permission.key.startsWith("users.") && !permission.key.startsWith("roles.") && !permission.key.startsWith("logs.") && !permission.key.startsWith("system.")).map(permission => ({ role: "editor", permission: permission.key })))
-        .concat(adminMock.roles.permissions.filter(permission => permission.key.endsWith(".read") || permission.key.endsWith(".create") || permission.key.endsWith(".update")).map(permission => ({ role: "user", permission: permission.key })));
 
       const adminState = {
         currentUser: null,
@@ -1039,7 +902,6 @@ function adminClientScript(ipInfo) {
         if (!adminIsZh()) return action || "-";
         return ({
           "login": "登录",
-          "system.mock": "系统占位",
           "user.role.update": "修改用户角色",
           "user.ban": "封禁用户",
           "user.unban": "解除封禁",
@@ -1052,7 +914,6 @@ function adminClientScript(ipInfo) {
       function adminLogDescription(log) {
         const text = log?.description || log?.target_label || "-";
         if (!adminIsZh()) return text;
-        if (log?.action === "system.mock") return "数据库迁移未完成时显示的占位提示。";
         if (log?.action === "user.role.update") return "用户角色已更新。";
         if (log?.action === "user.ban") return "用户已被封禁。";
         if (log?.action === "user.unban") return "用户已解除封禁。";
@@ -1208,13 +1069,17 @@ function adminClientScript(ipInfo) {
         requestAnimationFrame(tick);
       }
 
-      async function adminRpc(name, params, fallback) {
+      async function adminRpc(name, params) {
         const { data, error } = await supabaseClient.rpc(name, params || {});
         if (error) {
-          console.warn("Admin RPC fallback", name, error.message);
-          return { data: fallback, error };
+          console.error("Admin RPC failed", name, error.message);
+          return { data: null, error };
         }
         return { data, error: null };
+      }
+
+      function adminLoadError(message) {
+        return adminEmpty(message || adminText(adminIsZh(), "无法读取 Supabase 管理数据。", "Unable to load Supabase admin data."));
       }
 
       async function hydrateAdminModule(user) {
@@ -1240,8 +1105,22 @@ function adminClientScript(ipInfo) {
 
       async function loadAdminOverview() {
         ["admin-recent-users", "admin-recent-logs", "admin-risk-list"].forEach(id => adminSkeleton(document.getElementById(id), 4));
-        const result = await adminRpc("get_admin_overview", {}, adminMock.overview);
-        adminState.overview = result.data || adminMock.overview;
+        const result = await adminRpc("get_admin_overview", {});
+        if (result.error) {
+          document.querySelectorAll("[data-admin-metric]").forEach(el => {
+            el.closest("article")?.classList.remove("admin-skeleton");
+            el.innerText = "—";
+          });
+          ["admin-recent-users", "admin-recent-logs", "admin-risk-list"].forEach(id => {
+            const target = document.getElementById(id);
+            if (!target) return;
+            target.classList.remove("admin-list-skeleton");
+            target.innerHTML = adminLoadError();
+          });
+          adminToast(adminText(adminIsZh(), "管理数据读取失败。", "Admin data failed to load."), "danger");
+          return;
+        }
+        adminState.overview = result.data || {};
         renderAdminOverview(adminState.overview);
       }
 
@@ -1277,8 +1156,17 @@ function adminClientScript(ipInfo) {
       async function loadAdminUsers() {
         const table = document.getElementById("admin-users-table");
         adminSkeleton(table, 6);
-        const result = await adminRpc("get_admin_users", {}, adminMock.users);
-        adminState.users = result.data || adminMock.users;
+        const result = await adminRpc("get_admin_users", {});
+        if (result.error) {
+          adminState.users = [];
+          table?.classList.remove("admin-list-skeleton");
+          if (table) table.innerHTML = adminLoadError();
+          const count = document.getElementById("admin-users-count");
+          if (count) count.innerText = "—";
+          adminToast(adminText(adminIsZh(), "用户列表读取失败。", "User list failed to load."), "danger");
+          return;
+        }
+        adminState.users = result.data || [];
         bindAdminUserFilters();
         renderAdminUsers();
       }
@@ -1375,7 +1263,7 @@ function adminClientScript(ipInfo) {
           renderAdminUsers();
           return;
         }
-        const result = await adminRpc("update_user_role", { p_user_id: userId, p_role: role, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent }, null);
+        const result = await adminRpc("update_user_role", { p_user_id: userId, p_role: role, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent });
         if (result.error) {
           adminToast(result.error.message, "danger");
           renderAdminUsers();
@@ -1407,7 +1295,7 @@ function adminClientScript(ipInfo) {
           renderAdminUsers();
           return;
         }
-        const result = await adminRpc("update_user_status", { p_user_id: userId, p_status: status, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent }, null);
+        const result = await adminRpc("update_user_status", { p_user_id: userId, p_status: status, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent });
         if (result.error) {
           adminToast(result.error.message, "danger");
           renderAdminUsers();
@@ -1428,10 +1316,21 @@ function adminClientScript(ipInfo) {
       }
 
       async function loadAdminRoles() {
-        adminSkeleton(document.getElementById("admin-role-cards"), 3);
-        adminSkeleton(document.getElementById("admin-permission-matrix"), 8);
-        const result = await adminRpc("get_role_permissions", {}, adminMock.roles);
-        adminState.roles = normalizeRolePermissions(result.data || adminMock.roles);
+        const cards = document.getElementById("admin-role-cards");
+        const matrix = document.getElementById("admin-permission-matrix");
+        adminSkeleton(cards, 3);
+        adminSkeleton(matrix, 8);
+        const result = await adminRpc("get_role_permissions", {});
+        if (result.error) {
+          [cards, matrix].forEach(target => {
+            if (!target) return;
+            target.classList.remove("admin-list-skeleton");
+            target.innerHTML = adminLoadError();
+          });
+          adminToast(adminText(adminIsZh(), "角色权限读取失败。", "Role permissions failed to load."), "danger");
+          return;
+        }
+        adminState.roles = normalizeRolePermissions(result.data || {});
         adminState.pendingPermissions = JSON.parse(JSON.stringify(adminState.roles.role_permissions));
         adminState.permissionDirty = false;
         renderAdminRoles();
@@ -1517,7 +1416,7 @@ function adminClientScript(ipInfo) {
         const roles = adminState.roles.roles.map(role => role.name);
         for (const role of roles) {
           const permissions = (adminState.pendingPermissions || []).filter(item => item.role === role).map(item => item.permission);
-          const result = await adminRpc("update_role_permissions", { p_role: role, p_permissions: permissions, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent }, null);
+          const result = await adminRpc("update_role_permissions", { p_role: role, p_permissions: permissions, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent });
           if (result.error) {
             adminToast(result.error.message, "danger");
             return;
@@ -1577,7 +1476,16 @@ function adminClientScript(ipInfo) {
           p_to: document.getElementById("admin-log-to")?.value ? document.getElementById("admin-log-to").value + "T23:59:59" : null,
           p_limit: 120
         };
-        const result = await adminRpc("get_audit_logs", params, adminMock.logs);
+        const result = await adminRpc("get_audit_logs", params);
+        if (result.error) {
+          adminState.logs = [];
+          list?.classList.remove("admin-list-skeleton");
+          if (list) list.innerHTML = adminLoadError();
+          const count = document.getElementById("admin-logs-count");
+          if (count) count.innerText = "—";
+          adminToast(adminText(adminIsZh(), "操作日志读取失败。", "Audit logs failed to load."), "danger");
+          return;
+        }
         adminState.logs = result.data || [];
         renderAdminLogs();
       }
