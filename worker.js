@@ -1,13 +1,3 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run "npm run dev" in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run "npm run deploy" to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 const ZH_COUNTRIES = ["CN", "HK", "MO", "TW", "SG"];
@@ -15,7 +5,6 @@ const ADMIN_EMAILS = [
   "qssed_a@icloud.com"
 ];
 const OS_PATHS = new Set([
-  "/",
   "/dashboard",
   "/info",
   "/info/links",
@@ -41,56 +30,27 @@ const OS_PATHS = new Set([
   "/settings/language",
   "/settings/ai",
   "/settings/integrations",
-  "/settings/storage",
-  "/general",
-  "/general/infohub",
-  "/personal"
+  "/settings/storage"
+]);
+const LEGACY_REDIRECTS = new Map([
+  ["/", "/dashboard"],
+  ["/general", "/dashboard"],
+  ["/general/infohub", "/info"],
+  ["/personal", "/profile"]
 ]);
 const TEXT = {
   en: {
     studioName: "Qssed_A's Studio",
-    homeDescription: "Your private studio for getting information from Tianguo.",
     signIn: "Sign In",
     signUp: "Sign Up",
     continue: "Continue",
     getStarted: "Get Started",
-    logout: "Logout",
-    enterHomepage: "Enter Homepage",
-    signInSuccessfully: "Sign In Successfully",
-    loggedAs: "Logged as:",
-    welcomeBack: "Welcome back, ",
-    information: "Information",
-    profile: "Profile",
-    settings: "Settings",
-    admin: "Admin",
-    adminConsole: "Admin Console",
-    adminDescription: "Review access status, keep the idea board tidy, and remove duplicates before they turn into noise.",
     adminOnly: "This area is reserved for listed administrators.",
-    ideaBoard: "Idea Board",
-    ideaTitlePlaceholder: "Idea title",
-    ideaDetailPlaceholder: "Short note",
-    addIdea: "Add idea",
-    cleanIdeas: "Remove duplicates",
-    noIdeas: "No ideas yet.",
-    duplicateRemoved: "Duplicate ideas removed:",
-    accessAllowed: "Admin access verified.",
-    informationHub: "Information Hub",
-    personalProfile: "Personal Profile",
-    workspace: "Workspace",
-    infoHubEmptyTitle: "No content yet.",
-    infoHubDescription: "Curated notes, references, and discoveries will live here.",
-    informationCenter: "Information Center",
-    informationCenterDescription: "A calm place to sort useful signals before they become scattered tabs.",
-    collection: "Collection",
-    notes: "Notes",
-    sources: "Sources",
     enterBirthDate: "Enter your birth date.",
-    birthDatePlaceholder: "Birth date",
     birthYear: "Year",
     birthMonth: "Month",
     birthDay: "Day",
     adminApprovalMessage: "Registration successful. An administrator will grant your account permissions later. Please tell the administrator that your account has been registered successfully. Click the button below to sign in. If you need to contact us, please email:",
-    age: "Age:",
     selectGender: "Select your gender.",
     male: "Male",
     female: "Female",
@@ -102,9 +62,6 @@ const TEXT = {
     setPassword: "Set your password to finish.",
     alreadyHaveAccount: "Already have an account? Sign in",
     dontHaveAccount: "Don't have an account? Sign up",
-    ip: "IP:",
-    region: "Region:",
-    language: "Language: English",
     loginDescription: "Sign in to continue to get information from Tianguo.",
     signUpDescription: "Get started with studio access flow.",
     usernamePlaceholder: "Username",
@@ -114,55 +71,19 @@ const TEXT = {
     passwordPlaceholder: "Password",
     loading: "Loading...",
     account: "Account",
-    setupComplete: "Setup complete. Redirecting to login...",
-    informationHubDescription: "Collect useful links, summaries, and research notes in one place.",
-    personalProfileDescription: "Keep identity, profile visibility, and account details clear.",
-    workspaceDescription: "Plan small experiments, drafts, and future studio tools."
   },
   zh: {
     studioName: "Qssed_A's Studio",
-    homeDescription: "从这获取你想知道的",
     signIn: "登录",
     signUp: "注册",
     continue: "继续",
     getStarted: "开始使用",
-    logout: "退出登录",
-    enterHomepage: "进入主页",
-    signInSuccessfully: "登录成功",
-    loggedAs: "当前用户：",
-    welcomeBack: "欢迎回来，",
-    information: "信息",
-    profile: "个人主页",
-    settings: "设置",
-    admin: "管理",
-    adminConsole: "管理后台",
-    adminDescription: "检查访问状态，整理想法面板，并在冗余内容变成噪音前清理掉。",
     adminOnly: "此区域仅限已列入名单的管理员使用。",
-    ideaBoard: "想法面板",
-    ideaTitlePlaceholder: "想法标题",
-    ideaDetailPlaceholder: "简短备注",
-    addIdea: "加入想法",
-    cleanIdeas: "删除冗余想法",
-    noIdeas: "暂无想法",
-    duplicateRemoved: "已删除冗余想法：",
-    accessAllowed: "管理员身份已确认。",
-    informationHub: "信息中心",
-    personalProfile: "个人资料",
-    workspace: "工作区",
-    infoHubEmptyTitle: "暂无内容",
-    infoHubDescription: "这里会集中放置已整理的信息、笔记和来源。",
-    informationCenter: "信息中心",
-    informationCenterDescription: "你保存的信息将显示在这里",
-    collection: "收藏",
-    notes: "笔记",
-    sources: "来源",
     enterBirthDate: "请输入你的出生日期。",
-    birthDatePlaceholder: "出生日期",
     birthYear: "年",
     birthMonth: "月",
     birthDay: "日",
     adminApprovalMessage: "注册成功。管理员稍后会给予你相应权限。请告知管理员你的账号已注册成功。点击下方按钮即可登录。如需联系管理员，请发邮件至：",
-    age: "年龄：",
     selectGender: "请选择你的性别",
     male: "男",
     female: "女",
@@ -174,9 +95,6 @@ const TEXT = {
     setPassword: "请设置密码以完成注册",
     alreadyHaveAccount: "已有账号？登录",
     dontHaveAccount: "还没有账号？注册",
-    ip: "IP：",
-    region: "地区：",
-    language: "语言：中文",
     loginDescription: "登录后继续获取 Tianguo 的信息",
     signUpDescription: "开始使用 Studio 注册流程",
     usernamePlaceholder: "用户名",
@@ -186,16 +104,24 @@ const TEXT = {
     passwordPlaceholder: "密码",
     loading: "加载中...",
     account: "账号",
-    setupComplete: "注册完成，正在跳转到登录页...",
-    informationHubDescription: "集中收藏有价值的链接、摘要和研究笔记。",
-    personalProfileDescription: "清楚管理身份资料、展示偏好和账号信息。",
-    workspaceDescription: "规划小实验、草稿和未来的 Studio 工具。"
   }
 };
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const { pathname, locale, ipInfo } = getRouteInfo(request);
+
+    if (pathname === "/api/auth/login") {
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+      return handlePasswordLogin(request, env, ipInfo);
+    }
+
+    const legacyTarget = LEGACY_REDIRECTS.get(pathname);
+
+    if (legacyTarget) {
+      return localizedRedirect(request, locale, legacyTarget);
+    }
+
     const t = TEXT[locale];
     const links = buildLinks(locale, pathname);
 
@@ -211,23 +137,8 @@ export default {
       return html(loginPage(t, links, ipInfo));
     }
 
-    if (pathname === "/personal") {
-      return html(personalPage(t, links));
-    }
 
-    if (pathname === "/general/infohub") {
-      return html(infoHubPage(t, links));
-    }
-
-    if (pathname === "/admin") {
-      return html(adminPage(t, links));
-    }
-
-    if (pathname === "/general") {
-      return html(generalPage(t, links, ipInfo));
-    }
-
-    return html(homePage(t, links));
+    return html(notFoundPage(t, links), 404);
   },
 };
 
@@ -268,7 +179,6 @@ function getRouteInfo(request) {
   return {
     pathname,
     locale,
-    langPrefix: locale === "zh" ? "/zh-cn" : "/en",
     ipInfo: {
       ip,
       country,
@@ -284,29 +194,275 @@ function buildLinks(locale, pathname) {
   const currentPath = pathname === "/" ? "" : pathname;
 
   return {
-    home: prefix,
     login: `${prefix}/login`,
     signUp: `${prefix}/sign-up`,
-    personal: `${prefix}/personal`,
-    general: `${prefix}/general`,
-    infoHub: `${prefix}/general/infohub`,
     dashboard: `${prefix}/dashboard`,
-    info: `${prefix}/info`,
-    profileRoot: `${prefix}/profile`,
-    workspaceRoot: `${prefix}/workspace`,
-    settingsRoot: `${prefix}/settings`,
-    admin: `${prefix}/admin`,
     zhCurrent: `/zh-cn${currentPath}`,
     enCurrent: `/en${currentPath}`
   };
 }
 
-function html(content) {
+function html(content, status = 200) {
   return new Response(content, {
+    status,
     headers: {
       "content-type": "text/html;charset=UTF-8",
     },
   });
+}
+
+function localizedRedirect(request, locale, pathname) {
+  const url = new URL(request.url);
+  const prefix = locale === "zh" ? "/zh-cn" : "/en";
+  url.pathname = `${prefix}${pathname}`;
+  return Response.redirect(url.toString(), 302);
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "content-type": "application/json;charset=UTF-8",
+      "cache-control": "no-store"
+    }
+  });
+}
+
+function getSupabaseSecret(env) {
+  return env?.SUPABASE_SECRET_KEY || env?.SUPABASE_SERVICE_ROLE_KEY || "";
+}
+
+function getWorkerRequestId(request) {
+  return request.headers.get("CF-Ray") || crypto.randomUUID();
+}
+
+function workerLog(level, event, details = {}) {
+  const payload = JSON.stringify({
+    source: "qsseda-worker",
+    event,
+    ...details
+  });
+  const method = level === "error" ? "error" : level === "warn" ? "warn" : "info";
+  console[method](payload);
+}
+
+function parseServerUserAgent(userAgent) {
+  const ua = userAgent || "";
+  const browser = ua.includes("Edg/") ? "Edge" : ua.includes("Chrome/") ? "Chrome" : ua.includes("Firefox/") ? "Firefox" : ua.includes("Safari/") ? "Safari" : "Unknown";
+  const os = ua.includes("Windows") ? "Windows" : ua.includes("Mac OS") ? "macOS" : ua.includes("Android") ? "Android" : ua.includes("iPhone") || ua.includes("iPad") ? "iOS" : ua.includes("Linux") ? "Linux" : "Unknown";
+  const device_type = /Mobile|Android|iPhone|iPad/i.test(ua) ? "mobile" : "desktop";
+  return { user_agent: ua, browser, os, device_type };
+}
+
+async function recentFailedLoginCount(env, ipAddress, logContext) {
+  const secret = getSupabaseSecret(env);
+  if (!secret || !ipAddress || ipAddress === "Unknown") return 0;
+  const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const url = new URL(`${SUPABASE_URL}/rest/v1/login_events`);
+  url.searchParams.set("select", "id");
+  url.searchParams.set("success", "eq.false");
+  url.searchParams.set("ip_address", `eq.${ipAddress}`);
+  url.searchParams.set("created_at", `gte.${since}`);
+  url.searchParams.set("limit", "20");
+  try {
+    const response = await fetch(url.toString(), { headers: { apikey: secret, ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {}) } });
+    if (!response.ok) {
+      workerLog("warn", "auth.risk_query_failed", { ...logContext, upstream_status: response.status });
+      return 0;
+    }
+    const rows = await response.json();
+    return Array.isArray(rows) ? rows.length : 0;
+  } catch (error) {
+    workerLog("error", "auth.risk_query_error", { ...logContext, error_type: error?.name || "Error" });
+    return 0;
+  }
+}
+
+async function recordServerLoginEvent(env, request, ipInfo, user, success, deviceId, logContext) {
+  const secret = getSupabaseSecret(env);
+  if (!secret) {
+    workerLog("warn", "auth.audit.disabled", { ...logContext, reason: "missing_supabase_secret" });
+    return {
+      loginEventWritten: false,
+      auditLogWritten: false,
+      riskLevel: success ? "正常" : "注意",
+      recentFailures: success ? 0 : 1
+    };
+  }
+
+  const userAgent = request.headers.get("User-Agent") || "";
+  const device = parseServerUserAgent(userAgent);
+  const previousFailures = success ? 0 : await recentFailedLoginCount(env, ipInfo?.ip || "", logContext);
+  const riskLevel = success ? "正常" : previousFailures >= 4 ? "高风险" : "注意";
+  const severity = riskLevel === "高风险" ? "danger" : riskLevel === "注意" ? "warning" : "info";
+  const safeDeviceId = typeof deviceId === "string" ? deviceId.slice(0, 160) : "";
+  let loginEventWritten = false;
+  let auditLogWritten = success;
+
+  const event = {
+    user_id: user?.id || null,
+    event_type: "login",
+    success: Boolean(success),
+    provider: "password",
+    ip_address: ipInfo?.ip || "",
+    country: ipInfo?.country || "",
+    region: ipInfo?.region || "",
+    city: ipInfo?.city || "",
+    user_agent: userAgent.slice(0, 1024),
+    browser: device.browser,
+    os: device.os,
+    device_type: device.device_type,
+    device_id: safeDeviceId,
+    risk_level: riskLevel
+  };
+
+  try {
+    const eventResponse = await fetch(`${SUPABASE_URL}/rest/v1/login_events`, {
+      method: "POST",
+      headers: {
+        apikey: secret,
+        ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {}),
+        "content-type": "application/json",
+        prefer: "return=minimal"
+      },
+      body: JSON.stringify(event)
+    });
+    loginEventWritten = eventResponse.ok;
+    if (!eventResponse.ok) {
+      workerLog("error", "auth.audit.write_failed", {
+        ...logContext,
+        target: "login_events",
+        upstream_status: eventResponse.status
+      });
+    }
+
+    if (!success) {
+      const auditResponse = await fetch(`${SUPABASE_URL}/rest/v1/audit_logs`, {
+        method: "POST",
+        headers: {
+          apikey: secret,
+          ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {}),
+          "content-type": "application/json",
+          prefer: "return=minimal"
+        },
+        body: JSON.stringify({
+          actor_user_id: null,
+          actor_email: null,
+          action: "auth.login.failed",
+          target_type: "auth",
+          target_id: null,
+          target_label: "Password login",
+          description: "Failed password login attempt",
+          ip_address: ipInfo?.ip || "",
+          user_agent: userAgent.slice(0, 1024),
+          severity,
+          metadata: {
+            country: ipInfo?.country || "",
+            region: ipInfo?.region || "",
+            city: ipInfo?.city || "",
+            browser: device.browser,
+            os: device.os,
+            device_type: device.device_type,
+            risk_level: riskLevel,
+            recent_failures_15m: previousFailures + 1
+          }
+        })
+      });
+      auditLogWritten = auditResponse.ok;
+      if (!auditResponse.ok) {
+        workerLog("error", "auth.audit.write_failed", {
+          ...logContext,
+          target: "audit_logs",
+          upstream_status: auditResponse.status
+        });
+      }
+    }
+  } catch (error) {
+    workerLog("error", "auth.audit.error", { ...logContext, error_type: error?.name || "Error" });
+  }
+
+  return {
+    loginEventWritten,
+    auditLogWritten,
+    riskLevel,
+    recentFailures: success ? 0 : previousFailures + 1
+  };
+}
+
+async function handlePasswordLogin(request, env, ipInfo) {
+  const startedAt = Date.now();
+  const logContext = {
+    request_id: getWorkerRequestId(request),
+    country: ipInfo?.country || "Unknown"
+  };
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    workerLog("warn", "auth.login.invalid_request", { ...logContext, reason: "invalid_json" });
+    return json({ error: "Invalid request body" }, 400);
+  }
+
+  const email = typeof body?.email === "string" ? body.email.trim() : "";
+  const password = typeof body?.password === "string" ? body.password : "";
+  const deviceId = typeof body?.device_id === "string" ? body.device_id : "";
+  if (!email || !password) {
+    workerLog("warn", "auth.login.invalid_request", { ...logContext, reason: "missing_credentials" });
+    return json({ error: "Email and password are required" }, 400);
+  }
+
+  let authResponse;
+  try {
+    authResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+  } catch (error) {
+    workerLog("error", "auth.login.upstream_error", {
+      ...logContext,
+      error_type: error?.name || "Error",
+      duration_ms: Date.now() - startedAt
+    });
+    return json({ error: "Authentication service unavailable" }, 502);
+  }
+
+  let authData;
+  try {
+    authData = await authResponse.json();
+  } catch {
+    workerLog("error", "auth.login.invalid_upstream_response", {
+      ...logContext,
+      upstream_status: authResponse.status,
+      duration_ms: Date.now() - startedAt
+    });
+    return json({ error: "Authentication service returned an invalid response" }, 502);
+  }
+
+  const audit = await recordServerLoginEvent(
+    env,
+    request,
+    ipInfo,
+    authData?.user || null,
+    authResponse.ok,
+    deviceId,
+    logContext
+  );
+
+  workerLog(authResponse.ok ? "info" : "warn", authResponse.ok ? "auth.login.success" : "auth.login.failed", {
+    ...logContext,
+    upstream_status: authResponse.status,
+    risk_level: audit.riskLevel,
+    recent_failures_15m: audit.recentFailures,
+    login_event_written: audit.loginEventWritten,
+    audit_log_written: audit.auditLogWritten,
+    duration_ms: Date.now() - startedAt
+  });
+
+  return json(authData, authResponse.status);
 }
 
 function baseHead(title) {
@@ -456,10 +612,6 @@ function baseHead(title) {
       .brand-title{
         white-space:nowrap;
         overflow-wrap:normal;
-      }
-
-      .success-title{
-        font-size:clamp(28px, 4.8vw, 48px);
       }
 
       p{
@@ -667,10 +819,7 @@ function baseHead(title) {
       }
 
       :root.theme-switching body,
-      :root.theme-switching .card,
-      :root.theme-switching .sidebar,
-      :root.theme-switching .main-panel,
-      :root.theme-switching .admin-panel{
+      :root.theme-switching .card{
         transition:background .28s ease, color .28s ease, border-color .28s ease, box-shadow .28s ease;
       }
 
@@ -773,6 +922,10 @@ function auditClientScript(ipInfo) {
         return yyyy + "-" + mm + "-" + dd + " " + hh + ":" + min;
       }
 
+      function auditEscape(value) {
+        return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+      }
+
       function getAuditDeviceId() {
         const key = "qssed-device-id";
         let id = localStorage.getItem(key);
@@ -789,42 +942,6 @@ function auditClientScript(ipInfo) {
         const os = ua.includes("Windows") ? "Windows" : ua.includes("Mac OS") ? "macOS" : ua.includes("Android") ? "Android" : ua.includes("iPhone") || ua.includes("iPad") ? "iOS" : ua.includes("Linux") ? "Linux" : "Unknown";
         const device_type = /Mobile|Android|iPhone|iPad/i.test(ua) ? "mobile" : "desktop";
         return { user_agent: ua, browser, os, device_type, device_name: browser + " on " + os };
-      }
-
-      function getAuditPayload(user, success, provider, eventType) {
-        const device = parseAuditUserAgent();
-        return {
-          user_id: user?.id || null,
-          event_type: eventType || "login",
-          success: Boolean(success),
-          provider: provider || "password",
-          ip_address: auditRequestContext.ip_address,
-          country: auditRequestContext.country,
-          region: auditRequestContext.region,
-          city: auditRequestContext.city,
-          user_agent: device.user_agent,
-          browser: device.browser,
-          os: device.os,
-          device_type: device.device_type,
-          device_id: getAuditDeviceId(),
-          risk_level: "正常"
-        };
-      }
-
-      async function recordLoginEvent(user, success, provider, eventType) {
-        const payload = getAuditPayload(user, success, provider, eventType);
-        if (!payload.user_id) {
-          const failed = JSON.parse(localStorage.getItem("qssed-login-event-fallback") || "[]");
-          failed.unshift({ ...payload, created_at: new Date().toISOString() });
-          localStorage.setItem("qssed-login-event-fallback", JSON.stringify(failed.slice(0, 20)));
-          return;
-        }
-        const { error } = await supabaseClient.from("login_events").insert(payload);
-        if (error) {
-          const fallback = JSON.parse(localStorage.getItem("qssed-login-event-fallback") || "[]");
-          fallback.unshift({ ...payload, created_at: new Date().toISOString(), fallback_error: error.message });
-          localStorage.setItem("qssed-login-event-fallback", JSON.stringify(fallback.slice(0, 20)));
-        }
       }
 
       async function updateCurrentDevice(user) {
@@ -879,8 +996,7 @@ function auditClientScript(ipInfo) {
           supabaseClient.from("login_events").select("*").order("created_at", { ascending: false }).limit(50),
           supabaseClient.from("user_devices").select("*").order("last_seen_at", { ascending: false }).limit(20)
         ]);
-        const fallbackEvents = JSON.parse(localStorage.getItem("qssed-login-event-fallback") || "[]");
-        const events = eventsResult.error ? fallbackEvents : eventsResult.data || [];
+        const events = eventsResult.error ? [] : eventsResult.data || [];
         const fallbackDevice = JSON.parse(localStorage.getItem("qssed-device-fallback") || "null");
         const devices = devicesResult.error ? (fallbackDevice ? [fallbackDevice] : []) : devicesResult.data || [];
         renderAccountAudit(user, events, devices);
@@ -905,19 +1021,19 @@ function auditClientScript(ipInfo) {
 
       function renderAuditRows(events) {
         const head = ["登录时间", "IP 地址", "地区", "浏览器", "操作系统", "设备类型", "登录方式", "登录结果", "风险提示"];
-        const rows = events.length ? events : [getAuditPayload(null, true, "password", "login")];
-        return '<div class="audit-row audit-head">' + head.map(item => '<strong>' + item + '</strong>').join("") + '</div>' +
-          rows.map(event => '<div class="audit-row">' + [
-            formatAuditDate(event.created_at),
-            event.ip_address || "-",
-            [event.country, event.region, event.city].filter(Boolean).join(" / ") || "-",
-            event.browser || "-",
-            event.os || "-",
-            event.device_type || "-",
-            event.provider || "password",
-            event.success ? "成功" : "失败",
-            event.risk_level || "正常"
-          ].map(item => '<span>' + item + '</span>').join("") + '</div>').join("");
+        const header = '<div class="audit-row audit-head">' + head.map(item => '<strong>' + item + '</strong>').join("") + '</div>';
+        if (!events.length) return header + '<div class="audit-row"><span>暂无登录记录</span></div>';
+        return header + events.map(event => '<div class="audit-row">' + [
+          formatAuditDate(event.created_at),
+          event.ip_address || "-",
+          [event.country, event.region, event.city].filter(Boolean).join(" / ") || "-",
+          event.browser || "-",
+          event.os || "-",
+          event.device_type || "-",
+          event.provider || "password",
+          event.success ? "成功" : "失败",
+          event.risk_level || "正常"
+        ].map(item => '<span>' + auditEscape(item) + '</span>').join("") + '</div>').join("");
       }
 
       function renderSecurityAudit(events, devices) {
@@ -935,18 +1051,19 @@ function auditClientScript(ipInfo) {
         const alerts = document.getElementById("audit-risk-alerts");
         if (alerts) {
           const risks = events.filter(event => event.risk_level && event.risk_level !== "正常");
-          alerts.innerHTML = risks.length ? risks.map(event => '<p>' + formatAuditDate(event.created_at) + " · " + event.risk_level + " · " + (event.ip_address || "-") + '</p>').join("") : "<p>暂无异常登录提示</p>";
+          alerts.innerHTML = risks.length ? risks.map(event => '<p>' + auditEscape(formatAuditDate(event.created_at)) + " · " + auditEscape(event.risk_level) + " · " + auditEscape(event.ip_address || "-") + '</p>').join("") : "<p>暂无异常登录提示</p>";
         }
       }
 
       function renderDeviceCard(device, current) {
         const status = device.revoked_at ? "已退出" : "活跃";
+        const name = device.device_name || ((device.browser || "Browser") + " on " + (device.os || "OS"));
         return '<article class="audit-device-card">' +
-          '<strong>' + (device.device_name || ((device.browser || "Browser") + " on " + (device.os || "OS"))) + (current ? " · 当前设备" : "") + '</strong>' +
-          '<span>' + [device.browser, device.os, device.device_type].filter(Boolean).join(" / ") + '</span>' +
-          '<span>' + [device.last_ip, device.country, device.region, device.city].filter(Boolean).join(" · ") + '</span>' +
-          '<span>首次登录 ' + formatAuditDate(device.first_seen_at) + ' · 最近活跃 ' + formatAuditDate(device.last_seen_at) + '</span>' +
-          '<em>' + status + '</em>' +
+          '<strong>' + auditEscape(name + (current ? " · 当前设备" : "")) + '</strong>' +
+          '<span>' + auditEscape([device.browser, device.os, device.device_type].filter(Boolean).join(" / ")) + '</span>' +
+          '<span>' + auditEscape([device.last_ip, device.country, device.region, device.city].filter(Boolean).join(" · ")) + '</span>' +
+          '<span>首次登录 ' + auditEscape(formatAuditDate(device.first_seen_at)) + ' · 最近活跃 ' + auditEscape(formatAuditDate(device.last_seen_at)) + '</span>' +
+          '<em>' + auditEscape(status) + '</em>' +
         '</article>';
       }
 
@@ -960,8 +1077,16 @@ function auditClientScript(ipInfo) {
           groups[key].push(event);
         });
         return Object.entries(groups).filter(([, items]) => items.length).map(([label, items]) =>
-          '<section><h3>' + label + '</h3>' + items.map(event =>
-            '<p>' + formatAuditDate(event.created_at) + ' · ' + ([event.city, event.region, event.country].filter(Boolean).join(" / ") || "-") + ' · ' + (event.ip_address || "-") + ' · ' + (event.browser || "-") + ' on ' + (event.os || "-") + ' · ' + (event.provider || "password") + ' · ' + (event.success ? "成功" : "失败") + ' · ' + (event.risk_level || "正常") + '</p>'
+          '<section><h3>' + auditEscape(label) + '</h3>' + items.map(event =>
+            '<p>' + [
+              formatAuditDate(event.created_at),
+              [event.city, event.region, event.country].filter(Boolean).join(" / ") || "-",
+              event.ip_address || "-",
+              (event.browser || "-") + " on " + (event.os || "-"),
+              event.provider || "password",
+              event.success ? "成功" : "失败",
+              event.risk_level || "正常"
+            ].map(auditEscape).join(" · ") + '</p>'
           ).join("") + '</section>'
         ).join("") || "<p>暂无登录历史</p>";
       }
@@ -977,41 +1102,6 @@ function adminClientScript(ipInfo) {
         user_agent: ""
       })};
 
-      const adminMock = {
-        overview: {
-          user_count: 1,
-          admin_count: 1,
-          note_count: 0,
-          project_count: 0,
-          link_count: 0,
-          recent_users: [
-            { id: "mock-admin", display_name: "Qssed_A", username: "qssed_a", email: "qssed_a@icloud.com", role: "admin", status: "active", last_seen_at: new Date().toISOString() }
-          ],
-          recent_logs: [
-            { id: "mock-log", actor_email: "system", action: "system.mock", target_label: "Admin module", description: "Mock fallback is visible until Supabase admin SQL is applied.", severity: "info", created_at: new Date().toISOString() }
-          ],
-          risks: []
-        },
-        users: [
-          { user_id: "mock-admin", username: "qssed_a", display_name: "Qssed_A", email: "qssed_a@icloud.com", avatar_url: "", role: "admin", status: "active", created_at: new Date().toISOString(), last_sign_in_at: new Date().toISOString(), last_seen_at: new Date().toISOString(), recent_logins: [], recent_actions: [] }
-        ],
-        roles: {
-          roles: [
-            { id: "role-admin", name: "admin", description: "Full access." },
-            { id: "role-editor", name: "editor", description: "Own content editor." },
-            { id: "role-user", name: "user", description: "Personal workspace user." }
-          ],
-          permissions: [
-            "users.read","users.update","users.ban","roles.read","roles.update","logs.read","system.read","notes.read","notes.create","notes.update","notes.delete","links.read","links.create","links.update","links.delete","projects.read","projects.create","projects.update","projects.delete"
-          ].map(key => ({ id: key, key, category: key.split(".")[0], description: key })),
-          role_permissions: [],
-          user_counts: { admin: 1, editor: 0, user: 0 }
-        },
-        logs: []
-      };
-      adminMock.roles.role_permissions = adminMock.roles.permissions.map(permission => ({ role: "admin", permission: permission.key }))
-        .concat(adminMock.roles.permissions.filter(permission => !permission.key.startsWith("users.") && !permission.key.startsWith("roles.") && !permission.key.startsWith("logs.") && !permission.key.startsWith("system.")).map(permission => ({ role: "editor", permission: permission.key })))
-        .concat(adminMock.roles.permissions.filter(permission => permission.key.endsWith(".read") || permission.key.endsWith(".create") || permission.key.endsWith(".update")).map(permission => ({ role: "user", permission: permission.key })));
 
       const adminState = {
         currentUser: null,
@@ -1054,7 +1144,6 @@ function adminClientScript(ipInfo) {
         if (!adminIsZh()) return action || "-";
         return ({
           "login": "登录",
-          "system.mock": "系统占位",
           "user.role.update": "修改用户角色",
           "user.ban": "封禁用户",
           "user.unban": "解除封禁",
@@ -1067,7 +1156,6 @@ function adminClientScript(ipInfo) {
       function adminLogDescription(log) {
         const text = log?.description || log?.target_label || "-";
         if (!adminIsZh()) return text;
-        if (log?.action === "system.mock") return "数据库迁移未完成时显示的占位提示。";
         if (log?.action === "user.role.update") return "用户角色已更新。";
         if (log?.action === "user.ban") return "用户已被封禁。";
         if (log?.action === "user.unban") return "用户已解除封禁。";
@@ -1223,13 +1311,17 @@ function adminClientScript(ipInfo) {
         requestAnimationFrame(tick);
       }
 
-      async function adminRpc(name, params, fallback) {
+      async function adminRpc(name, params) {
         const { data, error } = await supabaseClient.rpc(name, params || {});
         if (error) {
-          console.warn("Admin RPC fallback", name, error.message);
-          return { data: fallback, error };
+          console.error("Admin RPC failed", name, error.message);
+          return { data: null, error };
         }
         return { data, error: null };
+      }
+
+      function adminLoadError(message) {
+        return adminEmpty(message || adminText(adminIsZh(), "无法读取 Supabase 管理数据。", "Unable to load Supabase admin data."));
       }
 
       async function hydrateAdminModule(user) {
@@ -1255,8 +1347,22 @@ function adminClientScript(ipInfo) {
 
       async function loadAdminOverview() {
         ["admin-recent-users", "admin-recent-logs", "admin-risk-list"].forEach(id => adminSkeleton(document.getElementById(id), 4));
-        const result = await adminRpc("get_admin_overview", {}, adminMock.overview);
-        adminState.overview = result.data || adminMock.overview;
+        const result = await adminRpc("get_admin_overview", {});
+        if (result.error) {
+          document.querySelectorAll("[data-admin-metric]").forEach(el => {
+            el.closest("article")?.classList.remove("admin-skeleton");
+            el.innerText = "—";
+          });
+          ["admin-recent-users", "admin-recent-logs", "admin-risk-list"].forEach(id => {
+            const target = document.getElementById(id);
+            if (!target) return;
+            target.classList.remove("admin-list-skeleton");
+            target.innerHTML = adminLoadError();
+          });
+          adminToast(adminText(adminIsZh(), "管理数据读取失败。", "Admin data failed to load."), "danger");
+          return;
+        }
+        adminState.overview = result.data || {};
         renderAdminOverview(adminState.overview);
       }
 
@@ -1292,8 +1398,17 @@ function adminClientScript(ipInfo) {
       async function loadAdminUsers() {
         const table = document.getElementById("admin-users-table");
         adminSkeleton(table, 6);
-        const result = await adminRpc("get_admin_users", {}, adminMock.users);
-        adminState.users = result.data || adminMock.users;
+        const result = await adminRpc("get_admin_users", {});
+        if (result.error) {
+          adminState.users = [];
+          table?.classList.remove("admin-list-skeleton");
+          if (table) table.innerHTML = adminLoadError();
+          const count = document.getElementById("admin-users-count");
+          if (count) count.innerText = "—";
+          adminToast(adminText(adminIsZh(), "用户列表读取失败。", "User list failed to load."), "danger");
+          return;
+        }
+        adminState.users = result.data || [];
         bindAdminUserFilters();
         renderAdminUsers();
       }
@@ -1390,7 +1505,7 @@ function adminClientScript(ipInfo) {
           renderAdminUsers();
           return;
         }
-        const result = await adminRpc("update_user_role", { p_user_id: userId, p_role: role, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent }, null);
+        const result = await adminRpc("update_user_role", { p_user_id: userId, p_role: role, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent });
         if (result.error) {
           adminToast(result.error.message, "danger");
           renderAdminUsers();
@@ -1422,7 +1537,7 @@ function adminClientScript(ipInfo) {
           renderAdminUsers();
           return;
         }
-        const result = await adminRpc("update_user_status", { p_user_id: userId, p_status: status, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent }, null);
+        const result = await adminRpc("update_user_status", { p_user_id: userId, p_status: status, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent });
         if (result.error) {
           adminToast(result.error.message, "danger");
           renderAdminUsers();
@@ -1443,10 +1558,21 @@ function adminClientScript(ipInfo) {
       }
 
       async function loadAdminRoles() {
-        adminSkeleton(document.getElementById("admin-role-cards"), 3);
-        adminSkeleton(document.getElementById("admin-permission-matrix"), 8);
-        const result = await adminRpc("get_role_permissions", {}, adminMock.roles);
-        adminState.roles = normalizeRolePermissions(result.data || adminMock.roles);
+        const cards = document.getElementById("admin-role-cards");
+        const matrix = document.getElementById("admin-permission-matrix");
+        adminSkeleton(cards, 3);
+        adminSkeleton(matrix, 8);
+        const result = await adminRpc("get_role_permissions", {});
+        if (result.error) {
+          [cards, matrix].forEach(target => {
+            if (!target) return;
+            target.classList.remove("admin-list-skeleton");
+            target.innerHTML = adminLoadError();
+          });
+          adminToast(adminText(adminIsZh(), "角色权限读取失败。", "Role permissions failed to load."), "danger");
+          return;
+        }
+        adminState.roles = normalizeRolePermissions(result.data || {});
         adminState.pendingPermissions = JSON.parse(JSON.stringify(adminState.roles.role_permissions));
         adminState.permissionDirty = false;
         renderAdminRoles();
@@ -1532,7 +1658,7 @@ function adminClientScript(ipInfo) {
         const roles = adminState.roles.roles.map(role => role.name);
         for (const role of roles) {
           const permissions = (adminState.pendingPermissions || []).filter(item => item.role === role).map(item => item.permission);
-          const result = await adminRpc("update_role_permissions", { p_role: role, p_permissions: permissions, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent }, null);
+          const result = await adminRpc("update_role_permissions", { p_role: role, p_permissions: permissions, p_ip_address: adminRequestContext.ip_address, p_user_agent: adminRequestContext.user_agent });
           if (result.error) {
             adminToast(result.error.message, "danger");
             return;
@@ -1592,7 +1718,16 @@ function adminClientScript(ipInfo) {
           p_to: document.getElementById("admin-log-to")?.value ? document.getElementById("admin-log-to").value + "T23:59:59" : null,
           p_limit: 120
         };
-        const result = await adminRpc("get_audit_logs", params, adminMock.logs);
+        const result = await adminRpc("get_audit_logs", params);
+        if (result.error) {
+          adminState.logs = [];
+          list?.classList.remove("admin-list-skeleton");
+          if (list) list.innerHTML = adminLoadError();
+          const count = document.getElementById("admin-logs-count");
+          if (count) count.innerText = "—";
+          adminToast(adminText(adminIsZh(), "操作日志读取失败。", "Audit logs failed to load."), "danger");
+          return;
+        }
         adminState.logs = result.data || [];
         renderAdminLogs();
       }
@@ -1696,258 +1831,8 @@ function themeScript() {
   `;
 }
 
-function shellDesignStyles() {
-  return `
-    <style>
-      body.general-shell,
-      body.admin-shell{
-        display:block;
-        padding:24px;
-        background:
-          linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 36%, transparent) 0%, transparent 44%),
-          linear-gradient(135deg, var(--bg) 0%, var(--bg-soft) 100%) !important;
-        background-size:100% 100%, 180% 180% !important;
-        color:var(--text);
-      }
-
-      .general-layout,
-      .admin-layout{
-        min-height:calc(100vh - 48px);
-        display:grid;
-        grid-template-columns:260px minmax(0, 1fr);
-        gap:18px;
-      }
-
-      .sidebar,
-      .main-panel,
-      .admin-panel,
-      .feature-card,
-      .info-card,
-      .empty-card,
-      .idea-card,
-      .composer,
-      .locked{
-        border-radius:var(--radius) !important;
-        border:1px solid var(--border) !important;
-        background:var(--card) !important;
-        box-shadow:var(--shadow-soft) !important;
-      }
-
-      .sidebar{
-        padding:18px !important;
-        backdrop-filter:none !important;
-        animation:panel-enter .55s cubic-bezier(.2,.8,.2,1) both;
-      }
-
-      .main-panel,
-      .admin-panel{
-        padding:30px !important;
-        overflow:hidden;
-        backdrop-filter:none !important;
-        animation:panel-enter .62s cubic-bezier(.2,.8,.2,1) .08s both;
-      }
-
-      .user-panel{
-        border-radius:var(--radius) !important;
-        background:var(--surface-soft) !important;
-        border:1px solid var(--border) !important;
-        color:var(--muted) !important;
-      }
-
-      .user-panel strong{
-        color:var(--quiet) !important;
-        letter-spacing:.08em;
-      }
-
-      .user-handle{
-        color:var(--text) !important;
-      }
-
-      .nav-link,
-      .nav-button{
-        min-height:46px !important;
-        border-radius:var(--radius) !important;
-        border:1px solid var(--border) !important;
-        background:transparent !important;
-        color:var(--text) !important;
-        font-weight:650;
-        position:relative;
-        overflow:hidden;
-      }
-
-      .nav-link::after,
-      .nav-button::after{
-        content:"";
-        position:absolute;
-        inset:auto 12px 8px;
-        height:2px;
-        background:var(--primary);
-        transform:scaleX(0);
-        transform-origin:left;
-        transition:transform .22s ease;
-      }
-
-      .nav-link:hover,
-      .nav-button:hover{
-        transform:translateY(-1px);
-        background:var(--surface-soft) !important;
-        border-color:var(--border-strong) !important;
-        box-shadow:none !important;
-      }
-
-      .nav-link:hover::after,
-      .nav-button:hover::after{
-        transform:scaleX(1);
-      }
-
-      .hero,
-      .admin-hero{
-        margin-bottom:26px !important;
-        padding:0 !important;
-      }
-
-      .hero::before{
-        display:none !important;
-      }
-
-      .hero h1,
-      .admin-hero h1{
-        margin:0 0 12px !important;
-        color:var(--text) !important;
-        font-size:clamp(34px, 5vw, 62px) !important;
-        line-height:1.02 !important;
-        letter-spacing:0 !important;
-      }
-
-      .hero p,
-      .admin-hero p,
-      .feature-card p,
-      .info-card p,
-      .empty-card p,
-      .idea-card p{
-        color:var(--muted) !important;
-      }
-
-      .status-pills{
-        gap:8px !important;
-        margin:16px 0 26px !important;
-      }
-
-      .pill,
-      .status-badge{
-        border-radius:var(--radius) !important;
-        border:1px solid var(--border) !important;
-        background:var(--surface-soft) !important;
-        color:var(--muted) !important;
-        box-shadow:none !important;
-      }
-
-      .feature-grid,
-      .info-grid{
-        gap:14px !important;
-      }
-
-      .feature-card,
-      .info-card,
-      .empty-card,
-      .idea-card{
-        padding:20px !important;
-        transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
-        animation:item-rise .48s cubic-bezier(.2,.8,.2,1) both;
-      }
-
-      .feature-grid > *:nth-child(1) .feature-card,
-      .info-grid > *:nth-child(1),
-      .idea-list > *:nth-child(1){
-        animation-delay:.13s;
-      }
-
-      .feature-grid > *:nth-child(2) .feature-card,
-      .info-grid > *:nth-child(2),
-      .idea-list > *:nth-child(2){
-        animation-delay:.2s;
-      }
-
-      .feature-grid > *:nth-child(3) .feature-card,
-      .info-grid > *:nth-child(3),
-      .idea-list > *:nth-child(3){
-        animation-delay:.27s;
-      }
-
-      .feature-card:hover,
-      .info-card:hover{
-        transform:translateY(-2px) !important;
-        border-color:var(--border-strong) !important;
-        box-shadow:var(--shadow) !important;
-      }
-
-      .feature-card h2,
-      .info-card h3,
-      .empty-card h2,
-      .idea-card h3,
-      .toolbar h2{
-        color:var(--text) !important;
-        letter-spacing:0 !important;
-      }
-
-      .info-card-body{
-        min-height:160px !important;
-        border-radius:var(--radius) !important;
-        border:1px dashed var(--border-strong) !important;
-        background:var(--surface-soft) !important;
-      }
-
-      .composer{
-        padding:16px !important;
-        animation:item-rise .5s cubic-bezier(.2,.8,.2,1) .14s both;
-      }
-
-      .composer input{
-        background:var(--surface-soft) !important;
-      }
-
-      .composer button,
-      .toolbar button,
-      .idea-card button{
-        width:auto;
-        min-height:44px;
-      }
-
-      @media (max-width: 860px){
-        body.general-shell,
-        body.admin-shell{
-          padding:14px;
-        }
-
-        .general-layout,
-        .admin-layout{
-          min-height:calc(100vh - 28px);
-          grid-template-columns:1fr;
-        }
-
-        .main-panel,
-        .admin-panel{
-          padding:22px 18px !important;
-        }
-
-        .sidebar-nav{
-          display:grid;
-          grid-template-columns:repeat(2, minmax(0, 1fr));
-        }
-      }
-    </style>
-  `;
-}
-
-function normalizeOsPath(pathname) {
-  if (pathname === "/" || pathname === "/general") return "/dashboard";
-  if (pathname === "/general/infohub") return "/info";
-  if (pathname === "/personal") return "/profile";
-  return pathname;
-}
-
 function osPage(t, links, pathname, ipInfo) {
-  const path = normalizeOsPath(pathname);
+  const path = pathname;
   const zh = t === TEXT.zh;
   const copy = buildOsCopy(zh);
   const page = copy.pages[path] || copy.pages["/dashboard"];
@@ -2563,21 +2448,21 @@ function osStyles() {
   </style>`;
 }
 
-function homePage(t, links) {
+function notFoundPage(t, links) {
+  const zh = t === TEXT.zh;
   return `
 <!DOCTYPE html>
 <html>
 <head>
-  ${baseHead(t.studioName)}
+  ${baseHead("404 · " + t.studioName)}
 </head>
 <body>
   ${topControls(links, t)}
   <div class="card">
-    <h1 class="brand-title">${t.studioName}</h1>
-    <p>${t.homeDescription}</p>
-
-    <a class="button" href="${links.login}">${t.signIn}</a>
-    <a class="button secondary" href="${links.signUp}">${t.signUp}</a>
+    <h1 class="brand-title">404</h1>
+    <p>${zh ? "没有找到这个页面。" : "This page could not be found."}</p>
+    <a class="button" href="${links.dashboard}">${zh ? "返回首页" : "Back to dashboard"}</a>
+    <a class="button secondary" href="${links.login}">${t.signIn}</a>
   </div>
   ${themeScript()}
 </body>
@@ -2953,7 +2838,7 @@ function loginPage(t, links, ipInfo) {
   ${auditClientScript(ipInfo)}
 
   <script>
-    const personalUrl = ${JSON.stringify(links.personal)};
+    const dashboardUrl = ${JSON.stringify(links.dashboard)};
     const emptyCredentialsMessage = ${JSON.stringify(
       t === TEXT.zh ? "请输入邮箱和密码。" : "Please enter email and password."
     )};
@@ -2971,1395 +2856,44 @@ function loginPage(t, links, ipInfo) {
         return;
       }
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
+      const authResponse = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          device_id: getAuditDeviceId()
+        })
       });
+      const authData = await authResponse.json().catch(() => ({}));
 
-      if (error) {
-        await recordLoginEvent(null, false, "password", "login");
-        message.innerText = error.message;
+      if (!authResponse.ok) {
+        message.innerText = authData.error_description || authData.msg || authData.error || "Login failed.";
         return;
       }
 
-      await recordLoginEvent(data.user, true, "password", "login");
-      await updateCurrentDevice(data.user);
-      window.location.href = personalUrl;
+      const { error: sessionError } = await supabaseClient.auth.setSession({
+        access_token: authData.access_token,
+        refresh_token: authData.refresh_token
+      });
+      if (sessionError) {
+        message.innerText = sessionError.message;
+        return;
+      }
+
+      await updateCurrentDevice(authData.user);
+      window.location.href = dashboardUrl;
     });
 
     async function redirectIfLoggedIn() {
       const { data } = await supabaseClient.auth.getUser();
 
       if (data.user) {
-        window.location.href = personalUrl;
+        window.location.href = dashboardUrl;
       }
     }
 
     redirectIfLoggedIn();
-  </script>
-  ${themeScript()}
-</body>
-</html>
-`;
-}
-
-function personalPage(t, links) {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  ${baseHead(t.signInSuccessfully)}
-</head>
-<body>
-  ${topControls(links, t)}
-  <div class="card">
-    <h1 class="success-title">${t.signInSuccessfully}</h1>
-    <p id="user-email">${t.loading}</p>
-    <a class="button" href="${links.general}">${t.enterHomepage}</a>
-    <button id="logout-btn">${t.logout}</button>
-    <div id="message"></div>
-  </div>
-
-  ${supabaseScript()}
-
-  <script>
-    async function loadUser() {
-      const { data } = await supabaseClient.auth.getUser();
-
-      if (!data.user) {
-        window.location.href = ${JSON.stringify(links.login)};
-        return;
-      }
-
-      document.getElementById("user-email").innerText =
-        ${JSON.stringify(t.loggedAs + " ")} + (data.user.user_metadata.username || data.user.email);
-    }
-
-    document.getElementById("logout-btn").addEventListener("click", async () => {
-      await supabaseClient.auth.signOut();
-      window.location.href = ${JSON.stringify(links.home)};
-    });
-
-    loadUser();
-  </script>
-  ${themeScript()}
-</body>
-</html>
-`;
-}
-
-function generalPage(t, links, ipInfo) {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  ${baseHead(t.studioName)}
-  <style>
-    body.general-shell{
-      display:block;
-      padding:20px;
-      background:
-        radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 20%, transparent), transparent 28%),
-        radial-gradient(circle at bottom right, color-mix(in srgb, var(--primary) 10%, transparent), transparent 24%),
-        var(--bg);
-      color:var(--text);
-    }
-
-    .general-layout{
-      min-height:calc(100vh - 40px);
-      display:grid;
-      grid-template-columns:260px minmax(0, 1fr);
-      gap:20px;
-    }
-
-    .sidebar{
-      background:color-mix(in srgb, var(--panel) 92%, transparent);
-      border:1px solid color-mix(in srgb, var(--border) 50%, transparent);
-      border-radius:24px;
-      padding:20px;
-      box-sizing:border-box;
-      backdrop-filter:blur(18px);
-      display:flex;
-      flex-direction:column;
-      gap:18px;
-    }
-
-    .user-panel{
-      padding:14px 16px;
-      border-radius:18px;
-      background:color-mix(in srgb, var(--panel-strong) 70%, transparent);
-      border:1px solid color-mix(in srgb, var(--border) 55%, transparent);
-      font-size:14px;
-      color:var(--muted);
-      text-align:left;
-    }
-
-    .user-panel strong{
-      display:block;
-      font-size:13px;
-      text-transform:uppercase;
-      letter-spacing:0.08em;
-      color:var(--primary);
-      margin-bottom:6px;
-    }
-
-    .user-handle{
-      font-size:15px;
-      color:var(--text);
-      word-break:break-word;
-    }
-
-    .sidebar-nav{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-
-    .nav-link,
-    .nav-button{
-      width:100%;
-      min-height:50px;
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-      padding:0 16px;
-      border-radius:16px;
-      box-sizing:border-box;
-      border:1px solid color-mix(in srgb, var(--border) 45%, transparent);
-      background:color-mix(in srgb, var(--panel-strong) 56%, transparent);
-      color:var(--text);
-      text-decoration:none;
-      font-size:15px;
-      transition:transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-    }
-
-    .nav-button{
-      cursor:pointer;
-    }
-
-    .nav-link:hover,
-    .nav-button:hover{
-      transform:translateY(-1px);
-      border-color:color-mix(in srgb, var(--primary) 45%, transparent);
-      background:color-mix(in srgb, var(--panel) 92%, transparent);
-    }
-
-    .main-panel{
-      background:color-mix(in srgb, var(--panel) 72%, transparent);
-      border:1px solid color-mix(in srgb, var(--border) 40%, transparent);
-      border-radius:28px;
-      padding:28px;
-      box-sizing:border-box;
-      backdrop-filter:blur(16px);
-      overflow:hidden;
-    }
-
-    .hero{
-      margin-bottom:28px;
-      padding:8px 2px;
-    }
-
-    .hero h1{
-      margin-bottom:10px;
-      font-size:clamp(30px, 4vw, 52px);
-      line-height:1.08;
-      letter-spacing:-0.03em;
-      white-space:normal;
-      overflow-wrap:anywhere;
-      word-break:break-word;
-      color:var(--text);
-    }
-
-    .hero p{
-      margin:0;
-      max-width:700px;
-      color:var(--muted);
-      font-size:16px;
-      line-height:1.6;
-    }
-
-    .feature-grid{
-      display:grid;
-      grid-template-columns:repeat(3, minmax(0, 1fr));
-      gap:18px;
-    }
-
-    .feature-link{
-      display:block;
-      color:inherit;
-      text-decoration:none;
-    }
-
-    .feature-card.is-action{
-      cursor:pointer;
-    }
-
-    .info-center{
-      margin-top:28px;
-    }
-
-    .info-center-header{
-      margin-bottom:18px;
-    }
-
-    .info-center-header h2{
-      margin:0 0 10px;
-      font-size:clamp(24px, 3.6vw, 36px);
-      color:var(--text);
-      line-height:1.12;
-      letter-spacing:-0.03em;
-    }
-
-    .info-center-header p{
-      margin:0;
-      color:var(--muted);
-      line-height:1.6;
-    }
-
-    .info-grid{
-      display:grid;
-      grid-template-columns:repeat(3, minmax(0, 1fr));
-      gap:18px;
-    }
-
-    .info-card{
-      padding:20px;
-      border-radius:22px;
-      border:1px solid color-mix(in srgb, var(--border) 50%, transparent);
-      background:
-        linear-gradient(
-          180deg,
-          color-mix(in srgb, var(--panel) 96%, transparent),
-          color-mix(in srgb, var(--panel-strong) 88%, transparent)
-        );
-      box-shadow:0 20px 40px color-mix(in srgb, var(--bg) 35%, transparent);
-      transition:transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .info-card:hover{
-      transform:translateY(-2px);
-      border-color:color-mix(in srgb, var(--primary) 30%, transparent);
-      box-shadow:0 24px 44px color-mix(in srgb, var(--bg) 42%, transparent);
-    }
-
-    .info-card h3{
-      margin:0 0 14px;
-      font-size:20px;
-      color:var(--text);
-    }
-
-    .info-card-body{
-      min-height:180px;
-      border-radius:16px;
-      border:1px dashed color-mix(in srgb, var(--border) 70%, transparent);
-      background:color-mix(in srgb, var(--panel-strong) 38%, transparent);
-    }
-
-    .status-pills{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin:18px 0 28px;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      min-height:38px;
-      padding:0 14px;
-      border-radius:999px;
-      border:1px solid color-mix(in srgb, var(--border) 55%, transparent);
-      background:color-mix(in srgb, var(--panel-strong) 64%, transparent);
-      color:var(--muted);
-      font-size:14px;
-      box-sizing:border-box;
-    }
-
-    .feature-card{
-      padding:22px;
-      border-radius:22px;
-      border:1px solid color-mix(in srgb, var(--border) 50%, transparent);
-      background:
-        linear-gradient(
-          180deg,
-          color-mix(in srgb, var(--panel) 96%, transparent),
-          color-mix(in srgb, var(--panel-strong) 88%, transparent)
-        );
-      box-shadow:0 20px 40px color-mix(in srgb, var(--bg) 35%, transparent);
-      transition:transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
-    }
-
-    .feature-card:hover{
-      transform:translateY(-4px);
-      border-color:color-mix(in srgb, var(--primary) 38%, transparent);
-      box-shadow:0 24px 48px color-mix(in srgb, var(--bg) 45%, transparent);
-    }
-
-    .feature-card h2{
-      margin:0 0 10px;
-      font-size:22px;
-      color:var(--text);
-    }
-
-    .feature-card p{
-      margin:0;
-      color:var(--muted);
-      line-height:1.6;
-    }
-
-    #message{
-      color:var(--primary);
-    }
-
-    @media (max-width: 768px){
-      body.general-shell{
-        padding:20px;
-      }
-
-      .general-layout{
-        grid-template-columns:1fr;
-      }
-
-      .sidebar{
-        padding:16px;
-      }
-
-      .sidebar-nav{
-        display:grid;
-        grid-template-columns:repeat(2, minmax(0, 1fr));
-      }
-
-      .nav-link,
-      .nav-button{
-        justify-content:center;
-        text-align:center;
-      }
-
-      .main-panel{
-        padding:22px 18px;
-      }
-
-      .hero h1{
-        font-size:clamp(28px, 8vw, 40px);
-      }
-
-      .feature-grid{
-        grid-template-columns:1fr;
-      }
-
-      .info-grid{
-        grid-template-columns:1fr;
-      }
-    }
-
-    @media (prefers-color-scheme: light){
-      body.general-shell{
-        background:
-          linear-gradient(135deg, #f8fafc 0%, #eef2ff 45%, #f1f5f9 100%);
-      }
-
-      .sidebar{
-        background:rgba(255,255,255,0.78);
-        border:1px solid #dbe4f0;
-        box-shadow:0 24px 60px rgba(15, 23, 42, 0.08);
-      }
-
-      .user-panel{
-        background:linear-gradient(135deg, #ffffff, #f8fafc);
-        border:1px solid #dbe4f0;
-        box-shadow:0 14px 30px rgba(15, 23, 42, 0.06);
-        color:var(--text);
-      }
-
-      .user-panel strong{
-        color:#3159c9;
-      }
-
-      .nav-link,
-      .nav-button{
-        background:rgba(248,250,252,0.9);
-        border:1px solid #dde6f0;
-        color:#1e293b;
-      }
-
-      .nav-link:hover,
-      .nav-button:hover{
-        background:#ffffff;
-        border-color:#bfdbfe;
-        box-shadow:0 14px 28px rgba(37, 99, 235, 0.08);
-      }
-
-      .main-panel{
-        position:relative;
-        background:rgba(255,255,255,0.74);
-        border:1px solid #dbe4f0;
-        box-shadow:0 28px 70px rgba(15, 23, 42, 0.08);
-      }
-
-      .hero{
-        position:relative;
-      }
-
-      .hero::before{
-        content:"";
-        position:absolute;
-        inset:-24px auto auto -18px;
-        width:220px;
-        height:220px;
-        background:radial-gradient(circle, rgba(96,165,250,0.16) 0%, rgba(96,165,250,0.08) 38%, transparent 72%);
-        pointer-events:none;
-        filter:blur(2px);
-      }
-
-      .hero h1,
-      .feature-card h2{
-        color:#0f172a;
-      }
-
-      .hero p,
-      .feature-card p{
-        color:#475569;
-      }
-
-      .feature-card{
-        background:linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-        border:1px solid #e2e8f0;
-        box-shadow:0 20px 40px rgba(15, 23, 42, 0.08);
-      }
-
-      .feature-card:hover{
-        transform:translateY(-3px);
-        border-color:#bfdbfe;
-        box-shadow:0 26px 52px rgba(37, 99, 235, 0.12);
-      }
-
-      .info-card{
-        background:linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-        border:1px solid #e2e8f0;
-        box-shadow:0 20px 40px rgba(15, 23, 42, 0.08);
-      }
-
-      .info-card:hover{
-        transform:translateY(-3px);
-        border-color:#bfdbfe;
-        box-shadow:0 26px 52px rgba(37, 99, 235, 0.12);
-      }
-
-      .info-card-body{
-        border-color:#dbe4f0;
-        background:linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-      }
-
-      .pill{
-        background:#eef4ff;
-        border:1px solid #d7e4ff;
-        color:#475569;
-        box-shadow:none;
-      }
-    }
-  </style>
-  ${shellDesignStyles()}
-</head>
-<body class="general-shell">
-  ${topControls(links, t)}
-  <div class="general-layout">
-    <aside class="sidebar">
-      <div class="user-panel">
-        <strong>${t.account}</strong>
-        <div id="sidebar-user" class="user-handle">@${t.loading}</div>
-      </div>
-
-      <nav class="sidebar-nav">
-        <a class="nav-link" href="${links.general}">${t.information}</a>
-        <a class="nav-link" href="${links.personal}">${t.profile}</a>
-        <a class="nav-link" href="${links.admin}">${t.admin}</a>
-        <a class="nav-link" href="${links.general}">${t.settings}</a>
-        <button id="logout-btn" class="nav-button">${t.logout}</button>
-      </nav>
-    </aside>
-
-    <main class="main-panel">
-      <section class="hero">
-        <h1 id="welcome-title">${t.welcomeBack}</h1>
-        <p>${t.homeDescription}</p>
-      </section>
-
-      <section class="status-pills">
-        <div class="pill">${t.ip} ${ipInfo.ip}</div>
-        <div class="pill">${t.region} ${ipInfo.country}</div>
-        <div class="pill">${t.language}</div>
-        <div id="age-pill" class="pill">${t.age} ${t.loading}</div>
-      </section>
-
-      <section class="feature-grid">
-        <a class="feature-link" href="${links.infoHub}">
-          <article class="feature-card is-action">
-            <h2>${t.informationHub}</h2>
-            <p>${t.informationHubDescription}</p>
-          </article>
-        </a>
-        <article class="feature-card">
-          <h2>${t.personalProfile}</h2>
-          <p>${t.personalProfileDescription}</p>
-        </article>
-        <article class="feature-card">
-          <h2>${t.workspace}</h2>
-          <p>${t.workspaceDescription}</p>
-        </article>
-      </section>
-
-      <div id="message"></div>
-    </main>
-  </div>
-
-  ${supabaseScript()}
-
-  <script>
-    function calculateAge(birthDateString) {
-      if (!birthDateString) return null;
-
-      const today = new Date();
-      const birthDate = new Date(birthDateString);
-
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-
-      if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-      ) {
-        age--;
-      }
-
-      return age;
-    }
-
-    async function checkUser() {
-      const { data } = await supabaseClient.auth.getUser();
-
-      if (!data.user) {
-        window.location.href = ${JSON.stringify(links.login)};
-        return;
-      }
-
-      const userName = data.user.user_metadata.username || data.user.email;
-      const birthDate = data.user.user_metadata.birth_date;
-      const age = calculateAge(birthDate);
-      document.getElementById("sidebar-user").innerText = "@" + userName;
-      document.getElementById("welcome-title").innerText = ${JSON.stringify(t.welcomeBack)} + userName;
-      document.getElementById("age-pill").innerText =
-        ${JSON.stringify(t.age + " ")} + (age === null ? ${JSON.stringify(t === TEXT.zh ? "未知" : "Unknown")} : age);
-    }
-
-    document.getElementById("logout-btn").addEventListener("click", async () => {
-      await supabaseClient.auth.signOut();
-      window.location.href = ${JSON.stringify(links.home)};
-    });
-
-    checkUser();
-  </script>
-  ${themeScript()}
-</body>
-</html>
-`;
-}
-
-function adminPage(t, links) {
-  const starterIdeas = t === TEXT.zh
-    ? [
-        {
-          title: "访问申请队列",
-          detail: "把新注册用户、邮箱、资料完成度和处理状态放在同一张清单里。"
-        },
-        {
-          title: "信息卡片编辑器",
-          detail: "让管理员直接维护信息中心卡片，不必每次改 Worker 代码。"
-        },
-        {
-          title: "操作记录",
-          detail: "记录管理员清理、审批和内容更新动作，方便回看。"
-        }
-      ]
-    : [
-        {
-          title: "Access request queue",
-          detail: "Show new signups, email, profile completeness, and review status in one list."
-        },
-        {
-          title: "Information card editor",
-          detail: "Let admins maintain info-center cards without editing Worker code every time."
-        },
-        {
-          title: "Action history",
-          detail: "Track cleanup, approval, and content updates so changes can be reviewed later."
-        }
-      ];
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  ${baseHead(t.adminConsole)}
-  <style>
-    body.admin-shell{
-      display:block;
-      padding:20px;
-      background:linear-gradient(135deg, var(--bg) 0%, #172033 58%, #101827 100%);
-      color:var(--text);
-    }
-
-    .admin-layout{
-      min-height:calc(100vh - 40px);
-      display:grid;
-      grid-template-columns:260px minmax(0, 1fr);
-      gap:20px;
-    }
-
-    .sidebar,
-    .admin-panel,
-    .idea-card,
-    .composer{
-      border:1px solid color-mix(in srgb, var(--border) 52%, transparent);
-      background:color-mix(in srgb, var(--panel) 82%, transparent);
-      backdrop-filter:blur(16px);
-      box-sizing:border-box;
-    }
-
-    .sidebar{
-      border-radius:24px;
-      padding:20px;
-    }
-
-    .user-panel{
-      padding:14px 16px;
-      border-radius:16px;
-      background:color-mix(in srgb, var(--panel-strong) 72%, transparent);
-      color:var(--muted);
-      margin-bottom:18px;
-    }
-
-    .user-panel strong{
-      display:block;
-      color:var(--primary);
-      font-size:13px;
-      text-transform:uppercase;
-      margin-bottom:6px;
-    }
-
-    .user-handle{
-      color:var(--text);
-      overflow-wrap:anywhere;
-    }
-
-    .sidebar-nav{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-
-    .nav-link,
-    .nav-button{
-      width:100%;
-      min-height:50px;
-      display:flex;
-      align-items:center;
-      padding:0 16px;
-      border-radius:14px;
-      border:1px solid color-mix(in srgb, var(--border) 45%, transparent);
-      background:color-mix(in srgb, var(--panel-strong) 58%, transparent);
-      color:var(--text);
-      text-decoration:none;
-      box-sizing:border-box;
-    }
-
-    .nav-button{
-      cursor:pointer;
-    }
-
-    .admin-panel{
-      border-radius:28px;
-      padding:28px;
-      overflow:hidden;
-    }
-
-    .admin-hero{
-      display:flex;
-      justify-content:space-between;
-      gap:18px;
-      align-items:flex-start;
-      margin-bottom:22px;
-    }
-
-    .admin-hero h1{
-      margin:0 0 10px;
-      font-size:clamp(30px, 4vw, 52px);
-      line-height:1.08;
-      letter-spacing:0;
-    }
-
-    .admin-hero p{
-      margin:0;
-      max-width:720px;
-      line-height:1.6;
-    }
-
-    .status-badge{
-      flex:0 0 auto;
-      padding:10px 12px;
-      border-radius:999px;
-      border:1px solid color-mix(in srgb, var(--primary) 45%, transparent);
-      color:var(--primary);
-      background:color-mix(in srgb, var(--primary) 12%, transparent);
-      font-size:14px;
-    }
-
-    .composer{
-      border-radius:20px;
-      padding:18px;
-      margin-bottom:20px;
-    }
-
-    .composer-grid{
-      display:grid;
-      grid-template-columns:minmax(180px, 0.8fr) minmax(220px, 1.2fr) auto;
-      gap:12px;
-      align-items:end;
-    }
-
-    .composer input{
-      margin-top:0;
-    }
-
-    .composer button,
-    .toolbar button,
-    .idea-card button{
-      margin-top:0;
-      min-height:46px;
-      width:auto;
-      padding:0 16px;
-    }
-
-    .toolbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin:8px 0 16px;
-    }
-
-    .toolbar h2{
-      margin:0;
-      font-size:22px;
-    }
-
-    .idea-list{
-      display:grid;
-      gap:12px;
-    }
-
-    .idea-card{
-      border-radius:18px;
-      padding:16px;
-      display:grid;
-      grid-template-columns:minmax(0, 1fr) auto;
-      gap:14px;
-      align-items:start;
-    }
-
-    .idea-card h3{
-      margin:0 0 8px;
-      font-size:18px;
-    }
-
-    .idea-card p{
-      margin:0;
-      line-height:1.55;
-    }
-
-    .locked{
-      display:none;
-      padding:22px;
-      border-radius:20px;
-      border:1px solid color-mix(in srgb, var(--border) 55%, transparent);
-      background:color-mix(in srgb, var(--panel-strong) 70%, transparent);
-    }
-
-    @media (max-width: 860px){
-      .admin-layout,
-      .composer-grid{
-        grid-template-columns:1fr;
-      }
-
-      .admin-hero,
-      .toolbar{
-        flex-direction:column;
-        align-items:stretch;
-      }
-
-      .sidebar-nav{
-        display:grid;
-        grid-template-columns:repeat(2, minmax(0, 1fr));
-      }
-
-      .nav-link,
-      .nav-button{
-        justify-content:center;
-      }
-    }
-
-    @media (prefers-color-scheme: light){
-      body.admin-shell{
-        background:linear-gradient(135deg, #f8fafc 0%, #eef4ff 52%, #f8fafc 100%);
-      }
-
-      .sidebar,
-      .admin-panel,
-      .idea-card,
-      .composer{
-        background:rgba(255,255,255,0.8);
-        border-color:#dbe4f0;
-        box-shadow:0 20px 50px rgba(15, 23, 42, 0.08);
-      }
-    }
-  </style>
-  ${shellDesignStyles()}
-</head>
-<body class="admin-shell">
-  ${topControls(links, t)}
-  <div class="admin-layout">
-    <aside class="sidebar">
-      <div class="user-panel">
-        <strong>${t.account}</strong>
-        <div id="sidebar-user" class="user-handle">@${t.loading}</div>
-      </div>
-
-      <nav class="sidebar-nav">
-        <a class="nav-link" href="${links.general}">${t.information}</a>
-        <a class="nav-link" href="${links.infoHub}">${t.informationHub}</a>
-        <a class="nav-link" href="${links.personal}">${t.profile}</a>
-        <button id="logout-btn" class="nav-button">${t.logout}</button>
-      </nav>
-    </aside>
-
-    <main class="admin-panel">
-      <section class="admin-hero">
-        <div>
-          <h1>${t.adminConsole}</h1>
-          <p>${t.adminDescription}</p>
-        </div>
-        <div id="status-badge" class="status-badge">${t.loading}</div>
-      </section>
-
-      <section id="locked" class="locked">
-        <p>${t.adminOnly}</p>
-      </section>
-
-      <section id="admin-tools" style="display:none;">
-        <div class="composer">
-          <div class="composer-grid">
-            <input id="idea-title" type="text" placeholder="${t.ideaTitlePlaceholder}">
-            <input id="idea-detail" type="text" placeholder="${t.ideaDetailPlaceholder}">
-            <button id="add-idea-btn">${t.addIdea}</button>
-          </div>
-        </div>
-
-        <div class="toolbar">
-          <h2>${t.ideaBoard}</h2>
-          <button id="clean-ideas-btn" class="secondary">${t.cleanIdeas}</button>
-        </div>
-
-        <div id="idea-list" class="idea-list"></div>
-        <div id="message"></div>
-      </section>
-    </main>
-  </div>
-
-  ${supabaseScript()}
-  ${auditClientScript(ipInfo)}
-
-  <script>
-    const starterIdeas = ${JSON.stringify(starterIdeas)};
-    const storageKey = "qssed-admin-ideas-v1";
-    const deleteText = ${JSON.stringify(t === TEXT.zh ? "删除" : "Delete")};
-    const noIdeasText = ${JSON.stringify(t.noIdeas)};
-    const duplicateRemovedText = ${JSON.stringify(t.duplicateRemoved + " ")};
-    const accessAllowedText = ${JSON.stringify(t.accessAllowed)};
-    const adminOnlyText = ${JSON.stringify(t.adminOnly)};
-    const loginUrl = ${JSON.stringify(links.login)};
-    const homeUrl = ${JSON.stringify(links.home)};
-
-    const adminTools = document.getElementById("admin-tools");
-    const locked = document.getElementById("locked");
-    const statusBadge = document.getElementById("status-badge");
-    const ideaList = document.getElementById("idea-list");
-    const message = document.getElementById("message");
-    const titleInput = document.getElementById("idea-title");
-    const detailInput = document.getElementById("idea-detail");
-
-    function normalizeIdeaTitle(title) {
-      return title.trim().toLowerCase().replace(/\\s+/g, " ");
-    }
-
-    function loadIdeas() {
-      const saved = localStorage.getItem(storageKey);
-
-      if (!saved) {
-        localStorage.setItem(storageKey, JSON.stringify(starterIdeas));
-        return starterIdeas.slice();
-      }
-
-      try {
-        const parsed = JSON.parse(saved);
-        return Array.isArray(parsed) ? parsed : starterIdeas.slice();
-      } catch {
-        return starterIdeas.slice();
-      }
-    }
-
-    function saveIdeas(ideas) {
-      localStorage.setItem(storageKey, JSON.stringify(ideas));
-    }
-
-    function dedupeIdeas(ideas) {
-      const seen = new Set();
-      const clean = [];
-      let removed = 0;
-
-      ideas.forEach(idea => {
-        const key = normalizeIdeaTitle(idea.title || "");
-
-        if (!key) {
-          removed += 1;
-          return;
-        }
-
-        if (seen.has(key)) {
-          removed += 1;
-          return;
-        }
-
-        seen.add(key);
-        clean.push({
-          title: idea.title,
-          detail: idea.detail || ""
-        });
-      });
-
-      return { clean, removed };
-    }
-
-    function renderIdeas() {
-      const ideas = loadIdeas();
-
-      if (ideas.length === 0) {
-        ideaList.innerHTML = '<section class="idea-card"><div><h3>' + noIdeasText + '</h3></div></section>';
-        return;
-      }
-
-      ideaList.innerHTML = "";
-      ideas.forEach((idea, index) => {
-        const card = document.createElement("section");
-        card.className = "idea-card";
-
-        const body = document.createElement("div");
-        const title = document.createElement("h3");
-        const detail = document.createElement("p");
-        title.innerText = idea.title;
-        detail.innerText = idea.detail || "";
-        body.appendChild(title);
-        body.appendChild(detail);
-
-        const deleteButton = document.createElement("button");
-        deleteButton.className = "secondary";
-        deleteButton.innerText = deleteText;
-        deleteButton.addEventListener("click", () => {
-          const nextIdeas = loadIdeas().filter((_, itemIndex) => itemIndex !== index);
-          saveIdeas(nextIdeas);
-          renderIdeas();
-        });
-
-        card.appendChild(body);
-        card.appendChild(deleteButton);
-        ideaList.appendChild(card);
-      });
-    }
-
-    document.getElementById("add-idea-btn").addEventListener("click", () => {
-      const title = titleInput.value.trim();
-      const detail = detailInput.value.trim();
-
-      if (!title) return;
-
-      const ideas = loadIdeas();
-      ideas.unshift({ title, detail });
-      const result = dedupeIdeas(ideas);
-      saveIdeas(result.clean);
-      titleInput.value = "";
-      detailInput.value = "";
-      message.innerText = result.removed ? duplicateRemovedText + result.removed : "";
-      renderIdeas();
-    });
-
-    document.getElementById("clean-ideas-btn").addEventListener("click", () => {
-      const result = dedupeIdeas(loadIdeas());
-      saveIdeas(result.clean);
-      message.innerText = duplicateRemovedText + result.removed;
-      renderIdeas();
-    });
-
-    document.getElementById("logout-btn").addEventListener("click", async () => {
-      await supabaseClient.auth.signOut();
-      window.location.href = homeUrl;
-    });
-
-    async function checkAdmin() {
-      const { data } = await supabaseClient.auth.getUser();
-
-      if (!data.user) {
-        window.location.href = loginUrl;
-        return;
-      }
-
-      const userName = data.user.user_metadata.username || data.user.email;
-      const { data: isAdmin, error: adminError } = await supabaseClient.rpc("is_admin");
-      const allowed = !adminError && isAdmin === true;
-
-      document.getElementById("sidebar-user").innerText = "@" + userName;
-      statusBadge.innerText = adminError ? adminError.message : (allowed ? accessAllowedText : adminOnlyText);
-      adminTools.style.display = allowed ? "block" : "none";
-      locked.style.display = allowed ? "none" : "block";
-
-      if (allowed) {
-        const result = dedupeIdeas(loadIdeas());
-        saveIdeas(result.clean);
-        renderIdeas();
-      }
-    }
-
-    checkAdmin();
-  </script>
-  ${themeScript()}
-</body>
-</html>
-`;
-}
-
-function infoHubPage(t, links) {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  ${baseHead(t.informationHub)}
-  <style>
-    body.general-shell{
-      display:block;
-      padding:20px;
-      background:
-        radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 20%, transparent), transparent 28%),
-        radial-gradient(circle at bottom right, color-mix(in srgb, var(--primary) 10%, transparent), transparent 24%),
-        var(--bg);
-      color:var(--text);
-    }
-
-    .general-layout{
-      min-height:calc(100vh - 40px);
-      display:grid;
-      grid-template-columns:260px minmax(0, 1fr);
-      gap:20px;
-    }
-
-    .sidebar{
-      background:color-mix(in srgb, var(--panel) 92%, transparent);
-      border:1px solid color-mix(in srgb, var(--border) 50%, transparent);
-      border-radius:24px;
-      padding:20px;
-      box-sizing:border-box;
-      backdrop-filter:blur(18px);
-      display:flex;
-      flex-direction:column;
-      gap:18px;
-    }
-
-    .user-panel{
-      padding:14px 16px;
-      border-radius:18px;
-      background:color-mix(in srgb, var(--panel-strong) 70%, transparent);
-      border:1px solid color-mix(in srgb, var(--border) 55%, transparent);
-      font-size:14px;
-      color:var(--muted);
-      text-align:left;
-    }
-
-    .user-panel strong{
-      display:block;
-      font-size:13px;
-      text-transform:uppercase;
-      letter-spacing:0.08em;
-      color:var(--primary);
-      margin-bottom:6px;
-    }
-
-    .user-handle{
-      font-size:15px;
-      color:var(--text);
-      word-break:break-word;
-    }
-
-    .sidebar-nav{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-
-    .nav-link,
-    .nav-button{
-      width:100%;
-      min-height:50px;
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-      padding:0 16px;
-      border-radius:16px;
-      box-sizing:border-box;
-      border:1px solid color-mix(in srgb, var(--border) 45%, transparent);
-      background:color-mix(in srgb, var(--panel-strong) 56%, transparent);
-      color:var(--text);
-      text-decoration:none;
-      font-size:15px;
-      transition:transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-    }
-
-    .nav-button{
-      cursor:pointer;
-    }
-
-    .nav-link:hover,
-    .nav-button:hover{
-      transform:translateY(-1px);
-      border-color:color-mix(in srgb, var(--primary) 45%, transparent);
-      background:color-mix(in srgb, var(--panel) 92%, transparent);
-    }
-
-    .main-panel{
-      background:color-mix(in srgb, var(--panel) 72%, transparent);
-      border:1px solid color-mix(in srgb, var(--border) 40%, transparent);
-      border-radius:28px;
-      padding:28px;
-      box-sizing:border-box;
-      backdrop-filter:blur(16px);
-      overflow:hidden;
-    }
-
-    .hero{
-      margin-bottom:28px;
-      padding:8px 2px;
-    }
-
-    .hero h1{
-      margin-bottom:10px;
-      font-size:clamp(30px, 4vw, 52px);
-      line-height:1.08;
-      letter-spacing:-0.03em;
-      white-space:normal;
-      overflow-wrap:anywhere;
-      word-break:break-word;
-      color:var(--text);
-    }
-
-    .hero p{
-      margin:0;
-      max-width:700px;
-      color:var(--muted);
-      font-size:16px;
-      line-height:1.6;
-    }
-
-    .empty-card{
-      padding:26px;
-      border-radius:22px;
-      border:1px solid color-mix(in srgb, var(--border) 50%, transparent);
-      background:
-        linear-gradient(
-          180deg,
-          color-mix(in srgb, var(--panel) 96%, transparent),
-          color-mix(in srgb, var(--panel-strong) 88%, transparent)
-        );
-      box-shadow:0 20px 40px color-mix(in srgb, var(--bg) 35%, transparent);
-    }
-
-    .empty-card h2{
-      margin:0;
-      font-size:22px;
-      color:var(--text);
-    }
-
-    #message{
-      color:var(--primary);
-    }
-
-    @media (max-width: 768px){
-      body.general-shell{
-        padding:20px;
-      }
-
-      .general-layout{
-        grid-template-columns:1fr;
-      }
-
-      .sidebar{
-        padding:16px;
-      }
-
-      .sidebar-nav{
-        display:grid;
-        grid-template-columns:repeat(2, minmax(0, 1fr));
-      }
-
-      .nav-link,
-      .nav-button{
-        justify-content:center;
-        text-align:center;
-      }
-
-      .main-panel{
-        padding:22px 18px;
-      }
-
-      .hero h1{
-        font-size:clamp(28px, 8vw, 40px);
-      }
-    }
-
-    @media (prefers-color-scheme: light){
-      body.general-shell{
-        background:
-          linear-gradient(135deg, #f8fafc 0%, #eef2ff 45%, #f1f5f9 100%);
-      }
-
-      .sidebar{
-        background:rgba(255,255,255,0.78);
-        border:1px solid #dbe4f0;
-        box-shadow:0 24px 60px rgba(15, 23, 42, 0.08);
-      }
-
-      .user-panel{
-        background:linear-gradient(135deg, #ffffff, #f8fafc);
-        border:1px solid #dbe4f0;
-        box-shadow:0 14px 30px rgba(15, 23, 42, 0.06);
-        color:var(--text);
-      }
-
-      .user-panel strong{
-        color:#3159c9;
-      }
-
-      .nav-link,
-      .nav-button{
-        background:rgba(248,250,252,0.9);
-        border:1px solid #dde6f0;
-        color:#1e293b;
-      }
-
-      .nav-link:hover,
-      .nav-button:hover{
-        background:#ffffff;
-        border-color:#bfdbfe;
-        box-shadow:0 14px 28px rgba(37, 99, 235, 0.08);
-      }
-
-      .main-panel{
-        position:relative;
-        background:rgba(255,255,255,0.74);
-        border:1px solid #dbe4f0;
-        box-shadow:0 28px 70px rgba(15, 23, 42, 0.08);
-      }
-
-      .hero{
-        position:relative;
-      }
-
-      .hero::before{
-        content:"";
-        position:absolute;
-        inset:-24px auto auto -18px;
-        width:220px;
-        height:220px;
-        background:radial-gradient(circle, rgba(96,165,250,0.16) 0%, rgba(96,165,250,0.08) 38%, transparent 72%);
-        pointer-events:none;
-        filter:blur(2px);
-      }
-
-      .hero h1,
-      .empty-card h2{
-        color:#0f172a;
-      }
-
-      .hero p{
-        color:#475569;
-      }
-
-      .empty-card{
-        background:linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-        border:1px solid #e2e8f0;
-        box-shadow:0 20px 40px rgba(15, 23, 42, 0.08);
-      }
-    }
-  </style>
-  ${shellDesignStyles()}
-</head>
-<body class="general-shell">
-  ${topControls(links, t)}
-  <div class="general-layout">
-    <aside class="sidebar">
-      <div class="user-panel">
-        <strong>${t.account}</strong>
-        <div id="sidebar-user" class="user-handle">@${t.loading}</div>
-      </div>
-
-      <nav class="sidebar-nav">
-        <a class="nav-link" href="${links.general}">${t.information}</a>
-        <a class="nav-link" href="${links.personal}">${t.profile}</a>
-        <a class="nav-link" href="${links.admin}">${t.admin}</a>
-        <a class="nav-link" href="${links.general}">${t.settings}</a>
-        <button id="logout-btn" class="nav-button">${t.logout}</button>
-      </nav>
-    </aside>
-
-    <main class="main-panel">
-      <section class="hero">
-        <h1>${t.informationHub}</h1>
-        <p>${t.infoHubDescription}</p>
-      </section>
-
-      <section class="empty-card">
-        <h2>${t.infoHubEmptyTitle}</h2>
-      </section>
-
-      <div id="message"></div>
-    </main>
-  </div>
-
-  ${supabaseScript()}
-
-  <script>
-    async function checkUser() {
-      const { data } = await supabaseClient.auth.getUser();
-
-      if (!data.user) {
-        window.location.href = ${JSON.stringify(links.login)};
-        return;
-      }
-
-      const userName = data.user.user_metadata.username || data.user.email;
-      document.getElementById("sidebar-user").innerText = "@" + userName;
-    }
-
-    document.getElementById("logout-btn").addEventListener("click", async () => {
-      await supabaseClient.auth.signOut();
-      window.location.href = ${JSON.stringify(links.home)};
-    });
-
-    checkUser();
   </script>
   ${themeScript()}
 </body>
