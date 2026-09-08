@@ -2175,7 +2175,7 @@ function renderOsNav(copy, activeSection) {
 function renderOsContent(path, copy) {
   const zh = copy.platform.includes("个人");
   if (path === "/dashboard") return dashboardContent(zh);
-  if (path === "/info") return overviewContent(zh, ["最近收藏", "最近笔记", "最近摘要", "最近 AI 对话"], ["Recent links", "Recent notes", "Recent summaries", "Recent AI chats"]);
+  if (path === "/info") return statusContent(zh, "信息中心尚未接入", "收藏链接、笔记、摘要和 AI 对话目前没有持久化数据源。", "Information Center is not connected yet", "Saved links, notes, summaries, and AI conversations do not have persistent data sources yet.");
   if (path === "/info/links") return linksContent(zh);
   if (path === "/info/notes") return notesContent(zh);
   if (path === "/info/summaries") return summariesContent(zh);
@@ -2187,13 +2187,8 @@ function renderOsContent(path, copy) {
   return dashboardContent(zh);
 }
 
-function metricCards(items) {
-  return `<section class="os-metrics">${items.map(item => `<article><span>${item[0]}</span>${item[1] ? `<strong>${item[1]}</strong>` : ""}</article>`).join("")}</section>`;
-}
-
-function overviewContent(zh, zhItems, enItems) {
-  const items = zh ? zhItems : enItems;
-  return `<section class="os-grid">${items.map((item, index) => `<article class="os-card"><small>0${index + 1}</small><h2>${item}</h2><p>${zh ? "该模块尚未接入可持久化的数据源。" : "This module is not connected to a persistent data source yet."}</p></article>`).join("")}</section>`;
+function statusContent(zh, zhTitle, zhBody, enTitle, enBody) {
+  return `<section class="os-card is-large"><h2>${zh ? zhTitle : enTitle}</h2><p>${zh ? zhBody : enBody}</p></section>`;
 }
 
 function dashboardContent(zh) {
@@ -2222,7 +2217,7 @@ function notesContent(zh) {
 }
 
 function summariesContent(zh) {
-  return overviewContent(zh, ["B站视频摘要", "YouTube 摘要", "网页摘要", "PDF 摘要"], ["Bilibili summaries", "YouTube summaries", "Webpage summaries", "PDF summaries"]);
+  return statusContent(zh, "摘要数据尚未接入", "当前没有用于保存 B 站、YouTube、网页或 PDF 摘要的数据源。", "Summary data is not connected yet", "There is no persistent data source for Bilibili, YouTube, webpage, or PDF summaries yet.");
 }
 
 function searchContent(zh) {
@@ -2286,19 +2281,11 @@ function securityAuditContent(zh) {
 }
 
 function workspaceContent(path, zh) {
-  if (path.endsWith("/projects")) return projectCards(zh);
-  if (path.endsWith("/experiments")) return overviewContent(zh, ["Prompt 测试", "Agent 测试", "API 测试"], ["Prompt tests", "Agent tests", "API tests"]);
-  if (path.endsWith("/drafts")) return overviewContent(zh, ["文章草稿", "想法草稿", "代码片段"], ["Article drafts", "Idea drafts", "Code snippets"]);
-  if (path.endsWith("/tasks")) return kanbanContent(zh);
-  return overviewContent(zh, ["进行中的项目", "最近打开内容"], ["Active projects", "Recently opened"]);
-}
-
-function projectCards(zh) {
-  return `<section class="os-card is-large"><h2>${zh ? "项目数据尚未接入" : "Project data is not connected yet"}</h2><p>${zh ? "当前数据库没有 projects 表，因此不再展示固定项目名称、状态或虚构完成百分比。" : "There is no projects table in the current database, so this page no longer shows fixed project names, statuses, or fabricated completion percentages."}</p></section>`;
-}
-
-function kanbanContent(zh) {
-  return `<section class="os-card is-large"><h2>${zh ? "任务数据尚未接入" : "Task data is not connected yet"}</h2><p>${zh ? "当前数据库没有 tasks 表，因此不再把开发过程中的固定事项显示成真实 Todo / Kanban 数据。" : "There is no tasks table in the current database, so development notes are no longer presented as real Todo or Kanban data."}</p></section>`;
+  if (path.endsWith("/projects")) return statusContent(zh, "项目数据尚未接入", "当前数据库没有 projects 表，因此不展示项目名称、状态或完成百分比。", "Project data is not connected yet", "There is no projects table in the current database, so project names, statuses, and completion percentages are not shown.");
+  if (path.endsWith("/experiments")) return statusContent(zh, "实验工具尚未接入", "Prompt、Agent 和 API 实验目前没有持久化数据或独立工具接口。", "Experiment tools are not connected yet", "Prompt, agent, and API experiments do not currently have persistent data or dedicated tool APIs.");
+  if (path.endsWith("/drafts")) return statusContent(zh, "草稿存储尚未接入", "当前数据库没有 drafts 表或草稿保存接口。", "Draft storage is not connected yet", "There is no drafts table or draft persistence API yet.");
+  if (path.endsWith("/tasks")) return statusContent(zh, "任务数据尚未接入", "当前数据库没有 tasks 表，因此不展示 Todo 或 Kanban 数据。", "Task data is not connected yet", "There is no tasks table in the current database, so Todo or Kanban data is not shown.");
+  return statusContent(zh, "工作区数据尚未接入", "项目、实验、草稿和任务目前没有统一的持久化工作区数据模型。", "Workspace data is not connected yet", "Projects, experiments, drafts, and tasks do not yet have a unified persistent workspace data model.");
 }
 
 function adminContent(path, zh) {
@@ -2439,7 +2426,7 @@ function osStyles() {
       animation:ambient-pan 18s ease-in-out infinite alternate;
     }
     .os-layout{min-height:calc(100vh - 48px);display:grid;grid-template-columns:286px minmax(0,1fr);gap:18px;}
-    .os-sidebar,.os-main,.os-card,.os-table,.os-editor,.os-profile-card,.os-kanban article,.os-lock{
+    .os-sidebar,.os-main,.os-card,.os-profile-card,.os-lock{
       border:1px solid var(--border);background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-soft);
     }
     .os-sidebar{padding:18px;animation:panel-enter .55s cubic-bezier(.2,.8,.2,1) both;}
@@ -2456,14 +2443,9 @@ function osStyles() {
     .os-hero{display:flex;justify-content:space-between;gap:18px;align-items:stretch;margin-bottom:24px;}
     .os-kicker{margin:0 0 8px;color:var(--primary);font-weight:800}.os-hero h1{margin:0 0 10px;font-size:clamp(34px,5vw,64px);letter-spacing:0;line-height:1.02}.os-hero p{max-width:780px;margin:0;color:var(--muted);}
     .os-ai{min-width:230px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--text);text-decoration:none}.os-ai span{color:var(--muted);font-size:13px}.os-ai strong{font-size:18px;}
-    .os-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}.os-metrics article{padding:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow-soft);animation:item-rise .48s cubic-bezier(.2,.8,.2,1) both}.os-metrics span{color:var(--muted)}.os-metrics strong{display:block;font-size:34px;margin-top:8px;}
     .os-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.os-card{padding:20px;animation:item-rise .48s cubic-bezier(.2,.8,.2,1) both}.os-card h2{margin:8px 0 8px;font-size:20px}.os-card small{color:var(--primary);font-weight:800}.os-card p{color:var(--muted);margin:0}.os-card.is-large{min-height:220px;}
-    .os-split{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.6fr);gap:14px}.os-command{margin-top:18px;padding:14px;border-radius:var(--radius);background:var(--surface-soft);color:var(--text);font-weight:800}.os-list{margin:0;padding-left:18px;color:var(--muted);line-height:1.8}
-    .os-table{overflow:hidden}.os-row{display:grid;grid-template-columns:1.2fr 1.6fr 1fr .8fr .8fr;gap:10px;padding:14px;border-top:1px solid var(--border)}.os-row:first-child{border-top:0}.os-head{background:var(--surface-soft)}.os-row span{color:var(--muted);overflow-wrap:anywhere;}
-    .os-editor{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:16px;padding:18px}.os-editor textarea{width:100%;min-height:360px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--text);padding:16px;font:15px/1.65 ui-monospace,Consolas,monospace;resize:vertical}.os-editor aside,.os-chip-row{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}.os-chip,.os-chip-row span{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--text);padding:8px 10px;font-weight:700;}
+    .os-chip-row{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}.os-chip-row span{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--text);padding:8px 10px;font-weight:700;}
     .os-search{font-size:18px;margin:0 0 18px}.os-profile-card{display:flex;gap:18px;align-items:center;padding:24px}.os-profile-card .os-avatar{width:84px;height:84px;font-size:36px}
-    .os-progress{height:8px;background:var(--surface-soft);border-radius:99px;overflow:hidden;margin:16px 0}.os-progress span{display:block;height:100%;background:var(--primary);}
-    .os-kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.os-kanban article{padding:16px}.os-kanban p{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);}
     .os-lock{padding:18px;margin-bottom:18px;border-color:var(--danger, #ff9a9a)}
     .audit-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:14px;margin-bottom:14px}
     .audit-facts{display:grid;gap:12px;margin:0}.audit-facts div{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}.audit-facts dt{color:var(--muted);font-size:13px}.audit-facts dd{margin:6px 0 0;color:var(--text);overflow-wrap:anywhere;font-weight:750}
@@ -2486,10 +2468,10 @@ function osStyles() {
     #admin-toast-host{position:fixed;right:18px;top:18px;z-index:60;display:grid;gap:10px;max-width:min(360px,calc(100vw - 36px))}.admin-toast{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow);color:var(--text);animation:toast-in .2s ease both}.admin-toast strong{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--primary);color:var(--primary-ink)}.admin-toast.warning strong{background:#d99a2b;color:#121212}.admin-toast.danger strong{background:var(--danger);color:#fff}.admin-toast.is-hiding{animation:toast-out .25s ease both}
     .admin-confirm-backdrop{position:fixed;inset:0;z-index:55;display:grid;place-items:center;background:rgba(0,0,0,.42);opacity:0;pointer-events:none;transition:opacity .18s ease}.admin-confirm-backdrop.is-open{opacity:1;pointer-events:auto}.admin-confirm{width:min(440px,calc(100vw - 32px));padding:20px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow);transform:scale(.95);opacity:0;transition:transform .18s ease,opacity .18s ease}.admin-confirm-backdrop.is-open .admin-confirm{transform:scale(1);opacity:1}.admin-confirm.is-danger{border-color:color-mix(in srgb,var(--danger) 48%,var(--border))}.admin-confirm h3{margin:0 0 8px}.admin-confirm p{margin:0 0 14px;color:var(--muted)}.admin-confirm input{margin-bottom:10px;background:var(--surface-soft)}.admin-confirm input.is-error{border-color:var(--danger);box-shadow:0 0 0 4px color-mix(in srgb,var(--danger) 16%,transparent)}.admin-confirm-actions{display:flex;justify-content:flex-end;gap:10px}
     @keyframes admin-page-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes admin-item-enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes admin-row-enter{from{opacity:0}to{opacity:1}}@keyframes admin-scan{0%{transform:translateX(-100%)}45%,100%{transform:translateX(100%)}}@keyframes status-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--primary) 28%,transparent)}50%{box-shadow:0 0 0 8px transparent}}@keyframes skeleton-shimmer{from{background-position:120% 0}to{background-position:-120% 0}}@keyframes toast-in{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:translateX(0)}}@keyframes toast-out{to{opacity:0;transform:translateX(22px)}}@keyframes danger-glow{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--danger) 34%,transparent)}100%{box-shadow:0 0 0 16px transparent}}@keyframes row-flash-warning{0%{background:color-mix(in srgb,#d99a2b 20%,transparent)}100%{background:transparent}}@keyframes row-flash-success{0%{background:color-mix(in srgb,#22c55e 18%,transparent)}100%{background:transparent}}@keyframes empty-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes confirm-shake{0%,100%{transform:translateX(0) scale(1)}25%{transform:translateX(-6px) scale(1)}75%{transform:translateX(6px) scale(1)}}.shake-once{animation:confirm-shake .25s ease 1}
-    @media (max-width:1050px){.os-layout{grid-template-columns:1fr}.os-sidebar{position:static}.os-grid,.os-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.os-hero,.os-split{grid-template-columns:1fr;display:grid}.os-ai{min-width:0}.os-row{grid-template-columns:1fr}.os-editor,.os-kanban{grid-template-columns:1fr}}
+    @media (max-width:1050px){.os-layout{grid-template-columns:1fr}.os-sidebar{position:static}.os-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.os-hero{grid-template-columns:1fr;display:grid}.os-ai{min-width:0}}
     @media (max-width:1050px){.admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-dashboard-grid,.admin-role-cards,.admin-detail-grid{grid-template-columns:1fr}.admin-toolbar{grid-template-columns:1fr 1fr}.permission-grid{grid-template-columns:minmax(190px,1fr) repeat(3,86px)}}
     @media (max-width:1050px){.audit-grid{grid-template-columns:1fr}}
-    @media (max-width:560px){body.os-shell{padding:14px}.os-main{padding:20px 16px}.os-grid,.os-metrics,.admin-metrics{grid-template-columns:1fr}.os-profile-card{align-items:flex-start;flex-direction:column}.admin-toolbar{grid-template-columns:1fr}.permission-grid{grid-template-columns:minmax(150px,1fr) repeat(3,70px)}.admin-drawer{width:calc(100vw - 12px)}}
+    @media (max-width:560px){body.os-shell{padding:14px}.os-main{padding:20px 16px}.os-grid,.admin-metrics{grid-template-columns:1fr}.os-profile-card{align-items:flex-start;flex-direction:column}.admin-toolbar{grid-template-columns:1fr}.permission-grid{grid-template-columns:minmax(150px,1fr) repeat(3,70px)}.admin-drawer{width:calc(100vw - 12px)}}
     @media (prefers-reduced-motion:reduce){body.os-shell,.os-sidebar,.os-main,.os-card,.admin-motion-page,.admin-motion-card,.admin-metrics article,.animated-row,.admin-scan:before,.status-pulse,.admin-empty-orb,.skeleton-line,.admin-skeleton strong{animation:none !important;transition:none !important}.admin-motion-card:hover,.admin-metrics article:hover,.admin-ghost:hover,.admin-primary:hover,.admin-danger:hover{transform:none !important}}
   </style>`;
 }
