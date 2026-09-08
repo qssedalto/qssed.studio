@@ -1296,6 +1296,8 @@ function adminClientScript(ipInfo) {
       const ADMIN_USERS_CACHE_KEY = "qssed-admin-users-v1";
       const ADMIN_ROLES_CACHE_KEY = "qssed-admin-roles-v1";
       const ADMIN_LOGS_CACHE_KEY = "qssed-admin-logs-v1";
+      const ADMIN_ACCESS_CACHE_KEY = "qssed-admin-access-v1";
+      const ADMIN_VIEW_CACHE_PREFIX = "qssed-admin-view-v1:";
 
       function readAdminCache(key) {
         try {
@@ -1318,6 +1320,18 @@ function adminClientScript(ipInfo) {
           sessionStorage.removeItem(ADMIN_USERS_CACHE_KEY);
           sessionStorage.removeItem(ADMIN_ROLES_CACHE_KEY);
           sessionStorage.removeItem(ADMIN_LOGS_CACHE_KEY);
+          sessionStorage.removeItem(ADMIN_ACCESS_CACHE_KEY);
+          Object.keys(sessionStorage)
+            .filter(key => key.startsWith(ADMIN_VIEW_CACHE_PREFIX))
+            .forEach(key => sessionStorage.removeItem(key));
+        } catch {}
+      }
+
+      function cacheAdminViewHtml() {
+        try {
+          const content = document.getElementById("os-content");
+          if (!content) return;
+          sessionStorage.setItem(ADMIN_VIEW_CACHE_PREFIX + location.pathname, content.innerHTML);
         } catch {}
       }
 
@@ -1743,6 +1757,7 @@ function adminClientScript(ipInfo) {
           ).join("") : adminEmpty(adminText(adminIsZh(), "暂无风险事件", "No risk events"), adminText(adminIsZh(), "查看日志", "Open logs"), "/admin/logs");
           if (riskItems.some(log => log.severity === "danger")) risks.closest(".danger-event-card")?.classList.add("pulse-once");
         }
+        cacheAdminViewHtml();
       }
 
       async function loadAdminUsers() {
@@ -1828,6 +1843,7 @@ function adminClientScript(ipInfo) {
         table.querySelectorAll("[data-user-detail]").forEach(button => button.addEventListener("click", () => showAdminUserDetail(button.dataset.userDetail)));
         table.querySelectorAll("[data-user-role]").forEach(select => select.addEventListener("change", () => changeAdminUserRole(select.dataset.userRole, select.value)));
         table.querySelectorAll("[data-user-status]").forEach(select => select.addEventListener("change", () => changeAdminUserStatus(select.dataset.userStatus, select.value)));
+        cacheAdminViewHtml();
       }
 
       function renderAdminUserRow(user, index) {
@@ -1862,6 +1878,7 @@ function adminClientScript(ipInfo) {
             '<div><h3>' + adminEscape(adminText(adminIsZh(), "最近登录", "Recent logins")) + '</h3>' + (logins.length ? logins.map(login => '<p>' + adminFormatDate(login.created_at) + ' · ' + adminEscape(login.ip_address || "-") + ' · ' + adminEscape(login.browser || "-") + '</p>').join("") : '<p>-</p>') + '</div>' +
             '<div><h3>' + adminEscape(adminText(adminIsZh(), "最近操作", "Recent actions")) + '</h3>' + (actions.length ? actions.map(log => '<p>' + adminFormatDate(log.created_at) + ' · ' + adminEscape(adminActionLabel(log.action)) + '</p>').join("") : '<p>-</p>') + '</div>' +
           '</div>';
+        cacheAdminViewHtml();
       }
 
       async function changeAdminUserRole(userId, role) {
@@ -2062,6 +2079,7 @@ function adminClientScript(ipInfo) {
           save.dataset.bound = "true";
           save.addEventListener("click", saveAdminPermissions);
         }
+        cacheAdminViewHtml();
       }
 
       async function saveAdminPermissions() {
@@ -2177,6 +2195,7 @@ function adminClientScript(ipInfo) {
         document.getElementById("admin-logs-count").innerText = String(adminState.logs.length);
         list.innerHTML = renderAdminLogRows(adminState.logs, false);
         list.querySelectorAll("[data-log-id]").forEach(row => row.addEventListener("click", () => toggleAdminLogDrawer(row.dataset.logId)));
+        cacheAdminViewHtml();
       }
 
       function renderAdminLogRows(logs, compact) {
@@ -2341,7 +2360,7 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
 <body class="os-shell" data-admin-path="${adminPath ? "true" : "false"}">
   ${topControls(links, t)}
   <div class="os-layout">
-    <aside class="os-sidebar">
+    <aside id="os-sidebar" class="os-sidebar">
       <a class="os-brand" href="${links.dashboard}">
         <span class="os-brand-mark">Q</span>
         <span>
@@ -2355,6 +2374,22 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
       </div>
       ${renderOsNav(copy, activeSection)}
     </aside>
+    <script>
+      try {
+        const sidebar = document.getElementById("os-sidebar");
+        const sidebarKey = "qssed-sidebar-scroll-v1";
+        const savedSidebarScroll = Number(sessionStorage.getItem(sidebarKey) || "0");
+        if (sidebar && Number.isFinite(savedSidebarScroll)) {
+          sidebar.scrollTop = savedSidebarScroll;
+          requestAnimationFrame(() => { sidebar.scrollTop = savedSidebarScroll; });
+          const saveSidebarScroll = () => {
+            try { sessionStorage.setItem(sidebarKey, String(sidebar.scrollTop)); } catch {}
+          };
+          sidebar.addEventListener("scroll", saveSidebarScroll, { passive: true });
+          sidebar.querySelectorAll("a").forEach(link => link.addEventListener("click", saveSidebarScroll, { capture: true }));
+        }
+      } catch {}
+    </script>
 
     <main class="os-main">
       <section class="os-hero">
@@ -2386,6 +2421,24 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
   <script>
     const loginUrl = ${JSON.stringify(links.login)};
     const isAdminPath = document.body.dataset.adminPath === "true";
+
+    async function restoreWarmAdminSnapshot() {
+      if (!isAdminPath) return;
+      try {
+        const access = JSON.parse(sessionStorage.getItem("qssed-admin-access-v1") || "null");
+        const snapshot = sessionStorage.getItem("qssed-admin-view-v1:" + location.pathname);
+        if (!access?.user_id || !snapshot) return;
+
+        const { data } = await supabaseClient.auth.getSession();
+        const localUserId = data?.session?.user?.id || "";
+        if (!localUserId || localUserId !== access.user_id) return;
+
+        const content = document.getElementById("os-content");
+        if (!content) return;
+        content.innerHTML = snapshot;
+        content.style.visibility = "visible";
+      } catch {}
+    }
 
     async function hydrateOsUser() {
       let data;
@@ -2431,10 +2484,14 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
         if (!allowed) {
           content.style.display = "none";
           content.style.visibility = "hidden";
+          try { if (typeof clearAdminUiCaches === "function") clearAdminUiCaches(); } catch {}
           void updateCurrentDevice(data.user);
           return;
         }
 
+        try {
+          sessionStorage.setItem("qssed-admin-access-v1", JSON.stringify({ user_id: data.user.id }));
+        } catch {}
         await hydrateAdminModule(data.user);
         content.style.display = "block";
         content.style.visibility = "visible";
@@ -2447,6 +2504,7 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
       await hydrateProfileAudit(data.user);
     }
 
+    void restoreWarmAdminSnapshot();
     hydrateOsUser();
   </script>
   ${themeScript()}
@@ -2922,8 +2980,14 @@ function osStyles() {
     @media (min-width:901px){
       body.os-shell{height:100vh;overflow:hidden;box-sizing:border-box;}
       .os-layout{height:calc(100vh - 48px);min-height:0;}
-      .os-sidebar,.os-main{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;}
-      .os-main{min-width:0;}
+      .os-sidebar,.os-main{min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+      .os-main{min-width:0;scrollbar-gutter:stable;}
+      .os-sidebar{scrollbar-width:thin;scrollbar-color:transparent transparent;}
+      .os-sidebar:hover{scrollbar-color:var(--border-strong) transparent;}
+      .os-sidebar::-webkit-scrollbar{width:8px;}
+      .os-sidebar::-webkit-scrollbar-track{background:transparent;}
+      .os-sidebar::-webkit-scrollbar-thumb{background:transparent;border-radius:999px;}
+      .os-sidebar:hover::-webkit-scrollbar-thumb{background:var(--border-strong);}
     }
     .os-brand{display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none;margin-bottom:16px;}
     .os-brand-mark,.os-avatar{display:grid;place-items:center;width:42px;height:42px;border-radius:var(--radius);background:var(--primary);color:var(--primary-ink);font-weight:900;}
@@ -3411,6 +3475,10 @@ function loginPage(t, links, ipInfo) {
         } catch {}
       }
       try { if (typeof clearProfileUiCaches === "function") clearProfileUiCaches(); } catch {}
+      try {
+        ["qssed-admin-overview-v1","qssed-admin-users-v1","qssed-admin-roles-v1","qssed-admin-logs-v1","qssed-admin-access-v1"].forEach(key => sessionStorage.removeItem(key));
+        Object.keys(sessionStorage).filter(key => key.startsWith("qssed-admin-view-v1:")).forEach(key => sessionStorage.removeItem(key));
+      } catch {}
       await updateCurrentDevice(authData.user);
       window.location.href = dashboardUrl;
     });
