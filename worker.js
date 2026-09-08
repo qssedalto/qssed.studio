@@ -111,6 +111,11 @@ export default {
   async fetch(request, env) {
     const { pathname, locale, ipInfo } = getRouteInfo(request);
 
+    if (pathname === "/api/auth/signup") {
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+      return handleRegistrationSignup(request, env, ipInfo);
+    }
+
     if (pathname === "/api/auth/login") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
       return handlePasswordLogin(request, env, ipInfo);
@@ -412,6 +417,221 @@ async function recordServerLoginEvent(env, request, ipInfo, user, success, devic
   };
 }
 
+function registrationUsernameRule(username) {
+  const value = String(username || "").trim();
+  const key = value.toLowerCase();
+  if (value.length < 3) return "too_short";
+  if (key.includes("tianguo")) return "reserved_tianguo";
+  if (key.includes("admin")) return "reserved_admin";
+  return "";
+}
+
+function registrationEmailValid(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+}
+
+function registrationPasswordChecks(password) {
+  const value = String(password || "");
+  return {
+    length: value.length >= 8,
+    number: /\d/.test(value),
+    upper: /[A-Z]/.test(value),
+    lower: /[a-z]/.test(value),
+    special: /[^A-Za-z0-9\s]/.test(value)
+  };
+}
+
+function registrationHanNameValid(value, expectedLength) {
+  const text = String(value || "").trim();
+  return (expectedLength === 1 || expectedLength === 2) &&
+    Array.from(text).length === expectedLength &&
+    /^\p{Script=Han}+$/u.test(text);
+}
+
+function registrationInternationalNameValid(value) {
+  const text = String(value || "").trim();
+  return text.length > 0 && text.length <= 80;
+}
+
+async function handleRegistrationSignup(request, env, ipInfo) {
+  const requestId = getWorkerRequestId(request);
+  const secret = getSupabaseSecret(env);
+  if (!secret) {
+    workerLog("error", "auth.signup.disabled", { request_id: requestId, reason: "missing_supabase_secret" });
+    return json({ error: "Registration service is temporarily unavailable." }, 503);
+  }
+
+  let form;
+  try {
+    form = await request.formData();
+  } catch {
+    return json({ error: "Invalid registration request." }, 400);
+  }
+
+  const username = String(form.get("username") || "").trim();
+  const firstName = String(form.get("first_name") || "").trim();
+  const lastName = String(form.get("last_name") || "").trim();
+  const surnameLength = Number(form.get("surname_length"));
+  const givenNameLength = Number(form.get("given_name_length"));
+  const birthDate = String(form.get("birth_date") || "").trim();
+  const gender = String(form.get("gender") || "").trim();
+  const hideGenderOnProfile = String(form.get("hide_gender_on_profile") || "") === "true";
+  const email = String(form.get("email") || "").trim();
+  const password = String(form.get("password") || "");
+  const avatarValue = form.get("avatar");
+  const avatarFile = avatarValue && typeof avatarValue !== "string" && typeof avatarValue.arrayBuffer === "function" ? avatarValue : null;
+  const enforceChineseNameRules = ZH_COUNTRIES.includes(ipInfo?.country || "");
+
+  const usernameRule = registrationUsernameRule(username);
+  if (usernameRule) return json({ error: usernameRule, field: "username" }, 400);
+
+  if (enforceChineseNameRules) {
+    if (!registrationHanNameValid(firstName, surnameLength) || !registrationHanNameValid(lastName, givenNameLength)) {
+      return json({ error: "invalid_real_name", field: "name" }, 400);
+    }
+  } else if (!registrationInternationalNameValid(firstName) || !registrationInternationalNameValid(lastName)) {
+    return json({ error: "invalid_real_name", field: "name" }, 400);
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+    return json({ error: "invalid_birth_date", field: "birth_date" }, 400);
+  }
+
+  if (gender !== "male" && gender !== "female") {
+    return json({ error: "invalid_gender", field: "gender" }, 400);
+  }
+
+  if (!registrationEmailValid(email)) {
+    return json({ error: "invalid_email", field: "email" }, 400);
+  }
+
+  const passwordChecks = registrationPasswordChecks(password);
+  if (!Object.values(passwordChecks).every(Boolean)) {
+    return json({ error: "weak_password", field: "password" }, 400);
+  }
+
+  const allowedAvatarTypes = new Map([
+    ["image/jpeg", "jpg"],
+    ["image/png", "png"],
+    ["image/webp", "webp"]
+  ]);
+  if (avatarFile) {
+    if (!allowedAvatarTypes.has(avatarFile.type)) {
+      return json({ error: "invalid_avatar_type", field: "avatar" }, 400);
+    }
+    if (avatarFile.size > 5 * 1024 * 1024) {
+      return json({ error: "avatar_too_large", field: "avatar" }, 400);
+    }
+  }
+
+  const privilegedHeaders = {
+    apikey: secret,
+    ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {})
+  };
+
+  try {
+    const availabilityResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/check_registration_username`, {
+      method: "POST",
+      headers: {
+        ...privilegedHeaders,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ p_username: username })
+    });
+    if (!availabilityResponse.ok) {
+      workerLog("error", "auth.signup.username_check_failed", { request_id: requestId, upstream_status: availabilityResponse.status });
+      return json({ error: "Registration service is temporarily unavailable." }, 503);
+    }
+    const availability = await availabilityResponse.json();
+    if (!availability?.available) {
+      return json({ error: availability?.reason || "username_taken", field: "username" }, 409);
+    }
+  } catch (error) {
+    workerLog("error", "auth.signup.username_check_error", { request_id: requestId, error_type: error?.name || "Error" });
+    return json({ error: "Registration service is temporarily unavailable." }, 503);
+  }
+
+  let authPayload;
+  try {
+    const signupResponse = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        data: {
+          display_name: username,
+          username,
+          first_name: firstName,
+          last_name: lastName,
+          skipped_name: false,
+          birth_date: birthDate,
+          gender,
+          hide_gender_on_profile: hideGenderOnProfile
+        }
+      })
+    });
+
+    authPayload = await signupResponse.json().catch(() => ({}));
+    if (!signupResponse.ok) {
+      workerLog("warn", "auth.signup.failed", { request_id: requestId, upstream_status: signupResponse.status });
+      return json({ error: authPayload?.msg || authPayload?.message || authPayload?.error_description || "Unable to create account." }, signupResponse.status);
+    }
+  } catch (error) {
+    workerLog("error", "auth.signup.error", { request_id: requestId, error_type: error?.name || "Error" });
+    return json({ error: "Unable to create account." }, 502);
+  }
+
+  const userId = authPayload?.user?.id || authPayload?.id || "";
+  let avatarStatus = avatarFile ? "failed" : "skipped";
+
+  if (avatarFile && userId) {
+    const ext = allowedAvatarTypes.get(avatarFile.type);
+    const objectPath = `${userId}/avatar.${ext}`;
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/avatars/${objectPath}`;
+    try {
+      const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/avatars/${objectPath}`, {
+        method: "POST",
+        headers: {
+          ...privilegedHeaders,
+          "content-type": avatarFile.type,
+          "x-upsert": "true"
+        },
+        body: await avatarFile.arrayBuffer()
+      });
+
+      if (uploadResponse.ok) {
+        const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+          method: "PATCH",
+          headers: {
+            ...privilegedHeaders,
+            "content-type": "application/json",
+            prefer: "return=minimal"
+          },
+          body: JSON.stringify({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+        });
+        avatarStatus = profileResponse.ok ? "saved" : "failed";
+        if (!profileResponse.ok) {
+          workerLog("warn", "auth.signup.avatar_profile_update_failed", { request_id: requestId, upstream_status: profileResponse.status });
+        }
+      } else {
+        workerLog("warn", "auth.signup.avatar_upload_failed", { request_id: requestId, upstream_status: uploadResponse.status });
+      }
+    } catch (error) {
+      workerLog("warn", "auth.signup.avatar_error", { request_id: requestId, error_type: error?.name || "Error" });
+    }
+  }
+
+  workerLog("info", "auth.signup.succeeded", {
+    request_id: requestId,
+    avatar_status: avatarStatus,
+    name_rules: enforceChineseNameRules ? "zh_ip" : "international_ip"
+  });
+  return json({ success: true, avatar_status: avatarStatus }, 200);
+}
 async function handlePasswordLogin(request, env, ipInfo) {
   const startedAt = Date.now();
   const logContext = {
@@ -3196,11 +3416,111 @@ function notFoundPage(t, links) {
 }
 
 function signUpPage(t, links, ipInfo) {
+  const zh = t === TEXT.zh;
+  const enforceChineseNameRules = ZH_COUNTRIES.includes(ipInfo?.country || "");
+  const copy = zh ? {
+    usernameHelp: "用户名必须唯一；不能包含 Tianguo、admin、administrator 或任何包含 admin 的大小写变体。",
+    usernameChecking: "正在检查用户名…",
+    usernameAvailable: "用户名可用",
+    usernameTaken: "这个用户名已经被使用。",
+    usernameReserved: "这个用户名属于保留名称，请更换。",
+    usernameTooShort: "用户名至少需要 3 个字符。",
+    realNameTitle: "填写真实姓名",
+    realNameHelpZhIp: "请填写你的真实姓名。姓和名都必须使用汉字，并分别选择实际字数。",
+    realNameHelpInternational: "检测到非中文地区网络：请填写真实姓名，但不限制汉字、姓或名的字数。",
+    surnameCount: "姓是几个字",
+    givenCount: "名是几个字",
+    oneChar: "1 个字",
+    twoChars: "2 个字",
+    invalidNameZhIp: "姓名必须全部为汉字，并与所选字数完全一致。",
+    invalidNameInternational: "姓和名都必须填写。",
+    avatarTitle: "设置头像",
+    avatarHelp: "你可以现在选择头像，也可以稍后再设置。支持 JPG、PNG、WebP，最大 5 MB。",
+    choosePhoto: "选择照片",
+    usePhoto: "使用这张照片",
+    later: "稍后设置",
+    invalidAvatar: "请选择 JPG、PNG 或 WebP 图片，且文件不能超过 5 MB。",
+    emailHelp: "请输入完整邮箱地址，必须同时包含 @ 和域名中的 .。",
+    invalidEmail: "请输入有效邮箱，例如 name@example.com。",
+    passwordTitle: "设置密码",
+    passwordHelp: "密码必须满足以下全部要求。",
+    passwordStrength: "密码强度",
+    passwordLength: "至少 8 个字符",
+    passwordNumber: "至少 1 个数字",
+    passwordUpper: "至少 1 个大写字母",
+    passwordLower: "至少 1 个小写字母",
+    passwordSpecial: "至少 1 个特殊字符",
+    creating: "正在创建账户…",
+    avatarFailed: "账户已创建，但头像保存失败，你可以稍后重新设置。"
+  } : {
+    usernameHelp: "Your username must be unique and cannot contain Tianguo, admin, administrator, or any case variation containing admin.",
+    usernameChecking: "Checking username…",
+    usernameAvailable: "Username is available",
+    usernameTaken: "This username is already in use.",
+    usernameReserved: "This username is reserved. Choose another one.",
+    usernameTooShort: "Username must contain at least 3 characters.",
+    realNameTitle: "Enter your real name",
+    realNameHelpZhIp: "Enter your real name using Chinese characters, then select the exact character count for your family and given names.",
+    realNameHelpInternational: "Enter your real first and last name. No Chinese-character or 1–2 character restriction is applied for your region.",
+    surnameCount: "Family-name length",
+    givenCount: "Given-name length",
+    oneChar: "1 character",
+    twoChars: "2 characters",
+    invalidNameZhIp: "Both name fields must contain only Chinese characters and exactly match the selected lengths.",
+    invalidNameInternational: "First name and last name are both required.",
+    avatarTitle: "Set a profile photo",
+    avatarHelp: "Choose a profile photo now or set one later. JPG, PNG, and WebP up to 5 MB are supported.",
+    choosePhoto: "Choose Photo",
+    usePhoto: "Use This Photo",
+    later: "Set Up Later",
+    invalidAvatar: "Choose a JPG, PNG, or WebP image no larger than 5 MB.",
+    emailHelp: "Enter a complete email address containing @ and a dot in the domain.",
+    invalidEmail: "Enter a valid email such as name@example.com.",
+    passwordTitle: "Set a password",
+    passwordHelp: "Your password must meet every requirement below.",
+    passwordStrength: "Password strength",
+    passwordLength: "At least 8 characters",
+    passwordNumber: "At least 1 number",
+    passwordUpper: "At least 1 uppercase letter",
+    passwordLower: "At least 1 lowercase letter",
+    passwordSpecial: "At least 1 special character",
+    creating: "Creating account…",
+    avatarFailed: "Your account was created, but the profile photo could not be saved. You can set it later."
+  };
+
   return `
 <!DOCTYPE html>
 <html>
 <head>
   ${baseHead(t.studioName)}
+  <style>
+    .signup-help{display:block;margin:6px 0 2px;color:var(--quiet);font-size:13px;line-height:1.55}
+    .signup-status{min-height:22px;margin-top:8px;font-size:13px;color:var(--muted)}
+    .signup-status.is-good{color:#2f9b63}.signup-status.is-bad{color:var(--danger)}
+    .name-count-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    .name-count-group{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}
+    .name-count-group>span{display:block;margin-bottom:8px;color:var(--muted);font-size:13px;font-weight:700}
+    .name-count-options{display:flex;gap:8px}
+    .name-count-choice{flex:1;display:flex;align-items:center;gap:7px;padding:9px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--text);font-size:13px;cursor:pointer}
+    .name-count-choice input{width:auto;min-height:auto;margin:0}
+    .avatar-shell{display:grid;place-items:center;gap:14px;margin:18px 0}
+    .avatar-preview{width:112px;height:112px;border-radius:50%;overflow:hidden;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--border-strong) 80%,transparent);background:linear-gradient(145deg,var(--surface),var(--surface-soft));box-shadow:var(--shadow-soft)}
+    .avatar-preview img{width:100%;height:100%;object-fit:cover;display:none}
+    .avatar-preview svg{width:48px;height:48px;fill:none;stroke:var(--muted);stroke-width:1.6}
+    .avatar-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+    .avatar-actions button{margin-top:0}
+    .password-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:8px}
+    .password-heading strong{font-size:15px;color:var(--text)}
+    .password-heading span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+    .password-meter{height:7px;margin-top:10px;border-radius:999px;background:var(--surface-soft);overflow:hidden;border:1px solid var(--border)}
+    .password-meter span{display:block;width:0;height:100%;background:var(--primary);transition:width .18s ease,background .18s ease}
+    .password-rules{display:grid;gap:7px;margin:12px 0 0;padding:0;list-style:none}
+    .password-rules li{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+    .password-rules li::before{content:"○";font-weight:900;color:var(--quiet)}
+    .password-rules li.is-met{color:var(--text)}
+    .password-rules li.is-met::before{content:"✓";color:#2f9b63}
+    @media (max-width:560px){.name-count-grid,.avatar-actions{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
   ${topControls(links, t)}
@@ -3210,82 +3530,107 @@ function signUpPage(t, links, ipInfo) {
 
     <div id="step-username">
       <p>${t.chooseUsername}</p>
-      <input id="username" type="text" placeholder="${t.usernamePlaceholder}">
+      <small class="signup-help">${copy.usernameHelp}</small>
+      <input id="username" type="text" placeholder="${t.usernamePlaceholder}" autocomplete="username">
+      <div id="username-status" class="signup-status"></div>
       <button id="username-next-btn" disabled>${t.continue}</button>
-
-      <a class="button secondary" href="${links.login}">
-        ${t.alreadyHaveAccount}
-      </a>
+      <a class="button secondary" href="${links.login}">${t.alreadyHaveAccount}</a>
     </div>
 
     <div id="step-name" style="display:none;">
-      <p>${t.addProfileDetails}</p>
+      <p>${copy.realNameTitle}</p>
+      <small class="signup-help">${enforceChineseNameRules ? copy.realNameHelpZhIp : copy.realNameHelpInternational}</small>
 
-      <input id="first-name" type="text" placeholder="${t.firstNamePlaceholder}">
-      <input id="last-name" type="text" placeholder="${t.lastNamePlaceholder}">
+      <input id="first-name" type="text" ${enforceChineseNameRules ? 'maxlength="2"' : 'maxlength="80"'} placeholder="${t.firstNamePlaceholder}" autocomplete="${enforceChineseNameRules ? "family-name" : "given-name"}">
+      ${enforceChineseNameRules ? `
+      <div class="name-count-group">
+        <span>${copy.surnameCount}</span>
+        <div class="name-count-options">
+          <label class="name-count-choice"><input type="radio" name="surname-length" value="1"><span>${copy.oneChar}</span></label>
+          <label class="name-count-choice"><input type="radio" name="surname-length" value="2"><span>${copy.twoChars}</span></label>
+        </div>
+      </div>` : ""}
 
-      <label class="checkbox-row">
-        <input id="skip-name" type="checkbox">
-        <span>${t.skipName}</span>
-      </label>
+      <input id="last-name" type="text" ${enforceChineseNameRules ? 'maxlength="2"' : 'maxlength="80"'} placeholder="${t.lastNamePlaceholder}" autocomplete="${enforceChineseNameRules ? "given-name" : "family-name"}">
+      ${enforceChineseNameRules ? `
+      <div class="name-count-group">
+        <span>${copy.givenCount}</span>
+        <div class="name-count-options">
+          <label class="name-count-choice"><input type="radio" name="given-name-length" value="1"><span>${copy.oneChar}</span></label>
+          <label class="name-count-choice"><input type="radio" name="given-name-length" value="2"><span>${copy.twoChars}</span></label>
+        </div>
+      </div>` : ""}
 
+      <div id="name-status" class="signup-status"></div>
       <button id="name-next-btn" disabled>${t.continue}</button>
+    </div>
+
+    <div id="step-avatar" style="display:none;">
+      <p>${copy.avatarTitle}</p>
+      <small class="signup-help">${copy.avatarHelp}</small>
+      <div class="avatar-shell">
+        <div class="avatar-preview">
+          <svg id="avatar-placeholder" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c.8-4.2 3.3-6.3 7.5-6.3s6.7 2.1 7.5 6.3"/></svg>
+          <img id="avatar-preview-image" alt="">
+        </div>
+        <input id="avatar-file" type="file" accept="image/jpeg,image/png,image/webp" style="display:none;">
+        <div id="avatar-status" class="signup-status"></div>
+        <div class="avatar-actions">
+          <button id="avatar-choose-btn" type="button">${copy.choosePhoto}</button>
+          <button id="avatar-later-btn" type="button" class="secondary">${copy.later}</button>
+        </div>
+        <button id="avatar-next-btn" type="button" disabled>${copy.usePhoto}</button>
+      </div>
     </div>
 
     <div id="step-birthday" style="display:none;">
       <p>${t.enterBirthDate}</p>
       <div class="birthdate-grid">
-        <select id="birth-year">
-          <option value="">${t.birthYear}</option>
-        </select>
-        <select id="birth-month">
-          <option value="">${t.birthMonth}</option>
-        </select>
-        <select id="birth-day">
-          <option value="">${t.birthDay}</option>
-        </select>
+        <select id="birth-year"><option value="">${t.birthYear}</option></select>
+        <select id="birth-month"><option value="">${t.birthMonth}</option></select>
+        <select id="birth-day"><option value="">${t.birthDay}</option></select>
       </div>
       <button id="birthday-next-btn" disabled>${t.continue}</button>
     </div>
 
     <div id="step-gender" style="display:none;">
       <p>${t.selectGender}</p>
-
-      <label class="choice-row">
-        <input type="radio" name="gender" value="male">
-        <span>${t.male}</span>
-      </label>
-
-      <label class="choice-row">
-        <input type="radio" name="gender" value="female">
-        <span>${t.female}</span>
-      </label>
-
-      <label class="checkbox-row">
-        <input id="hide-gender-on-profile" type="checkbox">
-        <span>${t.hideGenderOnProfile}</span>
-      </label>
-
+      <label class="choice-row"><input type="radio" name="gender" value="male"><span>${t.male}</span></label>
+      <label class="choice-row"><input type="radio" name="gender" value="female"><span>${t.female}</span></label>
+      <label class="checkbox-row"><input id="hide-gender-on-profile" type="checkbox"><span>${t.hideGenderOnProfile}</span></label>
       <button id="gender-next-btn" disabled>${t.continue}</button>
     </div>
 
     <div id="step-email" style="display:none;">
       <p>${t.enterEmail}</p>
-      <input id="email" type="email" placeholder="${t.emailPlaceholder}">
+      <small class="signup-help">${copy.emailHelp}</small>
+      <input id="email" type="email" placeholder="name@example.com" autocomplete="email">
+      <div id="email-status" class="signup-status"></div>
       <button id="email-next-btn" disabled>${t.continue}</button>
     </div>
 
     <div id="step-password" style="display:none;">
-      <p>${t.setPassword}</p>
-      <input id="password" type="password" placeholder="${t.passwordPlaceholder}">
+      <p>${copy.passwordTitle}</p>
+      <small class="signup-help">${copy.passwordHelp}</small>
+      <div class="password-heading">
+        <strong>${t.passwordPlaceholder}</strong>
+        <span id="password-strength">${copy.passwordStrength}：0%</span>
+      </div>
+      <input id="password" type="password" placeholder="${t.passwordPlaceholder}" autocomplete="new-password">
+      <div class="password-meter"><span id="password-meter-fill"></span></div>
+      <ul class="password-rules">
+        <li id="password-rule-length">${copy.passwordLength}</li>
+        <li id="password-rule-number">${copy.passwordNumber}</li>
+        <li id="password-rule-upper">${copy.passwordUpper}</li>
+        <li id="password-rule-lower">${copy.passwordLower}</li>
+        <li id="password-rule-special">${copy.passwordSpecial}</li>
+      </ul>
       <button id="create-account-btn" disabled>${t.getStarted}</button>
     </div>
 
     <div id="message"></div>
     <div id="post-signup-actions" style="display:none;">
-      <a class="button secondary" href="${links.login}">
-        ${t.alreadyHaveAccount}
-      </a>
+      <a class="button secondary" href="${links.login}">${t.alreadyHaveAccount}</a>
     </div>
   </div>
 
@@ -3294,30 +3639,29 @@ function signUpPage(t, links, ipInfo) {
 
   <script>
     const adminEmails = ${JSON.stringify(ADMIN_EMAILS)};
+    const enforceChineseNameRules = ${JSON.stringify(enforceChineseNameRules)};
     let username = "";
     let firstName = "";
     let lastName = "";
+    let surnameLength = 0;
+    let givenNameLength = 0;
     let birthDate = "";
     let gender = "";
     let hideGenderOnProfile = false;
-    let skippedName = false;
     let userEmail = "";
+    let avatarFile = null;
+    let avatarPreviewUrl = "";
+    let usernameCheckTimer = 0;
+    let usernameCheckSequence = 0;
+    let usernameIsAvailable = false;
 
     const message = document.getElementById("message");
     const postSignupActions = document.getElementById("post-signup-actions");
 
     function showStep(id) {
-      [
-        "step-username",
-        "step-name",
-        "step-birthday",
-        "step-gender",
-        "step-email",
-        "step-password"
-      ].forEach(step => {
+      ["step-username","step-name","step-avatar","step-birthday","step-gender","step-email","step-password"].forEach(step => {
         document.getElementById(step).style.display = "none";
       });
-
       document.getElementById(id).style.display = "block";
       message.innerText = "";
       postSignupActions.style.display = "none";
@@ -3329,51 +3673,172 @@ function signUpPage(t, links, ipInfo) {
       button.style.cursor = enabled ? "pointer" : "not-allowed";
     }
 
+    function setStatus(element, text, tone = "") {
+      element.textContent = text || "";
+      element.classList.remove("is-good", "is-bad");
+      if (tone) element.classList.add(tone);
+    }
+
+    function usernameLocalReason(value) {
+      const text = value.trim();
+      const key = text.toLowerCase();
+      if (text.length < 3) return "too_short";
+      if (key.includes("tianguo")) return "reserved_tianguo";
+      if (key.includes("admin")) return "reserved_admin";
+      return "";
+    }
+
+    function usernameMessage(reason) {
+      if (reason === "too_short") return ${JSON.stringify(copy.usernameTooShort)};
+      if (reason === "reserved_tianguo" || reason === "reserved_admin") return ${JSON.stringify(copy.usernameReserved)};
+      if (reason === "username_taken") return ${JSON.stringify(copy.usernameTaken)};
+      return ${JSON.stringify(copy.usernameTaken)};
+    }
+
     const usernameInput = document.getElementById("username");
+    const usernameStatus = document.getElementById("username-status");
     const usernameNextBtn = document.getElementById("username-next-btn");
 
+    async function checkUsernameAvailability() {
+      const value = usernameInput.value.trim();
+      const localReason = usernameLocalReason(value);
+      usernameIsAvailable = false;
+      setButtonState(usernameNextBtn, false);
+      if (localReason) {
+        setStatus(usernameStatus, usernameMessage(localReason), "is-bad");
+        return false;
+      }
+
+      const sequence = ++usernameCheckSequence;
+      setStatus(usernameStatus, ${JSON.stringify(copy.usernameChecking)});
+      const { data, error } = await supabaseClient.rpc("check_registration_username", { p_username: value });
+      if (sequence !== usernameCheckSequence) return false;
+      if (error) {
+        setStatus(usernameStatus, ${JSON.stringify(zh ? "暂时无法检查用户名，请稍后再试。" : "Unable to check the username right now.")}, "is-bad");
+        return false;
+      }
+      if (!data?.available) {
+        setStatus(usernameStatus, usernameMessage(data?.reason || "username_taken"), "is-bad");
+        return false;
+      }
+      usernameIsAvailable = true;
+      setStatus(usernameStatus, ${JSON.stringify(copy.usernameAvailable)}, "is-good");
+      setButtonState(usernameNextBtn, true);
+      return true;
+    }
+
     usernameInput.addEventListener("input", () => {
-      setButtonState(usernameNextBtn, usernameInput.value.trim().length >= 3);
+      clearTimeout(usernameCheckTimer);
+      usernameIsAvailable = false;
+      setButtonState(usernameNextBtn, false);
+      const reason = usernameLocalReason(usernameInput.value);
+      if (reason) {
+        setStatus(usernameStatus, usernameMessage(reason), "is-bad");
+        return;
+      }
+      setStatus(usernameStatus, "");
+      usernameCheckTimer = window.setTimeout(checkUsernameAvailability, 350);
     });
 
-    usernameNextBtn.addEventListener("click", () => {
+    usernameNextBtn.addEventListener("click", async () => {
+      if (!usernameIsAvailable && !(await checkUsernameAvailability())) return;
       username = usernameInput.value.trim();
       showStep("step-name");
     });
 
     const firstNameInput = document.getElementById("first-name");
     const lastNameInput = document.getElementById("last-name");
-    const skipNameInput = document.getElementById("skip-name");
+    const surnameLengthInputs = document.querySelectorAll('input[name="surname-length"]');
+    const givenNameLengthInputs = document.querySelectorAll('input[name="given-name-length"]');
+    const nameStatus = document.getElementById("name-status");
     const nameNextBtn = document.getElementById("name-next-btn");
 
-    function updateNameButton() {
-      const hasFirstName = firstNameInput.value.trim().length > 0;
-      const hasLastName = lastNameInput.value.trim().length > 0;
-      const wantsToSkip = skipNameInput.checked;
+    function exactHanName(value, expectedLength) {
+      const text = value.trim();
+      return (expectedLength === 1 || expectedLength === 2) &&
+        Array.from(text).length === expectedLength &&
+        /^\p{Script=Han}+$/u.test(text);
+    }
 
-      setButtonState(nameNextBtn, wantsToSkip || (hasFirstName && hasLastName));
+    function updateNameButton() {
+      let ready = false;
+
+      if (enforceChineseNameRules) {
+        surnameLength = Number(document.querySelector('input[name="surname-length"]:checked')?.value || 0);
+        givenNameLength = Number(document.querySelector('input[name="given-name-length"]:checked')?.value || 0);
+        ready = exactHanName(firstNameInput.value, surnameLength) && exactHanName(lastNameInput.value, givenNameLength);
+      } else {
+        surnameLength = 0;
+        givenNameLength = 0;
+        ready =
+          firstNameInput.value.trim().length > 0 &&
+          firstNameInput.value.trim().length <= 80 &&
+          lastNameInput.value.trim().length > 0 &&
+          lastNameInput.value.trim().length <= 80;
+      }
+
+      setButtonState(nameNextBtn, ready);
+      const hasAny = firstNameInput.value.trim() || lastNameInput.value.trim() || surnameLength || givenNameLength;
+      const invalidText = enforceChineseNameRules ? ${JSON.stringify(copy.invalidNameZhIp)} : ${JSON.stringify(copy.invalidNameInternational)};
+      setStatus(nameStatus, hasAny && !ready ? invalidText : "", hasAny && !ready ? "is-bad" : "");
     }
 
     firstNameInput.addEventListener("input", updateNameButton);
     lastNameInput.addEventListener("input", updateNameButton);
-
-    skipNameInput.addEventListener("change", () => {
-      const wantsToSkip = skipNameInput.checked;
-
-      firstNameInput.disabled = wantsToSkip;
-      lastNameInput.disabled = wantsToSkip;
-
-      firstNameInput.style.opacity = wantsToSkip ? "0.45" : "1";
-      lastNameInput.style.opacity = wantsToSkip ? "0.45" : "1";
-
-      updateNameButton();
-    });
+    surnameLengthInputs.forEach(input => input.addEventListener("change", updateNameButton));
+    givenNameLengthInputs.forEach(input => input.addEventListener("change", updateNameButton));
 
     nameNextBtn.addEventListener("click", () => {
-      skippedName = skipNameInput.checked;
-      firstName = skippedName ? "" : firstNameInput.value.trim();
-      lastName = skippedName ? "" : lastNameInput.value.trim();
+      updateNameButton();
+      if (nameNextBtn.disabled) return;
+      firstName = firstNameInput.value.trim();
+      lastName = lastNameInput.value.trim();
+      showStep("step-avatar");
+    });
 
+    const avatarInput = document.getElementById("avatar-file");
+    const avatarChooseBtn = document.getElementById("avatar-choose-btn");
+    const avatarLaterBtn = document.getElementById("avatar-later-btn");
+    const avatarNextBtn = document.getElementById("avatar-next-btn");
+    const avatarPreview = document.getElementById("avatar-preview-image");
+    const avatarPlaceholder = document.getElementById("avatar-placeholder");
+    const avatarStatus = document.getElementById("avatar-status");
+
+    avatarChooseBtn.addEventListener("click", () => avatarInput.click());
+
+    avatarInput.addEventListener("change", () => {
+      const file = avatarInput.files?.[0] || null;
+      const allowed = ["image/jpeg", "image/png", "image/webp"];
+      if (!file || !allowed.includes(file.type) || file.size > 5 * 1024 * 1024) {
+        avatarFile = null;
+        setButtonState(avatarNextBtn, false);
+        setStatus(avatarStatus, ${JSON.stringify(copy.invalidAvatar)}, "is-bad");
+        return;
+      }
+
+      avatarFile = file;
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+      avatarPreviewUrl = URL.createObjectURL(file);
+      avatarPreview.src = avatarPreviewUrl;
+      avatarPreview.style.display = "block";
+      avatarPlaceholder.style.display = "none";
+      setStatus(avatarStatus, file.name, "is-good");
+      setButtonState(avatarNextBtn, true);
+    });
+
+    avatarNextBtn.addEventListener("click", () => {
+      if (!avatarFile) return;
+      showStep("step-birthday");
+    });
+
+    avatarLaterBtn.addEventListener("click", () => {
+      avatarFile = null;
+      avatarInput.value = "";
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+      avatarPreviewUrl = "";
+      avatarPreview.removeAttribute("src");
+      avatarPreview.style.display = "none";
+      avatarPlaceholder.style.display = "block";
       showStep("step-birthday");
     });
 
@@ -3381,90 +3846,49 @@ function signUpPage(t, links, ipInfo) {
     const birthMonthInput = document.getElementById("birth-month");
     const birthDayInput = document.getElementById("birth-day");
     const birthdayNextBtn = document.getElementById("birthday-next-btn");
-
     const currentYear = new Date().getFullYear();
 
     for (let year = currentYear; year >= 1900; year -= 1) {
-      birthYearInput.insertAdjacentHTML(
-        "beforeend",
-        '<option value="' + year + '">' + year + '</option>'
-      );
+      birthYearInput.insertAdjacentHTML("beforeend", '<option value="' + year + '">' + year + '</option>');
     }
-
     for (let month = 1; month <= 12; month += 1) {
       const value = String(month).padStart(2, "0");
-      birthMonthInput.insertAdjacentHTML(
-        "beforeend",
-        '<option value="' + value + '">' + month + '</option>'
-      );
+      birthMonthInput.insertAdjacentHTML("beforeend", '<option value="' + value + '">' + month + '</option>');
     }
 
     function updateBirthDayOptions() {
       const selectedYear = Number(birthYearInput.value);
       const selectedMonth = Number(birthMonthInput.value);
       const previousDay = birthDayInput.value;
-      const daysInMonth = selectedYear && selectedMonth
-        ? new Date(selectedYear, selectedMonth, 0).getDate()
-        : 31;
-
-      birthDayInput.innerHTML =
-        '<option value="">${t.birthDay}</option>';
-
+      const daysInMonth = selectedYear && selectedMonth ? new Date(selectedYear, selectedMonth, 0).getDate() : 31;
+      birthDayInput.innerHTML = '<option value="">${t.birthDay}</option>';
       for (let day = 1; day <= daysInMonth; day += 1) {
         const value = String(day).padStart(2, "0");
-        birthDayInput.insertAdjacentHTML(
-          "beforeend",
-          '<option value="' + value + '">' + day + '</option>'
-        );
+        birthDayInput.insertAdjacentHTML("beforeend", '<option value="' + value + '">' + day + '</option>');
       }
-
-      if (previousDay && Number(previousDay) <= daysInMonth) {
-        birthDayInput.value = previousDay;
-      }
+      if (previousDay && Number(previousDay) <= daysInMonth) birthDayInput.value = previousDay;
     }
 
     function updateBirthDateButton() {
-      const isComplete =
-        Boolean(birthYearInput.value) &&
-        Boolean(birthMonthInput.value) &&
-        Boolean(birthDayInput.value);
-
-      setButtonState(birthdayNextBtn, isComplete);
+      setButtonState(birthdayNextBtn, Boolean(birthYearInput.value && birthMonthInput.value && birthDayInput.value));
     }
 
-    birthYearInput.addEventListener("change", () => {
-      updateBirthDayOptions();
-      updateBirthDateButton();
-    });
-
-    birthMonthInput.addEventListener("change", () => {
-      updateBirthDayOptions();
-      updateBirthDateButton();
-    });
-
+    birthYearInput.addEventListener("change", () => { updateBirthDayOptions(); updateBirthDateButton(); });
+    birthMonthInput.addEventListener("change", () => { updateBirthDayOptions(); updateBirthDateButton(); });
     birthDayInput.addEventListener("change", updateBirthDateButton);
 
     birthdayNextBtn.addEventListener("click", () => {
-      birthDate =
-        birthYearInput.value + "-" +
-        birthMonthInput.value + "-" +
-        birthDayInput.value;
+      birthDate = birthYearInput.value + "-" + birthMonthInput.value + "-" + birthDayInput.value;
       showStep("step-gender");
     });
 
     const genderInputs = document.querySelectorAll('input[name="gender"]');
     const hideGenderOnProfileInput = document.getElementById("hide-gender-on-profile");
     const genderNextBtn = document.getElementById("gender-next-btn");
-
     function updateGenderButton() {
-      const selectedGender = document.querySelector('input[name="gender"]:checked');
-      setButtonState(genderNextBtn, Boolean(selectedGender));
+      setButtonState(genderNextBtn, Boolean(document.querySelector('input[name="gender"]:checked')));
     }
-
-    genderInputs.forEach(input => {
-      input.addEventListener("change", updateGenderButton);
-    });
-
+    genderInputs.forEach(input => input.addEventListener("change", updateGenderButton));
     genderNextBtn.addEventListener("click", () => {
       const selectedGender = document.querySelector('input[name="gender"]:checked');
       gender = selectedGender ? selectedGender.value : "";
@@ -3473,68 +3897,125 @@ function signUpPage(t, links, ipInfo) {
     });
 
     const emailInput = document.getElementById("email");
+    const emailStatus = document.getElementById("email-status");
     const emailNextBtn = document.getElementById("email-next-btn");
 
+    function emailValid(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+    }
+
     emailInput.addEventListener("input", () => {
-      setButtonState(emailNextBtn, emailInput.value.includes("@"));
+      const value = emailInput.value;
+      const valid = emailValid(value);
+      setButtonState(emailNextBtn, valid);
+      setStatus(emailStatus, value && !valid ? ${JSON.stringify(copy.invalidEmail)} : "", value && !valid ? "is-bad" : "");
     });
 
     emailNextBtn.addEventListener("click", () => {
+      if (!emailValid(emailInput.value)) return;
       userEmail = emailInput.value.trim();
       showStep("step-password");
     });
 
     const passwordInput = document.getElementById("password");
+    const passwordStrength = document.getElementById("password-strength");
+    const passwordMeterFill = document.getElementById("password-meter-fill");
     const createAccountBtn = document.getElementById("create-account-btn");
 
-    passwordInput.addEventListener("input", () => {
-      setButtonState(createAccountBtn, passwordInput.value.length >= 6);
-    });
+    const passwordRuleEls = {
+      length: document.getElementById("password-rule-length"),
+      number: document.getElementById("password-rule-number"),
+      upper: document.getElementById("password-rule-upper"),
+      lower: document.getElementById("password-rule-lower"),
+      special: document.getElementById("password-rule-special")
+    };
+
+    function passwordChecks(value) {
+      return {
+        length: value.length >= 8,
+        number: /\d/.test(value),
+        upper: /[A-Z]/.test(value),
+        lower: /[a-z]/.test(value),
+        special: /[^A-Za-z0-9\s]/.test(value)
+      };
+    }
+
+    function updatePasswordStrength() {
+      const checks = passwordChecks(passwordInput.value);
+      const passed = Object.values(checks).filter(Boolean).length;
+      const percent = passed * 20;
+      passwordStrength.textContent = ${JSON.stringify(copy.passwordStrength + "：")} + percent + "%";
+      passwordMeterFill.style.width = percent + "%";
+      passwordMeterFill.style.background = percent === 100 ? "#2f9b63" : percent >= 60 ? "#d99a2b" : "var(--danger)";
+      Object.entries(checks).forEach(([key, met]) => passwordRuleEls[key].classList.toggle("is-met", met));
+      setButtonState(createAccountBtn, percent === 100);
+    }
+
+    passwordInput.addEventListener("input", updatePasswordStrength);
 
     createAccountBtn.addEventListener("click", async () => {
-      const password = passwordInput.value;
+      updatePasswordStrength();
+      if (createAccountBtn.disabled) return;
 
-      const { error } = await supabaseClient.auth.signUp({
-        email: userEmail,
-        password: password,
-        options: {
-          data: {
-            display_name: username,
-            username: username,
-            first_name: firstName,
-            last_name: lastName,
-            skipped_name: skippedName,
-            birth_date: birthDate,
-            gender: gender,
-            hide_gender_on_profile: hideGenderOnProfile
+      const originalLabel = createAccountBtn.textContent;
+      createAccountBtn.disabled = true;
+      createAccountBtn.textContent = ${JSON.stringify(copy.creating)};
+      message.textContent = "";
+
+      const form = new FormData();
+      form.set("username", username);
+      form.set("first_name", firstName);
+      form.set("last_name", lastName);
+      form.set("surname_length", String(surnameLength));
+      form.set("given_name_length", String(givenNameLength));
+      form.set("birth_date", birthDate);
+      form.set("gender", gender);
+      form.set("hide_gender_on_profile", String(hideGenderOnProfile));
+      form.set("email", userEmail);
+      form.set("password", passwordInput.value);
+      if (avatarFile) form.set("avatar", avatarFile, avatarFile.name);
+
+      try {
+        const response = await fetch("/api/auth/signup", { method: "POST", body: form });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          if (payload?.field === "username") {
+            showStep("step-username");
+            setStatus(usernameStatus, usernameMessage(payload?.error || "username_taken"), "is-bad");
+            usernameIsAvailable = false;
+            setButtonState(usernameNextBtn, false);
+          } else {
+            message.textContent = payload?.error || ${JSON.stringify(zh ? "注册失败，请检查填写内容。" : "Registration failed. Check your details and try again.")};
           }
+          return;
         }
-      });
 
-      if (error) {
-        message.innerText = error.message;
-        return;
+        const randomEmail = adminEmails[Math.floor(Math.random() * adminEmails.length)];
+        message.textContent = ${JSON.stringify(t.adminApprovalMessage + " ")} + randomEmail;
+        if (payload?.avatar_status === "failed") {
+          message.textContent += " " + ${JSON.stringify(copy.avatarFailed)};
+        }
+        postSignupActions.style.display = "block";
+      } finally {
+        createAccountBtn.textContent = originalLabel;
+        updatePasswordStrength();
       }
-
-      const randomEmail = adminEmails[Math.floor(Math.random() * adminEmails.length)];
-      message.innerText = ${JSON.stringify(t.adminApprovalMessage + " ")} + randomEmail;
-      postSignupActions.style.display = "block";
     });
 
     setButtonState(usernameNextBtn, false);
     setButtonState(nameNextBtn, false);
+    setButtonState(avatarNextBtn, false);
     updateBirthDayOptions();
     setButtonState(birthdayNextBtn, false);
     setButtonState(genderNextBtn, false);
     setButtonState(emailNextBtn, false);
-    setButtonState(createAccountBtn, false);
+    updatePasswordStrength();
   </script>
   ${themeScript()}
 </body>
 </html>
 `;
 }
-
 function loginPage(t, links, ipInfo) {
   return `
 <!DOCTYPE html>
