@@ -1914,7 +1914,13 @@ function osPage(t, links, pathname, ipInfo) {
       </a>
       <div class="os-user">
         <strong>${t.account}</strong>
-        <span id="os-user-name">${t.loading}</span>
+        <span id="os-user-name">&nbsp;</span>
+        <script>
+          try {
+            const cachedOsUserName = sessionStorage.getItem("qssed-os-user-name");
+            if (cachedOsUserName) document.getElementById("os-user-name").innerText = cachedOsUserName;
+          } catch {}
+        </script>
       </div>
       ${renderOsNav(copy, activeSection)}
     </aside>
@@ -1954,12 +1960,15 @@ function osPage(t, links, pathname, ipInfo) {
       const { data } = await supabaseClient.auth.getUser();
 
       if (!data.user) {
+        try { sessionStorage.removeItem("qssed-os-user-name"); } catch {}
         window.location.href = loginUrl;
         return;
       }
 
       const name = data.user.user_metadata.username || data.user.user_metadata.display_name || data.user.email;
-      document.getElementById("os-user-name").innerText = "@" + name;
+      const userLabel = "@" + name;
+      document.getElementById("os-user-name").innerText = userLabel;
+      try { sessionStorage.setItem("qssed-os-user-name", userLabel); } catch {}
       await updateCurrentDevice(data.user);
       await hydrateProfileSummary(data.user);
       await hydrateProfileAudit(data.user);
