@@ -3541,7 +3541,7 @@ function signUpPage(t, links, ipInfo) {
       <p>${copy.realNameTitle}</p>
       <small class="signup-help">${enforceChineseNameRules ? copy.realNameHelpZhIp : copy.realNameHelpInternational}</small>
 
-      <input id="first-name" type="text" ${enforceChineseNameRules ? 'maxlength="2"' : 'maxlength="80"'} placeholder="${t.firstNamePlaceholder}" autocomplete="family-name">
+      <input id="first-name" type="text" ${enforceChineseNameRules ? 'maxlength="2"' : 'maxlength="80"'} placeholder="${t.firstNamePlaceholder}" autocomplete="${enforceChineseNameRules ? "family-name" : "given-name"}">
       ${enforceChineseNameRules ? `
       <div class="name-count-group">
         <span>${copy.surnameCount}</span>
@@ -3551,7 +3551,7 @@ function signUpPage(t, links, ipInfo) {
         </div>
       </div>` : ""}
 
-      <input id="last-name" type="text" ${enforceChineseNameRules ? 'maxlength="2"' : 'maxlength="80"'} placeholder="${t.lastNamePlaceholder}" autocomplete="given-name">
+      <input id="last-name" type="text" ${enforceChineseNameRules ? 'maxlength="2"' : 'maxlength="80"'} placeholder="${t.lastNamePlaceholder}" autocomplete="${enforceChineseNameRules ? "given-name" : "family-name"}">
       ${enforceChineseNameRules ? `
       <div class="name-count-group">
         <span>${copy.givenCount}</span>
