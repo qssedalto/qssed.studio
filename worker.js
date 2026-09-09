@@ -7,6 +7,7 @@ const ADMIN_EMAILS = [
 const OS_PATHS = new Set([
   "/dashboard",
   "/info",
+  "/info/knowledge",
   "/info/links",
   "/info/notes",
   "/info/summaries",
@@ -2858,7 +2859,7 @@ function buildOsCopy(zh) {
       nav: [
         { id: "dashboard", label: "首页", href: `${prefix}/dashboard`, items: [] },
         { id: "info", label: "信息中心", href: `${prefix}/info`, items: [
-          ["知识库", `${prefix}/info`],
+          ["知识库", `${prefix}/info/knowledge`],
           ["收藏链接", `${prefix}/info/links`],
           ["研究笔记", `${prefix}/info/notes`],
           ["内容摘要", `${prefix}/info/summaries`],
@@ -2907,7 +2908,7 @@ function buildOsCopy(zh) {
     nav: [
       { id: "dashboard", label: "Dashboard", href: `${prefix}/dashboard`, items: [] },
       { id: "info", label: "Information", href: `${prefix}/info`, items: [
-        ["Knowledge base", `${prefix}/info`],
+        ["Knowledge base", `${prefix}/info/knowledge`],
         ["Links", `${prefix}/info/links`],
         ["Notes", `${prefix}/info/notes`],
         ["Summaries", `${prefix}/info/summaries`],
@@ -2950,6 +2951,7 @@ function buildOsPages(zh) {
   const z = {
     dashboard: ["仪表盘", "汇总账号状态与核心模块，快速查看当前可用功能。"],
     info: ["信息中心", "知识模块尚未建立持久化数据表；当前仅保留清晰的模块入口。"],
+    knowledge: ["知识库", "整理值得长期保留的知识内容，方便持续积累、查找与回顾。"],
     links: ["收藏链接", "尚未接入收藏链接数据表。"],
     notes: ["研究笔记", "尚未接入笔记存储与 Markdown 保存接口。"],
     summaries: ["内容摘要", "尚未接入摘要数据源。"],
@@ -2978,6 +2980,7 @@ function buildOsPages(zh) {
   const e = {
     dashboard: ["Dashboard", "Overview of your account status and core modules, with quick access to currently available features."],
     info: ["Information Center", "Persistent knowledge tables are not implemented yet; this area currently provides module entry points."],
+    knowledge: ["Knowledge Base", "Organize knowledge worth keeping so it stays easy to build on, find, and revisit."],
     links: ["Saved Links", "No saved-links table is connected yet."],
     notes: ["Research Notes", "Note storage and Markdown persistence are not connected yet."],
     summaries: ["Summaries", "No summary data source is connected yet."],
@@ -3007,6 +3010,7 @@ function buildOsPages(zh) {
   return {
     "/dashboard": { section: "dashboard", title: s.dashboard[0], description: s.dashboard[1] },
     "/info": { section: "info", title: s.info[0], description: s.info[1] },
+    "/info/knowledge": { section: "info", title: s.knowledge[0], description: s.knowledge[1] },
     "/info/links": { section: "info", title: s.links[0], description: s.links[1] },
     "/info/notes": { section: "info", title: s.notes[0], description: s.notes[1] },
     "/info/summaries": { section: "info", title: s.summaries[0], description: s.summaries[1] },
@@ -3053,6 +3057,7 @@ function renderOsContent(path, copy) {
   const zh = copy.platform.includes("个人");
   if (path === "/dashboard") return dashboardContent(zh);
   if (path === "/info") return statusContent(zh, "信息中心尚未接入", "收藏链接、笔记、摘要和 AI 对话目前没有持久化数据源。", "Information Center is not connected yet", "Saved links, notes, summaries, and AI conversations do not have persistent data sources yet.");
+  if (path === "/info/knowledge") return statusContent(zh, "知识库", "用于整理值得长期保留的知识内容，让信息更容易积累、查找和回顾。", "Knowledge Base", "Organize knowledge worth keeping so it remains easy to build on, find, and revisit.");
   if (path === "/info/links") return linksContent(zh);
   if (path === "/info/notes") return notesContent(zh);
   if (path === "/info/summaries") return summariesContent(zh);
