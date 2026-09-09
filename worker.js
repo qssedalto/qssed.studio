@@ -2886,7 +2886,7 @@ function buildOsCopy(zh) {
           ["系统状态", `${prefix}/admin/system`]
         ] },
         { id: "settings", label: "设置", href: `${prefix}/settings`, items: [
-          ["设置首页", `${prefix}/settings`],
+          ["通用", `${prefix}/settings`],
           ["外观", `${prefix}/settings/appearance`],
           ["语言", `${prefix}/settings/language`],
           ["AI 设置", `${prefix}/settings/ai`],
@@ -2935,7 +2935,7 @@ function buildOsCopy(zh) {
         ["System", `${prefix}/admin/system`]
       ] },
       { id: "settings", label: "Settings", href: `${prefix}/settings`, items: [
-        ["Overview", `${prefix}/settings`],
+        ["General", `${prefix}/settings`],
         ["Appearance", `${prefix}/settings/appearance`],
         ["Language", `${prefix}/settings/language`],
         ["AI", `${prefix}/settings/ai`],
@@ -2970,7 +2970,7 @@ function buildOsPages(zh) {
     roles: ["角色权限", "查看管理员、编辑者与普通成员的权限范围，并管理角色授权。"],
     logs: ["操作日志", "查看账户与管理操作的审计记录。"],
     system: ["系统状态", "查看管理功能、数据读取与审计能力的当前状态。"],
-    settings: ["设置首页", "查看当前可用设置，以及尚未实现的配置模块。"],
+    settings: ["通用", "查看当前可用设置，以及尚未实现的配置模块。"],
     appearance: ["外观", "当前支持浅色与深色主题，可使用右上角主题按钮切换。"],
     language: ["语言", "当前支持中文与 English。"],
     ai: ["AI 设置", "当前没有浏览器端 API Key 配置功能；敏感密钥不应保存在前端。"],
@@ -2999,7 +2999,7 @@ function buildOsPages(zh) {
     roles: ["Roles", "Review the access scope for administrators, editors, and members, and manage role permissions."],
     logs: ["Logs", "Review audit records for account and administrative actions."],
     system: ["System Status", "Review the current availability of management features, data access, and auditing capabilities."],
-    settings: ["Settings", "Review available settings and configuration modules that are not implemented yet."],
+    settings: ["General", "Review available settings and configuration modules that are not implemented yet."],
     appearance: ["Appearance", "Light and dark themes are available through the theme button in the top-right corner."],
     language: ["Language", "Chinese and English are currently supported."],
     ai: ["AI Settings", "There is no browser-side API-key configuration. Sensitive keys should not be stored in frontend code."],
