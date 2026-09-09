@@ -14,7 +14,6 @@ const OS_PATHS = new Set([
   "/info/search",
   "/profile",
   "/profile/account",
-  "/profile/security",
   "/profile/preferences",
   "/workspace",
   "/workspace/projects",
@@ -29,6 +28,8 @@ const OS_PATHS = new Set([
   "/settings",
   "/settings/appearance",
   "/settings/language",
+  "/settings/security",
+  "/settings/notifications",
   "/settings/ai",
   "/settings/integrations",
   "/settings/storage"
@@ -37,7 +38,8 @@ const LEGACY_REDIRECTS = new Map([
   ["/", "/dashboard"],
   ["/general", "/dashboard"],
   ["/general/infohub", "/info"],
-  ["/personal", "/profile"]
+  ["/personal", "/profile"],
+  ["/profile/security", "/settings/security"]
 ]);
 const TEXT = {
   en: {
@@ -2868,7 +2870,6 @@ function buildOsCopy(zh) {
         { id: "profile", label: "个人主页", href: `${prefix}/profile`, items: [
           ["用户资料", `${prefix}/profile`],
           ["账户信息", `${prefix}/profile/account`],
-          ["安全中心", `${prefix}/profile/security`],
           ["偏好设置", `${prefix}/profile/preferences`]
         ] },
         { id: "workspace", label: "工作区", href: `${prefix}/workspace`, items: [
@@ -2889,6 +2890,8 @@ function buildOsCopy(zh) {
           ["通用", `${prefix}/settings`],
           ["外观", `${prefix}/settings/appearance`],
           ["语言", `${prefix}/settings/language`],
+          ["账户与安全", `${prefix}/settings/security`],
+          ["通知", `${prefix}/settings/notifications`],
           ["AI 设置", `${prefix}/settings/ai`],
           ["第三方集成", `${prefix}/settings/integrations`],
           ["存储管理", `${prefix}/settings/storage`]
@@ -2917,7 +2920,6 @@ function buildOsCopy(zh) {
       { id: "profile", label: "Profile", href: `${prefix}/profile`, items: [
         ["Profile", `${prefix}/profile`],
         ["Account", `${prefix}/profile/account`],
-        ["Security", `${prefix}/profile/security`],
         ["Preferences", `${prefix}/profile/preferences`]
       ] },
       { id: "workspace", label: "Workspace", href: `${prefix}/workspace`, items: [
@@ -2938,6 +2940,8 @@ function buildOsCopy(zh) {
         ["General", `${prefix}/settings`],
         ["Appearance", `${prefix}/settings/appearance`],
         ["Language", `${prefix}/settings/language`],
+        ["Account & Security", `${prefix}/settings/security`],
+        ["Notifications", `${prefix}/settings/notifications`],
         ["AI", `${prefix}/settings/ai`],
         ["Integrations", `${prefix}/settings/integrations`],
         ["Storage", `${prefix}/settings/storage`]
@@ -2958,7 +2962,7 @@ function buildOsPages(zh) {
     search: ["全局搜索", "尚未接入跨模块搜索索引。"],
     profile: ["个人主页", ""],
     account: ["账户信息", "账号 ID、邮箱、创建时间、最近登录和登录记录。"],
-    security: ["安全中心", "查看登录设备、登录历史和风险记录。"],
+    security: ["账户与安全", "管理登录设备、登录历史与账户安全记录。"],
     preferences: ["偏好设置", "主题与语言可直接切换；字体和通知设置尚未实现。"],
     workspace: ["工作区", "工作区数据模型尚未建立；当前仅保留模块入口。"],
     projects: ["项目管理", "尚未接入项目数据表。"],
@@ -2970,9 +2974,10 @@ function buildOsPages(zh) {
     roles: ["角色权限", "查看管理员、编辑者与普通成员的权限范围，并管理角色授权。"],
     logs: ["操作日志", "查看账户与管理操作的审计记录。"],
     system: ["系统状态", "查看管理功能、数据读取与审计能力的当前状态。"],
-    settings: ["通用", "查看当前可用设置，以及尚未实现的配置模块。"],
+    settings: ["通用", "管理网页的整体设置和偏好设置，例如外观、语言、账户安全、通知、AI、第三方集成和存储等。"],
     appearance: ["外观", "当前支持浅色与深色主题，可使用右上角主题按钮切换。"],
-    language: ["语言", "当前支持中文与 English。"],
+    language: ["语言", "设置网页显示语言；当前支持中文与 English。"],
+    notifications: ["通知", "管理提醒、站内消息与其他通知偏好。"],
     ai: ["AI 设置", "当前没有浏览器端 API Key 配置功能；敏感密钥不应保存在前端。"],
     integrations: ["第三方集成", "当前站点运行依赖 Cloudflare 与 Supabase；此页尚无用户级集成配置。"],
     storage: ["存储管理", "当前没有文件存储模块。"]
@@ -2987,7 +2992,7 @@ function buildOsPages(zh) {
     search: ["Global Search", "No cross-module search index is connected yet."],
     profile: ["Profile", ""],
     account: ["Account", "Account ID, email, creation time, last sign-in, and login records."],
-    security: ["Security", "Review login devices, login history, and risk records."],
+    security: ["Account & Security", "Manage signed-in devices, login history, and account security records."],
     preferences: ["Preferences", "Theme and language can be switched now; font and notification preferences are not implemented."],
     workspace: ["Workspace", "The workspace data model is not implemented yet; this area currently provides module entry points."],
     projects: ["Projects", "No projects table is connected yet."],
@@ -2999,9 +3004,10 @@ function buildOsPages(zh) {
     roles: ["Roles", "Review the access scope for administrators, editors, and members, and manage role permissions."],
     logs: ["Logs", "Review audit records for account and administrative actions."],
     system: ["System Status", "Review the current availability of management features, data access, and auditing capabilities."],
-    settings: ["General", "Review available settings and configuration modules that are not implemented yet."],
+    settings: ["General", "Manage the site's overall settings and preferences, including appearance, language, account security, notifications, AI, integrations, and storage."],
     appearance: ["Appearance", "Light and dark themes are available through the theme button in the top-right corner."],
-    language: ["Language", "Chinese and English are currently supported."],
+    language: ["Language", "Choose the site language; Chinese and English are currently supported."],
+    notifications: ["Notifications", "Manage reminders, in-app messages, and other notification preferences."],
     ai: ["AI Settings", "There is no browser-side API-key configuration. Sensitive keys should not be stored in frontend code."],
     integrations: ["Integrations", "The site currently depends on Cloudflare and Supabase; user-configurable integrations are not implemented."],
     storage: ["Storage", "No file-storage module is implemented yet."]
@@ -3017,7 +3023,6 @@ function buildOsPages(zh) {
     "/info/search": { section: "info", title: s.search[0], description: s.search[1] },
     "/profile": { section: "profile", title: s.profile[0], description: s.profile[1] },
     "/profile/account": { section: "profile", title: s.account[0], description: s.account[1] },
-    "/profile/security": { section: "profile", title: s.security[0], description: s.security[1] },
     "/profile/preferences": { section: "profile", title: s.preferences[0], description: s.preferences[1] },
     "/workspace": { section: "workspace", title: s.workspace[0], description: s.workspace[1] },
     "/workspace/projects": { section: "workspace", title: s.projects[0], description: s.projects[1] },
@@ -3032,6 +3037,8 @@ function buildOsPages(zh) {
     "/settings": { section: "settings", title: s.settings[0], description: s.settings[1] },
     "/settings/appearance": { section: "settings", title: s.appearance[0], description: s.appearance[1] },
     "/settings/language": { section: "settings", title: s.language[0], description: s.language[1] },
+    "/settings/security": { section: "settings", title: s.security[0], description: s.security[1] },
+    "/settings/notifications": { section: "settings", title: s.notifications[0], description: s.notifications[1] },
     "/settings/ai": { section: "settings", title: s.ai[0], description: s.ai[1] },
     "/settings/integrations": { section: "settings", title: s.integrations[0], description: s.integrations[1] },
     "/settings/storage": { section: "settings", title: s.storage[0], description: s.storage[1] }
@@ -3108,7 +3115,7 @@ function searchContent(zh) {
 
 function profileContent(path, zh) {
   if (path.endsWith("/account")) return accountAuditContent(zh);
-  if (path.endsWith("/security")) return securityAuditContent(zh);
+
   if (path.endsWith("/preferences")) return `<section class="os-card is-large"><h2>${zh ? "偏好设置" : "Preferences"}</h2><p>${zh ? "主题和语言可通过页面右上角按钮切换。字体和通知偏好目前没有保存或配置接口。" : "Theme and language can be switched with the controls in the top-right corner. Font and notification preferences do not currently have configuration or persistence APIs."}</p></section>`;
   return `<section id="profile-summary" class="os-profile-card"><div id="profile-avatar" class="os-avatar">...</div><div><h2 id="profile-display-name">${zh ? "正在读取账号资料..." : "Loading account profile..."}</h2><p id="profile-email">...</p><div id="profile-tags" class="os-chip-row"></div></div></section>`;
 }
@@ -3272,27 +3279,80 @@ function adminLogsContent(zh) {
 }
 
 function settingsContent(path, zh) {
-  if (path.endsWith("/appearance")) return `<section class="os-card is-large"><h2>${zh ? "外观" : "Appearance"}</h2><p>${zh ? "当前支持浅色与深色主题。请使用右上角主题按钮切换；尚未实现“跟随系统”的独立设置项。" : "Light and dark themes are available through the top-right theme button. A separate system-following preference is not implemented."}</p></section>`;
-  if (path.endsWith("/language")) return `<section class="os-card is-large"><h2>${zh ? "语言" : "Language"}</h2><p>${zh ? "当前仅支持中文与 English；页面右上角语言按钮会在两者之间切换。" : "Chinese and English are currently supported; use the language button in the top-right corner to switch between them."}</p></section>`;
-  if (path.endsWith("/ai")) return `<section class="os-card is-large"><h2>${zh ? "AI 设置" : "AI Settings"}</h2><p>${zh ? "当前没有用户级 AI Provider 或 API Key 配置。任何服务端密钥都应保存在 Cloudflare Secret 等受保护环境中，而不是浏览器页面。" : "There is no user-level AI provider or API-key configuration. Server-side secrets should live in protected environments such as Cloudflare Secrets, not in browser UI."}</p></section>`;
-  if (path.endsWith("/integrations")) return `<section class="os-card is-large"><h2>${zh ? "第三方集成" : "Integrations"}</h2><p>${zh ? "Cloudflare 与 Supabase 是站点运行依赖，不是当前用户可配置的集成。其他用户级集成尚未实现。" : "Cloudflare and Supabase are runtime dependencies, not user-configurable integrations. Other user-level integrations are not implemented yet."}</p></section>`;
-  if (path.endsWith("/storage")) return `<section class="os-card is-large"><h2>${zh ? "存储管理" : "Storage"}</h2><p>${zh ? "当前没有文件表、存储桶管理界面或容量统计数据源。" : "There is currently no file table, storage-bucket management UI, or capacity data source."}</p></section>`;
+  if (path.endsWith("/appearance")) return appearanceSettingsContent(zh);
+  if (path.endsWith("/language")) return languageSettingsContent(zh);
+  if (path.endsWith("/security")) return securityAuditContent(zh);
+  if (path.endsWith("/notifications")) return statusContent(zh, "通知", "通知方式、提醒和站内消息偏好将在这里统一管理。当前尚未接入通知服务。", "Notifications", "Notification methods, reminders, and in-app message preferences will be managed here. Notification delivery is not connected yet.");
+  if (path.endsWith("/ai")) return statusContent(zh, "AI 设置", "这里将用于管理 AI Provider、模型与个人 AI 偏好。当前尚未开放用户级 AI 配置。", "AI Settings", "Manage AI providers, models, and personal AI preferences here. User-level AI configuration is not available yet.");
+  if (path.endsWith("/integrations")) return statusContent(zh, "第三方集成", "这里将用于管理可连接的第三方服务与账号授权。当前尚未开放用户级集成配置。", "Integrations", "Manage connected third-party services and account authorizations here. User-level integrations are not available yet.");
+  if (path.endsWith("/storage")) return statusContent(zh, "存储管理", "存储可接入 Cloudflare R2。完成存储桶绑定后，这里可以显示文件数量、已用空间与容量信息；当前 Worker 尚未配置 R2 绑定。", "Storage", "Storage can be backed by Cloudflare R2. Once an R2 bucket is bound, this page can show file counts, used space, and capacity information; the Worker does not currently have an R2 binding.");
+
+  const prefix = zh ? "/zh-cn" : "/en";
   const items = zh
     ? [
-        ["外观", "可用", "浅色与深色主题可通过右上角按钮切换。"],
-        ["语言", "可用", "当前支持中文与 English。"],
-        ["AI 设置", "未实现", "当前没有用户级 AI Provider 或 API Key 配置。"],
-        ["第三方集成", "未实现", "当前没有用户可配置的第三方集成界面。"],
-        ["存储管理", "未实现", "当前没有文件存储模块或容量统计数据源。"]
+        ["外观", "可用", "设置浅色或深色主题，以及网页的整体显示方式。", `${prefix}/settings/appearance`],
+        ["语言", "可用", "设置网页显示语言；当前支持中文与 English。", `${prefix}/settings/language`],
+        ["账户与安全", "可用", "查看当前设备、登录设备、登录历史与异常登录记录。", `${prefix}/settings/security`],
+        ["通知", "规划中", "管理提醒、站内消息与其他通知偏好。", `${prefix}/settings/notifications`],
+        ["AI 设置", "规划中", "管理 AI Provider、模型与个人 AI 偏好。", `${prefix}/settings/ai`],
+        ["第三方集成", "规划中", "管理可连接的第三方服务与账号授权。", `${prefix}/settings/integrations`],
+        ["存储管理", "可接入", "可使用 Cloudflare R2 管理文件、空间占用与容量。", `${prefix}/settings/storage`]
       ]
     : [
-        ["Appearance", "Available", "Light and dark themes can be switched from the top-right control."],
-        ["Language", "Available", "Chinese and English are currently supported."],
-        ["AI Settings", "Not implemented", "There is no user-level AI provider or API-key configuration."],
-        ["Integrations", "Not implemented", "There is no user-configurable integrations UI yet."],
-        ["Storage", "Not implemented", "There is no file-storage module or capacity data source yet."]
+        ["Appearance", "Available", "Choose light or dark mode and manage the site's overall display.", `${prefix}/settings/appearance`],
+        ["Language", "Available", "Choose the site language; Chinese and English are currently supported.", `${prefix}/settings/language`],
+        ["Account & Security", "Available", "Review the current device, signed-in devices, login history, and risk records.", `${prefix}/settings/security`],
+        ["Notifications", "Planned", "Manage reminders, in-app messages, and other notification preferences.", `${prefix}/settings/notifications`],
+        ["AI Settings", "Planned", "Manage AI providers, models, and personal AI preferences.", `${prefix}/settings/ai`],
+        ["Integrations", "Planned", "Manage connected third-party services and account authorizations.", `${prefix}/settings/integrations`],
+        ["Storage", "Connectable", "Cloudflare R2 can provide file storage, usage, and capacity data.", `${prefix}/settings/storage`]
       ];
-  return `<section class="os-grid">${items.map(item => `<article class="os-card"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p></article>`).join("")}</section>`;
+  return `<section class="os-grid settings-grid">${items.map(item => `<a class="os-card settings-card-link" href="${item[3]}"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p><span class="settings-card-arrow" aria-hidden="true">›</span></a>`).join("")}</section>`;
+}
+
+function appearanceSettingsContent(zh) {
+  return `
+    <section class="os-card is-large settings-detail-card">
+      <h2>${zh ? "显示模式" : "Display Mode"}</h2>
+      <p>${zh ? "选择网页使用浅色或深色外观。设置会保存在当前浏览器中。" : "Choose light or dark appearance. The preference is saved in this browser."}</p>
+      <div class="settings-choice-grid">
+        <button class="settings-choice" type="button" data-settings-theme="light"><strong>${zh ? "浅色" : "Light"}</strong><span>${zh ? "始终使用浅色外观" : "Always use the light appearance"}</span></button>
+        <button class="settings-choice" type="button" data-settings-theme="dark"><strong>${zh ? "深色" : "Dark"}</strong><span>${zh ? "始终使用深色外观" : "Always use the dark appearance"}</span></button>
+      </div>
+    </section>
+    <script>
+      (() => {
+        const choices = Array.from(document.querySelectorAll("[data-settings-theme]"));
+        if (!choices.length) return;
+        const refresh = () => {
+          const current = document.documentElement.dataset.theme || "light";
+          choices.forEach(button => button.classList.toggle("is-selected", button.dataset.settingsTheme === current));
+        };
+        choices.forEach(button => button.addEventListener("click", () => {
+          const theme = button.dataset.settingsTheme;
+          document.documentElement.classList.add("theme-switching");
+          document.documentElement.dataset.theme = theme;
+          try { localStorage.setItem("qssed-theme", theme); } catch {}
+          window.setTimeout(() => document.documentElement.classList.remove("theme-switching"), 220);
+          refresh();
+        }));
+        refresh();
+      })();
+    </script>
+  `;
+}
+
+function languageSettingsContent(zh) {
+  return `
+    <section class="os-card is-large settings-detail-card">
+      <h2>${zh ? "网页语言" : "Site Language"}</h2>
+      <p>${zh ? "选择 QssedA Studio 的显示语言。切换后会保留当前设置页面。" : "Choose the display language for QssedA Studio. Switching keeps you on the current settings page."}</p>
+      <div class="settings-choice-grid">
+        <a class="settings-choice ${zh ? "is-selected" : ""}" href="/zh-cn/settings/language"><strong>中文</strong><span>简体中文</span></a>
+        <a class="settings-choice ${zh ? "" : "is-selected"}" href="/en/settings/language"><strong>English</strong><span>English</span></a>
+      </div>
+    </section>
+  `;
 }
 
 function osStyles() {
@@ -3344,7 +3404,7 @@ function osStyles() {
     .os-hero{display:flex;justify-content:space-between;gap:18px;align-items:stretch;margin-bottom:24px;}
     .os-kicker{margin:0 0 8px;color:var(--primary);font-weight:800}.os-hero h1{margin:0 0 10px;font-size:clamp(34px,5vw,64px);letter-spacing:0;line-height:1.02}.os-hero p{max-width:780px;margin:0;color:var(--muted);}
     .os-ai{min-width:230px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--text);text-decoration:none}.os-ai span{color:var(--muted);font-size:13px}.os-ai strong{font-size:18px;}
-    .os-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.os-card{padding:20px;animation:item-rise .48s cubic-bezier(.2,.8,.2,1) both}.os-card h2{margin:8px 0 8px;font-size:20px}.os-card small{color:var(--primary);font-weight:800}.os-card p{color:var(--muted);margin:0}.os-card.is-large{min-height:220px;}
+    .os-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.os-card{padding:20px;animation:item-rise .48s cubic-bezier(.2,.8,.2,1) both}.os-card h2{margin:8px 0 8px;font-size:20px}.os-card small{color:var(--primary);font-weight:800}.os-card p{color:var(--muted);margin:0}.os-card.is-large{min-height:220px;}.settings-card-link{display:block;position:relative;color:inherit;text-decoration:none;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.settings-card-link:hover{transform:translateY(-3px);border-color:var(--border-strong);box-shadow:var(--shadow)}.settings-card-arrow{position:absolute;right:18px;bottom:16px;color:var(--muted);font-size:24px;line-height:1}.settings-detail-card p{max-width:760px}.settings-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:22px}.settings-choice{display:grid;gap:5px;padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--text);text-align:left;text-decoration:none;font:inherit;cursor:pointer;box-shadow:none}.settings-choice strong{font-size:17px}.settings-choice span{color:var(--muted);font-size:13px}.settings-choice:hover{border-color:var(--border-strong);background:color-mix(in srgb,var(--surface-soft) 82%,var(--primary) 4%);box-shadow:none;transform:none}.settings-choice.is-selected{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 12%,transparent)}
     .os-chip-row{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}.os-chip-row span{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--text);padding:8px 10px;font-weight:700;}
     .os-search{font-size:18px;margin:0 0 18px}.os-profile-card{display:flex;gap:18px;align-items:center;padding:24px}.os-profile-card .os-avatar{width:84px;height:84px;font-size:36px}
     .os-lock{padding:18px;margin-bottom:18px;border-color:var(--danger, #ff9a9a)}
