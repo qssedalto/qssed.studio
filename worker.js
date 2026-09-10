@@ -16,19 +16,23 @@ const OS_PATHS = new Set([
   "/info/summaries",
   "/info/search",
   "/profile",
+  "/profile/details",
   "/profile/account",
   "/profile/preferences",
   "/workspace",
+  "/workspace/workbench",
   "/workspace/projects",
   "/workspace/experiments",
   "/workspace/drafts",
   "/workspace/tasks",
   "/admin",
+  "/admin/general",
   "/admin/users",
   "/admin/roles",
   "/admin/logs",
   "/admin/system",
   "/settings",
+  "/settings/general",
   "/settings/appearance",
   "/settings/language",
   "/settings/security",
@@ -1756,7 +1760,10 @@ function auditClientScript(ipInfo) {
         const name = document.getElementById("profile-display-name");
         const email = document.getElementById("profile-email");
         const tags = document.getElementById("profile-tags");
-        if (avatar) avatar.innerText = String(snapshot.displayName || "User").slice(0, 1).toUpperCase();
+        if (avatar) {
+          const fallback = String(snapshot.displayName || "User").slice(0, 1).toUpperCase();
+          avatar.innerHTML = snapshot.avatar_url ? '<img src="' + auditEscape(snapshot.avatar_url) + '" alt="">' : auditEscape(fallback);
+        }
         if (name) name.innerText = snapshot.displayName || "User";
         if (email) email.innerText = snapshot.email || "-";
         if (tags) {
@@ -1807,7 +1814,7 @@ function auditClientScript(ipInfo) {
 
         const { data: profile, error: profileError } = await supabaseClient
           .from("profiles")
-          .select("username, display_name, role, status")
+          .select("username, display_name, avatar_url, role, status")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -1829,12 +1836,231 @@ function auditClientScript(ipInfo) {
           displayName,
           email: user.email || "",
           role: profile?.role || "",
-          status: profile?.status || ""
+          status: profile?.status || "",
+          avatar_url: profile?.avatar_url || ""
         };
         renderProfileSummarySnapshot(snapshot);
         writeProfileCache(PROFILE_SUMMARY_CACHE_KEY, snapshot);
       }
 
+      /* PROFILE_HOME_V3 */
+      const PROFILE_HOME_CACHE_PREFIX = "qssed-profile-home-v3:";
+      let profileHomeState = { user: null, personalization: null, links: [], editingLinkId: null };
+
+      function profileHomeIsZh() { return location.pathname.startsWith("/zh-cn/"); }
+      function profileHomeEscape(value) { return auditEscape(value == null ? "" : String(value)); }
+      function profileHomeCacheKey(userId) { return PROFILE_HOME_CACHE_PREFIX + String(userId || ""); }
+      function profileHomeStatusLabel(kind) {
+        const zh = profileHomeIsZh();
+        const labels = zh ? { online:"在线", focus:"专注中", busy:"忙碌", away:"离开", offline:"隐身" } : { online:"Online", focus:"Focus", busy:"Busy", away:"Away", offline:"Offline" };
+        return labels[kind] || labels.online;
+      }
+      function readProfileHomeCache(userId) {
+        try { const raw = sessionStorage.getItem(profileHomeCacheKey(userId)); return raw ? JSON.parse(raw) : null; } catch { return null; }
+      }
+      function writeProfileHomeCache() {
+        try { if (profileHomeState.user?.id) sessionStorage.setItem(profileHomeCacheKey(profileHomeState.user.id), JSON.stringify({ personalization: profileHomeState.personalization, links: profileHomeState.links })); } catch {}
+      }
+      function normalizeProfilePersonalization(row, userId) {
+        return {
+          user_id: userId,
+          signature: row?.signature || "",
+          bio: row?.bio || "",
+          location: row?.location || "",
+          status_kind: row?.status_kind || "online",
+          status_text: row?.status_text || "",
+          status_emoji: row?.status_emoji || "✨",
+          interests: Array.isArray(row?.interests) ? row.interests.slice(0,12) : [],
+          cover_style: row?.cover_style || "aurora",
+          background_url: row?.background_url || ""
+        };
+      }
+      function renderProfileHome() {
+        if (!document.querySelector("[data-profile-home]")) return;
+        const p = profileHomeState.personalization || normalizeProfilePersonalization(null, profileHomeState.user?.id);
+        const cover = document.getElementById("profile-cover");
+        if (cover) {
+          cover.dataset.coverStyle = p.cover_style;
+          cover.style.backgroundImage = p.background_url ? 'linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.08)),url("' + p.background_url.replace(/"/g,"%22") + '")' : "";
+          cover.classList.toggle("has-custom-background", Boolean(p.background_url));
+        }
+        const signature = document.getElementById("profile-signature");
+        if (signature) signature.textContent = p.signature || (profileHomeIsZh() ? "还没有设置个性签名。" : "No signature yet.");
+        const bio = document.getElementById("profile-bio");
+        if (bio) bio.textContent = p.bio || (profileHomeIsZh() ? "还没有填写个人介绍。" : "No bio yet.");
+        const presence = document.getElementById("profile-presence");
+        if (presence) presence.textContent = (p.status_emoji || "✨") + " " + (p.status_text || profileHomeStatusLabel(p.status_kind));
+        const location = document.getElementById("profile-location");
+        if (location) { location.textContent = p.location ? "⌖ " + p.location : ""; location.hidden = !p.location; }
+        const interests = document.getElementById("profile-interests");
+        if (interests) interests.innerHTML = p.interests.length ? p.interests.map(item => '<span>' + profileHomeEscape(item) + '</span>').join("") : '<span class="profile-interest-empty">' + (profileHomeIsZh() ? "添加兴趣标签，让主页更像你。" : "Add interests to make this profile yours.") + '</span>';
+        renderProfileLinks();
+      }
+      function profileLinkIcon(title, category) {
+        const t=String(title||"").toLowerCase();
+        if(t.includes("qq")) return "Q";
+        if(t.includes("github")) return "⌘";
+        if(t.includes("bilibili")||t.includes("b站")) return "B";
+        if(t==="x"||t.includes("twitter")) return "𝕏";
+        if(category==="developer") return "</>";
+        if(category==="contact") return "@";
+        if(category==="site") return "⌂";
+        return "↗";
+      }
+      function renderProfileLinks() {
+        const list=document.getElementById("profile-link-list"); if(!list) return;
+        const links=[...(profileHomeState.links||[])].sort((a,b)=>Number(b.pinned)-Number(a.pinned)||Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.created_at||"").localeCompare(String(b.created_at||"")));
+        if(!links.length){ list.innerHTML='<div class="profile-link-empty"><strong>'+(profileHomeIsZh()?"还没有链接":"No links yet")+'</strong><span>'+(profileHomeIsZh()?"添加 QQ、GitHub、个人网站或其他常用入口。":"Add QQ, GitHub, your website, or any other destination.")+'</span></div>'; return; }
+        list.innerHTML=links.map(link => '<article class="profile-link-item">'+
+          '<a class="profile-link-main" href="'+profileHomeEscape(link.url)+'" target="_blank" rel="noopener noreferrer"><span class="profile-link-icon">'+profileHomeEscape(profileLinkIcon(link.title,link.category))+'</span><span class="profile-link-copy"><strong>'+profileHomeEscape(link.title)+(link.pinned?' <em>★</em>':'')+'</strong><small>'+profileHomeEscape(link.note || link.url)+'</small></span><span class="profile-link-open">↗</span></a>'+
+          '<div class="profile-link-actions"><button type="button" data-profile-link-edit="'+profileHomeEscape(link.id)+'">'+(profileHomeIsZh()?"编辑":"Edit")+'</button><button type="button" data-profile-link-delete="'+profileHomeEscape(link.id)+'">'+(profileHomeIsZh()?"删除":"Delete")+'</button></div>'+
+        '</article>').join("");
+        list.querySelectorAll("[data-profile-link-edit]").forEach(button=>button.addEventListener("click",()=>openProfileLinkSheet(button.dataset.profileLinkEdit)));
+        list.querySelectorAll("[data-profile-link-delete]").forEach(button=>button.addEventListener("click",()=>deleteProfileLink(button.dataset.profileLinkDelete)));
+      }
+      function openProfileSheet() {
+        const sheet=document.getElementById("profile-edit-sheet"), backdrop=document.getElementById("profile-sheet-backdrop"); if(!sheet||!backdrop) return;
+        const p=profileHomeState.personalization || normalizeProfilePersonalization(null, profileHomeState.user?.id);
+        document.getElementById("profile-readonly-name").value=document.getElementById("profile-display-name")?.textContent || "";
+        const avatarPreview=document.getElementById("profile-avatar-preview"); if(avatarPreview) avatarPreview.innerHTML=document.getElementById("profile-avatar")?.innerHTML || "";
+        const backgroundPreview=document.getElementById("profile-background-preview"); if(backgroundPreview){ backgroundPreview.dataset.coverStyle=p.cover_style; backgroundPreview.style.backgroundImage=p.background_url?'url("'+p.background_url.replace(/"/g,"%22")+'")':""; backgroundPreview.classList.toggle("has-custom-background",Boolean(p.background_url)); }
+        document.getElementById("profile-edit-signature").value=p.signature;
+        document.getElementById("profile-edit-bio").value=p.bio;
+        document.getElementById("profile-edit-location").value=p.location;
+        document.getElementById("profile-edit-status-kind").value=p.status_kind;
+        document.getElementById("profile-edit-status-emoji").value=p.status_emoji;
+        document.getElementById("profile-edit-status-text").value=p.status_text;
+        document.getElementById("profile-edit-interests").value=p.interests.join(", ");
+        document.querySelectorAll("[data-cover-choice]").forEach(button=>button.classList.toggle("is-selected",button.dataset.coverChoice===p.cover_style));
+        document.documentElement.classList.add("profile-sheet-open"); backdrop.hidden=false; requestAnimationFrame(()=>{backdrop.classList.add("is-visible");sheet.classList.add("is-open");sheet.setAttribute("aria-hidden","false");});
+      }
+      function closeProfileSheets() {
+        document.documentElement.classList.remove("profile-sheet-open"); const backdrop=document.getElementById("profile-sheet-backdrop"); document.querySelectorAll(".profile-sheet.is-open").forEach(sheet=>{sheet.classList.remove("is-open");sheet.setAttribute("aria-hidden","true")}); if(backdrop){backdrop.classList.remove("is-visible");setTimeout(()=>{if(!document.querySelector(".profile-sheet.is-open")) backdrop.hidden=true},220);}
+      }
+      async function saveProfilePersonalization() {
+        if(!profileHomeState.user) return;
+        const button=document.getElementById("profile-save-button"); button.disabled=true; button.textContent=profileHomeIsZh()?"正在保存…":"Saving…";
+        const interests=document.getElementById("profile-edit-interests").value.split(/[,，]/).map(x=>x.trim()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).slice(0,12);
+        const cover=document.querySelector("[data-cover-choice].is-selected")?.dataset.coverChoice || "aurora";
+        const payload={ user_id:profileHomeState.user.id, signature:document.getElementById("profile-edit-signature").value.trim(), bio:document.getElementById("profile-edit-bio").value.trim(), location:document.getElementById("profile-edit-location").value.trim(), status_kind:document.getElementById("profile-edit-status-kind").value, status_emoji:document.getElementById("profile-edit-status-emoji").value.trim()||"✨", status_text:document.getElementById("profile-edit-status-text").value.trim(), interests, cover_style:cover, background_url:profileHomeState.personalization?.background_url || "" };
+        const {data,error}=await supabaseClient.from("profile_personalization").upsert(payload,{onConflict:"user_id"}).select().single();
+        button.disabled=false; button.textContent=profileHomeIsZh()?"保存":"Save";
+        if(error){ console.error("Profile personalization save failed",error.message); alert(profileHomeIsZh()?"保存失败，请稍后重试。":"Could not save your profile. Please try again."); return; }
+        profileHomeState.personalization=normalizeProfilePersonalization(data,profileHomeState.user.id); writeProfileHomeCache(); renderProfileHome(); closeProfileSheets();
+      }
+      function openProfileLinkSheet(id) {
+        const sheet=document.getElementById("profile-link-sheet"), backdrop=document.getElementById("profile-sheet-backdrop"); if(!sheet||!backdrop) return;
+        const link=(profileHomeState.links||[]).find(item=>item.id===id)||null; profileHomeState.editingLinkId=link?.id||null;
+        document.getElementById("profile-link-sheet-title").textContent=link?(profileHomeIsZh()?"编辑链接":"Edit link"):(profileHomeIsZh()?"添加链接":"Add link");
+        document.getElementById("profile-link-id").value=link?.id||"";
+        document.getElementById("profile-link-title").value=link?.title||"";
+        document.getElementById("profile-link-url").value=link?.url||"";
+        document.getElementById("profile-link-category").value=link?.category||"social";
+        document.getElementById("profile-link-note").value=link?.note||"";
+        document.getElementById("profile-link-pinned").checked=Boolean(link?.pinned);
+        document.documentElement.classList.add("profile-sheet-open"); backdrop.hidden=false; requestAnimationFrame(()=>{backdrop.classList.add("is-visible");sheet.classList.add("is-open");sheet.setAttribute("aria-hidden","false");document.getElementById("profile-link-title").focus();});
+      }
+      async function saveProfileLink() {
+        if(!profileHomeState.user) return;
+        const button=document.getElementById("profile-link-save"), title=document.getElementById("profile-link-title").value.trim(), url=document.getElementById("profile-link-url").value.trim();
+        if(!title || !/^https?:\\/\\//i.test(url)){ alert(profileHomeIsZh()?"请填写名称，并输入以 http:// 或 https:// 开头的有效链接。":"Enter a title and a valid URL beginning with http:// or https://."); return; }
+        button.disabled=true;
+        const payload={ user_id:profileHomeState.user.id,title,url,category:document.getElementById("profile-link-category").value,note:document.getElementById("profile-link-note").value.trim(),pinned:document.getElementById("profile-link-pinned").checked,sort_order:profileHomeState.editingLinkId?((profileHomeState.links.find(x=>x.id===profileHomeState.editingLinkId)?.sort_order)||0):(profileHomeState.links.length*10)};
+        let result;
+        if(profileHomeState.editingLinkId) result=await supabaseClient.from("profile_links").update(payload).eq("id",profileHomeState.editingLinkId).select().single();
+        else result=await supabaseClient.from("profile_links").insert(payload).select().single();
+        button.disabled=false;
+        if(result.error){console.error("Profile link save failed",result.error.message);alert(profileHomeIsZh()?"链接保存失败。":"Could not save the link.");return;}
+        if(profileHomeState.editingLinkId) profileHomeState.links=profileHomeState.links.map(x=>x.id===profileHomeState.editingLinkId?result.data:x); else profileHomeState.links.push(result.data);
+        writeProfileHomeCache(); renderProfileLinks(); closeProfileSheets();
+      }
+      async function deleteProfileLink(id) {
+        const link=(profileHomeState.links||[]).find(item=>item.id===id); if(!link) return;
+        if(!confirm((profileHomeIsZh()?"删除“":"Delete “")+link.title+"”"+(profileHomeIsZh()?"？":"?"))) return;
+        const {error}=await supabaseClient.from("profile_links").delete().eq("id",id);
+        if(error){alert(profileHomeIsZh()?"删除失败。":"Could not delete the link.");return;}
+        profileHomeState.links=profileHomeState.links.filter(item=>item.id!==id); writeProfileHomeCache(); renderProfileLinks();
+      }
+      function profileMediaExtension(file) {
+        const map={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"};
+        return map[file?.type] || "";
+      }
+      async function uploadProfileMedia(file, kind) {
+        if(!profileHomeState.user || !file) return null;
+        const max=kind==="avatar"?5*1024*1024:8*1024*1024;
+        const ext=profileMediaExtension(file);
+        if(!ext || file.size>max){ alert(profileHomeIsZh()?(kind==="avatar"?"头像需为 JPG、PNG 或 WebP，且不超过 5 MB。":"背景需为 JPG、PNG 或 WebP，且不超过 8 MB。"):(kind==="avatar"?"Profile photo must be JPG, PNG, or WebP and no larger than 5 MB.":"Background must be JPG, PNG, or WebP and no larger than 8 MB.")); return null; }
+        const bucket=kind==="avatar"?"avatars":"profile-media";
+        const objectPath=profileHomeState.user.id+"/"+kind+"."+ext;
+        const {error}=await supabaseClient.storage.from(bucket).upload(objectPath,file,{upsert:true,contentType:file.type,cacheControl:"3600"});
+        if(error){console.error("Profile media upload failed",error.message);alert(profileHomeIsZh()?"图片上传失败，请稍后重试。":"Image upload failed. Please try again.");return null;}
+        const {data}=supabaseClient.storage.from(bucket).getPublicUrl(objectPath);
+        return data?.publicUrl ? data.publicUrl+"?v="+Date.now() : null;
+      }
+      async function changeProfileAvatar(file) {
+        const url=await uploadProfileMedia(file,"avatar"); if(!url) return;
+        const {error}=await supabaseClient.from("profiles").update({avatar_url:url,updated_at:new Date().toISOString()}).eq("id",profileHomeState.user.id);
+        if(error){console.error("Avatar profile update failed",error.message);alert(profileHomeIsZh()?"头像已上传，但账号资料更新失败。":"The photo uploaded, but your profile could not be updated.");return;}
+        const avatar=document.getElementById("profile-avatar"); if(avatar) avatar.innerHTML='<img src="'+profileHomeEscape(url)+'" alt="">';
+        const preview=document.getElementById("profile-avatar-preview"); if(preview) preview.innerHTML='<img src="'+profileHomeEscape(url)+'" alt="">';
+      }
+      async function changeProfileBackground(file) {
+        const url=await uploadProfileMedia(file,"background"); if(!url) return;
+        profileHomeState.personalization=normalizeProfilePersonalization({...profileHomeState.personalization,background_url:url},profileHomeState.user.id);
+        const {data,error}=await supabaseClient.from("profile_personalization").upsert(profileHomeState.personalization,{onConflict:"user_id"}).select().single();
+        if(error){console.error("Background save failed",error.message);alert(profileHomeIsZh()?"背景保存失败。":"Could not save the background.");return;}
+        profileHomeState.personalization=normalizeProfilePersonalization(data,profileHomeState.user.id);writeProfileHomeCache();renderProfileHome();openProfileSheet();
+      }
+      async function clearProfileBackground() {
+        if(!profileHomeState.user) return;
+        profileHomeState.personalization=normalizeProfilePersonalization({...profileHomeState.personalization,background_url:""},profileHomeState.user.id);
+        const {data,error}=await supabaseClient.from("profile_personalization").upsert(profileHomeState.personalization,{onConflict:"user_id"}).select().single();
+        if(error){alert(profileHomeIsZh()?"无法清除背景。":"Could not clear the background.");return;}
+        profileHomeState.personalization=normalizeProfilePersonalization(data,profileHomeState.user.id);writeProfileHomeCache();renderProfileHome();openProfileSheet();
+      }
+      function bindCurrentPageNoReload() {
+        document.querySelectorAll(".os-nav a[href]").forEach(link=>{
+          const target=new URL(link.href,location.href);
+          if(target.pathname!==location.pathname)return;
+          link.setAttribute("aria-current","page");
+          link.dataset.currentPage="true";
+          link.addEventListener("click",event=>event.preventDefault());
+        });
+      }
+      function bindProfileHome() {
+        const modalBackdrop=document.getElementById("profile-sheet-backdrop"); if(modalBackdrop&&modalBackdrop.parentElement!==document.body)document.body.appendChild(modalBackdrop); document.querySelectorAll(".profile-sheet").forEach(sheet=>{if(sheet.parentElement!==document.body)document.body.appendChild(sheet);});
+        if(!document.querySelector("[data-profile-home]")) return;
+        document.getElementById("profile-edit-button")?.addEventListener("click",openProfileSheet);
+        document.getElementById("profile-add-link")?.addEventListener("click",()=>openProfileLinkSheet(null));
+        document.querySelectorAll("[data-close-profile-sheet],[data-close-profile-link-sheet]").forEach(button=>button.addEventListener("click",closeProfileSheets));
+        document.getElementById("profile-sheet-backdrop")?.addEventListener("click",closeProfileSheets);
+        document.getElementById("profile-save-button")?.addEventListener("click",saveProfilePersonalization);
+        document.getElementById("profile-link-save")?.addEventListener("click",saveProfileLink);
+        document.getElementById("profile-avatar-choose")?.addEventListener("click",()=>document.getElementById("profile-avatar-file")?.click());
+        document.getElementById("profile-avatar-file")?.addEventListener("change",async event=>{const file=event.target.files?.[0];if(file)await changeProfileAvatar(file);event.target.value="";});
+        document.getElementById("profile-background-choose")?.addEventListener("click",()=>document.getElementById("profile-background-file")?.click());
+        document.getElementById("profile-background-file")?.addEventListener("change",async event=>{const file=event.target.files?.[0];if(file)await changeProfileBackground(file);event.target.value="";});
+        document.getElementById("profile-background-clear")?.addEventListener("click",clearProfileBackground);
+        bindCurrentPageNoReload();
+        document.getElementById("profile-cover-picker")?.addEventListener("click",event=>{const button=event.target.closest("[data-cover-choice]");if(!button)return;document.querySelectorAll("[data-cover-choice]").forEach(x=>x.classList.toggle("is-selected",x===button));});
+        document.querySelectorAll("[data-link-preset]").forEach(button=>button.addEventListener("click",()=>{document.getElementById("profile-link-title").value=button.dataset.linkPreset;}));
+        window.addEventListener("keydown",event=>{if(event.key==="Escape")closeProfileSheets();});
+      }
+      async function hydrateProfileHome(user) {
+        if(!document.querySelector("[data-profile-home]") || !user) return;
+        profileHomeState.user=user;
+        const cached=readProfileHomeCache(user.id);
+        if(cached){profileHomeState.personalization=normalizeProfilePersonalization(cached.personalization,user.id);profileHomeState.links=Array.isArray(cached.links)?cached.links:[];renderProfileHome();}
+        const [personalizationResult,linksResult]=await Promise.all([
+          supabaseClient.from("profile_personalization").select("*").eq("user_id",user.id).maybeSingle(),
+          supabaseClient.from("profile_links").select("*").eq("user_id",user.id).order("pinned",{ascending:false}).order("sort_order",{ascending:true}).order("created_at",{ascending:true})
+        ]);
+        if(personalizationResult.error) console.error("Profile personalization query failed",personalizationResult.error.message);
+        if(linksResult.error) console.error("Profile links query failed",linksResult.error.message);
+        if(!personalizationResult.error) profileHomeState.personalization=normalizeProfilePersonalization(personalizationResult.data,user.id);
+        if(!linksResult.error) profileHomeState.links=linksResult.data||[];
+        writeProfileHomeCache(); renderProfileHome();
+      }
       async function hydrateProfileAudit(user) {
         if (!document.getElementById("audit-created-at") && !document.getElementById("audit-current-device")) return;
 
@@ -1880,6 +2106,7 @@ function auditClientScript(ipInfo) {
       }
 
       restoreProfileUiCaches();
+      bindProfileHome();
 
       function renderAccountAudit(user, events, devices, eventsError, devicesError) {
         const set = (id, value) => { const el = document.getElementById(id); if (el) el.innerText = value || "-"; };
@@ -3111,7 +3338,7 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
           <span id="os-signout-label">${zh ? "退出登录" : "Sign Out"}</span>
         </button>
       </div>
-      ${renderOsNav(copy, activeSection)}
+      ${renderOsNav(copy, activeSection, path)}
     </aside>
     <script>
       try {
@@ -3324,6 +3551,7 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
 
       await updateCurrentDevice(data.user);
       await hydrateProfileSummary(data.user);
+      await hydrateProfileHome(data.user);
       await hydrateProfileAudit(data.user);
     }
 
@@ -3357,26 +3585,26 @@ function buildOsCopy(zh) {
           ["全局搜索", `${prefix}/info/search`]
         ] },
         { id: "profile", label: "个人主页", href: `${prefix}/profile`, items: [
-          ["用户资料", `${prefix}/profile`],
+          ["用户资料", `${prefix}/profile/details`],
           ["账户信息", `${prefix}/profile/account`],
           ["偏好设置", `${prefix}/profile/preferences`]
         ] },
         { id: "workspace", label: "工作区", href: `${prefix}/workspace`, items: [
-          ["工作台", `${prefix}/workspace`],
+          ["工作台", `${prefix}/workspace/workbench`],
           ["项目管理", `${prefix}/workspace/projects`],
           ["实验室", `${prefix}/workspace/experiments`],
           ["草稿箱", `${prefix}/workspace/drafts`],
           ["任务中心", `${prefix}/workspace/tasks`]
         ] },
         { id: "admin", label: "管理", href: `${prefix}/admin`, items: [
-          ["管理首页", `${prefix}/admin`],
+          ["通用", `${prefix}/admin/general`],
           ["用户管理", `${prefix}/admin/users`],
           ["角色权限", `${prefix}/admin/roles`],
           ["操作日志", `${prefix}/admin/logs`],
           ["系统状态", `${prefix}/admin/system`]
         ] },
         { id: "settings", label: "设置", href: `${prefix}/settings`, items: [
-          ["通用", `${prefix}/settings`],
+          ["通用", `${prefix}/settings/general`],
           ["外观", `${prefix}/settings/appearance`],
           ["语言", `${prefix}/settings/language`],
           ["账户与安全", `${prefix}/settings/security`],
@@ -3407,26 +3635,26 @@ function buildOsCopy(zh) {
         ["Search", `${prefix}/info/search`]
       ] },
       { id: "profile", label: "Profile", href: `${prefix}/profile`, items: [
-        ["Profile", `${prefix}/profile`],
+        ["Profile Details", `${prefix}/profile/details`],
         ["Account", `${prefix}/profile/account`],
         ["Preferences", `${prefix}/profile/preferences`]
       ] },
       { id: "workspace", label: "Workspace", href: `${prefix}/workspace`, items: [
-        ["Workbench", `${prefix}/workspace`],
+        ["Workbench", `${prefix}/workspace/workbench`],
         ["Projects", `${prefix}/workspace/projects`],
         ["Experiments", `${prefix}/workspace/experiments`],
         ["Drafts", `${prefix}/workspace/drafts`],
         ["Tasks", `${prefix}/workspace/tasks`]
       ] },
       { id: "admin", label: "Admin", href: `${prefix}/admin`, items: [
-        ["Overview", `${prefix}/admin`],
+        ["General", `${prefix}/admin/general`],
         ["Users", `${prefix}/admin/users`],
         ["Roles", `${prefix}/admin/roles`],
         ["Logs", `${prefix}/admin/logs`],
         ["System", `${prefix}/admin/system`]
       ] },
       { id: "settings", label: "Settings", href: `${prefix}/settings`, items: [
-        ["General", `${prefix}/settings`],
+        ["General", `${prefix}/settings/general`],
         ["Appearance", `${prefix}/settings/appearance`],
         ["Language", `${prefix}/settings/language`],
         ["Account & Security", `${prefix}/settings/security`],
@@ -3453,17 +3681,19 @@ function buildOsPages(zh) {
     account: ["账户信息", "账号 ID、邮箱、创建时间、最近登录和登录记录。"],
     security: ["账户与安全", "管理登录设备、登录历史与账户安全记录。"],
     preferences: ["偏好设置", "主题与语言可直接切换；字体和通知设置尚未实现。"],
-    workspace: ["工作区", "工作区数据模型尚未建立；当前仅保留模块入口。"],
+    workspace: ["工作区", "工作区总览，用于查看并进入工作台、项目、实验、草稿与任务。"],
+    workbench: ["工作台", "工作区中的主要操作界面，用于集中处理项目、草稿、实验与任务。"],
     projects: ["项目管理", "尚未接入项目数据表。"],
     experiments: ["实验室", "实验工具尚未接入持久化数据。"],
     drafts: ["草稿箱", "尚未接入草稿数据表。"],
     tasks: ["任务中心", "尚未接入任务数据表。"],
-    admin: ["管理首页", "显示真实用户与管理员数量、最近用户、操作日志和风险事件。"],
+    admin: ["管理", "显示真实用户与管理员数量、最近用户、操作日志和风险事件。"],
     users: ["用户管理", "用户列表、权限管理和封禁管理。"],
     roles: ["角色权限", "查看管理员、编辑者与普通成员的权限范围，并管理角色授权。"],
     logs: ["操作日志", "查看账户与管理操作的审计记录。"],
     system: ["系统状态", "查看管理功能、数据读取与审计能力的当前状态。"],
-    settings: ["通用", "管理网页的整体设置和偏好设置，例如外观、语言、账户安全、通知、AI、第三方集成和存储等。"],
+    settings: ["设置", "集中管理通用、外观、语言、账户安全、通知、AI、第三方集成和存储等设置。"],
+    general: ["通用", "管理网站的基础行为与通用偏好。"],
     appearance: ["外观", "当前支持浅色与深色主题，可使用右上角主题按钮切换。"],
     language: ["语言", "设置网页显示语言；当前支持中文与 English。"],
     notifications: ["通知", "管理提醒、站内消息与其他通知偏好。"],
@@ -3483,17 +3713,19 @@ function buildOsPages(zh) {
     account: ["Account", "Account ID, email, creation time, last sign-in, and login records."],
     security: ["Account & Security", "Manage signed-in devices, login history, and account security records."],
     preferences: ["Preferences", "Theme and language can be switched now; font and notification preferences are not implemented."],
-    workspace: ["Workspace", "The workspace data model is not implemented yet; this area currently provides module entry points."],
+    workspace: ["Workspace", "An overview for entering the Workbench, projects, experiments, drafts, and tasks."],
+    workbench: ["Workbench", "The main operating surface inside Workspace for projects, drafts, experiments, and tasks."],
     projects: ["Projects", "No projects table is connected yet."],
     experiments: ["Lab", "Experiment tools are not connected to persistent data yet."],
     drafts: ["Drafts", "No drafts table is connected yet."],
     tasks: ["Tasks", "No tasks table is connected yet."],
-    admin: ["Admin Overview", "Shows live user/admin counts, recent users, operation logs, and risk events."],
+    admin: ["Admin", "Shows live user/admin counts, recent users, operation logs, and risk events."],
     users: ["User Management", "User list, permissions, and bans."],
     roles: ["Roles", "Review the access scope for administrators, editors, and members, and manage role permissions."],
     logs: ["Logs", "Review audit records for account and administrative actions."],
     system: ["System Status", "Review the current availability of management features, data access, and auditing capabilities."],
-    settings: ["General", "Manage the site's overall settings and preferences, including appearance, language, account security, notifications, AI, integrations, and storage."],
+    settings: ["Settings", "Manage general, appearance, language, account security, notifications, AI, integrations, and storage settings."],
+    general: ["General", "Manage the site's basic behavior and general preferences."],
     appearance: ["Appearance", "Light and dark themes are available through the theme button in the top-right corner."],
     language: ["Language", "Choose the site language; Chinese and English are currently supported."],
     notifications: ["Notifications", "Manage reminders, in-app messages, and other notification preferences."],
@@ -3511,19 +3743,23 @@ function buildOsPages(zh) {
     "/info/summaries": { section: "info", title: s.summaries[0], description: s.summaries[1] },
     "/info/search": { section: "info", title: s.search[0], description: s.search[1] },
     "/profile": { section: "profile", title: s.profile[0], description: s.profile[1] },
+    "/profile/details": { section: "profile", title: zh ? "用户资料" : "Profile Details", description: zh ? "查看和维护头像、个性签名、个人介绍、状态、兴趣与主页背景。" : "View and maintain your photo, signature, bio, presence, interests, and profile background." },
     "/profile/account": { section: "profile", title: s.account[0], description: s.account[1] },
     "/profile/preferences": { section: "profile", title: s.preferences[0], description: s.preferences[1] },
     "/workspace": { section: "workspace", title: s.workspace[0], description: s.workspace[1] },
+    "/workspace/workbench": { section: "workspace", title: zh ? "工作台" : "Workbench", description: zh ? "工作区中的主要操作界面，用于集中处理项目、实验、草稿与任务。" : "The main operating surface inside Workspace for projects, experiments, drafts, and tasks." },
     "/workspace/projects": { section: "workspace", title: s.projects[0], description: s.projects[1] },
     "/workspace/experiments": { section: "workspace", title: s.experiments[0], description: s.experiments[1] },
     "/workspace/drafts": { section: "workspace", title: s.drafts[0], description: s.drafts[1] },
     "/workspace/tasks": { section: "workspace", title: s.tasks[0], description: s.tasks[1] },
     "/admin": { section: "admin", title: s.admin[0], description: s.admin[1] },
+    "/admin/general": { section: "admin", title: zh ? "通用" : "General", description: zh ? "查看管理区域的核心概览、账户统计、近期操作与风险信息。" : "Review the core admin overview, account metrics, recent operations, and risk information." },
     "/admin/users": { section: "admin", title: s.users[0], description: s.users[1] },
     "/admin/roles": { section: "admin", title: s.roles[0], description: s.roles[1] },
     "/admin/logs": { section: "admin", title: s.logs[0], description: s.logs[1] },
     "/admin/system": { section: "admin", title: s.system[0], description: s.system[1] },
     "/settings": { section: "settings", title: s.settings[0], description: s.settings[1] },
+    "/settings/general": { section: "settings", title: zh ? "通用" : "General", description: zh ? "管理网站的基础行为与通用偏好。" : "Manage the site's basic behavior and general preferences." },
     "/settings/appearance": { section: "settings", title: s.appearance[0], description: s.appearance[1] },
     "/settings/language": { section: "settings", title: s.language[0], description: s.language[1] },
     "/settings/security": { section: "settings", title: s.security[0], description: s.security[1] },
@@ -3534,14 +3770,14 @@ function buildOsPages(zh) {
   };
 }
 
-function renderOsNav(copy, activeSection) {
+function renderOsNav(copy, activeSection, currentPath = "") {
   return `
     <nav class="os-nav">
       ${copy.nav.map(group => `
         <section class="os-nav-group ${group.id === activeSection ? "is-active" : ""}">
           <a class="os-nav-title" href="${group.href}">${group.label}</a>
           ${group.items.length ? `<div class="os-nav-items">
-            ${group.items.map(item => `<a href="${item[1]}">${item[0]}</a>`).join("")}
+            ${group.items.map(item => `<a href="${item[1]}"${item[1].endsWith(currentPath) ? ` aria-current="page"` : ""}>${item[0]}</a>`).join("")}
           </div>` : ""}
         </section>
       `).join("")}
@@ -3606,9 +3842,128 @@ function profileContent(path, zh) {
   if (path.endsWith("/account")) return accountAuditContent(zh);
 
   if (path.endsWith("/preferences")) return `<section class="os-card is-large"><h2>${zh ? "偏好设置" : "Preferences"}</h2><p>${zh ? "主题和语言可通过页面右上角按钮切换。字体和通知偏好目前没有保存或配置接口。" : "Theme and language can be switched with the controls in the top-right corner. Font and notification preferences do not currently have configuration or persistence APIs."}</p></section>`;
-  return `<section id="profile-summary" class="os-profile-card"><div id="profile-avatar" class="os-avatar">...</div><div><h2 id="profile-display-name">${zh ? "正在读取账号资料..." : "Loading account profile..."}</h2><p id="profile-email">...</p><div id="profile-tags" class="os-chip-row"></div></div></section>`;
-}
+  return `
+    <section id="profile-summary" class="profile-home" data-profile-home>
+      <div id="profile-cover" class="profile-cover" data-cover-style="aurora">
+        <div class="profile-cover-noise" aria-hidden="true"></div>
+        <div class="profile-cover-actions">
+          <button id="profile-edit-button" class="profile-pill-button" type="button">${zh ? "编辑资料" : "Edit profile"}</button>
+        </div>
+      </div>
 
+      <div class="profile-identity">
+        <div id="profile-avatar" class="os-avatar profile-avatar-large">...</div>
+        <div class="profile-identity-copy">
+          <div class="profile-name-row">
+            <h2 id="profile-display-name">${zh ? "正在读取账号资料..." : "Loading account profile..."}</h2>
+            <span class="profile-name-lock" title="${zh ? "姓名不可修改" : "Name cannot be changed"}">🔒</span>
+          </div>
+          <p id="profile-email">...</p>
+          <div id="profile-tags" class="os-chip-row"></div>
+          <p id="profile-signature" class="profile-signature"></p>
+        </div>
+      </div>
+
+      <div class="profile-home-grid">
+        <article class="profile-section-card profile-about-card">
+          <div class="profile-section-head">
+            <div>
+              <span class="profile-eyebrow">${zh ? "关于我" : "About"}</span>
+              <h3>${zh ? "个人介绍" : "Profile"}</h3>
+            </div>
+          </div>
+          <p id="profile-bio" class="profile-bio">${zh ? "还没有填写个人介绍。" : "No bio yet."}</p>
+          <div class="profile-meta-row">
+            <span id="profile-presence" class="profile-presence">✨ ${zh ? "在线" : "Online"}</span>
+            <span id="profile-location" class="profile-location"></span>
+          </div>
+          <div id="profile-interests" class="profile-interest-list"></div>
+        </article>
+
+        <article class="profile-section-card">
+          <div class="profile-section-head">
+            <div>
+              <span class="profile-eyebrow">${zh ? "快捷入口" : "Quick access"}</span>
+              <h3>${zh ? "我的空间" : "My space"}</h3>
+            </div>
+          </div>
+          <div class="profile-quick-grid">
+            <a href="${zh ? "/zh-cn/profile/account" : "/en/profile/account"}"><span>◷</span><strong>${zh ? "账户信息" : "Account"}</strong><small>${zh ? "登录、设备与审计" : "Sign-in, devices & audit"}</small></a>
+            <a href="${zh ? "/zh-cn/settings/storage" : "/en/settings/storage"}"><span>☁︎</span><strong>${zh ? "私人存储" : "Private storage"}</strong><small>${zh ? "管理 R2 文件" : "Manage R2 files"}</small></a>
+            <a href="${zh ? "/zh-cn/info/links" : "/en/info/links"}"><span>⌘</span><strong>${zh ? "收藏链接" : "Saved links"}</strong><small>${zh ? "信息中心入口" : "Information center"}</small></a>
+            <a href="${zh ? "/zh-cn/profile/preferences" : "/en/profile/preferences"}"><span>⚙︎</span><strong>${zh ? "偏好设置" : "Preferences"}</strong><small>${zh ? "外观与语言" : "Appearance & language"}</small></a>
+          </div>
+        </article>
+      </div>
+
+      <article class="profile-section-card profile-links-card">
+        <div class="profile-section-head">
+          <div>
+            <span class="profile-eyebrow">${zh ? "联系与链接" : "Contact & links"}</span>
+            <h3>${zh ? "我的链接库" : "My link library"}</h3>
+            <p>${zh ? "把 QQ、GitHub、Bilibili、X、个人网站或其他入口集中在这里。" : "Keep QQ, GitHub, Bilibili, X, personal sites, and other destinations in one place."}</p>
+          </div>
+          <button id="profile-add-link" class="profile-pill-button profile-pill-secondary" type="button">＋ ${zh ? "添加链接" : "Add link"}</button>
+        </div>
+        <div id="profile-link-list" class="profile-link-list"></div>
+      </article>
+    </section>
+
+    <div id="profile-sheet-backdrop" class="profile-sheet-backdrop" hidden></div>
+
+    <aside id="profile-edit-sheet" class="profile-sheet" aria-hidden="true">
+      <div class="profile-sheet-grabber" aria-hidden="true"></div>
+      <div class="profile-sheet-head">
+        <div><span class="profile-eyebrow">${zh ? "个人主页" : "Profile"}</span><h3>${zh ? "编辑资料" : "Edit profile"}</h3></div>
+        <button class="profile-sheet-close" type="button" data-close-profile-sheet aria-label="${zh ? "关闭" : "Close"}">×</button>
+      </div>
+      <div class="profile-sheet-body">
+        <label class="profile-field"><span>${zh ? "姓名" : "Name"}</span><input id="profile-readonly-name" type="text" readonly aria-readonly="true"><small>${zh ? "姓名由账号资料确定，不允许在个人主页中修改。" : "Your name comes from your account profile and cannot be changed here."}</small></label>
+        <div class="profile-field">
+          <span>${zh ? "头像" : "Profile photo"}</span>
+          <div class="profile-media-editor">
+            <div id="profile-avatar-preview" class="profile-media-preview profile-avatar-preview"></div>
+            <div class="profile-media-copy"><strong>${zh ? "更换头像" : "Change profile photo"}</strong><small>${zh ? "支持 JPG、PNG、WebP，最大 5 MB。头像会保存到你的账号资料中。" : "JPG, PNG, or WebP up to 5 MB. Your photo is saved to your account profile."}</small><button id="profile-avatar-choose" class="profile-inline-button" type="button">${zh ? "选择图片" : "Choose image"}</button></div>
+            <input id="profile-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          </div>
+        </div>
+        <div class="profile-field">
+          <span>${zh ? "自定义背景" : "Custom background"}</span>
+          <div class="profile-media-editor">
+            <div id="profile-background-preview" class="profile-media-preview profile-background-preview"></div>
+            <div class="profile-media-copy"><strong>${zh ? "上传封面背景" : "Upload cover background"}</strong><small>${zh ? "支持 JPG、PNG、WebP，最大 8 MB。上传图片后会覆盖下面的主页配色；清除后会恢复配色。" : "JPG, PNG, or WebP up to 8 MB. An uploaded image overrides the color preset below; clearing it restores the preset."}</small><div class="profile-media-actions"><button id="profile-background-choose" class="profile-inline-button" type="button">${zh ? "选择图片" : "Choose image"}</button><button id="profile-background-clear" class="profile-inline-button secondary" type="button">${zh ? "清除背景" : "Clear background"}</button></div></div>
+            <input id="profile-background-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          </div>
+        </div>
+        <label class="profile-field"><span>${zh ? "个性签名" : "Signature"}</span><input id="profile-edit-signature" type="text" maxlength="80" placeholder="${zh ? "一句话介绍现在的你" : "A short line about you"}"><small>${zh ? "会显示在姓名与邮箱下方，建议控制在一句话内。" : "Shown under your name and email. Keep it to one concise line."}</small></label>
+        <label class="profile-field"><span>${zh ? "个人介绍" : "Bio"}</span><textarea id="profile-edit-bio" maxlength="500" rows="5" placeholder="${zh ? "介绍你的兴趣、方向或正在做的事" : "Share your interests, focus, or what you are working on"}"></textarea><small>${zh ? "用于“关于我”区域，适合写长期兴趣、学习方向或正在进行的项目。" : "Used in the About section for longer-term interests, focus areas, or current projects."}</small></label>
+        <label class="profile-field"><span>${zh ? "所在地" : "Location"}</span><input id="profile-edit-location" type="text" maxlength="80" placeholder="${zh ? "例如：苏州" : "For example: Suzhou"}"><small>${zh ? "仅填写你愿意公开展示的城市或地区，不建议填写具体住址。" : "Only add a city or region you are comfortable showing. Avoid a precise address."}</small></label>
+        <div class="profile-field"><span>${zh ? "在线状态" : "Status"}</span><div class="profile-status-editor"><select id="profile-edit-status-kind"><option value="online">${zh ? "在线" : "Online"}</option><option value="focus">${zh ? "专注中" : "Focus"}</option><option value="busy">${zh ? "忙碌" : "Busy"}</option><option value="away">${zh ? "离开" : "Away"}</option><option value="offline">${zh ? "隐身" : "Offline"}</option></select><input id="profile-edit-status-emoji" type="text" maxlength="8" value="✨" aria-label="${zh ? "状态表情" : "Status emoji"}"><input id="profile-edit-status-text" type="text" maxlength="80" placeholder="${zh ? "自定义状态文字" : "Custom status text"}"></div></div>
+        <label class="profile-field"><span>${zh ? "兴趣标签" : "Interests"}</span><input id="profile-edit-interests" type="text" placeholder="${zh ? "用逗号分隔，例如：统计学, AI, 骑行" : "Comma-separated, e.g. Statistics, AI, Cycling"}"><small>${zh ? "最多 12 个标签。" : "Up to 12 tags."}</small></label>
+        <div class="profile-field"><span>${zh ? "主页配色" : "Profile cover"}</span><div id="profile-cover-picker" class="profile-cover-picker">${["aurora","sky","sunset","grape","graphite","mint"].map(value => `<button type="button" data-cover-choice="${value}" aria-label="${value}"><span data-cover-style="${value}"></span></button>`).join("")}</div></div>
+      </div>
+      <div class="profile-sheet-actions"><button id="profile-save-button" class="profile-save-button" type="button">${zh ? "保存" : "Save"}</button></div>
+    </aside>
+
+    <aside id="profile-link-sheet" class="profile-sheet profile-link-sheet" aria-hidden="true">
+      <div class="profile-sheet-grabber" aria-hidden="true"></div>
+      <div class="profile-sheet-head">
+        <div><span class="profile-eyebrow">${zh ? "链接库" : "Link library"}</span><h3 id="profile-link-sheet-title">${zh ? "添加链接" : "Add link"}</h3></div>
+        <button class="profile-sheet-close" type="button" data-close-profile-link-sheet aria-label="${zh ? "关闭" : "Close"}">×</button>
+      </div>
+      <div class="profile-sheet-body">
+        <input id="profile-link-id" type="hidden">
+        <div class="profile-link-presets"><button type="button" data-link-preset="QQ">QQ</button><button type="button" data-link-preset="GitHub">GitHub</button><button type="button" data-link-preset="Bilibili">Bilibili</button><button type="button" data-link-preset="X">X</button><button type="button" data-link-preset="${zh ? "个人网站" : "Website"}">${zh ? "个人网站" : "Website"}</button></div>
+        <label class="profile-field"><span>${zh ? "名称" : "Title"}</span><input id="profile-link-title" type="text" maxlength="50" placeholder="QQ / GitHub / Website"></label>
+        <label class="profile-field"><span>${zh ? "链接" : "URL"}</span><input id="profile-link-url" type="url" maxlength="1024" placeholder="https://"></label>
+        <label class="profile-field"><span>${zh ? "分类" : "Category"}</span><select id="profile-link-category"><option value="social">${zh ? "社交" : "Social"}</option><option value="developer">${zh ? "开发者" : "Developer"}</option><option value="site">${zh ? "网站" : "Website"}</option><option value="contact">${zh ? "联系方式" : "Contact"}</option><option value="other">${zh ? "其他" : "Other"}</option></select></label>
+        <label class="profile-field"><span>${zh ? "备注" : "Note"}</span><input id="profile-link-note" type="text" maxlength="140" placeholder="${zh ? "可选" : "Optional"}"></label>
+        <label class="profile-pin-row"><input id="profile-link-pinned" type="checkbox"><span>${zh ? "置顶这个链接" : "Pin this link"}</span></label>
+      </div>
+      <div class="profile-sheet-actions"><button id="profile-link-save" class="profile-save-button" type="button">${zh ? "保存链接" : "Save link"}</button></div>
+    </aside>
+  `;
+}
 function accountAuditContent(zh) {
   return `
     <section class="audit-grid">
@@ -3659,6 +4014,7 @@ function securityAuditContent(zh) {
 }
 
 function workspaceContent(path, zh) {
+  if (path.endsWith("/workbench")) return statusContent(zh, "工作台数据尚未接入", "工作台是工作区中的主要操作界面；当前尚未建立独立的持久化工作台数据模型。", "Workbench data is not connected yet", "The Workbench is the primary operating surface inside Workspace; a dedicated persistent workbench data model has not been established yet.");
   if (path.endsWith("/projects")) return statusContent(zh, "项目数据尚未接入", "当前数据库没有 projects 表，因此不展示项目名称、状态或完成百分比。", "Project data is not connected yet", "There is no projects table in the current database, so project names, statuses, and completion percentages are not shown.");
   if (path.endsWith("/experiments")) return statusContent(zh, "实验工具尚未接入", "Prompt、Agent 和 API 实验目前没有持久化数据或独立工具接口。", "Experiment tools are not connected yet", "Prompt, agent, and API experiments do not currently have persistent data or dedicated tool APIs.");
   if (path.endsWith("/drafts")) return statusContent(zh, "草稿存储尚未接入", "当前数据库没有 drafts 表或草稿保存接口。", "Draft storage is not connected yet", "There is no drafts table or draft persistence API yet.");
@@ -4469,6 +4825,7 @@ function storageClientScript(zh, loginUrl) {
   `;
 }
 function settingsContent(path, zh) {
+  if (path.endsWith("/general")) return settingsContent("/settings", zh);
   if (path.endsWith("/appearance")) return appearanceSettingsContent(zh);
   if (path.endsWith("/language")) return languageSettingsContent(zh);
   if (path.endsWith("/security")) return securityAuditContent(zh);
@@ -5062,6 +5419,205 @@ body.os-shell{
 @media (prefers-contrast:more){
   .os-sidebar,.os-main,.os-card,.os-profile-card,.admin-motion-card,.admin-metrics article,.storage-overview-panel,.storage-browser{border-color:var(--border-strong)!important}
 }
+
+    /* PROFILE_HOME_V3 */
+    .profile-home{display:grid;gap:14px}
+    .profile-cover{position:relative;min-height:210px;border-radius:22px;overflow:hidden;background:linear-gradient(135deg,#1d7fff 0%,#7d62ff 52%,#ff6ea8 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28)}
+    .profile-cover[data-cover-style="sky"],[data-cover-style="sky"]{background:linear-gradient(135deg,#5ac8fa,#007aff)}
+    .profile-cover[data-cover-style="sunset"],[data-cover-style="sunset"]{background:linear-gradient(135deg,#ff9f0a,#ff375f 55%,#af52de)}
+    .profile-cover[data-cover-style="grape"],[data-cover-style="grape"]{background:linear-gradient(135deg,#5856d6,#af52de)}
+    .profile-cover[data-cover-style="graphite"],[data-cover-style="graphite"]{background:linear-gradient(135deg,#3a3a3c,#1c1c1e)}
+    .profile-cover[data-cover-style="mint"],[data-cover-style="mint"]{background:linear-gradient(135deg,#30d158,#64d2ff)}
+    .profile-cover-noise{position:absolute;inset:0;background:radial-gradient(circle at 18% 15%,rgba(255,255,255,.34),transparent 28%),radial-gradient(circle at 82% 72%,rgba(255,255,255,.16),transparent 32%);mix-blend-mode:screen;pointer-events:none}
+    .profile-cover-actions{position:absolute;top:16px;right:16px}
+    .profile-pill-button{width:auto;min-height:38px;margin:0;padding:0 14px;border:1px solid rgba(255,255,255,.32);border-radius:999px;background:rgba(255,255,255,.22);color:#fff;-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);font-size:13px;font-weight:680;box-shadow:none}
+    .profile-pill-button:hover{background:rgba(255,255,255,.28);filter:none}
+    .profile-pill-secondary{border-color:var(--border);background:var(--fill);color:var(--text);-webkit-backdrop-filter:none;backdrop-filter:none}
+    .profile-pill-secondary:hover{background:var(--secondary)}
+    .profile-identity{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:end;margin:-64px 24px 0;position:relative;z-index:2}
+    .profile-avatar-large{width:116px!important;height:116px!important;border-radius:50%!important;border:5px solid color-mix(in srgb,var(--surface) 94%,transparent);font-size:42px!important;box-shadow:0 14px 34px rgba(0,0,0,.18)!important}
+    .profile-identity-copy{padding-bottom:4px;min-width:0}
+    .profile-name-row{display:flex;align-items:center;gap:8px}
+    .profile-name-row h2{margin:0;font-size:28px;letter-spacing:-.035em}
+    .profile-name-lock{font-size:13px;opacity:.5}
+    .profile-identity-copy>p{margin:4px 0 0;color:var(--muted)}
+    .profile-signature{font-size:14px!important;color:var(--text)!important;max-width:760px}
+    .profile-home-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:14px}
+    .profile-section-card{padding:19px;border:1px solid var(--border);border-radius:19px;background:color-mix(in srgb,var(--surface) 76%,transparent);box-shadow:0 8px 26px rgba(0,0,0,.045)}
+    .profile-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+    .profile-section-head h3{margin:3px 0 0;font-size:18px;letter-spacing:-.02em}
+    .profile-section-head p{margin:7px 0 0;font-size:13px}
+    .profile-eyebrow{display:block;color:var(--muted);font-size:11px;font-weight:680}
+    .profile-bio{min-height:48px;margin:16px 0;color:var(--text);font-size:14px;line-height:1.55;white-space:pre-wrap}
+    .profile-meta-row{display:flex;flex-wrap:wrap;gap:8px}
+    .profile-presence,.profile-location{display:inline-flex;align-items:center;min-height:30px;padding:0 10px;border-radius:999px;background:var(--fill);color:var(--muted);font-size:12px;font-weight:620}
+    .profile-interest-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+    .profile-interest-list>span{padding:7px 10px;border-radius:999px;background:var(--fill);color:var(--text);font-size:12px}
+    .profile-interest-list .profile-interest-empty{color:var(--muted)}
+    .profile-quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
+    .profile-quick-grid a{display:grid;grid-template-columns:34px 1fr;grid-template-rows:auto auto;column-gap:9px;align-items:center;padding:11px;border-radius:14px;background:var(--fill);color:var(--text);text-decoration:none;transition:background .13s ease,transform .1s ease}
+    .profile-quick-grid a:hover{background:var(--secondary)}.profile-quick-grid a:active{transform:scale(.985)}
+    .profile-quick-grid a>span{grid-row:1/-1;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--primary) 14%,transparent);color:var(--primary);font-weight:800}
+    .profile-quick-grid strong{font-size:13px}.profile-quick-grid small{color:var(--muted);font-size:11px}
+    .profile-link-list{display:grid;gap:8px;margin-top:15px}
+    .profile-link-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px;border-radius:15px;background:var(--fill)}
+    .profile-link-main{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:10px;min-width:0;padding:3px;color:var(--text);text-decoration:none}
+    .profile-link-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--border);font-size:14px;font-weight:800}
+    .profile-link-copy{min-width:0}.profile-link-copy strong,.profile-link-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.profile-link-copy strong{font-size:13px}.profile-link-copy strong em{font-style:normal;color:var(--warning)}.profile-link-copy small{margin-top:3px;color:var(--muted);font-size:11px}
+    .profile-link-open{color:var(--muted)}
+    .profile-link-actions{display:flex;gap:4px}.profile-link-actions button{width:auto;min-height:34px;margin:0;padding:0 9px;border-radius:9px;background:transparent;color:var(--muted);font-size:11px}.profile-link-actions button:hover{background:var(--secondary);color:var(--text)}
+    .profile-link-empty{display:grid;place-items:center;min-height:120px;padding:20px;text-align:center;color:var(--muted)}.profile-link-empty strong{color:var(--text);font-size:14px}.profile-link-empty span{margin-top:4px;font-size:12px}
+    .profile-sheet-backdrop{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.24);opacity:0;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);transition:opacity .18s ease}.profile-sheet-backdrop.is-visible{opacity:1}
+    .profile-sheet{position:fixed;top:12px;right:12px;bottom:12px;z-index:80;display:flex;flex-direction:column;width:min(480px,calc(100vw - 24px));border:1px solid var(--border);border-radius:24px;background:var(--glass-heavy);-webkit-backdrop-filter:blur(34px) saturate(180%);backdrop-filter:blur(34px) saturate(180%);box-shadow:-18px 0 60px rgba(0,0,0,.2);transform:translateX(calc(100% + 28px));opacity:.78;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .18s ease;overflow:hidden}
+    .profile-sheet.is-open{transform:none;opacity:1}.profile-sheet-grabber{display:none}
+    .profile-sheet-head{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:20px 20px 12px}.profile-sheet-head h3{margin:3px 0 0;font-size:22px;letter-spacing:-.03em}
+    .profile-sheet-close{width:36px;height:36px;min-height:36px;margin:0;padding:0;border-radius:50%;background:var(--fill);color:var(--text);font-size:22px;font-weight:400}
+    .profile-sheet-body{flex:1;overflow:auto;padding:4px 20px 22px}
+    .profile-field{display:grid;gap:7px;margin-top:15px}.profile-field>span{font-size:12px;font-weight:650;color:var(--muted)}.profile-field small{color:var(--quiet);font-size:11px;line-height:1.4}
+    .profile-field input,.profile-field select,.profile-field textarea{width:100%;margin:0;border:0;border-radius:12px;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border);font:inherit;color:var(--text)}
+    .profile-field textarea{min-height:110px;padding:12px 14px;resize:vertical;line-height:1.5}
+    .profile-field input[readonly]{opacity:.72;cursor:not-allowed}
+    .profile-status-editor{display:grid;grid-template-columns:1fr 64px 1.3fr;gap:7px}.profile-status-editor>*{min-width:0}
+    .profile-cover-picker{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}.profile-cover-picker button{width:auto;min-height:46px;margin:0;padding:3px;border:2px solid transparent;border-radius:13px;background:transparent}.profile-cover-picker button.is-selected{border-color:var(--primary)}.profile-cover-picker span{display:block;height:36px;border-radius:9px}
+    .profile-pin-row{display:flex;align-items:center;gap:9px;margin-top:16px;color:var(--text);font-size:13px}.profile-pin-row input{width:auto;min-height:auto;margin:0}
+    .profile-link-presets{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.profile-link-presets button{width:auto;min-height:34px;margin:0;padding:0 10px;border-radius:999px;background:var(--fill);color:var(--text);font-size:11px}
+    .profile-sheet-actions{padding:12px 20px 20px;border-top:1px solid var(--hairline);background:color-mix(in srgb,var(--glass-heavy) 94%,transparent)}.profile-save-button{margin:0}
+    @media(max-width:900px){.profile-home-grid{grid-template-columns:1fr}.profile-identity{margin-left:18px;margin-right:18px}}
+    @media(max-width:620px){.profile-cover{min-height:160px;border-radius:18px}.profile-identity{grid-template-columns:88px minmax(0,1fr);gap:12px;margin-top:-44px}.profile-avatar-large{width:88px!important;height:88px!important;font-size:30px!important}.profile-name-row h2{font-size:22px}.profile-section-card{padding:16px}.profile-quick-grid{grid-template-columns:1fr}.profile-link-item{grid-template-columns:1fr}.profile-link-actions{justify-content:flex-end}.profile-sheet{top:auto;right:8px;left:8px;bottom:8px;width:auto;max-height:88dvh;border-radius:24px;transform:translateY(calc(100% + 20px));opacity:1}.profile-sheet-grabber{display:block;width:42px;height:5px;margin:8px auto 0;border-radius:999px;background:var(--quiet);opacity:.45}.profile-status-editor{grid-template-columns:1fr 58px}.profile-status-editor input:last-child{grid-column:1/-1}.profile-cover-picker{grid-template-columns:repeat(3,1fr)}}
+    @media(prefers-reduced-motion:reduce){.profile-sheet,.profile-sheet-backdrop,.profile-link-item,.profile-quick-grid a{transition:opacity .12s ease,background .12s ease!important}}
+    @media(prefers-reduced-transparency:reduce){.profile-sheet{background:var(--surface)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.profile-pill-button{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
+    /* PROFILE_HOME_V3_POLISH_1 */
+    :root:not([data-theme="light"]) .profile-status-editor select{
+      color-scheme:dark;
+      background:#242426;
+      color:#f5f5f7;
+    }
+    :root:not([data-theme="light"]) .profile-status-editor select option{
+      background:#242426;
+      color:#f5f5f7;
+    }
+    :root[data-theme="light"] .profile-status-editor select{
+      color-scheme:light;
+      background:rgba(118,118,128,.10);
+      color:#1d1d1f;
+    }
+    :root[data-theme="light"] .profile-status-editor select option{
+      background:#fff;
+      color:#1d1d1f;
+    }
+
+    html.profile-sheet-open .top-controls{
+      opacity:0!important;
+      visibility:hidden!important;
+      pointer-events:none!important;
+      transform:translateY(-10px)!important;
+    }
+    .top-controls{
+      transition:opacity .16s ease,transform .18s cubic-bezier(.2,.8,.2,1),visibility .16s step-end;
+    }
+    html:not(.profile-sheet-open) .top-controls{
+      visibility:visible;
+    }
+    .profile-sheet{z-index:120}
+    .profile-sheet-backdrop{z-index:110}
+    .profile-sheet-close{
+      position:relative;
+      z-index:3;
+      pointer-events:auto;
+    }
+
+    .profile-cover-picker{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-start;
+      gap:10px;
+    }
+    .profile-cover-picker button{
+      flex:0 0 auto;
+      width:58px;
+      height:48px;
+      min-height:48px;
+      margin:0;
+      padding:4px;
+      border:2px solid transparent;
+      border-radius:14px;
+      background:transparent;
+      box-shadow:none;
+    }
+    .profile-cover-picker button:hover{
+      background:var(--fill);
+      filter:none;
+      transform:none;
+    }
+    .profile-cover-picker button:active{transform:scale(.94)}
+    .profile-cover-picker button.is-selected{
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 13%,transparent);
+    }
+    .profile-cover-picker span{
+      display:block;
+      width:46px;
+      height:36px;
+      border-radius:10px;
+      border:1px solid color-mix(in srgb,#fff 20%,var(--border));
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
+    }
+    .profile-cover-picker [data-cover-style="aurora"]{background:linear-gradient(135deg,#1d7fff 0%,#7d62ff 52%,#ff6ea8 100%)}
+    .profile-cover-picker [data-cover-style="sky"]{background:linear-gradient(135deg,#5ac8fa,#007aff)}
+    .profile-cover-picker [data-cover-style="sunset"]{background:linear-gradient(135deg,#ff9f0a,#ff375f 55%,#af52de)}
+    .profile-cover-picker [data-cover-style="grape"]{background:linear-gradient(135deg,#5856d6,#af52de)}
+    .profile-cover-picker [data-cover-style="graphite"]{background:linear-gradient(135deg,#636366,#1c1c1e)}
+    .profile-cover-picker [data-cover-style="mint"]{background:linear-gradient(135deg,#30d158,#64d2ff)}
+
+    .profile-identity{
+      align-items:start;
+      margin-top:-58px;
+    }
+    .profile-identity-copy{
+      padding-top:72px;
+      padding-bottom:0;
+    }
+    .profile-identity-copy>p{
+      margin-top:7px;
+    }
+    .profile-signature{
+      margin-top:10px!important;
+    }
+
+    @media(max-width:620px){
+      .profile-identity{margin-top:-44px}
+      .profile-identity-copy{padding-top:56px}
+      .profile-cover-picker{gap:8px}
+      .profile-cover-picker button{width:54px;height:46px;min-height:46px}
+      .profile-cover-picker span{width:42px;height:34px}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .top-controls{transition:none!important}
+    }
+    /* PROFILE_HOME_V3_POLISH_2 */
+    .profile-avatar-large{overflow:hidden}
+    .profile-avatar-large img{width:100%;height:100%;display:block;object-fit:cover}
+    .profile-cover.has-custom-background{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}
+    .profile-media-editor{display:grid;grid-template-columns:88px minmax(0,1fr);gap:14px;align-items:center;padding:12px;border-radius:15px;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border)}
+    .profile-media-preview{width:88px;height:70px;border-radius:13px;background:var(--surface-soft);background-size:cover;background-position:center;overflow:hidden;box-shadow:inset 0 0 0 1px var(--border)}
+    .profile-avatar-preview{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;font-size:26px;font-weight:800;color:#fff;background:linear-gradient(145deg,#64a8ff,#3f7ff4)}
+    .profile-avatar-preview img{width:100%;height:100%;object-fit:cover}
+    .profile-background-preview[data-cover-style="aurora"]{background:linear-gradient(135deg,#1d7fff 0%,#7d62ff 52%,#ff6ea8 100%)}
+    .profile-background-preview[data-cover-style="sky"]{background:linear-gradient(135deg,#5ac8fa,#007aff)}
+    .profile-background-preview[data-cover-style="sunset"]{background:linear-gradient(135deg,#ff9f0a,#ff375f 55%,#af52de)}
+    .profile-background-preview[data-cover-style="grape"]{background:linear-gradient(135deg,#5856d6,#af52de)}
+    .profile-background-preview[data-cover-style="graphite"]{background:linear-gradient(135deg,#636366,#1c1c1e)}
+    .profile-background-preview[data-cover-style="mint"]{background:linear-gradient(135deg,#30d158,#64d2ff)}
+    .profile-media-copy{display:grid;gap:5px;min-width:0}.profile-media-copy strong{font-size:13px}.profile-media-copy small{color:var(--muted);font-size:11px;line-height:1.45}
+    .profile-media-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:3px}
+    .profile-inline-button{width:max-content;min-height:34px;margin:3px 0 0;padding:0 11px;border-radius:10px;background:var(--primary);color:#fff;font-size:11px;font-weight:680}
+    .profile-inline-button.secondary{background:var(--secondary)!important;color:var(--text)!important}
+    .os-nav-items a[aria-current="page"],.os-nav-title[aria-current="page"]{background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary)}
+    @media(max-width:620px){.profile-media-editor{grid-template-columns:72px minmax(0,1fr)}.profile-media-preview{width:72px;height:58px}.profile-avatar-preview{width:64px;height:64px}}
+    /* PROFILE_HOME_V3_POLISH_2_HOTFIX */
+    /* PROFILE_HOME_V3_CONTROLS_HITBOX_FIX */ html.profile-sheet-open .top-controls{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:none!important;right:calc(min(520px,92vw) + 20px)!important;z-index:130!important}.profile-sheet-head{position:relative!important;padding-right:62px!important}.profile-sheet-close{position:absolute!important;top:14px!important;right:14px!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;margin:0!important;display:grid!important;place-items:center!important;border-radius:50%!important;z-index:160!important;pointer-events:auto!important;touch-action:manipulation!important;line-height:1!important}.profile-sheet-close::before{content:"";position:absolute;inset:-4px}@media(max-width:760px){html.profile-sheet-open .top-controls{right:16px!important;z-index:130!important}.profile-sheet-head{padding-right:62px!important}}    /* PROFILE_SHEET_VIEWPORT_FIX */ .profile-sheet-backdrop{position:fixed!important;inset:0!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;z-index:110!important}.profile-sheet-backdrop.is-visible{pointer-events:auto!important}html.profile-sheet-open,html.profile-sheet-open body{overflow:hidden!important;overscroll-behavior:none!important}
+    /* SETTINGS_GENERAL_ROUTE_V1 */
 </style>`;
 }
 
@@ -6026,3 +6582,4 @@ function loginPage(t, links, ipInfo) {
 </html>
 `;
 }
+// OS_ROUTE_ARCHITECTURE_V2_FIXED
