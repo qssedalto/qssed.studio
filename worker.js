@@ -101,7 +101,7 @@ const TEXT = {
     setPassword: "请设置密码以完成注册",
     alreadyHaveAccount: "已有账号？登录",
     dontHaveAccount: "还没有账号？注册",
-    loginDescription: "登录后继续。",
+    loginDescription: "登录后继续",
     signUpDescription: "创建账号并开始使用 Studio",
     usernamePlaceholder: "用户名",
     firstNamePlaceholder: "姓",
