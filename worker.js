@@ -68,8 +68,8 @@ const TEXT = {
     setPassword: "Set your password to finish.",
     alreadyHaveAccount: "Already have an account? Sign in",
     dontHaveAccount: "Don't have an account? Sign up",
-    loginDescription: "Sign in to continue to get information from Tianguo.",
-    signUpDescription: "Get started with studio access flow.",
+    loginDescription: "Sign in to continue accessing Tianguo information.",
+    signUpDescription: "Create an account to start using Studio.",
     usernamePlaceholder: "Username",
     firstNamePlaceholder: "First name",
     lastNamePlaceholder: "Last name",
@@ -101,8 +101,8 @@ const TEXT = {
     setPassword: "请设置密码以完成注册",
     alreadyHaveAccount: "已有账号？登录",
     dontHaveAccount: "还没有账号？注册",
-    loginDescription: "登录后继续获取 Tianguo 的信息",
-    signUpDescription: "开始使用 Studio 注册流程",
+    loginDescription: "登录后继续访问 Tianguo 的信息",
+    signUpDescription: "创建账号并开始使用 Studio",
     usernamePlaceholder: "用户名",
     firstNamePlaceholder: "姓",
     lastNamePlaceholder: "名",
@@ -1421,7 +1421,205 @@ function baseHead(title) {
           min-width:62px;
         }
       }
-    </style>
+
+      /* APPLE_DESIGN_SYSTEM_V2_SHARED */
+/* APPLE_DESIGN_SYSTEM_V2 — shared surfaces */
+:root{
+  color-scheme:dark;
+  --bg:#0b0b0d;
+  --bg-soft:#141416;
+  --surface:#1c1c1e;
+  --surface-strong:#2c2c2e;
+  --surface-soft:rgba(118,118,128,.14);
+  --card:rgba(28,28,30,.74);
+  --text:#f5f5f7;
+  --muted:#a1a1a6;
+  --quiet:#6e6e73;
+  --border:rgba(255,255,255,.105);
+  --border-strong:rgba(255,255,255,.19);
+  --primary:#0a84ff;
+  --primary-hover:#409cff;
+  --primary-ink:#fff;
+  --secondary:rgba(118,118,128,.18);
+  --secondary-hover:rgba(118,118,128,.28);
+  --success:#32d74b;
+  --danger:#ff453a;
+  --warning:#ffd60a;
+  --shadow:0 30px 80px rgba(0,0,0,.34);
+  --shadow-soft:0 12px 34px rgba(0,0,0,.18);
+  --radius:14px;
+  --radius-lg:26px;
+  --hairline:rgba(255,255,255,.09);
+  --glass:rgba(28,28,30,.68);
+  --glass-heavy:rgba(24,24,26,.82);
+  --fill:rgba(118,118,128,.16);
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f5f5f7;
+  --bg-soft:#ffffff;
+  --surface:#ffffff;
+  --surface-strong:#f2f2f7;
+  --surface-soft:rgba(118,118,128,.10);
+  --card:rgba(255,255,255,.72);
+  --text:#1d1d1f;
+  --muted:#6e6e73;
+  --quiet:#8e8e93;
+  --border:rgba(60,60,67,.13);
+  --border-strong:rgba(60,60,67,.22);
+  --primary:#007aff;
+  --primary-hover:#1687ff;
+  --primary-ink:#fff;
+  --secondary:rgba(118,118,128,.12);
+  --secondary-hover:rgba(118,118,128,.20);
+  --success:#248a3d;
+  --danger:#d70015;
+  --warning:#b25000;
+  --shadow:0 28px 72px rgba(0,0,0,.13);
+  --shadow-soft:0 10px 30px rgba(0,0,0,.075);
+  --hairline:rgba(60,60,67,.12);
+  --glass:rgba(255,255,255,.72);
+  --glass-heavy:rgba(247,247,249,.86);
+  --fill:rgba(118,118,128,.10);
+}
+*{-webkit-tap-highlight-color:transparent}
+html{font-size:16px;background:var(--bg);font-optical-sizing:auto}
+body{
+  padding:clamp(16px,3vw,32px);
+  background:
+    radial-gradient(900px 560px at 15% -5%,color-mix(in srgb,var(--primary) 12%,transparent),transparent 64%),
+    radial-gradient(720px 520px at 96% 104%,color-mix(in srgb,#af52de 8%,transparent),transparent 68%),
+    var(--bg);
+  background-size:auto;
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI",system-ui,sans-serif;
+  letter-spacing:0;
+  animation:none;
+}
+body::before{
+  background:none!important;
+  opacity:0!important;
+  animation:none!important;
+}
+.card{
+  max-width:560px;
+  padding:32px;
+  border:1px solid var(--border);
+  border-radius:28px;
+  background:var(--glass);
+  -webkit-backdrop-filter:blur(30px) saturate(180%);
+  backdrop-filter:blur(30px) saturate(180%);
+  box-shadow:var(--shadow);
+  overflow:visible;
+  animation:apple-materialize .34s cubic-bezier(.2,.8,.2,1) both;
+}
+.card::before{display:none}
+h1,.brand-title{
+  margin-bottom:12px;
+  font-weight:720;
+  letter-spacing:-.035em;
+  line-height:1.04;
+}
+h1{font-size:clamp(34px,5vw,54px)}
+p{color:var(--muted);line-height:1.55}
+input,select{
+  min-height:50px;
+  margin-top:12px;
+  padding:0 14px;
+  border:1px solid transparent;
+  border-radius:13px;
+  background:var(--fill);
+  color:var(--text);
+  font:inherit;
+  font-size:15px;
+  box-shadow:inset 0 0 0 1px var(--border);
+  transition:background .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+input:hover,select:hover{background:color-mix(in srgb,var(--fill) 82%,var(--surface) 18%)}
+input:focus,select:focus{
+  border-color:color-mix(in srgb,var(--primary) 70%,transparent);
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 16%,transparent);
+}
+button,a.button{
+  min-height:50px;
+  margin-top:14px;
+  padding:0 16px;
+  border:0;
+  border-radius:13px;
+  background:var(--primary);
+  color:var(--primary-ink);
+  font:inherit;
+  font-size:15px;
+  font-weight:680;
+  box-shadow:none;
+  touch-action:manipulation;
+  transition:filter .14s ease,background .14s ease,transform .10s ease,opacity .14s ease;
+}
+button:hover,a.button:hover{background:var(--primary);filter:brightness(1.06);transform:none;box-shadow:none}
+button:active,a.button:active{transform:scale(.975);filter:brightness(.97)}
+button:disabled,a.button[aria-disabled="true"]{opacity:.42;cursor:not-allowed;filter:none;transform:none}
+.secondary{
+  background:var(--secondary)!important;
+  color:var(--text)!important;
+  border:0!important;
+}
+.secondary:hover{background:var(--secondary-hover)!important}
+.choice-row{
+  min-height:50px;
+  padding:12px 14px;
+  border:1px solid transparent;
+  border-radius:14px;
+  background:var(--fill);
+  box-shadow:inset 0 0 0 1px var(--border);
+  transition:background .14s ease,box-shadow .14s ease,transform .10s ease;
+}
+.choice-row:hover{background:var(--secondary)}
+.choice-row:active{transform:scale(.99)}
+.checkbox-row{color:var(--muted)}
+input[type="radio"],input[type="checkbox"]{accent-color:var(--primary)}
+.theme-toggle,.language-toggle{
+  top:18px;
+  width:44px;
+  height:44px;
+  min-width:44px;
+  min-height:44px;
+  margin:0;
+  padding:0;
+  border:1px solid color-mix(in srgb,var(--border-strong) 72%,transparent);
+  border-radius:50%;
+  background:var(--glass);
+  color:var(--text);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  backdrop-filter:blur(20px) saturate(180%);
+  box-shadow:0 8px 28px rgba(0,0,0,.12),inset 0 1px 0 color-mix(in srgb,#fff 32%,transparent);
+}
+.theme-toggle{right:18px}
+.language-toggle{right:70px;font-size:11px;font-weight:720}
+.theme-toggle:hover,.language-toggle:hover{background:color-mix(in srgb,var(--glass) 84%,var(--surface-strong) 16%);transform:none}
+.theme-toggle:active,.language-toggle:active{transform:scale(.92)}
+#message{color:var(--primary);font-size:13px;line-height:1.5}
+@keyframes apple-materialize{
+  from{opacity:0;transform:scale(.985) translateY(8px);filter:blur(4px)}
+  to{opacity:1;transform:none;filter:none}
+}
+@media (max-width:560px){
+  body{padding:12px}
+  .card{padding:24px 18px;border-radius:24px}
+  .theme-toggle,.language-toggle{top:12px}
+  .theme-toggle{right:12px}.language-toggle{right:62px}
+}
+@media (prefers-reduced-motion:reduce){
+  .card{animation:none!important}
+  button,a.button,.choice-row,.theme-toggle,.language-toggle{transition:opacity .12s ease,background .12s ease,color .12s ease!important}
+}
+@media (prefers-reduced-transparency:reduce){
+  .card,.theme-toggle,.language-toggle{background:var(--surface)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+}
+@media (prefers-contrast:more){
+  .card,.theme-toggle,.language-toggle,input,select,.choice-row{border-color:var(--border-strong)!important}
+}
+</style>
   `;
 }
 
@@ -3604,7 +3802,7 @@ function storageSettingsContent(zh) {
     deleteFailed: "删除失败：{message}",
     refreshedNow: "刚刚",
     tooLarge: "“{name}”超过 50 MB，未上传。",
-    connectionDescription: "文件仅通过已登录的 Worker API 存取，R2 不会直接暴露给浏览器。"
+    connectionDescription: "文件仅对当前账号可见，并通过已登录的 Worker API 安全存取；浏览器不会直接访问 R2。"
   } : {
     connected: "Connected",
     checking: "Checking",
@@ -3639,7 +3837,7 @@ function storageSettingsContent(zh) {
     deleteFailed: "Delete failed: {message}",
     refreshedNow: "Just now",
     tooLarge: "“{name}” exceeds 50 MB and was not uploaded.",
-    connectionDescription: "Files are accessed only through the signed-in Worker API. R2 is never exposed directly to the browser."
+    connectionDescription: "Files are private to the current account and accessed securely through the signed-in Worker API; the browser never connects to R2 directly."
   };
 
   return `
@@ -4506,7 +4704,365 @@ function osStyles() {
       .admin-drawer{width:calc(100vw - 12px)}
     }
     @media (prefers-reduced-motion:reduce){body.os-shell,.os-sidebar,.os-main,.os-card,.admin-motion-page,.admin-motion-card,.admin-metrics article,.animated-row,.admin-scan:before,.status-pulse,.admin-empty-orb,.skeleton-line,.admin-skeleton strong{animation:none !important;transition:none !important}.admin-motion-card:hover,.admin-metrics article:hover,.admin-ghost:hover,.admin-primary:hover,.admin-danger:hover{transform:none !important}}
-  </style>`;
+
+      /* APPLE_DESIGN_SYSTEM_V2_OS */
+/* APPLE_DESIGN_SYSTEM_V2 — authenticated workspace */
+body.os-shell{
+  padding:18px!important;
+  background:
+    radial-gradient(1000px 620px at 10% -12%,color-mix(in srgb,var(--primary) 10%,transparent),transparent 66%),
+    radial-gradient(820px 560px at 102% 108%,color-mix(in srgb,#af52de 7%,transparent),transparent 70%),
+    var(--bg)!important;
+  background-size:auto!important;
+  animation:none!important;
+}
+.os-layout{
+  max-width:1680px;
+  margin:0 auto;
+  grid-template-columns:276px minmax(0,1fr);
+  gap:14px;
+}
+.os-sidebar,.os-main,.os-card,.os-profile-card,.os-lock{border-color:var(--border)}
+.os-sidebar{
+  padding:14px;
+  border-radius:26px;
+  background:var(--glass-heavy);
+  -webkit-backdrop-filter:blur(34px) saturate(180%);
+  backdrop-filter:blur(34px) saturate(180%);
+  box-shadow:0 20px 56px rgba(0,0,0,.13),inset 0 1px 0 color-mix(in srgb,#fff 26%,transparent);
+  animation:none;
+}
+.os-main{
+  padding:clamp(24px,3vw,38px);
+  border-radius:26px;
+  background:color-mix(in srgb,var(--glass) 92%,transparent);
+  -webkit-backdrop-filter:blur(28px) saturate(165%);
+  backdrop-filter:blur(28px) saturate(165%);
+  box-shadow:0 20px 56px rgba(0,0,0,.10),inset 0 1px 0 color-mix(in srgb,#fff 22%,transparent);
+  animation:none;
+}
+.os-brand{gap:10px;margin:2px 4px 16px}
+.os-brand-mark,.os-avatar{
+  width:40px;height:40px;
+  border-radius:12px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 78%,#fff 22%),var(--primary));
+  box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 22%,transparent);
+}
+.os-brand strong{font-size:14px;letter-spacing:-.01em}
+.os-brand small{font-size:11px;color:var(--muted)}
+.os-user{
+  margin:0 2px 12px;
+  padding:11px 12px;
+  border:0;
+  border-radius:14px;
+  background:var(--fill);
+  box-shadow:inset 0 0 0 1px var(--border);
+}
+.os-user strong{font-size:10px;letter-spacing:.04em}
+.os-user>span{margin-top:4px;font-size:13px}
+.os-signout-button{
+  min-height:36px;
+  margin:9px 0 0;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:var(--muted);
+  font-size:12px;
+  box-shadow:none;
+}
+.os-signout-button:hover{background:color-mix(in srgb,var(--danger) 9%,transparent);color:var(--danger)}
+.os-signout-button:active{transform:scale(.97)}
+.os-nav{gap:5px}
+.os-nav-group{
+  padding:3px;
+  border:0;
+  border-radius:14px;
+  background:transparent;
+}
+.os-nav-group.is-active{border:0;box-shadow:none;background:transparent}
+.os-nav-title{
+  padding:9px 10px;
+  border-radius:11px;
+  color:var(--text);
+  font-size:13px;
+  font-weight:680;
+  transition:background .13s ease,color .13s ease,transform .1s ease;
+}
+.os-nav-title:hover{background:var(--fill)}
+.os-nav-title:active{transform:scale(.985)}
+.os-nav-group.is-active>.os-nav-title{
+  background:color-mix(in srgb,var(--primary) 15%,transparent);
+  color:var(--primary);
+}
+.os-nav-items{gap:1px;padding:2px 0 3px 9px}
+.os-nav-items a{
+  padding:7px 10px;
+  border-radius:9px;
+  color:var(--muted);
+  font-size:12.5px;
+  transition:background .13s ease,color .13s ease,transform .1s ease;
+}
+.os-nav-items a:hover{background:var(--fill);color:var(--text)}
+.os-nav-items a:active{transform:scale(.985)}
+.os-hero{
+  align-items:flex-start;
+  margin-bottom:24px;
+  gap:20px;
+}
+.os-kicker{
+  margin:0 0 6px;
+  color:var(--primary);
+  font-size:12px;
+  font-weight:680;
+  letter-spacing:.01em;
+}
+.os-hero h1{
+  margin:0 0 8px;
+  font-size:clamp(32px,4.4vw,50px);
+  font-weight:730;
+  letter-spacing:-.04em;
+  line-height:1.02;
+}
+.os-hero p{max-width:760px;font-size:14px;line-height:1.5}
+.os-ai{
+  min-width:190px;
+  padding:13px 15px;
+  border:0;
+  border-radius:15px;
+  background:var(--fill);
+  box-shadow:inset 0 0 0 1px var(--border);
+  transition:background .14s ease,transform .1s ease;
+}
+.os-ai:hover{background:var(--secondary);transform:none}
+.os-ai:active{transform:scale(.98)}
+.os-ai span{font-size:11px}.os-ai strong{font-size:15px;letter-spacing:-.01em}
+.os-grid{
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+}
+.os-card,.os-profile-card,.os-lock{
+  border:1px solid var(--border);
+  border-radius:19px;
+  background:color-mix(in srgb,var(--surface) 74%,transparent);
+  box-shadow:0 8px 26px rgba(0,0,0,.055);
+}
+.os-card{
+  padding:18px;
+  animation:none;
+}
+.os-card h2{margin:7px 0 7px;font-size:18px;letter-spacing:-.02em}
+.os-card small{color:var(--muted);font-size:11px;font-weight:650}
+.os-card p{font-size:13.5px;line-height:1.5}
+.os-card.is-large{min-height:190px}
+.settings-card-link{
+  transition:background .14s ease,border-color .14s ease,transform .1s ease;
+}
+.settings-card-link:hover{
+  transform:none;
+  border-color:var(--border-strong);
+  background:color-mix(in srgb,var(--surface) 82%,var(--fill) 18%);
+  box-shadow:0 8px 26px rgba(0,0,0,.055);
+}
+.settings-card-link:active{transform:scale(.988)}
+.settings-card-arrow{right:16px;bottom:13px;font-size:20px;color:var(--quiet)}
+.settings-choice-grid{gap:8px;margin-top:18px}
+.settings-choice{
+  min-height:72px;
+  padding:13px 14px;
+  border:1px solid transparent;
+  border-radius:14px;
+  background:var(--fill);
+  box-shadow:inset 0 0 0 1px var(--border);
+  transition:background .14s ease,box-shadow .14s ease,transform .1s ease;
+}
+.settings-choice:hover{background:var(--secondary);border-color:transparent;box-shadow:inset 0 0 0 1px var(--border);transform:none}
+.settings-choice:active{transform:scale(.985)}
+.settings-choice.is-selected{
+  border-color:transparent;
+  background:color-mix(in srgb,var(--primary) 14%,var(--fill));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 38%,transparent);
+}
+.settings-choice strong{font-size:15px}.settings-choice span{font-size:12px}
+.os-profile-card{padding:20px}
+.os-profile-card .os-avatar{width:76px;height:76px;border-radius:50%;font-size:30px}
+.os-chip-row{gap:7px}
+.os-chip-row span{
+  padding:7px 9px;
+  border:0;
+  border-radius:999px;
+  background:var(--fill);
+  font-size:12px;
+  font-weight:620;
+}
+.audit-grid,.admin-dashboard-grid,.admin-metrics,.admin-role-cards,.admin-detail-grid{gap:12px}
+.audit-facts div,.admin-detail-grid>div,.audit-stats span,.audit-timeline section,.admin-drawer-facts div{
+  border:0;
+  border-radius:13px;
+  background:var(--fill);
+  box-shadow:inset 0 0 0 1px var(--border);
+}
+.admin-motion-card,.admin-metrics article{
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:17px;
+  background:color-mix(in srgb,var(--surface) 74%,transparent);
+  box-shadow:0 7px 22px rgba(0,0,0,.05);
+  animation:none;
+  transition:background .14s ease,border-color .14s ease,transform .1s ease;
+}
+.admin-motion-card:hover,.admin-metrics article:hover{
+  transform:none;
+  border-color:var(--border-strong);
+  box-shadow:0 7px 22px rgba(0,0,0,.05);
+}
+.admin-metrics strong{font-size:30px;letter-spacing:-.035em}
+.admin-mini-row,.admin-log-row,.admin-risk{
+  padding:11px 12px;
+  border:0;
+  border-radius:12px;
+  background:var(--fill);
+  box-shadow:inset 0 0 0 1px var(--border);
+  transition:background .13s ease,transform .1s ease;
+}
+.admin-mini-row:hover,.admin-log-row:hover{background:var(--secondary);border-color:transparent}
+.admin-mini-row:active,.admin-log-row:active{transform:scale(.994)}
+.admin-badge{
+  min-width:64px;
+  padding:5px 8px;
+  border:0;
+  border-radius:999px;
+  background:var(--fill);
+  font-size:11px;
+}
+.admin-toolbar{gap:8px}
+.admin-toolbar input,.admin-toolbar select{
+  height:48px;min-height:48px;
+  border:0;
+  border-radius:13px;
+  background:var(--fill);
+  box-shadow:inset 0 0 0 1px var(--border);
+}
+.admin-toolbar input:focus,.admin-toolbar select:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 14%,transparent),inset 0 0 0 1px var(--primary)}
+.admin-table-card,.storage-browser{overflow:hidden}
+.admin-table-row,.audit-row,.storage-file-row{border-top-color:var(--hairline)}
+.admin-table-head,.audit-head,.storage-file-head{
+  background:color-mix(in srgb,var(--glass-heavy) 92%,transparent);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  backdrop-filter:blur(18px) saturate(160%);
+}
+.admin-primary,.admin-ghost,.admin-danger{
+  min-height:38px;
+  border:0;
+  border-radius:11px;
+  box-shadow:none;
+  font-weight:660;
+}
+.admin-primary{background:var(--primary);color:#fff}
+.admin-ghost{background:var(--fill);color:var(--text)}
+.admin-danger{background:var(--danger);color:#fff}
+.admin-ghost:hover,.admin-primary:hover,.admin-danger:hover{transform:none;box-shadow:none;filter:brightness(1.04)}
+.admin-ghost:active,.admin-primary:active,.admin-danger:active{transform:scale(.96)}
+.admin-drawer{
+  padding:22px;
+  background:var(--glass-heavy);
+  -webkit-backdrop-filter:blur(32px) saturate(180%);
+  backdrop-filter:blur(32px) saturate(180%);
+  box-shadow:-18px 0 60px rgba(0,0,0,.18);
+}
+.admin-confirm-backdrop{background:rgba(0,0,0,.34);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.admin-confirm{
+  padding:20px;
+  border:1px solid var(--border);
+  border-radius:20px;
+  background:var(--glass-heavy);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);
+  backdrop-filter:blur(28px) saturate(180%);
+  box-shadow:var(--shadow);
+}
+#admin-toast-host{right:18px;top:18px}
+.admin-toast{
+  padding:11px 13px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:var(--glass-heavy);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  backdrop-filter:blur(24px) saturate(180%);
+  box-shadow:0 14px 38px rgba(0,0,0,.16);
+  animation:apple-toast-in .22s cubic-bezier(.2,.8,.2,1) both;
+}
+.admin-empty-state{
+  min-height:150px;
+  border:0;
+  border-radius:16px;
+  background:var(--fill);
+  box-shadow:inset 0 0 0 1px var(--border);
+  animation:none;
+}
+.admin-empty-orb{background:var(--fill);color:var(--primary);animation:none}
+.skeleton-line,.admin-skeleton strong{
+  background:linear-gradient(90deg,var(--fill),color-mix(in srgb,var(--fill) 62%,var(--surface-strong) 38%),var(--fill));
+  background-size:220% 100%;
+}
+.permission-group{
+  border:0;
+  border-radius:15px;
+  background:var(--fill);
+  box-shadow:inset 0 0 0 1px var(--border);
+}
+.permission-group summary{padding:12px 14px;font-weight:680}
+.switch-cell span{border:0;background:var(--secondary);box-shadow:inset 0 0 0 1px var(--border)}
+.switch-cell input:checked+span{background:var(--primary);border-color:transparent}
+.switch-cell input:checked+span:before{background:#fff}
+.os-lock{padding:16px}
+.storage-overview-panel{
+  border-radius:20px;
+  background:color-mix(in srgb,var(--surface) 72%,transparent);
+  box-shadow:0 8px 26px rgba(0,0,0,.055),inset 0 1px 0 color-mix(in srgb,#fff 18%,transparent);
+}
+.storage-toolbar{
+  border-radius:15px;
+  background:var(--fill);
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+.storage-upload-button,.storage-empty-upload{border-radius:11px;font-weight:660}
+.storage-search-shell{
+  border-radius:11px;
+  background:color-mix(in srgb,var(--surface) 72%,transparent);
+  box-shadow:inset 0 0 0 1px var(--border);
+}
+.storage-search-shell:focus-within{border-color:transparent;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 13%,transparent),inset 0 0 0 1px var(--primary)}
+.storage-browser{
+  border-radius:18px;
+  background:color-mix(in srgb,var(--surface) 76%,transparent);
+  box-shadow:0 8px 26px rgba(0,0,0,.045);
+}
+.storage-action-button{border:0;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border)}
+.storage-empty-icon{border-radius:14px;background:var(--fill)}
+@keyframes apple-toast-in{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+@media (max-width:1050px){
+  body.os-shell{padding:12px!important}
+  .os-layout{height:calc(100dvh - 24px)}
+  .os-main{border-radius:22px}
+  .os-sidebar{border-radius:22px}
+}
+@media (max-width:620px){
+  .os-main{padding:22px 16px}
+  .os-hero{gap:14px}
+  .os-hero h1{font-size:36px}
+  .os-ai{min-width:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .admin-toast{animation:none!important}
+  .admin-motion-card,.admin-metrics article,.settings-card-link,.admin-mini-row,.admin-log-row,.os-ai,.os-nav-title,.os-nav-items a{transition:background .12s ease,color .12s ease,opacity .12s ease!important}
+}
+@media (prefers-reduced-transparency:reduce){
+  .os-sidebar,.os-main,.admin-drawer,.admin-confirm,.admin-toast,.admin-table-head,.audit-head,.storage-file-head{background:var(--surface)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+}
+@media (prefers-contrast:more){
+  .os-sidebar,.os-main,.os-card,.os-profile-card,.admin-motion-card,.admin-metrics article,.storage-overview-panel,.storage-browser{border-color:var(--border-strong)!important}
+}
+</style>`;
 }
 
 function notFoundPage(t, links) {
@@ -4535,14 +5091,14 @@ function signUpPage(t, links, ipInfo) {
   const zh = t === TEXT.zh;
   const enforceChineseNameRules = ZH_COUNTRIES.includes(ipInfo?.country || "");
   const copy = zh ? {
-    usernameHelp: "用户名必须唯一；不能包含 Tianguo、admin、administrator 或任何包含 admin 的大小写变体。",
+    usernameHelp: "用户名需保持唯一，且不能包含 Tianguo、admin、administrator，或任何包含 admin 的大小写变体。",
     usernameChecking: "正在检查用户名…",
     usernameAvailable: "用户名可用",
     usernameTaken: "这个用户名已经被使用。",
     usernameReserved: "这个用户名属于保留名称，请更换。",
     usernameTooShort: "用户名至少需要 3 个字符。",
     realNameTitle: "填写真实姓名",
-    realNameHelpZhIp: "请填写你的真实姓名。姓和名都必须使用汉字，并分别选择实际字数。",
+    realNameHelpZhIp: "请填写真实姓名；姓和名均使用汉字，并分别选择对应字数。",
     realNameHelpInternational: "检测到非中文地区网络：请填写真实姓名，但不限制汉字、姓或名的字数。",
     surnameCount: "姓是几个字",
     givenCount: "名是几个字",
@@ -4556,10 +5112,10 @@ function signUpPage(t, links, ipInfo) {
     usePhoto: "使用这张照片",
     later: "稍后设置",
     invalidAvatar: "请选择 JPG、PNG 或 WebP 图片，且文件不能超过 5 MB。",
-    emailHelp: "请确保你输入的邮箱真实有效。若邮箱无效或无法正常使用，管理员可能会限制或封禁你的账号。",
+    emailHelp: "请确保邮箱真实且可正常使用。无效或无法使用的邮箱可能导致账号受到限制或封禁。",
     invalidEmail: "请输入有效邮箱",
     passwordTitle: "设置密码",
-    passwordHelp: "密码必须满足以下全部要求。",
+    passwordHelp: "密码需要满足以下所有要求。",
     passwordStrength: "密码强度",
     passwordLength: "至少 8 个字符",
     passwordNumber: "至少 1 个数字",
@@ -4574,14 +5130,14 @@ function signUpPage(t, links, ipInfo) {
     creating: "正在创建账户…",
     avatarFailed: "账户已创建，但头像保存失败，你可以稍后重新设置。"
   } : {
-    usernameHelp: "Your username must be unique and cannot contain Tianguo, admin, administrator, or any case variation containing admin.",
+    usernameHelp: "Your username must be unique and cannot contain Tianguo, admin, administrator, or any case variation that includes admin.",
     usernameChecking: "Checking username…",
     usernameAvailable: "Username is available",
     usernameTaken: "This username is already in use.",
     usernameReserved: "This username is reserved. Choose another one.",
     usernameTooShort: "Username must contain at least 3 characters.",
     realNameTitle: "Enter your real name",
-    realNameHelpZhIp: "Enter your real name using Chinese characters, then select the exact character count for your family and given names.",
+    realNameHelpZhIp: "Enter your real name in Chinese characters, then choose the exact length of your family and given names.",
     realNameHelpInternational: "Enter your real first and last name. No Chinese-character or 1–2 character restriction is applied for your region.",
     surnameCount: "Family-name length",
     givenCount: "Given-name length",
@@ -4595,10 +5151,10 @@ function signUpPage(t, links, ipInfo) {
     usePhoto: "Use This Photo",
     later: "Set Up Later",
     invalidAvatar: "Choose a JPG, PNG, or WebP image no larger than 5 MB.",
-    emailHelp: "Please make sure the email address you enter is real and valid. Invalid or unusable email addresses may result in account restrictions or suspension.",
+    emailHelp: "Use a real, working email address. Invalid or unusable addresses may result in account restrictions or suspension.",
     invalidEmail: "Enter a valid email address.",
     passwordTitle: "Set a password",
-    passwordHelp: "Your password must meet every requirement below.",
+    passwordHelp: "Your password must meet all of the requirements below.",
     passwordStrength: "Password strength",
     passwordLength: "At least 8 characters",
     passwordNumber: "At least 1 number",
@@ -4664,7 +5220,80 @@ function signUpPage(t, links, ipInfo) {
     .password-rules li.is-met{color:var(--text)}
     .password-rules li.is-met::before{content:"✓";color:#2f9b63}
     @media (max-width:560px){.name-count-grid,.avatar-actions{grid-template-columns:1fr}}
-  </style>
+
+      /* APPLE_DESIGN_SYSTEM_V2_SIGNUP */
+/* APPLE_DESIGN_SYSTEM_V2 — sign-up components */
+.signup-help{margin:7px 0 3px;color:var(--muted);font-size:13px;line-height:1.5}
+.signup-status{min-height:20px;margin-top:7px;font-size:13px}
+.signup-status.is-good{color:var(--success)}.signup-status.is-bad{color:var(--danger)}
+.signup-input-shell,.password-input-shell{margin-top:12px}
+.signup-validity{right:14px;width:22px;height:22px;font-size:18px}
+.signup-validity.is-good{color:var(--success);transform:translateY(-50%) scale(1)}
+.name-count-grid{gap:10px}
+.name-count-group{
+  padding:12px;
+  border:0;
+  border-radius:15px;
+  background:var(--fill);
+  box-shadow:inset 0 0 0 1px var(--border);
+}
+.name-count-group>span{margin-bottom:9px;color:var(--muted);font-size:12px;font-weight:650}
+.name-count-options{
+  gap:4px;
+  padding:3px;
+  border-radius:11px;
+  background:color-mix(in srgb,var(--surface-soft) 85%,transparent);
+}
+.name-count-choice{
+  min-height:36px;
+  justify-content:center;
+  padding:7px 9px;
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  font-size:13px;
+  transition:background .14s ease,transform .1s ease;
+}
+.name-count-choice:has(input:checked){
+  background:var(--surface);
+  box-shadow:0 1px 4px rgba(0,0,0,.10);
+}
+.name-count-choice input{position:absolute;opacity:0;pointer-events:none}
+.name-count-choice:active{transform:scale(.97)}
+.avatar-shell{gap:13px;margin:20px 0 4px}
+.avatar-preview{
+  width:108px;height:108px;
+  border:1px solid var(--border);
+  background:var(--fill);
+  box-shadow:0 12px 30px rgba(0,0,0,.10);
+}
+.avatar-actions{gap:8px}
+.password-heading{margin-top:16px}
+.password-heading strong{font-size:14px;font-weight:680}
+.password-heading span{font-size:12px}
+.password-toggle{
+  right:6px;width:38px;height:38px;border-radius:10px;
+  color:var(--muted);
+  transition:background .12s ease,color .12s ease,transform .1s ease;
+}
+.password-toggle:hover{background:var(--secondary);color:var(--text)}
+.password-toggle:active{transform:translateY(-50%) scale(.9)}
+.confirm-password-block{margin-top:18px}
+.confirm-password-label{margin-bottom:6px;font-size:13px;font-weight:650}
+.password-meter{
+  height:5px;margin-top:11px;border:0;background:var(--fill)
+}
+.password-meter span{border-radius:999px;transition:width .18s ease,background .18s ease}
+.password-rules{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px;margin-top:12px}
+.password-rules li{gap:7px;font-size:12px;line-height:1.35}
+.password-rules li::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--quiet)}
+.password-rules li.is-met::before{content:"";background:var(--success);box-shadow:0 0 0 3px color-mix(in srgb,var(--success) 13%,transparent)}
+#step-username,#step-name,#step-avatar,#step-birthday,#step-gender,#step-email,#step-password{transform-origin:50% 16%}
+@media (max-width:560px){
+  .password-rules{grid-template-columns:1fr}
+  .name-count-grid,.avatar-actions{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
   ${topControls(links, t)}
