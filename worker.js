@@ -4298,6 +4298,11 @@ function signUpPage(t, links, ipInfo) {
     passwordUpper: "至少 1 个大写字母",
     passwordLower: "至少 1 个小写字母",
     passwordSpecial: "至少 1 个特殊字符",
+    confirmPassword: "确认密码",
+    confirmPasswordRequired: "请再次输入密码以确认。",
+    passwordMismatch: "两次输入的密码不一致，请检查后重新输入。",
+    showPassword: "显示密码",
+    hidePassword: "隐藏密码",
     creating: "正在创建账户…",
     avatarFailed: "账户已创建，但头像保存失败，你可以稍后重新设置。"
   } : {
@@ -4332,6 +4337,11 @@ function signUpPage(t, links, ipInfo) {
     passwordUpper: "At least 1 uppercase letter",
     passwordLower: "At least 1 lowercase letter",
     passwordSpecial: "At least 1 special character",
+    confirmPassword: "Confirm password",
+    confirmPasswordRequired: "Please enter your password again to confirm it.",
+    passwordMismatch: "The passwords do not match. Please check and try again.",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     creating: "Creating account…",
     avatarFailed: "Your account was created, but the profile photo could not be saved. You can set it later."
   };
@@ -4366,6 +4376,18 @@ function signUpPage(t, links, ipInfo) {
     .password-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:8px}
     .password-heading strong{font-size:15px;color:var(--text)}
     .password-heading span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+    .password-input-shell{position:relative;margin-top:12px}
+    .password-input-shell input{margin-top:0;padding-right:54px}
+    .password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:40px;height:40px;min-height:0;margin:0;padding:0;border:0;border-radius:10px;background:transparent;color:var(--muted);box-shadow:none;cursor:pointer}
+    .password-toggle:hover{background:var(--surface-soft);color:var(--text)}
+    .password-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .password-toggle .eye-off{display:none}
+    .password-toggle.is-visible .eye-open{display:none}
+    .password-toggle.is-visible .eye-off{display:block}
+    .confirm-password-block .password-input-shell input{padding-right:96px}
+    .password-confirm-validity{right:52px}
+    .confirm-password-block{margin-top:16px}
+    .confirm-password-label{display:block;margin-bottom:6px;font-size:13px;font-weight:700;color:var(--text)}
     .password-meter{height:7px;margin-top:10px;border-radius:999px;background:var(--surface-soft);overflow:hidden;border:1px solid var(--border)}
     .password-meter span{display:block;width:0;height:100%;background:var(--primary);transition:width .18s ease,background .18s ease}
     .password-rules{display:grid;gap:7px;margin:12px 0 0;padding:0;list-style:none}
@@ -4471,7 +4493,13 @@ function signUpPage(t, links, ipInfo) {
         <strong>${t.passwordPlaceholder}</strong>
         <span id="password-strength">${copy.passwordStrength}：0%</span>
       </div>
-      <input id="password" type="password" placeholder="${t.passwordPlaceholder}" autocomplete="new-password">
+      <div class="password-input-shell">
+        <input id="password" type="password" placeholder="${t.passwordPlaceholder}" autocomplete="new-password">
+        <button id="password-toggle" class="password-toggle" type="button" aria-label="${copy.showPassword}" title="${copy.showPassword}">
+          <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.2A11 11 0 0 1 12 6c6.5 0 10 6 10 6a17.7 17.7 0 0 1-2.1 2.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.5 6 10 6c1.6 0 3-.4 4.2-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+        </button>
+      </div>
       <div class="password-meter"><span id="password-meter-fill"></span></div>
       <ul class="password-rules">
         <li id="password-rule-length">${copy.passwordLength}</li>
@@ -4480,6 +4508,18 @@ function signUpPage(t, links, ipInfo) {
         <li id="password-rule-lower">${copy.passwordLower}</li>
         <li id="password-rule-special">${copy.passwordSpecial}</li>
       </ul>
+      <div class="confirm-password-block">
+        <label class="confirm-password-label" for="confirm-password">${copy.confirmPassword}</label>
+        <div class="password-input-shell">
+          <input id="confirm-password" type="password" placeholder="${copy.confirmPassword}" autocomplete="new-password" aria-describedby="confirm-password-status" aria-invalid="false">
+          <span id="confirm-password-validity" class="signup-validity password-confirm-validity" aria-hidden="true"></span>
+          <button id="confirm-password-toggle" class="password-toggle" type="button" aria-label="${copy.showPassword}" title="${copy.showPassword}">
+            <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.2A11 11 0 0 1 12 6c6.5 0 10 6 10 6a17.7 17.7 0 0 1-2.1 2.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.5 6 10 6c1.6 0 3-.4 4.2-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+          </button>
+        </div>
+        <div id="confirm-password-status" class="signup-status" role="status"></div>
+      </div>
       <button id="create-account-btn" disabled>${t.getStarted}</button>
     </div>
 
@@ -4816,6 +4856,43 @@ function signUpPage(t, links, ipInfo) {
     });
 
     const passwordInput = document.getElementById("password");
+    const confirmPasswordInput = document.getElementById("confirm-password");
+    const passwordToggle = document.getElementById("password-toggle");
+    const confirmPasswordToggle = document.getElementById("confirm-password-toggle");
+    const confirmPasswordValidity = document.getElementById("confirm-password-validity");
+    const confirmPasswordStatus = document.getElementById("confirm-password-status");
+    const showPasswordLabel = ${JSON.stringify(copy.showPassword)};
+    const hidePasswordLabel = ${JSON.stringify(copy.hidePassword)};
+    let passwordConfirmationValid = false;
+
+    function wirePasswordToggle(button, input) {
+      button.addEventListener("click", () => {
+        const willShow = input.type === "password";
+        input.type = willShow ? "text" : "password";
+        button.classList.toggle("is-visible", willShow);
+        const label = willShow ? hidePasswordLabel : showPasswordLabel;
+        button.setAttribute("aria-label", label);
+        button.setAttribute("title", label);
+        input.focus({ preventScroll: true });
+      });
+    }
+
+    function setConfirmPasswordValidity(state) {
+      confirmPasswordValidity.classList.remove("is-good", "is-bad");
+      confirmPasswordInput.setAttribute("aria-invalid", state === "bad" ? "true" : "false");
+      if (state === "good") {
+        confirmPasswordValidity.textContent = "✓";
+        confirmPasswordValidity.classList.add("is-good");
+      } else if (state === "bad") {
+        confirmPasswordValidity.textContent = "×";
+        confirmPasswordValidity.classList.add("is-bad");
+      } else {
+        confirmPasswordValidity.textContent = "";
+      }
+    }
+
+    wirePasswordToggle(passwordToggle, passwordInput);
+    wirePasswordToggle(confirmPasswordToggle, confirmPasswordInput);
     const passwordStrength = document.getElementById("password-strength");
     const passwordMeterFill = document.getElementById("password-meter-fill");
     const createAccountBtn = document.getElementById("create-account-btn");
@@ -4831,10 +4908,10 @@ function signUpPage(t, links, ipInfo) {
     function passwordChecks(value) {
       return {
         length: value.length >= 8,
-        number: /\d/.test(value),
+        number: /\\d/.test(value),
         upper: /[A-Z]/.test(value),
         lower: /[a-z]/.test(value),
-        special: /[^A-Za-z0-9\s]/.test(value)
+        special: /[^A-Za-z0-9\\s]/.test(value)
       };
     }
 
@@ -4846,10 +4923,40 @@ function signUpPage(t, links, ipInfo) {
       passwordMeterFill.style.width = percent + "%";
       passwordMeterFill.style.background = percent === 100 ? "#2f9b63" : percent >= 60 ? "#d99a2b" : "var(--danger)";
       Object.entries(checks).forEach(([key, met]) => passwordRuleEls[key].classList.toggle("is-met", met));
-      setButtonState(createAccountBtn, percent === 100);
+      setButtonState(createAccountBtn, percent === 100 && passwordConfirmationValid);
     }
 
-    passwordInput.addEventListener("input", updatePasswordStrength);
+    passwordInput.addEventListener("input", () => {
+      passwordConfirmationValid = false;
+      setConfirmPasswordValidity("");
+      setStatus(confirmPasswordStatus, "");
+      updatePasswordStrength();
+    });
+
+    confirmPasswordInput.addEventListener("input", () => {
+      passwordConfirmationValid = false;
+      setConfirmPasswordValidity("");
+      setStatus(confirmPasswordStatus, "");
+      updatePasswordStrength();
+    });
+
+    confirmPasswordInput.addEventListener("blur", () => {
+      const value = confirmPasswordInput.value;
+      if (!value) {
+        passwordConfirmationValid = false;
+        setConfirmPasswordValidity("bad");
+        setStatus(confirmPasswordStatus, ${JSON.stringify(copy.confirmPasswordRequired)}, "is-bad");
+      } else if (value !== passwordInput.value) {
+        passwordConfirmationValid = false;
+        setConfirmPasswordValidity("bad");
+        setStatus(confirmPasswordStatus, ${JSON.stringify(copy.passwordMismatch)}, "is-bad");
+      } else {
+        passwordConfirmationValid = true;
+        setConfirmPasswordValidity("good");
+        setStatus(confirmPasswordStatus, "");
+      }
+      updatePasswordStrength();
+    });
 
     createAccountBtn.addEventListener("click", async () => {
       updatePasswordStrength();
