@@ -4458,7 +4458,7 @@ function signUpPage(t, links, ipInfo) {
 
     <div id="step-email" style="display:none;">
       <p>${t.enterEmail}</p>
-
+      <small class="signup-help">${copy.emailHelp}</small>
       <input id="email" type="email" placeholder="name@example.com" autocomplete="email">
       <div id="email-status" class="signup-status"></div>
       <button id="email-next-btn" disabled>${t.continue}</button>
