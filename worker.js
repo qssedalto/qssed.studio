@@ -2603,7 +2603,7 @@ function adminClientScript(ipInfo) {
         adminState.currentUser = user;
         adminRequestContext.user_agent = navigator.userAgent || "";
         const path = location.pathname.replace(/^\\/(zh-cn|en)/, "") || "/dashboard";
-        if (path === "/admin") await loadAdminOverview();
+        if (path === "/admin/general") await loadAdminOverview();
         if (path === "/admin/users") await loadAdminUsers();
         if (path === "/admin/roles") await loadAdminRoles();
         if (path === "/admin/logs") await loadAdminLogs();
@@ -2987,7 +2987,7 @@ function adminClientScript(ipInfo) {
         matrix.innerHTML = Object.entries(grouped).map(([category, permissions]) =>
           '<details class="permission-group" open><summary>' + adminEscape(adminCategoryLabel(category)) + '</summary>' +
           '<div class="permission-grid">' +
-            '<div class="permission-head"></div>' + data.roles.map(role => '<strong>' + adminEscape(adminRoleLabel(role.name)) + '</strong>').join("") +
+            '<strong class="permission-head">' + adminEscape(adminText(adminIsZh(), "权限", "Permission")) + '</strong>' + data.roles.map(role => '<strong>' + adminEscape(adminRoleLabel(role.name)) + '</strong>').join("") +
             permissions.map(permission =>
               '<div class="permission-key"><strong>' + adminEscape(adminPermissionLabel(permission.key)) + '</strong><small>' + adminEscape(permission.key) + ' · ' + adminEscape(adminPermissionDescription(permission)) + '</small></div>' +
               data.roles.map(role => '<label class="switch-cell"><input type="checkbox" data-role="' + adminEscape(role.name) + '" data-permission="' + adminEscape(permission.key) + '"' + (roleHasPermission(role.name, permission.key) ? " checked" : "") + '><span></span></label>').join("")
@@ -3805,23 +3805,140 @@ function statusContent(zh, zhTitle, zhBody, enTitle, enBody) {
   return `<section class="os-card is-large"><h2>${zh ? zhTitle : enTitle}</h2><p>${zh ? zhBody : enBody}</p></section>`;
 }
 
-function dashboardContent(zh) {
-  const modules = zh
-    ? [
-        ["账户与安全", "已接入", "Supabase Auth、登录事件和设备记录使用真实数据。"],
-        ["管理后台", "已接入", "集中管理用户、角色、权限与安全审计。"],
-        ["知识与工作区", "未接入", "笔记、链接、摘要、项目、草稿和任务目前没有对应数据表。"],
-        ["设置与集成", "部分接入", "主题和中英切换可用；私人 R2 存储已可用，AI 与用户级第三方配置尚未实现。"]
-      ]
-    : [
-        ["Account & Security", "Connected", "Supabase Auth, login events, and device records use live data."],
-        ["Admin", "Connected", "Manage users, roles, permissions, and security audits in one place."],
-        ["Knowledge & Workspace", "Not connected", "Notes, links, summaries, projects, drafts, and tasks do not have backing tables yet."],
-        ["Settings & Integrations", "Partial", "Theme and Chinese/English switching work; private R2 storage is available, while AI and user-level integrations are not implemented."]
-      ];
-  return `<section class="os-grid">${modules.map(item => `<article class="os-card"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p></article>`).join("")}</section>`;
+function dashboardIcon(name) {
+  const icons = {
+    profile: '<circle cx="12" cy="8" r="3.2"/><path d="M5.5 19c.9-3.2 3.2-5 6.5-5s5.6 1.8 6.5 5"/>',
+    workbench: '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M8 9h8M8 13h5"/>',
+    storage: '<path d="M4 7.5C4 5.6 7.6 4 12 4s8 1.6 8 3.5S16.4 11 12 11 4 9.4 4 7.5z"/><path d="M4 7.5v4C4 13.4 7.6 15 12 15s8-1.6 8-3.5v-4M4 11.5v4C4 17.4 7.6 19 12 19s8-1.6 8-3.5v-4"/>',
+    links: '<path d="M9.5 14.5l5-5M7.2 16.8l-1.3 1.3a3.2 3.2 0 01-4.5-4.5l3.4-3.4a3.2 3.2 0 014.5 0M16.8 7.2l1.3-1.3a3.2 3.2 0 014.5 4.5l-3.4 3.4a3.2 3.2 0 01-4.5 0"/>',
+    security: '<path d="M12 3l7 3v5c0 4.4-2.6 7.8-7 10-4.4-2.2-7-5.6-7-10V6l7-3z"/><path d="M9.3 12l1.8 1.8 3.7-4"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19 12a7.4 7.4 0 00-.1-1l2-1.5-2-3.4-2.5 1A8.3 8.3 0 0014.7 6L14.4 3h-4.8L9.3 6a8.3 8.3 0 00-1.7 1.1l-2.5-1-2 3.4 2 1.5a7.4 7.4 0 000 2l-2 1.5 2 3.4 2.5-1A8.3 8.3 0 009.3 18l.3 3h4.8l.3-3a8.3 8.3 0 001.7-1.1l2.5 1 2-3.4-2-1.5c.1-.3.1-.7.1-1z"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    appearance: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 000 16z"/>',
+    language: '<path d="M4 5h10M9 5c-.2 5-2.3 8.3-5 10M6 9c1.8 2.8 4 4.8 7 6M14 10h6M17 7v10M14 17h6"/>'
+  };
+  return '<span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (icons[name] || icons.info) + '</svg></span>';
 }
 
+function dashboardContent(zh) {
+  const prefix = zh ? "/zh-cn" : "/en";
+  const shortcuts = zh ? [
+    ["用户资料","完善你的头像、签名与主页","profile",`${prefix}/profile/details`],
+    ["工作台","进入工作区主要操作界面","workbench",`${prefix}/workspace/workbench`],
+    ["私人存储","管理当前账号的 R2 文件","storage",`${prefix}/settings/storage`],
+    ["收藏链接","打开你的链接收藏与常用入口","links",`${prefix}/info/links`],
+    ["账户与安全","查看设备、登录与安全记录","security",`${prefix}/settings/security`],
+    ["设置","外观、语言与其他偏好入口","settings",`${prefix}/settings`]
+  ] : [
+    ["Profile Details","Edit your photo, signature, and personal page","profile",`${prefix}/profile/details`],
+    ["Workbench","Open the main operating surface in Workspace","workbench",`${prefix}/workspace/workbench`],
+    ["Private Storage","Manage R2 files for this account","storage",`${prefix}/settings/storage`],
+    ["Saved Links","Open saved links and common destinations","links",`${prefix}/info/links`],
+    ["Account & Security","Review devices, sign-ins, and security records","security",`${prefix}/settings/security`],
+    ["Settings","Appearance, language, and preference entry points","settings",`${prefix}/settings`]
+  ];
+
+  const moduleRows = zh ? [
+    ["个人主页","已接入","头像、背景、个性签名、状态、兴趣与链接库。","profile",`${prefix}/profile`],
+    ["私人存储","已连接","Cloudflare R2 私人文件空间。","storage",`${prefix}/settings/storage`],
+    ["工作区","入口已建立","工作台、项目、实验、草稿与任务已有独立路由。","workbench",`${prefix}/workspace`],
+    ["信息中心","部分可用","收藏链接等入口可用，其余模块等待数据源。","info",`${prefix}/info`]
+  ] : [
+    ["Profile","Connected","Profile photo, background, signature, presence, interests, and links.","profile",`${prefix}/profile`],
+    ["Private Storage","Connected","Private Cloudflare R2 file space.","storage",`${prefix}/settings/storage`],
+    ["Workspace","Routes ready","Workbench, projects, experiments, drafts, and tasks have distinct routes.","workbench",`${prefix}/workspace`],
+    ["Information","Partially available","Saved links are available; other modules still await data sources.","info",`${prefix}/info`]
+  ];
+
+  return `
+    <section class="dashboard-welcome">
+      <div class="dashboard-welcome-copy">
+        <span class="dashboard-eyebrow">${zh ? "QssedA Studio" : "QssedA Studio"}</span>
+        <h2>${zh ? "欢迎回来" : "Welcome back"}</h2>
+        <p>${zh ? "从这里继续进入你的个人空间、工作区、收藏内容与私人存储。首页只展示真实可用的入口，不制造没有数据来源的统计数字。" : "Continue into your profile, workspace, saved content, and private storage. The dashboard only surfaces real entry points rather than invented statistics."}</p>
+        <div class="dashboard-welcome-actions">
+          <a class="dashboard-primary-action" href="${prefix}/workspace/workbench">${zh ? "打开工作台" : "Open Workbench"}<span>›</span></a>
+          <a class="dashboard-secondary-action" href="${prefix}/profile/details">${zh ? "编辑用户资料" : "Edit Profile"}<span>›</span></a>
+        </div>
+      </div>
+      <div class="dashboard-today-card" aria-label="${zh ? "本次访问" : "This visit"}">
+        ${dashboardIcon("clock")}
+        <div>
+          <small>${zh ? "本次访问" : "This visit"}</small>
+          <strong id="dashboard-live-time">--:--</strong>
+          <span id="dashboard-live-date">----</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <div class="dashboard-section-head">
+        <div><small>${zh ? "快速开始" : "Quick Start"}</small><h2>${zh ? "继续使用" : "Continue"}</h2></div>
+        <span>${zh ? "常用入口" : "Common destinations"}</span>
+      </div>
+      <div class="dashboard-shortcuts">
+        ${shortcuts.map(item => `<a class="dashboard-shortcut" href="${item[3]}">${dashboardIcon(item[2])}<span><strong>${item[0]}</strong><small>${item[1]}</small></span><b aria-hidden="true">›</b></a>`).join("")}
+      </div>
+    </section>
+
+    <section class="dashboard-split">
+      <article class="os-card dashboard-module-card">
+        <div class="dashboard-section-head compact">
+          <div><small>${zh ? "Studio 概览" : "Studio Overview"}</small><h2>${zh ? "当前模块" : "Current Modules"}</h2></div>
+        </div>
+        <div class="dashboard-module-list">
+          ${moduleRows.map(row => `<a href="${row[4]}">${dashboardIcon(row[3])}<span><strong>${row[0]}</strong><small>${row[2]}</small></span><em>${row[1]}</em><b aria-hidden="true">›</b></a>`).join("")}
+        </div>
+      </article>
+
+      <article class="os-card dashboard-session-card">
+        <div class="dashboard-section-head compact">
+          <div><small>${zh ? "当前环境" : "Current Environment"}</small><h2>${zh ? "本次使用" : "This Session"}</h2></div>
+        </div>
+        <div class="dashboard-session-facts">
+          <div>${dashboardIcon("appearance")}<span><small>${zh ? "外观" : "Appearance"}</small><strong id="dashboard-theme-label">—</strong></span></div>
+          <div>${dashboardIcon("language")}<span><small>${zh ? "语言" : "Language"}</small><strong>${zh ? "简体中文" : "English"}</strong></span></div>
+          <div>${dashboardIcon("storage")}<span><small>${zh ? "存储" : "Storage"}</small><strong>Cloudflare R2</strong></span></div>
+        </div>
+        <a class="dashboard-session-settings" href="${prefix}/settings">${zh ? "管理设置" : "Manage settings"}<span>›</span></a>
+      </article>
+    </section>
+
+    <section class="os-card dashboard-activity-card">
+      <div class="dashboard-section-head compact">
+        <div><small>${zh ? "活动" : "Activity"}</small><h2>${zh ? "最近动态" : "Recent Activity"}</h2></div>
+      </div>
+      <div class="dashboard-empty-activity">
+        <span></span>
+        <strong>${zh ? "暂时没有统一活动流" : "No unified activity feed yet"}</strong>
+        <p>${zh ? "项目、实验、草稿和任务的数据模型接入后，这里再展示真实的最近活动；目前不使用示例数据冒充历史记录。" : "Real recent activity will appear here after projects, experiments, drafts, and tasks share persistent data. Placeholder activity is intentionally not shown as history."}</p>
+        <a href="${prefix}/workspace">${zh ? "查看工作区" : "View Workspace"} <b>›</b></a>
+      </div>
+    </section>
+
+    <script>
+      (() => {
+        const time = document.getElementById("dashboard-live-time");
+        const date = document.getElementById("dashboard-live-date");
+        const theme = document.getElementById("dashboard-theme-label");
+        const zh = ${zh ? "true" : "false"};
+        const paint = () => {
+          const now = new Date();
+          if (time) time.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { hour:"2-digit", minute:"2-digit", hour12:false }).format(now);
+          if (date) date.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { year:"numeric", month:"long", day:"numeric", weekday:"short" }).format(now);
+          if (theme) {
+            const current = document.documentElement.dataset.theme || "light";
+            theme.textContent = current === "dark" ? (zh ? "深色" : "Dark") : (zh ? "浅色" : "Light");
+          }
+        };
+        paint();
+        window.setInterval(paint, 30000);
+        new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+      })();
+    </script>
+  `;
+}
 function linksContent(zh) {
   return `<section class="os-card is-large"><h2>${zh ? "尚未接入收藏链接" : "Saved links are not connected yet"}</h2><p>${zh ? "当前数据库没有收藏链接表，因此这里不再展示固定示例链接或伪造收藏时间。" : "There is no saved-links table in the current database, so this page no longer shows fixed sample links or fabricated saved dates."}</p></section>`;
 }
@@ -3838,7 +3955,147 @@ function searchContent(zh) {
   return `<section class="os-card is-large"><h2>${zh ? "全局搜索尚未接入" : "Global search is not connected yet"}</h2><p>${zh ? "当前没有笔记、链接、项目或聊天记录的数据索引，因此不展示无实际搜索行为的输入框。" : "There is no index for notes, links, projects, or chat records yet, so this page does not show a search box with no real search behavior."}</p></section>`;
 }
 
+function osHubIcon(name) {
+  const icons = {
+    profile: '<circle cx="12" cy="8" r="3.1"/><path d="M5.5 19c.9-3.2 3.2-5 6.5-5s5.6 1.8 6.5 5"/>',
+    account: '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M8 9h8M8 13h5"/>',
+    preferences: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9M8 4v6M16 14v6"/>',
+    links: '<path d="M9.5 14.5l5-5M7.2 16.8l-1.3 1.3a3.2 3.2 0 01-4.5-4.5l3.4-3.4a3.2 3.2 0 014.5 0M16.8 7.2l1.3-1.3a3.2 3.2 0 014.5 4.5l-3.4 3.4a3.2 3.2 0 01-4.5 0"/>',
+    storage: '<path d="M4 7.5C4 5.6 7.6 4 12 4s8 1.6 8 3.5S16.4 11 12 11 4 9.4 4 7.5z"/><path d="M4 7.5v4C4 13.4 7.6 15 12 15s8-1.6 8-3.5v-4M4 11.5v4C4 17.4 7.6 19 12 19s8-1.6 8-3.5v-4"/>',
+    shield: '<path d="M12 3l7 3v5c0 4.4-2.6 7.8-7 10-4.4-2.2-7-5.6-7-10V6l7-3z"/><path d="M9.3 12l1.8 1.8 3.7-4"/>',
+    general: '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
+    users: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3.5 19c.7-3.4 2.7-5 5.5-5s4.8 1.6 5.5 5M14 15c2.8-.2 4.8 1.1 5.8 4"/>',
+    roles: '<path d="M4 6h16v12H4z"/><path d="M8 10h8M8 14h5"/>',
+    logs: '<path d="M6 4h12v16H6z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+    system: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.8 1.8"/>',
+    appearance: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 000 16z"/>',
+    language: '<path d="M4 5h10M9 5c-.2 5-2.3 8.3-5 10M6 9c1.8 2.8 4 4.8 7 6M14 10h6M17 7v10M14 17h6"/>',
+    notifications: '<path d="M6 16h12l-1.5-2V10a4.5 4.5 0 00-9 0v4L6 16z"/><path d="M10 19h4"/>',
+    ai: '<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3zM18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15z"/>',
+    integrations: '<path d="M8 8V5a3 3 0 016 0v3M16 16v3a3 3 0 01-6 0v-3M7 12h10"/>'
+  };
+  const body = icons[name] || icons.general;
+  return `<span class="os-hub-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${body}</svg></span>`;
+}
+
+function osHubCard(item) {
+  const classes = ["os-hub-card"];
+  if (item.featured) classes.push("is-featured");
+  if (item.tone) classes.push("tone-" + item.tone);
+  return `<a class="${classes.join(" ")}" href="${item.href}">
+    <div class="os-hub-card-top">
+      ${osHubIcon(item.icon)}
+      <span class="os-hub-arrow" aria-hidden="true">›</span>
+    </div>
+    <div class="os-hub-card-copy">
+      <div class="os-hub-card-title-row">
+        <h2>${item.title}</h2>
+        ${item.meta ? `<small>${item.meta}</small>` : ""}
+      </div>
+      <p>${item.description}</p>
+    </div>
+  </a>`;
+}
+
+function osHubGrid(items, extraClass = "") {
+  return `<section class="os-hub-grid ${extraClass}">${items.map(osHubCard).join("")}</section>`;
+}
+
+function profileHubContent(zh) {
+  const prefix = zh ? "/zh-cn" : "/en";
+  const items = zh ? [
+    { title:"用户资料", meta:"个人空间", description:"头像、主页背景、个性签名、个人介绍、在线状态与兴趣标签。", href:`${prefix}/profile/details`, icon:"profile", featured:true, tone:"blue" },
+    { title:"账户信息", meta:"账号", description:"查看账号 ID、邮箱、注册时间、最近登录与登录记录。", href:`${prefix}/profile/account`, icon:"account" },
+    { title:"账户与安全", meta:"安全", description:"查看当前设备、登录历史与异常登录提示。", href:`${prefix}/settings/security`, icon:"shield" },
+    { title:"偏好设置", meta:"偏好", description:"管理与个人使用体验相关的设置入口。", href:`${prefix}/profile/preferences`, icon:"preferences" },
+    { title:"收藏链接", meta:"内容", description:"进入你的链接收藏与常用入口。", href:`${prefix}/info/links`, icon:"links" },
+    { title:"私人存储", meta:"R2", description:"上传、下载并管理只属于当前账号的私人文件。", href:`${prefix}/settings/storage`, icon:"storage" }
+  ] : [
+    { title:"Profile Details", meta:"Personal", description:"Profile photo, background, signature, bio, presence, and interests.", href:`${prefix}/profile/details`, icon:"profile", featured:true, tone:"blue" },
+    { title:"Account", meta:"Account", description:"Review account ID, email, registration time, recent sign-in, and login records.", href:`${prefix}/profile/account`, icon:"account" },
+    { title:"Account & Security", meta:"Security", description:"Review the current device, login history, and risk alerts.", href:`${prefix}/settings/security`, icon:"shield" },
+    { title:"Preferences", meta:"Preferences", description:"Manage entry points related to your personal experience.", href:`${prefix}/profile/preferences`, icon:"preferences" },
+    { title:"Saved Links", meta:"Content", description:"Open your saved links and frequently used destinations.", href:`${prefix}/info/links`, icon:"links" },
+    { title:"Private Storage", meta:"R2", description:"Upload, download, and manage files private to this account.", href:`${prefix}/settings/storage`, icon:"storage" }
+  ];
+  return osHubGrid(items, "profile-hub-grid");
+}
+
+function adminHubContent(zh) {
+  const prefix = zh ? "/zh-cn" : "/en";
+  const items = zh ? [
+    { title:"通用", meta:"管理概览", description:"账户统计、近期登录、操作日志与系统风险信号。", href:`${prefix}/admin/general`, icon:"general", featured:true, tone:"blue" },
+    { title:"用户管理", meta:"成员", description:"搜索用户，查看资料并调整角色或账号状态。", href:`${prefix}/admin/users`, icon:"users" },
+    { title:"角色权限", meta:"RBAC", description:"查看角色范围并管理管理员、编辑者与普通成员权限。", href:`${prefix}/admin/roles`, icon:"roles" },
+    { title:"操作日志", meta:"审计", description:"按动作、级别、用户和日期筛选管理操作记录。", href:`${prefix}/admin/logs`, icon:"logs" },
+    { title:"系统状态", meta:"系统", description:"查看管理能力与运行状态相关信息。", href:`${prefix}/admin/system`, icon:"system" }
+  ] : [
+    { title:"General", meta:"Overview", description:"Account metrics, recent sign-ins, operation logs, and system risk signals.", href:`${prefix}/admin/general`, icon:"general", featured:true, tone:"blue" },
+    { title:"Users", meta:"Members", description:"Search users, review profiles, and adjust roles or account status.", href:`${prefix}/admin/users`, icon:"users" },
+    { title:"Roles", meta:"RBAC", description:"Review role scopes and manage administrator, editor, and member permissions.", href:`${prefix}/admin/roles`, icon:"roles" },
+    { title:"Logs", meta:"Audit", description:"Filter administration records by action, severity, user, and date.", href:`${prefix}/admin/logs`, icon:"logs" },
+    { title:"System", meta:"System", description:"Review management capabilities and runtime-related status information.", href:`${prefix}/admin/system`, icon:"system" }
+  ];
+  return osHubGrid(items, "admin-hub-grid");
+}
+
+function settingsHubContent(zh) {
+  const prefix = zh ? "/zh-cn" : "/en";
+  const items = zh ? [
+    { title:"通用", meta:"基础", description:"查看网站基础行为与常用设置入口。", href:`${prefix}/settings/general`, icon:"general", featured:true, tone:"blue" },
+    { title:"外观", meta:"可用", description:"切换浅色与深色显示模式。", href:`${prefix}/settings/appearance`, icon:"appearance" },
+    { title:"语言", meta:"可用", description:"在中文与 English 之间切换网页语言。", href:`${prefix}/settings/language`, icon:"language" },
+    { title:"账户与安全", meta:"可用", description:"查看设备、登录历史与安全记录。", href:`${prefix}/settings/security`, icon:"shield" },
+    { title:"通知", meta:"规划中", description:"管理提醒、站内消息与通知偏好。", href:`${prefix}/settings/notifications`, icon:"notifications" },
+    { title:"AI 设置", meta:"规划中", description:"管理 AI Provider、模型与个人 AI 偏好。", href:`${prefix}/settings/ai`, icon:"ai" },
+    { title:"第三方集成", meta:"规划中", description:"管理外部服务与账号授权。", href:`${prefix}/settings/integrations`, icon:"integrations" },
+    { title:"存储管理", meta:"已连接", description:"管理当前账号的私人 Cloudflare R2 文件。", href:`${prefix}/settings/storage`, icon:"storage" }
+  ] : [
+    { title:"General", meta:"Basics", description:"Review general site behavior and common settings entry points.", href:`${prefix}/settings/general`, icon:"general", featured:true, tone:"blue" },
+    { title:"Appearance", meta:"Available", description:"Switch between light and dark display modes.", href:`${prefix}/settings/appearance`, icon:"appearance" },
+    { title:"Language", meta:"Available", description:"Switch the interface between Chinese and English.", href:`${prefix}/settings/language`, icon:"language" },
+    { title:"Account & Security", meta:"Available", description:"Review devices, login history, and security records.", href:`${prefix}/settings/security`, icon:"shield" },
+    { title:"Notifications", meta:"Planned", description:"Manage reminders, in-app messages, and notification preferences.", href:`${prefix}/settings/notifications`, icon:"notifications" },
+    { title:"AI Settings", meta:"Planned", description:"Manage AI providers, models, and personal AI preferences.", href:`${prefix}/settings/ai`, icon:"ai" },
+    { title:"Integrations", meta:"Planned", description:"Manage external services and account authorizations.", href:`${prefix}/settings/integrations`, icon:"integrations" },
+    { title:"Storage", meta:"Connected", description:"Manage private Cloudflare R2 files for this account.", href:`${prefix}/settings/storage`, icon:"storage" }
+  ];
+  return osHubGrid(items, "settings-hub-grid");
+}
+
+function settingsGeneralContent(zh) {
+  const prefix = zh ? "/zh-cn" : "/en";
+  const rows = zh ? [
+    ["外观", "浅色 / 深色", `${prefix}/settings/appearance`, "appearance"],
+    ["语言", "中文 / English", `${prefix}/settings/language`, "language"],
+    ["账户与安全", "设备与登录", `${prefix}/settings/security`, "shield"]
+  ] : [
+    ["Appearance", "Light / Dark", `${prefix}/settings/appearance`, "appearance"],
+    ["Language", "Chinese / English", `${prefix}/settings/language`, "language"],
+    ["Account & Security", "Devices & sign-ins", `${prefix}/settings/security`, "shield"]
+  ];
+  return `
+    <section class="os-card settings-general-card">
+      <div class="settings-general-heading">
+        ${osHubIcon("general")}
+        <div>
+          <small>${zh ? "通用设置" : "General Settings"}</small>
+          <h2>${zh ? "基础与常用设置" : "Basics & Common Settings"}</h2>
+          <p>${zh ? "这里保留跨模块的基础设置入口。具体选项仍在各自页面中管理，避免把不同层级的控制混在一起。" : "This page keeps cross-module basics together. Detailed controls remain on their dedicated pages instead of mixing unrelated levels."}</p>
+        </div>
+      </div>
+      <div class="settings-general-list">
+        ${rows.map(row => `<a href="${row[2]}">${osHubIcon(row[3])}<span><strong>${row[0]}</strong><small>${row[1]}</small></span><b aria-hidden="true">›</b></a>`).join("")}
+      </div>
+    </section>
+    <section class="os-card settings-general-note">
+      <strong>${zh ? "关于通用设置" : "About General"}</strong>
+      <p>${zh ? "当前没有为尚未接入的功能创建无实际作用的开关。等对应服务具备真实配置与持久化能力后，再在这里加入可操作选项。" : "No placeholder switches are shown for features that are not connected yet. Controls will appear here only when they have real configuration and persistence behind them."}</p>
+    </section>
+  `;
+}
 function profileContent(path, zh) {
+  if (path === "/profile") return profileHubContent(zh);
   if (path.endsWith("/account")) return accountAuditContent(zh);
 
   if (path.endsWith("/preferences")) return `<section class="os-card is-large"><h2>${zh ? "偏好设置" : "Preferences"}</h2><p>${zh ? "主题和语言可通过页面右上角按钮切换。字体和通知偏好目前没有保存或配置接口。" : "Theme and language can be switched with the controls in the top-right corner. Font and notification preferences do not currently have configuration or persistence APIs."}</p></section>`;
@@ -4023,6 +4280,8 @@ function workspaceContent(path, zh) {
 }
 
 function adminContent(path, zh) {
+  if (path === "/admin") return adminHubContent(zh);
+  if (path.endsWith("/general")) return adminOverviewContent(zh);
   if (path.endsWith("/users")) return adminUsersContent(zh);
   if (path.endsWith("/roles")) return adminRolesContent(zh);
   if (path.endsWith("/logs")) return adminLogsContent(zh);
@@ -4825,7 +5084,8 @@ function storageClientScript(zh, loginUrl) {
   `;
 }
 function settingsContent(path, zh) {
-  if (path.endsWith("/general")) return settingsContent("/settings", zh);
+  if (path === "/settings") return settingsHubContent(zh);
+  if (path.endsWith("/general")) return settingsGeneralContent(zh);
   if (path.endsWith("/appearance")) return appearanceSettingsContent(zh);
   if (path.endsWith("/language")) return languageSettingsContent(zh);
   if (path.endsWith("/security")) return securityAuditContent(zh);
@@ -5618,7 +5878,635 @@ body.os-shell{
     /* PROFILE_HOME_V3_POLISH_2_HOTFIX */
     /* PROFILE_HOME_V3_CONTROLS_HITBOX_FIX */ html.profile-sheet-open .top-controls{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:none!important;right:calc(min(520px,92vw) + 20px)!important;z-index:130!important}.profile-sheet-head{position:relative!important;padding-right:62px!important}.profile-sheet-close{position:absolute!important;top:14px!important;right:14px!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;margin:0!important;display:grid!important;place-items:center!important;border-radius:50%!important;z-index:160!important;pointer-events:auto!important;touch-action:manipulation!important;line-height:1!important}.profile-sheet-close::before{content:"";position:absolute;inset:-4px}@media(max-width:760px){html.profile-sheet-open .top-controls{right:16px!important;z-index:130!important}.profile-sheet-head{padding-right:62px!important}}    /* PROFILE_SHEET_VIEWPORT_FIX */ .profile-sheet-backdrop{position:fixed!important;inset:0!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;z-index:110!important}.profile-sheet-backdrop.is-visible{pointer-events:auto!important}html.profile-sheet-open,html.profile-sheet-open body{overflow:hidden!important;overscroll-behavior:none!important}
     /* SETTINGS_GENERAL_ROUTE_V1 */
-</style>`;
+
+    /* ADMIN_UI_POLISH_V1 */
+
+    .admin-toolbar:has(#admin-user-search){
+      grid-template-columns:repeat(3,minmax(0,1fr))!important;
+      align-items:stretch!important;
+      gap:12px!important;
+    }
+
+    .admin-toolbar:has(#admin-log-search){
+      grid-template-columns:repeat(3,minmax(0,1fr))!important;
+      align-items:stretch!important;
+      gap:12px!important;
+    }
+
+    .admin-toolbar:has(#admin-user-search)>*,
+    .admin-toolbar:has(#admin-log-search)>*{
+      width:100%!important;
+      min-width:0!important;
+      height:54px!important;
+      min-height:54px!important;
+      margin:0!important;
+      align-self:stretch!important;
+      box-sizing:border-box!important;
+    }
+
+    .admin-toolbar:has(#admin-user-search) input,
+    .admin-toolbar:has(#admin-user-search) select,
+    .admin-toolbar:has(#admin-log-search) input,
+    .admin-toolbar:has(#admin-log-search) select{
+      padding-left:16px!important;
+      padding-right:16px!important;
+      border-radius:16px!important;
+      line-height:normal!important;
+    }
+
+    #admin-users-table .admin-table-row{
+      grid-template-columns:
+        minmax(100px,.72fr)
+        minmax(132px,.92fr)
+        minmax(220px,1.40fr)
+        68px
+        minmax(156px,1fr)
+        minmax(156px,1fr)
+        minmax(142px,.94fr)
+        minmax(142px,.94fr)
+        minmax(142px,.94fr)
+        minmax(112px,.78fr)!important;
+      min-width:1430px!important;
+      column-gap:12px!important;
+    }
+
+    #admin-users-table .admin-table-row select{
+      width:100%!important;
+      min-width:0!important;
+      height:44px!important;
+      min-height:44px!important;
+      padding:0 36px 0 13px!important;
+      border-radius:14px!important;
+      white-space:nowrap!important;
+      font-size:15px!important;
+    }
+
+    .permission-grid{
+      grid-template-columns:minmax(320px,1.75fr) repeat(3,minmax(132px,.58fr))!important;
+    }
+
+    .permission-head{
+      display:flex!important;
+      align-items:center!important;
+      color:var(--muted)!important;
+      font-size:13px!important;
+      font-weight:800!important;
+      letter-spacing:.01em!important;
+    }
+
+    .permission-grid>strong:not(.permission-head){
+      display:flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      min-width:0!important;
+      text-align:center!important;
+    }
+
+    .permission-key{
+      min-width:0!important;
+    }
+
+    #admin-user-search,
+    #admin-role-filter,
+    #admin-status-filter,
+    #admin-log-search,
+    #admin-log-action,
+    #admin-log-severity,
+    #admin-log-actor,
+    #admin-log-from,
+    #admin-log-to{
+      vertical-align:middle!important;
+    }
+
+    @media(max-width:980px){
+      .admin-toolbar:has(#admin-user-search),
+      .admin-toolbar:has(#admin-log-search){
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      }
+      .permission-grid{
+        grid-template-columns:minmax(260px,1.5fr) repeat(3,minmax(118px,.62fr))!important;
+      }
+    }
+
+    @media(max-width:640px){
+      .admin-toolbar:has(#admin-user-search),
+      .admin-toolbar:has(#admin-log-search){
+        grid-template-columns:1fr!important;
+      }
+    }
+    /* OS_APPLE_HUBS_V1 */
+    .os-hub-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+      align-items:stretch;
+    }
+    .settings-hub-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .os-hub-card{
+      position:relative;
+      min-height:158px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:22px;
+      padding:20px;
+      overflow:hidden;
+      color:var(--text);
+      text-decoration:none;
+      border:1px solid color-mix(in srgb,var(--border) 82%,transparent);
+      border-radius:24px;
+      background:color-mix(in srgb,var(--card) 78%,transparent);
+      -webkit-backdrop-filter:blur(22px) saturate(150%);
+      backdrop-filter:blur(22px) saturate(150%);
+      box-shadow:0 10px 30px rgba(0,0,0,.055),inset 0 1px 0 color-mix(in srgb,#fff 24%,transparent);
+      transform:translateZ(0);
+      transition:transform 180ms cubic-bezier(.2,.8,.2,1),border-color 180ms ease,box-shadow 180ms ease,background 180ms ease;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .os-hub-card::after{
+      content:"";
+      position:absolute;
+      inset:auto -50px -72px auto;
+      width:150px;
+      height:150px;
+      border-radius:50%;
+      background:color-mix(in srgb,var(--primary) 8%,transparent);
+      filter:blur(4px);
+      pointer-events:none;
+    }
+    .os-hub-card:hover{
+      transform:translateY(-2px);
+      border-color:color-mix(in srgb,var(--primary) 30%,var(--border));
+      box-shadow:0 16px 38px rgba(0,0,0,.085),inset 0 1px 0 color-mix(in srgb,#fff 28%,transparent);
+    }
+    .os-hub-card:active{
+      transform:scale(.985);
+      transition-duration:80ms;
+    }
+    .os-hub-card:focus-visible{
+      outline:none;
+      border-color:var(--primary);
+      box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 16%,transparent),0 16px 38px rgba(0,0,0,.08);
+    }
+    .os-hub-card.is-featured{
+      grid-column:span 2;
+      min-height:184px;
+      background:
+        radial-gradient(circle at 88% 18%,color-mix(in srgb,var(--primary) 20%,transparent),transparent 34%),
+        linear-gradient(135deg,color-mix(in srgb,var(--primary) 11%,var(--card)),color-mix(in srgb,var(--card) 86%,transparent));
+    }
+    .settings-hub-grid .os-hub-card.is-featured{grid-column:span 2}
+    .os-hub-card-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .os-hub-icon{
+      width:46px;
+      height:46px;
+      display:grid;
+      place-items:center;
+      flex:0 0 auto;
+      border-radius:15px;
+      color:var(--primary);
+      background:color-mix(in srgb,var(--primary) 13%,var(--surface-soft));
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 11%,var(--border));
+    }
+    .os-hub-icon svg{width:23px;height:23px}
+    .is-featured .os-hub-icon{
+      width:52px;
+      height:52px;
+      border-radius:17px;
+      color:var(--primary-ink);
+      background:var(--primary);
+      box-shadow:0 8px 20px color-mix(in srgb,var(--primary) 22%,transparent);
+    }
+    .os-hub-arrow{
+      width:32px;
+      height:32px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      color:var(--muted);
+      background:color-mix(in srgb,var(--surface-soft) 88%,transparent);
+      font-size:24px;
+      font-weight:500;
+      line-height:1;
+      transition:transform 160ms ease,color 160ms ease,background 160ms ease;
+    }
+    .os-hub-card:hover .os-hub-arrow{
+      transform:translateX(2px);
+      color:var(--primary);
+      background:color-mix(in srgb,var(--primary) 10%,var(--surface-soft));
+    }
+    .os-hub-card-copy{position:relative;z-index:1}
+    .os-hub-card-title-row{
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:8px 10px;
+    }
+    .os-hub-card h2{
+      margin:0;
+      font-size:22px;
+      line-height:1.15;
+      letter-spacing:-.025em;
+    }
+    .os-hub-card small{
+      display:inline-flex;
+      align-items:center;
+      min-height:24px;
+      padding:0 9px;
+      border-radius:999px;
+      color:var(--muted);
+      background:color-mix(in srgb,var(--surface-soft) 90%,transparent);
+      font-size:11px;
+      font-weight:760;
+    }
+    .os-hub-card p{
+      max-width:620px;
+      margin:9px 0 0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.55;
+    }
+
+    .settings-general-card{
+      display:grid;
+      gap:22px;
+      padding:24px;
+      border-radius:24px;
+    }
+    .settings-general-heading{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr);
+      gap:15px;
+      align-items:start;
+    }
+    .settings-general-heading h2{
+      margin:3px 0 7px;
+      font-size:24px;
+      letter-spacing:-.025em;
+    }
+    .settings-general-heading p{
+      max-width:760px;
+      margin:0;
+      color:var(--muted);
+      line-height:1.6;
+    }
+    .settings-general-list{
+      display:grid;
+      border:1px solid var(--border);
+      border-radius:18px;
+      overflow:hidden;
+      background:color-mix(in srgb,var(--surface-soft) 62%,transparent);
+    }
+    .settings-general-list>a{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      gap:13px;
+      align-items:center;
+      min-height:72px;
+      padding:11px 14px;
+      color:var(--text);
+      text-decoration:none;
+      border-top:1px solid var(--border);
+      transition:background 130ms ease,transform 90ms ease;
+    }
+    .settings-general-list>a:first-child{border-top:0}
+    .settings-general-list>a:hover{background:color-mix(in srgb,var(--primary) 6%,var(--surface-soft))}
+    .settings-general-list>a:active{transform:scale(.995)}
+    .settings-general-list .os-hub-icon{
+      width:38px;
+      height:38px;
+      border-radius:12px;
+    }
+    .settings-general-list .os-hub-icon svg{width:19px;height:19px}
+    .settings-general-list span strong,
+    .settings-general-list span small{display:block}
+    .settings-general-list span strong{font-size:15px}
+    .settings-general-list span small{margin-top:3px;color:var(--muted);font-size:12px}
+    .settings-general-list b{color:var(--muted);font-size:22px;font-weight:500}
+    .settings-general-note{
+      margin-top:14px;
+      padding:18px 20px;
+      border-radius:20px;
+      background:color-mix(in srgb,var(--surface-soft) 58%,var(--card));
+    }
+    .settings-general-note p{margin:7px 0 0;color:var(--muted);line-height:1.55}
+
+    @media(max-width:1080px){
+      .settings-hub-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:720px){
+      .os-hub-grid,.settings-hub-grid{grid-template-columns:1fr}
+      .os-hub-card.is-featured,.settings-hub-grid .os-hub-card.is-featured{grid-column:auto}
+      .os-hub-card{min-height:146px;border-radius:21px}
+      .settings-general-card{padding:18px}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .os-hub-card,.os-hub-arrow,.settings-general-list>a{transition:none!important}
+      .os-hub-card:hover,.os-hub-card:active,.settings-general-list>a:active{transform:none!important}
+    }
+    @media(prefers-reduced-transparency:reduce){
+      .os-hub-card{
+        background:var(--card)!important;
+        -webkit-backdrop-filter:none!important;
+        backdrop-filter:none!important;
+      }
+    }
+    @media(prefers-contrast:more){
+      .os-hub-card,.settings-general-list{border-color:var(--text)}
+      .os-hub-card small{color:var(--text)}
+    }
+    /* DASHBOARD_APPLE_V2 */
+    .os-main:has(.dashboard-welcome) .os-hero{margin-bottom:18px}
+    .os-main:has(.dashboard-welcome) .os-hero h1{font-size:clamp(38px,4.6vw,58px)}
+
+    .dashboard-welcome{
+      position:relative;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(220px,300px);
+      gap:18px;
+      min-height:250px;
+      padding:28px;
+      overflow:hidden;
+      border:1px solid color-mix(in srgb,var(--primary) 17%,var(--border));
+      border-radius:28px;
+      background:
+        radial-gradient(circle at 86% 12%,color-mix(in srgb,var(--primary) 25%,transparent),transparent 34%),
+        radial-gradient(circle at 18% 120%,color-mix(in srgb,#af52de 16%,transparent),transparent 38%),
+        color-mix(in srgb,var(--card) 82%,transparent);
+      -webkit-backdrop-filter:blur(24px) saturate(160%);
+      backdrop-filter:blur(24px) saturate(160%);
+      box-shadow:0 18px 44px rgba(0,0,0,.075),inset 0 1px 0 color-mix(in srgb,#fff 28%,transparent);
+    }
+    .dashboard-welcome::after{
+      content:"";
+      position:absolute;
+      right:-90px;
+      bottom:-130px;
+      width:310px;
+      height:310px;
+      border-radius:50%;
+      background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 18%,transparent),color-mix(in srgb,#af52de 16%,transparent));
+      filter:blur(8px);
+      pointer-events:none;
+    }
+    .dashboard-welcome-copy{position:relative;z-index:1;align-self:center}
+    .dashboard-eyebrow{
+      display:inline-flex;
+      align-items:center;
+      min-height:28px;
+      padding:0 11px;
+      border-radius:999px;
+      color:var(--primary);
+      background:color-mix(in srgb,var(--primary) 11%,var(--surface-soft));
+      font-size:12px;
+      font-weight:780;
+    }
+    .dashboard-welcome h2{
+      margin:14px 0 9px;
+      font-size:clamp(34px,4.2vw,52px);
+      line-height:1.02;
+      letter-spacing:-.04em;
+    }
+    .dashboard-welcome p{
+      max-width:760px;
+      margin:0;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.62;
+    }
+    .dashboard-welcome-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:9px;
+      margin-top:22px;
+    }
+    .dashboard-primary-action,.dashboard-secondary-action{
+      min-height:42px;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:0 15px;
+      border-radius:13px;
+      color:var(--text);
+      text-decoration:none;
+      font-size:13px;
+      font-weight:760;
+      transition:transform 90ms ease,background 150ms ease,border-color 150ms ease;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .dashboard-primary-action{
+      color:var(--primary-ink);
+      background:var(--primary);
+      box-shadow:0 8px 20px color-mix(in srgb,var(--primary) 22%,transparent);
+    }
+    .dashboard-secondary-action{
+      border:1px solid var(--border);
+      background:color-mix(in srgb,var(--surface-soft) 74%,transparent);
+    }
+    .dashboard-primary-action:active,.dashboard-secondary-action:active{transform:scale(.975)}
+    .dashboard-primary-action span,.dashboard-secondary-action span{font-size:18px;line-height:1}
+
+    .dashboard-today-card{
+      position:relative;
+      z-index:1;
+      align-self:stretch;
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr);
+      gap:13px;
+      align-content:end;
+      min-height:170px;
+      padding:18px;
+      border:1px solid color-mix(in srgb,var(--border) 82%,transparent);
+      border-radius:22px;
+      background:color-mix(in srgb,var(--surface-soft) 66%,transparent);
+      -webkit-backdrop-filter:blur(18px) saturate(145%);
+      backdrop-filter:blur(18px) saturate(145%);
+      box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 20%,transparent);
+    }
+    .dashboard-icon{
+      width:42px;
+      height:42px;
+      display:grid;
+      place-items:center;
+      flex:0 0 auto;
+      border-radius:14px;
+      color:var(--primary);
+      background:color-mix(in srgb,var(--primary) 12%,var(--surface-soft));
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 10%,var(--border));
+    }
+    .dashboard-icon svg{width:21px;height:21px}
+    .dashboard-today-card small,.dashboard-today-card strong,.dashboard-today-card span{display:block}
+    .dashboard-today-card small{color:var(--muted);font-size:11px;font-weight:750}
+    .dashboard-today-card strong{margin-top:3px;font-size:32px;line-height:1;letter-spacing:-.04em}
+    .dashboard-today-card span{margin-top:7px;color:var(--muted);font-size:12px}
+
+    .dashboard-section{margin-top:18px}
+    .dashboard-section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:end;
+      gap:14px;
+      padding:0 3px;
+      margin-bottom:11px;
+    }
+    .dashboard-section-head.compact{margin-bottom:14px;padding:0}
+    .dashboard-section-head small{display:block;color:var(--primary);font-size:11px;font-weight:780}
+    .dashboard-section-head h2{margin:3px 0 0;font-size:22px;letter-spacing:-.025em}
+    .dashboard-section-head>span{color:var(--muted);font-size:12px}
+
+    .dashboard-shortcuts{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
+    .dashboard-shortcut{
+      min-height:100px;
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      gap:12px;
+      align-items:center;
+      padding:14px;
+      color:var(--text);
+      text-decoration:none;
+      border:1px solid var(--border);
+      border-radius:19px;
+      background:color-mix(in srgb,var(--card) 84%,transparent);
+      box-shadow:0 6px 18px rgba(0,0,0,.035),inset 0 1px 0 color-mix(in srgb,#fff 20%,transparent);
+      transition:transform 100ms ease,border-color 150ms ease,background 150ms ease;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .dashboard-shortcut:hover{
+      border-color:color-mix(in srgb,var(--primary) 28%,var(--border));
+      background:color-mix(in srgb,var(--primary) 4%,var(--card));
+    }
+    .dashboard-shortcut:active{transform:scale(.985)}
+    .dashboard-shortcut span strong,.dashboard-shortcut span small{display:block}
+    .dashboard-shortcut span strong{font-size:14px}
+    .dashboard-shortcut span small{margin-top:4px;color:var(--muted);font-size:11px;line-height:1.4}
+    .dashboard-shortcut b{color:var(--muted);font-size:20px;font-weight:500}
+
+    .dashboard-split{
+      display:grid;
+      grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr);
+      gap:14px;
+      margin-top:18px;
+    }
+    .dashboard-module-card,.dashboard-session-card,.dashboard-activity-card{border-radius:24px}
+    .dashboard-module-list{display:grid;gap:8px}
+    .dashboard-module-list>a{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto auto;
+      gap:12px;
+      align-items:center;
+      min-height:72px;
+      padding:10px 11px;
+      color:var(--text);
+      text-decoration:none;
+      border-radius:15px;
+      background:var(--surface-soft);
+      transition:transform 90ms ease,background 150ms ease;
+    }
+    .dashboard-module-list>a:hover{background:color-mix(in srgb,var(--primary) 6%,var(--surface-soft))}
+    .dashboard-module-list>a:active{transform:scale(.992)}
+    .dashboard-module-list span strong,.dashboard-module-list span small{display:block}
+    .dashboard-module-list span strong{font-size:14px}
+    .dashboard-module-list span small{margin-top:3px;color:var(--muted);font-size:11px;line-height:1.4}
+    .dashboard-module-list em{
+      min-height:24px;
+      display:inline-flex;
+      align-items:center;
+      padding:0 9px;
+      border-radius:999px;
+      color:var(--primary);
+      background:color-mix(in srgb,var(--primary) 10%,var(--card));
+      font-size:10px;
+      font-style:normal;
+      font-weight:780;
+      white-space:nowrap;
+    }
+    .dashboard-module-list b{color:var(--muted);font-size:19px;font-weight:500}
+
+    .dashboard-session-card{display:flex;flex-direction:column}
+    .dashboard-session-facts{display:grid;gap:8px;flex:1}
+    .dashboard-session-facts>div{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr);
+      gap:11px;
+      align-items:center;
+      padding:10px;
+      border-radius:15px;
+      background:var(--surface-soft);
+    }
+    .dashboard-session-facts .dashboard-icon{width:38px;height:38px;border-radius:12px}
+    .dashboard-session-facts .dashboard-icon svg{width:18px;height:18px}
+    .dashboard-session-facts span small,.dashboard-session-facts span strong{display:block}
+    .dashboard-session-facts span small{color:var(--muted);font-size:10px}
+    .dashboard-session-facts span strong{margin-top:2px;font-size:13px}
+    .dashboard-session-settings{
+      min-height:42px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:10px;
+      padding:0 13px;
+      border-radius:13px;
+      color:var(--text);
+      text-decoration:none;
+      background:color-mix(in srgb,var(--primary) 8%,var(--surface-soft));
+      font-size:12px;
+      font-weight:760;
+    }
+
+    .dashboard-activity-card{margin-top:14px}
+    .dashboard-empty-activity{
+      display:grid;
+      place-items:center;
+      min-height:170px;
+      padding:22px;
+      text-align:center;
+      border:1px dashed color-mix(in srgb,var(--border) 82%,transparent);
+      border-radius:18px;
+      background:color-mix(in srgb,var(--surface-soft) 46%,transparent);
+    }
+    .dashboard-empty-activity>span{
+      width:9px;
+      height:9px;
+      margin-bottom:10px;
+      border-radius:50%;
+      background:var(--primary);
+      box-shadow:0 0 0 7px color-mix(in srgb,var(--primary) 10%,transparent);
+    }
+    .dashboard-empty-activity strong{font-size:15px}
+    .dashboard-empty-activity p{max-width:680px;margin:7px 0 0;color:var(--muted);font-size:12px;line-height:1.55}
+    .dashboard-empty-activity a{margin-top:12px;color:var(--primary);text-decoration:none;font-size:12px;font-weight:760}
+    .dashboard-empty-activity b{font-size:16px}
+
+    @media(max-width:1080px){
+      .dashboard-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .dashboard-split{grid-template-columns:1fr}
+    }
+    @media(max-width:760px){
+      .dashboard-welcome{grid-template-columns:1fr;padding:20px;border-radius:23px}
+      .dashboard-today-card{min-height:120px}
+      .dashboard-shortcuts{grid-template-columns:1fr}
+      .dashboard-module-list>a{grid-template-columns:auto minmax(0,1fr) auto}
+      .dashboard-module-list em{display:none}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .dashboard-primary-action,.dashboard-secondary-action,.dashboard-shortcut,.dashboard-module-list>a{transition:none!important}
+      .dashboard-primary-action:active,.dashboard-secondary-action:active,.dashboard-shortcut:active,.dashboard-module-list>a:active{transform:none!important}
+    }
+    @media(prefers-reduced-transparency:reduce){
+      .dashboard-welcome,.dashboard-today-card{background:var(--card)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+    }
+    @media(prefers-contrast:more){
+      .dashboard-welcome,.dashboard-shortcut,.dashboard-module-list>a,.dashboard-empty-activity{border-color:var(--text)}
+    }</style>`;
 }
 
 function notFoundPage(t, links) {
