@@ -4288,8 +4288,8 @@ function signUpPage(t, links, ipInfo) {
     usePhoto: "使用这张照片",
     later: "稍后设置",
     invalidAvatar: "请选择 JPG、PNG 或 WebP 图片，且文件不能超过 5 MB。",
-    emailHelp: "请输入完整邮箱地址，必须同时包含 @ 和域名中的 .。",
-    invalidEmail: "请输入有效邮箱，例如 name@example.com。",
+    emailHelp: "请确保你输入的邮箱真实有效。若邮箱无效或无法正常使用，管理员可能会限制或封禁你的账号。",
+    invalidEmail: "请输入有效邮箱",
     passwordTitle: "设置密码",
     passwordHelp: "密码必须满足以下全部要求。",
     passwordStrength: "密码强度",
@@ -4322,8 +4322,8 @@ function signUpPage(t, links, ipInfo) {
     usePhoto: "Use This Photo",
     later: "Set Up Later",
     invalidAvatar: "Choose a JPG, PNG, or WebP image no larger than 5 MB.",
-    emailHelp: "Enter a complete email address containing @ and a dot in the domain.",
-    invalidEmail: "Enter a valid email such as name@example.com.",
+    emailHelp: "Please make sure the email address you enter is real and valid. Invalid or unusable email addresses may result in account restrictions or suspension.",
+    invalidEmail: "Enter a valid email address.",
     passwordTitle: "Set a password",
     passwordHelp: "Your password must meet every requirement below.",
     passwordStrength: "Password strength",
@@ -4458,7 +4458,7 @@ function signUpPage(t, links, ipInfo) {
 
     <div id="step-email" style="display:none;">
       <p>${t.enterEmail}</p>
-      <small class="signup-help">${copy.emailHelp}</small>
+
       <input id="email" type="email" placeholder="name@example.com" autocomplete="email">
       <div id="email-status" class="signup-status"></div>
       <button id="email-next-btn" disabled>${t.continue}</button>
@@ -4799,7 +4799,7 @@ function signUpPage(t, links, ipInfo) {
     const emailNextBtn = document.getElementById("email-next-btn");
 
     function emailValid(value) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+      return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value.trim());
     }
 
     emailInput.addEventListener("input", () => {
