@@ -4,6 +4,9 @@ const ZH_COUNTRIES = ["CN", "HK", "MO", "TW", "SG"];
 const ADMIN_EMAILS = [
   "qssed_a@icloud.com"
 ];
+const MAX_STORAGE_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_STORAGE_LIST_OBJECTS = 10000;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const OS_PATHS = new Set([
   "/dashboard",
   "/info",
@@ -124,6 +127,21 @@ export default {
       return handlePasswordLogin(request, env, ipInfo);
     }
 
+    if (pathname === "/api/storage/files") {
+      if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
+      return handleStorageFiles(request, env);
+    }
+
+    if (pathname === "/api/storage/upload") {
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+      return handleStorageUpload(request, env);
+    }
+
+    if (pathname === "/api/storage/object") {
+      if (request.method !== "GET" && request.method !== "DELETE") return json({ error: "Method not allowed" }, 405);
+      return handleStorageObject(request, env);
+    }
+
     const legacyTarget = LEGACY_REDIRECTS.get(pathname);
 
     if (legacyTarget) {
@@ -235,6 +253,278 @@ function json(data, status = 200) {
       "cache-control": "no-store"
     }
   });
+}
+
+function storageUnavailable() {
+  return json({ error: "Storage service is temporarily unavailable." }, 503);
+}
+
+function hasStorageBinding(env) {
+  return Boolean(env?.STORAGE && ["list", "get", "put", "head", "delete"].every(method => typeof env.STORAGE[method] === "function"));
+}
+
+function isStorageObjectId(value) {
+  return typeof value === "string" && UUID_PATTERN.test(value);
+}
+
+function storageKey(ownerId, objectId) {
+  return `users/${ownerId}/${objectId}`;
+}
+
+function storagePrefix(ownerId) {
+  return `users/${ownerId}/`;
+}
+
+function cleanStorageFilename(value) {
+  const normalized = String(value || "")
+    .normalize("NFC")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/[\\/]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return Array.from(normalized).slice(0, 180).join("") || "file";
+}
+
+function storageContentType(value) {
+  const type = String(value || "").trim().toLowerCase();
+  return /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+(?:\s*;\s*charset=[a-z0-9._-]+)?$/.test(type)
+    ? type.slice(0, 160)
+    : "application/octet-stream";
+}
+
+function storageDownloadDisposition(filename) {
+  const safeName = cleanStorageFilename(filename);
+  const fallback = Array.from(safeName)
+    .map(char => /[A-Za-z0-9._-]/.test(char) ? char : "_")
+    .join("")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 120) || "file";
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeRfc8187Filename(safeName)}`;
+}
+
+function encodeRfc8187Filename(value) {
+  return encodeURIComponent(value).replace(/['()*]/g, character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`);
+}
+
+async function verifyStorageUser(request, env) {
+  const authorization = request.headers.get("Authorization") || "";
+  if (!/^Bearer\s+\S+$/i.test(authorization)) {
+    return { error: json({ error: "Authentication required." }, 401) };
+  }
+
+  let response;
+  try {
+    response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: authorization
+      }
+    });
+  } catch {
+    return { error: json({ error: "Authentication service is temporarily unavailable." }, 503) };
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    return { error: json({ error: "Session is invalid or expired." }, 401) };
+  }
+  if (!response.ok) {
+    return { error: json({ error: "Authentication service is temporarily unavailable." }, 503) };
+  }
+
+  let user;
+  try {
+    user = await response.json();
+  } catch {
+    return { error: json({ error: "Authentication service is temporarily unavailable." }, 503) };
+  }
+  if (!isStorageObjectId(user?.id)) {
+    return { error: json({ error: "Session is invalid or expired." }, 401) };
+  }
+
+  const secret = getSupabaseSecret(env);
+  if (!secret) {
+    return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
+  }
+
+  let profileResponse;
+  try {
+    profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(user.id)}`, {
+      headers: {
+        apikey: secret,
+        ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {})
+      }
+    });
+  } catch {
+    return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
+  }
+  if (!profileResponse.ok) {
+    return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
+  }
+
+  let profiles;
+  try {
+    profiles = await profileResponse.json();
+  } catch {
+    return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
+  }
+  if (!Array.isArray(profiles) || profiles.length !== 1 || profiles[0]?.status !== "active") {
+    return { error: json({ error: "Account is not authorized to use storage." }, 403) };
+  }
+  return { user };
+}
+
+class StorageSizeLimitError extends Error {}
+
+function sizeLimitedStorageBody(body, maximumBytes) {
+  if (!body) return null;
+  const reader = body.getReader();
+  let total = 0;
+  return new ReadableStream({
+    async pull(controller) {
+      try {
+        const { done, value } = await reader.read();
+        if (done) {
+          controller.close();
+          return;
+        }
+        total += value.byteLength;
+        if (total > maximumBytes) {
+          await reader.cancel();
+          controller.error(new StorageSizeLimitError("File exceeds the 50 MB limit."));
+          return;
+        }
+        controller.enqueue(value);
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+    async cancel(reason) {
+      await reader.cancel(reason);
+    }
+  });
+}
+
+async function handleStorageFiles(request, env) {
+  const auth = await verifyStorageUser(request, env);
+  if (auth.error) return auth.error;
+  if (!hasStorageBinding(env)) return storageUnavailable();
+
+  const files = [];
+  let cursor;
+  let scanned = 0;
+  let partial = false;
+  try {
+    do {
+      const remaining = MAX_STORAGE_LIST_OBJECTS - scanned;
+      const page = await env.STORAGE.list({
+        prefix: storagePrefix(auth.user.id),
+        cursor,
+        limit: Math.min(1000, remaining),
+        include: ["httpMetadata", "customMetadata"]
+      });
+      scanned += page.objects.length;
+      for (const object of page.objects) {
+        const id = object.key.slice(storagePrefix(auth.user.id).length);
+        if (!isStorageObjectId(id)) continue;
+        files.push({
+          id,
+          name: cleanStorageFilename(object.customMetadata?.originalName),
+          size: Number(object.size) || 0,
+          uploadedAt: object.uploaded?.toISOString?.() || null,
+          contentType: storageContentType(object.httpMetadata?.contentType)
+        });
+      }
+      cursor = page.cursor;
+      if (!page.truncated) break;
+      if (scanned >= MAX_STORAGE_LIST_OBJECTS || !cursor) {
+        partial = true;
+        break;
+      }
+    } while (cursor);
+  } catch (error) {
+    workerLog("error", "storage.list.failed", { message: String(error?.message || error) });
+    return storageUnavailable();
+  }
+
+  files.sort((a, b) => String(b.uploadedAt || "").localeCompare(String(a.uploadedAt || "")));
+  return json({
+    connected: true,
+    files,
+    file_count: files.length,
+    used_bytes: files.reduce((total, file) => total + file.size, 0),
+    partial
+  });
+}
+
+async function handleStorageUpload(request, env) {
+  const auth = await verifyStorageUser(request, env);
+  if (auth.error) return auth.error;
+  if (!hasStorageBinding(env)) return storageUnavailable();
+
+  const headerSize = request.headers.get("Content-Length") || request.headers.get("X-File-Size");
+  if (headerSize && (!/^\d+$/.test(headerSize) || Number(headerSize) > MAX_STORAGE_FILE_BYTES)) {
+    return json({ error: "File exceeds the 50 MB limit." }, 413);
+  }
+  if (!request.body) return json({ error: "A file body is required." }, 400);
+
+  const id = crypto.randomUUID();
+  const key = storageKey(auth.user.id, id);
+  const name = cleanStorageFilename(new URL(request.url).searchParams.get("name"));
+  try {
+    await env.STORAGE.put(key, sizeLimitedStorageBody(request.body, MAX_STORAGE_FILE_BYTES), {
+      httpMetadata: { contentType: storageContentType(request.headers.get("Content-Type")) },
+      customMetadata: { originalName: name, ownerId: auth.user.id }
+    });
+  } catch (error) {
+    try {
+      await env.STORAGE.delete(key);
+    } catch {}
+    if (error instanceof StorageSizeLimitError || /50\s*MB|exceeds the 50 MB/i.test(String(error?.message || error))) {
+      return json({ error: "File exceeds the 50 MB limit." }, 413);
+    }
+    workerLog("error", "storage.upload.failed", { message: String(error?.message || error) });
+    return storageUnavailable();
+  }
+
+  return json({ id, name, message: "File uploaded." }, 201);
+}
+
+async function handleStorageObject(request, env) {
+  const auth = await verifyStorageUser(request, env);
+  if (auth.error) return auth.error;
+  if (!hasStorageBinding(env)) return storageUnavailable();
+
+  const id = new URL(request.url).searchParams.get("id") || "";
+  if (!isStorageObjectId(id)) return json({ error: "Invalid object id." }, 400);
+  const key = storageKey(auth.user.id, id);
+
+  if (request.method === "DELETE") {
+    try {
+      const existing = await env.STORAGE.head(key);
+      if (!existing) return json({ error: "File not found." }, 404);
+      await env.STORAGE.delete(key);
+      return json({ id, message: "File deleted." });
+    } catch (error) {
+      workerLog("error", "storage.delete.failed", { message: String(error?.message || error) });
+      return storageUnavailable();
+    }
+  }
+
+  try {
+    const object = await env.STORAGE.get(key);
+    if (!object) return json({ error: "File not found." }, 404);
+    return new Response(object.body, {
+      headers: {
+        "content-type": "application/octet-stream",
+        "content-disposition": storageDownloadDisposition(object.customMetadata?.originalName),
+        "cache-control": "private, no-store",
+        "x-content-type-options": "nosniff"
+      }
+    });
+  } catch (error) {
+    workerLog("error", "storage.download.failed", { message: String(error?.message || error) });
+    return storageUnavailable();
+  }
 }
 
 function getRequestCookie(request, name) {
@@ -2674,6 +2964,7 @@ function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
   </div>
 
   ${supabaseScript()}
+  ${path === "/settings/storage" ? storageClientScript(zh, links.login) : ""}
   ${auditClientScript(ipInfo)}
   ${adminClientScript(ipInfo)}
   <script>
@@ -2980,7 +3271,7 @@ function buildOsPages(zh) {
     notifications: ["通知", "管理提醒、站内消息与其他通知偏好。"],
     ai: ["AI 设置", "当前没有浏览器端 API Key 配置功能；敏感密钥不应保存在前端。"],
     integrations: ["第三方集成", "当前站点运行依赖 Cloudflare 与 Supabase；此页尚无用户级集成配置。"],
-    storage: ["存储管理", "当前没有文件存储模块。"]
+    storage: ["存储管理", "管理仅属于当前账号的私人 Cloudflare R2 文件。"]
   };
   const e = {
     dashboard: ["Dashboard", "Overview of your account status and core modules, with quick access to currently available features."],
@@ -3010,7 +3301,7 @@ function buildOsPages(zh) {
     notifications: ["Notifications", "Manage reminders, in-app messages, and other notification preferences."],
     ai: ["AI Settings", "There is no browser-side API-key configuration. Sensitive keys should not be stored in frontend code."],
     integrations: ["Integrations", "The site currently depends on Cloudflare and Supabase; user-configurable integrations are not implemented."],
-    storage: ["Storage", "No file-storage module is implemented yet."]
+    storage: ["Storage", "Manage private Cloudflare R2 files belonging only to your account."]
   };
   const s = zh ? z : e;
   return {
@@ -3086,13 +3377,13 @@ function dashboardContent(zh) {
         ["账户与安全", "已接入", "Supabase Auth、登录事件和设备记录使用真实数据。"],
         ["管理后台", "已接入", "集中管理用户、角色、权限与安全审计。"],
         ["知识与工作区", "未接入", "笔记、链接、摘要、项目、草稿和任务目前没有对应数据表。"],
-        ["设置与集成", "部分接入", "主题和中英切换可用；AI、存储和用户级第三方配置尚未实现。"]
+        ["设置与集成", "部分接入", "主题和中英切换可用；私人 R2 存储已可用，AI 与用户级第三方配置尚未实现。"]
       ]
     : [
         ["Account & Security", "Connected", "Supabase Auth, login events, and device records use live data."],
         ["Admin", "Connected", "Manage users, roles, permissions, and security audits in one place."],
         ["Knowledge & Workspace", "Not connected", "Notes, links, summaries, projects, drafts, and tasks do not have backing tables yet."],
-        ["Settings & Integrations", "Partial", "Theme and Chinese/English switching work; AI, storage, and user-level integrations are not implemented."]
+        ["Settings & Integrations", "Partial", "Theme and Chinese/English switching work; private R2 storage is available, while AI and user-level integrations are not implemented."]
       ];
   return `<section class="os-grid">${modules.map(item => `<article class="os-card"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p></article>`).join("")}</section>`;
 }
@@ -3278,6 +3569,439 @@ function adminLogsContent(zh) {
   `;
 }
 
+function storageSettingsContent(zh) {
+  const copy = zh ? {
+    connected: "已连接",
+    checking: "检查中",
+    files: "文件数量",
+    used: "已用空间",
+    refreshed: "最近刷新",
+    select: "选择文件",
+    refresh: "刷新",
+    search: "搜索文件名",
+    name: "文件名",
+    type: "类型",
+    size: "大小",
+    uploaded: "上传时间",
+    actions: "操作",
+    download: "下载",
+    remove: "删除",
+    loading: "正在读取你的私人文件…",
+    empty: "还没有文件。选择文件后即可上传到你的私人存储空间。",
+    partial: "文件数量较多，当前统计仅包含前 10,000 个对象。",
+    uploadIdle: "每个文件最大 50 MB。文件会逐个上传。",
+    storage: "Cloudflare R2",
+    unavailable: "存储服务暂时不可用。",
+    notAuthorized: "当前账号不可使用私人存储。",
+    signInAgain: "登录状态已失效，请重新登录。",
+    login: "前往登录",
+    deleteConfirm: "确定要删除“{name}”吗？此操作无法撤销。",
+    uploadComplete: "已上传 {count} 个文件。",
+    uploadFailed: "上传失败：{message}",
+    uploading: "正在上传 {current}/{total} · {name}",
+    deleting: "正在删除 {name}…",
+    downloadFailed: "下载失败：{message}",
+    deleteFailed: "删除失败：{message}",
+    refreshedNow: "刚刚",
+    tooLarge: "“{name}”超过 50 MB，未上传。",
+    connectionDescription: "文件只会经由已登录的 Worker API 存取，不会向浏览器公开 R2。"
+  } : {
+    connected: "Connected",
+    checking: "Checking",
+    files: "Files",
+    used: "Used space",
+    refreshed: "Last refreshed",
+    select: "Select files",
+    refresh: "Refresh",
+    search: "Search file names",
+    name: "File name",
+    type: "Type",
+    size: "Size",
+    uploaded: "Uploaded",
+    actions: "Actions",
+    download: "Download",
+    remove: "Delete",
+    loading: "Loading your private files…",
+    empty: "No files yet. Select files to upload them to your private storage.",
+    partial: "There are many files; this statistic includes only the first 10,000 objects.",
+    uploadIdle: "50 MB maximum per file. Files upload one at a time.",
+    storage: "Cloudflare R2",
+    unavailable: "Storage service is temporarily unavailable.",
+    notAuthorized: "This account is not allowed to use private storage.",
+    signInAgain: "Your session has expired. Please sign in again.",
+    login: "Sign in",
+    deleteConfirm: "Delete “{name}”? This cannot be undone.",
+    uploadComplete: "Uploaded {count} files.",
+    uploadFailed: "Upload failed: {message}",
+    uploading: "Uploading {current}/{total} · {name}",
+    deleting: "Deleting {name}…",
+    downloadFailed: "Download failed: {message}",
+    deleteFailed: "Delete failed: {message}",
+    refreshedNow: "Just now",
+    tooLarge: "“{name}” exceeds 50 MB and was not uploaded.",
+    connectionDescription: "Files travel only through the signed-in Worker API; R2 is never exposed to the browser."
+  };
+
+  return `
+    <section id="storage-manager" class="storage-manager is-checking">
+      <section class="storage-summary-grid">
+        <article class="os-card storage-connection-card">
+          <small>${copy.storage}</small>
+          <div class="storage-connection-line"><span class="storage-status-dot" aria-hidden="true"></span><strong id="storage-connection">${copy.checking}</strong></div>
+          <p>${copy.connectionDescription}</p>
+        </article>
+        <article class="os-card storage-metric"><small>${copy.files}</small><strong id="storage-file-count">—</strong></article>
+        <article class="os-card storage-metric"><small>${copy.used}</small><strong id="storage-used-bytes">—</strong></article>
+        <article class="os-card storage-metric"><small>${copy.refreshed}</small><strong id="storage-refreshed-at">—</strong></article>
+      </section>
+      <section class="os-card storage-toolbar">
+        <button id="storage-upload-button" class="storage-upload-button" type="button">${copy.select}</button>
+        <input id="storage-file-input" type="file" multiple hidden>
+        <button id="storage-refresh-button" class="storage-secondary-button" type="button">${copy.refresh}</button>
+        <input id="storage-search" class="storage-search" type="search" placeholder="${copy.search}" aria-label="${copy.search}" autocomplete="off">
+      </section>
+      <p id="storage-upload-status" class="storage-upload-status">${copy.uploadIdle}</p>
+      <p id="storage-api-status" class="storage-api-status" role="status">${copy.loading}</p>
+      <a id="storage-login-link" class="storage-login-link" href="#" hidden>${copy.login}</a>
+      <section class="os-card storage-table-card">
+        <div class="storage-table" role="table" aria-label="${copy.files}">
+          <div class="storage-file-row storage-file-head" role="row">
+            <span role="columnheader">${copy.name}</span><span role="columnheader">${copy.type}</span><span role="columnheader">${copy.size}</span><span role="columnheader">${copy.uploaded}</span><span role="columnheader">${copy.actions}</span>
+          </div>
+          <div id="storage-file-list" class="storage-file-list" role="rowgroup"></div>
+        </div>
+        <p id="storage-partial-notice" class="storage-partial-notice" hidden>${copy.partial}</p>
+      </section>
+    </section>
+  `;
+}
+
+function storageClientScript(zh, loginUrl) {
+  const copy = zh ? {
+    loading: "正在读取你的私人文件…", empty: "还没有文件。选择文件后即可上传到你的私人存储空间。", unavailable: "存储服务暂时不可用。", notAuthorized: "当前账号不可使用私人存储。", signInAgain: "登录状态已失效，请重新登录。", login: "前往登录", download: "下载", remove: "删除", uploadIdle: "每个文件最大 50 MB。文件会逐个上传。", partial: "文件数量较多，当前统计仅包含前 10,000 个对象。", uploadComplete: "已上传 {count} 个文件。", uploadCompleteWithSkipped: "已上传 {count} 个文件，跳过 {skipped} 个超过 50 MB 的文件。", uploadFailed: "上传失败：{message}", uploading: "正在上传 {current}/{total} · {name}", deleting: "正在删除 {name}…", downloadFailed: "下载失败：{message}", deleteFailed: "删除失败：{message}", deleteConfirm: "确定要删除“{name}”吗？此操作无法撤销。", tooLarge: "“{name}”超过 50 MB，未上传。", refreshedNow: "刚刚"
+  } : {
+    loading: "Loading your private files…", empty: "No files yet. Select files to upload them to your private storage.", unavailable: "Storage service is temporarily unavailable.", notAuthorized: "This account is not allowed to use private storage.", signInAgain: "Your session has expired. Please sign in again.", login: "Sign in", download: "Download", remove: "Delete", uploadIdle: "50 MB maximum per file. Files upload one at a time.", partial: "There are many files; this statistic includes only the first 10,000 objects.", uploadComplete: "Uploaded {count} files.", uploadCompleteWithSkipped: "Uploaded {count} files and skipped {skipped} files larger than 50 MB.", uploadFailed: "Upload failed: {message}", uploading: "Uploading {current}/{total} · {name}", deleting: "Deleting {name}…", downloadFailed: "Download failed: {message}", deleteFailed: "Delete failed: {message}", deleteConfirm: "Delete “{name}”? This cannot be undone.", tooLarge: "“{name}” exceeds 50 MB and was not uploaded.", refreshedNow: "Just now"
+  };
+  return `
+    <script>
+      (() => {
+        const copy = ${JSON.stringify(copy)};
+        const loginUrl = ${JSON.stringify(loginUrl)};
+        const maximumBytes = ${MAX_STORAGE_FILE_BYTES};
+        const root = document.getElementById("storage-manager");
+        if (!root) return;
+
+        const fileInput = document.getElementById("storage-file-input");
+        const uploadButton = document.getElementById("storage-upload-button");
+        const refreshButton = document.getElementById("storage-refresh-button");
+        const searchInput = document.getElementById("storage-search");
+        const fileList = document.getElementById("storage-file-list");
+        const apiStatus = document.getElementById("storage-api-status");
+        const uploadStatus = document.getElementById("storage-upload-status");
+        const loginLink = document.getElementById("storage-login-link");
+        const partialNotice = document.getElementById("storage-partial-notice");
+        const connection = document.getElementById("storage-connection");
+        const fileCount = document.getElementById("storage-file-count");
+        const usedBytes = document.getElementById("storage-used-bytes");
+        const refreshedAt = document.getElementById("storage-refreshed-at");
+        let files = [];
+        let partial = false;
+        let currentFilter = "";
+        let isBusy = false;
+
+        class SessionExpiredError extends Error {}
+        class StorageForbiddenError extends Error {}
+
+        function message(template, values) {
+          return Object.entries(values || {}).reduce((text, entry) => text.replace("{" + entry[0] + "}", entry[1]), template);
+        }
+
+        function formatBytes(bytes) {
+          const value = Number(bytes) || 0;
+          if (value < 1024) return value + " B";
+          const units = ["KB", "MB", "GB", "TB"];
+          let size = value / 1024;
+          let index = 0;
+          while (size >= 1024 && index < units.length - 1) { size /= 1024; index += 1; }
+          return size.toLocaleString(undefined, { maximumFractionDigits: size >= 100 ? 0 : 1 }) + " " + units[index];
+        }
+
+        function formatDate(value) {
+          if (!value) return "—";
+          const date = new Date(value);
+          return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
+        }
+
+        function setApiStatus(text, kind) {
+          apiStatus.textContent = text;
+          apiStatus.className = "storage-api-status" + (kind ? " is-" + kind : "");
+        }
+
+        function setUploadStatus(text, kind) {
+          uploadStatus.textContent = text;
+          uploadStatus.className = "storage-upload-status" + (kind ? " is-" + kind : "");
+        }
+
+        function resetMetrics() {
+          fileCount.textContent = "—";
+          usedBytes.textContent = "—";
+          refreshedAt.textContent = "—";
+          partial = false;
+          partialNotice.hidden = true;
+        }
+
+        function setBusy(busy) {
+          isBusy = busy;
+          const unavailable = root.classList.contains("is-unavailable");
+          uploadButton.disabled = busy || unavailable;
+          refreshButton.disabled = busy;
+          fileInput.disabled = busy || unavailable;
+          root.querySelectorAll(".storage-action-button").forEach(button => {
+            button.disabled = busy || unavailable;
+          });
+        }
+
+        function clearStorageView() {
+          resetMetrics();
+          files = [];
+          renderFiles();
+        }
+
+        function showSessionExpired() {
+          clearStorageView();
+          root.classList.remove("is-checking");
+          root.classList.add("is-unavailable");
+          setApiStatus(copy.signInAgain, "error");
+          loginLink.hidden = false;
+          loginLink.href = loginUrl;
+          connection.textContent = copy.signInAgain;
+        }
+
+        function showStorageForbidden() {
+          clearStorageView();
+          root.classList.remove("is-checking");
+          root.classList.add("is-unavailable");
+          loginLink.hidden = true;
+          connection.textContent = copy.notAuthorized;
+          setApiStatus(copy.notAuthorized, "error");
+        }
+
+        async function accessToken() {
+          const result = await supabaseClient.auth.getSession();
+          const token = result?.data?.session?.access_token;
+          if (!token) throw new SessionExpiredError();
+          return token;
+        }
+
+        async function storageRequest(path, options) {
+          const token = await accessToken();
+          const headers = new Headers(options?.headers || {});
+          headers.set("Authorization", "Bearer " + token);
+          let response;
+          try {
+            response = await fetch(path, { ...options, headers, cache: "no-store" });
+          } catch {
+            throw new Error(copy.unavailable);
+          }
+          if (response.status === 401) throw new SessionExpiredError();
+          if (response.status === 403) throw new StorageForbiddenError();
+          if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            const error = new Error(payload?.error || copy.unavailable);
+            error.status = response.status;
+            throw error;
+          }
+          return response;
+        }
+
+        function visibleFiles() {
+          const query = currentFilter.trim().toLocaleLowerCase();
+          return query ? files.filter(file => String(file.name || "").toLocaleLowerCase().includes(query)) : files;
+        }
+
+        function renderFiles() {
+          const visible = visibleFiles();
+          fileList.replaceChildren();
+          if (!visible.length) {
+            const empty = document.createElement("p");
+            empty.className = "storage-empty";
+            empty.textContent = files.length ? "—" : copy.empty;
+            fileList.append(empty);
+            return;
+          }
+          visible.forEach(file => {
+            const row = document.createElement("div");
+            row.className = "storage-file-row";
+            row.setAttribute("role", "row");
+            const name = document.createElement("strong");
+            name.className = "storage-file-name";
+            name.textContent = file.name;
+            name.title = file.name;
+            const type = document.createElement("span");
+            type.textContent = file.contentType || "application/octet-stream";
+            const size = document.createElement("span");
+            size.textContent = formatBytes(file.size);
+            const uploaded = document.createElement("time");
+            uploaded.dateTime = file.uploadedAt || "";
+            uploaded.textContent = formatDate(file.uploadedAt);
+            const actions = document.createElement("div");
+            actions.className = "storage-actions";
+            const download = document.createElement("button");
+            download.type = "button";
+            download.className = "storage-action-button";
+            download.textContent = copy.download;
+            download.addEventListener("click", () => void downloadFile(file, download));
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "storage-action-button is-danger";
+            remove.textContent = copy.remove;
+            remove.addEventListener("click", () => void deleteFile(file, remove));
+            actions.append(download, remove);
+            row.append(name, type, size, uploaded, actions);
+            fileList.append(row);
+          });
+        }
+
+        function renderMetrics(data) {
+          fileCount.textContent = String(data.file_count) + (data.partial ? "+" : "");
+          usedBytes.textContent = formatBytes(data.used_bytes);
+          refreshedAt.textContent = new Date().toLocaleString();
+          partial = Boolean(data.partial);
+          partialNotice.hidden = !partial;
+          if (partial) partialNotice.textContent = copy.partial;
+        }
+
+        async function refreshFiles(force) {
+          if (isBusy && !force) return;
+          root.classList.remove("is-unavailable");
+          root.classList.add("is-checking");
+          setBusy(true);
+          loginLink.hidden = true;
+          setApiStatus(copy.loading, "loading");
+          try {
+            const response = await storageRequest("/api/storage/files", { method: "GET" });
+            const data = await response.json();
+            files = Array.isArray(data.files) ? data.files : [];
+            renderMetrics(data);
+            renderFiles();
+            root.classList.remove("is-checking");
+            connection.textContent = copy.connected;
+            setApiStatus("", "");
+          } catch (error) {
+            root.classList.remove("is-checking");
+            if (error instanceof SessionExpiredError) {
+              showSessionExpired();
+            } else if (error instanceof StorageForbiddenError) {
+              showStorageForbidden();
+            } else {
+              clearStorageView();
+              root.classList.add("is-unavailable");
+              connection.textContent = copy.unavailable;
+              setApiStatus(error.message || copy.unavailable, "error");
+            }
+          } finally {
+            setBusy(false);
+          }
+        }
+
+        async function uploadFiles(selected) {
+          const queue = Array.from(selected || []);
+          if (!queue.length || isBusy) return;
+          const oversized = queue.filter(file => file.size > maximumBytes);
+          const uploadQueue = queue.filter(file => file.size <= maximumBytes);
+          if (!uploadQueue.length) {
+            setUploadStatus(message(copy.tooLarge, { name: oversized[0]?.name || "file" }), "error");
+            fileInput.value = "";
+            return;
+          }
+          setBusy(true);
+          let completed = 0;
+          try {
+            for (let index = 0; index < uploadQueue.length; index += 1) {
+              const file = uploadQueue[index];
+              setUploadStatus(message(copy.uploading, { current: index + 1, total: uploadQueue.length, name: file.name }), "loading");
+              const response = await storageRequest("/api/storage/upload?name=" + encodeURIComponent(file.name), {
+                method: "POST",
+                headers: {
+                  "Content-Type": file.type || "application/octet-stream",
+                  "X-File-Size": String(file.size)
+                },
+                body: file
+              });
+              if (response.status === 201) completed += 1;
+            }
+            setUploadStatus(oversized.length ? message(copy.uploadCompleteWithSkipped, { count: completed, skipped: oversized.length }) : message(copy.uploadComplete, { count: completed }), "success");
+            await refreshFiles(true);
+          } catch (error) {
+            if (error instanceof SessionExpiredError) {
+              showSessionExpired();
+            } else if (error instanceof StorageForbiddenError) {
+              showStorageForbidden();
+            } else {
+              setUploadStatus(message(copy.uploadFailed, { message: error.message || copy.unavailable }), "error");
+              if (completed) await refreshFiles(true);
+            }
+          } finally {
+            fileInput.value = "";
+            if (isBusy) setBusy(false);
+          }
+        }
+
+        async function downloadFile(file, button) {
+          button.disabled = true;
+          try {
+            const response = await storageRequest("/api/storage/object?id=" + encodeURIComponent(file.id), { method: "GET" });
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = objectUrl;
+            anchor.download = file.name || "file";
+            anchor.style.display = "none";
+            document.body.append(anchor);
+            anchor.click();
+            anchor.remove();
+            window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+          } catch (error) {
+            if (error instanceof SessionExpiredError) showSessionExpired();
+            else if (error instanceof StorageForbiddenError) showStorageForbidden();
+            else setApiStatus(message(copy.downloadFailed, { message: error.message || copy.unavailable }), "error");
+          } finally {
+            button.disabled = false;
+          }
+        }
+
+        async function deleteFile(file, button) {
+          if (isBusy || !window.confirm(message(copy.deleteConfirm, { name: file.name }))) return;
+          setBusy(true);
+          button.disabled = true;
+          setUploadStatus(message(copy.deleting, { name: file.name }), "loading");
+          try {
+            await storageRequest("/api/storage/object?id=" + encodeURIComponent(file.id), { method: "DELETE" });
+            setUploadStatus(copy.uploadIdle, "");
+            await refreshFiles(true);
+          } catch (error) {
+            if (error instanceof SessionExpiredError) showSessionExpired();
+            else if (error instanceof StorageForbiddenError) showStorageForbidden();
+            else setApiStatus(message(copy.deleteFailed, { message: error.message || copy.unavailable }), "error");
+          } finally {
+            button.disabled = false;
+            if (isBusy) setBusy(false);
+          }
+        }
+
+        searchInput.addEventListener("input", () => {
+          currentFilter = searchInput.value || "";
+          renderFiles();
+        });
+        uploadButton.addEventListener("click", () => fileInput.click());
+        refreshButton.addEventListener("click", () => void refreshFiles());
+        fileInput.addEventListener("change", event => void uploadFiles(event.target.files));
+        void refreshFiles();
+      })();
+    </script>
+  `;
+}
+
 function settingsContent(path, zh) {
   if (path.endsWith("/appearance")) return appearanceSettingsContent(zh);
   if (path.endsWith("/language")) return languageSettingsContent(zh);
@@ -3285,7 +4009,7 @@ function settingsContent(path, zh) {
   if (path.endsWith("/notifications")) return statusContent(zh, "通知", "通知方式、提醒和站内消息偏好将在这里统一管理。当前尚未接入通知服务。", "Notifications", "Notification methods, reminders, and in-app message preferences will be managed here. Notification delivery is not connected yet.");
   if (path.endsWith("/ai")) return statusContent(zh, "AI 设置", "这里将用于管理 AI Provider、模型与个人 AI 偏好。当前尚未开放用户级 AI 配置。", "AI Settings", "Manage AI providers, models, and personal AI preferences here. User-level AI configuration is not available yet.");
   if (path.endsWith("/integrations")) return statusContent(zh, "第三方集成", "这里将用于管理可连接的第三方服务与账号授权。当前尚未开放用户级集成配置。", "Integrations", "Manage connected third-party services and account authorizations here. User-level integrations are not available yet.");
-  if (path.endsWith("/storage")) return statusContent(zh, "存储管理", "存储可接入 Cloudflare R2。完成存储桶绑定后，这里可以显示文件数量、已用空间与容量信息；当前 Worker 尚未配置 R2 绑定。", "Storage", "Storage can be backed by Cloudflare R2. Once an R2 bucket is bound, this page can show file counts, used space, and capacity information; the Worker does not currently have an R2 binding.");
+  if (path.endsWith("/storage")) return storageSettingsContent(zh);
 
   const prefix = zh ? "/zh-cn" : "/en";
   const items = zh
@@ -3296,7 +4020,7 @@ function settingsContent(path, zh) {
         ["通知", "规划中", "管理提醒、站内消息与其他通知偏好。", `${prefix}/settings/notifications`],
         ["AI 设置", "规划中", "管理 AI Provider、模型与个人 AI 偏好。", `${prefix}/settings/ai`],
         ["第三方集成", "规划中", "管理可连接的第三方服务与账号授权。", `${prefix}/settings/integrations`],
-        ["存储管理", "可接入", "可使用 Cloudflare R2 管理文件、空间占用与容量。", `${prefix}/settings/storage`]
+        ["存储管理", "已连接", "上传、下载和管理仅属于当前账号的私人 R2 文件。", `${prefix}/settings/storage`]
       ]
     : [
         ["Appearance", "Available", "Choose light or dark mode and manage the site's overall display.", `${prefix}/settings/appearance`],
@@ -3305,7 +4029,7 @@ function settingsContent(path, zh) {
         ["Notifications", "Planned", "Manage reminders, in-app messages, and other notification preferences.", `${prefix}/settings/notifications`],
         ["AI Settings", "Planned", "Manage AI providers, models, and personal AI preferences.", `${prefix}/settings/ai`],
         ["Integrations", "Planned", "Manage connected third-party services and account authorizations.", `${prefix}/settings/integrations`],
-        ["Storage", "Connectable", "Cloudflare R2 can provide file storage, usage, and capacity data.", `${prefix}/settings/storage`]
+        ["Storage", "Connected", "Upload, download, and manage private R2 files belonging only to your account.", `${prefix}/settings/storage`]
       ];
   return `<section class="os-grid settings-grid">${items.map(item => `<a class="os-card settings-card-link" href="${item[3]}"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p><span class="settings-card-arrow" aria-hidden="true">›</span></a>`).join("")}</section>`;
 }
@@ -3405,6 +4129,7 @@ function osStyles() {
     .os-kicker{margin:0 0 8px;color:var(--primary);font-weight:800}.os-hero h1{margin:0 0 10px;font-size:clamp(34px,5vw,64px);letter-spacing:0;line-height:1.02}.os-hero p{max-width:780px;margin:0;color:var(--muted);}
     .os-ai{min-width:230px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--text);text-decoration:none}.os-ai span{color:var(--muted);font-size:13px}.os-ai strong{font-size:18px;}
     .os-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.os-card{padding:20px;animation:item-rise .48s cubic-bezier(.2,.8,.2,1) both}.os-card h2{margin:8px 0 8px;font-size:20px}.os-card small{color:var(--primary);font-weight:800}.os-card p{color:var(--muted);margin:0}.os-card.is-large{min-height:220px;}.settings-card-link{display:block;position:relative;color:inherit;text-decoration:none;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.settings-card-link:hover{transform:translateY(-3px);border-color:var(--border-strong);box-shadow:var(--shadow)}.settings-card-arrow{position:absolute;right:18px;bottom:16px;color:var(--muted);font-size:24px;line-height:1}.settings-detail-card p{max-width:760px}.settings-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:22px}.settings-choice{display:grid;gap:5px;padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--text);text-align:left;text-decoration:none;font:inherit;cursor:pointer;box-shadow:none}.settings-choice strong{font-size:17px}.settings-choice span{color:var(--muted);font-size:13px}.settings-choice:hover{border-color:var(--border-strong);background:color-mix(in srgb,var(--surface-soft) 82%,var(--primary) 4%);box-shadow:none;transform:none}.settings-choice.is-selected{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 12%,transparent)}
+    .storage-manager{display:grid;gap:14px}.storage-summary-grid{display:grid;grid-template-columns:1.35fr repeat(3,minmax(0,1fr));gap:14px}.storage-connection-card{min-height:150px}.storage-connection-line{display:flex;align-items:center;gap:9px;margin:12px 0 8px}.storage-status-dot{width:10px;height:10px;border-radius:50%;background:var(--success);box-shadow:0 0 0 5px color-mix(in srgb,var(--success) 14%,transparent)}.storage-metric{display:grid;align-content:space-between;min-height:150px}.storage-metric strong{font-size:clamp(23px,3vw,36px);overflow-wrap:anywhere}.storage-toolbar{display:grid;grid-template-columns:auto auto minmax(180px,1fr);gap:10px;align-items:center}.storage-upload-button,.storage-secondary-button,.storage-action-button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 13px;border:1px solid var(--border);border-radius:var(--radius);background:var(--primary);color:var(--primary-ink);font:inherit;font-size:14px;font-weight:800;cursor:pointer;text-decoration:none;white-space:nowrap}.storage-secondary-button,.storage-action-button{background:var(--surface-soft);color:var(--text)}.storage-upload-button:hover,.storage-secondary-button:hover,.storage-action-button:hover{transform:translateY(-1px);border-color:var(--border-strong);box-shadow:var(--shadow-soft)}.storage-action-button.is-danger{color:var(--danger)}.storage-upload-button:disabled,.storage-secondary-button:disabled,.storage-action-button:disabled{opacity:.58;cursor:not-allowed;transform:none;box-shadow:none}.storage-search{width:100%;min-height:42px;margin:0;padding:0 12px;background:var(--surface-soft);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);font:inherit}.storage-upload-status,.storage-api-status{min-height:20px;margin:0 2px;color:var(--muted);font-size:14px}.storage-upload-status.is-error,.storage-api-status.is-error{color:var(--danger)}.storage-upload-status.is-success{color:var(--success)}.storage-upload-status.is-loading,.storage-api-status.is-loading{color:var(--primary)}.storage-login-link{justify-self:start;color:var(--primary);font-weight:800}.storage-table-card{padding:0;overflow:hidden}.storage-table{overflow:auto}.storage-file-row{display:grid;grid-template-columns:minmax(180px,1.8fr) minmax(120px,1fr) minmax(78px,.55fr) minmax(130px,.9fr) minmax(150px,.85fr);gap:12px;align-items:center;min-width:760px;padding:13px 20px;border-top:1px solid var(--border)}.storage-file-head{position:sticky;top:0;z-index:1;border-top:0;background:var(--surface-soft);color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase}.storage-file-row>span,.storage-file-row time{min-width:0;color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.storage-file-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.storage-actions{display:flex;gap:8px;justify-content:flex-end}.storage-action-button{min-height:34px;padding:0 10px;font-size:13px}.storage-empty{margin:0;padding:32px 20px;color:var(--muted);text-align:center}.storage-partial-notice{margin:0;padding:12px 20px;color:var(--muted);border-top:1px solid var(--border);font-size:14px}.storage-manager.is-checking .storage-status-dot{background:var(--muted);box-shadow:0 0 0 5px color-mix(in srgb,var(--muted) 14%,transparent)}.storage-manager.is-unavailable .storage-status-dot{background:var(--danger);box-shadow:0 0 0 5px color-mix(in srgb,var(--danger) 14%,transparent)}
     .os-chip-row{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}.os-chip-row span{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);color:var(--text);padding:8px 10px;font-weight:700;}
     .os-search{font-size:18px;margin:0 0 18px}.os-profile-card{display:flex;gap:18px;align-items:center;padding:24px}.os-profile-card .os-avatar{width:84px;height:84px;font-size:36px}
     .os-lock{padding:18px;margin-bottom:18px;border-color:var(--danger, #ff9a9a)}
@@ -3488,6 +4213,7 @@ function osStyles() {
       }
       .compact-back-button:active{transform:translateY(0) scale(.94)}
       .os-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .storage-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.storage-connection-card{grid-column:span 2}.storage-toolbar{grid-template-columns:auto auto minmax(160px,1fr)}
       .os-hero{grid-template-columns:1fr;display:grid}
       .os-ai{min-width:0}
       .admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -3505,6 +4231,7 @@ function osStyles() {
       .os-main{padding:20px 16px}
       html.compact-content-view .os-main{padding-top:64px}
       .os-grid,.admin-metrics{grid-template-columns:1fr}
+      .storage-summary-grid{grid-template-columns:1fr}.storage-connection-card{grid-column:auto}.storage-toolbar{grid-template-columns:1fr 1fr}.storage-search{grid-column:1 / -1}.storage-file-row{min-width:620px;padding:12px 14px;grid-template-columns:minmax(150px,1.45fr) minmax(104px,.85fr) minmax(68px,.48fr) minmax(112px,.75fr) minmax(132px,.78fr)}.storage-file-head{font-size:11px}.storage-actions{gap:5px}.storage-action-button{padding:0 8px}
       .os-profile-card{align-items:flex-start;flex-direction:column}
       .admin-toolbar{grid-template-columns:1fr}
       .permission-grid{grid-template-columns:minmax(150px,1fr) repeat(3,70px)}
@@ -3618,6 +4345,12 @@ function signUpPage(t, links, ipInfo) {
     .signup-help{display:block;margin:6px 0 2px;color:var(--quiet);font-size:13px;line-height:1.55}
     .signup-status{min-height:22px;margin-top:8px;font-size:13px;color:var(--muted)}
     .signup-status.is-good{color:#2f9b63}.signup-status.is-bad{color:var(--danger)}
+    .signup-input-shell{position:relative;margin-top:12px}
+    .signup-input-shell input{margin-top:0;padding-right:50px}
+    .signup-validity{position:absolute;right:15px;top:50%;display:grid;place-items:center;width:24px;height:24px;transform:translateY(-50%);font-size:19px;font-weight:900;line-height:1;opacity:0;pointer-events:none;transition:opacity .15s ease,color .15s ease,transform .15s ease}
+    .signup-validity.is-checking{opacity:1;color:var(--muted)}
+    .signup-validity.is-good{opacity:1;color:#2f9b63;transform:translateY(-50%) scale(1.04)}
+    .signup-validity.is-bad{opacity:1;color:var(--danger)}
     .name-count-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
     .name-count-group{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft)}
     .name-count-group>span{display:block;margin-bottom:8px;color:var(--muted);font-size:13px;font-weight:700}
@@ -3647,13 +4380,14 @@ function signUpPage(t, links, ipInfo) {
   ${topControls(links, t)}
   <div class="card">
     <h1 class="brand-title">${t.studioName}</h1>
-    <p>${t.signUpDescription}</p>
 
     <div id="step-username">
       <p>${t.chooseUsername}</p>
-      <small class="signup-help">${copy.usernameHelp}</small>
-      <input id="username" type="text" placeholder="${t.usernamePlaceholder}" autocomplete="username">
-      <div id="username-status" class="signup-status"></div>
+      <div class="signup-input-shell">
+        <input id="username" type="text" placeholder="${t.usernamePlaceholder}" autocomplete="username" aria-describedby="username-status" aria-invalid="false">
+        <span id="username-validity" class="signup-validity" aria-hidden="true"></span>
+      </div>
+      <div id="username-status" class="signup-status" role="status"></div>
       <button id="username-next-btn" disabled>${t.continue}</button>
       <a class="button secondary" href="${links.login}">${t.alreadyHaveAccount}</a>
     </div>
@@ -3803,6 +4537,7 @@ function signUpPage(t, links, ipInfo) {
     function usernameLocalReason(value) {
       const text = value.trim();
       const key = text.toLowerCase();
+      if (!text) return "";
       if (text.length < 3) return "too_short";
       if (key.includes("tianguo")) return "reserved_tianguo";
       if (key.includes("admin")) return "reserved_admin";
@@ -3818,47 +4553,89 @@ function signUpPage(t, links, ipInfo) {
 
     const usernameInput = document.getElementById("username");
     const usernameStatus = document.getElementById("username-status");
+    const usernameValidity = document.getElementById("username-validity");
     const usernameNextBtn = document.getElementById("username-next-btn");
+
+    function setUsernameValidity(state) {
+      usernameValidity.classList.remove("is-checking", "is-good", "is-bad");
+      usernameInput.setAttribute("aria-invalid", state === "bad" ? "true" : "false");
+      if (state === "checking") {
+        usernameValidity.textContent = "…";
+        usernameValidity.classList.add("is-checking");
+      } else if (state === "good") {
+        usernameValidity.textContent = "✓";
+        usernameValidity.classList.add("is-good");
+      } else if (state === "bad") {
+        usernameValidity.textContent = "×";
+        usernameValidity.classList.add("is-bad");
+      } else {
+        usernameValidity.textContent = "";
+      }
+    }
 
     async function checkUsernameAvailability() {
       const value = usernameInput.value.trim();
-      const localReason = usernameLocalReason(value);
       usernameIsAvailable = false;
       setButtonState(usernameNextBtn, false);
+
+      if (!value) {
+        setStatus(usernameStatus, "");
+        setUsernameValidity("");
+        return false;
+      }
+
+      const localReason = usernameLocalReason(value);
       if (localReason) {
         setStatus(usernameStatus, usernameMessage(localReason), "is-bad");
+        setUsernameValidity("bad");
         return false;
       }
 
       const sequence = ++usernameCheckSequence;
-      setStatus(usernameStatus, ${JSON.stringify(copy.usernameChecking)});
+      setStatus(usernameStatus, "");
+      setUsernameValidity("checking");
       const { data, error } = await supabaseClient.rpc("check_registration_username", { p_username: value });
       if (sequence !== usernameCheckSequence) return false;
       if (error) {
         setStatus(usernameStatus, ${JSON.stringify(zh ? "暂时无法检查用户名，请稍后再试。" : "Unable to check the username right now.")}, "is-bad");
+        setUsernameValidity("bad");
         return false;
       }
       if (!data?.available) {
         setStatus(usernameStatus, usernameMessage(data?.reason || "username_taken"), "is-bad");
+        setUsernameValidity("bad");
         return false;
       }
       usernameIsAvailable = true;
-      setStatus(usernameStatus, ${JSON.stringify(copy.usernameAvailable)}, "is-good");
+      setStatus(usernameStatus, "");
+      setUsernameValidity("good");
       setButtonState(usernameNextBtn, true);
       return true;
     }
 
     usernameInput.addEventListener("input", () => {
       clearTimeout(usernameCheckTimer);
+      usernameCheckSequence += 1;
       usernameIsAvailable = false;
       setButtonState(usernameNextBtn, false);
-      const reason = usernameLocalReason(usernameInput.value);
-      if (reason) {
-        setStatus(usernameStatus, usernameMessage(reason), "is-bad");
+
+      const value = usernameInput.value.trim();
+      if (!value) {
+        setStatus(usernameStatus, "");
+        setUsernameValidity("");
         return;
       }
+
+      const reason = usernameLocalReason(value);
+      if (reason) {
+        setStatus(usernameStatus, usernameMessage(reason), "is-bad");
+        setUsernameValidity("bad");
+        return;
+      }
+
       setStatus(usernameStatus, "");
-      usernameCheckTimer = window.setTimeout(checkUsernameAvailability, 350);
+      setUsernameValidity("checking");
+      usernameCheckTimer = window.setTimeout(checkUsernameAvailability, 250);
     });
 
     usernameNextBtn.addEventListener("click", async () => {
@@ -4103,6 +4880,7 @@ function signUpPage(t, links, ipInfo) {
           if (payload?.field === "username") {
             showStep("step-username");
             setStatus(usernameStatus, usernameMessage(payload?.error || "username_taken"), "is-bad");
+            setUsernameValidity("bad");
             usernameIsAvailable = false;
             setButtonState(usernameNextBtn, false);
           } else {
