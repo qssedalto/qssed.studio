@@ -4655,7 +4655,7 @@ function signUpPage(t, links, ipInfo) {
       const text = value.trim();
       return (expectedLength === 1 || expectedLength === 2) &&
         Array.from(text).length === expectedLength &&
-        /^\p{Script=Han}+$/u.test(text);
+        /^\\p{Script=Han}+$/u.test(text);
     }
 
     function updateNameButton() {
