@@ -1,6 +1,8 @@
 import { osStyles } from "./src/styles/os-styles.js";
 import { dashboardContent } from "./src/pages/dashboard.js";
 import { baseHead } from "./src/ui/base-head.js";
+import { themeToggle } from "./src/ui/theme-toggle.js";
+import { themeScript } from "./src/client/theme-script.js";
 
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
@@ -2557,15 +2559,6 @@ function adminClientScript(ipInfo) {
   `;
 }
 
-function themeToggle() {
-  return `
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color mode" title="Toggle color mode">
-      <span class="theme-moon">◐</span>
-      <span class="theme-sun">◑</span>
-    </button>
-  `;
-}
-
 function languageToggle(links, t) {
   const targetUrl = t === TEXT.zh ? links.enCurrent : links.zhCurrent;
   const label = t === TEXT.zh ? "ZH" : "EN";
@@ -2632,33 +2625,6 @@ function topControls(links, t) {
         }
       }
     </style>
-  `;
-}
-
-function themeScript() {
-  return `
-    <script>
-      (function () {
-        const button = document.getElementById("theme-toggle");
-        if (!button) return;
-
-        function setTheme(theme) {
-          document.documentElement.classList.add("theme-switching");
-          document.documentElement.dataset.theme = theme;
-          try {
-            localStorage.setItem("qssed-theme", theme);
-          } catch {}
-          window.setTimeout(() => {
-            document.documentElement.classList.remove("theme-switching");
-          }, 320);
-        }
-
-        button.addEventListener("click", () => {
-          const currentTheme = document.documentElement.dataset.theme === "light" ? "light" : "dark";
-          setTheme(currentTheme === "light" ? "dark" : "light");
-        });
-      })();
-    </script>
   `;
 }
 
