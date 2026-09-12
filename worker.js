@@ -136,6 +136,16 @@ export default {
       return handleManagerStorageFiles(request, env);
     }
 
+    if (pathname === "/api/manager/storage/upload") {
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+      return handleManagerStorageUpload(request, env);
+    }
+
+    if (pathname === "/api/manager/storage/object") {
+      if (request.method !== "GET" && request.method !== "DELETE") return json({ error: "Method not allowed" }, 405);
+      return handleManagerStorageObject(request, env);
+    }
+
     if (pathname === "/api/storage/files") {
       if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
       return handleStorageFiles(request, env);
@@ -349,58 +359,102 @@ async function verifyManagerRequest(request, env) {
   return { ok: true };
 }
 
+function managerStorageObjectReference(request) {
+  const url = new URL(request.url);
+  const scope = String(url.searchParams.get("scope") || "").trim().toLowerCase();
+  const id = String(url.searchParams.get("id") || "").trim();
+  const ownerId = String(url.searchParams.get("owner_id") || "").trim();
+
+  if (!isStorageObjectId(id)) return null;
+  if (scope === "manager") {
+    return { scope, ownerId: "manager", id, key: `manager/${id}` };
+  }
+  if (scope === "user" && isStorageObjectId(ownerId)) {
+    return { scope, ownerId, id, key: storageKey(ownerId, id) };
+  }
+  return null;
+}
+
+function managerStorageListedFile(object) {
+  const parts = object.key.split("/");
+  let scope;
+  let ownerId;
+  let id;
+
+  if (parts.length === 2 && parts[0] === "manager" && isStorageObjectId(parts[1])) {
+    scope = "manager";
+    ownerId = "manager";
+    id = parts[1];
+  } else if (
+    parts.length === 3 &&
+    parts[0] === "users" &&
+    isStorageObjectId(parts[1]) &&
+    isStorageObjectId(parts[2])
+  ) {
+    scope = "user";
+    ownerId = parts[1];
+    id = parts[2];
+  } else {
+    return null;
+  }
+
+  return {
+    key: object.key,
+    scope,
+    ownerId,
+    id,
+    name: cleanStorageFilename(object.customMetadata?.originalName),
+    size: Number(object.size) || 0,
+    uploadedAt: object.uploaded?.toISOString?.() || null,
+    contentType: storageContentType(object.httpMetadata?.contentType)
+  };
+}
+
 async function handleManagerStorageFiles(request, env) {
   const auth = await verifyManagerRequest(request, env);
   if (auth.error) return auth.error;
   if (!hasStorageBinding(env)) return storageUnavailable();
 
   const files = [];
-  let cursor;
   let scanned = 0;
   let partial = false;
 
   try {
-    do {
-      const remaining = MAX_STORAGE_LIST_OBJECTS - scanned;
-      if (remaining <= 0) {
-        partial = true;
-        break;
-      }
+    for (const prefix of ["users/", "manager/"]) {
+      let cursor;
+      do {
+        const remaining = MAX_STORAGE_LIST_OBJECTS - scanned;
+        if (remaining <= 0) {
+          partial = true;
+          break;
+        }
 
-      const page = await env.STORAGE.list({
-        prefix: "users/",
-        cursor,
-        limit: Math.min(1000, remaining),
-        include: ["httpMetadata", "customMetadata"]
-      });
-
-      scanned += page.objects.length;
-      for (const object of page.objects) {
-        const parts = object.key.split("/");
-        if (parts.length !== 3 || parts[0] !== "users") continue;
-        const ownerId = parts[1];
-        const id = parts[2];
-        if (!isStorageObjectId(ownerId) || !isStorageObjectId(id)) continue;
-
-        files.push({
-          key: object.key,
-          ownerId,
-          id,
-          name: cleanStorageFilename(object.customMetadata?.originalName),
-          size: Number(object.size) || 0,
-          uploadedAt: object.uploaded?.toISOString?.() || null,
-          contentType: storageContentType(object.httpMetadata?.contentType)
+        const page = await env.STORAGE.list({
+          prefix,
+          cursor,
+          limit: Math.min(1000, remaining),
+          include: ["httpMetadata", "customMetadata"]
         });
-      }
 
-      cursor = page.truncated ? page.cursor : undefined;
-      if (page.truncated && !cursor) {
-        partial = true;
-        break;
-      }
-    } while (cursor);
+        scanned += page.objects.length;
+        for (const object of page.objects) {
+          const file = managerStorageListedFile(object);
+          if (file) files.push(file);
+        }
 
-    if (cursor || scanned >= MAX_STORAGE_LIST_OBJECTS) partial = true;
+        cursor = page.truncated ? page.cursor : undefined;
+        if (page.truncated && !cursor) {
+          partial = true;
+          break;
+        }
+        if (page.truncated && scanned >= MAX_STORAGE_LIST_OBJECTS) {
+          partial = true;
+          break;
+        }
+      } while (cursor);
+
+      if (partial) break;
+    }
   } catch {
     return storageUnavailable();
   }
@@ -413,6 +467,97 @@ async function handleManagerStorageFiles(request, env) {
     used_bytes: files.reduce((total, file) => total + file.size, 0),
     partial
   });
+}
+
+async function handleManagerStorageUpload(request, env) {
+  const auth = await verifyManagerRequest(request, env);
+  if (auth.error) return auth.error;
+  if (!hasStorageBinding(env)) return storageUnavailable();
+  if (!request.body) return json({ error: "File body is required." }, 400);
+
+  const contentLength = request.headers.get("Content-Length");
+  const declaredLength = Number(contentLength);
+  if (!contentLength || !Number.isInteger(declaredLength) || declaredLength < 0) {
+    return json({ error: "Content-Length is required." }, 411);
+  }
+  if (declaredLength > MAX_STORAGE_FILE_BYTES) {
+    return json({ error: "File exceeds the 50 MB limit." }, 413);
+  }
+
+  const name = cleanStorageFilename(new URL(request.url).searchParams.get("name"));
+  const id = crypto.randomUUID();
+  const key = `manager/${id}`;
+
+  try {
+    await env.STORAGE.put(key, request.body, {
+      httpMetadata: {
+        contentType: storageContentType(request.headers.get("Content-Type"))
+      },
+      customMetadata: {
+        originalName: name,
+        source: "manager"
+      }
+    });
+  } catch (error) {
+    try {
+      await env.STORAGE.delete(key);
+    } catch {}
+    if (error instanceof StorageSizeLimitError) {
+      return json({ error: "File exceeds the 50 MB limit." }, 413);
+    }
+    return storageUnavailable();
+  }
+
+  return json({
+    scope: "manager",
+    ownerId: "manager",
+    id,
+    key,
+    name,
+    message: "File uploaded."
+  }, 201);
+}
+
+async function handleManagerStorageObject(request, env) {
+  const auth = await verifyManagerRequest(request, env);
+  if (auth.error) return auth.error;
+  if (!hasStorageBinding(env)) return storageUnavailable();
+
+  const reference = managerStorageObjectReference(request);
+  if (!reference) return json({ error: "Invalid storage object reference." }, 400);
+
+  if (request.method === "DELETE") {
+    try {
+      const existing = await env.STORAGE.head(reference.key);
+      if (!existing) return json({ error: "File not found." }, 404);
+      await env.STORAGE.delete(reference.key);
+      return json({
+        scope: reference.scope,
+        ownerId: reference.ownerId,
+        id: reference.id,
+        message: "File deleted."
+      });
+    } catch {
+      return storageUnavailable();
+    }
+  }
+
+  try {
+    const object = await env.STORAGE.get(reference.key);
+    if (!object) return json({ error: "File not found." }, 404);
+    const filename = cleanStorageFilename(object.customMetadata?.originalName);
+    return new Response(object.body, {
+      headers: {
+        "content-type": storageContentType(object.httpMetadata?.contentType),
+        "content-length": String(object.size || 0),
+        "content-disposition": storageDownloadDisposition(filename),
+        "cache-control": "private, no-store",
+        "x-content-type-options": "nosniff"
+      }
+    });
+  } catch {
+    return storageUnavailable();
+  }
 }
 
 async function verifyStorageUser(request, env) {
