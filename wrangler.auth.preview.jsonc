@@ -1,16 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "qsseda-auth",
+  "name": "qsseda-auth-preview",
   "main": "auth-worker.js",
   "compatibility_date": "2026-09-13",
-  "workers_dev": false,
-  "preview_urls": true,
-  "observability": {
-    "logs": {
-      "enabled": true,
-      "head_sampling_rate": 1,
-      "invocation_logs": true,
-      "persist": true
-    }
-  }
+  "workers_dev": true,
+  "preview_urls": true
 }
