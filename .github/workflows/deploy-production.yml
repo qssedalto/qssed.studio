@@ -1,0 +1,45 @@
+name: Deploy QssedA Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - worker.js
+      - auth-worker.js
+      - wrangler.jsonc
+      - wrangler.auth.jsonc
+      - .github/workflows/deploy-production.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qsseda-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Workers
+        run: |
+          node --check worker.js
+          node --check auth-worker.js
+
+      - name: Deploy QssedA Studio
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 deploy -c wrangler.jsonc
+
+      - name: Deploy QssedA Auth
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 deploy -c wrangler.auth.jsonc
