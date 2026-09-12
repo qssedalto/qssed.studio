@@ -181,12 +181,17 @@ export default {
 async function handleAuthHandoff(request, env, locale) {
   const origin = request.headers.get("Origin") || "";
   const referer = request.headers.get("Referer") || "";
+  const fetchSite = (request.headers.get("Sec-Fetch-Site") || "").toLowerCase();
+  const fetchMode = (request.headers.get("Sec-Fetch-Mode") || "").toLowerCase();
+  const fetchDest = (request.headers.get("Sec-Fetch-Dest") || "").toLowerCase();
   const productionOrigin = "https://auth.qsseda.studio";
   const previewAllowed = env?.AUTH_PREVIEW_ALLOW_WORKERS_DEV === "1";
   let refererOrigin = "";
   try { refererOrigin = referer ? new URL(referer).origin : ""; } catch {}
   const missingOrigin = origin === "" || origin === "null";
-  const trustedProductionHandoff = origin === productionOrigin || (missingOrigin && refererOrigin === productionOrigin);
+  const trustedRefererFallback = missingOrigin && refererOrigin === productionOrigin;
+  const trustedSameSiteNavigation = missingOrigin && (fetchSite === "same-site" || fetchSite === "same-origin") && (fetchMode === "navigate" || fetchMode === "") && (fetchDest === "document" || fetchDest === "");
+  const trustedProductionHandoff = origin === productionOrigin || trustedRefererFallback || trustedSameSiteNavigation;
   if (!trustedProductionHandoff && !previewAllowed) {
     return json({ error: "Invalid authentication origin" }, 403);
   }

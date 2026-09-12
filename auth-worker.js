@@ -181,7 +181,7 @@ async function handleContinue(request, env) {
   const next = safeNextPath(requestUrl.searchParams.get("next"));
   const mainSite = safeHttpsOrigin(env?.MAIN_SITE_URL) || "https://qsseda.studio";
   const headers = new Headers(baseHeaders("text/html;charset=UTF-8"));
-  headers.set("referrer-policy", "no-referrer");
+  headers.set("referrer-policy", "origin");
   headers.set("content-security-policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${mainSite}; base-uri 'none'; frame-ancestors 'none'`);
   if (rotated) for (const value of sessionCookies(rotated)) headers.append("set-cookie", value);
 
