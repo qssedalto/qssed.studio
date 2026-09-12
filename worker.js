@@ -131,6 +131,11 @@ export default {
       return handlePasswordLogin(request, env, ipInfo);
     }
 
+    if (pathname === "/api/manager/storage/files") {
+      if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
+      return handleManagerStorageFiles(request, env);
+    }
+
     if (pathname === "/api/storage/files") {
       if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
       return handleStorageFiles(request, env);
@@ -308,6 +313,106 @@ function storageDownloadDisposition(filename) {
 
 function encodeRfc8187Filename(value) {
   return encodeURIComponent(value).replace(/['()*]/g, character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`);
+}
+
+async function managerTokenMatches(provided, expected) {
+  const encoder = new TextEncoder();
+  const [providedDigest, expectedDigest] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(provided)),
+    crypto.subtle.digest("SHA-256", encoder.encode(expected))
+  ]);
+  const left = new Uint8Array(providedDigest);
+  const right = new Uint8Array(expectedDigest);
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left[index] ^ right[index];
+  }
+  return difference === 0;
+}
+
+async function verifyManagerRequest(request, env) {
+  const expected = String(env?.MANAGER_DEVICE_TOKEN || "").trim();
+  if (!expected) {
+    return { error: json({ error: "Manager service is temporarily unavailable." }, 503) };
+  }
+
+  const authorization = request.headers.get("Authorization") || "";
+  const match = /^Bearer\s+(\S+)$/i.exec(authorization);
+  if (!match) {
+    return { error: json({ error: "Manager authentication required." }, 401) };
+  }
+
+  const provided = match[1].trim();
+  if (!provided || !(await managerTokenMatches(provided, expected))) {
+    return { error: json({ error: "Manager authentication failed." }, 401) };
+  }
+  return { ok: true };
+}
+
+async function handleManagerStorageFiles(request, env) {
+  const auth = await verifyManagerRequest(request, env);
+  if (auth.error) return auth.error;
+  if (!hasStorageBinding(env)) return storageUnavailable();
+
+  const files = [];
+  let cursor;
+  let scanned = 0;
+  let partial = false;
+
+  try {
+    do {
+      const remaining = MAX_STORAGE_LIST_OBJECTS - scanned;
+      if (remaining <= 0) {
+        partial = true;
+        break;
+      }
+
+      const page = await env.STORAGE.list({
+        prefix: "users/",
+        cursor,
+        limit: Math.min(1000, remaining),
+        include: ["httpMetadata", "customMetadata"]
+      });
+
+      scanned += page.objects.length;
+      for (const object of page.objects) {
+        const parts = object.key.split("/");
+        if (parts.length !== 3 || parts[0] !== "users") continue;
+        const ownerId = parts[1];
+        const id = parts[2];
+        if (!isStorageObjectId(ownerId) || !isStorageObjectId(id)) continue;
+
+        files.push({
+          key: object.key,
+          ownerId,
+          id,
+          name: cleanStorageFilename(object.customMetadata?.originalName),
+          size: Number(object.size) || 0,
+          uploadedAt: object.uploaded?.toISOString?.() || null,
+          contentType: storageContentType(object.httpMetadata?.contentType)
+        });
+      }
+
+      cursor = page.truncated ? page.cursor : undefined;
+      if (page.truncated && !cursor) {
+        partial = true;
+        break;
+      }
+    } while (cursor);
+
+    if (cursor || scanned >= MAX_STORAGE_LIST_OBJECTS) partial = true;
+  } catch {
+    return storageUnavailable();
+  }
+
+  files.sort((left, right) => String(right.uploadedAt || "").localeCompare(String(left.uploadedAt || "")));
+  return json({
+    connected: true,
+    files,
+    file_count: files.length,
+    used_bytes: files.reduce((total, file) => total + file.size, 0),
+    partial
+  });
 }
 
 async function verifyStorageUser(request, env) {
