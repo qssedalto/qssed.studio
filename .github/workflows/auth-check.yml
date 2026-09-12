@@ -1,0 +1,45 @@
+name: Auth Worker Check
+
+on:
+  pull_request:
+    paths:
+      - "auth-worker.js"
+      - "wrangler.auth.jsonc"
+      - "AUTH_PORTAL.md"
+      - ".github/workflows/auth-check.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "auth-worker.js"
+      - "wrangler.auth.jsonc"
+      - ".github/workflows/auth-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check Auth Worker JavaScript syntax
+        run: node --check auth-worker.js
+
+      - name: Validate Auth Wrangler JSONC shape
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const text = fs.readFileSync('wrangler.auth.jsonc', 'utf8')
+            .replace(/^\s*\/\/.*$/gm, '')
+            .replace(/\/\*[\s\S]*?\*\//g, '');
+          const config = JSON.parse(text);
+          if (config.main !== 'auth-worker.js') throw new Error('wrangler.auth.jsonc must point to auth-worker.js');
+          if (!Array.isArray(config.routes) || !config.routes.some(r => r.pattern === 'auth.qsseda.studio' && r.custom_domain === true)) {
+            throw new Error('auth.qsseda.studio custom domain route is missing');
+          }
+          console.log('Auth Wrangler configuration looks valid.');
+          NODE
