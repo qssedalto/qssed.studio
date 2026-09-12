@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// Preview-only compatibility fix. Production continues to require auth.qsseda.studio.
 function replaceOnce(text, needle, replacement, label) {
   const count = text.split(needle).length - 1;
   if (count !== 1) throw new Error(`${label}: expected exactly one match, found ${count}`);
