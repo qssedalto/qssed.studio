@@ -180,9 +180,14 @@ export default {
 
 async function handleAuthHandoff(request, env, locale) {
   const origin = request.headers.get("Origin") || "";
+  const referer = request.headers.get("Referer") || "";
   const productionOrigin = "https://auth.qsseda.studio";
   const previewAllowed = env?.AUTH_PREVIEW_ALLOW_WORKERS_DEV === "1";
-  if (origin !== productionOrigin && !previewAllowed) {
+  let refererOrigin = "";
+  try { refererOrigin = referer ? new URL(referer).origin : ""; } catch {}
+  const missingOrigin = origin === "" || origin === "null";
+  const trustedProductionHandoff = origin === productionOrigin || (missingOrigin && refererOrigin === productionOrigin);
+  if (!trustedProductionHandoff && !previewAllowed) {
     return json({ error: "Invalid authentication origin" }, 403);
   }
 
