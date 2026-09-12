@@ -8,7 +8,7 @@ const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 const ACTIVE_STATUS = "active";
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     const pathname = normalizePath(url.pathname);
 
@@ -27,6 +27,11 @@ export default {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
       if (!sameOrigin(request, url)) return json({ error: "Invalid origin" }, 403);
       return handleLogout(request);
+    }
+
+    if (pathname === "/continue") {
+      if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
+      return handleContinue(request, env);
     }
 
     if (pathname === "/health") {
@@ -144,6 +149,71 @@ async function handleLogout(request) {
   }
 
   return json({ success: true }, 200, clearSessionCookies());
+}
+
+async function handleContinue(request, env) {
+  const cookies = parseCookies(request.headers.get("Cookie") || "");
+  let accessToken = cookies[ACCESS_COOKIE] || "";
+  let refreshToken = cookies[REFRESH_COOKIE] || "";
+  let authUser = accessToken ? await fetchUser(accessToken) : null;
+  let rotated = null;
+
+  if (!authUser && refreshToken) {
+    rotated = await refreshSession(refreshToken);
+    if (rotated) {
+      accessToken = rotated.access_token;
+      refreshToken = rotated.refresh_token;
+      authUser = rotated.user;
+    }
+  }
+
+  if (!authUser || !accessToken || !refreshToken) {
+    return redirectResponse("/login");
+  }
+
+  const profile = await fetchProfile(accessToken, authUser.id);
+  const user = publicUser(authUser, profile);
+  if (user.status !== ACTIVE_STATUS) {
+    return redirectResponse("/account");
+  }
+
+  const requestUrl = new URL(request.url);
+  const next = safeNextPath(requestUrl.searchParams.get("next"));
+  const mainSite = safeHttpsOrigin(env?.MAIN_SITE_URL) || "https://qsseda.studio";
+  const headers = new Headers(baseHeaders("text/html;charset=UTF-8"));
+  headers.set("referrer-policy", "no-referrer");
+  headers.set("content-security-policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${mainSite}; base-uri 'none'; frame-ancestors 'none'`);
+  if (rotated) for (const value of sessionCookies(rotated)) headers.append("set-cookie", value);
+
+  return new Response(handoffPage(mainSite, accessToken, refreshToken, next), { status: 200, headers });
+}
+
+function safeNextPath(value) {
+  const path = cleanText(value, 500);
+  return path.startsWith("/") && !path.startsWith("//") ? path : "/dashboard";
+}
+
+function safeHttpsOrigin(value) {
+  const text = cleanText(value, 500);
+  if (!text) return "";
+  try {
+    const url = new URL(text);
+    return url.protocol === "https:" ? url.origin : "";
+  } catch {
+    return "";
+  }
+}
+
+function redirectResponse(path) {
+  return new Response(null, { status: 302, headers: { location: path, "cache-control": "no-store" } });
+}
+
+function htmlEscape(value) {
+  return String(value || "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "\'": "&#39;" }[character]));
+}
+
+function handoffPage(mainSite, accessToken, refreshToken, next) {
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>QssedA Auth</title><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#0b0b0d;color:#f5f5f7;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid #3a3a3c;border-top-color:#0a84ff;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:#a1a1a6}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 QssedA Studio</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(mainSite)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
 }
 
 async function fetchUser(accessToken) {
@@ -332,7 +402,13 @@ function authPage(pathname, request) {
     authorizeTitle: "授权应用",
     authorizeLead: "确认要使用哪个 QssedA 账号继续。",
     accountTitle: "账号状态",
-    accountLead: "这个页面直接读取 auth.qsseda.studio 的当前认证会话。",
+    accountLead: "查看当前账号、会话与授权状态。",
+    usernameLabel: "用户名",
+    roleLabel: "角色",
+    sessionLabel: "认证会话",
+    sessionProtected: "受 QssedA Auth 保护",
+    securityNote: "登录凭据保存在仅服务器可读取的安全 Cookie 中。其他 QssedA 应用通过授权或安全会话交接使用此身份。",
+    backAuth: "返回认证中心",
     active: "账号已启用",
     suspended: "账号已暂停",
     banned: "账号已封禁",
@@ -361,7 +437,13 @@ function authPage(pathname, request) {
     authorizeTitle: "Authorize application",
     authorizeLead: "Confirm which QssedA account you want to use.",
     accountTitle: "Account status",
-    accountLead: "This page reads the current auth.qsseda.studio session directly.",
+    accountLead: "Review the current account, session and authorization state.",
+    usernameLabel: "Username",
+    roleLabel: "Role",
+    sessionLabel: "Auth session",
+    sessionProtected: "Protected by QssedA Auth",
+    securityNote: "Credentials remain in secure server-only cookies. Other QssedA apps use authorization or a secure session handoff to consume this identity.",
+    backAuth: "Back to Auth",
     active: "Account active",
     suspended: "Account suspended",
     banned: "Account banned",
@@ -392,7 +474,7 @@ function authPage(pathname, request) {
     .card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);backdrop-filter:blur(30px) saturate(150%);-webkit-backdrop-filter:blur(30px) saturate(150%);box-shadow:var(--shadow);padding:30px}.card:before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);opacity:.65}h1{margin:0;font-size:31px;line-height:1.08;letter-spacing:-.04em;font-weight:760}.lead{margin:10px 0 24px;color:var(--muted);font-size:14px;line-height:1.55}.hidden{display:none!important}
     .loading{display:flex;align-items:center;gap:12px;color:var(--muted);padding:8px 0}.spinner{width:18px;height:18px;border:2px solid var(--line-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}label{display:block;margin:0 0 8px;color:var(--muted);font-size:13px;font-weight:600}.field{margin-top:16px}input{width:100%;height:50px;border-radius:var(--control);border:1px solid var(--line);padding:0 14px;background:var(--surface);color:var(--text);font:inherit;font-size:15px;outline:none;transition:.18s ease border-color,.18s ease box-shadow,.18s ease background}input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(10,132,255,.14);background:var(--panel-strong)}
     button,.button{width:100%;min-height:50px;margin-top:18px;border:0;border-radius:var(--control);padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:var(--accent);color:white;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.16s ease transform,.16s ease background,.16s ease opacity}button:hover,.button:hover{background:var(--accent-hover)}button:active,.button:active{transform:scale(.985)}button:disabled{opacity:.48;cursor:not-allowed}.secondary{background:var(--surface);color:var(--text);border:1px solid var(--line)}.secondary:hover{background:var(--surface-hover)}.message{min-height:20px;margin:13px 0 0;color:var(--muted);font-size:13px;line-height:1.45}.message.error{color:var(--danger)}
-    .account{display:flex;align-items:center;gap:14px;padding:16px;border-radius:17px;background:var(--surface);border:1px solid var(--line)}.avatar{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#5e5ce6,#0a84ff);color:#fff;font-weight:800;font-size:17px}.avatar img{width:100%;height:100%;object-fit:cover}.identity{min-width:0;flex:1}.identity strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.identity span{display:block;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px}.badge{display:inline-flex;align-items:center;gap:6px;margin-top:9px;color:var(--muted);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(48,209,88,.12)}.dot.warning{background:var(--warning);box-shadow:none}.dot.danger{background:var(--danger);box-shadow:none}.divider{height:1px;background:var(--line);margin:22px 0}.app-box{padding:16px;border:1px solid var(--line);border-radius:17px;background:var(--surface)}.app-name{font-weight:700;font-size:15px}.app-id{margin-top:5px;color:var(--quiet);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.permissions{margin:16px 0 0;padding:0;list-style:none}.permissions li{display:flex;gap:10px;padding:9px 0;color:var(--muted);font-size:13px;border-bottom:1px solid var(--line)}.permissions li:last-child{border-bottom:0}.tick{color:var(--accent);font-weight:900}.foot{margin:16px 2px 0;text-align:center;color:var(--quiet);font-size:11px;line-height:1.5}
+    .account{display:flex;align-items:center;gap:14px;padding:16px;border-radius:17px;background:var(--surface);border:1px solid var(--line)}.avatar{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#5e5ce6,#0a84ff);color:#fff;font-weight:800;font-size:17px}.avatar img{width:100%;height:100%;object-fit:cover}.identity{min-width:0;flex:1}.identity strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.identity span{display:block;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px}.badge{display:inline-flex;align-items:center;gap:6px;margin-top:9px;color:var(--muted);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(48,209,88,.12)}.dot.warning{background:var(--warning);box-shadow:none}.dot.danger{background:var(--danger);box-shadow:none}.details{margin-top:18px;border:1px solid var(--line);border-radius:17px;overflow:hidden;background:var(--surface)}.detail{display:flex;justify-content:space-between;gap:18px;padding:13px 15px;border-bottom:1px solid var(--line);font-size:13px}.detail:last-child{border-bottom:0}.detail span{color:var(--muted)}.detail strong{min-width:0;text-align:right;overflow-wrap:anywhere}.security-note{margin:14px 2px 0;color:var(--quiet);font-size:12px;line-height:1.55}.divider{height:1px;background:var(--line);margin:22px 0}.app-box{padding:16px;border:1px solid var(--line);border-radius:17px;background:var(--surface)}.app-name{font-weight:700;font-size:15px}.app-id{margin-top:5px;color:var(--quiet);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.permissions{margin:16px 0 0;padding:0;list-style:none}.permissions li{display:flex;gap:10px;padding:9px 0;color:var(--muted);font-size:13px;border-bottom:1px solid var(--line)}.permissions li:last-child{border-bottom:0}.tick{color:var(--accent);font-weight:900}.foot{margin:16px 2px 0;text-align:center;color:var(--quiet);font-size:11px;line-height:1.5}
     @media(max-width:520px){.card{padding:24px 20px;border-radius:20px}h1{font-size:28px}.brand{margin-left:2px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
   </style>
 </head>
@@ -414,8 +496,9 @@ function authPage(pathname, request) {
         <h1 id="signedInTitle">${copy.signedTitle}</h1><p class="lead" id="signedInLead">${copy.signedLead}</p>
         <div class="account"><div id="avatar" class="avatar">Q</div><div class="identity"><strong id="displayName">QssedA User</strong><span id="emailText"></span><div class="badge"><span id="statusDot" class="dot"></span><span id="statusText">${copy.active}</span></div></div></div>
         <div id="blockedMessage" class="message error hidden">${copy.unavailable}</div>
-        <div id="homeActions"><a id="studioButton" class="button" href="https://qsseda.studio/">${copy.openStudio}</a><a class="button secondary" href="/account">${copy.account}</a></div>
-        <div id="accountActions" class="hidden"><a class="button" href="https://qsseda.studio/">${copy.openStudio}</a><button id="logoutButton" class="secondary" type="button">${copy.signOut}</button></div>
+        <div id="accountDetails" class="hidden"><div class="details"><div class="detail"><span>${copy.usernameLabel}</span><strong id="usernameText">—</strong></div><div class="detail"><span>${copy.roleLabel}</span><strong id="roleText">—</strong></div><div class="detail"><span>${copy.sessionLabel}</span><strong>${copy.sessionProtected}</strong></div></div><p class="security-note">${copy.securityNote}</p></div>
+        <div id="homeActions"><a id="studioButton" class="button" href="/continue">${copy.openStudio}</a><a class="button secondary" href="/account">${copy.account}</a></div>
+        <div id="accountActions" class="hidden"><a id="accountStudioButton" class="button" href="/continue">${copy.openStudio}</a><a class="button secondary" href="/">${copy.backAuth}</a><button id="logoutButton" class="secondary" type="button">${copy.signOut}</button></div>
         <div id="authorizePanel" class="hidden"><div class="divider"></div><div class="app-box"><div class="app-name" id="clientName">${copy.appRequest}</div><div class="app-id" id="clientId"></div></div><ul class="permissions"><li><span class="tick">✓</span><span>${copy.p1}</span></li><li><span class="tick">✓</span><span>${copy.p2}</span></li></ul><button id="allowButton" type="button" disabled>${copy.allowLater}</button><p class="message">${copy.later}</p></div>
       </div>
     </section>
@@ -432,9 +515,9 @@ function authPage(pathname, request) {
   function showLoggedIn(data){
     var user=data.user||{};loading.classList.add("hidden");signedOut.classList.add("hidden");signedIn.classList.remove("hidden");document.getElementById("displayName").textContent=user.displayName||user.username||"QssedA User";document.getElementById("emailText").textContent=user.email||"";document.getElementById("statusText").textContent=statusLabel(user.status);
     var dot=document.getElementById("statusDot");dot.className="dot"+(user.status==="suspended"?" warning":user.status==="banned"?" danger":"");
-    var blocked=!data.authorized;document.getElementById("blockedMessage").classList.toggle("hidden",!blocked);document.getElementById("studioButton").classList.toggle("hidden",blocked);
+    var blocked=!data.authorized;document.getElementById("blockedMessage").classList.toggle("hidden",!blocked);document.getElementById("studioButton").classList.toggle("hidden",blocked);document.getElementById("accountStudioButton").classList.toggle("hidden",blocked);document.getElementById("usernameText").textContent=user.username||"—";document.getElementById("roleText").textContent=user.role||"user";
     var avatar=document.getElementById("avatar");avatar.textContent=initials(user.displayName||user.username||user.email);if(user.avatarUrl){var img=document.createElement("img");img.alt="";img.src=user.avatarUrl;img.referrerPolicy="no-referrer";avatar.textContent="";avatar.appendChild(img)}
-    document.getElementById("homeActions").classList.toggle("hidden",page!=="home"&&page!=="login");document.getElementById("accountActions").classList.toggle("hidden",page!=="account");document.getElementById("authorizePanel").classList.toggle("hidden",page!=="authorize");
+    document.getElementById("homeActions").classList.toggle("hidden",page!=="home"&&page!=="login");document.getElementById("accountActions").classList.toggle("hidden",page!=="account");document.getElementById("accountDetails").classList.toggle("hidden",page!=="account");document.getElementById("authorizePanel").classList.toggle("hidden",page!=="authorize");
     if(page==="account"){document.getElementById("signedInTitle").textContent=copy.accountTitle;document.getElementById("signedInLead").textContent=copy.accountLead}
     if(page==="authorize"){document.getElementById("signedInTitle").textContent=copy.authorizeTitle;document.getElementById("signedInLead").textContent=copy.authorizeLead;var params=new URLSearchParams(location.search);document.getElementById("clientId").textContent=params.get("client_id")||"client_id: —";document.getElementById("clientName").textContent=params.get("client_name")||copy.appRequest}
   }
