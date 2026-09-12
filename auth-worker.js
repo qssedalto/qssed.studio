@@ -497,7 +497,7 @@ function authPage(pathname, request) {
         <div class="account"><div id="avatar" class="avatar">Q</div><div class="identity"><strong id="displayName">QssedA User</strong><span id="emailText"></span><div class="badge"><span id="statusDot" class="dot"></span><span id="statusText">${copy.active}</span></div></div></div>
         <div id="blockedMessage" class="message error hidden">${copy.unavailable}</div>
         <div id="accountDetails" class="hidden"><div class="details"><div class="detail"><span>${copy.usernameLabel}</span><strong id="usernameText">—</strong></div><div class="detail"><span>${copy.roleLabel}</span><strong id="roleText">—</strong></div><div class="detail"><span>${copy.sessionLabel}</span><strong>${copy.sessionProtected}</strong></div></div><p class="security-note">${copy.securityNote}</p></div>
-        <div id="homeActions"><a id="studioButton" class="button" href="/continue">${copy.openStudio}</a><a class="button secondary" href="/account">${copy.account}</a></div>
+        <div id="homeActions"><a id="studioButton" class="button" href="/continue">${copy.openStudio}</a><a class="button secondary" href="/account">${copy.account}</a><button id="homeLogoutButton" class="secondary" type="button">${copy.signOut}</button></div>
         <div id="accountActions" class="hidden"><a id="accountStudioButton" class="button" href="/continue">${copy.openStudio}</a><a class="button secondary" href="/">${copy.backAuth}</a><button id="logoutButton" class="secondary" type="button">${copy.signOut}</button></div>
         <div id="authorizePanel" class="hidden"><div class="divider"></div><div class="app-box"><div class="app-name" id="clientName">${copy.appRequest}</div><div class="app-id" id="clientId"></div></div><ul class="permissions"><li><span class="tick">✓</span><span>${copy.p1}</span></li><li><span class="tick">✓</span><span>${copy.p2}</span></li></ul><button id="allowButton" type="button" disabled>${copy.allowLater}</button><p class="message">${copy.later}</p></div>
       </div>
@@ -507,7 +507,7 @@ function authPage(pathname, request) {
 <script>
 (function(){
   var page=document.body.dataset.page||"home";
-  var loading=document.getElementById("loading"),signedOut=document.getElementById("signedOut"),signedIn=document.getElementById("signedIn"),loginForm=document.getElementById("loginForm"),loginButton=document.getElementById("loginButton"),loginMessage=document.getElementById("loginMessage"),logoutButton=document.getElementById("logoutButton");
+  var loading=document.getElementById("loading"),signedOut=document.getElementById("signedOut"),signedIn=document.getElementById("signedIn"),loginForm=document.getElementById("loginForm"),loginButton=document.getElementById("loginButton"),loginMessage=document.getElementById("loginMessage"),logoutButton=document.getElementById("logoutButton"),homeLogoutButton=document.getElementById("homeLogoutButton");
   var copy=${JSON.stringify(copy)};
   function initials(name){var chars=Array.from(String(name||"Q").trim());return(chars.slice(0,2).join("")||"Q").toUpperCase()}
   function statusLabel(status){if(status==="active")return copy.active;if(status==="suspended")return copy.suspended;if(status==="banned")return copy.banned;return status||copy.active}
@@ -523,7 +523,9 @@ function authPage(pathname, request) {
   }
   async function checkSession(){try{var response=await fetch("/api/session",{credentials:"same-origin",cache:"no-store"});var data=await response.json();if(response.ok&&data.authenticated&&data.user)showLoggedIn(data);else showLoggedOut()}catch(e){showLoggedOut();loginMessage.textContent=copy.connectError;loginMessage.classList.add("error")}}
   loginForm.addEventListener("submit",async function(event){event.preventDefault();loginMessage.textContent=copy.loggingIn;loginMessage.classList.remove("error");loginButton.disabled=true;try{var response=await fetch("/api/login",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({email:document.getElementById("email").value,password:document.getElementById("password").value})});var data=await response.json();if(!response.ok||!data.authenticated)throw new Error(data.error||"Login failed");document.getElementById("password").value="";showLoggedIn(data)}catch(error){loginMessage.textContent=error&&error.message?error.message:"Login failed";loginMessage.classList.add("error")}finally{loginButton.disabled=false}});
-  if(logoutButton)logoutButton.addEventListener("click",async function(){logoutButton.disabled=true;try{await fetch("/api/logout",{method:"POST",credentials:"same-origin"})}catch(e){}location.replace("/login")});
+  async function signOut(button){if(button)button.disabled=true;try{await fetch("/api/logout",{method:"POST",credentials:"same-origin"})}catch(e){}location.replace("/login")}
+  if(logoutButton)logoutButton.addEventListener("click",function(){signOut(logoutButton)});
+  if(homeLogoutButton)homeLogoutButton.addEventListener("click",function(){signOut(homeLogoutButton)});
   checkSession();
 })();
 </script>

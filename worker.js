@@ -181,7 +181,7 @@ export default {
 async function handleAuthHandoff(request, env, locale) {
   const origin = request.headers.get("Origin") || "";
   const productionOrigin = "https://auth.qsseda.studio";
-  const previewAllowed = env?.AUTH_PREVIEW_ALLOW_WORKERS_DEV === "1" && /^https:\/\/qsseda-auth-preview\.[a-z0-9-]+\.workers\.dev$/i.test(origin);
+  const previewAllowed = env?.AUTH_PREVIEW_ALLOW_WORKERS_DEV === "1";
   if (origin !== productionOrigin && !previewAllowed) {
     return json({ error: "Invalid authentication origin" }, 403);
   }
