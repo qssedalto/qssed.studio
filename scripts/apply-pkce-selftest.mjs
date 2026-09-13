@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// One-off wiring script. This update intentionally retriggers the workflow now that it exists on main.
 function replaceOnce(text, needle, replacement, label) {
   const count = text.split(needle).length - 1;
   if (count !== 1) throw new Error(`${label}: expected exactly one match, found ${count}`);
