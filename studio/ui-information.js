@@ -1,9 +1,10 @@
 import { statusContent } from "./ui-primitives.js";
 import { knowledgeContent } from "./ui-knowledge.js";
 import { curatedLinksContent } from "./curated-links.js";
+import { curatedLinksFavoritesEnhancer } from "./curated-links-favorites.js";
 
 export function linksContent(zh) {
-  return curatedLinksContent(zh);
+  return curatedLinksContent(zh) + curatedLinksFavoritesEnhancer(zh);
 }
 
 export function notesContent(zh) {
