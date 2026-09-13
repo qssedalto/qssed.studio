@@ -1,6 +1,7 @@
 import { dashboardStyles } from "./ui-style-dashboard.js";
 import { adminStyles } from "./ui-style-admin.js";
 import { profileStyles } from "./ui-style-profile.js";
+import { knowledgeStyles } from "./ui-style-knowledge.js";
 import { html } from "./routing.js";
 
 export function osStyles() {
@@ -749,6 +750,6 @@ ${adminStyles()}    /* OS_APPLE_HUBS_V1 */
       .os-hub-card,.settings-general-list{border-color:var(--text)}
       .os-hub-card small{color:var(--text)}
     }
-${dashboardStyles()}</style>`;
+${dashboardStyles()}${knowledgeStyles()}</style>`;
 }
 
