@@ -1,4 +1,6 @@
-export function settingsGeneralContent(zh, osHubIcon) {
+import { osHubGrid, osHubIcon } from "./ui-primitives.js";
+
+export function settingsGeneralContent(zh) {
   const prefix = zh ? "/zh-cn" : "/en";
   const rows = zh ? [
     ["外观", "浅色 / 深色", `${prefix}/settings/appearance`, "appearance"],
@@ -95,7 +97,7 @@ export function languageSettingsContent(zh) {
   `;
 }
 
-export function settingsHubContent(zh, osHubGrid) {
+export function settingsHubContent(zh) {
   const prefix = zh ? "/zh-cn" : "/en";
   const items = zh ? [
     { title:"通用", meta:"基础", description:"查看网站基础行为与常用设置入口。", href:`${prefix}/settings/general`, icon:"general", featured:true, tone:"blue" },
