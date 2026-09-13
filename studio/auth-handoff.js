@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { html, json } from "./routing.js";
-import { baseHead, supabaseScript } from "./ui-core.js";
+import { baseHead, supabaseScript } from "./ui-page.js";
 
 export async function handleAuthHandoff(request, env, locale) {
   const origin = request.headers.get("Origin") || "";
