@@ -2,6 +2,14 @@
 
 This document freezes the initial Phase 4 shared-layer cleanup plan after Phase 3 product ownership became stable. Phase 4 removes mixed shared responsibilities and unnecessary dependency edges; it is not permission for a rewrite, framework migration, visual redesign, or behavior change.
 
+## Implementation status
+
+- **Phase 4A — complete:** the shared account/device/audit browser runtime lives in `ui-audit.js` with rendered output preserved.
+- **Phase 4B — complete:** neutral shared page infrastructure lives in `ui-page.js`; the former `ui-core.js` ownership name is gone.
+- **Phase 4C — complete:** shared status/Hub render primitives live in `ui-primitives.js`, removing Shell-owned function injection into product modules.
+- **Phase 4D — complete:** only clearly bounded product CSS was extracted verbatim: Profile → `ui-style-profile.js`, Admin polish → `ui-style-admin.js`, Dashboard → `ui-style-dashboard.js`. Remaining Settings/Storage/Audit/Shell/Hub CSS stays aggregated because responsive/accessibility blocks intentionally cross ownership boundaries. Global CSS custom properties remain owned by `ui-page.js`.
+- **Phase 4E — in progress:** dead compatibility imports/helpers, historical snapshots and naming/directory leftovers are audited one evidence-backed item at a time.
+
 ## Starting point
 
 Phase 3 completed product-domain ownership:
@@ -236,4 +244,4 @@ Every Phase 4 code slice must, at minimum:
 
 ## Next concrete task
 
-Implement **Phase 4A only**: move the complete `auditClientScript(ipInfo)` renderer from `ui-core.js` to a new `ui-audit.js`, update only `auth-pages.js` and `ui-shell.js` imports, and prove all affected rendered pages/scripts remain byte-identical.
+Continue **Phase 4E** with evidence-backed cleanup only. The first confirmed dead item is the unused `json` import in `ui-shell.js`; after removing it, audit historical snapshots, obsolete compatibility helpers and naming/directory leftovers one item at a time. Every runtime-affecting slice must retain the Phase 4 byte-equivalence and deployment gates.
