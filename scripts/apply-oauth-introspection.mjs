@@ -35,3 +35,4 @@ text = replaceOnce(
 
 fs.writeFileSync(file, text);
 console.log('Protected OAuth introspection endpoint wired.');
+// Triggered after the workflow was added so the one-off job runs on this push.
