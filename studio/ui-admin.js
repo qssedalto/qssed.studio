@@ -1058,3 +1058,21 @@ export function adminClientScript(ipInfo) {
     </script>
   `;
 }
+
+export function adminHubContent(zh, osHubGrid) {
+  const prefix = zh ? "/zh-cn" : "/en";
+  const items = zh ? [
+    { title:"通用", meta:"管理概览", description:"账户统计、近期登录、操作日志与系统风险信号。", href:`${prefix}/admin/general`, icon:"general", featured:true, tone:"blue" },
+    { title:"用户管理", meta:"成员", description:"搜索用户，查看资料并调整角色或账号状态。", href:`${prefix}/admin/users`, icon:"users" },
+    { title:"角色权限", meta:"RBAC", description:"查看角色范围并管理管理员、编辑者与普通成员权限。", href:`${prefix}/admin/roles`, icon:"roles" },
+    { title:"操作日志", meta:"审计", description:"按动作、级别、用户和日期筛选管理操作记录。", href:`${prefix}/admin/logs`, icon:"logs" },
+    { title:"系统状态", meta:"系统", description:"查看管理能力与运行状态相关信息。", href:`${prefix}/admin/system`, icon:"system" }
+  ] : [
+    { title:"General", meta:"Overview", description:"Account metrics, recent sign-ins, operation logs, and system risk signals.", href:`${prefix}/admin/general`, icon:"general", featured:true, tone:"blue" },
+    { title:"Users", meta:"Members", description:"Search users, review profiles, and adjust roles or account status.", href:`${prefix}/admin/users`, icon:"users" },
+    { title:"Roles", meta:"RBAC", description:"Review role scopes and manage administrator, editor, and member permissions.", href:`${prefix}/admin/roles`, icon:"roles" },
+    { title:"Logs", meta:"Audit", description:"Filter administration records by action, severity, user, and date.", href:`${prefix}/admin/logs`, icon:"logs" },
+    { title:"System", meta:"System", description:"Review management capabilities and runtime-related status information.", href:`${prefix}/admin/system`, icon:"system" }
+  ];
+  return osHubGrid(items, "admin-hub-grid");
+}
