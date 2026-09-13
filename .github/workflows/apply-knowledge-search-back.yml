@@ -1,0 +1,88 @@
+name: Apply Knowledge Search Back
+
+on:
+  push:
+    branches:
+      - feature/knowledge-search-back-navigation
+    paths:
+      - scripts/apply-knowledge-search-back.mjs
+      - .github/workflows/apply-knowledge-search-back.yml
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/knowledge-search-back-navigation
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply guarded source edits
+        run: node scripts/apply-knowledge-search-back.mjs
+      - name: Check Studio JavaScript syntax
+        run: |
+          node --check worker.js
+          for f in studio/*.js; do node --check "$f"; done
+      - name: Validate mobile back routing
+        run: |
+          node --input-type=module <<'NODE'
+          import { compactBackHref } from './studio/ui-navigation.js';
+          const cases = [
+            ['/info/knowledge/references/github-projects', true, '/zh-cn/info/knowledge/references'],
+            ['/info/knowledge/references', true, '/zh-cn/info/knowledge'],
+            ['/info/knowledge', true, '/zh-cn/info'],
+            ['/settings/security', true, '/zh-cn/settings'],
+            ['/settings', true, '/zh-cn/dashboard'],
+            ['/profile/details', false, '/en/profile']
+          ];
+          for (const [path, zh, expected] of cases) {
+            const actual = compactBackHref(path, zh);
+            if (actual !== expected) throw new Error(`${path}: expected ${expected}, got ${actual}`);
+          }
+          NODE
+      - name: Validate literal Knowledge search index
+        run: |
+          node --input-type=module <<'NODE'
+          import { buildStaticKnowledgeSearchIndex, knowledgeSearchClientScript } from './studio/knowledge-search.js';
+          for (const zh of [true, false]) {
+            const index = buildStaticKnowledgeSearchIndex(zh);
+            if (index.length !== 47) throw new Error(`Expected 47 docs, got ${index.length}`);
+            if (!index.every(doc => doc.title && doc.content && doc.href)) throw new Error('Incomplete static search document');
+          }
+          const zh = buildStaticKnowledgeSearchIndex(true);
+          const single = '权';
+          const matchesSingle = zh.some(doc => `${doc.title}\n${doc.summary}\n${doc.content}`.toLocaleLowerCase().includes(single));
+          if (!matchesSingle) throw new Error('Single Chinese character search has no validation hit');
+          const github = zh.some(doc => `${doc.title}\n${doc.summary}\n${doc.content}`.toLocaleLowerCase().includes('github'));
+          if (!github) throw new Error('GitHub literal search has no validation hit');
+          const script = knowledgeSearchClientScript(true);
+          if (!script.includes('search_knowledge_documents') || !script.includes('.includes(q)')) throw new Error('Hybrid search client missing literal/RPC paths');
+          NODE
+      - name: Validate Knowledge UI wiring
+        run: |
+          node --input-type=module <<'NODE'
+          import { knowledgeContent } from './studio/ui-knowledge.js';
+          const root = knowledgeContent('/info/knowledge', true);
+          const category = knowledgeContent('/info/knowledge/references', true);
+          const article = knowledgeContent('/info/knowledge/references/github-projects', true);
+          for (const [name, html] of Object.entries({ root, category, article })) {
+            if (!html.includes('knowledge-search-input')) throw new Error(`${name} missing search surface`);
+          }
+          NODE
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler@4 deploy --config wrangler.jsonc --dry-run --outdir .wrangler-knowledge-search-back
+      - name: Commit integrated source and remove one-off files
+        run: |
+          rm -rf .wrangler-knowledge-search-back
+          rm scripts/apply-knowledge-search-back.mjs
+          rm .github/workflows/apply-knowledge-search-back.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "feat(knowledge): improve back navigation and hybrid search"
+          git push origin HEAD:feature/knowledge-search-back-navigation
