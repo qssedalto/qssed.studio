@@ -22,6 +22,7 @@ jobs:
         run: |
           node --check auth-entry.js
           node --check auth-worker.js
+          node --check auth-login-identifier.js
           node --check auth-oauth.js
           node --check auth-pkce-test.js
 
