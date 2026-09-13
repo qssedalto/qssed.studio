@@ -19,33 +19,62 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Capture rendered Profile client script
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          import { pathToFileURL } from 'node:url';
-          const profile = await import(pathToFileURL('studio/ui-profile.js').href + '?before=' + Date.now());
-          fs.writeFileSync('/tmp/profile-client-before.txt', profile.profileClientScript());
-          NODE
+      - name: Fetch pre-extraction main baseline
+        run: git fetch origin main --depth=1
 
-      - name: Normalize Profile runtime source
+      - name: Rebuild readable Profile runtime from main
         run: node scripts/normalize-studio-profile-runtime.mjs
 
-      - name: Validate readable source and behavior
+      - name: Compare rendered browser scripts to pre-extraction main
         run: |
-          node --check studio/ui-profile.js
+          git show origin/main:studio/ui-core.js > studio/__baseline-ui-core.mjs
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           import { pathToFileURL } from 'node:url';
-          const before = fs.readFileSync('/tmp/profile-client-before.txt', 'utf8');
-          const profile = await import(pathToFileURL('studio/ui-profile.js').href + '?after=' + Date.now());
-          const after = profile.profileClientScript();
-          if (after !== before) throw new Error('Profile client script output changed during source normalization');
+
+          const stamp = Date.now();
+          const baselineCore = await import(pathToFileURL('studio/__baseline-ui-core.mjs').href + '?baseline=' + stamp);
+          const currentCore = await import(pathToFileURL('studio/ui-core.js').href + '?current=' + stamp);
+          const profile = await import(pathToFileURL('studio/ui-profile.js').href + '?profile=' + stamp);
+          const sample = { ip: '203.0.113.9', country: 'ZZ', region: 'Test', city: 'Example' };
+
+          const oldAudit = baselineCore.auditClientScript(sample);
+          const currentAudit = currentCore.auditClientScript(sample);
+          const startMarker = '      /* PROFILE_HOME_V3 */';
+          const endMarker = '      async function hydrateProfileAudit(user) {';
+          const start = oldAudit.indexOf(startMarker);
+          const end = oldAudit.indexOf(endMarker, start + startMarker.length);
+          if (start < 0 || end < 0) throw new Error('Rendered main audit script does not contain Profile runtime markers');
+
+          const oldProfileBody = oldAudit.slice(start, end);
+          const expectedAuditAfterExtraction = oldAudit.slice(0, start) + oldAudit.slice(end);
+          if (currentAudit !== expectedAuditAfterExtraction) {
+            throw new Error('Shared audit client output changed beyond removal of the Profile block');
+          }
+
+          const renderedProfile = profile.profileClientScript();
+          const prefix = '<script>\n';
+          const suffix = '\n    </script>';
+          if (!renderedProfile.startsWith(prefix) || !renderedProfile.endsWith(suffix)) {
+            throw new Error('Profile client script wrapper is not the expected classic-script wrapper');
+          }
+          const currentProfileBody = renderedProfile.slice(prefix.length, -suffix.length);
+          if (currentProfileBody !== oldProfileBody) {
+            let index = 0;
+            while (index < currentProfileBody.length && index < oldProfileBody.length && currentProfileBody[index] === oldProfileBody[index]) index++;
+            throw new Error('Rendered Profile browser JavaScript differs from main at index ' + index);
+          }
+
           const source = fs.readFileSync('studio/ui-profile.js', 'utf8');
           if (source.includes('const PROFILE_CLIENT_BODY = ')) throw new Error('Encoded Profile runtime constant still exists');
           if (!source.includes('/* PROFILE_HOME_V3 */')) throw new Error('Readable PROFILE_HOME_V3 marker missing');
-          console.log('Readable source produces byte-identical Profile client script output.');
+          console.log('Main audit output and extracted Profile browser runtime are byte-identical after separation.');
           NODE
+          rm -f studio/__baseline-ui-core.mjs
+
+      - name: Validate Studio JavaScript
+        run: |
+          node --check worker.js
           for file in studio/*.js; do node --check "$file"; done
 
       - name: Bundle Studio Worker
@@ -59,5 +88,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add studio/ui-profile.js scripts/normalize-studio-profile-runtime.mjs .github/workflows/normalize-studio-profile-runtime.yml
           git diff --cached --check
-          git commit -m "refactor(studio): keep Profile runtime source readable"
+          git commit -m "refactor(studio): preserve exact Profile browser runtime"
           git push
