@@ -11,9 +11,11 @@ qsseda.studio
        -> auth-handoff.js      Auth -> Studio browser-session handoff
        -> account-api.js       registration, password login, login auditing
        -> storage-api.js       authenticated R2 file operations
+       -> server-runtime.js    shared protected server helpers/logging
+       -> html-utils.js        neutral HTML helpers
        -> routing.js           locale/path/HTTP helpers
-       -> ui-core.js           shared HTML head and client scripts
-       -> ui-shell.js          Studio OS pages and settings panels
+       -> ui-core.js           shared HTML head + client/runtime scripts
+       -> ui-shell.js          Studio OS shell + product UI composition
        -> ui-styles.js         Studio OS styles
        -> auth-pages.js        Studio login/sign-up/not-found pages
        -> config.js            shared constants, copy and route tables
@@ -50,18 +52,18 @@ The Studio Worker uses the `STORAGE` R2 binding and may use the protected Supaba
 
 ## Modularization roadmap
 
-Studio modularization is intentionally staged. PR #23 completed **Phase 1 (boundary extraction)**; it did not define the final module layout.
+Studio modularization is intentionally staged. PR #23 completed **Phase 1 (boundary extraction)** and PR #25 completed **Phase 2 (backend/shared-server dependency separation)**. Neither phase treats the current coarse UI files as a final module layout.
 
-The frozen sequencing guide and current dependency graph are documented in [`docs/STUDIO_WORKER_MODULARIZATION.md`](./docs/STUDIO_WORKER_MODULARIZATION.md).
+The frozen sequencing guide, current dependency graph and Phase 3 safety order are documented in [`docs/STUDIO_WORKER_MODULARIZATION.md`](./docs/STUDIO_WORKER_MODULARIZATION.md).
 
 Current order:
 
 1. ✅ Phase 1 — boundary extraction
-2. ⏭️ Phase 2 — backend/shared-server dependency separation
-3. ⛔ Phase 3 — frontend product-domain separation
+2. ✅ Phase 2 — backend/shared-server dependency separation
+3. ⏭️ Phase 3 — frontend product-domain separation
 4. ⛔ Phase 4 — shared-layer cleanup and consolidation
 
-Do not skip directly to splitting `ui-core.js` / `ui-shell.js` by product domain before Phase 2 is complete.
+Phase 3 moves one product domain at a time. The first planned slice is **Profile**; Settings/Storage, Admin and shell/shared-runtime cleanup must not be folded into the same PR.
 
 ## Auth service
 
@@ -85,5 +87,6 @@ Before merging structural Worker changes:
 3. Route behavior should be smoke-tested against the previous implementation when doing a structural refactor.
 4. Secrets must remain in Cloudflare/GitHub secret storage rather than source control.
 5. Structural work must follow the active phase in the modularization roadmap; do not mix later-phase cleanup into the same PR.
+6. During Phase 3, extract one product domain at a time and preserve its existing route, cache and authorization behavior.
 
 Git history remains the recovery mechanism for previous versions; large historical snapshots in the repository are not part of the active runtime architecture.
