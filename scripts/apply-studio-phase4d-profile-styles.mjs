@@ -10,7 +10,7 @@ if (start < 0 || end < 0) throw new Error('Profile style block markers not found
 const block = source.slice(start, end);
 if (block.includes('${') || block.includes('`')) throw new Error('Profile CSS block is not safe for direct template extraction');
 fs.writeFileSync('studio/ui-style-profile.js', `export function profileStyles() {\n  return \`${block}\`;\n}\n`);
-source = source.slice(0, start) + '    ${profileStyles()}\n' + source.slice(end);
+source = source.slice(0, start) + '${profileStyles()}' + source.slice(end);
 source = 'import { profileStyles } from "./ui-style-profile.js";\n' + source;
 fs.writeFileSync(stylesPath, source);
-console.log(`Extracted ${block.split('\\n').length} Profile style lines into studio/ui-style-profile.js.`);
+console.log(`Extracted ${block.split('\n').length} Profile style lines into studio/ui-style-profile.js.`);
