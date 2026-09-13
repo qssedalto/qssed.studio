@@ -1,5 +1,24 @@
+const STATUS_COPY = {
+  "通知": ["通知尚未开放", "通知服务还没接入。"],
+  "Notifications": ["Notifications aren’t available yet", "Notification delivery is not connected yet."],
+  "AI 设置": ["AI 设置尚未开放", "用户级 AI 配置还没开放。"],
+  "AI Settings": ["AI settings aren’t available yet", "User-level AI configuration is not available yet."],
+  "第三方集成": ["第三方集成尚未开放", "用户级集成配置还没开放。"],
+  "Integrations": ["Integrations aren’t available yet", "User-level integrations are not available yet."]
+};
+
 export function statusContent(zh, zhTitle, zhBody, enTitle, enBody) {
-  return `<section class="os-card is-large"><h2>${zh ? zhTitle : enTitle}</h2><p>${zh ? zhBody : enBody}</p></section>`;
+  const requestedTitle = zh ? zhTitle : enTitle;
+  const fallbackBody = zh ? zhBody : enBody;
+  const normalized = STATUS_COPY[requestedTitle];
+  const title = normalized?.[0] || requestedTitle;
+  const body = normalized?.[1] || fallbackBody;
+  return `
+    <section class="os-card is-large status-panel" role="status">
+      <small>${zh ? "状态" : "Status"}</small>
+      <h2>${title}</h2>
+      <p>${body}</p>
+    </section>`;
 }
 
 export function osHubIcon(name) {
@@ -39,7 +58,7 @@ export function osHubCard(item) {
         <h2>${item.title}</h2>
         ${item.meta ? `<small>${item.meta}</small>` : ""}
       </div>
-      <p>${item.description}</p>
+      ${item.description ? `<p>${item.description}</p>` : ""}
     </div>
   </a>`;
 }

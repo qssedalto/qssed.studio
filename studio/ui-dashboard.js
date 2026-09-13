@@ -17,48 +17,48 @@ export function dashboardIcon(name) {
 export function dashboardContent(zh) {
   const prefix = zh ? "/zh-cn" : "/en";
   const shortcuts = zh ? [
-    ["用户资料","完善你的头像、签名与主页","profile",`${prefix}/profile/details`],
-    ["工作台","进入工作区主要操作界面","workbench",`${prefix}/workspace/workbench`],
-    ["私人存储","管理当前账号的 R2 文件","storage",`${prefix}/settings/storage`],
-    ["收藏链接","打开你的链接收藏与常用入口","links",`${prefix}/info/links`],
-    ["账户与安全","查看设备、登录与安全记录","security",`${prefix}/settings/security`],
-    ["设置","外观、语言与其他偏好入口","settings",`${prefix}/settings`]
+    ["用户资料","头像、签名和主页信息","profile",`${prefix}/profile/details`],
+    ["工作台","打开工作区","workbench",`${prefix}/workspace/workbench`],
+    ["私人存储","管理 R2 文件","storage",`${prefix}/settings/storage`],
+    ["收藏链接","常用链接和收藏","links",`${prefix}/info/links`],
+    ["账户与安全","设备和登录记录","security",`${prefix}/settings/security`],
+    ["设置","外观、语言和其他设置","settings",`${prefix}/settings`]
   ] : [
-    ["Profile Details","Edit your photo, signature, and personal page","profile",`${prefix}/profile/details`],
-    ["Workbench","Open the main operating surface in Workspace","workbench",`${prefix}/workspace/workbench`],
-    ["Private Storage","Manage R2 files for this account","storage",`${prefix}/settings/storage`],
-    ["Saved Links","Open saved links and common destinations","links",`${prefix}/info/links`],
-    ["Account & Security","Review devices, sign-ins, and security records","security",`${prefix}/settings/security`],
-    ["Settings","Appearance, language, and preference entry points","settings",`${prefix}/settings`]
+    ["Profile","Photo, signature, and profile details","profile",`${prefix}/profile/details`],
+    ["Workbench","Open Workspace","workbench",`${prefix}/workspace/workbench`],
+    ["Private Storage","Manage R2 files","storage",`${prefix}/settings/storage`],
+    ["Saved Links","Links and bookmarks","links",`${prefix}/info/links`],
+    ["Account & Security","Devices and sign-in history","security",`${prefix}/settings/security`],
+    ["Settings","Appearance, language, and more","settings",`${prefix}/settings`]
   ];
 
   const moduleRows = zh ? [
-    ["个人主页","已接入","头像、背景、个性签名、状态、兴趣与链接库。","profile",`${prefix}/profile`],
-    ["私人存储","已连接","Cloudflare R2 私人文件空间。","storage",`${prefix}/settings/storage`],
-    ["工作区","入口已建立","工作台、项目、实验、草稿与任务已有独立路由。","workbench",`${prefix}/workspace`],
-    ["信息中心","部分可用","收藏链接等入口可用，其余模块等待数据源。","info",`${prefix}/info`]
+    ["个人主页","可用","资料、状态、兴趣和链接。","profile",`${prefix}/profile`],
+    ["私人存储","可用","Cloudflare R2 私人文件。","storage",`${prefix}/settings/storage`],
+    ["工作区","部分可用","工作台、项目、实验、草稿和任务。","workbench",`${prefix}/workspace`],
+    ["信息中心","部分可用","知识库、链接和后续信息模块。","info",`${prefix}/info`]
   ] : [
-    ["Profile","Connected","Profile photo, background, signature, presence, interests, and links.","profile",`${prefix}/profile`],
-    ["Private Storage","Connected","Private Cloudflare R2 file space.","storage",`${prefix}/settings/storage`],
-    ["Workspace","Routes ready","Workbench, projects, experiments, drafts, and tasks have distinct routes.","workbench",`${prefix}/workspace`],
-    ["Information","Partially available","Saved links are available; other modules still await data sources.","info",`${prefix}/info`]
+    ["Profile","Available","Profile details, presence, interests, and links.","profile",`${prefix}/profile`],
+    ["Private Storage","Available","Private Cloudflare R2 files.","storage",`${prefix}/settings/storage`],
+    ["Workspace","Partial","Workbench, projects, experiments, drafts, and tasks.","workbench",`${prefix}/workspace`],
+    ["Information","Partial","Knowledge, links, and upcoming information modules.","info",`${prefix}/info`]
   ];
 
   return `
     <section class="dashboard-welcome">
       <div class="dashboard-welcome-copy">
-        <span class="dashboard-eyebrow">${zh ? "QssedA Studio" : "QssedA Studio"}</span>
+        <span class="dashboard-eyebrow">QssedA Studio</span>
         <h2>${zh ? "欢迎回来" : "Welcome back"}</h2>
-        <p>${zh ? "从这里继续进入你的个人空间、工作区、收藏内容与私人存储。首页只展示真实可用的入口，不制造没有数据来源的统计数字。" : "Continue into your profile, workspace, saved content, and private storage. The dashboard only surfaces real entry points rather than invented statistics."}</p>
+        <p>${zh ? "继续上次的工作，或者直接打开常用功能。" : "Pick up where you left off or open a common tool."}</p>
         <div class="dashboard-welcome-actions">
           <a class="dashboard-primary-action" href="${prefix}/workspace/workbench">${zh ? "打开工作台" : "Open Workbench"}<span>›</span></a>
-          <a class="dashboard-secondary-action" href="${prefix}/profile/details">${zh ? "编辑用户资料" : "Edit Profile"}<span>›</span></a>
+          <a class="dashboard-secondary-action" href="${prefix}/profile/details">${zh ? "用户资料" : "Profile"}<span>›</span></a>
         </div>
       </div>
-      <div class="dashboard-today-card" aria-label="${zh ? "本次访问" : "This visit"}">
+      <div class="dashboard-today-card" aria-label="${zh ? "当前时间" : "Current time"}">
         ${dashboardIcon("clock")}
         <div>
-          <small>${zh ? "本次访问" : "This visit"}</small>
+          <small>${zh ? "现在" : "Now"}</small>
           <strong id="dashboard-live-time">--:--</strong>
           <span id="dashboard-live-date">----</span>
         </div>
@@ -67,8 +67,7 @@ export function dashboardContent(zh) {
 
     <section class="dashboard-section">
       <div class="dashboard-section-head">
-        <div><small>${zh ? "快速开始" : "Quick Start"}</small><h2>${zh ? "继续使用" : "Continue"}</h2></div>
-        <span>${zh ? "常用入口" : "Common destinations"}</span>
+        <div><small>${zh ? "快捷入口" : "Shortcuts"}</small><h2>${zh ? "常用" : "Common"}</h2></div>
       </div>
       <div class="dashboard-shortcuts">
         ${shortcuts.map(item => `<a class="dashboard-shortcut" href="${item[3]}">${dashboardIcon(item[2])}<span><strong>${item[0]}</strong><small>${item[1]}</small></span><b aria-hidden="true">›</b></a>`).join("")}
@@ -78,7 +77,7 @@ export function dashboardContent(zh) {
     <section class="dashboard-split">
       <article class="os-card dashboard-module-card">
         <div class="dashboard-section-head compact">
-          <div><small>${zh ? "Studio 概览" : "Studio Overview"}</small><h2>${zh ? "当前模块" : "Current Modules"}</h2></div>
+          <div><small>${zh ? "模块" : "Modules"}</small><h2>${zh ? "当前状态" : "Status"}</h2></div>
         </div>
         <div class="dashboard-module-list">
           ${moduleRows.map(row => `<a href="${row[4]}">${dashboardIcon(row[3])}<span><strong>${row[0]}</strong><small>${row[2]}</small></span><em>${row[1]}</em><b aria-hidden="true">›</b></a>`).join("")}
@@ -87,26 +86,26 @@ export function dashboardContent(zh) {
 
       <article class="os-card dashboard-session-card">
         <div class="dashboard-section-head compact">
-          <div><small>${zh ? "当前环境" : "Current Environment"}</small><h2>${zh ? "本次使用" : "This Session"}</h2></div>
+          <div><small>${zh ? "当前" : "Current"}</small><h2>${zh ? "环境" : "Environment"}</h2></div>
         </div>
         <div class="dashboard-session-facts">
           <div>${dashboardIcon("appearance")}<span><small>${zh ? "外观" : "Appearance"}</small><strong id="dashboard-theme-label">—</strong></span></div>
           <div>${dashboardIcon("language")}<span><small>${zh ? "语言" : "Language"}</small><strong>${zh ? "简体中文" : "English"}</strong></span></div>
           <div>${dashboardIcon("storage")}<span><small>${zh ? "存储" : "Storage"}</small><strong>Cloudflare R2</strong></span></div>
         </div>
-        <a class="dashboard-session-settings" href="${prefix}/settings">${zh ? "管理设置" : "Manage settings"}<span>›</span></a>
+        <a class="dashboard-session-settings" href="${prefix}/settings">${zh ? "设置" : "Settings"}<span>›</span></a>
       </article>
     </section>
 
     <section class="os-card dashboard-activity-card">
       <div class="dashboard-section-head compact">
-        <div><small>${zh ? "活动" : "Activity"}</small><h2>${zh ? "最近动态" : "Recent Activity"}</h2></div>
+        <div><small>${zh ? "活动" : "Activity"}</small><h2>${zh ? "最近动态" : "Recent"}</h2></div>
       </div>
       <div class="dashboard-empty-activity">
         <span></span>
-        <strong>${zh ? "暂时没有统一活动流" : "No unified activity feed yet"}</strong>
-        <p>${zh ? "项目、实验、草稿和任务的数据模型接入后，这里再展示真实的最近活动；目前不使用示例数据冒充历史记录。" : "Real recent activity will appear here after projects, experiments, drafts, and tasks share persistent data. Placeholder activity is intentionally not shown as history."}</p>
-        <a href="${prefix}/workspace">${zh ? "查看工作区" : "View Workspace"} <b>›</b></a>
+        <strong>${zh ? "暂无动态" : "No recent activity"}</strong>
+        <p>${zh ? "项目、草稿和任务接入后会显示在这里。" : "Projects, drafts, and tasks will appear here once connected."}</p>
+        <a href="${prefix}/workspace">${zh ? "打开工作区" : "Open Workspace"} <b>›</b></a>
       </div>
     </section>
 
