@@ -36,6 +36,11 @@ export async function handleOAuthRequest(request) {
     return handleRevoke(request);
   }
 
+  if (pathname === "/oauth/introspect") {
+    if (request.method !== "POST") return oauthError("invalid_request", "Method not allowed", 405);
+    return handleIntrospect(request);
+  }
+
   return oauthError("invalid_request", "OAuth endpoint not found", 404);
 }
 
@@ -165,14 +170,24 @@ async function handleRevoke(request) {
 }
 
 async function handleIntrospect(request) {
+  const credentials = parseBasicCredentials(request.headers.get("Authorization") || "");
+  if (!credentials) return introspectionUnauthorized();
+
   const form = await readForm(request);
   if (!form) return oauthError("invalid_request", "Expected application/x-www-form-urlencoded body", 400);
   const token = clean(form.get("token"), 1200);
   if (!token) return oauthError("invalid_request", "token is required", 400);
 
-  const result = await rpc("oauth_introspect_access_token", { p_access_token: token });
+  const result = await rpc("oauth_introspect_for_resource_server", {
+    p_resource_server_id: credentials.id,
+    p_resource_server_secret: credentials.secret,
+    p_access_token: token
+  });
   const row = firstRow(result);
+
+  if (!row?.authorized) return introspectionUnauthorized();
   if (!row?.active) return json({ active: false });
+
   return json({
     active: true,
     client_id: row.client_id,
@@ -183,6 +198,27 @@ async function handleIntrospect(request) {
   });
 }
 
+function parseBasicCredentials(header) {
+  if (!header.startsWith("Basic ")) return null;
+  try {
+    const decoded = atob(header.slice(6).trim());
+    const separator = decoded.indexOf(":");
+    if (separator <= 0) return null;
+    const id = clean(decoded.slice(0, separator), 160);
+    const secret = clean(decoded.slice(separator + 1), 500);
+    if (!id || !secret) return null;
+    return { id, secret };
+  } catch {
+    return null;
+  }
+}
+
+function introspectionUnauthorized() {
+  const headers = oauthHeaders("application/json;charset=UTF-8");
+  headers.set("www-authenticate", 'Basic realm="QssedA OAuth Resource Server"');
+  return new Response(JSON.stringify({ error: "invalid_client" }), { status: 401, headers });
+}
+
 function metadataResponse(origin) {
   const issuer = origin === ISSUER ? ISSUER : origin;
   return json({
@@ -190,6 +226,7 @@ function metadataResponse(origin) {
     authorization_endpoint: `${issuer}/authorize`,
     token_endpoint: `${issuer}/oauth/token`,
     revocation_endpoint: `${issuer}/oauth/revoke`,
+    introspection_endpoint: `${issuer}/oauth/introspect`,
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code", "refresh_token"],
     code_challenge_methods_supported: ["S256"],
