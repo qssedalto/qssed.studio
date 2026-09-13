@@ -1,11 +1,11 @@
 import { TEXT } from "./config.js";
 import { escapeHtmlText } from "./html-utils.js";
-import { profileClientScript, profileContent } from "./ui-profile.js";
-import { adminClientScript, adminLogsContent, adminOverviewContent, adminRolesContent, adminSystemContent, adminUsersContent } from "./ui-admin.js";
+import { profileClientScript, profileContent, profileHubContent } from "./ui-profile.js";
+import { adminClientScript, adminHubContent, adminLogsContent, adminOverviewContent, adminRolesContent, adminSystemContent, adminUsersContent } from "./ui-admin.js";
 import { dashboardContent } from "./ui-dashboard.js";
 import { informationContent } from "./ui-information.js";
 import { workspaceContent } from "./ui-workspace.js";
-import { appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsGeneralContent } from "./ui-settings.js";
+import { appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsFallbackContent, settingsGeneralContent, settingsHubContent } from "./ui-settings.js";
 import { storageClientScript, storageSettingsContent } from "./ui-storage.js";
 import { html, json } from "./routing.js";
 import { auditClientScript, baseHead, supabaseScript, themeScript, topControls } from "./ui-core.js";
@@ -521,7 +521,7 @@ export function renderOsContent(path, copy) {
   const zh = copy.platform.includes("个人");
   if (path === "/dashboard") return dashboardContent(zh);
   if (path.startsWith("/info")) return informationContent(path, zh, statusContent);
-  if (path === "/profile") return profileHubContent(zh);
+  if (path === "/profile") return profileHubContent(zh, osHubGrid);
   if (path.startsWith("/profile/")) return profileContent(path, zh);
   if (path.startsWith("/workspace")) return workspaceContent(path, zh, statusContent);
   if (path.startsWith("/admin")) return adminContent(path, zh);
@@ -579,70 +579,8 @@ export function osHubGrid(items, extraClass = "") {
   return `<section class="os-hub-grid ${extraClass}">${items.map(osHubCard).join("")}</section>`;
 }
 
-export function profileHubContent(zh) {
-  const prefix = zh ? "/zh-cn" : "/en";
-  const items = zh ? [
-    { title:"用户资料", meta:"个人空间", description:"头像、主页背景、个性签名、个人介绍、在线状态与兴趣标签。", href:`${prefix}/profile/details`, icon:"profile", featured:true, tone:"blue" },
-    { title:"账户信息", meta:"账号", description:"查看账号 ID、邮箱、注册时间、最近登录与登录记录。", href:`${prefix}/profile/account`, icon:"account" },
-    { title:"账户与安全", meta:"安全", description:"查看当前设备、登录历史与异常登录提示。", href:`${prefix}/settings/security`, icon:"shield" },
-    { title:"偏好设置", meta:"偏好", description:"管理与个人使用体验相关的设置入口。", href:`${prefix}/profile/preferences`, icon:"preferences" },
-    { title:"收藏链接", meta:"内容", description:"进入你的链接收藏与常用入口。", href:`${prefix}/info/links`, icon:"links" },
-    { title:"私人存储", meta:"R2", description:"上传、下载并管理只属于当前账号的私人文件。", href:`${prefix}/settings/storage`, icon:"storage" }
-  ] : [
-    { title:"Profile Details", meta:"Personal", description:"Profile photo, background, signature, bio, presence, and interests.", href:`${prefix}/profile/details`, icon:"profile", featured:true, tone:"blue" },
-    { title:"Account", meta:"Account", description:"Review account ID, email, registration time, recent sign-in, and login records.", href:`${prefix}/profile/account`, icon:"account" },
-    { title:"Account & Security", meta:"Security", description:"Review the current device, login history, and risk alerts.", href:`${prefix}/settings/security`, icon:"shield" },
-    { title:"Preferences", meta:"Preferences", description:"Manage entry points related to your personal experience.", href:`${prefix}/profile/preferences`, icon:"preferences" },
-    { title:"Saved Links", meta:"Content", description:"Open your saved links and frequently used destinations.", href:`${prefix}/info/links`, icon:"links" },
-    { title:"Private Storage", meta:"R2", description:"Upload, download, and manage files private to this account.", href:`${prefix}/settings/storage`, icon:"storage" }
-  ];
-  return osHubGrid(items, "profile-hub-grid");
-}
-
-export function adminHubContent(zh) {
-  const prefix = zh ? "/zh-cn" : "/en";
-  const items = zh ? [
-    { title:"通用", meta:"管理概览", description:"账户统计、近期登录、操作日志与系统风险信号。", href:`${prefix}/admin/general`, icon:"general", featured:true, tone:"blue" },
-    { title:"用户管理", meta:"成员", description:"搜索用户，查看资料并调整角色或账号状态。", href:`${prefix}/admin/users`, icon:"users" },
-    { title:"角色权限", meta:"RBAC", description:"查看角色范围并管理管理员、编辑者与普通成员权限。", href:`${prefix}/admin/roles`, icon:"roles" },
-    { title:"操作日志", meta:"审计", description:"按动作、级别、用户和日期筛选管理操作记录。", href:`${prefix}/admin/logs`, icon:"logs" },
-    { title:"系统状态", meta:"系统", description:"查看管理能力与运行状态相关信息。", href:`${prefix}/admin/system`, icon:"system" }
-  ] : [
-    { title:"General", meta:"Overview", description:"Account metrics, recent sign-ins, operation logs, and system risk signals.", href:`${prefix}/admin/general`, icon:"general", featured:true, tone:"blue" },
-    { title:"Users", meta:"Members", description:"Search users, review profiles, and adjust roles or account status.", href:`${prefix}/admin/users`, icon:"users" },
-    { title:"Roles", meta:"RBAC", description:"Review role scopes and manage administrator, editor, and member permissions.", href:`${prefix}/admin/roles`, icon:"roles" },
-    { title:"Logs", meta:"Audit", description:"Filter administration records by action, severity, user, and date.", href:`${prefix}/admin/logs`, icon:"logs" },
-    { title:"System", meta:"System", description:"Review management capabilities and runtime-related status information.", href:`${prefix}/admin/system`, icon:"system" }
-  ];
-  return osHubGrid(items, "admin-hub-grid");
-}
-
-export function settingsHubContent(zh) {
-  const prefix = zh ? "/zh-cn" : "/en";
-  const items = zh ? [
-    { title:"通用", meta:"基础", description:"查看网站基础行为与常用设置入口。", href:`${prefix}/settings/general`, icon:"general", featured:true, tone:"blue" },
-    { title:"外观", meta:"可用", description:"切换浅色与深色显示模式。", href:`${prefix}/settings/appearance`, icon:"appearance" },
-    { title:"语言", meta:"可用", description:"在中文与 English 之间切换网页语言。", href:`${prefix}/settings/language`, icon:"language" },
-    { title:"账户与安全", meta:"可用", description:"查看设备、登录历史与安全记录。", href:`${prefix}/settings/security`, icon:"shield" },
-    { title:"通知", meta:"规划中", description:"管理提醒、站内消息与通知偏好。", href:`${prefix}/settings/notifications`, icon:"notifications" },
-    { title:"AI 设置", meta:"规划中", description:"管理 AI Provider、模型与个人 AI 偏好。", href:`${prefix}/settings/ai`, icon:"ai" },
-    { title:"第三方集成", meta:"规划中", description:"管理外部服务与账号授权。", href:`${prefix}/settings/integrations`, icon:"integrations" },
-    { title:"存储管理", meta:"已连接", description:"管理当前账号的私人 Cloudflare R2 文件。", href:`${prefix}/settings/storage`, icon:"storage" }
-  ] : [
-    { title:"General", meta:"Basics", description:"Review general site behavior and common settings entry points.", href:`${prefix}/settings/general`, icon:"general", featured:true, tone:"blue" },
-    { title:"Appearance", meta:"Available", description:"Switch between light and dark display modes.", href:`${prefix}/settings/appearance`, icon:"appearance" },
-    { title:"Language", meta:"Available", description:"Switch the interface between Chinese and English.", href:`${prefix}/settings/language`, icon:"language" },
-    { title:"Account & Security", meta:"Available", description:"Review devices, login history, and security records.", href:`${prefix}/settings/security`, icon:"shield" },
-    { title:"Notifications", meta:"Planned", description:"Manage reminders, in-app messages, and notification preferences.", href:`${prefix}/settings/notifications`, icon:"notifications" },
-    { title:"AI Settings", meta:"Planned", description:"Manage AI providers, models, and personal AI preferences.", href:`${prefix}/settings/ai`, icon:"ai" },
-    { title:"Integrations", meta:"Planned", description:"Manage external services and account authorizations.", href:`${prefix}/settings/integrations`, icon:"integrations" },
-    { title:"Storage", meta:"Connected", description:"Manage private Cloudflare R2 files for this account.", href:`${prefix}/settings/storage`, icon:"storage" }
-  ];
-  return osHubGrid(items, "settings-hub-grid");
-}
-
 export function adminContent(path, zh) {
-  if (path === "/admin") return adminHubContent(zh);
+  if (path === "/admin") return adminHubContent(zh, osHubGrid);
   if (path.endsWith("/general")) return adminOverviewContent(zh);
   if (path.endsWith("/users")) return adminUsersContent(zh);
   if (path.endsWith("/roles")) return adminRolesContent(zh);
@@ -652,7 +590,7 @@ export function adminContent(path, zh) {
 }
 
 export function settingsContent(path, zh) {
-  if (path === "/settings") return settingsHubContent(zh);
+  if (path === "/settings") return settingsHubContent(zh, osHubGrid);
   if (path.endsWith("/general")) return settingsGeneralContent(zh, osHubIcon);
   if (path.endsWith("/appearance")) return appearanceSettingsContent(zh);
   if (path.endsWith("/language")) return languageSettingsContent(zh);
@@ -662,25 +600,5 @@ export function settingsContent(path, zh) {
   if (path.endsWith("/integrations")) return statusContent(zh, "第三方集成", "这里将用于管理可连接的第三方服务与账号授权。当前尚未开放用户级集成配置。", "Integrations", "Manage connected third-party services and account authorizations here. User-level integrations are not available yet.");
   if (path.endsWith("/storage")) return storageSettingsContent(zh);
 
-  const prefix = zh ? "/zh-cn" : "/en";
-  const items = zh
-    ? [
-        ["外观", "可用", "设置浅色或深色主题，以及网页的整体显示方式。", `${prefix}/settings/appearance`],
-        ["语言", "可用", "设置网页显示语言；当前支持中文与 English。", `${prefix}/settings/language`],
-        ["账户与安全", "可用", "查看当前设备、登录设备、登录历史与异常登录记录。", `${prefix}/settings/security`],
-        ["通知", "规划中", "管理提醒、站内消息与其他通知偏好。", `${prefix}/settings/notifications`],
-        ["AI 设置", "规划中", "管理 AI Provider、模型与个人 AI 偏好。", `${prefix}/settings/ai`],
-        ["第三方集成", "规划中", "管理可连接的第三方服务与账号授权。", `${prefix}/settings/integrations`],
-        ["存储管理", "已连接", "上传、下载和管理仅属于当前账号的私人 R2 文件。", `${prefix}/settings/storage`]
-      ]
-    : [
-        ["Appearance", "Available", "Choose light or dark mode and manage the site's overall display.", `${prefix}/settings/appearance`],
-        ["Language", "Available", "Choose the site language; Chinese and English are currently supported.", `${prefix}/settings/language`],
-        ["Account & Security", "Available", "Review the current device, signed-in devices, login history, and risk records.", `${prefix}/settings/security`],
-        ["Notifications", "Planned", "Manage reminders, in-app messages, and other notification preferences.", `${prefix}/settings/notifications`],
-        ["AI Settings", "Planned", "Manage AI providers, models, and personal AI preferences.", `${prefix}/settings/ai`],
-        ["Integrations", "Planned", "Manage connected third-party services and account authorizations.", `${prefix}/settings/integrations`],
-        ["Storage", "Connected", "Upload, download, and manage private R2 files belonging only to your account.", `${prefix}/settings/storage`]
-      ];
-  return `<section class="os-grid settings-grid">${items.map(item => `<a class="os-card settings-card-link" href="${item[3]}"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p><span class="settings-card-arrow" aria-hidden="true">›</span></a>`).join("")}</section>`;
+  return settingsFallbackContent(zh);
 }
