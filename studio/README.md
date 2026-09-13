@@ -29,7 +29,8 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 - `ui-information.js` — Information route composition and route-owned Links/Notes/Summaries/Search rendering.
 - `ui-workspace.js` — Workspace route rendering.
 - `ui-styles.js` — Studio OS style aggregator and remaining shared/product CSS in original output order.
-- `ui-style-profile.js` — Phase 4D Profile-owned CSS fragment extracted verbatim from `ui-styles.js`; `ui-styles.js` reinserts it at the original position so emitted CSS remains byte-identical.
+- `ui-style-profile.js` — Phase 4D Profile-owned CSS fragment extracted verbatim from `ui-styles.js` and reinserted at the original output position.
+- `ui-style-admin.js` — Phase 4D Admin-owned polish CSS fragment extracted verbatim from `ui-styles.js` and reinserted at the original output position.
 - `auth-pages.js` — Studio sign-up, login and not-found pages.
 
 Phase 3 product ownership is explicit. Product Hub renderers live with Profile/Admin/Settings.
@@ -40,7 +41,7 @@ Phase 4B renames the remaining neutral `ui-core.js` page infrastructure to `ui-p
 
 Phase 4C moves `statusContent()`, `osHubIcon()`, `osHubCard()` and `osHubGrid()` out of `ui-shell.js` into `ui-primitives.js`. Profile, Admin, Settings, Information and Workspace now consume those neutral render primitives directly; no product module depends on `ui-shell.js`.
 
-Phase 4D begins with the clearly bounded Profile style fragment. The `PROFILE_HOME_V3` through pre-Settings block now lives in `ui-style-profile.js`; `osStyles()` and every registered Studio page remain byte-identical. Global CSS custom properties remain owned by `ui-page.js`; they are not duplicated into product style modules.
+Phase 4D extracts only clearly bounded product CSS while preserving emitted CSS byte-for-byte. The Profile `PROFILE_HOME_V3` block lives in `ui-style-profile.js`, and the `ADMIN_UI_POLISH_V1` block lives in `ui-style-admin.js`. Global CSS custom properties remain owned by `ui-page.js`; they are not duplicated into product style modules.
 
 Admin authorization remains shell-owned: `is_admin`, the Admin lock, warm snapshot restore and authenticated bootstrap are intentionally not part of `ui-admin.js`.
 
