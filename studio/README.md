@@ -44,6 +44,8 @@ Phase 4C moves `statusContent()`, `osHubIcon()`, `osHubCard()` and `osHubGrid()`
 
 Phase 4D extracts only clearly bounded product CSS while preserving emitted CSS byte-for-byte. The Profile `PROFILE_HOME_V3` block lives in `ui-style-profile.js`, the `ADMIN_UI_POLISH_V1` block lives in `ui-style-admin.js`, and the final `DASHBOARD_APPLE_V2` block lives in `ui-style-dashboard.js`. Global CSS custom properties remain owned by `ui-page.js`; they are not duplicated into product style modules.
 
+Phase 4E removes only evidence-backed dead/history artifacts. The unused `json` routing import has been removed from `ui-shell.js`, and the historical `qsseda-worker-pre-repair-2026-09-08.js` snapshot is removed from the current tree because it is not a Wrangler entrypoint or runtime/workflow dependency; its contents remain recoverable from Git history.
+
 Admin authorization remains shell-owned: `is_admin`, the Admin lock, warm snapshot restore and authenticated bootstrap are intentionally not part of `ui-admin.js`.
 
 Detailed boundaries:
