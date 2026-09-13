@@ -10,38 +10,44 @@ A prior Codex discussion used a staged approach rather than a big-bang rewrite. 
 
 ## Current dependency graph
 
+After Phase 2:
+
 ```text
 worker.js
 └── studio/entry.js
     ├── config.js
     ├── routing.js ────────────────> config.js
-    ├── account-api.js ────────────> config.js, routing.js
-    ├── storage-api.js ────────────> config.js, routing.js, account-api.js
+    ├── account-api.js ────────────> config.js, routing.js, server-runtime.js
+    ├── storage-api.js ────────────> config.js, routing.js, server-runtime.js
     ├── auth-handoff.js ───────────> config.js, routing.js, ui-core.js
     ├── auth-pages.js ─────────────> config.js, routing.js, ui-core.js
-    └── ui-shell.js ───────────────> config.js, routing.js, account-api.js,
+    └── ui-shell.js ───────────────> config.js, html-utils.js, routing.js,
                                      ui-core.js, ui-styles.js
 
 ui-core.js ────────────────────────> config.js, routing.js
-ui-styles.js ──────────────────────> no Studio-module dependency
+ui-styles.js ──────────────────────> routing.js
+server-runtime.js ─────────────────> no Studio-module dependency
+html-utils.js ─────────────────────> no Studio-module dependency
 ```
 
-The graph is deliberately recorded because it shows that Phase 1 is an extraction, not the final architecture. In particular:
+Phase 2 removed the inappropriate generic-utility edges from Storage/UI into the Account domain:
 
-- `storage-api.js` currently imports server helpers from `account-api.js`.
-- `ui-shell.js` currently imports `escapeHtmlText` from `account-api.js`.
-- `auth-handoff.js` mixes handoff/server behavior with a small HTML response dependency on `ui-core.js`.
-- `ui-core.js` and `ui-shell.js` remain the two large UI aggregation modules.
+```text
+storage-api.js  -X-> account-api.js
+ui-shell.js     -X-> account-api.js
+```
 
-Those dependencies are **not** a reason to jump directly into UI splitting. They define the work for the next phase.
+`auth-handoff.js -> ui-core.js` remains intentionally: the handoff endpoint returns a browser page and currently consumes shared page primitives. Moving those primitives would begin shared UI/runtime restructuring, so that edge was reviewed but deliberately left for a later phase rather than forcing it into the backend cleanup.
+
+`ui-core.js` and `ui-shell.js` are still coarse UI aggregation modules. Their size is now a Phase 3 concern, but they must be split by product/data-flow ownership rather than by line count.
 
 ## Phase status
 
 | Phase | Goal | Status |
 |---|---|---|
 | 1 | Boundary extraction without business redesign | ✅ Complete — PR #23 |
-| 2 | Backend/shared-server dependency separation | ⏭️ Next |
-| 3 | Frontend product-domain separation | ⛔ Blocked until Phase 2 is complete |
+| 2 | Backend/shared-server dependency separation | ✅ Complete — PR #25 |
+| 3 | Frontend product-domain separation | ⏭️ Next |
 | 4 | Shared UI/runtime cleanup and final consolidation | ⛔ Blocked until Phase 3 is stable |
 
 ---
@@ -68,117 +74,106 @@ Files created in this phase are **coarse boundaries**, not promises that each fi
 
 **Goal:** remove inappropriate cross-domain dependencies in server-side code before touching the large UI domains.
 
-### Required work
+Completed in PR #25:
 
-1. Extract shared Supabase/server access helpers from `account-api.js`.
-   - `getSupabaseSecret`
-   - authenticated server REST/RPC helpers where appropriate
-   - shared active-profile/session verification where it is genuinely common
+- moved `getSupabaseSecret` and `workerLog` out of `account-api.js` into `server-runtime.js`;
+- moved generic `escapeHtmlText` out of the Account domain into `html-utils.js`;
+- changed `storage-api.js` to consume the shared server runtime instead of importing Account helpers;
+- changed `ui-shell.js` to consume the neutral HTML helper instead of importing the Account API;
+- reviewed `auth-handoff.js -> ui-core.js` and intentionally kept it because separating shared page primitives belongs to later UI/runtime work;
+- preserved all public routes, the Auth/OAuth/PKCE protocol, the `STORAGE` R2 binding, UI output contracts and data model.
 
-2. Extract Worker/server logging helpers from `account-api.js`.
-   - `workerLog`
-   - shared structured audit/logging helpers that are not account-specific
+### Phase 2 verification
 
-3. Move generic escaping/helper code out of `account-api.js`.
-   - `escapeHtmlText` belongs in a neutral HTML/shared utility module, not the account domain.
+- exact-match guarded extraction was used so the moved helper implementations were not silently rewritten;
+- all Studio JavaScript syntax checks passed;
+- dependency-direction assertions passed;
+- Wrangler Studio dry-run bundle passed;
+- Cloudflare branch Preview deployment passed;
+- production `Deploy QssedA Production #9` passed validation, Studio deployment and Auth deployment.
 
-4. Make `storage-api.js` depend on shared server utilities rather than the account domain.
+### Phase 2 rule
 
-5. Make `ui-shell.js` stop depending on `account-api.js` for generic rendering helpers.
-
-6. Review `auth-handoff.js` boundaries.
-   - preserve the existing handoff protocol and iOS compatibility behavior.
-   - only separate response rendering from handoff verification if it reduces coupling without changing behavior.
-
-### Suggested target dependency direction
-
-```text
-entry
-├── account-api
-├── storage-api
-├── auth-handoff
-├── auth-pages
-└── ui-shell
-
-account-api ─┐
-storage-api ─┼──> server/supabase + server/logging + shared/html + config/routing
-auth-handoff ┘
-
-UI modules must not import account/storage API modules merely to obtain generic utilities.
-```
-
-The exact filenames may differ; the **dependency direction** is the requirement.
-
-### Phase 2 must NOT do
-
-- do not split Dashboard/Profile/Admin/Settings/Storage UI into separate product modules yet.
-- do not redesign the Auth/OAuth/PKCE protocol.
-- do not change public route names.
-- do not rename the `STORAGE` binding.
-- do not redesign user-facing UI as part of the structural PR.
-- do not combine unrelated feature work with the refactor.
-
-### Exit criteria
-
-Phase 2 is complete only when:
-
-- backend domains no longer depend on another backend domain just for generic utilities;
-- UI code no longer imports an API domain just for generic utilities;
-- JavaScript syntax checks pass;
-- Wrangler Studio dry-run bundle passes;
-- representative route/API behavior is smoke-tested against the pre-refactor baseline;
-- production route names and bindings remain unchanged.
+The backend/shared dependency cleanup is closed. Do not reopen it merely to perform opportunistic UI cleanup during Phase 3. If a new backend coupling bug is discovered, fix it as a focused prerequisite rather than mixing it into a product-domain extraction.
 
 ---
 
 ## Phase 3 — Frontend product-domain separation
 
-**Goal:** split large UI aggregation modules by actual product ownership, after server dependencies are clean.
+**Goal:** split large UI aggregation modules by actual product ownership, now that server dependencies are clean.
 
-Only begin after Phase 2 exits cleanly.
+### Discovery snapshot
 
-### Candidate product domains
+The current `ui-shell.js` mixes several distinct responsibilities:
 
-- Dashboard
-- Profile
-- Admin
-- Settings
-- Storage UI
-- Information / knowledge pages
-- shell/navigation/compact-navigation runtime
+- shell composition, sidebar/navigation and compact-navigation state;
+- authenticated-user bootstrap/sign-out behavior;
+- route/page metadata and bilingual copy;
+- Dashboard/Information/Workspace content;
+- Profile page markup and editors;
+- Settings content;
+- Storage UI markup/client bootstrap;
+- Admin shell authorization/bootstrap.
 
-The exact final files should be selected by inspecting functions and data flow at the start of Phase 3. Do **not** split by line count alone.
+The current `ui-core.js` contains both genuinely shared primitives (`baseHead`, `supabaseScript`, `themeScript`, top controls) and product-specific client applications such as `auditClientScript` and `adminClientScript`.
+
+That means Phase 3 must extract **one product domain at a time** while leaving shared shell/runtime primitives stable until their consumers are understood.
+
+### Planned extraction order
+
+The order below is a safety sequence, not a final naming mandate:
+
+1. **Profile domain**
+   - first candidate because its markup/editors and hydration behavior form a clear product boundary;
+   - preserve profile/sessionStorage first-paint behavior and current Supabase contracts.
+2. **Settings + Storage UI domain boundary**
+   - separate Settings page rendering from the shell;
+   - keep `storage-api.js` backend unchanged and preserve the existing Storage UI/API contract.
+3. **Admin domain**
+   - extract admin-specific rendering/client logic only after lower-risk domains prove the pattern;
+   - preserve `is_admin`, warm snapshots, audit behavior and authorization gates exactly.
+4. **Information + Workspace + Dashboard content**
+   - move simple route-owned content out of shell composition without inventing persistence for unimplemented features.
+5. **Shell/navigation composition**
+   - only after product content has moved, reduce `ui-shell.js` to shell composition, navigation, route dispatch and session/bootstrap responsibilities.
+
+`ui-core.js` shared primitives should not be broadly reorganized just to make files smaller. Product-specific code may move with its owning Phase 3 domain; genuinely shared runtime cleanup belongs to Phase 4.
 
 ### Expected direction
 
 ```text
-ui-shell (composition only)
-├── dashboard
-├── profile
-├── admin
-├── settings
-├── storage
-└── information
+ui-shell (composition/navigation/bootstrap)
+├── profile domain
+├── settings domain
+│   └── storage UI
+├── admin domain
+├── information/workspace domain
+└── dashboard domain
 
-shared UI/runtime remains central only when it is truly shared.
+ui-core
+├── shared page/runtime primitives
+└── product-specific client code gradually moves to its domain
 ```
 
 ### Phase 3 rules
 
 - move one product domain at a time;
+- use a separate PR for each meaningful extraction slice, even though they all belong to Phase 3;
 - preserve the current first-paint/sessionStorage behavior unless a separate feature change is requested;
 - preserve compact-navigation behavior;
 - preserve bilingual routing/copy behavior;
 - keep Admin authorization checks intact;
 - keep Storage UI/API contract intact;
+- do not redesign user-facing UI during structural extraction;
 - verify each extracted domain before extracting the next one.
 
 ### Exit criteria
 
-- `ui-shell.js` becomes primarily composition/navigation rather than a container for every product page;
+- `ui-shell.js` becomes primarily composition/navigation/bootstrap rather than a container for every product page;
 - `ui-core.js` no longer contains large product-specific client applications such as Admin code unless there is a documented reason;
 - each product domain has a clear owner/boundary;
-- bundle, route and browser smoke tests pass.
+- bundle, route and browser smoke tests pass for every extraction slice;
+- production deployment succeeds after the final Phase 3 slice.
 
 ---
 
@@ -194,7 +189,8 @@ Potential work:
 - duplicated response/error helpers;
 - naming/directory normalization;
 - dead compatibility helpers discovered after domain extraction;
-- archive or relocate historical snapshots that are not part of runtime.
+- archive or relocate historical snapshots that are not part of runtime;
+- reconsider small remaining edges such as shared handoff/page primitives only when the stable consumers are known.
 
 ### Phase 4 must NOT become a rewrite
 
@@ -214,7 +210,7 @@ These are non-negotiable unless a separate reviewed change intentionally modifie
 6. Supabase secrets stay in protected runtime configuration, never source control.
 7. Structural changes require syntax + Wrangler bundle validation.
 8. Large structural changes should use a branch/PR, not direct production edits.
-9. One modularization phase per PR. Do not mix Phase 2 and Phase 3 work.
+9. Do not mix a later phase into the active phase; during Phase 3, move one product domain at a time.
 10. If a change needs behavior changes to make extraction possible, split the behavior change into a separate PR first.
 
 ## How Codex / ChatGPT should continue
@@ -223,23 +219,15 @@ Before making a structural Studio change:
 
 1. Read this document.
 2. Identify the active phase.
-3. Show which dependency edge is being removed or which domain is being extracted.
+3. Show which dependency edge is being removed or which product domain is being extracted.
 4. Refuse to opportunistically perform later-phase cleanup in the same PR.
 5. Run the phase exit checks before merge.
 6. Update the phase status here only after the phase has actually passed verification and production deployment.
 
 ## Next concrete task
 
-The next structural PR should be **Phase 2 only** and should start with the smallest high-value dependency cleanup:
+The next structural PR should be the **first Phase 3 slice: Profile domain extraction**.
 
-```text
-account-api.js
-  ├── generic Supabase/server helpers  ──> shared server module
-  ├── generic logging helpers          ──> shared logging module
-  └── generic HTML escaping            ──> shared HTML utility
+Before changing code, inventory all Profile-owned markup, client functions, cache keys and Supabase/storage interactions across `ui-shell.js`, `ui-core.js` and styles. Then move only the Profile-owned logic while preserving the shell/bootstrap contract.
 
-storage-api.js and ui-shell.js
-  └── switch to the new shared modules
-```
-
-Do not split `ui-core.js` or `ui-shell.js` into Dashboard/Admin/Profile/etc. in that PR.
+Do not combine Settings, Admin, Storage, shared theme/runtime cleanup, or visual redesign with that PR.
