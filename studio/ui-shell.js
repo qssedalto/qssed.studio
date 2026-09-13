@@ -1,10 +1,11 @@
 import { TEXT } from "./config.js";
 import { escapeHtmlText } from "./html-utils.js";
 import { profileClientScript, profileContent } from "./ui-profile.js";
+import { adminClientScript, adminLogsContent, adminOverviewContent, adminRolesContent, adminSystemContent, adminUsersContent } from "./ui-admin.js";
 import { appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsGeneralContent } from "./ui-settings.js";
 import { storageClientScript, storageSettingsContent } from "./ui-storage.js";
 import { html, json } from "./routing.js";
-import { adminClientScript, auditClientScript, baseHead, supabaseScript, themeScript, topControls } from "./ui-core.js";
+import { auditClientScript, baseHead, supabaseScript, themeScript, topControls } from "./ui-core.js";
 import { osStyles } from "./ui-styles.js";
 
 export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
@@ -807,101 +808,8 @@ export function adminContent(path, zh) {
   if (path.endsWith("/users")) return adminUsersContent(zh);
   if (path.endsWith("/roles")) return adminRolesContent(zh);
   if (path.endsWith("/logs")) return adminLogsContent(zh);
-  if (path.endsWith("/system")) return `<section class="os-card is-large"><h2>${zh ? "系统状态" : "System Status"}</h2><p>${zh ? "当前管理界面尚未接入运行状态、存储占用与容量统计等监控数据；账户、权限与审计相关信息仍可在对应管理页面查看。" : "Runtime health, storage usage, and capacity metrics are not yet available in the management interface. Account, permission, and audit information remains available in the corresponding administration pages."}</p></section>`;
+  if (path.endsWith("/system")) return adminSystemContent(zh);
   return adminOverviewContent(zh);
-}
-
-export function adminOverviewContent(zh) {
-  const labels = zh
-    ? ["用户总数", "管理员数量"]
-    : ["Total Users", "Admins"];
-  return `
-    <section class="admin-scan">
-      <span></span>
-      <strong>${zh ? "管理数据概览" : "Admin Data Overview"}</strong>
-      <p>${zh ? "汇总用户、角色、权限和操作日志。" : "Overview of users, roles, permissions, and operation logs."}</p>
-    </section>
-    <section class="admin-metrics" id="admin-overview-metrics">
-      ${labels.map((label, index) => `<article class="admin-motion-card admin-skeleton" style="--stagger:${index}"><span>${label}</span><strong data-admin-metric="${index}">0</strong></article>`).join("")}
-    </section>
-    <section class="admin-dashboard-grid">
-      <article class="os-card admin-section-card">
-        <div class="admin-section-head"><h2>${zh ? "最近登录用户" : "Recent Login Users"}</h2><span class="status-pulse"></span></div>
-        <div id="admin-recent-users" class="admin-list-skeleton"></div>
-      </article>
-      <article class="os-card admin-section-card">
-        <div class="admin-section-head"><h2>${zh ? "最近操作日志" : "Recent Operation Logs"}</h2><button class="admin-ghost" data-admin-nav="/admin/logs">${zh ? "查看全部" : "View all"}</button></div>
-        <div id="admin-recent-logs" class="admin-log-list admin-list-skeleton"></div>
-      </article>
-      <article class="os-card admin-section-card danger-event-card">
-        <div class="admin-section-head"><h2>${zh ? "系统风险提示" : "System Risk Signals"}</h2><span>${zh ? "审计规则" : "Audit rules"}</span></div>
-        <div id="admin-risk-list" class="admin-risk-list admin-list-skeleton"></div>
-      </article>
-    </section>
-  `;
-}
-
-export function adminUsersContent(zh) {
-  const roleOptions = zh ? [["", "全部角色"], ["admin", "管理员"], ["editor", "编辑者"], ["user", "普通成员"]] : [["", "All roles"], ["admin", "Administrator"], ["editor", "Editor"], ["user", "Member"]];
-  const statusOptions = zh ? [["", "全部状态"], ["active", "正常"], ["suspended", "已停用"], ["banned", "已封禁"]] : [["", "All status"], ["active", "active"], ["suspended", "suspended"], ["banned", "banned"]];
-  return `
-    <section class="admin-toolbar os-card">
-      <input id="admin-user-search" class="os-search" placeholder="${zh ? "搜索用户、邮箱、ID..." : "Search users, email, ID..."}">
-      <select id="admin-role-filter">${roleOptions.map(option => `<option value="${option[0]}">${option[1]}</option>`).join("")}</select>
-      <select id="admin-status-filter">${statusOptions.map(option => `<option value="${option[0]}">${option[1]}</option>`).join("")}</select>
-    </section>
-    <section class="os-card admin-table-card">
-      <div class="admin-section-head"><h2>${zh ? "用户列表" : "Users"}</h2><span id="admin-users-count">0</span></div>
-      <div id="admin-users-table" class="admin-data-table admin-user-table admin-list-skeleton"></div>
-    </section>
-    <section class="os-card admin-detail-card" id="admin-user-detail">
-      <h2>${zh ? "用户详情" : "User Detail"}</h2>
-      <div id="admin-user-detail-body" class="admin-empty">${zh ? "选择一位用户查看最近登录和操作记录。" : "Select a user to review recent logins and operations."}</div>
-    </section>
-  `;
-}
-
-export function adminRolesContent(zh) {
-  return `
-    <section class="os-card admin-role-summary">
-      <div class="admin-section-head">
-        <h2>${zh ? "RBAC 角色权限" : "RBAC Roles"}</h2>
-        <button id="admin-save-permissions" class="admin-primary" disabled>${zh ? "保存权限" : "Save permissions"}</button>
-      </div>
-      <p>${zh ? "角色用于控制成员可访问的功能。普通成员适合日常使用，不具备用户管理、角色权限调整或管理级审计访问能力；管理员与编辑者应仅授予确有需要的账号。所有权限调整都会保留操作记录。" : "Roles control which features members can access. Members are intended for everyday use and cannot manage users, change role permissions, or access administrator-only audit data. Administrator and editor roles should be granted only when needed. Permission changes are recorded."}</p>
-      <div id="admin-unsaved-bar" class="admin-unsaved" hidden>${zh ? "有未保存的权限变更" : "Unsaved permission changes"}</div>
-    </section>
-    <section id="admin-role-cards" class="admin-role-cards admin-list-skeleton"></section>
-    <section class="os-card admin-table-card">
-      <div class="admin-section-head"><h2>${zh ? "权限矩阵" : "Permission Matrix"}</h2><span>${zh ? "分组开关" : "Grouped switches"}</span></div>
-      <div id="admin-permission-matrix" class="admin-permission-matrix admin-list-skeleton"></div>
-    </section>
-  `;
-}
-
-export function adminLogsContent(zh) {
-  const actions = zh
-    ? [["", "全部动作"], ["auth.login.failed", "登录失败"], ["user.role.update", "修改用户角色"], ["user.ban", "封禁用户"], ["user.unban", "解除封禁"], ["user.suspend", "停用用户"], ["role.permissions.update", "修改角色权限"]]
-    : [["", "All actions"], ["auth.login.failed", "auth.login.failed"], ["user.role.update", "user.role.update"], ["user.ban", "user.ban"], ["user.unban", "user.unban"], ["user.suspend", "user.suspend"], ["role.permissions.update", "role.permissions.update"]];
-  const severities = zh ? [["", "全部级别"], ["info", "信息"], ["warning", "警告"], ["danger", "危险"]] : [["", "All severity"], ["info", "info"], ["warning", "warning"], ["danger", "danger"]];
-  return `
-    <section class="admin-toolbar os-card">
-      <input id="admin-log-search" class="os-search" placeholder="${zh ? "搜索描述、对象、动作..." : "Search description, target, action..."}">
-      <select id="admin-log-action">${actions.map(action => `<option value="${action[0]}">${action[1]}</option>`).join("")}</select>
-      <select id="admin-log-severity">${severities.map(severity => `<option value="${severity[0]}">${severity[1]}</option>`).join("")}</select>
-      <input id="admin-log-actor" placeholder="${zh ? "用户邮箱 / ID" : "Actor email / ID"}">
-      <input id="admin-log-from" type="date">
-      <input id="admin-log-to" type="date">
-    </section>
-    <section class="os-card admin-table-card">
-      <div class="admin-section-head"><h2>${zh ? "操作日志" : "Operation Logs"}</h2><span id="admin-logs-count">0</span></div>
-      <div id="admin-logs-list" class="admin-log-timeline admin-list-skeleton"></div>
-    </section>
-    <aside id="admin-log-drawer" class="admin-drawer" aria-hidden="true">
-      <button id="admin-log-drawer-close" class="admin-ghost">×</button>
-      <div id="admin-log-drawer-body"></div>
-    </aside>
-  `;
 }
 
 export function settingsContent(path, zh) {

@@ -17,22 +17,24 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 
 ## UI modules
 
-- `ui-core.js` — shared HTML/runtime primitives plus cross-domain audit/security and Admin client runtime that has not yet been fully separated by product domain.
-- `ui-shell.js` — Studio OS shell, navigation, route dispatch, bootstrap, shared Hub composition and remaining coarse product content.
+- `ui-core.js` — shared HTML/runtime primitives plus cross-domain account/security audit runtime; product-specific Profile and Admin client applications have moved to their owning modules.
+- `ui-shell.js` — Studio OS shell, navigation, route dispatch, authorization/session bootstrap, shared Hub composition and remaining coarse Information/Workspace/Dashboard content.
 - `ui-profile.js` — Phase 3A Profile-owned detail/account/preferences rendering and Profile-home personalization/link/media client runtime.
 - `ui-settings.js` — Phase 3B Settings-owned General, Appearance, Language and Account & Security rendering.
 - `ui-storage.js` — Phase 3B private Storage page rendering and browser client runtime; consumes the shared storage-size limit from `config.js`.
+- `ui-admin.js` — Phase 3C Admin-owned General/Users/Roles/Logs/System rendering plus the Admin browser client application.
 - `ui-styles.js` — Studio OS CSS; product-specific styles remain here until a later safe extraction requires moving them.
 - `auth-pages.js` — Studio sign-up, login and not-found pages.
 
-The `/profile` and `/settings` Hubs remain in `ui-shell.js` because they use Hub-card primitives shared across Profile, Admin and Settings. `settingsContent()` also remains in the shell as route composition/dispatch.
+The `/profile`, `/settings`, and `/admin` Hubs remain in `ui-shell.js` because they use Hub-card primitives shared across product domains. Their route dispatchers also remain shell-owned composition points.
 
-Shared account/security audit client code remains in `ui-core.js`: Profile Account and Settings Security consume the same login/device/audit runtime, so moving it into either product module would create the wrong ownership direction.
+Admin authorization remains shell-owned: `is_admin`, the Admin lock, warm snapshot restore and authenticated bootstrap are intentionally not part of `ui-admin.js`. Shared account/security audit client code also remains in `ui-core.js` because Profile Account and Settings Security consume the same login/device/audit runtime.
 
 Detailed extraction boundaries:
 
 - [`../docs/STUDIO_PHASE3_PROFILE_INVENTORY.md`](../docs/STUDIO_PHASE3_PROFILE_INVENTORY.md)
 - [`../docs/STUDIO_PHASE3_SETTINGS_STORAGE_INVENTORY.md`](../docs/STUDIO_PHASE3_SETTINGS_STORAGE_INVENTORY.md)
+- [`../docs/STUDIO_PHASE3_ADMIN_INVENTORY.md`](../docs/STUDIO_PHASE3_ADMIN_INVENTORY.md)
 
 ## Original monolith
 
