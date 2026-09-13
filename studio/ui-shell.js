@@ -2,6 +2,9 @@ import { TEXT } from "./config.js";
 import { escapeHtmlText } from "./html-utils.js";
 import { profileClientScript, profileContent } from "./ui-profile.js";
 import { adminClientScript, adminLogsContent, adminOverviewContent, adminRolesContent, adminSystemContent, adminUsersContent } from "./ui-admin.js";
+import { dashboardContent } from "./ui-dashboard.js";
+import { informationContent } from "./ui-information.js";
+import { workspaceContent } from "./ui-workspace.js";
 import { appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsGeneralContent } from "./ui-settings.js";
 import { storageClientScript, storageSettingsContent } from "./ui-storage.js";
 import { html, json } from "./routing.js";
@@ -517,15 +520,10 @@ export function renderOsNav(copy, activeSection, currentPath = "") {
 export function renderOsContent(path, copy) {
   const zh = copy.platform.includes("个人");
   if (path === "/dashboard") return dashboardContent(zh);
-  if (path === "/info") return statusContent(zh, "信息中心尚未接入", "收藏链接、笔记、摘要和 AI 对话目前没有持久化数据源。", "Information Center is not connected yet", "Saved links, notes, summaries, and AI conversations do not have persistent data sources yet.");
-  if (path === "/info/knowledge") return statusContent(zh, "知识库", "用于整理值得长期保留的知识内容，让信息更容易积累、查找和回顾。", "Knowledge Base", "Organize knowledge worth keeping so it remains easy to build on, find, and revisit.");
-  if (path === "/info/links") return linksContent(zh);
-  if (path === "/info/notes") return notesContent(zh);
-  if (path === "/info/summaries") return summariesContent(zh);
-  if (path === "/info/search") return searchContent(zh);
+  if (path.startsWith("/info")) return informationContent(path, zh, statusContent);
   if (path === "/profile") return profileHubContent(zh);
   if (path.startsWith("/profile/")) return profileContent(path, zh);
-  if (path.startsWith("/workspace")) return workspaceContent(path, zh);
+  if (path.startsWith("/workspace")) return workspaceContent(path, zh, statusContent);
   if (path.startsWith("/admin")) return adminContent(path, zh);
   if (path.startsWith("/settings")) return settingsContent(path, zh);
   throw new Error("Unhandled OS path: " + path);
@@ -533,156 +531,6 @@ export function renderOsContent(path, copy) {
 
 export function statusContent(zh, zhTitle, zhBody, enTitle, enBody) {
   return `<section class="os-card is-large"><h2>${zh ? zhTitle : enTitle}</h2><p>${zh ? zhBody : enBody}</p></section>`;
-}
-
-export function dashboardIcon(name) {
-  const icons = {
-    profile: '<circle cx="12" cy="8" r="3.2"/><path d="M5.5 19c.9-3.2 3.2-5 6.5-5s5.6 1.8 6.5 5"/>',
-    workbench: '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M8 9h8M8 13h5"/>',
-    storage: '<path d="M4 7.5C4 5.6 7.6 4 12 4s8 1.6 8 3.5S16.4 11 12 11 4 9.4 4 7.5z"/><path d="M4 7.5v4C4 13.4 7.6 15 12 15s8-1.6 8-3.5v-4M4 11.5v4C4 17.4 7.6 19 12 19s8-1.6 8-3.5v-4"/>',
-    links: '<path d="M9.5 14.5l5-5M7.2 16.8l-1.3 1.3a3.2 3.2 0 01-4.5-4.5l3.4-3.4a3.2 3.2 0 014.5 0M16.8 7.2l1.3-1.3a3.2 3.2 0 014.5 4.5l-3.4 3.4a3.2 3.2 0 01-4.5 0"/>',
-    security: '<path d="M12 3l7 3v5c0 4.4-2.6 7.8-7 10-4.4-2.2-7-5.6-7-10V6l7-3z"/><path d="M9.3 12l1.8 1.8 3.7-4"/>',
-    settings: '<circle cx="12" cy="12" r="3"/><path d="M19 12a7.4 7.4 0 00-.1-1l2-1.5-2-3.4-2.5 1A8.3 8.3 0 0014.7 6L14.4 3h-4.8L9.3 6a8.3 8.3 0 00-1.7 1.1l-2.5-1-2 3.4 2 1.5a7.4 7.4 0 000 2l-2 1.5 2 3.4 2.5-1A8.3 8.3 0 009.3 18l.3 3h4.8l.3-3a8.3 8.3 0 001.7-1.1l2.5 1 2-3.4-2-1.5c.1-.3.1-.7.1-1z"/>',
-    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
-    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-    appearance: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 000 16z"/>',
-    language: '<path d="M4 5h10M9 5c-.2 5-2.3 8.3-5 10M6 9c1.8 2.8 4 4.8 7 6M14 10h6M17 7v10M14 17h6"/>'
-  };
-  return '<span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (icons[name] || icons.info) + '</svg></span>';
-}
-
-export function dashboardContent(zh) {
-  const prefix = zh ? "/zh-cn" : "/en";
-  const shortcuts = zh ? [
-    ["用户资料","完善你的头像、签名与主页","profile",`${prefix}/profile/details`],
-    ["工作台","进入工作区主要操作界面","workbench",`${prefix}/workspace/workbench`],
-    ["私人存储","管理当前账号的 R2 文件","storage",`${prefix}/settings/storage`],
-    ["收藏链接","打开你的链接收藏与常用入口","links",`${prefix}/info/links`],
-    ["账户与安全","查看设备、登录与安全记录","security",`${prefix}/settings/security`],
-    ["设置","外观、语言与其他偏好入口","settings",`${prefix}/settings`]
-  ] : [
-    ["Profile Details","Edit your photo, signature, and personal page","profile",`${prefix}/profile/details`],
-    ["Workbench","Open the main operating surface in Workspace","workbench",`${prefix}/workspace/workbench`],
-    ["Private Storage","Manage R2 files for this account","storage",`${prefix}/settings/storage`],
-    ["Saved Links","Open saved links and common destinations","links",`${prefix}/info/links`],
-    ["Account & Security","Review devices, sign-ins, and security records","security",`${prefix}/settings/security`],
-    ["Settings","Appearance, language, and preference entry points","settings",`${prefix}/settings`]
-  ];
-
-  const moduleRows = zh ? [
-    ["个人主页","已接入","头像、背景、个性签名、状态、兴趣与链接库。","profile",`${prefix}/profile`],
-    ["私人存储","已连接","Cloudflare R2 私人文件空间。","storage",`${prefix}/settings/storage`],
-    ["工作区","入口已建立","工作台、项目、实验、草稿与任务已有独立路由。","workbench",`${prefix}/workspace`],
-    ["信息中心","部分可用","收藏链接等入口可用，其余模块等待数据源。","info",`${prefix}/info`]
-  ] : [
-    ["Profile","Connected","Profile photo, background, signature, presence, interests, and links.","profile",`${prefix}/profile`],
-    ["Private Storage","Connected","Private Cloudflare R2 file space.","storage",`${prefix}/settings/storage`],
-    ["Workspace","Routes ready","Workbench, projects, experiments, drafts, and tasks have distinct routes.","workbench",`${prefix}/workspace`],
-    ["Information","Partially available","Saved links are available; other modules still await data sources.","info",`${prefix}/info`]
-  ];
-
-  return `
-    <section class="dashboard-welcome">
-      <div class="dashboard-welcome-copy">
-        <span class="dashboard-eyebrow">${zh ? "QssedA Studio" : "QssedA Studio"}</span>
-        <h2>${zh ? "欢迎回来" : "Welcome back"}</h2>
-        <p>${zh ? "从这里继续进入你的个人空间、工作区、收藏内容与私人存储。首页只展示真实可用的入口，不制造没有数据来源的统计数字。" : "Continue into your profile, workspace, saved content, and private storage. The dashboard only surfaces real entry points rather than invented statistics."}</p>
-        <div class="dashboard-welcome-actions">
-          <a class="dashboard-primary-action" href="${prefix}/workspace/workbench">${zh ? "打开工作台" : "Open Workbench"}<span>›</span></a>
-          <a class="dashboard-secondary-action" href="${prefix}/profile/details">${zh ? "编辑用户资料" : "Edit Profile"}<span>›</span></a>
-        </div>
-      </div>
-      <div class="dashboard-today-card" aria-label="${zh ? "本次访问" : "This visit"}">
-        ${dashboardIcon("clock")}
-        <div>
-          <small>${zh ? "本次访问" : "This visit"}</small>
-          <strong id="dashboard-live-time">--:--</strong>
-          <span id="dashboard-live-date">----</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="dashboard-section">
-      <div class="dashboard-section-head">
-        <div><small>${zh ? "快速开始" : "Quick Start"}</small><h2>${zh ? "继续使用" : "Continue"}</h2></div>
-        <span>${zh ? "常用入口" : "Common destinations"}</span>
-      </div>
-      <div class="dashboard-shortcuts">
-        ${shortcuts.map(item => `<a class="dashboard-shortcut" href="${item[3]}">${dashboardIcon(item[2])}<span><strong>${item[0]}</strong><small>${item[1]}</small></span><b aria-hidden="true">›</b></a>`).join("")}
-      </div>
-    </section>
-
-    <section class="dashboard-split">
-      <article class="os-card dashboard-module-card">
-        <div class="dashboard-section-head compact">
-          <div><small>${zh ? "Studio 概览" : "Studio Overview"}</small><h2>${zh ? "当前模块" : "Current Modules"}</h2></div>
-        </div>
-        <div class="dashboard-module-list">
-          ${moduleRows.map(row => `<a href="${row[4]}">${dashboardIcon(row[3])}<span><strong>${row[0]}</strong><small>${row[2]}</small></span><em>${row[1]}</em><b aria-hidden="true">›</b></a>`).join("")}
-        </div>
-      </article>
-
-      <article class="os-card dashboard-session-card">
-        <div class="dashboard-section-head compact">
-          <div><small>${zh ? "当前环境" : "Current Environment"}</small><h2>${zh ? "本次使用" : "This Session"}</h2></div>
-        </div>
-        <div class="dashboard-session-facts">
-          <div>${dashboardIcon("appearance")}<span><small>${zh ? "外观" : "Appearance"}</small><strong id="dashboard-theme-label">—</strong></span></div>
-          <div>${dashboardIcon("language")}<span><small>${zh ? "语言" : "Language"}</small><strong>${zh ? "简体中文" : "English"}</strong></span></div>
-          <div>${dashboardIcon("storage")}<span><small>${zh ? "存储" : "Storage"}</small><strong>Cloudflare R2</strong></span></div>
-        </div>
-        <a class="dashboard-session-settings" href="${prefix}/settings">${zh ? "管理设置" : "Manage settings"}<span>›</span></a>
-      </article>
-    </section>
-
-    <section class="os-card dashboard-activity-card">
-      <div class="dashboard-section-head compact">
-        <div><small>${zh ? "活动" : "Activity"}</small><h2>${zh ? "最近动态" : "Recent Activity"}</h2></div>
-      </div>
-      <div class="dashboard-empty-activity">
-        <span></span>
-        <strong>${zh ? "暂时没有统一活动流" : "No unified activity feed yet"}</strong>
-        <p>${zh ? "项目、实验、草稿和任务的数据模型接入后，这里再展示真实的最近活动；目前不使用示例数据冒充历史记录。" : "Real recent activity will appear here after projects, experiments, drafts, and tasks share persistent data. Placeholder activity is intentionally not shown as history."}</p>
-        <a href="${prefix}/workspace">${zh ? "查看工作区" : "View Workspace"} <b>›</b></a>
-      </div>
-    </section>
-
-    <script>
-      (() => {
-        const time = document.getElementById("dashboard-live-time");
-        const date = document.getElementById("dashboard-live-date");
-        const theme = document.getElementById("dashboard-theme-label");
-        const zh = ${zh ? "true" : "false"};
-        const paint = () => {
-          const now = new Date();
-          if (time) time.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { hour:"2-digit", minute:"2-digit", hour12:false }).format(now);
-          if (date) date.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { year:"numeric", month:"long", day:"numeric", weekday:"short" }).format(now);
-          if (theme) {
-            const current = document.documentElement.dataset.theme || "light";
-            theme.textContent = current === "dark" ? (zh ? "深色" : "Dark") : (zh ? "浅色" : "Light");
-          }
-        };
-        paint();
-        window.setInterval(paint, 30000);
-        new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
-      })();
-    </script>
-  `;
-}
-export function linksContent(zh) {
-  return `<section class="os-card is-large"><h2>${zh ? "尚未接入收藏链接" : "Saved links are not connected yet"}</h2><p>${zh ? "当前数据库没有收藏链接表，因此这里不再展示固定示例链接或伪造收藏时间。" : "There is no saved-links table in the current database, so this page no longer shows fixed sample links or fabricated saved dates."}</p></section>`;
-}
-
-export function notesContent(zh) {
-  return `<section class="os-card is-large"><h2>${zh ? "笔记存储尚未接入" : "Note storage is not connected yet"}</h2><p>${zh ? "当前没有 notes 数据表或保存接口，因此这里不再显示一个看似可编辑但无法持久化的 Markdown 编辑器。" : "There is no notes table or save API, so this page no longer presents an editor that looks functional but cannot persist changes."}</p></section>`;
-}
-
-export function summariesContent(zh) {
-  return statusContent(zh, "摘要数据尚未接入", "当前没有用于保存 B 站、YouTube、网页或 PDF 摘要的数据源。", "Summary data is not connected yet", "There is no persistent data source for Bilibili, YouTube, webpage, or PDF summaries yet.");
-}
-
-export function searchContent(zh) {
-  return `<section class="os-card is-large"><h2>${zh ? "全局搜索尚未接入" : "Global search is not connected yet"}</h2><p>${zh ? "当前没有笔记、链接、项目或聊天记录的数据索引，因此不展示无实际搜索行为的输入框。" : "There is no index for notes, links, projects, or chat records yet, so this page does not show a search box with no real search behavior."}</p></section>`;
 }
 
 export function osHubIcon(name) {
@@ -791,15 +639,6 @@ export function settingsHubContent(zh) {
     { title:"Storage", meta:"Connected", description:"Manage private Cloudflare R2 files for this account.", href:`${prefix}/settings/storage`, icon:"storage" }
   ];
   return osHubGrid(items, "settings-hub-grid");
-}
-
-export function workspaceContent(path, zh) {
-  if (path.endsWith("/workbench")) return statusContent(zh, "工作台数据尚未接入", "工作台是工作区中的主要操作界面；当前尚未建立独立的持久化工作台数据模型。", "Workbench data is not connected yet", "The Workbench is the primary operating surface inside Workspace; a dedicated persistent workbench data model has not been established yet.");
-  if (path.endsWith("/projects")) return statusContent(zh, "项目数据尚未接入", "当前数据库没有 projects 表，因此不展示项目名称、状态或完成百分比。", "Project data is not connected yet", "There is no projects table in the current database, so project names, statuses, and completion percentages are not shown.");
-  if (path.endsWith("/experiments")) return statusContent(zh, "实验工具尚未接入", "Prompt、Agent 和 API 实验目前没有持久化数据或独立工具接口。", "Experiment tools are not connected yet", "Prompt, agent, and API experiments do not currently have persistent data or dedicated tool APIs.");
-  if (path.endsWith("/drafts")) return statusContent(zh, "草稿存储尚未接入", "当前数据库没有 drafts 表或草稿保存接口。", "Draft storage is not connected yet", "There is no drafts table or draft persistence API yet.");
-  if (path.endsWith("/tasks")) return statusContent(zh, "任务数据尚未接入", "当前数据库没有 tasks 表，因此不展示 Todo 或 Kanban 数据。", "Task data is not connected yet", "There is no tasks table in the current database, so Todo or Kanban data is not shown.");
-  return statusContent(zh, "工作区数据尚未接入", "项目、实验、草稿和任务目前没有统一的持久化工作区数据模型。", "Workspace data is not connected yet", "Projects, experiments, drafts, and tasks do not yet have a unified persistent workspace data model.");
 }
 
 export function adminContent(path, zh) {
