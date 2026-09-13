@@ -1,0 +1,52 @@
+name: Studio Worker Check
+
+on:
+  pull_request:
+    paths:
+      - "worker.js"
+      - "studio/**"
+      - "wrangler.jsonc"
+      - ".github/workflows/studio-check.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "worker.js"
+      - "studio/**"
+      - "wrangler.jsonc"
+      - ".github/workflows/studio-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check Studio JavaScript syntax
+        run: |
+          node --check worker.js
+          for file in studio/*.js; do node --check "$file"; done
+
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check
+
+      - name: Validate Studio Wrangler JSONC shape
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const text = fs.readFileSync('wrangler.jsonc', 'utf8')
+            .replace(/^\s*\/\/.*$/gm, '')
+            .replace(/\/\*[\s\S]*?\*\//g, '');
+          const config = JSON.parse(text);
+          if (config.main !== 'worker.js') throw new Error('wrangler.jsonc must retain the worker.js compatibility facade');
+          if (!Array.isArray(config.r2_buckets) || !config.r2_buckets.some(b => b.binding === 'STORAGE' && b.bucket_name === 'qsseda-studio-storage')) {
+            throw new Error('Studio STORAGE R2 binding is missing');
+          }
+          console.log('Studio Wrangler configuration looks valid.');
+          NODE

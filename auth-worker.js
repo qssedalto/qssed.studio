@@ -13,6 +13,7 @@ const OAUTH_PATHS = new Set([
   "/api/oauth/authorize",
   "/oauth/token",
   "/oauth/revoke",
+  "/oauth/introspect",
   "/.well-known/oauth-authorization-server"
 ]);
 

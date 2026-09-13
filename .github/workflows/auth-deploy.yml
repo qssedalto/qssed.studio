@@ -19,7 +19,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check Auth Worker syntax
-        run: node --check auth-worker.js
+        run: |
+          node --check auth-entry.js
+          node --check auth-worker.js
+          node --check auth-oauth.js
+          node --check auth-pkce-test.js
+
+      - name: Bundle Auth Worker
+        run: npx --yes wrangler@4 deploy -c wrangler.auth.jsonc --dry-run --outdir .wrangler-auth-check
 
       - name: Deploy auth.qsseda.studio
         env:

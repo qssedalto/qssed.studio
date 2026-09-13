@@ -21,6 +21,7 @@ QssedA Auth implements the Authorization Code flow with PKCE and requires `S256`
 - `POST /api/oauth/authorize` — issues a short-lived one-time authorization code after explicit approval.
 - `POST /oauth/token` — exchanges an authorization code + `code_verifier`, or rotates a refresh token.
 - `POST /oauth/revoke` — revokes a QssedA access or refresh token.
+- `POST /oauth/introspect` — allows an authenticated QssedA resource server to validate an opaque access token.
 - `GET /.well-known/oauth-authorization-server` — publishes OAuth server metadata.
 
 Authorization codes expire after **5 minutes** and are single-use. Access tokens expire after **30 minutes**. Refresh tokens expire after **30 days** and rotate every time they are used.
@@ -94,6 +95,14 @@ The registry enforces an allow-list of redirect URIs and scopes. Authorization-c
 
 The OAuth tables have RLS enabled and are not directly readable/writable by browser API roles. Protocol operations are performed through narrowly scoped database functions. Internal hashing/redirect helper functions are not executable by `anon` or `authenticated` roles, and authorization-code issuance is available only in an authenticated Supabase context.
 
+## Resource-server token validation
+
+QssedA application access tokens are opaque, so API/resource servers validate them through `POST /oauth/introspect`. This endpoint is not a public-client API: the caller must authenticate with HTTP Basic credentials for a registered resource server.
+
+Resource-server credentials are represented by `oauth_resource_servers`. Only a SHA-256 hash of the resource-server secret is persisted, and a resource server can be restricted to tokens issued for specific OAuth client IDs. Invalid server credentials fail with `401 invalid_client`; a valid server querying an invalid, expired, revoked, inactive-account, or disallowed-client token receives `{ "active": false }`.
+
+The raw database introspection RPC is not executable by `anon` or `authenticated`; browser and desktop public clients therefore cannot use it as a token oracle.
+
 ## Browser session model
 
 The Auth portal keeps the Supabase access and refresh tokens in host-only `__Host-` cookies with `HttpOnly`, `Secure`, `Path=/`, and `SameSite=Lax`.
@@ -129,11 +138,14 @@ Production deployment validates and deploys both `auth-worker.js` and the OAuth 
 
 ## Files
 
+- `auth-entry.js` — Auth Worker entrypoint and PKCE self-test dispatch
 - `auth-worker.js` — browser Auth UI, sessions, account status, Studio handoff, OAuth route dispatch
-- `auth-oauth.js` — OAuth metadata, authorization/consent, token exchange, refresh and revocation
+- `auth-oauth.js` — OAuth metadata, authorization/consent, token exchange, refresh, revocation and protected introspection
+- `auth-pkce-test.js` — browser PKCE self-test
 - `wrangler.auth.jsonc` — Auth Cloudflare Worker configuration
 - `supabase/migrations/202609130955_oauth_pkce_v1.sql` — OAuth schema, RPCs and initial public client
 - `supabase/migrations/202609131005_oauth_pkce_privilege_hardening.sql` — OAuth RPC privilege hardening
+- `supabase/migrations/202609131150_oauth_resource_server_introspection_v1.sql` — authenticated resource-server introspection
 
 ## Security notes
 

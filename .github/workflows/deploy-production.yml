@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - worker.js
+      - studio/**
       - auth-entry.js
       - auth-worker.js
       - auth-oauth.js
@@ -33,6 +34,7 @@ jobs:
       - name: Validate Workers
         run: |
           node --check worker.js
+          for file in studio/*.js; do node --check "$file"; done
           node --check auth-entry.js
           node --check auth-worker.js
           node --check auth-oauth.js
