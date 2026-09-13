@@ -1,7 +1,7 @@
 import { ZH_COUNTRIES, ADMIN_EMAILS, TEXT } from "./config.js";
 import { html, json } from "./routing.js";
 import { auditClientScript } from "./ui-audit.js";
-import { baseHead, supabaseScript, themeScript, topControls } from "./ui-core.js";
+import { baseHead, supabaseScript, themeScript, topControls } from "./ui-page.js";
 
 export function notFoundPage(t, links) {
   const zh = t === TEXT.zh;

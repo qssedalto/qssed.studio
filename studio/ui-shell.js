@@ -9,7 +9,7 @@ import { appearanceSettingsContent, languageSettingsContent, securityAuditConten
 import { storageClientScript, storageSettingsContent } from "./ui-storage.js";
 import { html, json } from "./routing.js";
 import { auditClientScript } from "./ui-audit.js";
-import { baseHead, supabaseScript, themeScript, topControls } from "./ui-core.js";
+import { baseHead, supabaseScript, themeScript, topControls } from "./ui-page.js";
 import { osStyles } from "./ui-styles.js";
 
 export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
