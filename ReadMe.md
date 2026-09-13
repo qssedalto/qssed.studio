@@ -1,44 +1,73 @@
-# Git 恢复说明
+# QssedA Studio
 
-这个文件夹已经初始化为 Git 仓库，并保存了一次当前状态的快照。
+QssedA Studio is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.studio`.
 
-常用命令：
+## Runtime architecture
 
-```powershell
-git status
+```text
+qsseda.studio
+  worker.js                    compatibility entrypoint
+    -> studio/entry.js         Studio router
+       -> auth-handoff.js      Auth -> Studio browser-session handoff
+       -> account-api.js       registration, password login, login auditing
+       -> storage-api.js       authenticated R2 file operations
+       -> routing.js           locale/path/HTTP helpers
+       -> ui-core.js           shared HTML head and client scripts
+       -> ui-shell.js          Studio OS pages and settings panels
+       -> ui-styles.js         Studio OS styles
+       -> auth-pages.js        Studio login/sign-up/not-found pages
+       -> config.js            shared constants, copy and route tables
+
+auth.qsseda.studio
+  auth-entry.js
+    -> auth-worker.js          browser Auth/session/handoff
+    -> auth-oauth.js           OAuth 2.0 Authorization Code + PKCE
+    -> auth-pkce-test.js       browser PKCE self-test
+
+Supabase PostgreSQL
+  profiles / login_events / audit_logs
+  OAuth client, code and token tables
+
+Cloudflare R2
+  qsseda-studio-storage -> env.STORAGE
 ```
 
-查看当前文件有没有被修改。
+## Studio Worker
 
-```powershell
-git log --oneline
-```
+`worker.js` is intentionally tiny and remains the Wrangler entrypoint for compatibility. The implementation lives in `studio/` and is split by responsibility rather than by arbitrary file size.
 
-查看历史快照。每一行最前面的短编号就是提交编号。
+Public Studio server routes currently include:
 
-```powershell
-git restore 文件名
-```
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `POST /auth/handoff`
+- `GET /api/storage/files`
+- `POST /api/storage/upload`
+- `GET|DELETE /api/storage/object`
+- localized Studio UI routes under `/zh-cn/*` and `/en/*`
 
-把某个文件恢复到最近一次提交时的状态。
+The Studio Worker uses the `STORAGE` R2 binding and may use the protected Supabase server secret bindings already configured in production.
 
-```powershell
-git restore .
-```
+## Auth service
 
-把当前文件夹里所有已跟踪文件恢复到最近一次提交时的状态。
+See [`AUTH_PORTAL.md`](./AUTH_PORTAL.md) for browser sessions, Studio handoff, OAuth 2.0 + PKCE, token rotation/revocation and resource-server token introspection.
 
-```powershell
-git checkout 提交编号 -- .
-```
+## CI/CD
 
-把整个文件夹恢复到某个历史提交的内容。先用 `git log --oneline` 找到提交编号，再运行这条命令。
+- `Studio Worker Check` syntax-checks every `studio/*.js` module and runs a Wrangler dry-run bundle.
+- `Auth Worker Check` validates and bundles the independent Auth Worker.
+- `Deploy QssedA Production` deploys Studio and Auth from `main` after relevant files change.
+- `Deploy QssedA Auth` remains available as a manual Auth-only production deployment.
 
-注意：Git 只能恢复已经提交过的历史。以后做完一轮重要修改，可以运行：
+Production deployment is intentionally keyed to both `worker.js` and `studio/**`, so changing an implementation module cannot bypass deployment automation.
 
-```powershell
-git add .
-git commit -m "说明这次修改"
-```
+## Development safety
 
-这样之后就能回到这次修改前后的版本。
+Before merging structural Worker changes:
+
+1. JavaScript syntax must pass.
+2. Wrangler must successfully bundle the Worker.
+3. Route behavior should be smoke-tested against the previous implementation when doing a structural refactor.
+4. Secrets must remain in Cloudflare/GitHub secret storage rather than source control.
+
+Git history remains the recovery mechanism for previous versions; large historical snapshots in the repository are not part of the active runtime architecture.
