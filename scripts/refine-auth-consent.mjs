@@ -45,3 +45,4 @@ text = text.replace('<h1>无法授权</h1><p>${escapeHtml(description)}</p><div 
 
 fs.writeFileSync(file, text);
 console.log('Auth consent UI refined.');
+// Triggered intentionally after workflow registration.
