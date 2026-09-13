@@ -4,6 +4,8 @@ import { profileClientScript, profileContent, profileHubContent } from "./ui-pro
 import { adminClientScript, adminHubContent, adminLogsContent, adminOverviewContent, adminRolesContent, adminSystemContent, adminUsersContent } from "./ui-admin.js";
 import { dashboardContent } from "./ui-dashboard.js";
 import { informationContent } from "./ui-information.js";
+import { knowledgeSearchClientScript } from "./knowledge-search.js";
+import { compactBackHref, compactBackScript } from "./ui-navigation.js";
 import { knowledgePageMeta } from "./ui-knowledge.js";
 import { workspaceContent } from "./ui-workspace.js";
 import { appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsFallbackContent, settingsGeneralContent, settingsHubContent } from "./ui-settings.js";
@@ -22,6 +24,8 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
   const activeSection = page.section;
   const adminPath = path.startsWith("/admin");
   const dashboardPath = path === "/dashboard";
+  const knowledgePath = path.startsWith("/info/knowledge");
+  const compactBackUrl = compactBackHref(path, zh);
 
   return `
 <!DOCTYPE html>
@@ -46,10 +50,11 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
 <body class="os-shell" data-admin-path="${adminPath ? "true" : "false"}">
   ${topControls(links, t)}
   <div id="compact-back-zone" class="compact-back-zone">
-    <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${zh ? "返回导航" : "Back to navigation"}">
+    <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${zh ? "返回上一级" : "Back"}" data-fallback-href="${compactBackUrl}">
       <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
         <path d="M14.5 5.5 8 12l6.5 6.5"/>
       </svg>
+      <span>${zh ? "返回" : "Back"}</span>
     </button>
   </div>
   <div class="os-layout">
@@ -123,6 +128,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
   </div>
 
   ${supabaseScript()}
+  ${knowledgePath ? knowledgeSearchClientScript(zh) : ""}
   ${path === "/settings/storage" ? storageClientScript(zh, links.login) : ""}
   ${auditClientScript(ipInfo)}
   ${profileClientScript()}
@@ -131,7 +137,6 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
     const loginUrl = ${JSON.stringify(links.login)};
     const isAdminPath = document.body.dataset.adminPath === "true";
     const compactViewKey = "qssed-compact-view-v1";
-    const compactSidebarKey = "qssed-sidebar-scroll-v1";
     const compactMedia = window.matchMedia("(max-width:1050px)");
 
     function applyCompactViewMode() {
@@ -146,19 +151,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
       document.documentElement.classList.toggle("compact-menu-view", !showContent);
     }
 
-    function showCompactNavigation() {
-      if (!compactMedia.matches) return;
-      try { sessionStorage.setItem(compactViewKey, "menu"); } catch {}
-      document.documentElement.classList.remove("compact-content-view");
-      document.documentElement.classList.add("compact-menu-view");
-      const sidebar = document.getElementById("os-sidebar");
-      const saved = Number(sessionStorage.getItem(compactSidebarKey) || "0");
-      requestAnimationFrame(() => {
-        if (sidebar && Number.isFinite(saved)) sidebar.scrollTop = saved;
-      });
-    }
-
-    document.getElementById("compact-back-button")?.addEventListener("click", showCompactNavigation);
+    ${compactBackScript(path, zh)}
 
     const signOutButton = document.getElementById("os-signout-button");
     const signOutLabel = document.getElementById("os-signout-label");
