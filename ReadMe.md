@@ -48,6 +48,21 @@ Public Studio server routes currently include:
 
 The Studio Worker uses the `STORAGE` R2 binding and may use the protected Supabase server secret bindings already configured in production.
 
+## Modularization roadmap
+
+Studio modularization is intentionally staged. PR #23 completed **Phase 1 (boundary extraction)**; it did not define the final module layout.
+
+The frozen sequencing guide and current dependency graph are documented in [`docs/STUDIO_WORKER_MODULARIZATION.md`](./docs/STUDIO_WORKER_MODULARIZATION.md).
+
+Current order:
+
+1. ✅ Phase 1 — boundary extraction
+2. ⏭️ Phase 2 — backend/shared-server dependency separation
+3. ⛔ Phase 3 — frontend product-domain separation
+4. ⛔ Phase 4 — shared-layer cleanup and consolidation
+
+Do not skip directly to splitting `ui-core.js` / `ui-shell.js` by product domain before Phase 2 is complete.
+
 ## Auth service
 
 See [`AUTH_PORTAL.md`](./AUTH_PORTAL.md) for browser sessions, Studio handoff, OAuth 2.0 + PKCE, token rotation/revocation and resource-server token introspection.
@@ -69,5 +84,6 @@ Before merging structural Worker changes:
 2. Wrangler must successfully bundle the Worker.
 3. Route behavior should be smoke-tested against the previous implementation when doing a structural refactor.
 4. Secrets must remain in Cloudflare/GitHub secret storage rather than source control.
+5. Structural work must follow the active phase in the modularization roadmap; do not mix later-phase cleanup into the same PR.
 
 Git history remains the recovery mechanism for previous versions; large historical snapshots in the repository are not part of the active runtime architecture.
