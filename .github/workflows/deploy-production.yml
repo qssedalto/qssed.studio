@@ -7,6 +7,7 @@ on:
     paths:
       - worker.js
       - auth-worker.js
+      - auth-oauth.js
       - wrangler.jsonc
       - wrangler.auth.jsonc
       - .github/workflows/deploy-production.yml
@@ -31,6 +32,7 @@ jobs:
         run: |
           node --check worker.js
           node --check auth-worker.js
+          node --check auth-oauth.js
 
       - name: Deploy QssedA Studio
         env:
