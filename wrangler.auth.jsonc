@@ -5,6 +5,7 @@
   "compatibility_date": "2026-09-12",
   "workers_dev": false,
   "preview_urls": true,
+  // Deployment touchpoint for the refined user-facing authorization UI.
   "routes": [
     {
       "pattern": "auth.qsseda.studio",
