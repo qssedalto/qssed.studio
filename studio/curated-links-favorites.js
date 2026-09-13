@@ -58,7 +58,7 @@ export function curatedLinksFavoritesEnhancer(zh) {
     const localSection=document.createElement('section');
     localSection.className='curated-local-favorites';
     localSection.dataset.curatedLocalFavorites='';
-    localSection.innerHTML='<div class="curated-local-favorites-head"><h2>${favoriteLabel}<span class="curated-favorite-count" data-favorite-count>0</span></h2><p data-favorite-storage-label>${localLabel}</p></div><div class="curated-local-favorites-grid" data-favorite-grid></div><div class="curated-local-favorites-empty" data-favorite-empty><strong>${emptyLabel}</strong><span>${emptyHint}</span></div>';
+    localSection.innerHTML='<div class="curated-local-favorites-head"><h2>${favoriteLabel}<span class="curated-favorite-count" data-favorite-count>0</span></h2><p data-favorite-storage-label>${syncingLabel}</p></div><div class="curated-local-favorites-grid" data-favorite-grid></div><div class="curated-local-favorites-empty" data-favorite-empty><strong>${emptyLabel}</strong><span>${emptyHint}</span></div>';
     const nav=root.querySelector('.curated-link-nav');
     if(nav)nav.after(localSection);else if(featured)featured.before(localSection);else root.prepend(localSection);
     const favoriteGrid=localSection.querySelector('[data-favorite-grid]');
@@ -243,6 +243,8 @@ export function curatedLinksFavoritesEnhancer(zh) {
     }
 
     refresh();
-    initializeAccount();
+    setStorageLabel('syncing');
+    if(document.readyState==='complete')initializeAccount();
+    else window.addEventListener('load',initializeAccount,{once:true});
   })();</script>`;
 }
