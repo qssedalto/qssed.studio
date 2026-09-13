@@ -1,0 +1,54 @@
+name: Fix Session Refresh Login Flash
+
+on:
+  push:
+    branches:
+      - fix/session-refresh-login-flash
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/session-refresh-login-flash
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Apply guarded session repair
+        run: node scripts/fix-session-refresh-login-flash.mjs
+
+      - name: Verify session repair markers
+        run: |
+          grep -F 'const hadCachedOsUser = ${JSON.stringify(Boolean(cachedOsUserLabel))};' studio/ui-shell.js
+          grep -F 'sessionResult = await supabaseClient.auth.getSession();' studio/ui-shell.js
+          grep -F 'window.location.replace(loginUrl);' studio/ui-shell.js
+          if grep -F 'const [userResult, adminResult] = await Promise.all([' studio/ui-shell.js; then exit 1; fi
+
+      - name: Check Studio JavaScript syntax
+        run: |
+          for file in studio/*.js; do node --check "$file"; done
+
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler@4 deploy --config wrangler.jsonc --dry-run --outdir .wrangler-session-refresh
+
+      - name: Remove one-shot repair files
+        run: |
+          rm -rf .wrangler-session-refresh
+          rm scripts/fix-session-refresh-login-flash.mjs
+          rm .github/workflows/fix-session-refresh-login-flash.yml
+
+      - name: Commit repaired runtime only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix(session): avoid refresh login bounce"
+          git push origin HEAD:fix/session-refresh-login-flash
