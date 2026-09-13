@@ -1,0 +1,113 @@
+name: Apply Studio Phase 3A Profile Extraction
+
+on:
+  push:
+    branches:
+      - refactor/studio-phase3-profile
+    paths:
+      - scripts/apply-studio-phase3-profile.mjs
+      - .github/workflows/apply-studio-phase3-profile.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Capture Profile baseline
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?baseline=' + Date.now());
+          const baseline = {};
+          for (const zh of [true, false]) {
+            const language = zh ? 'zh' : 'en';
+            for (const path of ['/profile', '/profile/details', '/profile/account', '/profile/preferences']) {
+              baseline[language + ':' + path] = shell.profileContent(path, zh);
+            }
+          }
+          fs.writeFileSync('/tmp/profile-render-baseline.json', JSON.stringify(baseline));
+
+          const coreText = fs.readFileSync('studio/ui-core.js', 'utf8');
+          const startMarker = '      /* PROFILE_HOME_V3 */';
+          const endMarker = '      async function hydrateProfileAudit(user) {';
+          const start = coreText.indexOf(startMarker);
+          const end = coreText.indexOf(endMarker, start + startMarker.length);
+          if (start < 0 || end < 0) throw new Error('Could not capture Profile runtime baseline');
+          fs.writeFileSync('/tmp/profile-runtime-baseline.txt', coreText.slice(start, end));
+          NODE
+
+      - name: Apply guarded Profile extraction
+        run: node scripts/apply-studio-phase3-profile.mjs
+
+      - name: Validate Studio JavaScript
+        run: |
+          node --check worker.js
+          for file in studio/*.js; do node --check "$file"; done
+
+      - name: Verify Profile ownership boundaries
+        run: |
+          test -f studio/ui-profile.js
+          ! grep -F '/* PROFILE_HOME_V3 */' studio/ui-core.js
+          ! grep -F 'export function profileContent' studio/ui-shell.js
+          ! grep -F 'export function accountAuditContent' studio/ui-shell.js
+          grep -F 'from "./ui-profile.js"' studio/ui-shell.js
+          grep -F 'if (path === "/profile") return profileHubContent(zh);' studio/ui-shell.js
+          grep -F '${profileClientScript()}' studio/ui-shell.js
+
+      - name: Compare Profile render output and moved runtime
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const baseline = JSON.parse(fs.readFileSync('/tmp/profile-render-baseline.json', 'utf8'));
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?after=' + Date.now());
+          const profile = await import(pathToFileURL('studio/ui-profile.js').href + '?after=' + Date.now());
+
+          for (const zh of [true, false]) {
+            const language = zh ? 'zh' : 'en';
+            const hubKey = language + ':/profile';
+            if (shell.profileHubContent(zh) !== baseline[hubKey]) {
+              throw new Error('Profile hub output changed for ' + language);
+            }
+            for (const path of ['/profile/details', '/profile/account', '/profile/preferences']) {
+              const key = language + ':' + path;
+              if (profile.profileContent(path, zh) !== baseline[key]) {
+                throw new Error('Profile render output changed for ' + key);
+              }
+            }
+          }
+
+          const runtimeBaseline = fs.readFileSync('/tmp/profile-runtime-baseline.txt', 'utf8');
+          const rendered = profile.profileClientScript();
+          const prefix = '<script>\n';
+          const suffix = '\n    </script>';
+          if (!rendered.startsWith(prefix) || !rendered.endsWith(suffix)) {
+            throw new Error('Profile client wrapper changed unexpectedly');
+          }
+          const movedRuntime = rendered.slice(prefix.length, -suffix.length);
+          if (movedRuntime !== runtimeBaseline) {
+            throw new Error('PROFILE_HOME_V3 runtime was not moved byte-for-byte');
+          }
+          console.log('Profile render outputs and runtime body are unchanged.');
+          NODE
+
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-phase3-profile-dry-run
+
+      - name: Commit Profile extraction and remove one-off files
+        run: |
+          rm -f scripts/apply-studio-phase3-profile.mjs
+          rm -f .github/workflows/apply-studio-phase3-profile.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add studio/ui-shell.js studio/ui-core.js studio/ui-profile.js docs/STUDIO_PHASE3_PROFILE_INVENTORY.md scripts/apply-studio-phase3-profile.mjs .github/workflows/apply-studio-phase3-profile.yml
+          git diff --cached --check
+          git commit -m "refactor(studio): extract Phase 3A Profile domain"
+          git push
