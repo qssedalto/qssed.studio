@@ -8,7 +8,8 @@ import { workspaceContent } from "./ui-workspace.js";
 import { appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsFallbackContent, settingsGeneralContent, settingsHubContent } from "./ui-settings.js";
 import { storageClientScript, storageSettingsContent } from "./ui-storage.js";
 import { html, json } from "./routing.js";
-import { auditClientScript, baseHead, supabaseScript, themeScript, topControls } from "./ui-core.js";
+import { auditClientScript } from "./ui-audit.js";
+import { baseHead, supabaseScript, themeScript, topControls } from "./ui-core.js";
 import { osStyles } from "./ui-styles.js";
 
 export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {

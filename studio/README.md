@@ -2,7 +2,7 @@
 
 The Studio Worker was extracted from the former monolithic `worker.js` in staged refactors. `worker.js` remains a compatibility facade that exports `studio/entry.js`.
 
-Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](../docs/STUDIO_WORKER_MODULARIZATION.md). Do not split modules by file size alone.
+Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](../docs/STUDIO_WORKER_MODULARIZATION.md). Phase 4 shared-layer sequencing is recorded in [`../docs/STUDIO_PHASE4_SHARED_INVENTORY.md`](../docs/STUDIO_PHASE4_SHARED_INVENTORY.md). Do not split modules by file size alone.
 
 ## Server and routing modules
 
@@ -17,7 +17,8 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 
 ## UI modules
 
-- `ui-core.js` — shared HTML/runtime primitives plus cross-domain account/security audit runtime; product-specific Profile and Admin client applications live in their owning modules.
+- `ui-core.js` — shared page infrastructure that currently includes the page head, Supabase bootstrap, top controls and theme/language runtime; the audit browser runtime no longer lives here after Phase 4A.
+- `ui-audit.js` — Phase 4A shared account/device/audit browser runtime used by Auth pages and the authenticated Studio shell. It preserves the existing browser globals, cache keys and Supabase audit/device contracts.
 - `ui-shell.js` — stable Studio OS composition layer: shell HTML, navigation/page metadata, top-level route dispatch, shared status/Hub primitives, authorization/session bootstrap and client-runtime ordering.
 - `ui-profile.js` — Profile detail/account/preferences rendering, Profile Hub, and Profile-home personalization/link/media client runtime.
 - `ui-settings.js` — Settings Hub, General/Appearance/Language/Account & Security rendering, and the Settings fallback overview.
@@ -29,17 +30,20 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 - `ui-styles.js` — Studio OS CSS; product-specific styles remain here until a later safe extraction requires moving them.
 - `auth-pages.js` — Studio sign-up, login and not-found pages.
 
-Phase 3 product ownership is now explicit. Product Hub renderers live with Profile/Admin/Settings, while the reusable Hub primitives (`osHubIcon`, `osHubCard`, `osHubGrid`) remain shell-owned. Likewise, `statusContent()` remains a shared shell primitive passed into Information/Workspace/Settings composition where required. Moving or normalizing those shared primitives is Phase 4 work, not Phase 3.
+Phase 3 product ownership is explicit. Product Hub renderers live with Profile/Admin/Settings, while the reusable Hub primitives (`osHubIcon`, `osHubCard`, `osHubGrid`) remain shell-owned. Likewise, `statusContent()` remains a shared shell primitive passed into Information/Workspace/Settings composition where required.
 
-Admin authorization remains shell-owned: `is_admin`, the Admin lock, warm snapshot restore and authenticated bootstrap are intentionally not part of `ui-admin.js`. Shared account/security audit client code remains in `ui-core.js` because Profile Account and Settings Security consume the same login/device/audit runtime.
+Phase 4A isolates the previously mixed audit runtime without changing its page order or browser API. Auth login still uses `getAuditDeviceId()`, `clearProfileUiCaches()` and `updateCurrentDevice()`, while the Studio shell still consumes `updateCurrentDevice()`, `hydrateProfileSummary()` and `hydrateProfileAudit()` from the rendered audit script.
 
-Detailed extraction boundaries:
+Admin authorization remains shell-owned: `is_admin`, the Admin lock, warm snapshot restore and authenticated bootstrap are intentionally not part of `ui-admin.js`.
+
+Detailed boundaries:
 
 - [`../docs/STUDIO_PHASE3_PROFILE_INVENTORY.md`](../docs/STUDIO_PHASE3_PROFILE_INVENTORY.md)
 - [`../docs/STUDIO_PHASE3_SETTINGS_STORAGE_INVENTORY.md`](../docs/STUDIO_PHASE3_SETTINGS_STORAGE_INVENTORY.md)
 - [`../docs/STUDIO_PHASE3_ADMIN_INVENTORY.md`](../docs/STUDIO_PHASE3_ADMIN_INVENTORY.md)
 - [`../docs/STUDIO_PHASE3_CONTENT_INVENTORY.md`](../docs/STUDIO_PHASE3_CONTENT_INVENTORY.md)
 - [`../docs/STUDIO_PHASE3_SHELL_INVENTORY.md`](../docs/STUDIO_PHASE3_SHELL_INVENTORY.md)
+- [`../docs/STUDIO_PHASE4_SHARED_INVENTORY.md`](../docs/STUDIO_PHASE4_SHARED_INVENTORY.md)
 
 ## Original monolith
 
