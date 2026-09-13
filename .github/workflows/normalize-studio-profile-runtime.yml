@@ -1,0 +1,63 @@
+name: Normalize Studio Profile Runtime Source
+
+on:
+  push:
+    branches:
+      - refactor/studio-phase3-profile
+    paths:
+      - scripts/normalize-studio-profile-runtime.mjs
+      - .github/workflows/normalize-studio-profile-runtime.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Capture rendered Profile client script
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const profile = await import(pathToFileURL('studio/ui-profile.js').href + '?before=' + Date.now());
+          fs.writeFileSync('/tmp/profile-client-before.txt', profile.profileClientScript());
+          NODE
+
+      - name: Normalize Profile runtime source
+        run: node scripts/normalize-studio-profile-runtime.mjs
+
+      - name: Validate readable source and behavior
+        run: |
+          node --check studio/ui-profile.js
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const before = fs.readFileSync('/tmp/profile-client-before.txt', 'utf8');
+          const profile = await import(pathToFileURL('studio/ui-profile.js').href + '?after=' + Date.now());
+          const after = profile.profileClientScript();
+          if (after !== before) throw new Error('Profile client script output changed during source normalization');
+          const source = fs.readFileSync('studio/ui-profile.js', 'utf8');
+          if (source.includes('const PROFILE_CLIENT_BODY = ')) throw new Error('Encoded Profile runtime constant still exists');
+          if (!source.includes('/* PROFILE_HOME_V3 */')) throw new Error('Readable PROFILE_HOME_V3 marker missing');
+          console.log('Readable source produces byte-identical Profile client script output.');
+          NODE
+          for file in studio/*.js; do node --check "$file"; done
+
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-profile-readable-dry-run
+
+      - name: Commit readable source and remove one-off files
+        run: |
+          rm -f scripts/normalize-studio-profile-runtime.mjs
+          rm -f .github/workflows/normalize-studio-profile-runtime.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add studio/ui-profile.js scripts/normalize-studio-profile-runtime.mjs .github/workflows/normalize-studio-profile-runtime.yml
+          git diff --cached --check
+          git commit -m "refactor(studio): keep Profile runtime source readable"
+          git push
