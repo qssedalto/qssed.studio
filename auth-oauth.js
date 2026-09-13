@@ -36,11 +36,6 @@ export async function handleOAuthRequest(request) {
     return handleRevoke(request);
   }
 
-  if (pathname === "/oauth/introspect") {
-    if (request.method !== "POST") return oauthError("invalid_request", "Method not allowed", 405);
-    return handleIntrospect(request);
-  }
-
   return oauthError("invalid_request", "OAuth endpoint not found", 404);
 }
 
@@ -195,7 +190,6 @@ function metadataResponse(origin) {
     authorization_endpoint: `${issuer}/authorize`,
     token_endpoint: `${issuer}/oauth/token`,
     revocation_endpoint: `${issuer}/oauth/revoke`,
-    introspection_endpoint: `${issuer}/oauth/introspect`,
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code", "refresh_token"],
     code_challenge_methods_supported: ["S256"],
