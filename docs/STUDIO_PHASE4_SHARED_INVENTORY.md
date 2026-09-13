@@ -8,7 +8,7 @@ This document freezes the initial Phase 4 shared-layer cleanup plan after Phase 
 - **Phase 4B — complete:** neutral shared page infrastructure lives in `ui-page.js`; the former `ui-core.js` ownership name is gone.
 - **Phase 4C — complete:** shared status/Hub render primitives live in `ui-primitives.js`, removing Shell-owned function injection into product modules.
 - **Phase 4D — complete:** only clearly bounded product CSS was extracted verbatim: Profile → `ui-style-profile.js`, Admin polish → `ui-style-admin.js`, Dashboard → `ui-style-dashboard.js`. Remaining Settings/Storage/Audit/Shell/Hub CSS stays aggregated because responsive/accessibility blocks intentionally cross ownership boundaries. Global CSS custom properties remain owned by `ui-page.js`.
-- **Phase 4E — in progress:** dead compatibility imports/helpers, historical snapshots and naming/directory leftovers are audited one evidence-backed item at a time.
+- **Phase 4E — complete:** removed the confirmed dead `json` routing import and non-runtime historical/browser-saved snapshots, while retaining the top-level Supabase baseline SQL because the current migration chain still depends on pre-existing baseline objects.
 
 ## Starting point
 
@@ -26,7 +26,7 @@ Phase 3 completed product-domain ownership:
 
 The Phase 4 audit found that the remaining mixed responsibilities now have stable consumers and can be cleaned up one boundary at a time.
 
-## Current import graph relevant to Phase 4
+## Starting import graph relevant to Phase 4
 
 ```text
 auth-handoff.js
@@ -51,7 +51,7 @@ ui-shell.js
     └── themeScript
 ```
 
-`ui-core.js` currently exports:
+`ui-core.js` originally exported:
 
 ```text
 baseHead
@@ -146,7 +146,7 @@ osHubGrid
 └── ui-shell.js
 ```
 
-These currently work through explicit function injection from `ui-shell.js`. This is structurally imperfect but safe and explicit. Because it does not create a bad product-to-product dependency, it is **not** the first Phase 4 target.
+At the start of Phase 4 these worked through explicit function injection from `ui-shell.js`. Phase 4C moved them to `ui-primitives.js`, so product modules now consume the neutral primitives directly.
 
 ## Phase 4 sequence
 
@@ -242,6 +242,8 @@ Every Phase 4 code slice must, at minimum:
 7. require Cloudflare branch Preview on the final PR head;
 8. require production `Validate Workers`, Studio deployment and Auth deployment after merge.
 
-## Next concrete task
+## Phase 4 completion
 
-Continue **Phase 4E** with evidence-backed cleanup only. The first confirmed dead item is the unused `json` import in `ui-shell.js`; after removing it, audit historical snapshots, obsolete compatibility helpers and naming/directory leftovers one item at a time. Every runtime-affecting slice must retain the Phase 4 byte-equivalence and deployment gates.
+Phase 4 is closed. 4A isolated the shared audit runtime, 4B established the neutral shared page module, 4C moved shared Hub/status primitives to a neutral owner, 4D extracted only clearly bounded product CSS, and 4E removed evidence-backed dead/history artifacts without deleting the still-required Supabase bootstrap SQL.
+
+Future feature or behavior work should be scoped independently rather than reopening Phase 4 merely to make files smaller. If the database bootstrap is later consolidated, first create a complete ordered baseline migration and prove a clean Supabase database can be rebuilt from migrations alone before removing the top-level baseline SQL.

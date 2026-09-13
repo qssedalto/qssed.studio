@@ -134,7 +134,7 @@ npx wrangler deploy -c wrangler.auth.jsonc
 
 `wrangler.auth.jsonc` declares `auth.qsseda.studio` as a Cloudflare Worker Custom Domain.
 
-Production deployment validates and deploys both `auth-worker.js` and the OAuth module `auth-oauth.js`.
+Production deployment validates and deploys the complete Auth entry graph: `auth-entry.js`, `auth-worker.js`, `auth-oauth.js`, and `auth-pkce-test.js`.
 
 ## Files
 
