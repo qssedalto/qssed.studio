@@ -1,0 +1,89 @@
+name: Apply Studio Phase 4E Dead Imports
+
+on:
+  push:
+    branches:
+      - refactor/studio-phase4e-dead-imports
+    paths:
+      - .github/workflows/apply-studio-phase4e-dead-imports.yml
+      - scripts/apply-studio-phase4e-dead-imports.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Capture complete Studio page baseline
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?before=' + Date.now());
+          const { TEXT, OS_PATHS } = await import(pathToFileURL('studio/config.js').href + '?before=' + Date.now());
+          const { buildLinks } = await import(pathToFileURL('studio/routing.js').href + '?before=' + Date.now());
+          const ipInfo = { ip: '203.0.113.77', country: 'CN', region: 'Jiangsu', city: 'Suzhou' };
+          const pages = {};
+          for (const locale of ['en', 'zh']) {
+            for (const route of Array.from(OS_PATHS).sort()) {
+              pages[locale + ':' + route] = shell.osPage(TEXT[locale], buildLinks(locale, route), route, ipInfo, '@cached-user');
+            }
+          }
+          fs.writeFileSync('/tmp/phase4e-dead-import-baseline.json', JSON.stringify(pages));
+          NODE
+
+      - name: Apply dead import cleanup
+        run: node scripts/apply-studio-phase4e-dead-imports.mjs
+
+      - name: Validate exact cleanup
+        run: |
+          for file in studio/*.js; do node --check "$file"; done
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const shell = fs.readFileSync('studio/ui-shell.js', 'utf8');
+          if (shell.includes('import { html, json } from "./routing.js";')) throw new Error('Obsolete json import remains');
+          if (!shell.includes('import { html } from "./routing.js";')) throw new Error('Expected routing html import missing');
+          const body = shell.slice(shell.indexOf('\n', shell.indexOf('from "./routing.js";')) + 1);
+          if (/\bjson\b/.test(body)) throw new Error('json identifier still appears in ui-shell.js body');
+          const doc = fs.readFileSync('docs/STUDIO_PHASE4_SHARED_INVENTORY.md', 'utf8');
+          for (const text of ['Phase 4A — complete', 'Phase 4B — complete', 'Phase 4C — complete', 'Phase 4D — complete', 'Phase 4E — in progress']) {
+            if (!doc.includes(text)) throw new Error('Missing implementation status: ' + text);
+          }
+          NODE
+
+      - name: Compare every registered Studio page
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const baseline = JSON.parse(fs.readFileSync('/tmp/phase4e-dead-import-baseline.json', 'utf8'));
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?after=' + Date.now());
+          const { TEXT, OS_PATHS } = await import(pathToFileURL('studio/config.js').href + '?after=' + Date.now());
+          const { buildLinks } = await import(pathToFileURL('studio/routing.js').href + '?after=' + Date.now());
+          const ipInfo = { ip: '203.0.113.77', country: 'CN', region: 'Jiangsu', city: 'Suzhou' };
+          for (const locale of ['en', 'zh']) {
+            for (const route of Array.from(OS_PATHS).sort()) {
+              const key = locale + ':' + route;
+              const current = shell.osPage(TEXT[locale], buildLinks(locale, route), route, ipInfo, '@cached-user');
+              if (current !== baseline[key]) throw new Error('Page changed: ' + key);
+            }
+          }
+          console.log('Every registered Studio page in EN/ZH is byte-identical.');
+          NODE
+
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler@4 deploy --config wrangler.jsonc --dry-run --outdir /tmp/wrangler-phase4e-dead-imports
+
+      - name: Commit Phase 4E cleanup and remove one-off files
+        run: |
+          rm -f .github/workflows/apply-studio-phase4e-dead-imports.yml scripts/apply-studio-phase4e-dead-imports.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add studio/ui-shell.js docs/STUDIO_PHASE4_SHARED_INVENTORY.md .github/workflows/apply-studio-phase4e-dead-imports.yml scripts/apply-studio-phase4e-dead-imports.mjs
+          git diff --cached --check
+          git commit -m "refactor(studio): remove dead routing import"
+          git push
