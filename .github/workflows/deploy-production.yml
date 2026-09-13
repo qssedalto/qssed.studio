@@ -9,6 +9,7 @@ on:
       - studio/**
       - auth-entry.js
       - auth-worker.js
+      - auth-login-identifier.js
       - auth-oauth.js
       - auth-pkce-test.js
       - wrangler.jsonc
@@ -37,6 +38,7 @@ jobs:
           for file in studio/*.js; do node --check "$file"; done
           node --check auth-entry.js
           node --check auth-worker.js
+          node --check auth-login-identifier.js
           node --check auth-oauth.js
           node --check auth-pkce-test.js
 
