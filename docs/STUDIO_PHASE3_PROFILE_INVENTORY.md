@@ -157,3 +157,17 @@ Before merge:
 6. shell script order remains `auditClientScript -> profileClientScript -> adminClientScript -> shell bootstrap`;
 7. representative Profile/Account routes are compared against the pre-extraction output or smoke-tested in Preview;
 8. production deployment succeeds after merge.
+
+### Implemented differential guard
+
+The final Phase 3A validation does not compare only source text. It fetches the pre-extraction `main` version of `ui-core.js`, renders its actual `auditClientScript()` output, and verifies:
+
+```text
+pre-extraction rendered audit script - rendered PROFILE_HOME_V3 block
+    == post-extraction auditClientScript()
+
+pre-extraction rendered PROFILE_HOME_V3 browser JavaScript block
+    == post-extraction profileClientScript() body
+```
+
+This is intentionally stronger than syntax or source-slice comparison because the old runtime lived inside a JavaScript template literal: escape sequences can make raw source differ from the JavaScript actually delivered to the browser. The extracted Profile runtime is kept as normal readable source while preserving the rendered browser code byte-for-byte.
