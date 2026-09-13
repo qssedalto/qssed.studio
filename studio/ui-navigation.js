@@ -4,6 +4,15 @@ function prefixFor(zh) {
   return zh ? "/zh-cn" : "/en";
 }
 
+const COMPACT_MENU_ROOTS = new Set([
+  "/dashboard",
+  "/info",
+  "/profile",
+  "/workspace",
+  "/admin",
+  "/settings"
+]);
+
 export function compactBackHref(path, zh) {
   const prefix = prefixFor(zh);
 
@@ -16,7 +25,6 @@ export function compactBackHref(path, zh) {
 
   const sectionRoots = ["/info", "/profile", "/workspace", "/admin", "/settings"];
   for (const root of sectionRoots) {
-    if (path === root) return `${prefix}/dashboard`;
     if (path.startsWith(root + "/")) return `${prefix}${root}`;
   }
 
@@ -26,28 +34,56 @@ export function compactBackHref(path, zh) {
 export function compactBackScript(path, zh) {
   const fallbackHref = compactBackHref(path, zh);
   const knowledgePath = path.startsWith(KNOWLEDGE_ROOT);
+  const menuRoot = COMPACT_MENU_ROOTS.has(path);
   return `
     const compactBackButton = document.getElementById("compact-back-button");
     const compactFallbackHref = ${JSON.stringify(fallbackHref)};
     const compactKnowledgePath = ${JSON.stringify(knowledgePath)};
+    const compactMenuRoot = ${JSON.stringify(menuRoot)};
+
+    // Mobile back is an icon control, not a text button. Keep the accessible
+    // label for screen readers while rendering only the chevron visually.
+    if (compactBackButton) {
+      compactBackButton.querySelector("span")?.remove();
+      compactBackButton.style.width = "48px";
+      compactBackButton.style.minWidth = "48px";
+      compactBackButton.style.height = "48px";
+      compactBackButton.style.minHeight = "48px";
+      compactBackButton.style.padding = "0";
+      compactBackButton.style.gap = "0";
+      compactBackButton.style.borderRadius = "50%";
+    }
+
+    function showCompactMenu() {
+      try { sessionStorage.setItem("qssed-compact-view-v1", "menu"); } catch {}
+      document.documentElement.classList.remove("compact-content-view");
+      document.documentElement.classList.add("compact-menu-view");
+      if (typeof applyCompactViewMode === "function") applyCompactViewMode();
+    }
 
     function goBackFromCompactContent() {
       if (!compactBackButton) return;
+
+      // Dashboard and the five main Studio sections are peers in the mobile
+      // navigation hierarchy. Their parent is the mobile menu, not Dashboard.
+      if (compactMenuRoot) {
+        showCompactMenu();
+        return;
+      }
 
       let referrer = null;
       try { referrer = document.referrer ? new URL(document.referrer) : null; } catch {}
       const sameOrigin = referrer?.origin === window.location.origin;
       const referrerIsKnowledge = sameOrigin && /\\/(?:zh-cn|en)\\/info\\/knowledge(?:\\/|$)/.test(referrer.pathname);
 
-      // Inside the Knowledge Base, preserve the real reading path when the previous
-      // document was also a Knowledge Base page (category, search page, article, etc.).
-      // A direct deep link has no safe in-product history, so it uses the deterministic
-      // parent route instead of leaving QssedA Studio.
+      // Preserve the actual reading path inside Knowledge when possible.
       if (compactKnowledgePath && referrerIsKnowledge && window.history.length > 1) {
         window.history.back();
         return;
       }
 
+      // Child pages use their deterministic parent route. The parent remains in
+      // content mode; pressing back once more from that top-level page opens menu.
       try { sessionStorage.setItem("qssed-compact-view-v1", "content"); } catch {}
       window.location.assign(compactFallbackHref);
     }
