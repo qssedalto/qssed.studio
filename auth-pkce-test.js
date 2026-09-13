@@ -28,34 +28,33 @@ function startPage(origin) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#07080a">
-  <title>PKCE 自检 · QssedA Auth</title>
+  <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+  <title>登录流程测试 · QssedA</title>
   <style>${css()}</style>
 </head>
 <body>
   <main class="shell">
-    <div class="brand"><div class="mark">Q</div><div><strong>QssedA Auth</strong><span>OAuth 2.0 + PKCE Self-Test</span></div></div>
+    <div class="brand"><div class="mark">Q</div><div><strong>QssedA</strong><span>登录流程测试</span></div></div>
     <section class="card">
-      <div class="eyebrow">开发者工具</div>
-      <h1>PKCE 自检</h1>
-      <p class="lead">不用桌面 GUI，也可以在当前浏览器完整验证 Authorization Code + PKCE (S256) 流程。</p>
+      <div class="hero-icon" aria-hidden="true">✓</div>
+      <h1>测试应用登录</h1>
+      <p class="lead">确认 QssedA 可以正常完成应用登录与授权。</p>
 
-      <div class="flow">
-        <div><b>1</b><span>生成 code_verifier / state</span></div>
-        <div><b>2</b><span>SHA-256 生成 code_challenge</span></div>
-        <div><b>3</b><span>进入 /authorize 并确认授权</span></div>
-        <div><b>4</b><span>用 code + verifier 换取 QssedA Token</span></div>
-      </div>
+      <button id="startButton" type="button">开始测试</button>
+      <a class="button secondary" href="/">返回</a>
+      <p id="message" class="message" role="status" aria-live="polite"></p>
 
-      <div class="meta"><span>Client</span><code>${CLIENT_ID}</code></div>
-      <div class="meta"><span>Callback</span><code>${escapeHtml(redirectUri)}</code></div>
-      <div class="meta"><span>Scope</span><code>${SCOPE}</code></div>
-
-      <button id="startButton" type="button">开始 PKCE 自检</button>
-      <a class="button secondary" href="/">返回认证中心</a>
-      <p id="message" class="message"></p>
+      <details>
+        <summary>技术信息</summary>
+        <div class="tech">
+          <div><span>协议</span><code>OAuth 2.0 + PKCE (S256)</code></div>
+          <div><span>Client</span><code>${CLIENT_ID}</code></div>
+          <div><span>Callback</span><code>${escapeHtml(redirectUri)}</code></div>
+        </div>
+      </details>
     </section>
-    <div class="foot">测试数据只保存在当前标签页的 sessionStorage；页面不会显示完整 Token。</div>
+    <div class="foot">QssedA</div>
   </main>
 <script>
 (function(){
@@ -84,7 +83,7 @@ function startPage(origin) {
 
   button.addEventListener('click',async()=>{
     button.disabled=true;
-    message.textContent='正在生成 PKCE 参数…';
+    message.textContent='正在准备…';
     try{
       const verifier=randomUrlSafe(64);
       const state=randomUrlSafe(24);
@@ -104,7 +103,7 @@ function startPage(origin) {
       });
       location.assign('/authorize?'+params.toString());
     }catch(error){
-      message.textContent='无法生成 PKCE 参数：'+(error&&error.message?error.message:'未知错误');
+      message.textContent='无法开始测试，请重试。';
       button.disabled=false;
     }
   });
@@ -121,38 +120,45 @@ function callbackPage(origin) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#07080a">
-  <title>PKCE 自检结果 · QssedA Auth</title>
+  <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+  <title>登录流程测试 · QssedA</title>
   <style>${css()}</style>
 </head>
 <body>
   <main class="shell">
-    <div class="brand"><div class="mark">Q</div><div><strong>QssedA Auth</strong><span>OAuth 2.0 + PKCE Self-Test</span></div></div>
+    <div class="brand"><div class="mark">Q</div><div><strong>QssedA</strong><span>登录流程测试</span></div></div>
     <section class="card">
-      <div id="statusIcon" class="result-icon pending">…</div>
-      <h1 id="title">正在验证 PKCE</h1>
-      <p id="lead" class="lead">正在校验 state 并兑换一次性 Authorization Code。</p>
-
-      <div id="steps" class="flow compact">
-        <div id="stateStep"><b>1</b><span>state 校验</span><em>等待</em></div>
-        <div id="codeStep"><b>2</b><span>Authorization Code</span><em>等待</em></div>
-        <div id="tokenStep"><b>3</b><span>PKCE Token Exchange</span><em>等待</em></div>
-      </div>
+      <div id="statusIcon" class="result-icon pending" aria-hidden="true">…</div>
+      <h1 id="title">正在检查</h1>
+      <p id="lead" class="lead">请稍候，正在确认登录流程。</p>
 
       <div id="result" class="result hidden">
-        <div class="meta"><span>Access Token</span><code id="accessToken">—</code></div>
-        <div class="meta"><span>Refresh Token</span><code id="refreshToken">—</code></div>
-        <div class="meta"><span>有效期</span><code id="expires">—</code></div>
-        <div class="meta"><span>Scope</span><code id="scope">—</code></div>
-        <button id="refreshButton" type="button">测试 Refresh Token Rotation</button>
-        <button id="revokeButton" class="secondary" type="button">撤销当前测试 Token</button>
+        <button id="refreshButton" type="button">测试保持登录</button>
+        <button id="revokeButton" class="secondary" type="button">结束测试</button>
       </div>
 
-      <div id="errorBox" class="error-box hidden"></div>
-      <a class="button secondary" href="/pkce-test">重新测试</a>
-      <a class="button ghost" href="/">返回认证中心</a>
+      <div id="errorBox" class="error-box hidden" role="alert"></div>
+
+      <details>
+        <summary>技术信息</summary>
+        <div id="steps" class="steps">
+          <div id="stateStep"><span>请求校验</span><em>等待</em></div>
+          <div id="codeStep"><span>授权结果</span><em>等待</em></div>
+          <div id="tokenStep"><span>会话交换</span><em>等待</em></div>
+        </div>
+        <div class="tech">
+          <div><span>Access Token</span><code id="accessToken">—</code></div>
+          <div><span>Refresh Token</span><code id="refreshToken">—</code></div>
+          <div><span>有效期</span><code id="expires">—</code></div>
+          <div><span>Scope</span><code id="scope">—</code></div>
+        </div>
+      </details>
+
+      <a class="button ghost" href="/pkce-test">重新测试</a>
+      <a class="button ghost" href="/">返回 QssedA</a>
     </section>
-    <div class="foot">为防止截图泄漏，Token 只显示前后少量字符。</div>
+    <div class="foot">QssedA</div>
   </main>
 <script>
 (async function(){
@@ -185,9 +191,10 @@ function callbackPage(origin) {
   }
 
   function fail(message){
-    icon.textContent='!';icon.className='result-icon fail';
-    title.textContent='PKCE 自检失败';
-    lead.textContent='流程没有完成。';
+    icon.textContent='!';
+    icon.className='result-icon fail';
+    title.textContent='测试未完成';
+    lead.textContent='请重新尝试。';
     errorBox.textContent=message;
     errorBox.classList.remove('hidden');
   }
@@ -209,29 +216,29 @@ function callbackPage(origin) {
       body:new URLSearchParams(form).toString()
     });
     const data=await response.json();
-    if(!response.ok)throw new Error(data.error_description||data.error||'Token endpoint returned an error');
+    if(!response.ok)throw new Error(data.error_description||data.error||'登录服务返回错误');
     return data;
   }
 
   try{
     if(oauthError){
-      step('stateStep','已返回',false);
-      throw new Error('授权被拒绝或返回错误：'+oauthError);
+      step('stateStep','未通过',false);
+      throw new Error('你取消了授权，或授权请求未完成。');
     }
     if(!expectedState||!verifier){
       step('stateStep','缺失',false);
-      throw new Error('当前标签页没有 PKCE 测试上下文，请从 /pkce-test 重新开始。');
+      throw new Error('测试信息已失效，请重新开始。');
     }
     if(returnedState!==expectedState){
-      step('stateStep','不匹配',false);
-      throw new Error('state 校验失败，已停止 Token Exchange。');
+      step('stateStep','未通过',false);
+      throw new Error('安全校验未通过，请重新开始。');
     }
     step('stateStep','通过',true);
     if(!code){
       step('codeStep','缺失',false);
-      throw new Error('回调中没有 Authorization Code。');
+      throw new Error('没有收到授权结果。');
     }
-    step('codeStep','收到一次性 Code',true);
+    step('codeStep','通过',true);
 
     const token=await postToken({
       grant_type:'authorization_code',
@@ -240,41 +247,45 @@ function callbackPage(origin) {
       redirect_uri:redirectUri,
       code_verifier:verifier
     });
-    step('tokenStep','兑换成功',true);
-    icon.textContent='✓';icon.className='result-icon success';
-    title.textContent='PKCE 自检通过';
-    lead.textContent='Authorization Code + PKCE (S256) 已成功换取 QssedA Token。';
+    step('tokenStep','通过',true);
+    icon.textContent='✓';
+    icon.className='result-icon success';
+    title.textContent='登录流程正常';
+    lead.textContent='QssedA 已成功完成应用登录与授权。';
     showTokens(token);
     sessionStorage.removeItem('qsseda_pkce_verifier');
     sessionStorage.removeItem('qsseda_pkce_state');
     sessionStorage.removeItem('qsseda_pkce_started_at');
   }catch(error){
-    fail(error&&error.message?error.message:'未知错误');
+    fail(error&&error.message?error.message:'测试未完成');
   }
 
   document.getElementById('refreshButton').addEventListener('click',async function(){
     if(!currentRefresh)return;
     this.disabled=true;
     const old=currentRefresh;
-    this.textContent='正在刷新…';
+    this.textContent='正在检查…';
     try{
       const token=await postToken({grant_type:'refresh_token',client_id:clientId,refresh_token:old});
       const rotated=token.refresh_token&&token.refresh_token!==old;
       showTokens(token);
-      this.textContent=rotated?'Rotation 成功 ✓':'刷新成功';
-      lead.textContent=rotated?'Refresh Token 已轮换，旧 Refresh Token 已失效。':'Refresh Token 已刷新。';
+      this.textContent=rotated?'保持登录正常 ✓':'保持登录正常';
+      lead.textContent='应用可以安全地保持登录状态。';
     }catch(error){
-      this.textContent='刷新失败';
-      fail(error&&error.message?error.message:'Refresh Token 测试失败');
+      this.textContent='检查失败';
+      fail(error&&error.message?error.message:'保持登录测试失败');
     }finally{
-      setTimeout(()=>{this.disabled=false;if(this.textContent!=='刷新失败')this.textContent='再次测试 Refresh Token Rotation'},900);
+      setTimeout(()=>{
+        this.disabled=false;
+        if(this.textContent!=='检查失败')this.textContent='再次测试保持登录';
+      },900);
     }
   });
 
   document.getElementById('revokeButton').addEventListener('click',async function(){
     if(!currentAccess&&!currentRefresh)return;
     this.disabled=true;
-    this.textContent='正在撤销…';
+    this.textContent='正在结束…';
     try{
       for(const token of [currentAccess,currentRefresh].filter(Boolean)){
         const response=await fetch('/oauth/revoke',{
@@ -282,15 +293,16 @@ function callbackPage(origin) {
           headers:{'content-type':'application/x-www-form-urlencoded'},
           body:new URLSearchParams({client_id:clientId,token}).toString()
         });
-        if(!response.ok)throw new Error('撤销失败');
+        if(!response.ok)throw new Error('无法结束测试');
       }
-      currentAccess='';currentRefresh='';
-      this.textContent='测试 Token 已撤销 ✓';
+      currentAccess='';
+      currentRefresh='';
+      this.textContent='测试已结束 ✓';
       document.getElementById('refreshButton').disabled=true;
-      lead.textContent='PKCE 流程通过，测试产生的 Token 已撤销。';
+      lead.textContent='测试产生的访问权限已撤销。';
     }catch(error){
-      this.textContent='撤销失败';
-      fail(error&&error.message?error.message:'撤销失败');
+      this.textContent='结束失败';
+      fail(error&&error.message?error.message:'无法结束测试');
     }
   });
 })();
@@ -337,5 +349,5 @@ function escapeHtml(value) {
 }
 
 function css() {
-  return `:root{color-scheme:dark light;--bg:#07080a;--panel:rgba(27,28,32,.84);--surface:rgba(118,118,128,.16);--text:#f5f5f7;--muted:#a1a1a6;--quiet:#73737a;--line:rgba(255,255,255,.11);--accent:#0a84ff;--success:#30d158;--danger:#ff453a}@media(prefers-color-scheme:light){:root{--bg:#f3f4f7;--panel:rgba(255,255,255,.9);--surface:rgba(116,116,128,.1);--text:#111114;--muted:#62626a;--quiet:#85858d;--line:rgba(20,20,30,.1);--accent:#0071e3;--success:#248a3d;--danger:#d70015}}*{box-sizing:border-box}html,body{min-height:100%;margin:0}body{min-height:100dvh;display:grid;place-items:center;padding:max(22px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;background:radial-gradient(circle at 18% 12%,rgba(10,132,255,.16),transparent 34%),radial-gradient(circle at 82% 78%,rgba(94,92,230,.10),transparent 30%),var(--bg);color:var(--text)}.shell{width:min(100%,500px)}.brand{display:flex;align-items:center;gap:12px;margin:0 0 18px 4px}.brand strong,.brand span{display:block}.brand span{font-size:12px;color:var(--muted);margin-top:2px}.mark{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#2997ff,#0067d8);color:#fff;font-weight:800}.card{border:1px solid var(--line);border-radius:22px;background:var(--panel);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);padding:28px;box-shadow:0 28px 80px rgba(0,0,0,.35)}.eyebrow{color:var(--accent);font-size:12px;font-weight:700;margin-bottom:10px}h1{margin:0;font-size:30px;letter-spacing:-.04em}.lead{color:var(--muted);line-height:1.55;margin:10px 0 20px}.flow{display:grid;gap:8px;margin:18px 0}.flow>div{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:13px;background:var(--surface)}.flow b{width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:rgba(10,132,255,.14);color:var(--accent);font-size:12px}.flow span{font-size:13px;color:var(--muted)}.flow em{font-style:normal;font-size:12px;color:var(--quiet)}.flow em.ok{color:var(--success)}.flow em.bad{color:var(--danger)}.meta{display:grid;grid-template-columns:82px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px}.meta span{color:var(--muted)}.meta code{overflow-wrap:anywhere;color:var(--text)}button,.button{width:100%;min-height:50px;margin-top:16px;border:0;border-radius:14px;padding:0 14px;display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:var(--accent);color:#fff;font:inherit;font-weight:700;cursor:pointer}.secondary{background:var(--surface);color:var(--text);border:1px solid var(--line)}.ghost{background:transparent;color:var(--muted);border:1px solid transparent}button:disabled{opacity:.5}.message{color:var(--danger);font-size:13px;line-height:1.5}.foot{text-align:center;color:var(--quiet);font-size:11px;line-height:1.5;margin-top:14px}.result-icon{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:24px;margin-bottom:16px;background:var(--surface);color:var(--muted)}.result-icon.success{background:rgba(48,209,88,.14);color:var(--success)}.result-icon.fail{background:rgba(255,69,58,.14);color:var(--danger)}.result{margin-top:18px}.hidden{display:none!important}.error-box{margin-top:16px;padding:13px;border-radius:13px;background:rgba(255,69,58,.10);color:var(--danger);font-size:13px;line-height:1.5}@media(max-width:520px){.card{padding:24px 20px}h1{font-size:28px}.meta{grid-template-columns:72px 1fr}}`;
+  return `:root{color-scheme:dark light;--bg:#0b0b0d;--panel:rgba(30,30,32,.84);--surface:rgba(118,118,128,.16);--text:#f5f5f7;--muted:#a1a1a6;--line:rgba(255,255,255,.11);--accent:#0a84ff;--success:#30d158;--danger:#ff453a;--shadow:0 28px 80px rgba(0,0,0,.38)}@media(prefers-color-scheme:light){:root{--bg:#f5f5f7;--panel:rgba(255,255,255,.9);--surface:rgba(118,118,128,.10);--text:#1d1d1f;--muted:#6e6e73;--line:rgba(0,0,0,.09);--accent:#0071e3;--success:#248a3d;--danger:#d70015;--shadow:0 24px 64px rgba(0,0,0,.10)}}*{box-sizing:border-box}html,body{min-height:100%;margin:0}body{min-height:100dvh;display:grid;place-items:center;padding:max(22px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;font-optical-sizing:auto;background:var(--bg);color:var(--text)}.shell{width:min(100%,440px)}.brand{display:flex;align-items:center;gap:11px;margin:0 0 18px 4px}.brand strong,.brand span{display:block}.brand strong{font-size:15px}.brand span{font-size:12px;color:var(--muted);margin-top:2px}.mark{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,#2997ff,#0071e3);color:white;font-weight:800}.card{border:1px solid var(--line);border-radius:26px;background:var(--panel);backdrop-filter:blur(24px) saturate(135%);-webkit-backdrop-filter:blur(24px) saturate(135%);padding:30px;box-shadow:var(--shadow)}.hero-icon,.result-icon{width:56px;height:56px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:24px;font-weight:800}.result-icon.success{background:color-mix(in srgb,var(--success) 14%,transparent);color:var(--success)}.result-icon.fail{background:color-mix(in srgb,var(--danger) 14%,transparent);color:var(--danger)}h1{text-align:center;margin:0;font-size:29px;line-height:1.1;letter-spacing:-.035em;font-weight:730}.lead{text-align:center;margin:9px 0 22px;color:var(--muted);font-size:14px;line-height:1.5}button,.button{width:100%;min-height:50px;margin-top:14px;border:0;border-radius:14px;padding:0 14px;display:flex;align-items:center;justify-content:center;text-decoration:none;background:var(--accent);color:white;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:transform .10s ease,opacity .15s ease}.secondary{background:var(--surface);color:var(--text);border:1px solid var(--line)}.ghost{background:transparent;color:var(--muted)}button:active,.button:active{transform:scale(.98)}button:disabled{opacity:.5}.message{min-height:18px;margin:12px 0 0;text-align:center;color:var(--danger);font-size:12px}.foot{text-align:center;color:var(--muted);font-size:11px;margin-top:14px}.hidden{display:none!important}.result{margin-top:4px}details{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}summary{cursor:pointer;color:var(--muted);font-size:12px;text-align:center;list-style:none}summary::-webkit-details-marker{display:none}.tech{margin-top:12px;border-radius:14px;background:var(--surface);padding:4px 12px}.tech>div,.steps>div{display:grid;grid-template-columns:90px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:11px}.tech>div:last-child,.steps>div:last-child{border-bottom:0}.tech span,.steps span{color:var(--muted)}.tech code{overflow-wrap:anywhere}.steps{margin-top:12px;border-radius:14px;background:var(--surface);padding:4px 12px}.steps em{font-style:normal;text-align:right;color:var(--muted)}.steps em.ok{color:var(--success)}.steps em.bad{color:var(--danger)}.error-box{margin-top:14px;padding:12px;border-radius:13px;background:color-mix(in srgb,var(--danger) 10%,transparent);color:var(--danger);font-size:12px;line-height:1.45}@media(max-width:520px){.card{padding:26px 20px;border-radius:24px}h1{font-size:27px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;transition-duration:.001ms!important}}@media(prefers-contrast:more){.card,.secondary,.tech,.steps{border:1px solid currentColor}.card{background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none}}`;
 }
