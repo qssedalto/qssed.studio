@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-// One-off wiring script. This update intentionally retriggers the workflow now that it exists on main.
+// One-off wiring script. It is deliberately idempotent so reruns are safe.
 function replaceOnce(text, needle, replacement, label) {
   const count = text.split(needle).length - 1;
   if (count !== 1) throw new Error(`${label}: expected exactly one match, found ${count}`);
@@ -38,17 +38,14 @@ if (!auth.includes('handlePkceTestRequest')) {
   );
 }
 
-function ensureWorkflowPath(text, anchor, line, label) {
-  if (text.includes(line.trim())) return text;
-  return replaceOnce(text, anchor, anchor + line, label);
+if (!deploy.includes('      - auth-pkce-test.js\n')) {
+  deploy = replaceOnce(
+    deploy,
+    '      - auth-oauth.js\n',
+    '      - auth-oauth.js\n      - auth-pkce-test.js\n',
+    'deploy path'
+  );
 }
-
-deploy = ensureWorkflowPath(
-  deploy,
-  '      - auth-oauth.js\n',
-  '      - auth-pkce-test.js\n',
-  'deploy path'
-);
 
 if (!deploy.includes('node --check auth-pkce-test.js')) {
   deploy = replaceOnce(
@@ -59,18 +56,16 @@ if (!deploy.includes('node --check auth-pkce-test.js')) {
   );
 }
 
-check = ensureWorkflowPath(
-  check,
-  '      - "auth-oauth.js"\n',
-  '      - "auth-pkce-test.js"\n',
-  'check pull path'
-);
-
-const secondPushMarker = '      - "auth-oauth.js"\n';
-const firstIndex = check.indexOf(secondPushMarker);
-const secondIndex = check.indexOf(secondPushMarker, firstIndex + secondPushMarker.length);
-if (secondIndex !== -1 && !check.slice(secondIndex, secondIndex + 120).includes('auth-pkce-test.js')) {
-  check = check.slice(0, secondIndex + secondPushMarker.length) + '      - "auth-pkce-test.js"\n' + check.slice(secondIndex + secondPushMarker.length);
+if (!check.includes('      - "auth-pkce-test.js"\n')) {
+  const marker = '      - "auth-oauth.js"\n';
+  let offset = 0;
+  for (let i = 0; i < 2; i++) {
+    const index = check.indexOf(marker, offset);
+    if (index === -1) throw new Error(`check workflow: expected OAuth path occurrence ${i + 1}`);
+    const insertAt = index + marker.length;
+    check = check.slice(0, insertAt) + '      - "auth-pkce-test.js"\n' + check.slice(insertAt);
+    offset = insertAt + '      - "auth-pkce-test.js"\n'.length;
+  }
 }
 
 if (!check.includes('node --check auth-pkce-test.js')) {
