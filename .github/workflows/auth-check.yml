@@ -4,15 +4,19 @@ on:
   pull_request:
     paths:
       - "auth-worker.js"
+      - "auth-oauth.js"
       - "wrangler.auth.jsonc"
       - "AUTH_PORTAL.md"
+      - "supabase/migrations/**"
       - ".github/workflows/auth-check.yml"
   push:
     branches:
       - main
     paths:
       - "auth-worker.js"
+      - "auth-oauth.js"
       - "wrangler.auth.jsonc"
+      - "supabase/migrations/**"
       - ".github/workflows/auth-check.yml"
 
 permissions:
@@ -25,8 +29,13 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Check Auth Worker JavaScript syntax
-        run: node --check auth-worker.js
+      - name: Check Auth JavaScript syntax
+        run: |
+          node --check auth-worker.js
+          node --check auth-oauth.js
+
+      - name: Bundle Auth Worker
+        run: npx --yes wrangler@4 deploy -c wrangler.auth.jsonc --dry-run --outdir .wrangler-dry-run
 
       - name: Validate Auth Wrangler JSONC shape
         shell: bash
