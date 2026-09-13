@@ -1,0 +1,87 @@
+name: Audit Studio Phase 4D Style Ownership
+
+on:
+  push:
+    branches:
+      - refactor/studio-phase4-style-audit
+    paths:
+      - .github/workflows/audit-studio-phase4-styles.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Audit style ownership and duplication
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const files = fs.readdirSync('studio').filter(name => name.endsWith('.js')).sort();
+          console.log('### Studio JS size / inline style inventory');
+          for (const file of files) {
+            const source = fs.readFileSync('studio/' + file, 'utf8');
+            const lines = source.split('\n').length;
+            const styles = (source.match(/<style>/g) || []).length;
+            const closes = (source.match(/<\/style>/g) || []).length;
+            console.log(`${file}: ${lines} lines, ${Buffer.byteLength(source)} bytes, style blocks ${styles}/${closes}`);
+          }
+
+          const page = fs.readFileSync('studio/ui-page.js', 'utf8');
+          const os = fs.readFileSync('studio/ui-styles.js', 'utf8');
+          const variableRegex = /--([a-z0-9-]+)\s*:/gi;
+          const vars = source => new Set([...source.matchAll(variableRegex)].map(match => match[1]));
+          const pageVars = vars(page);
+          const osVars = vars(os);
+          const duplicateVars = [...pageVars].filter(name => osVars.has(name)).sort();
+          console.log('\n### CSS custom-property definitions');
+          console.log('ui-page definitions:', [...pageVars].sort().join(', ') || '(none)');
+          console.log('ui-styles definitions:', [...osVars].sort().join(', ') || '(none)');
+          console.log('defined in both:', duplicateVars.join(', ') || '(none)');
+
+          console.log('\n### ui-styles product-prefix signals');
+          for (const prefix of ['profile','admin','settings','storage','dashboard','info','workspace','audit','os-hub','os-nav','os-shell']) {
+            const count = (os.match(new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi')) || []).length;
+            console.log(`${prefix}: ${count}`);
+          }
+
+          console.log('\n### Imports and obvious usage counts');
+          for (const file of ['ui-page.js','ui-styles.js']) {
+            const source = fs.readFileSync('studio/' + file, 'utf8');
+            const imports = [...source.matchAll(/^import\s+\{([^}]+)\}\s+from\s+["']([^"']+)["'];?$/gm)];
+            console.log(file);
+            for (const match of imports) {
+              for (const rawName of match[1].split(',')) {
+                const name = rawName.trim().split(/\s+as\s+/).at(-1);
+                const body = source.slice(match.index + match[0].length);
+                const uses = (body.match(new RegExp(`\\b${name}\\b`, 'g')) || []).length;
+                console.log(`  ${name} from ${match[2]}: ${uses} post-import occurrences`);
+              }
+            }
+          }
+
+          console.log('\n### Style marker locations');
+          for (const file of ['ui-page.js','ui-styles.js','auth-pages.js','ui-profile.js','ui-settings.js','ui-storage.js','ui-admin.js','ui-dashboard.js','ui-information.js','ui-workspace.js']) {
+            const lines = fs.readFileSync('studio/' + file, 'utf8').split('\n');
+            const hits = [];
+            lines.forEach((line,index) => {
+              if (/<style>|APPLE_DESIGN|PROFILE_|ADMIN_|SETTINGS_|STORAGE_|DASHBOARD_/i.test(line)) hits.push(`${index+1}:${line.trim().slice(0,120)}`);
+            });
+            if (hits.length) console.log(file + '\n  ' + hits.join('\n  '));
+          }
+          NODE
+
+      - name: Remove one-off audit workflow
+        run: |
+          rm -f .github/workflows/audit-studio-phase4-styles.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/audit-studio-phase4-styles.yml
+          git diff --cached --check
+          git commit -m "chore(studio): remove Phase 4D style audit workflow"
+          git push
