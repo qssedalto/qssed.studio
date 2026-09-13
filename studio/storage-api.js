@@ -218,7 +218,10 @@ export async function handleStorageUpload(request, env) {
   const key = storageKey(auth.user.id, id);
   const name = cleanStorageFilename(new URL(request.url).searchParams.get("name"));
   try {
-    await env.STORAGE.put(key, sizeLimitedStorageBody(request.body, MAX_STORAGE_FILE_BYTES), {
+    // Preserve the inbound request body's runtime-known length. Wrapping it in a
+    // generic ReadableStream strips that metadata and causes R2.put() to reject
+    // otherwise valid browser File uploads as an unknown-length stream.
+    await env.STORAGE.put(key, request.body, {
       httpMetadata: { contentType: storageContentType(request.headers.get("Content-Type")) },
       customMetadata: { originalName: name, ownerId: auth.user.id }
     });
@@ -273,4 +276,3 @@ export async function handleStorageObject(request, env) {
     return storageUnavailable();
   }
 }
-
