@@ -1,7 +1,8 @@
 import { OS_PATHS, LEGACY_REDIRECTS, TEXT } from "./config.js";
 import { handleAuthHandoff } from "./auth-handoff.js";
 import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./storage-api.js";
-import { getRequestCookie, handleRegistrationSignup, handlePasswordLogin } from "./account-api.js";
+import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
+import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
 import { osPage } from "./ui-shell.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
@@ -17,7 +18,7 @@ export default {
 
     if (pathname === "/api/auth/login") {
       if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
-      return handlePasswordLogin(request, env, ipInfo);
+      return handleIdentifierPasswordLogin(request, env, ipInfo);
     }
 
     if (pathname === "/auth/handoff") {
@@ -52,7 +53,7 @@ export default {
     }
 
     if (pathname === "/sign-up") return html(signUpPage(t, links, ipInfo));
-    if (pathname === "/login") return html(loginPage(t, links, ipInfo));
+    if (pathname === "/login") return html(identifierLoginPage(loginPage(t, links, ipInfo), t, locale === "zh-cn"));
     return html(notFoundPage(t, links), 404);
   }
 };
