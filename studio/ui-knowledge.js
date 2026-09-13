@@ -49,8 +49,8 @@ export function knowledgePageMeta(path, zh) {
       section: "info",
       title: zh ? "知识库" : "Knowledge Base",
       description: zh
-        ? "把项目、技术、学习、方法论、参考资料和长期档案整理成可以持续积累和检索的个人知识系统。"
-        : "A durable personal knowledge system for projects, technology, study, methodology, references, and long-term archives."
+        ? "按项目、技术、课程和资料分类整理，支持全文搜索。"
+        : "Organized by project, technology, study, and reference topics, with full-text search."
     };
   }
   if (route.type === "category") {
@@ -83,9 +83,9 @@ function knowledgeRootContent(zh) {
       ${knowledgeSearchPanel(zh)}
       <section class="knowledge-intro-panel">
         <div>
-          <span class="knowledge-overline">${zh ? "QssedA Knowledge" : "QssedA Knowledge"}</span>
-          <h2>${zh ? "把值得保留的东西，变成以后真的找得到的知识" : "Turn things worth keeping into knowledge you can actually find later"}</h2>
-          <p>${zh ? "这里不是临时笔记堆。每个大类都有独立路由，每个主题也有自己的页面，用来保存会反复使用、需要解释上下文、或者几个月后仍然值得重新查的内容。" : "This is not a pile of temporary notes. Every category and topic has its own route for knowledge that remains useful, contextual, and retrievable months later."}</p>
+          <span class="knowledge-overline">QssedA Knowledge</span>
+          <h2>${zh ? "项目、技术和学习资料" : "Projects, technology, and study notes"}</h2>
+          <p>${zh ? "按分类保存项目说明、开发记录、课程内容和常用资料。每个主题都有固定页面，可以直接搜索和回看。" : "Project notes, development records, course material, and references are organized by category. Each topic has a stable page and can be searched directly."}</p>
         </div>
         <div class="knowledge-intro-stats" aria-label="${zh ? "知识库结构" : "Knowledge structure"}">
           <div><strong>${KNOWLEDGE_CATEGORIES.length}</strong><span>${zh ? "大类" : "categories"}</span></div>
@@ -100,19 +100,19 @@ function knowledgeRootContent(zh) {
             <span class="knowledge-category-count">${category.items.length} ${zh ? "个主题" : "topics"}</span>
             <h3>${zh ? category.zh : category.en}</h3>
             <p>${zh ? category.zhDescription : category.enDescription}</p>
-            <span class="knowledge-card-action">${zh ? "打开分类" : "Open category"}<b aria-hidden="true">›</b></span>
+            <span class="knowledge-card-action">${zh ? "查看" : "Open"}<b aria-hidden="true">›</b></span>
           </a>
         `).join("")}
       </section>
       <section class="knowledge-guidance os-card">
         <div>
-          <small>${zh ? "收录原则" : "What belongs here"}</small>
-          <h3>${zh ? "三个月后还可能需要重新查，就值得进入知识库" : "If you may need it again in three months, it belongs here"}</h3>
+          <small>${zh ? "整理建议" : "Guidelines"}</small>
+          <h3>${zh ? "只放以后还会查的内容" : "Keep material you expect to use again"}</h3>
         </div>
         <ul>
-          <li>${zh ? "记录原因、条件和上下文，不只保存结论。" : "Keep reasons, conditions, and context—not just conclusions."}</li>
-          <li>${zh ? "优先保存可复用方法、项目决策、公式、排错经验与高质量来源。" : "Prioritize reusable methods, project decisions, formulas, debugging lessons, and strong sources."}</li>
-          <li>${zh ? "临时待办、一次性提醒和纯文件更适合 Tasks / Notes / Storage。" : "Temporary todos, reminders, and raw files belong in Tasks, Notes, or Storage."}</li>
+          <li>${zh ? "项目决策要写清原因和约束。" : "Record the reasons and constraints behind project decisions."}</li>
+          <li>${zh ? "排错记录保留现象、原因和最终修复。" : "For debugging notes, keep the symptom, cause, and final fix."}</li>
+          <li>${zh ? "临时待办和文件继续放在对应工具里。" : "Keep temporary tasks and raw files in their dedicated tools."}</li>
         </ul>
       </section>
     </div>`;
@@ -126,7 +126,7 @@ function knowledgeCategoryContent(category, zh) {
       <section class="knowledge-category-hero">
         ${iconFor(category)}
         <div>
-          <span class="knowledge-overline">${zh ? "知识分类" : "Knowledge category"}</span>
+          <span class="knowledge-overline">${zh ? "分类" : "Category"}</span>
           <h2>${zh ? category.zh : category.en}</h2>
           <p>${zh ? category.zhDescription : category.enDescription}</p>
         </div>
