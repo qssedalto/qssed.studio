@@ -1,5 +1,5 @@
 import { MAX_STORAGE_FILE_BYTES, TEXT } from "./config.js";
-import { escapeHtmlText } from "./account-api.js";
+import { escapeHtmlText } from "./html-utils.js";
 import { html, json } from "./routing.js";
 import { adminClientScript, auditClientScript, baseHead, supabaseScript, themeScript, topControls } from "./ui-core.js";
 import { osStyles } from "./ui-styles.js";
