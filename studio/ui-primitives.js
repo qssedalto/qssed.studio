@@ -1,5 +1,10 @@
 export function statusContent(zh, zhTitle, zhBody, enTitle, enBody) {
-  return `<section class="os-card is-large"><h2>${zh ? zhTitle : enTitle}</h2><p>${zh ? zhBody : enBody}</p></section>`;
+  return `
+    <section class="os-card is-large status-panel" role="status">
+      <small>${zh ? "状态" : "Status"}</small>
+      <h2>${zh ? zhTitle : enTitle}</h2>
+      <p>${zh ? zhBody : enBody}</p>
+    </section>`;
 }
 
 export function osHubIcon(name) {
@@ -39,7 +44,7 @@ export function osHubCard(item) {
         <h2>${item.title}</h2>
         ${item.meta ? `<small>${item.meta}</small>` : ""}
       </div>
-      <p>${item.description}</p>
+      ${item.description ? `<p>${item.description}</p>` : ""}
     </div>
   </a>`;
 }
