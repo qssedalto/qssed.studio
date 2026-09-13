@@ -1,3 +1,5 @@
+import { handleOAuthRequest } from "./auth-oauth.js";
+
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 
@@ -6,11 +8,21 @@ const REFRESH_COOKIE = "__Host-qsseda-refresh";
 const ACCESS_MAX_AGE = 60 * 60;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 const ACTIVE_STATUS = "active";
+const OAUTH_PATHS = new Set([
+  "/authorize",
+  "/api/oauth/authorize",
+  "/oauth/token",
+  "/oauth/revoke",
+  "/oauth/introspect",
+  "/.well-known/oauth-authorization-server"
+]);
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const pathname = normalizePath(url.pathname);
+
+    if (OAUTH_PATHS.has(pathname)) return handleOAuthRequest(request);
 
     if (pathname === "/api/login") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
