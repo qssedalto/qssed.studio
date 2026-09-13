@@ -47,8 +47,8 @@ ui-shell.js     -X-> account-api.js
 |---|---|---|
 | 1 | Boundary extraction without business redesign | ✅ Complete — PR #23 |
 | 2 | Backend/shared-server dependency separation | ✅ Complete — PR #25 |
-| 3 | Frontend product-domain separation | ⏭️ Next |
-| 4 | Shared UI/runtime cleanup and final consolidation | ⛔ Blocked until Phase 3 is stable |
+| 3 | Frontend product-domain separation | ✅ Complete — PRs #27–#31 |
+| 4 | Shared UI/runtime cleanup and final consolidation | ⏭️ Next |
 
 ---
 
@@ -102,7 +102,7 @@ The backend/shared dependency cleanup is closed. Do not reopen it merely to perf
 
 **Goal:** split large UI aggregation modules by actual product ownership, now that server dependencies are clean.
 
-### Discovery snapshot
+### Pre-Phase 3 discovery snapshot
 
 The current `ui-shell.js` mixes several distinct responsibilities:
 
@@ -175,6 +175,20 @@ ui-core
 - bundle, route and browser smoke tests pass for every extraction slice;
 - production deployment succeeds after the final Phase 3 slice.
 
+### Phase 3 completion
+
+Phase 3 was completed in five production-verified slices:
+
+- **3A / PR #27 — Profile:** moved Profile detail/account/preferences rendering and the Profile-home personalization/link/media runtime into `ui-profile.js`.
+- **3B / PR #28 — Settings + Storage:** moved Settings-owned rendering into `ui-settings.js` and private Storage rendering/runtime into `ui-storage.js`.
+- **3C / PR #29 — Admin:** moved Admin detail rendering and the Admin browser application into `ui-admin.js` while keeping `is_admin`, the lock, warm snapshots and shell authorization intact.
+- **3D / PR #30 — Dashboard + Information + Workspace:** moved route-owned content into `ui-dashboard.js`, `ui-information.js` and `ui-workspace.js` without inventing persistence for unfinished features.
+- **3E / PR #31 — Shell boundary:** moved the remaining Profile/Admin/Settings Hub and Settings fallback rendering to their owning modules, leaving `ui-shell.js` focused on shell composition, navigation, route dispatch, shared Hub/status primitives and session/authorization bootstrap.
+
+The final Phase 3 slice compared every registered Studio OS route in both languages byte-for-byte and also compared representative complete `osPage()` HTML. Standard Studio CI, Cloudflare Preview and production validation/Studio/Auth deployment all passed.
+
+Shared `osHub*` and `statusContent` primitives remain intentionally shell-owned, and the shared account/security audit runtime remains in `ui-core.js`. Those are now Phase 4 candidates rather than unfinished Phase 3 work.
+
 ---
 
 ## Phase 4 — Shared-layer cleanup and final consolidation
@@ -226,8 +240,8 @@ Before making a structural Studio change:
 
 ## Next concrete task
 
-The next structural PR should be the **first Phase 3 slice: Profile domain extraction**.
+The next structural work is **Phase 4 shared-layer audit**, not another product extraction.
 
-Before changing code, inventory all Profile-owned markup, client functions, cache keys and Supabase/storage interactions across `ui-shell.js`, `ui-core.js` and styles. Then move only the Profile-owned logic while preserving the shell/bootstrap contract.
+Before changing code, inventory the remaining genuinely shared consumers and dependency edges across `ui-core.js`, `ui-shell.js`, `auth-pages.js`, `auth-handoff.js`, `ui-styles.js` and the Phase 3 product modules. Identify duplication or mixed responsibilities only where there is more than one stable consumer.
 
-Do not combine Settings, Admin, Storage, shared theme/runtime cleanup, or visual redesign with that PR.
+The first Phase 4 PR must be chosen from that audit and remain narrow. Do not use Phase 4 as permission for a framework rewrite, visual redesign, Auth/OAuth behavior changes, or speculative abstractions. Shared helpers should move only when their stable consumers and invariants are explicit.
