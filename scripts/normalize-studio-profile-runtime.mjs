@@ -1,33 +1,36 @@
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
-const path = 'studio/ui-profile.js';
-let source = fs.readFileSync(path, 'utf8');
+const profilePath = 'studio/ui-profile.js';
+let source = fs.readFileSync(profilePath, 'utf8');
 
-const marker = 'const PROFILE_CLIENT_BODY = ';
-const start = source.indexOf(marker);
-if (start < 0) throw new Error('PROFILE_CLIENT_BODY marker not found');
+// Use the actual pre-Phase-3 source on main as the source of truth. This matters
+// because the block originally lived inside a template literal, so raw source and
+// rendered browser JavaScript are not interchangeable when escape sequences exist.
+const baselineCore = execFileSync('git', ['show', 'origin/main:studio/ui-core.js'], { encoding: 'utf8' });
+const runtimeStartMarker = '      /* PROFILE_HOME_V3 */';
+const runtimeEndMarker = '      async function hydrateProfileAudit(user) {';
+const runtimeStart = baselineCore.indexOf(runtimeStartMarker);
+const runtimeEnd = baselineCore.indexOf(runtimeEndMarker, runtimeStart + runtimeStartMarker.length);
+if (runtimeStart < 0 || runtimeEnd < 0) throw new Error('Could not locate pre-extraction Profile runtime on main');
+const rawRuntimeSource = baselineCore.slice(runtimeStart, runtimeEnd);
+
+const encodedMarker = 'const PROFILE_CLIENT_BODY = ';
+const encodedStart = source.indexOf(encodedMarker);
+if (encodedStart < 0) throw new Error('Encoded PROFILE_CLIENT_BODY marker not found');
 const functionMarker = '\n\nexport function profileClientScript() {';
-const functionStart = source.indexOf(functionMarker, start);
+const functionStart = source.indexOf(functionMarker, encodedStart);
 if (functionStart < 0) throw new Error('profileClientScript marker not found');
-
-const literal = source.slice(start + marker.length, functionStart).trim().replace(/;$/, '');
-let body;
-try {
-  body = JSON.parse(literal);
-} catch (error) {
-  throw new Error('Could not decode PROFILE_CLIENT_BODY: ' + error.message);
-}
-
 const functionEndMarker = '\n}\n';
 const functionEnd = source.indexOf(functionEndMarker, functionStart + functionMarker.length);
 if (functionEnd < 0) throw new Error('profileClientScript end not found');
 const afterFunction = functionEnd + functionEndMarker.length;
 
-// Keep the generated runtime string byte-for-byte identical to the encoded form:
-// "<script>\n" + body + "\n    </script>".
-// Only the source representation changes so the Profile runtime stays readable/editable.
-const readable = `export function profileClientScript() {\n  return \`<script>\n${body}\n    </script>\`;\n}\n`;
-source = source.slice(0, start) + readable + source.slice(afterFunction);
+// Put the exact raw source back into the same kind of template-literal context it
+// had before extraction. This keeps the file readable while preserving template
+// escape semantics from the monolithic ui-core implementation.
+const readable = `export function profileClientScript() {\n  return \`<script>\n${rawRuntimeSource}\n    </script>\`;\n}\n`;
+source = source.slice(0, encodedStart) + readable + source.slice(afterFunction);
 
-fs.writeFileSync(path, source);
-console.log('Converted Profile client runtime to readable source without changing rendered output.');
+fs.writeFileSync(profilePath, source);
+console.log('Rebuilt readable Profile runtime from the pre-extraction main source.');
