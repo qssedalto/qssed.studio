@@ -1,1 +1,0 @@
-This folder contains the built output assets for the worker "restless-boat-f553" generated at 2026-09-13T05:10:23.730Z.
