@@ -1,0 +1,97 @@
+name: Apply Studio Phase 4D Dashboard Styles
+
+on:
+  push:
+    branches:
+      - refactor/studio-phase4d-dashboard-styles
+    paths:
+      - scripts/apply-studio-phase4d-dashboard-styles.mjs
+      - .github/workflows/apply-studio-phase4d-dashboard-styles.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Capture complete style/page baseline
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const styles = await import(pathToFileURL('studio/ui-styles.js').href + '?before=' + Date.now());
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?before=' + Date.now());
+          const { TEXT, OS_PATHS } = await import(pathToFileURL('studio/config.js').href + '?before=' + Date.now());
+          const { buildLinks } = await import(pathToFileURL('studio/routing.js').href + '?before=' + Date.now());
+          const ipInfo = { ip: '203.0.113.84', country: 'CN', region: 'Jiangsu', city: 'Suzhou' };
+          const pages = {};
+          for (const locale of ['en','zh']) {
+            for (const route of Array.from(OS_PATHS).sort()) pages[locale + ':' + route] = shell.osPage(TEXT[locale], buildLinks(locale, route), route, ipInfo, '@cached-user');
+          }
+          fs.writeFileSync('/tmp/phase4d-dashboard-baseline.json', JSON.stringify({ styles: styles.osStyles(), pages }));
+          const source = fs.readFileSync('studio/ui-styles.js', 'utf8');
+          const start = source.indexOf('    /* DASHBOARD_APPLE_V2 */');
+          const end = source.indexOf('</style>`;', start);
+          if (start < 0 || end < 0) throw new Error('Dashboard style block markers not found');
+          fs.writeFileSync('/tmp/phase4d-dashboard-block.txt', source.slice(start, end));
+          NODE
+
+      - name: Apply Dashboard style extraction
+        run: node scripts/apply-studio-phase4d-dashboard-styles.mjs
+
+      - name: Validate exact ownership extraction
+        run: |
+          for file in studio/*.js; do node --check "$file"; done
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const block = fs.readFileSync('/tmp/phase4d-dashboard-block.txt', 'utf8');
+          const moduleSource = fs.readFileSync('studio/ui-style-dashboard.js', 'utf8');
+          const prefix = 'export function dashboardStyles() {\n  return `';
+          const suffix = '`;\n}\n';
+          if (!moduleSource.startsWith(prefix) || !moduleSource.endsWith(suffix)) throw new Error('Unexpected Dashboard style module wrapper');
+          if (moduleSource.slice(prefix.length, -suffix.length) !== block) throw new Error('Dashboard style block changed during extraction');
+          const styles = fs.readFileSync('studio/ui-styles.js', 'utf8');
+          if (styles.includes('/* DASHBOARD_APPLE_V2 */')) throw new Error('Dashboard block remains in ui-styles.js');
+          if (!styles.includes('import { dashboardStyles } from "./ui-style-dashboard.js";')) throw new Error('Dashboard style import missing');
+          if (!styles.includes('${dashboardStyles()}')) throw new Error('Dashboard style insertion point missing');
+          NODE
+
+      - name: Compare style and every registered Studio page
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const baseline = JSON.parse(fs.readFileSync('/tmp/phase4d-dashboard-baseline.json', 'utf8'));
+          const styles = await import(pathToFileURL('studio/ui-styles.js').href + '?after=' + Date.now());
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?after=' + Date.now());
+          const { TEXT, OS_PATHS } = await import(pathToFileURL('studio/config.js').href + '?after=' + Date.now());
+          const { buildLinks } = await import(pathToFileURL('studio/routing.js').href + '?after=' + Date.now());
+          const ipInfo = { ip: '203.0.113.84', country: 'CN', region: 'Jiangsu', city: 'Suzhou' };
+          if (styles.osStyles() !== baseline.styles) throw new Error('osStyles output changed');
+          for (const locale of ['en','zh']) {
+            for (const route of Array.from(OS_PATHS).sort()) {
+              const current = shell.osPage(TEXT[locale], buildLinks(locale, route), route, ipInfo, '@cached-user');
+              if (current !== baseline.pages[locale + ':' + route]) throw new Error('Page changed: ' + locale + ':' + route);
+            }
+          }
+          console.log('Dashboard style fragment, osStyles, and all Studio pages are unchanged.');
+          NODE
+
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir /tmp/wrangler-phase4d-dashboard
+
+      - name: Commit Phase 4D Dashboard styles and remove one-off files
+        run: |
+          rm -f scripts/apply-studio-phase4d-dashboard-styles.mjs
+          rm -f .github/workflows/apply-studio-phase4d-dashboard-styles.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A studio scripts/apply-studio-phase4d-dashboard-styles.mjs .github/workflows/apply-studio-phase4d-dashboard-styles.yml
+          git diff --cached --check
+          git commit -m "refactor(studio): extract Dashboard style fragment"
+          git push
