@@ -1,4 +1,5 @@
 import { statusContent } from "./ui-primitives.js";
+import { knowledgeContent } from "./ui-knowledge.js";
 
 export function linksContent(zh) {
   return `<section class="os-card is-large"><h2>${zh ? "尚未接入收藏链接" : "Saved links are not connected yet"}</h2><p>${zh ? "当前数据库没有收藏链接表，因此这里不再展示固定示例链接或伪造收藏时间。" : "There is no saved-links table in the current database, so this page no longer shows fixed sample links or fabricated saved dates."}</p></section>`;
@@ -17,8 +18,8 @@ export function searchContent(zh) {
 }
 
 export function informationContent(path, zh) {
-  if (path === "/info") return statusContent(zh, "信息中心尚未接入", "收藏链接、笔记、摘要和 AI 对话目前没有持久化数据源。", "Information Center is not connected yet", "Saved links, notes, summaries, and AI conversations do not have persistent data sources yet.");
-  if (path === "/info/knowledge") return statusContent(zh, "知识库", "用于整理值得长期保留的知识内容，让信息更容易积累、查找和回顾。", "Knowledge Base", "Organize knowledge worth keeping so it remains easy to build on, find, and revisit.");
+  if (path === "/info") return statusContent(zh, "信息中心", "知识库已经建立完整的长期知识结构；收藏链接、研究笔记、摘要和全局搜索仍等待持久化数据源。", "Information Center", "The Knowledge Base now has a complete long-term structure; saved links, research notes, summaries, and global search still await persistent data sources.");
+  if (path === "/info/knowledge" || path.startsWith("/info/knowledge/")) return knowledgeContent(path, zh);
   if (path === "/info/links") return linksContent(zh);
   if (path === "/info/notes") return notesContent(zh);
   if (path === "/info/summaries") return summariesContent(zh);
