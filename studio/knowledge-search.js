@@ -48,15 +48,15 @@ export function knowledgeSearchPanel(zh) {
     <section class="knowledge-search-panel" aria-label="${zh ? "搜索知识库" : "Search Knowledge Base"}">
       <div class="knowledge-search-heading">
         <div>
-          <span class="knowledge-overline">${zh ? "全文检索" : "Full-text search"}</span>
-          <h3>${zh ? "搜索标题、正文、句子或单个字" : "Search titles, content, phrases, or a single character"}</h3>
-          <p>${zh ? "同时检索内置知识与当前账号保存在 Supabase 的个人知识内容。中文不依赖分词，输入单个汉字也可以匹配。" : "Searches built-in knowledge and personal documents stored in Supabase for the current account. Literal substring matching also works for single characters."}</p>
+          <span class="knowledge-overline">${zh ? "搜索" : "Search"}</span>
+          <h3>${zh ? "搜索知识库" : "Search Knowledge Base"}</h3>
+          <p>${zh ? "搜索内置内容和当前账号的个人知识，支持标题和正文匹配。" : "Search built-in and personal knowledge by title or body text."}</p>
         </div>
         <span id="knowledge-search-count" class="knowledge-search-count" aria-live="polite"></span>
       </div>
       <label class="knowledge-search-box">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
-        <input id="knowledge-search-input" type="search" autocomplete="off" spellcheck="false" placeholder="${zh ? "输入关键词、句子或单个字…" : "Type a keyword, phrase, or single character…"}" aria-label="${zh ? "知识库搜索" : "Knowledge search"}">
+        <input id="knowledge-search-input" type="search" autocomplete="off" spellcheck="false" placeholder="${zh ? "搜索知识库" : "Search knowledge"}" aria-label="${zh ? "知识库搜索" : "Knowledge search"}">
         <button id="knowledge-search-clear" class="knowledge-search-clear" type="button" aria-label="${zh ? "清空搜索" : "Clear search"}" hidden>×</button>
       </label>
       <div id="knowledge-search-results" class="knowledge-search-results" hidden></div>
@@ -78,18 +78,18 @@ export function knowledgeSearchClientScript(zh) {
         builtin: "内置知识",
         personal: "个人知识",
         noResults: "没有找到匹配内容",
-        noResultsHint: "试试更短的关键词、句子片段，或者直接输入一个汉字。",
+        noResultsHint: "换一个关键词，或缩短搜索内容。",
         resultSuffix: "条结果",
-        loading: "正在搜索个人知识…",
-        supabaseUnavailable: "个人知识搜索暂时不可用，已显示内置知识结果。"
+        loading: "正在搜索…",
+        supabaseUnavailable: "个人知识暂时不可用，已显示内置内容。"
       } : {
         builtin: "Built-in",
         personal: "Personal",
         noResults: "No matching knowledge found",
-        noResultsHint: "Try a shorter keyword, part of a sentence, or a single character.",
+        noResultsHint: "Try another keyword or a shorter query.",
         resultSuffix: "results",
-        loading: "Searching personal knowledge…",
-        supabaseUnavailable: "Personal search is temporarily unavailable; built-in results are still shown."
+        loading: "Searching…",
+        supabaseUnavailable: "Personal knowledge is unavailable; showing built-in results."
       })};
 
       let sequence = 0;
