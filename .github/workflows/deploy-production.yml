@@ -6,8 +6,10 @@ on:
       - main
     paths:
       - worker.js
+      - auth-entry.js
       - auth-worker.js
       - auth-oauth.js
+      - auth-pkce-test.js
       - wrangler.jsonc
       - wrangler.auth.jsonc
       - .github/workflows/deploy-production.yml
@@ -31,8 +33,10 @@ jobs:
       - name: Validate Workers
         run: |
           node --check worker.js
+          node --check auth-entry.js
           node --check auth-worker.js
           node --check auth-oauth.js
+          node --check auth-pkce-test.js
 
       - name: Deploy QssedA Studio
         env:
