@@ -53,7 +53,7 @@ export default {
     }
 
     if (pathname === "/sign-up") return html(signUpPage(t, links, ipInfo));
-    if (pathname === "/login") return html(identifierLoginPage(loginPage(t, links, ipInfo), t, locale === "zh-cn"));
+    if (pathname === "/login") return html(identifierLoginPage(loginPage(t, links, ipInfo), t, locale === "zh"));
     return html(notFoundPage(t, links), 404);
   }
 };
