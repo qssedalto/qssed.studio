@@ -28,7 +28,8 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 - `ui-dashboard.js` — Dashboard rendering, Dashboard icons and its visit-time/date/theme browser behavior.
 - `ui-information.js` — Information route composition and route-owned Links/Notes/Summaries/Search rendering.
 - `ui-workspace.js` — Workspace route rendering.
-- `ui-styles.js` — Studio OS CSS; product-specific styles remain here until a later safe extraction requires moving them.
+- `ui-styles.js` — Studio OS style aggregator and remaining shared/product CSS in original output order.
+- `ui-style-profile.js` — Phase 4D Profile-owned CSS fragment extracted verbatim from `ui-styles.js`; `ui-styles.js` reinserts it at the original position so emitted CSS remains byte-identical.
 - `auth-pages.js` — Studio sign-up, login and not-found pages.
 
 Phase 3 product ownership is explicit. Product Hub renderers live with Profile/Admin/Settings.
@@ -38,6 +39,8 @@ Phase 4A isolates the previously mixed audit runtime without changing its page o
 Phase 4B renames the remaining neutral `ui-core.js` page infrastructure to `ui-page.js` without changing generated HTML. This removes the misleading `ui-core` ownership name and makes the shared dependency used by `auth-handoff.js`, `auth-pages.js` and `ui-shell.js` explicit.
 
 Phase 4C moves `statusContent()`, `osHubIcon()`, `osHubCard()` and `osHubGrid()` out of `ui-shell.js` into `ui-primitives.js`. Profile, Admin, Settings, Information and Workspace now consume those neutral render primitives directly; no product module depends on `ui-shell.js`.
+
+Phase 4D begins with the clearly bounded Profile style fragment. The `PROFILE_HOME_V3` through pre-Settings block now lives in `ui-style-profile.js`; `osStyles()` and every registered Studio page remain byte-identical. Global CSS custom properties remain owned by `ui-page.js`; they are not duplicated into product style modules.
 
 Admin authorization remains shell-owned: `is_admin`, the Admin lock, warm snapshot restore and authenticated bootstrap are intentionally not part of `ui-admin.js`.
 
