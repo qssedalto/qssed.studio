@@ -3,8 +3,10 @@ name: Auth Worker Check
 on:
   pull_request:
     paths:
+      - "auth-entry.js"
       - "auth-worker.js"
       - "auth-oauth.js"
+      - "auth-pkce-test.js"
       - "wrangler.auth.jsonc"
       - "AUTH_PORTAL.md"
       - "supabase/migrations/**"
@@ -13,8 +15,10 @@ on:
     branches:
       - main
     paths:
+      - "auth-entry.js"
       - "auth-worker.js"
       - "auth-oauth.js"
+      - "auth-pkce-test.js"
       - "wrangler.auth.jsonc"
       - "supabase/migrations/**"
       - ".github/workflows/auth-check.yml"
@@ -31,8 +35,10 @@ jobs:
 
       - name: Check Auth JavaScript syntax
         run: |
+          node --check auth-entry.js
           node --check auth-worker.js
           node --check auth-oauth.js
+          node --check auth-pkce-test.js
 
       - name: Bundle Auth Worker
         run: npx --yes wrangler@4 deploy -c wrangler.auth.jsonc --dry-run --outdir .wrangler-dry-run
@@ -46,7 +52,7 @@ jobs:
             .replace(/^\s*\/\/.*$/gm, '')
             .replace(/\/\*[\s\S]*?\*\//g, '');
           const config = JSON.parse(text);
-          if (config.main !== 'auth-worker.js') throw new Error('wrangler.auth.jsonc must point to auth-worker.js');
+          if (config.main !== 'auth-entry.js') throw new Error('wrangler.auth.jsonc must point to auth-entry.js');
           if (!Array.isArray(config.routes) || !config.routes.some(r => r.pattern === 'auth.qsseda.studio' && r.custom_domain === true)) {
             throw new Error('auth.qsseda.studio custom domain route is missing');
           }
