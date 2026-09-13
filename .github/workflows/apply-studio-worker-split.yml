@@ -1,0 +1,46 @@
+name: Apply Studio Worker Split
+
+on:
+  push:
+    branches:
+      - refactor/studio-worker-modules
+    paths:
+      - scripts/split-studio-worker.mjs
+      - scripts/smoke-studio-worker.mjs
+      - .github/workflows/apply-studio-worker-split.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Save monolith baseline
+        run: cp worker.js /tmp/qsseda-worker-monolith.mjs
+
+      - name: Split Studio Worker
+        run: node scripts/split-studio-worker.mjs
+
+      - name: Check modular JavaScript syntax
+        run: |
+          node --check worker.js
+          for file in studio/*.js; do node --check "$file"; done
+
+      - name: Differential smoke test
+        run: node scripts/smoke-studio-worker.mjs /tmp/qsseda-worker-monolith.mjs
+
+      - name: Bundle modular Studio Worker
+        run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-modular-studio
+
+      - name: Commit modular Worker
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add worker.js studio
+          git commit -m "refactor(studio): split monolithic Worker into modules"
+          git push
