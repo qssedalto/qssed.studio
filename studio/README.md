@@ -17,15 +17,22 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 
 ## UI modules
 
-- `ui-core.js` — shared HTML/runtime primitives plus audit/admin client runtime that has not yet been fully separated by product domain.
-- `ui-shell.js` — Studio OS shell, navigation, route dispatch, bootstrap and remaining coarse product content.
+- `ui-core.js` — shared HTML/runtime primitives plus cross-domain audit/security and Admin client runtime that has not yet been fully separated by product domain.
+- `ui-shell.js` — Studio OS shell, navigation, route dispatch, bootstrap, shared Hub composition and remaining coarse product content.
 - `ui-profile.js` — Phase 3A Profile-owned detail/account/preferences rendering and Profile-home personalization/link/media client runtime.
+- `ui-settings.js` — Phase 3B Settings-owned General, Appearance, Language and Account & Security rendering.
+- `ui-storage.js` — Phase 3B private Storage page rendering and browser client runtime; consumes the shared storage-size limit from `config.js`.
 - `ui-styles.js` — Studio OS CSS; product-specific styles remain here until a later safe extraction requires moving them.
 - `auth-pages.js` — Studio sign-up, login and not-found pages.
 
-The `/profile` Hub remains in `ui-shell.js` for Phase 3A because it uses the shared Hub-card primitives also consumed by Admin and Settings. Shared audit/security code also remains in `ui-core.js` because Profile Account and Settings Security share it.
+The `/profile` and `/settings` Hubs remain in `ui-shell.js` because they use Hub-card primitives shared across Profile, Admin and Settings. `settingsContent()` also remains in the shell as route composition/dispatch.
 
-See [`../docs/STUDIO_PHASE3_PROFILE_INVENTORY.md`](../docs/STUDIO_PHASE3_PROFILE_INVENTORY.md) for the exact Phase 3A ownership boundary.
+Shared account/security audit client code remains in `ui-core.js`: Profile Account and Settings Security consume the same login/device/audit runtime, so moving it into either product module would create the wrong ownership direction.
+
+Detailed extraction boundaries:
+
+- [`../docs/STUDIO_PHASE3_PROFILE_INVENTORY.md`](../docs/STUDIO_PHASE3_PROFILE_INVENTORY.md)
+- [`../docs/STUDIO_PHASE3_SETTINGS_STORAGE_INVENTORY.md`](../docs/STUDIO_PHASE3_SETTINGS_STORAGE_INVENTORY.md)
 
 ## Original monolith
 
