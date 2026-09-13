@@ -9,8 +9,9 @@ export function storageSettingsContent(zh) {
     refreshed: "最近更新",
     select: "选择文件",
     refresh: "刷新",
-    search: "搜索文件名",
+    search: "搜索文件名或所属账号",
     name: "文件名",
+    owner: "所属账号",
     type: "类型",
     size: "大小",
     uploaded: "上传时间",
@@ -44,8 +45,9 @@ export function storageSettingsContent(zh) {
     refreshed: "Updated",
     select: "Choose Files",
     refresh: "Refresh",
-    search: "Search files",
+    search: "Search files or owners",
     name: "File name",
+    owner: "Owner",
     type: "Type",
     size: "Size",
     uploaded: "Uploaded",
@@ -74,6 +76,15 @@ export function storageSettingsContent(zh) {
   };
 
   return `
+    <style>
+      #storage-manager.is-admin .storage-file-row{
+        min-width:820px;
+        grid-template-columns:minmax(150px,1.25fr) minmax(150px,1fr) minmax(104px,.78fr) minmax(68px,.46fr) minmax(112px,.72fr) minmax(132px,.76fr);
+      }
+      #storage-manager .storage-owner-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+      #storage-manager .storage-owner-cell[hidden],#storage-manager [data-storage-owner-header][hidden]{display:none}
+      @media (max-width:720px){#storage-manager.is-admin .storage-file-row{min-width:800px}}
+    </style>
     <section id="storage-manager" class="storage-manager">
       <section class="storage-overview-panel">
         <div class="storage-overview-copy">
@@ -82,7 +93,7 @@ export function storageSettingsContent(zh) {
             <strong>${copy.storage}</strong>
             <span id="storage-connection" class="storage-connection-state">${copy.checking}</span>
           </div>
-          <p>${copy.connectionDescription}</p>
+          <p id="storage-description">${copy.connectionDescription}</p>
         </div>
         <div class="storage-overview-stats">
           <div class="storage-stat">
@@ -127,6 +138,7 @@ export function storageSettingsContent(zh) {
         <div class="storage-table" role="table" aria-label="${copy.files}">
           <div class="storage-file-row storage-file-head" role="row">
             <span role="columnheader">${copy.name}</span>
+            <span data-storage-owner-header role="columnheader" hidden>${copy.owner}</span>
             <span role="columnheader">${copy.type}</span>
             <span role="columnheader">${copy.size}</span>
             <span role="columnheader">${copy.uploaded}</span>
@@ -146,7 +158,7 @@ export function storageClientScript(zh, loginUrl) {
     loading: "正在读取你的私人文件…",
     emptyTitle: "还没有文件",
     emptyHint: "选择文件后即可上传到你的私人存储空间。",
-    noMatches: "没有匹配的文件。",
+    noMatches: "没有匹配的文件或所属账号。",
     unavailable: "存储服务暂时不可用。",
     notAuthorized: "当前账号不可使用私人存储。",
     signInAgain: "登录状态已失效，请重新登录。",
@@ -165,14 +177,16 @@ export function storageClientScript(zh, loginUrl) {
     deleteFailed: "删除失败：{message}",
     deleteConfirm: "确定要删除“{name}”吗？此操作无法撤销。",
     tooLarge: "“{name}”超过 50 MB，未上传。",
-    refreshedNow: "刚刚"
+    refreshedNow: "刚刚",
+    userDescription: "文件仅对当前账号可见，并通过已登录的 Worker API 安全存取；浏览器不会直接访问 R2。",
+    adminDescription: "管理员视图会汇总所有账号的 R2 文件，并显示文件所属账号；跨账号下载或删除仍由 Worker 在服务端验证管理员权限。"
   } : {
     connected: "Connected",
     checking: "Checking",
     loading: "Loading your private files…",
     emptyTitle: "No files yet",
     emptyHint: "Choose files to upload them to your private storage.",
-    noMatches: "No matching files.",
+    noMatches: "No matching files or owners.",
     unavailable: "Storage service is temporarily unavailable.",
     notAuthorized: "This account is not allowed to use private storage.",
     signInAgain: "Your session has expired. Please sign in again.",
@@ -191,7 +205,9 @@ export function storageClientScript(zh, loginUrl) {
     deleteFailed: "Delete failed: {message}",
     deleteConfirm: "Delete “{name}”? This cannot be undone.",
     tooLarge: "“{name}” exceeds 50 MB and was not uploaded.",
-    refreshedNow: "Just now"
+    refreshedNow: "Just now",
+    userDescription: "Files are private to the current account and accessed securely through the signed-in Worker API; the browser never connects to R2 directly.",
+    adminDescription: "The administrator view aggregates R2 files across accounts and shows each owner; cross-account downloads and deletes are still authorized by the Worker on the server."
   };
 
   return `
@@ -217,6 +233,8 @@ export function storageClientScript(zh, loginUrl) {
         const fileCount = document.getElementById("storage-file-count");
         const usedBytes = document.getElementById("storage-used-bytes");
         const refreshedAt = document.getElementById("storage-refreshed-at");
+        const storageDescription = document.getElementById("storage-description");
+        const ownerHeader = root.querySelector("[data-storage-owner-header]");
 
         let files = [];
         let partial = false;
@@ -226,6 +244,7 @@ export function storageClientScript(zh, loginUrl) {
         let storageCacheFingerprint = "";
         let hasStorageSnapshot = false;
         let refreshSequence = 0;
+        let isAdminView = false;
 
         class SessionExpiredError extends Error {}
         class StorageForbiddenError extends Error {}
@@ -307,11 +326,13 @@ export function storageClientScript(zh, loginUrl) {
           const normalizedFiles = (Array.isArray(data?.files) ? data.files : []).map(file => [
             file?.id || "",
             file?.name || "",
+            file?.ownerLabel || "",
+            file?.mediaType || file?.contentType || "",
             Number(file?.size) || 0,
-            file?.uploadedAt || "",
-            file?.contentType || ""
+            file?.uploadedAt || ""
           ]);
           return JSON.stringify([
+            Boolean(data?.is_admin),
             Number(data?.file_count) || 0,
             Number(data?.used_bytes) || 0,
             Boolean(data?.partial),
@@ -396,7 +417,15 @@ export function storageClientScript(zh, loginUrl) {
 
         function visibleFiles() {
           const query = currentFilter.trim().toLocaleLowerCase();
-          return query ? files.filter(file => String(file.name || "").toLocaleLowerCase().includes(query)) : files;
+          if (!query) return files;
+          return files.filter(file => [
+            file?.name,
+            file?.ownerLabel,
+            file?.ownerUsername,
+            file?.ownerDisplayName,
+            file?.mediaType,
+            file?.contentType
+          ].some(value => String(value || "").toLocaleLowerCase().includes(query)));
         }
 
         function renderFiles() {
@@ -446,8 +475,14 @@ export function storageClientScript(zh, loginUrl) {
             name.textContent = file.name;
             name.title = file.name;
 
+            const owner = document.createElement("span");
+            owner.className = "storage-owner-cell";
+            owner.textContent = file.ownerLabel || "—";
+            owner.title = file.ownerLabel || file.ownerId || "";
+            owner.hidden = !isAdminView;
+
             const type = document.createElement("span");
-            type.textContent = file.contentType || "application/octet-stream";
+            type.textContent = file.mediaType || file.contentType || "application/octet-stream";
 
             const size = document.createElement("span");
             size.textContent = formatBytes(file.size);
@@ -472,7 +507,7 @@ export function storageClientScript(zh, loginUrl) {
             remove.addEventListener("click", () => void deleteFile(file, remove));
 
             actions.append(download, remove);
-            row.append(name, type, size, uploaded, actions);
+            row.append(name, owner, type, size, uploaded, actions);
             fileList.append(row);
           });
         }
@@ -487,6 +522,10 @@ export function storageClientScript(zh, loginUrl) {
         }
 
         function applyStorageData(data, refreshedAtValue) {
+          isAdminView = Boolean(data?.is_admin);
+          root.classList.toggle("is-admin", isAdminView);
+          if (ownerHeader) ownerHeader.hidden = !isAdminView;
+          if (storageDescription) storageDescription.textContent = isAdminView ? copy.adminDescription : copy.userDescription;
           files = Array.isArray(data?.files) ? data.files : [];
           renderMetrics(data || {}, refreshedAtValue);
           renderFiles();
