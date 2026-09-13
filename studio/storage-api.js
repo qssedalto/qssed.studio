@@ -1,5 +1,5 @@
 import { SUPABASE_URL, SUPABASE_KEY, MAX_STORAGE_FILE_BYTES, MAX_STORAGE_LIST_OBJECTS, UUID_PATTERN } from "./config.js";
-import { getSupabaseSecret, workerLog } from "./account-api.js";
+import { getSupabaseSecret, workerLog } from "./server-runtime.js";
 import { json } from "./routing.js";
 
 export function storageUnavailable() {

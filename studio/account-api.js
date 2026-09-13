@@ -1,5 +1,6 @@
 import { SUPABASE_URL, SUPABASE_KEY, ZH_COUNTRIES } from "./config.js";
 import { json } from "./routing.js";
+import { getSupabaseSecret, workerLog } from "./server-runtime.js";
 
 export function getRequestCookie(request, name) {
   const header = request.headers.get("Cookie") || "";
@@ -13,32 +14,8 @@ export function getRequestCookie(request, name) {
   }
 }
 
-export function escapeHtmlText(value) {
-  return String(value || "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[char]);
-}
-
-export function getSupabaseSecret(env) {
-  return env?.SUPABASE_SECRET_KEY || env?.SUPABASE_SERVICE_ROLE_KEY || "";
-}
-
 export function getWorkerRequestId(request) {
   return request.headers.get("CF-Ray") || crypto.randomUUID();
-}
-
-export function workerLog(level, event, details = {}) {
-  const payload = JSON.stringify({
-    source: "qsseda-worker",
-    event,
-    ...details
-  });
-  const method = level === "error" ? "error" : level === "warn" ? "warn" : "info";
-  console[method](payload);
 }
 
 export function parseServerUserAgent(userAgent) {
