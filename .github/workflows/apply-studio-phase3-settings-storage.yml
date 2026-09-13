@@ -1,0 +1,130 @@
+name: Apply Studio Phase 3B Settings Storage Extraction
+
+on:
+  push:
+    branches:
+      - refactor/studio-phase3-settings-storage
+    paths:
+      - scripts/apply-studio-phase3-settings-storage.mjs
+      - .github/workflows/apply-studio-phase3-settings-storage.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Capture Settings and Storage baseline
+        run: |
+          cp studio/ui-core.js /tmp/ui-core-before.js
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?baseline=' + Date.now());
+          const routes = [
+            '/settings',
+            '/settings/general',
+            '/settings/appearance',
+            '/settings/language',
+            '/settings/security',
+            '/settings/notifications',
+            '/settings/ai',
+            '/settings/integrations',
+            '/settings/storage'
+          ];
+          const baseline = { routes: {}, storageScripts: {} };
+          for (const zh of [true, false]) {
+            const language = zh ? 'zh' : 'en';
+            for (const route of routes) baseline.routes[language + ':' + route] = shell.settingsContent(route, zh);
+            baseline.storageScripts[language] = shell.storageClientScript(zh, '/test-login');
+          }
+          fs.writeFileSync('/tmp/settings-storage-baseline.json', JSON.stringify(baseline));
+          NODE
+
+      - name: Apply guarded Settings and Storage extraction
+        run: node scripts/apply-studio-phase3-settings-storage.mjs
+
+      - name: Validate Studio JavaScript
+        run: |
+          node --check worker.js
+          for file in studio/*.js; do node --check "$file"; done
+
+      - name: Verify ownership boundaries
+        run: |
+          test -f studio/ui-settings.js
+          test -f studio/ui-storage.js
+          grep -F 'from "./ui-settings.js"' studio/ui-shell.js
+          grep -F 'from "./ui-storage.js"' studio/ui-shell.js
+          grep -F 'export function settingsHubContent' studio/ui-shell.js
+          grep -F 'export function settingsContent' studio/ui-shell.js
+          ! grep -F 'export function settingsGeneralContent' studio/ui-shell.js
+          ! grep -F 'export function securityAuditContent' studio/ui-shell.js
+          ! grep -F 'export function storageSettingsContent' studio/ui-shell.js
+          ! grep -F 'export function storageClientScript' studio/ui-shell.js
+          ! grep -F 'export function appearanceSettingsContent' studio/ui-shell.js
+          ! grep -F 'export function languageSettingsContent' studio/ui-shell.js
+          grep -F 'export function settingsGeneralContent' studio/ui-settings.js
+          grep -F 'export function securityAuditContent' studio/ui-settings.js
+          grep -F 'export function storageSettingsContent' studio/ui-storage.js
+          grep -F 'export function storageClientScript' studio/ui-storage.js
+          grep -F 'MAX_STORAGE_FILE_BYTES' studio/ui-storage.js
+          ! grep -F 'MAX_STORAGE_FILE_BYTES' studio/ui-shell.js
+          cmp -s /tmp/ui-core-before.js studio/ui-core.js
+
+      - name: Compare Settings and Storage behavior
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const baseline = JSON.parse(fs.readFileSync('/tmp/settings-storage-baseline.json', 'utf8'));
+          const stamp = Date.now();
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?after=' + stamp);
+          const storage = await import(pathToFileURL('studio/ui-storage.js').href + '?after=' + stamp);
+          const routes = [
+            '/settings',
+            '/settings/general',
+            '/settings/appearance',
+            '/settings/language',
+            '/settings/security',
+            '/settings/notifications',
+            '/settings/ai',
+            '/settings/integrations',
+            '/settings/storage'
+          ];
+          for (const zh of [true, false]) {
+            const language = zh ? 'zh' : 'en';
+            for (const route of routes) {
+              const key = language + ':' + route;
+              const current = shell.settingsContent(route, zh);
+              if (current !== baseline.routes[key]) throw new Error('Settings render output changed: ' + key);
+            }
+            const currentStorageScript = storage.storageClientScript(zh, '/test-login');
+            if (currentStorageScript !== baseline.storageScripts[language]) {
+              let index = 0;
+              const before = baseline.storageScripts[language];
+              while (index < before.length && index < currentStorageScript.length && before[index] === currentStorageScript[index]) index++;
+              throw new Error('Storage client browser script changed for ' + language + ' at index ' + index);
+            }
+          }
+          console.log('All Settings route outputs and Storage client scripts are byte-identical.');
+          NODE
+
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-phase3-settings-dry-run
+
+      - name: Commit Phase 3B extraction and remove one-off files
+        run: |
+          rm -f scripts/apply-studio-phase3-settings-storage.mjs
+          rm -f .github/workflows/apply-studio-phase3-settings-storage.yml
+          rm -f .github/workflows/audit-studio-phase3-settings.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add studio/ui-shell.js studio/ui-settings.js studio/ui-storage.js docs/STUDIO_PHASE3_SETTINGS_STORAGE_INVENTORY.md scripts/apply-studio-phase3-settings-storage.mjs .github/workflows/apply-studio-phase3-settings-storage.yml .github/workflows/audit-studio-phase3-settings.yml
+          git diff --cached --check
+          git commit -m "refactor(studio): extract Phase 3B Settings and Storage UI"
+          git push
