@@ -22,6 +22,27 @@ export function storagePrefix(ownerId) {
   return `users/${ownerId}/`;
 }
 
+function serviceHeaders(secret) {
+  return {
+    apikey: secret,
+    ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {})
+  };
+}
+
+function parseStorageKey(key) {
+  const parts = String(key || "").split("/");
+  if (parts.length !== 3 || parts[0] !== "users" || !isStorageObjectId(parts[1]) || !isStorageObjectId(parts[2])) return null;
+  return { ownerId: parts[1], objectId: parts[2] };
+}
+
+function parseObjectReference(value) {
+  const raw = String(value || "");
+  if (isStorageObjectId(raw)) return { ownerId: null, objectId: raw };
+  const parts = raw.split(":");
+  if (parts.length !== 2 || !isStorageObjectId(parts[0]) || !isStorageObjectId(parts[1])) return null;
+  return { ownerId: parts[0], objectId: parts[1] };
+}
+
 export function cleanStorageFilename(value) {
   const normalized = String(value || "")
     .normalize("NFC")
@@ -62,10 +83,7 @@ export async function verifyStorageUser(request, env) {
   let response;
   try {
     response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: authorization
-      }
+      headers: { apikey: SUPABASE_KEY, Authorization: authorization }
     });
   } catch {
     return { error: json({ error: "Authentication service is temporarily unavailable." }, 503) };
@@ -93,62 +111,27 @@ export async function verifyStorageUser(request, env) {
     return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
   }
 
-  let profileResponse;
-  try {
-    profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(user.id)}`, {
-      headers: {
-        apikey: secret,
-        ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {})
-      }
-    });
-  } catch {
-    return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
-  }
-  if (!profileResponse.ok) {
-    return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
-  }
-
   let profiles;
   try {
+    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status,role&id=eq.${encodeURIComponent(user.id)}`, {
+      headers: serviceHeaders(secret)
+    });
+    if (!profileResponse.ok) return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
     profiles = await profileResponse.json();
   } catch {
     return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
   }
+
   if (!Array.isArray(profiles) || profiles.length !== 1 || profiles[0]?.status !== "active") {
     return { error: json({ error: "Account is not authorized to use storage." }, 403) };
   }
-  return { user };
-}
 
-class StorageSizeLimitError extends Error {}
-
-export function sizeLimitedStorageBody(body, maximumBytes) {
-  if (!body) return null;
-  const reader = body.getReader();
-  let total = 0;
-  return new ReadableStream({
-    async pull(controller) {
-      try {
-        const { done, value } = await reader.read();
-        if (done) {
-          controller.close();
-          return;
-        }
-        total += value.byteLength;
-        if (total > maximumBytes) {
-          await reader.cancel();
-          controller.error(new StorageSizeLimitError("File exceeds the 50 MB limit."));
-          return;
-        }
-        controller.enqueue(value);
-      } catch (error) {
-        controller.error(error);
-      }
-    },
-    async cancel(reason) {
-      await reader.cancel(reason);
-    }
-  });
+  const metadata = user?.app_metadata || {};
+  const isAdmin = profiles[0]?.role === "admin"
+    || metadata.role === "admin"
+    || metadata.is_admin === true
+    || metadata.is_admin === "true";
+  return { user, isAdmin };
 }
 
 export async function handleStorageFiles(request, env) {
@@ -157,30 +140,39 @@ export async function handleStorageFiles(request, env) {
   if (!hasStorageBinding(env)) return storageUnavailable();
 
   const files = [];
+  const prefix = auth.isAdmin ? "users/" : storagePrefix(auth.user.id);
   let cursor;
   let scanned = 0;
   let partial = false;
+
   try {
     do {
       const remaining = MAX_STORAGE_LIST_OBJECTS - scanned;
       const page = await env.STORAGE.list({
-        prefix: storagePrefix(auth.user.id),
+        prefix,
         cursor,
         limit: Math.min(1000, remaining),
         include: ["httpMetadata", "customMetadata"]
       });
       scanned += page.objects.length;
+
       for (const object of page.objects) {
-        const id = object.key.slice(storagePrefix(auth.user.id).length);
-        if (!isStorageObjectId(id)) continue;
+        const parsed = parseStorageKey(object.key);
+        if (!parsed) continue;
+        if (!auth.isAdmin && parsed.ownerId !== auth.user.id) continue;
+
+        const mediaType = storageContentType(object.httpMetadata?.contentType);
         files.push({
-          id,
+          id: auth.isAdmin ? `${parsed.ownerId}:${parsed.objectId}` : parsed.objectId,
+          ownerId: auth.isAdmin ? parsed.ownerId : undefined,
           name: cleanStorageFilename(object.customMetadata?.originalName),
           size: Number(object.size) || 0,
           uploadedAt: object.uploaded?.toISOString?.() || null,
-          contentType: storageContentType(object.httpMetadata?.contentType)
+          contentType: auth.isAdmin ? `${parsed.ownerId.slice(0, 8)} · ${mediaType}` : mediaType,
+          mediaType
         });
       }
+
       cursor = page.cursor;
       if (!page.truncated) break;
       if (scanned >= MAX_STORAGE_LIST_OBJECTS || !cursor) {
@@ -189,13 +181,15 @@ export async function handleStorageFiles(request, env) {
       }
     } while (cursor);
   } catch (error) {
-    workerLog("error", "storage.list.failed", { message: String(error?.message || error) });
+    workerLog("error", "storage.list.failed", { message: String(error?.message || error), admin: auth.isAdmin });
     return storageUnavailable();
   }
 
   files.sort((a, b) => String(b.uploadedAt || "").localeCompare(String(a.uploadedAt || "")));
   return json({
     connected: true,
+    scope: auth.isAdmin ? "all" : "own",
+    is_admin: auth.isAdmin,
     files,
     file_count: files.length,
     used_bytes: files.reduce((total, file) => total + file.size, 0),
@@ -218,20 +212,12 @@ export async function handleStorageUpload(request, env) {
   const key = storageKey(auth.user.id, id);
   const name = cleanStorageFilename(new URL(request.url).searchParams.get("name"));
   try {
-    // Preserve the inbound request body's runtime-known length. Wrapping it in a
-    // generic ReadableStream strips that metadata and causes R2.put() to reject
-    // otherwise valid browser File uploads as an unknown-length stream.
     await env.STORAGE.put(key, request.body, {
       httpMetadata: { contentType: storageContentType(request.headers.get("Content-Type")) },
       customMetadata: { originalName: name, ownerId: auth.user.id }
     });
   } catch (error) {
-    try {
-      await env.STORAGE.delete(key);
-    } catch {}
-    if (error instanceof StorageSizeLimitError || /50\s*MB|exceeds the 50 MB/i.test(String(error?.message || error))) {
-      return json({ error: "File exceeds the 50 MB limit." }, 413);
-    }
+    try { await env.STORAGE.delete(key); } catch {}
     workerLog("error", "storage.upload.failed", { message: String(error?.message || error) });
     return storageUnavailable();
   }
@@ -244,18 +230,27 @@ export async function handleStorageObject(request, env) {
   if (auth.error) return auth.error;
   if (!hasStorageBinding(env)) return storageUnavailable();
 
-  const id = new URL(request.url).searchParams.get("id") || "";
-  if (!isStorageObjectId(id)) return json({ error: "Invalid object id." }, 400);
-  const key = storageKey(auth.user.id, id);
+  const rawId = new URL(request.url).searchParams.get("id") || "";
+  const reference = parseObjectReference(rawId);
+  if (!reference) return json({ error: "Invalid object id." }, 400);
+
+  const ownerId = reference.ownerId || auth.user.id;
+  if (ownerId !== auth.user.id && !auth.isAdmin) {
+    return json({ error: "Administrator access required for this storage object." }, 403);
+  }
+  const key = storageKey(ownerId, reference.objectId);
 
   if (request.method === "DELETE") {
     try {
       const existing = await env.STORAGE.head(key);
       if (!existing) return json({ error: "File not found." }, 404);
       await env.STORAGE.delete(key);
-      return json({ id, message: "File deleted." });
+      if (ownerId !== auth.user.id) {
+        workerLog("warning", "storage.admin.delete", { actor_user_id: auth.user.id, owner_user_id: ownerId, object_id: reference.objectId });
+      }
+      return json({ id: rawId, message: "File deleted." });
     } catch (error) {
-      workerLog("error", "storage.delete.failed", { message: String(error?.message || error) });
+      workerLog("error", "storage.delete.failed", { message: String(error?.message || error), owner_user_id: ownerId });
       return storageUnavailable();
     }
   }
@@ -263,6 +258,9 @@ export async function handleStorageObject(request, env) {
   try {
     const object = await env.STORAGE.get(key);
     if (!object) return json({ error: "File not found." }, 404);
+    if (ownerId !== auth.user.id) {
+      workerLog("info", "storage.admin.download", { actor_user_id: auth.user.id, owner_user_id: ownerId, object_id: reference.objectId });
+    }
     return new Response(object.body, {
       headers: {
         "content-type": "application/octet-stream",
@@ -272,7 +270,7 @@ export async function handleStorageObject(request, env) {
       }
     });
   } catch (error) {
-    workerLog("error", "storage.download.failed", { message: String(error?.message || error) });
+    workerLog("error", "storage.download.failed", { message: String(error?.message || error), owner_user_id: ownerId });
     return storageUnavailable();
   }
 }
