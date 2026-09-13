@@ -24,3 +24,4 @@ else if (text.endsWith('\n\n}')) text = text.slice(0, -2);
 
 fs.writeFileSync(file, text);
 console.log('Repaired OAuth template literals for Worker bundling.');
+// Trigger after workflow creation.
