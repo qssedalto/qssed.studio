@@ -31,11 +31,10 @@ jobs:
       - name: Bundle Auth Worker
         run: npx --yes wrangler@4 deploy -c wrangler.auth.jsonc --dry-run --outdir .wrangler-dry-run
 
-      - name: Commit integration and remove one-off files
+      - name: Commit Auth Worker integration
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add auth-worker.js auth-oauth.js .github/workflows/auth-check.yml .github/workflows/deploy-production.yml
-          git rm scripts/apply-auth-pkce-integration.mjs .github/workflows/apply-auth-pkce-integration.yml
+          git add auth-worker.js
           git commit -m "feat(auth): wire OAuth PKCE into Auth Worker"
           git push origin HEAD:feat/auth-pkce-v1
