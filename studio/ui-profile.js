@@ -1,3 +1,5 @@
+import { osHubGrid } from "./ui-primitives.js";
+
 export function profileContent(path, zh) {
   if (path.endsWith("/account")) return accountAuditContent(zh);
 
@@ -376,7 +378,7 @@ export function profileClientScript() {
     </script>`;
 }
 
-export function profileHubContent(zh, osHubGrid) {
+export function profileHubContent(zh) {
   const prefix = zh ? "/zh-cn" : "/en";
   const items = zh ? [
     { title:"用户资料", meta:"个人空间", description:"头像、主页背景、个性签名、个人介绍、在线状态与兴趣标签。", href:`${prefix}/profile/details`, icon:"profile", featured:true, tone:"blue" },

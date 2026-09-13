@@ -1,3 +1,5 @@
+import { osHubGrid } from "./ui-primitives.js";
+
 export function adminOverviewContent(zh) {
   const labels = zh
     ? ["用户总数", "管理员数量"]
@@ -1059,7 +1061,7 @@ export function adminClientScript(ipInfo) {
   `;
 }
 
-export function adminHubContent(zh, osHubGrid) {
+export function adminHubContent(zh) {
   const prefix = zh ? "/zh-cn" : "/en";
   const items = zh ? [
     { title:"通用", meta:"管理概览", description:"账户统计、近期登录、操作日志与系统风险信号。", href:`${prefix}/admin/general`, icon:"general", featured:true, tone:"blue" },
