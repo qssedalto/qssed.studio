@@ -1,0 +1,135 @@
+name: Apply Studio Phase 4A Audit Runtime Extraction
+
+on:
+  push:
+    branches:
+      - refactor/studio-phase4-audit-runtime
+    paths:
+      - scripts/apply-studio-phase4-audit-runtime.mjs
+      - .github/workflows/apply-studio-phase4-audit-runtime.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Capture audit and page baselines
+        run: |
+          cp studio/ui-core.js /tmp/ui-core-before.js
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const core = await import(pathToFileURL('studio/ui-core.js').href + '?before=' + Date.now());
+          const auth = await import(pathToFileURL('studio/auth-pages.js').href + '?before=' + Date.now());
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?before=' + Date.now());
+          const { TEXT } = await import(pathToFileURL('studio/config.js').href + '?before=' + Date.now());
+          const { buildLinks } = await import(pathToFileURL('studio/routing.js').href + '?before=' + Date.now());
+          const ipInfo = { ip: '203.0.113.91', country: 'CN', region: 'Jiangsu', city: 'Suzhou' };
+          const snapshot = {
+            audit: core.auditClientScript(ipInfo),
+            auth: {},
+            pages: {}
+          };
+          for (const locale of ['en','zh']) {
+            snapshot.auth[locale + ':signup'] = auth.signUpPage(TEXT[locale], buildLinks(locale, '/sign-up'), ipInfo);
+            snapshot.auth[locale + ':login'] = auth.loginPage(TEXT[locale], buildLinks(locale, '/login'), ipInfo);
+            for (const route of ['/dashboard','/profile/account','/settings/security']) {
+              snapshot.pages[locale + ':' + route] = shell.osPage(TEXT[locale], buildLinks(locale, route), route, ipInfo, '@cached-user');
+            }
+          }
+          fs.writeFileSync('/tmp/audit-baseline.json', JSON.stringify(snapshot));
+          NODE
+
+      - name: Apply exact audit runtime extraction
+        run: node scripts/apply-studio-phase4-audit-runtime.mjs
+
+      - name: Validate Studio JavaScript
+        run: for file in studio/*.js; do node --check "$file"; done
+
+      - name: Verify source ownership and exact ui-core delta
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const before = fs.readFileSync('/tmp/ui-core-before.js', 'utf8');
+          const after = fs.readFileSync('studio/ui-core.js', 'utf8');
+          const audit = fs.readFileSync('studio/ui-audit.js', 'utf8');
+          const start = before.indexOf('export function auditClientScript(ipInfo) {');
+          const end = before.indexOf('\n\nexport function themeToggle', start);
+          if (start < 0 || end < 0) throw new Error('Could not locate old auditClientScript block');
+          const moved = before.slice(start, end).trimEnd() + '\n';
+          const expectedCore = before.slice(0, start) + before.slice(end + 2);
+          if (audit !== moved) throw new Error('ui-audit.js is not the exact old auditClientScript source block');
+          if (after !== expectedCore) throw new Error('ui-core.js changed outside exact auditClientScript removal');
+          if (after.includes('export function auditClientScript')) throw new Error('auditClientScript remains in ui-core.js');
+          for (const marker of ['function getAuditDeviceId()','async function updateCurrentDevice(user)','function clearProfileUiCaches()','async function hydrateProfileSummary(user)','async function hydrateProfileAudit(user)']) {
+            if (!audit.includes(marker)) throw new Error('Moved audit contract missing: ' + marker);
+          }
+          console.log('ui-core.js differs only by exact audit runtime removal.');
+          NODE
+
+      - name: Compare rendered audit runtime and affected pages
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const baseline = JSON.parse(fs.readFileSync('/tmp/audit-baseline.json', 'utf8'));
+          const audit = await import(pathToFileURL('studio/ui-audit.js').href + '?after=' + Date.now());
+          const auth = await import(pathToFileURL('studio/auth-pages.js').href + '?after=' + Date.now());
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?after=' + Date.now());
+          const { TEXT } = await import(pathToFileURL('studio/config.js').href + '?after=' + Date.now());
+          const { buildLinks } = await import(pathToFileURL('studio/routing.js').href + '?after=' + Date.now());
+          const ipInfo = { ip: '203.0.113.91', country: 'CN', region: 'Jiangsu', city: 'Suzhou' };
+          if (audit.auditClientScript(ipInfo) !== baseline.audit) throw new Error('Rendered auditClientScript output changed');
+          for (const locale of ['en','zh']) {
+            const signup = auth.signUpPage(TEXT[locale], buildLinks(locale, '/sign-up'), ipInfo);
+            const login = auth.loginPage(TEXT[locale], buildLinks(locale, '/login'), ipInfo);
+            if (signup !== baseline.auth[locale + ':signup']) throw new Error('Signup page changed: ' + locale);
+            if (login !== baseline.auth[locale + ':login']) throw new Error('Login page changed: ' + locale);
+            for (const route of ['/dashboard','/profile/account','/settings/security']) {
+              const current = shell.osPage(TEXT[locale], buildLinks(locale, route), route, ipInfo, '@cached-user');
+              if (current !== baseline.pages[locale + ':' + route]) throw new Error('Studio page changed: ' + locale + ':' + route);
+            }
+          }
+          console.log('Audit runtime, Auth pages and representative Studio pages are byte-identical.');
+          NODE
+
+      - name: Verify consumer imports and script ordering
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const auth = fs.readFileSync('studio/auth-pages.js', 'utf8');
+          const shell = fs.readFileSync('studio/ui-shell.js', 'utf8');
+          for (const [name, source] of [['auth-pages', auth], ['ui-shell', shell]]) {
+            if (!source.includes('import { auditClientScript } from "./ui-audit.js";')) throw new Error(name + ' does not import ui-audit.js');
+            if (/import \{[^}]*auditClientScript[^}]*\} from "\.\/ui-core\.js";/.test(source)) throw new Error(name + ' still imports audit runtime from ui-core.js');
+            const supabasePos = source.indexOf('${supabaseScript()}');
+            const auditPos = source.indexOf('${auditClientScript(ipInfo)}', supabasePos);
+            if (!(supabasePos >= 0 && auditPos > supabasePos)) throw new Error(name + ' script order changed');
+          }
+          for (const marker of ['getAuditDeviceId()','clearProfileUiCaches','updateCurrentDevice(authData.user)']) {
+            if (!auth.includes(marker)) throw new Error('Login consumer contract lost: ' + marker);
+          }
+          for (const marker of ['updateCurrentDevice(data.user)','hydrateProfileSummary(data.user)','hydrateProfileAudit(data.user)','clearProfileUiCaches']) {
+            if (!shell.includes(marker)) throw new Error('Shell consumer contract lost: ' + marker);
+          }
+          NODE
+
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-audit-runtime-dry-run
+
+      - name: Commit Phase 4A extraction and remove one-off files
+        run: |
+          rm -f scripts/apply-studio-phase4-audit-runtime.mjs
+          rm -f .github/workflows/apply-studio-phase4-audit-runtime.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add studio/ui-audit.js studio/ui-core.js studio/auth-pages.js studio/ui-shell.js scripts/apply-studio-phase4-audit-runtime.mjs .github/workflows/apply-studio-phase4-audit-runtime.yml
+          git diff --cached --check
+          git commit -m "refactor(studio): isolate shared audit runtime"
+          git push
