@@ -119,10 +119,10 @@ export function dashboardStyles() {
       box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 10%,var(--border));
     }
     .dashboard-icon svg{width:21px;height:21px}
-    .dashboard-today-card small,.dashboard-today-card strong,.dashboard-today-card span{display:block}
-    .dashboard-today-card small{color:var(--muted);font-size:11px;font-weight:750}
-    .dashboard-today-card strong{margin-top:3px;font-size:32px;line-height:1;letter-spacing:-.04em}
-    .dashboard-today-card span{margin-top:7px;color:var(--muted);font-size:12px}
+    .dashboard-today-card>div>small,.dashboard-today-card>div>strong,.dashboard-today-card>div>span{display:block}
+    .dashboard-today-card>div>small{color:var(--muted);font-size:11px;font-weight:750}
+    .dashboard-today-card>div>strong{margin-top:3px;font-size:32px;line-height:1;letter-spacing:-.04em}
+    .dashboard-today-card>div>span{margin-top:7px;color:var(--muted);font-size:12px}
 
     .dashboard-section{margin-top:18px}
     .dashboard-section-head{
