@@ -23,8 +23,11 @@ const functionEnd = source.indexOf(functionEndMarker, functionStart + functionMa
 if (functionEnd < 0) throw new Error('profileClientScript end not found');
 const afterFunction = functionEnd + functionEndMarker.length;
 
-const readable = `export function profileClientScript() {\n  return \`\n    <script>\n${body}    </script>\n  \`;\n}\n`;
+// Keep the generated runtime string byte-for-byte identical to the encoded form:
+// "<script>\n" + body + "\n    </script>".
+// Only the source representation changes so the Profile runtime stays readable/editable.
+const readable = `export function profileClientScript() {\n  return \`<script>\n${body}\n    </script>\`;\n}\n`;
 source = source.slice(0, start) + readable + source.slice(afterFunction);
 
 fs.writeFileSync(path, source);
-console.log('Converted Profile client runtime from encoded string storage to readable template source.');
+console.log('Converted Profile client runtime to readable source without changing rendered output.');
