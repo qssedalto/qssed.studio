@@ -1,0 +1,126 @@
+name: Apply Studio Phase 4C Render Primitives
+
+on:
+  push:
+    branches:
+      - refactor/studio-phase4-render-primitives
+    paths:
+      - scripts/apply-studio-phase4-render-primitives.mjs
+      - .github/workflows/apply-studio-phase4-render-primitives.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Capture complete Studio baseline
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?before=' + Date.now());
+          const { TEXT, OS_PATHS } = await import(pathToFileURL('studio/config.js').href + '?before=' + Date.now());
+          const { buildLinks } = await import(pathToFileURL('studio/routing.js').href + '?before=' + Date.now());
+          const ipInfo = { ip: '203.0.113.44', country: 'CN', region: 'Jiangsu', city: 'Suzhou' };
+          const pages = {};
+          for (const locale of ['en','zh']) {
+            for (const route of Array.from(OS_PATHS).sort()) {
+              pages[locale + ':' + route] = shell.osPage(TEXT[locale], buildLinks(locale, route), route, ipInfo, '@cached-user');
+            }
+          }
+          const primitives = {
+            status: shell.statusContent(true, '标题', '正文', 'Title', 'Body'),
+            icon: shell.osHubIcon('storage'),
+            card: shell.osHubCard({ title:'A', meta:'M', description:'D', href:'/x', icon:'profile', featured:true, tone:'blue' }),
+            grid: shell.osHubGrid([{ title:'A', description:'D', href:'/x', icon:'general' }], 'test-grid')
+          };
+          fs.writeFileSync('/tmp/phase4c-baseline.json', JSON.stringify({ pages, primitives }));
+          const source = fs.readFileSync('studio/ui-shell.js', 'utf8');
+          const start = source.indexOf('export function statusContent');
+          const end = source.indexOf('export function adminContent', start);
+          if (start < 0 || end < 0) throw new Error('Primitive block not found');
+          fs.writeFileSync('/tmp/phase4c-primitives.js', source.slice(start, end).trimEnd() + '\n');
+          NODE
+
+      - name: Apply Phase 4C extraction
+        run: node scripts/apply-studio-phase4-render-primitives.mjs
+
+      - name: Validate JavaScript and ownership
+        run: |
+          for file in studio/*.js; do node --check "$file"; done
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const expected = fs.readFileSync('/tmp/phase4c-primitives.js', 'utf8');
+          const actual = fs.readFileSync('studio/ui-primitives.js', 'utf8');
+          if (expected !== actual) throw new Error('ui-primitives.js is not the exact former shell primitive block');
+          const shell = fs.readFileSync('studio/ui-shell.js', 'utf8');
+          for (const marker of ['export function statusContent','export function osHubIcon','export function osHubCard','export function osHubGrid']) {
+            if (shell.includes(marker)) throw new Error('Shell still owns primitive: ' + marker);
+          }
+          if (!shell.includes('from "./ui-primitives.js"')) throw new Error('Shell does not import shared status primitive');
+          const expectations = {
+            'ui-profile.js':['osHubGrid'],
+            'ui-admin.js':['osHubGrid'],
+            'ui-settings.js':['osHubGrid','osHubIcon'],
+            'ui-information.js':['statusContent'],
+            'ui-workspace.js':['statusContent']
+          };
+          for (const [file, names] of Object.entries(expectations)) {
+            const source = fs.readFileSync('studio/' + file, 'utf8');
+            if (!source.includes('from "./ui-primitives.js"')) throw new Error(file + ' does not import ui-primitives.js');
+            if (source.includes('from "./ui-shell.js"')) throw new Error(file + ' imports ui-shell.js');
+            for (const name of names) if (!source.includes(name)) throw new Error(file + ' missing ' + name);
+          }
+          for (const forbidden of ['profileHubContent(zh, osHubGrid)','adminHubContent(zh, osHubGrid)','settingsHubContent(zh, osHubGrid)','settingsGeneralContent(zh, osHubIcon)','informationContent(path, zh, statusContent)','workspaceContent(path, zh, statusContent)']) {
+            for (const file of fs.readdirSync('studio').filter(name => name.endsWith('.js'))) {
+              if (fs.readFileSync('studio/' + file, 'utf8').includes(forbidden)) throw new Error('Legacy injection remains: ' + forbidden + ' in ' + file);
+            }
+          }
+          NODE
+
+      - name: Compare every registered Studio page
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          const baseline = JSON.parse(fs.readFileSync('/tmp/phase4c-baseline.json', 'utf8'));
+          const shell = await import(pathToFileURL('studio/ui-shell.js').href + '?after=' + Date.now());
+          const primitives = await import(pathToFileURL('studio/ui-primitives.js').href + '?after=' + Date.now());
+          const { TEXT, OS_PATHS } = await import(pathToFileURL('studio/config.js').href + '?after=' + Date.now());
+          const { buildLinks } = await import(pathToFileURL('studio/routing.js').href + '?after=' + Date.now());
+          const ipInfo = { ip: '203.0.113.44', country: 'CN', region: 'Jiangsu', city: 'Suzhou' };
+          for (const locale of ['en','zh']) {
+            for (const route of Array.from(OS_PATHS).sort()) {
+              const current = shell.osPage(TEXT[locale], buildLinks(locale, route), route, ipInfo, '@cached-user');
+              if (current !== baseline.pages[locale + ':' + route]) throw new Error('Page changed: ' + locale + ':' + route);
+            }
+          }
+          const currentPrimitives = {
+            status: primitives.statusContent(true, '标题', '正文', 'Title', 'Body'),
+            icon: primitives.osHubIcon('storage'),
+            card: primitives.osHubCard({ title:'A', meta:'M', description:'D', href:'/x', icon:'profile', featured:true, tone:'blue' }),
+            grid: primitives.osHubGrid([{ title:'A', description:'D', href:'/x', icon:'general' }], 'test-grid')
+          };
+          if (JSON.stringify(currentPrimitives) !== JSON.stringify(baseline.primitives)) throw new Error('Primitive output changed');
+          console.log('Every registered Studio page in EN/ZH and all shared render primitives are byte-identical.');
+          NODE
+
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir /tmp/wrangler-phase4c
+
+      - name: Commit Phase 4C and remove one-off files
+        run: |
+          rm -f scripts/apply-studio-phase4-render-primitives.mjs
+          rm -f .github/workflows/apply-studio-phase4-render-primitives.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A studio scripts/apply-studio-phase4-render-primitives.mjs .github/workflows/apply-studio-phase4-render-primitives.yml
+          git diff --cached --check
+          git commit -m "refactor(studio): isolate shared render primitives"
+          git push
