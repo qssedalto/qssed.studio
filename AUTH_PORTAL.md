@@ -1,64 +1,123 @@
 # QssedA Auth Portal
 
-`auth.qsseda.studio` is a standalone authentication portal for QssedA services and future desktop/mobile clients.
+`auth.qsseda.studio` is the standalone identity and application-authorization service for QssedA web, desktop, and future mobile clients.
 
-## V1 scope
+## Core routes
 
-- `/` checks the current authentication session automatically.
+- `/` checks the current browser authentication session automatically.
 - `/login` signs in with the existing Supabase project.
 - `/account` shows the current authenticated account and supports sign-out.
-- `/authorize` provides the first authorization UI shell for future desktop/mobile clients.
-- `/api/login` exchanges email/password for a Supabase session.
-- `/api/session` validates the current session and refreshes it when needed.
-- `/api/logout` attempts upstream Supabase sign-out and always clears local auth cookies.
-- `/health` is a simple health endpoint.
-- Chinese/English UI follows the browser `Accept-Language` preference.
-- The session response distinguishes `authenticated` from `authorized`: suspended or banned accounts can be identified but must not be authorized for applications.
+- `/continue` performs the verified browser-session handoff into `qsseda.studio`.
+- `/api/login`, `/api/session`, `/api/logout` manage the browser Auth session.
+- `/health` is the service health endpoint.
 
-## Session model
+## OAuth 2.0 + PKCE
 
-The auth portal keeps the Supabase access and refresh tokens in host-only `__Host-` cookies with `HttpOnly`, `Secure`, `Path=/`, and `SameSite=Lax`.
+Desktop applications are public OAuth clients. They do not receive or embed a reusable `client_secret`.
 
-The page itself does not read or store access/refresh tokens in JavaScript or `localStorage`. The browser calls `/api/session`, and the Worker validates the access token with Supabase. If the access token has expired, the Worker rotates the session with the refresh token and updates both cookies.
+QssedA Auth implements the Authorization Code flow with PKCE and requires `S256`:
 
-This gives `auth.qsseda.studio` a canonical server-readable authentication state without exposing bearer credentials to page JavaScript.
+- `GET /authorize` — validates the client, redirect URI, requested scopes, `state`, and PKCE challenge, then shows the account/consent UI.
+- `POST /api/oauth/authorize` — issues a short-lived one-time authorization code after explicit approval.
+- `POST /oauth/token` — exchanges an authorization code + `code_verifier`, or rotates a refresh token.
+- `POST /oauth/revoke` — revokes a QssedA access or refresh token.
+- `GET /.well-known/oauth-authorization-server` — publishes OAuth server metadata.
 
-V1 deliberately does **not** share auth cookies with every `*.qsseda.studio` subdomain. Future applications should use an authorization-code + PKCE flow through `auth.qsseda.studio` rather than receiving the browser session cookie directly.
+Authorization codes expire after **5 minutes** and are single-use. Access tokens expire after **30 minutes**. Refresh tokens expire after **30 days** and rotate every time they are used.
 
-## Existing qsseda.studio session
+QssedA application tokens are opaque random values. Only SHA-256 hashes of authorization codes, access tokens, and refresh tokens are persisted in PostgreSQL.
 
-The current `qsseda.studio` site uses its own Supabase browser session. Because browser storage is origin-isolated, `auth.qsseda.studio` cannot directly read `qsseda.studio` localStorage.
+### Initial desktop client
 
-A later migration should make Auth the canonical sign-in entry point, or add a short-lived, verified session handoff from the main site. Raw refresh tokens must never be placed in a URL.
+The first registered public client is:
 
-## Account status
+```text
+client_id: qsseda-git-desktop
+name: QssedA Git
+scopes: profile.read session.read
+```
 
-`/api/session` returns both:
+Allowed callbacks:
 
-- `authenticated`: Supabase identity is valid.
-- `authorized`: the `profiles.status` value is `active`.
+```text
+qsseda-git://auth/callback
+http://127.0.0.1:<ephemeral-port>/callback
+```
 
-The UI visibly distinguishes active, suspended, and banned accounts. Application authorization must fail closed for non-active accounts when the authorization backend is enabled.
+For the loopback flow, the registry stores `http://127.0.0.1/callback` and Auth accepts the same callback with an ephemeral TCP port. This allows a Windows desktop application to start a temporary loopback listener without reserving a fixed port.
 
-The profile lookup intentionally uses fields that exist in the current `profiles` schema: `username`, `display_name`, `avatar_url`, `role`, and `status`. Registration-only name details continue to fall back to Supabase user metadata.
+### Desktop flow
 
-## Authorization status
+The desktop client generates a high-entropy `code_verifier`, computes:
 
-The `/authorize` screen is currently interface-only. It shows the authenticated account and requested `client_id`, but the Allow button is disabled until all of the following exist:
+```text
+code_challenge = BASE64URL(SHA256(code_verifier))
+```
 
-1. application/client registry;
-2. strict redirect URI allow-listing;
-3. authorization-code issuance;
-4. PKCE (`S256`) verification;
-5. short code expiry and single-use enforcement;
-6. explicit scopes and consent;
-7. active-account enforcement.
+and opens the system browser at a URL equivalent to:
 
-Desktop applications should be treated as public OAuth clients and must not embed a reusable client secret in the executable.
+```text
+https://auth.qsseda.studio/authorize
+  ?response_type=code
+  &client_id=qsseda-git-desktop
+  &redirect_uri=qsseda-git%3A%2F%2Fauth%2Fcallback
+  &scope=profile.read%20session.read
+  &state=<random state>
+  &code_challenge=<S256 challenge>
+  &code_challenge_method=S256
+```
 
-## Deploy
+After approval, Auth redirects to the registered callback with `code` and the original `state`. The desktop client must verify `state`, then exchange the code using `application/x-www-form-urlencoded`:
 
-This portal uses a separate Wrangler config so the existing `qsseda.studio` Worker is not changed:
+```text
+POST /oauth/token
+
+grant_type=authorization_code
+client_id=qsseda-git-desktop
+code=<authorization code>
+redirect_uri=<the exact redirect URI used above>
+code_verifier=<original verifier>
+```
+
+Refreshing uses the same endpoint with `grant_type=refresh_token`. A successful refresh returns a replacement refresh token; the previous refresh token is immediately revoked.
+
+## Client registry and database model
+
+OAuth state is stored in Supabase PostgreSQL:
+
+- `oauth_clients`
+- `oauth_authorization_codes`
+- `oauth_access_tokens`
+- `oauth_refresh_tokens`
+
+The registry enforces an allow-list of redirect URIs and scopes. Authorization-code issuance additionally requires a valid Supabase user and `profiles.status = 'active'`.
+
+The OAuth tables have RLS enabled and are not directly readable/writable by browser API roles. Protocol operations are performed through narrowly scoped database functions. Internal hashing/redirect helper functions are not executable by `anon` or `authenticated` roles, and authorization-code issuance is available only in an authenticated Supabase context.
+
+## Browser session model
+
+The Auth portal keeps the Supabase access and refresh tokens in host-only `__Host-` cookies with `HttpOnly`, `Secure`, `Path=/`, and `SameSite=Lax`.
+
+Page JavaScript does not read or store those tokens in `localStorage`. The browser calls `/api/session`; the Worker validates the access token with Supabase and rotates the Supabase refresh token when needed.
+
+The session response distinguishes:
+
+- `authenticated`: the Supabase identity is valid.
+- `authorized`: the account is active and may authorize applications.
+
+Suspended or banned accounts remain identifiable but fail closed for application authorization.
+
+## qsseda.studio web handoff
+
+The main `qsseda.studio` site has its own Supabase browser session. Browser storage is origin-isolated, so Auth does not read the main site's `localStorage` directly.
+
+`/continue` instead performs a verified POST handoff to `qsseda.studio/auth/handoff`. The receiving Worker validates the Supabase session and active account before establishing the main-site browser session. Raw credentials are never placed in the URL.
+
+This web handoff is separate from the OAuth/PKCE flow used by desktop applications.
+
+## Deployment
+
+Auth has a dedicated Wrangler configuration:
 
 ```powershell
 npx wrangler deploy -c wrangler.auth.jsonc
@@ -66,18 +125,26 @@ npx wrangler deploy -c wrangler.auth.jsonc
 
 `wrangler.auth.jsonc` declares `auth.qsseda.studio` as a Cloudflare Worker Custom Domain.
 
+Production deployment validates and deploys both `auth-worker.js` and the OAuth module `auth-oauth.js`.
+
 ## Files
 
-- `auth-worker.js` — auth UI, session APIs, account-status checks, Supabase integration
-- `wrangler.auth.jsonc` — dedicated Cloudflare Worker configuration
+- `auth-worker.js` — browser Auth UI, sessions, account status, Studio handoff, OAuth route dispatch
+- `auth-oauth.js` — OAuth metadata, authorization/consent, token exchange, refresh and revocation
+- `wrangler.auth.jsonc` — Auth Cloudflare Worker configuration
+- `supabase/migrations/202609130955_oauth_pkce_v1.sql` — OAuth schema, RPCs and initial public client
+- `supabase/migrations/202609131005_oauth_pkce_privilege_hardening.sql` — OAuth RPC privilege hardening
 
 ## Security notes
 
 - No Supabase service-role key is embedded in the Auth Worker.
 - Passwords are forwarded directly to Supabase Auth and are not stored by the Worker.
-- Session cookies are host-only `__Host-` cookies and unavailable to page JavaScript.
-- State-changing API requests require the exact same `Origin`.
-- Logout attempts to revoke the active Supabase session before clearing browser cookies.
+- Browser session cookies are host-only `__Host-` cookies and unavailable to page JavaScript.
+- Desktop clients use PKCE `S256`; `plain` PKCE is rejected.
+- Redirect URIs and scopes are checked against the server-side client registry.
+- Authorization codes are short-lived, single-use, and bound to client, redirect URI, scopes, and PKCE challenge.
+- Desktop applications do not contain a client secret.
+- OAuth access and refresh tokens are opaque, random, and persisted only as hashes.
+- Refresh-token rotation limits reuse of stolen stale refresh tokens.
+- State-changing browser Auth requests enforce same-origin checks.
 - The portal sends CSP, frame, referrer, MIME, permissions, HSTS, and no-store headers.
-- RLS remains responsible for profile visibility in Supabase.
-- The current authorization UI does not issue credentials yet; it is intentionally non-functional until PKCE/client validation is implemented.
