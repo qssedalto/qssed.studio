@@ -4,6 +4,7 @@ import { profileClientScript, profileContent, profileHubContent } from "./ui-pro
 import { adminClientScript, adminHubContent, adminLogsContent, adminOverviewContent, adminRolesContent, adminSystemContent, adminUsersContent } from "./ui-admin.js";
 import { dashboardContent } from "./ui-dashboard.js";
 import { informationContent } from "./ui-information.js";
+import { knowledgePageMeta } from "./ui-knowledge.js";
 import { workspaceContent } from "./ui-workspace.js";
 import { appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsFallbackContent, settingsGeneralContent, settingsHubContent } from "./ui-settings.js";
 import { storageClientScript, storageSettingsContent } from "./ui-storage.js";
@@ -17,7 +18,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
   const path = pathname;
   const zh = t === TEXT.zh;
   const copy = buildOsCopy(zh);
-  const page = copy.pages[path] || copy.pages["/dashboard"];
+  const page = copy.pages[path] || knowledgePageMeta(path, zh) || copy.pages["/dashboard"];
   const activeSection = page.section;
   const adminPath = path.startsWith("/admin");
   const dashboardPath = path === "/dashboard";

@@ -26,7 +26,11 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 - `ui-storage.js` — private Storage page rendering and browser client runtime; consumes the shared storage-size limit from `config.js`.
 - `ui-admin.js` — Admin Hub, General/Users/Roles/Logs/System rendering, and the Admin browser client application.
 - `ui-dashboard.js` — Dashboard rendering, Dashboard icons and its visit-time/date/theme browser behavior.
-- `ui-information.js` — Information route composition and route-owned Links/Notes/Summaries/Search rendering.
+- `ui-information.js` — Information route composition and route-owned Links/Notes/Summaries/Search rendering; delegates the Knowledge Base route tree to `ui-knowledge.js`.
+- `ui-knowledge.js` — Knowledge Base root/category/article composition for 54 bilingual routes.
+- `knowledge-routes.js` — six-category, 47-topic Knowledge Base route schema shared by routing and rendering.
+- `knowledge-projects.js`, `knowledge-technology.js`, `knowledge-study.js`, `knowledge-methodology.js`, `knowledge-references.js`, `knowledge-archive.js` — detailed bilingual long-term knowledge content by category.
+- `ui-style-knowledge.js` — responsive and accessible Knowledge Base UI styles.
 - `ui-workspace.js` — Workspace route rendering.
 - `ui-styles.js` — Studio OS style aggregator and remaining shared/product CSS in original output order.
 - `ui-style-profile.js` — Phase 4D Profile-owned CSS fragment extracted verbatim from `ui-styles.js` and reinserted at the original output position.

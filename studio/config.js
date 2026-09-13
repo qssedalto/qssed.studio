@@ -1,3 +1,5 @@
+import { KNOWLEDGE_PATHS } from "./knowledge-routes.js";
+
 export const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 export const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 export const ZH_COUNTRIES = ["CN", "HK", "MO", "TW", "SG"];
@@ -10,7 +12,7 @@ export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-
 export const OS_PATHS = new Set([
   "/dashboard",
   "/info",
-  "/info/knowledge",
+  ...KNOWLEDGE_PATHS,
   "/info/links",
   "/info/notes",
   "/info/summaries",
