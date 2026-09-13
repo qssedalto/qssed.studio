@@ -5,6 +5,7 @@ on:
     paths:
       - "auth-entry.js"
       - "auth-worker.js"
+      - "auth-login-identifier.js"
       - "auth-oauth.js"
       - "auth-pkce-test.js"
       - "wrangler.auth.jsonc"
@@ -17,6 +18,7 @@ on:
     paths:
       - "auth-entry.js"
       - "auth-worker.js"
+      - "auth-login-identifier.js"
       - "auth-oauth.js"
       - "auth-pkce-test.js"
       - "wrangler.auth.jsonc"
@@ -37,6 +39,7 @@ jobs:
         run: |
           node --check auth-entry.js
           node --check auth-worker.js
+          node --check auth-login-identifier.js
           node --check auth-oauth.js
           node --check auth-pkce-test.js
 
