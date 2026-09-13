@@ -19,7 +19,8 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 
 - `ui-page.js` — Phase 4B neutral shared page infrastructure: page head, Supabase bootstrap, top controls and theme/language runtime. It is consumed by Auth handoff, Auth pages and the authenticated Studio shell.
 - `ui-audit.js` — Phase 4A shared account/device/audit browser runtime used by Auth pages and the authenticated Studio shell. It preserves the existing browser globals, cache keys and Supabase audit/device contracts.
-- `ui-shell.js` — stable Studio OS composition layer: shell HTML, navigation/page metadata, top-level route dispatch, shared status/Hub primitives, authorization/session bootstrap and client-runtime ordering.
+- `ui-primitives.js` — Phase 4C neutral shared render primitives for status cards and Hub icon/card/grid rendering. Product modules import these directly instead of receiving Shell-owned functions as parameters.
+- `ui-shell.js` — stable Studio OS composition layer: shell HTML, navigation/page metadata, top-level route dispatch, authorization/session bootstrap and client-runtime ordering.
 - `ui-profile.js` — Profile detail/account/preferences rendering, Profile Hub, and Profile-home personalization/link/media client runtime.
 - `ui-settings.js` — Settings Hub, General/Appearance/Language/Account & Security rendering, and the Settings fallback overview.
 - `ui-storage.js` — private Storage page rendering and browser client runtime; consumes the shared storage-size limit from `config.js`.
@@ -30,11 +31,13 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 - `ui-styles.js` — Studio OS CSS; product-specific styles remain here until a later safe extraction requires moving them.
 - `auth-pages.js` — Studio sign-up, login and not-found pages.
 
-Phase 3 product ownership is explicit. Product Hub renderers live with Profile/Admin/Settings, while the reusable Hub primitives (`osHubIcon`, `osHubCard`, `osHubGrid`) remain shell-owned. Likewise, `statusContent()` remains a shared shell primitive passed into Information/Workspace/Settings composition where required.
+Phase 3 product ownership is explicit. Product Hub renderers live with Profile/Admin/Settings.
 
 Phase 4A isolates the previously mixed audit runtime without changing its page order or browser API. Auth login still uses `getAuditDeviceId()`, `clearProfileUiCaches()` and `updateCurrentDevice()`, while the Studio shell still consumes `updateCurrentDevice()`, `hydrateProfileSummary()` and `hydrateProfileAudit()` from the rendered audit script.
 
 Phase 4B renames the remaining neutral `ui-core.js` page infrastructure to `ui-page.js` without changing generated HTML. This removes the misleading `ui-core` ownership name and makes the shared dependency used by `auth-handoff.js`, `auth-pages.js` and `ui-shell.js` explicit.
+
+Phase 4C moves `statusContent()`, `osHubIcon()`, `osHubCard()` and `osHubGrid()` out of `ui-shell.js` into `ui-primitives.js`. Profile, Admin, Settings, Information and Workspace now consume those neutral render primitives directly; no product module depends on `ui-shell.js`.
 
 Admin authorization remains shell-owned: `is_admin`, the Admin lock, warm snapshot restore and authenticated bootstrap are intentionally not part of `ui-admin.js`.
 
