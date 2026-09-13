@@ -28,6 +28,8 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 - `ui-dashboard.js` — Dashboard rendering, Dashboard icons and its visit-time/date/theme browser behavior.
 - `ui-information.js` — Information route composition and route-owned Links/Notes/Summaries/Search rendering; delegates the Knowledge Base route tree to `ui-knowledge.js`.
 - `ui-knowledge.js` — Knowledge Base root/category/article composition for 54 bilingual routes.
+- `knowledge-search.js` — hybrid literal search across built-in knowledge and the current user’s Supabase `knowledge_documents`; supports phrases and single CJK characters.
+- `ui-navigation.js` — deterministic compact/mobile back targets with safe Knowledge Base history preservation.
 - `knowledge-routes.js` — six-category, 47-topic Knowledge Base route schema shared by routing and rendering.
 - `knowledge-projects.js`, `knowledge-technology.js`, `knowledge-study.js`, `knowledge-methodology.js`, `knowledge-references.js`, `knowledge-archive.js` — detailed bilingual long-term knowledge content by category.
 - `ui-style-knowledge.js` — responsive and accessible Knowledge Base UI styles.

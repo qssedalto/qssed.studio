@@ -750,6 +750,16 @@ ${adminStyles()}    /* OS_APPLE_HUBS_V1 */
       .os-hub-card,.settings-general-list{border-color:var(--text)}
       .os-hub-card small{color:var(--text)}
     }
+    /* COMPACT_BACK_NAV_V2 */
+    @media(max-width:900px){
+      .compact-back-zone{width:142px;height:82px}
+      .compact-back-button{width:auto!important;min-width:88px!important;height:48px!important;min-height:48px!important;padding:0 15px 0 12px!important;border-radius:999px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;margin:0!important;font-size:13px!important;font-weight:760!important;letter-spacing:0!important;-webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);transition:transform .12s ease,background .15s ease,border-color .15s ease,box-shadow .15s ease!important}
+      .compact-back-button span{display:inline!important;color:inherit!important;line-height:1!important}
+      .compact-back-button svg{width:21px!important;height:21px!important;stroke:currentColor!important}
+      :root:not([data-theme="light"]) .compact-back-button{background:#000!important;color:#fff!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 10px 28px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.09)!important}
+      :root[data-theme="light"] .compact-back-button{background:rgba(255,255,255,.94)!important;color:#111!important;border:1px solid rgba(17,24,39,.10)!important;box-shadow:0 10px 26px rgba(18,26,38,.12),inset 0 1px 0 rgba(255,255,255,.75)!important}
+      .compact-back-button:active{transform:scale(.955)!important}
+    }
 ${dashboardStyles()}${knowledgeStyles()}</style>`;
 }
 

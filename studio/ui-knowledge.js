@@ -5,6 +5,7 @@ import { STUDY_KNOWLEDGE } from "./knowledge-study.js";
 import { METHODOLOGY_KNOWLEDGE } from "./knowledge-methodology.js";
 import { REFERENCE_KNOWLEDGE } from "./knowledge-references.js";
 import { ARCHIVE_KNOWLEDGE } from "./knowledge-archive.js";
+import { knowledgeSearchPanel } from "./knowledge-search.js";
 
 const CONTENT_BY_CATEGORY = {
   projects: PROJECT_KNOWLEDGE,
@@ -79,6 +80,7 @@ function knowledgeRootContent(zh) {
   const topicCount = KNOWLEDGE_CATEGORIES.reduce((sum, category) => sum + category.items.length, 0);
   return `
     <div class="knowledge-shell knowledge-root">
+      ${knowledgeSearchPanel(zh)}
       <section class="knowledge-intro-panel">
         <div>
           <span class="knowledge-overline">${zh ? "QssedA Knowledge" : "QssedA Knowledge"}</span>
@@ -119,6 +121,7 @@ function knowledgeRootContent(zh) {
 function knowledgeCategoryContent(category, zh) {
   return `
     <div class="knowledge-shell">
+      ${knowledgeSearchPanel(zh)}
       ${breadcrumbs([{ label: zh ? "知识库" : "Knowledge Base", href: `${prefixFor(zh)}${KNOWLEDGE_ROOT}` }, { label: zh ? category.zh : category.en }])}
       <section class="knowledge-category-hero">
         ${iconFor(category)}
@@ -154,6 +157,7 @@ function knowledgeTopicContent(category, item, zh) {
 
   return `
     <div class="knowledge-shell knowledge-article-layout">
+      ${knowledgeSearchPanel(zh)}
       ${breadcrumbs([
         { label: zh ? "知识库" : "Knowledge Base", href: `${prefixFor(zh)}${KNOWLEDGE_ROOT}` },
         { label: zh ? category.zh : category.en, href: categoryHref(category, zh) },
