@@ -17,13 +17,15 @@ export function isMainWorkHandoffPath(pathname) {
 export function mainWorkRedirect(pathname) {
   const clean = normalizePath(pathname);
 
-  if (clean === "/zh-cn/work" || clean === "/zh-cn/work/local" || clean === "/zh-cn/work/tex" || clean === "/zh-cn/workspace/experiments/tex") {
+  // Collaboration Hub and Local Bridge stay in Studio as distinct interfaces.
+  // Only TeX routes move to the standalone Work product.
+  if (clean === "/zh-cn/work/tex" || clean === "/zh-cn/workspace/experiments/tex") {
     return `${WORK_ORIGIN}/zh-cn/tex`;
   }
-  if (clean === "/en/work" || clean === "/en/work/local" || clean === "/en/work/tex" || clean === "/en/workspace/experiments/tex") {
+  if (clean === "/en/work/tex" || clean === "/en/workspace/experiments/tex") {
     return `${WORK_ORIGIN}/en/tex`;
   }
-  if (clean === "/work" || clean === "/work/local" || clean === "/work/tex" || clean === "/workspace/experiments/tex") {
+  if (clean === "/work/tex" || clean === "/workspace/experiments/tex") {
     return `${WORK_ORIGIN}/tex`;
   }
 
