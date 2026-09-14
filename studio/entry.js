@@ -1,10 +1,5 @@
 import { OS_PATHS, LEGACY_REDIRECTS, TEXT } from "./config.js";
 import { handleAuthHandoff } from "./auth-handoff.js";
-import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./storage-api.js";
-import { handleSummaries } from "./summary-api.js";
-import { handleNotes } from "./notes-api.js";
-import { handleUserLinks } from "./user-links-api.js";
-import { handleAdminAccess, handleAdminAction } from "./admin-api.js";
 import {
   handleStudioSessionBootstrap,
   handleStudioSessionLogout,
@@ -91,78 +86,6 @@ function normalizePublicPrivacyCopy(markup) {
   return output;
 }
 
-function hardenAdminClientMarkup(markup) {
-  let output = String(markup || "");
-  const rpcAliases = [
-    ["get_admin_overview", "overview"],
-    ["get_admin_users", "users"],
-    ["get_role_permissions", "roles"],
-    ["get_audit_logs", "logs"],
-    ["update_user_role", "user-role"],
-    ["update_user_status", "user-status"],
-    ["update_role_permissions", "permissions"]
-  ];
-
-  for (const [rpcName, alias] of rpcAliases) output = output.replaceAll(`\"${rpcName}\"`, `\"${alias}\"`);
-
-  output = output.replace(
-    'const { data, error } = await supabaseClient.rpc(name, params || {});',
-    `const sessionResult = await supabaseClient.auth.getSession();
-        const accessToken = sessionResult?.data?.session?.access_token || "";
-        if (!accessToken) {
-          const error = new Error("Session expired");
-          return { data: null, error };
-        }
-        let response;
-        let payload;
-        try {
-          response = await fetch("/api/admin/" + encodeURIComponent(name), {
-            method: "POST",
-            headers: {
-              Authorization: "Bearer " + accessToken,
-              "Content-Type": "application/json",
-              Accept: "application/json"
-            },
-            body: JSON.stringify(params || {}),
-            cache: "no-store"
-          });
-          payload = await response.json().catch(() => ({}));
-        } catch (requestError) {
-          return { data: null, error: requestError };
-        }
-        if (!response.ok) {
-          const error = new Error(payload?.error || "Administrator request failed");
-          return { data: null, error };
-        }
-        const data = payload?.data;
-        const error = null;`
-  );
-
-  output = output.replace(
-    'adminCheck = await supabaseClient.rpc("is_admin");',
-    `const adminSessionResult = await supabaseClient.auth.getSession();
-        const adminAccessToken = adminSessionResult?.data?.session?.access_token || "";
-        if (!adminAccessToken) {
-          adminCheck = { data: false, error: new Error("Session expired") };
-        } else {
-          try {
-            const adminAccessResponse = await fetch("/api/admin/access", {
-              headers: { Authorization: "Bearer " + adminAccessToken, Accept: "application/json" },
-              cache: "no-store"
-            });
-            const adminAccessPayload = await adminAccessResponse.json().catch(() => ({}));
-            adminCheck = adminAccessResponse.ok
-              ? { data: Boolean(adminAccessPayload?.is_admin), error: null }
-              : { data: false, error: new Error(adminAccessPayload?.error || "Administrator access check failed") };
-          } catch (adminAccessError) {
-            adminCheck = { data: false, error: adminAccessError };
-          }
-        }`
-  );
-
-  return output;
-}
-
 function hardenSessionClientMarkup(markup) {
   return String(markup || "").replace(
     'const { error } = await supabaseClient.auth.signOut({ scope: "local" });',
@@ -228,46 +151,6 @@ export default {
       return handleAuthHandoff(request, env, locale);
     }
 
-    if (pathname === "/api/admin/access") {
-      if (request.method !== "GET") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
-      return handleAdminAccess(request, env);
-    }
-
-    if (pathname.startsWith("/api/admin/")) {
-      const action = pathname.slice("/api/admin/".length);
-      return handleAdminAction(request, env, action);
-    }
-
-    if (pathname === "/api/storage/files") {
-      if (request.method !== "GET") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
-      return handleStorageFiles(request, env);
-    }
-
-    if (pathname === "/api/storage/upload") {
-      if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
-      return handleStorageUpload(request, env);
-    }
-
-    if (pathname === "/api/storage/object") {
-      if (request.method !== "GET" && request.method !== "DELETE") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
-      return handleStorageObject(request, env);
-    }
-
-    if (pathname === "/api/summaries") {
-      if (!new Set(["GET", "PUT", "DELETE"]).has(request.method)) return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
-      return handleSummaries(request, env);
-    }
-
-    if (pathname === "/api/notes") {
-      if (!new Set(["GET", "POST", "PUT", "DELETE"]).has(request.method)) return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
-      return handleNotes(request, env);
-    }
-
-    if (pathname === "/api/user-links") {
-      if (!new Set(["GET", "POST", "PUT", "DELETE"]).has(request.method)) return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
-      return handleUserLinks(request, env);
-    }
-
     const legacyTarget = LEGACY_REDIRECTS.get(pathname);
     if (legacyTarget) return localizedRedirect(request, locale, legacyTarget);
 
@@ -287,7 +170,6 @@ export default {
       const shellPath = linksSubroute ? "/info/links" : pathname;
       let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel);
       markup = hardenSessionClientMarkup(markup);
-      if (pathname.startsWith("/admin")) markup = hardenAdminClientMarkup(markup);
       if (pathname === "/info/links") {
         const baseContent = polishLinksContent(linksHubContent(zh), pathname, zh);
         markup = replaceOsContent(markup, enhanceLinksHubWithCommunity(baseContent, zh));
