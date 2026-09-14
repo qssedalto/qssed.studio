@@ -72,6 +72,32 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
         min-height:calc(100vh - 16px)!important;
         border-radius:24px!important;
       }
+      .tex-connection-actions{
+        display:flex!important;
+        align-items:center!important;
+        justify-content:flex-start!important;
+        gap:8px!important;
+        margin-top:10px!important;
+      }
+      .tex-connection-check{
+        width:auto!important;
+        min-width:88px!important;
+        min-height:30px!important;
+        margin:0!important;
+        padding:0 11px!important;
+        border:0!important;
+        border-radius:9px!important;
+        background:var(--fill)!important;
+        color:var(--text)!important;
+        box-shadow:inset 0 0 0 1px var(--border)!important;
+        font-size:9px!important;
+        font-weight:700!important;
+      }
+      .tex-connection-check:hover{
+        background:var(--surface-strong)!important;
+        filter:none!important;
+      }
+      .tex-connection-check:disabled{opacity:.52!important}
       @media(max-width:760px){
         body.os-shell{padding:0!important}
         body.os-shell .os-layout,
@@ -87,6 +113,173 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
         }
       }
     </style></head>`
+  );
+
+  const connectionCopy = zh ? {
+    check: "检测连接",
+    recheck: "重新检测",
+    checking: "正在检测…",
+    checkingTitle: "正在检测编译连接",
+    checkingDetail: "正在检测本机 QssedA Local Bridge 与云端 TeX 编译服务。",
+    localReady: "本机 TeX 已连接",
+    localDetail: "已检测到本机 QssedA Local Bridge",
+    cloudReady: "云端编译服务已连接",
+    cloudDetail: "本机 Bridge 未连接；当前可使用已配置的云端 TeX 编译服务。",
+    offline: "编译服务尚未连接",
+    offlineDetail: "仍未检测到本机 TeX Bridge，云端编译服务也不可用。请确认 QssedA Local Bridge 已启动，然后重新检测。"
+  } : {
+    check: "Check connection",
+    recheck: "Check again",
+    checking: "Checking…",
+    checkingTitle: "Checking compiler connection",
+    checkingDetail: "Checking QssedA Local Bridge on this computer and the cloud TeX compiler.",
+    localReady: "Local TeX connected",
+    localDetail: "QssedA Local Bridge detected",
+    cloudReady: "Cloud compiler connected",
+    cloudDetail: "Local Bridge is offline; the configured cloud TeX compiler is available.",
+    offline: "Compiler not connected",
+    offlineDetail: "Local TeX Bridge is still unavailable and the cloud compiler is offline. Start QssedA Local Bridge, then check again."
+  };
+
+  output = output.replace(
+    "</body>",
+    `<script id="qsseda-work-tex-connection-check">
+      (() => {
+        const copy = ${JSON.stringify(connectionCopy)};
+        const endpoints = ["http://127.0.0.1:32145", "http://localhost:32145"];
+        const expectedService = "qsseda-local-bridge";
+        const expectedProtocol = 1;
+        let checking = false;
+
+        function install() {
+          const card = document.querySelector('.tex-compiler-card');
+          const state = document.getElementById('tex-compiler-state');
+          const detail = document.getElementById('tex-compiler-detail');
+          if (!card || !state || !detail) {
+            window.setTimeout(install, 80);
+            return;
+          }
+          if (document.getElementById('tex-connection-check')) return;
+
+          const actions = document.createElement('div');
+          actions.className = 'tex-connection-actions';
+          const button = document.createElement('button');
+          button.id = 'tex-connection-check';
+          button.className = 'tex-connection-check';
+          button.type = 'button';
+          button.textContent = state.classList.contains('is-ready') ? copy.recheck : copy.check;
+          actions.append(button);
+          const privacy = card.querySelector('small');
+          if (privacy) card.insertBefore(actions, privacy);
+          else card.append(actions);
+
+          const syncButtonLabel = () => {
+            if (checking) return;
+            button.textContent = state.classList.contains('is-ready') ? copy.recheck : copy.check;
+          };
+          const observer = new MutationObserver(syncButtonLabel);
+          observer.observe(state, { attributes: true, childList: true, subtree: true });
+
+          button.addEventListener('click', async () => {
+            if (checking) return;
+            checking = true;
+            button.disabled = true;
+            button.textContent = copy.checking;
+            setSurface(copy.checkingTitle, copy.checkingDetail, false);
+
+            const [local, cloud] = await Promise.all([probeLocal(), probeCloud()]);
+            if (local) {
+              const engineText = local.engines.length ? ' · ' + local.engines.join(' / ') : '';
+              setSurface(copy.localReady, copy.localDetail + ' · ' + local.host + engineText, true);
+              button.textContent = copy.recheck;
+              window.setTimeout(() => window.location.reload(), 420);
+              return;
+            }
+
+            if (cloud) {
+              setSurface(copy.cloudReady, copy.cloudDetail, true);
+              checking = false;
+              button.disabled = false;
+              button.textContent = copy.recheck;
+              return;
+            }
+
+            setSurface(copy.offline, copy.offlineDetail, false);
+            checking = false;
+            button.disabled = false;
+            button.textContent = copy.recheck;
+          });
+
+          function setSurface(label, description, ready) {
+            const stateText = state.querySelector('strong');
+            if (stateText) stateText.textContent = label;
+            detail.textContent = description;
+            state.classList.toggle('is-ready', Boolean(ready));
+            const pill = document.getElementById('tex-compiler-pill');
+            const pillText = pill?.querySelector('span');
+            if (pillText) pillText.textContent = label;
+            pill?.classList.toggle('is-ready', Boolean(ready));
+            pill?.classList.toggle('is-offline', !ready);
+          }
+
+          async function loopbackFetch(base, path) {
+            const controller = new AbortController();
+            const timer = window.setTimeout(() => controller.abort(), 2200);
+            try {
+              return await fetch(new Request(base + path, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-store',
+                credentials: 'omit',
+                headers: { Accept: 'application/json' },
+                signal: controller.signal,
+                targetAddressSpace: 'loopback'
+              }));
+            } finally {
+              window.clearTimeout(timer);
+            }
+          }
+
+          async function probeLocal() {
+            for (const base of endpoints) {
+              try {
+                const healthResponse = await loopbackFetch(base, '/health');
+                if (!healthResponse.ok) continue;
+                const health = await healthResponse.json();
+                if (health?.service !== expectedService || Number(health?.protocol) !== expectedProtocol) continue;
+                if (!Array.isArray(health?.capabilities) || !health.capabilities.includes('tex.compile')) continue;
+
+                const texResponse = await loopbackFetch(base, '/tex/status');
+                if (!texResponse.ok) continue;
+                const tex = await texResponse.json();
+                if (!tex?.available) continue;
+                const engines = Array.isArray(tex.engines)
+                  ? tex.engines.map(value => String(value))
+                  : [String(tex.engine || 'xelatex')];
+                return { host: base.replace(/^https?:\\/\\//, ''), engines };
+              } catch {}
+            }
+            return null;
+          }
+
+          async function probeCloud() {
+            try {
+              const response = await fetch('/api/tex/status', {
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { Accept: 'application/json' }
+              });
+              const payload = await response.json().catch(() => ({}));
+              return Boolean(response.ok && payload?.compiler_available);
+            } catch {
+              return false;
+            }
+          }
+        }
+
+        install();
+      })();
+    </script></body>`
   );
 
   output = output.replace('const currentPath = "/workspace";', `const currentPath = ${JSON.stringify(`${prefix}/tex`)};`);
