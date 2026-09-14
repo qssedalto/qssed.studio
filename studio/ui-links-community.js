@@ -5,14 +5,14 @@ export function enhanceLinksHubWithCommunity(content, zh) {
   const submitButton = zh
     ? '<button class="links-quick-submit" id="links-quick-submit" type="submit" disabled>新建链接</button>'
     : '<button class="links-quick-submit" id="links-quick-submit" type="submit" disabled>Create link</button>';
-  const shareText = zh ? "同时发布到社区" : "Also publish to Community";
+  const shareText = zh ? "发布到社区" : "Publish to Community";
   const shareHint = zh
-    ? "勾选后，这条链接仍属于你的账号，同时会公开出现在社区链接中。"
-    : "When selected, the link still belongs to your account and is also published in Community Links.";
+    ? "开启后公开给所有用户；关闭时仅你和管理员可见。"
+    : "Turn on to make this link public. Off keeps it private to you and administrators.";
 
   output = output.replace(
     submitButton,
-    `<div class="links-create-actions">${submitButton}<label class="links-community-option"><input id="links-community-opt-in" type="checkbox"><span><strong>${shareText}</strong><small>${shareHint}</small></span></label></div>`
+    `<div class="links-create-actions">${submitButton}<label class="links-community-option"><input id="links-community-opt-in" type="checkbox"><span class="links-community-switch" aria-hidden="true"></span><span class="links-community-copy"><strong>${shareText}</strong><small>${shareHint}</small></span></label></div>`
   );
 
   output = output.replace(
@@ -39,11 +39,17 @@ export function enhanceLinksHubWithCommunity(content, zh) {
 
   output += `
     <style>
-      .links-create-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-      .links-community-option{display:flex;align-items:center;gap:9px;min-height:48px;padding:7px 11px;border-radius:13px;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border);cursor:pointer;user-select:none}
-      .links-community-option input{width:18px;height:18px;margin:0;accent-color:var(--primary)}
-      .links-community-option span{display:grid;gap:1px}.links-community-option strong{font-size:12px}.links-community-option small{max-width:430px;color:var(--muted);font-size:10px;line-height:1.35}
-      @media(max-width:700px){.links-create-actions{align-items:stretch;flex-direction:column}.links-community-option{width:100%}}
+      .links-create-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+      .links-community-option{position:relative;display:flex;align-items:center;gap:10px;min-height:48px;padding:0 10px;border-radius:13px;background:transparent;cursor:pointer;user-select:none;transition:background .12s ease}
+      .links-community-option:hover{background:var(--fill)}
+      .links-community-option input{position:absolute!important;width:1px!important;height:1px!important;min-height:1px!important;margin:0!important;padding:0!important;border:0!important;opacity:0!important;pointer-events:none!important;box-shadow:none!important}
+      .links-community-switch{position:relative;display:block!important;width:40px;height:24px;flex:0 0 40px;border-radius:999px;background:var(--secondary);box-shadow:inset 0 0 0 1px var(--border);transition:background .18s ease,box-shadow .18s ease}
+      .links-community-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.18);transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+      .links-community-option input:checked + .links-community-switch{background:var(--primary);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 82%,black)}
+      .links-community-option input:checked + .links-community-switch::after{transform:translateX(16px)}
+      .links-community-option input:focus-visible + .links-community-switch{outline:3px solid color-mix(in srgb,var(--primary) 18%,transparent);outline-offset:2px}
+      .links-community-copy{display:grid!important;gap:1px;min-width:0}.links-community-copy strong{font-size:12px;font-weight:680;line-height:1.3}.links-community-copy small{max-width:390px;color:var(--muted);font-size:10px;line-height:1.35}
+      @media(max-width:700px){.links-create-actions{align-items:stretch;flex-direction:column}.links-community-option{width:100%;padding:8px 2px}.links-community-option:hover{background:transparent}}
     </style>
   `;
   return output;
