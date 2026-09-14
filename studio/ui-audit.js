@@ -248,7 +248,13 @@ export function auditClientScript(ipInfo) {
       }
 
       restoreProfileUiCaches();
-      bindProfileHome();
+      window.setTimeout(() => {
+        try {
+          if (typeof bindProfileHome === "function") bindProfileHome();
+        } catch (error) {
+          console.error("Profile interaction binding failed", error);
+        }
+      }, 0);
 
       function renderAccountAudit(user, events, devices, eventsError, devicesError) {
         const set = (id, value) => { const el = document.getElementById(id); if (el) el.innerText = value || "-"; };
