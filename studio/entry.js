@@ -16,6 +16,7 @@ import { projectsWorkspaceContent } from "./ui-projects.js";
 import { tasksWorkspaceContent } from "./ui-tasks.js";
 import { draftsWorkspaceContent } from "./ui-drafts.js";
 import { workbenchContent } from "./ui-workbench.js";
+import { labContent } from "./ui-lab.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
@@ -109,6 +110,7 @@ export default {
       if (pathname === "/workspace/projects") markup = replaceOsContent(markup, projectsWorkspaceContent(zh));
       if (pathname === "/workspace/tasks") markup = replaceOsContent(markup, tasksWorkspaceContent(zh));
       if (pathname === "/workspace/drafts") markup = replaceOsContent(markup, draftsWorkspaceContent(zh));
+      if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh));
       return withStudioSessionCookies(localizedPage(markup, locale), gate.cookies);
     }
 
