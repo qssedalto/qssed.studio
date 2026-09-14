@@ -3,6 +3,7 @@ import { handleKnowledgeSearch } from "./studio/knowledge-api.js";
 import { handleGlobalSearch } from "./studio/global-search-api.js";
 import { handleProjects } from "./studio/projects-api.js";
 import { handleTasks } from "./studio/tasks-api.js";
+import { handleDrafts } from "./studio/drafts-api.js";
 import { handleCuratedFavorites } from "./studio/favorites-api.js";
 import { handleRegistrationUsernameCheck } from "./studio/registration-check-api.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
@@ -25,7 +26,6 @@ export default {
   async fetch(request, env, ctx) {
     const blocked = await protectEdgeRequest(request, env);
     if (blocked) return applyEdgeProtectionHeaders(request, blocked);
-
     const response = await routeStudioRequest(request, env, ctx);
     return applyEdgeProtectionHeaders(request, response);
   }
@@ -49,6 +49,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (pathname === "/api/search/global") return handleGlobalSearch(request, env);
   if (pathname === "/api/projects") return handleProjects(request, env);
   if (pathname === "/api/tasks") return handleTasks(request, env);
+  if (pathname === "/api/drafts") return handleDrafts(request, env);
   if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
   if (pathname === "/api/auth/username-check") return handleRegistrationUsernameCheck(request, env);
   if (pathname === "/api/admin/access") {
@@ -88,11 +89,9 @@ async function rateLimitKey(request, scope, preferAuthenticatedIdentity) {
   if (preferAuthenticatedIdentity) {
     const authorization = request.headers.get("Authorization") || "";
     if (authorization) return `${scope}:auth:${await digest(authorization)}`;
-
     const cookie = request.headers.get("Cookie") || "";
     if (cookie) return `${scope}:cookie:${await digest(cookie)}`;
   }
-
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   return `${scope}:ip:${ip}`;
 }
@@ -106,22 +105,13 @@ async function digest(value) {
 function methodNotAllowed() {
   return new Response(JSON.stringify({ error: "Method not allowed" }), {
     status: 405,
-    headers: {
-      "content-type": "application/json;charset=UTF-8",
-      "cache-control": "no-store",
-      "x-content-type-options": "nosniff"
-    }
+    headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store", "x-content-type-options": "nosniff" }
   });
 }
 
 function tooManyRequests() {
   return new Response(JSON.stringify({ error: "Too many requests. Please try again shortly." }), {
     status: 429,
-    headers: {
-      "content-type": "application/json;charset=UTF-8",
-      "cache-control": "no-store",
-      "retry-after": "60",
-      "x-content-type-options": "nosniff"
-    }
+    headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store", "retry-after": "60", "x-content-type-options": "nosniff" }
   });
 }
