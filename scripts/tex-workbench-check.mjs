@@ -41,6 +41,17 @@ for (const zh of [true, false]) {
   assert(workMarkup.includes('id="tex-right-panel-toggle"'), "Work TeX must expose a right-panel collapse control");
   assert(workMarkup.includes("is-left-collapsed") && workMarkup.includes("is-right-collapsed"), "Work TeX must implement independent panel states");
   assert(workMarkup.includes("qsseda.work.tex.panel-layout.v1"), "Work TeX panel state must persist across reloads");
+  assert(workMarkup.includes('id="qsseda-work-tex-mobile-ui"'), "Work TeX must include the dedicated mobile layout");
+  assert(workMarkup.includes("tex-mobile-tabs"), "Mobile Work TeX must expose Documents, Edit, and PDF tabs");
+  assert(workMarkup.includes('data-mobile-pane="documents"') && workMarkup.includes('data-mobile-pane="editor"') && workMarkup.includes('data-mobile-pane="preview"'), "Mobile Work TeX must expose all three workspace panes");
+  assert(workMarkup.includes("--tex-mobile-vh"), "Mobile Work TeX must track the visual viewport for keyboard-safe sizing");
+  assert(workMarkup.includes("visualViewport"), "Mobile Work TeX must respond to the on-screen keyboard viewport");
+  assert(workMarkup.includes("qsseda.work.tex.mobile-pane.v1"), "Mobile Work TeX must preserve the active pane within the session");
+  assert(workMarkup.includes("pointer:coarse"), "Phone landscape layouts must use the mobile workspace on touch devices");
+  assert(workMarkup.includes('id="qsseda-work-tex-mobile-tools"'), "Mobile Work TeX must include the quick-input toolbar styles");
+  assert(workMarkup.includes("tex-mobile-inputbar"), "Mobile Work TeX must expose the TeX quick-input toolbar");
+  assert(workMarkup.includes("setRangeText"), "Mobile TeX quick input must insert at the current selection");
+  assert(workMarkup.includes("pointerdown") && workMarkup.includes("preventDefault"), "Mobile TeX quick input must preserve textarea focus while tapping toolbar buttons");
   const appScripts = [...workMarkup.matchAll(/<script(?: [^>]*)?>([\s\S]*?)<\/script>/g)].map(match => match[1]);
   for (const code of appScripts) new Function(code);
 }
