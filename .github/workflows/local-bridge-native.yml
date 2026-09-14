@@ -45,7 +45,7 @@ jobs:
           CGO_ENABLED: "0"
         run: |
           mkdir -p dist
-          go build -trimpath -ldflags "-s -w -H=windowsgui -X main.version=0.2.0-${GITHUB_SHA::7}" -o dist/QssedA-Local-Bridge.exe .
+          go build -trimpath -ldflags "-s -w -H=windowsgui -X main.version=0.3.0-${GITHUB_SHA::7}" -o dist/QssedA-Local-Bridge.exe .
           test -s dist/QssedA-Local-Bridge.exe
 
       - name: Upload workflow artifact
