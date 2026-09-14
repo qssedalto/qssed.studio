@@ -110,6 +110,7 @@ function runFixedProbe(command, args, timeoutMs) {
     let stderr = "";
     let settled = false;
     let child;
+    let timer = null;
 
     try {
       child = spawn(command, args, {
@@ -125,7 +126,7 @@ function runFixedProbe(command, args, timeoutMs) {
     const finish = ok => {
       if (settled) return;
       settled = true;
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       resolve({ ok, stdout: stdout.slice(0, 4096), stderr: stderr.slice(0, 4096) });
     };
 
@@ -137,7 +138,7 @@ function runFixedProbe(command, args, timeoutMs) {
     });
     child.on("close", code => finish(code === 0));
 
-    const timer = setTimeout(() => {
+    timer = setTimeout(() => {
       try { child.kill(); } catch {}
       finish(false);
     }, timeoutMs);
