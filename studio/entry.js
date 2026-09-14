@@ -4,7 +4,7 @@ import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./
 import { handleSummaries } from "./summary-api.js";
 import { handleNotes } from "./notes-api.js";
 import { handleUserLinks } from "./user-links-api.js";
-import { curatedLinksAccountContent } from "./curated-links-account.js";
+import { linksWorkspaceContent } from "./ui-links-workspace.js";
 import { researchNotesContent } from "./ui-notes.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
@@ -19,13 +19,6 @@ function localizedPage(markup, locale, status = 200) {
     `$1${label}$2`
   );
   return html(localizedMarkup, status);
-}
-
-function appendToOsContent(markup, content) {
-  const marker = "\n      </section>\n    </main>";
-  const end = markup.lastIndexOf(marker);
-  if (end < 0) return markup;
-  return markup.slice(0, end) + "\n        " + content + markup.slice(end);
 }
 
 function replaceOsContent(markup, content) {
@@ -99,7 +92,7 @@ export default {
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
       const zh = locale === "zh";
       let markup = osPage(t, links, pathname, ipInfo, cachedOsUserLabel);
-      if (pathname === "/info/links") markup = appendToOsContent(markup, curatedLinksAccountContent(zh));
+      if (pathname === "/info/links") markup = replaceOsContent(markup, linksWorkspaceContent(zh));
       if (pathname === "/info/notes") markup = replaceOsContent(markup, researchNotesContent(zh));
       return localizedPage(markup, locale);
     }
