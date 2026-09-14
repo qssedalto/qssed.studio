@@ -15,6 +15,14 @@ import { handleAdminAccess, handleAdminAction } from "./studio/admin-api.js";
 import { isLegacyCookieApiPath, handleLegacyCookieApi } from "./studio/legacy-cookie-api.js";
 import { hardenGlobalBrowserResponse } from "./studio/global-browser-security.js";
 import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js";
+import {
+  handleMainWorkHandoff,
+  isMainWorkHandoffPath,
+  isWorkSubdomainRequest,
+  mainWorkRedirect,
+  rewriteWorkSubdomainRequest,
+  workSessionRedirect
+} from "./studio/work-subdomain.js";
 
 const AUTH_ABUSE_PATHS = new Set([
   "/api/auth/login",
@@ -35,8 +43,26 @@ export default {
 };
 
 async function routeStudioRequest(request, env, ctx) {
-  const url = new URL(request.url);
-  const pathname = url.pathname;
+  let url = new URL(request.url);
+  let pathname = url.pathname;
+  const workHost = isWorkSubdomainRequest(request);
+
+  if (!workHost && isMainWorkHandoffPath(pathname)) return handleMainWorkHandoff(request);
+
+  if (!workHost) {
+    const workTarget = mainWorkRedirect(pathname);
+    if (workTarget) return redirect(workTarget);
+  }
+
+  let workPageNext = "";
+  if (workHost) {
+    const mapped = rewriteWorkSubdomainRequest(request);
+    if (mapped.redirect) return redirect(mapped.redirect);
+    request = mapped.request;
+    workPageNext = mapped.pageNext;
+    url = new URL(request.url);
+    pathname = url.pathname;
+  }
 
   if (AUTH_ABUSE_PATHS.has(pathname)) {
     const key = await rateLimitKey(request, `auth:${pathname}`, false);
@@ -77,6 +103,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (isLegacyCookieApiPath(pathname)) return handleLegacyCookieApi(request, env, pathname);
 
   const response = await studio.fetch(request, env, ctx);
+  if (workHost && workPageNext && response.status === 401) return workSessionRedirect(workPageNext);
   return hardenGlobalBrowserResponse(response);
 }
 
@@ -106,6 +133,10 @@ async function digest(value) {
   const bytes = new TextEncoder().encode(String(value || ""));
   const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   return Array.from(hash.slice(0, 16), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function redirect(location) {
+  return new Response(null, { status: 302, headers: { location, "cache-control": "no-store", "referrer-policy": "no-referrer" } });
 }
 
 function methodNotAllowed() {
