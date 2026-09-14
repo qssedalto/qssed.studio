@@ -2,11 +2,18 @@ import { TEXT } from "../studio/config.js";
 import { buildLinks } from "../studio/routing.js";
 import { signUpPage } from "../studio/auth-pages.js";
 import { osPage } from "../studio/ui-shell.js";
+import { storageSettingsContent } from "../studio/ui-storage.js";
+import { researchNotesContent } from "../studio/ui-notes.js";
+import { summariesContent } from "../studio/ui-information.js";
+import { privateLinksPageContent } from "../studio/ui-links-workspace.js";
+import { curatedLinksAccountContent } from "../studio/curated-links-account.js";
+import { curatedLinksUserEnhancer } from "../studio/curated-links-user.js";
 import { hardenBrowserMarkup } from "../studio/browser-security.js";
 import { hardenAdminBrowserMarkup } from "../studio/admin-browser-security.js";
+import { hardenLegacyApiBrowserMarkup } from "../studio/legacy-api-browser-security.js";
 
 const ipInfo = { ip: "203.0.113.10", country: "CN", region: "Test", city: "Test" };
-const harden = source => hardenAdminBrowserMarkup(hardenBrowserMarkup(source));
+const harden = source => hardenLegacyApiBrowserMarkup(hardenAdminBrowserMarkup(hardenBrowserMarkup(source)));
 
 const signupLinks = buildLinks("zh", "/sign-up");
 const signup = harden(signUpPage(TEXT.zh, signupLinks, ipInfo));
@@ -35,6 +42,24 @@ const dashboard = harden(osPage(TEXT.zh, dashboardLinks, "/dashboard", ipInfo, "
 assertContains(dashboard, "/api/account/device", "Dashboard must use the Worker device endpoint from the shared runtime");
 assertContains(dashboard, "/api/admin/", "Dashboard shared admin runtime must use the Worker admin endpoint");
 assertBrowserInternalsHidden(dashboard, "Dashboard");
+
+const cookieClients = [
+  ["Storage", harden(storageSettingsContent(true)), ["/api/storage/files", "/api/storage/upload", "/api/storage/object"]],
+  ["Notes", harden(researchNotesContent(true)), ["/api/notes"]],
+  ["Summaries", harden(summariesContent(true)), ["/api/summaries"]],
+  ["Private links", harden(privateLinksPageContent(true)), ["/api/user-links"]],
+  ["Account links", harden(curatedLinksAccountContent(true)), ["/api/user-links"]],
+  ["Curated user links", harden(curatedLinksUserEnhancer(true)), ["/api/user-links"]]
+];
+for (const [label, source, endpoints] of cookieClients) {
+  for (const endpoint of endpoints) assertContains(source, endpoint, `${label} must retain ${endpoint}`);
+  assertAbsent(source, "headers.set('Authorization'", `${label} still sets an Authorization header`);
+  assertAbsent(source, 'headers.set("Authorization"', `${label} still sets an Authorization header`);
+  assertAbsent(source, "'Authorization':'Bearer '", `${label} still contains a bearer Authorization helper`);
+  assertAbsent(source, "Authorization: 'Bearer ' + session.access_token", `${label} still contains a bearer Authorization helper`);
+  assertAbsent(source, "const access = await token()", `${label} still reads a token for API authentication`);
+  assertContains(source, "same-origin", `${label} must explicitly use same-origin credentials after hardening`);
+}
 
 const legacyAdminProxy = `
       async function adminRpc(name, params) {
