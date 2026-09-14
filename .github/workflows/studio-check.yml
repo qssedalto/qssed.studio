@@ -12,6 +12,7 @@ on:
       - "scripts/projects-check.mjs"
       - "scripts/tasks-check.mjs"
       - "scripts/drafts-check.mjs"
+      - "scripts/workbench-check.mjs"
       - "wrangler.jsonc"
       - ".github/workflows/studio-check.yml"
   push:
@@ -27,6 +28,7 @@ on:
       - "scripts/projects-check.mjs"
       - "scripts/tasks-check.mjs"
       - "scripts/drafts-check.mjs"
+      - "scripts/workbench-check.mjs"
       - "wrangler.jsonc"
       - ".github/workflows/studio-check.yml"
   workflow_dispatch:
@@ -52,6 +54,7 @@ jobs:
           node --check scripts/projects-check.mjs
           node --check scripts/tasks-check.mjs
           node --check scripts/drafts-check.mjs
+          node --check scripts/workbench-check.mjs
 
       - name: Verify browser security markup
         run: node scripts/security-markup-check.mjs
@@ -73,6 +76,9 @@ jobs:
 
       - name: Verify draft workspace
         run: node scripts/drafts-check.mjs
+
+      - name: Verify Workbench aggregation
+        run: node scripts/workbench-check.mjs
 
       - name: Bundle Studio Worker
         run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check

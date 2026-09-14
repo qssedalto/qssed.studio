@@ -12,6 +12,7 @@ const EXPENSIVE_PATHS = new Set([
   "/api/projects",
   "/api/tasks",
   "/api/drafts",
+  "/api/workbench/overview",
   "/api/storage/files",
   "/api/summaries",
   "/api/user-links",

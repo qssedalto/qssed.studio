@@ -23,7 +23,8 @@ export function normalizeFeatureAvailabilityCopy(markup) {
     ["全局搜索尚未开放","全局搜索"],["Global search isn’t available yet","Global search"],["跨模块搜索索引还没接入。","可跨知识库、研究笔记、摘要和不同链接范围进行统一搜索。"],["The cross-module search index is not connected yet.","Search across Knowledge, research notes, summaries, and the available link scopes."],
     ["项目尚未开放","项目管理"],["Projects aren’t available yet","Project Management"],["项目数据表还没接入。","项目已与当前账号关联保存。"],["Project data is not connected yet.","Projects are saved with the current account."],
     ["任务尚未开放","任务中心"],["Tasks aren’t available yet","Task Center"],["任务数据表还没接入。","任务已与当前账号关联保存，并可直接关联项目。"],["Task data is not connected yet.","Tasks are saved with the current account and can attach directly to projects."],
-    ["草稿尚未开放","草稿箱"],["Drafts aren’t available yet","Drafts"],["草稿保存接口还没接入。","草稿已与当前账号关联，并在编辑时自动保存。"],["Draft storage is not connected yet.","Drafts are linked to the current account and autosave while editing."]
+    ["草稿尚未开放","草稿箱"],["Drafts aren’t available yet","Drafts"],["草稿保存接口还没接入。","草稿已与当前账号关联，并在编辑时自动保存。"],["Draft storage is not connected yet.","Drafts are linked to the current account and autosave while editing."],
+    ["工作台尚未开放","工作台"],["Workbench isn’t available yet","Workbench"],["工作台数据模型还没接入。","工作台会聚合进行中的项目、今天与逾期任务、最近草稿和最近研究笔记，不单独复制数据。"],["Workbench data is not connected yet.","Workbench aggregates active projects, today's and overdue tasks, recent drafts, and recent research notes without duplicating data."]
   ];
   for (const [before, after] of replacements) output = output.replaceAll(before, after);
   return output;
