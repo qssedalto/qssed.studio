@@ -1,3 +1,4 @@
+import { SUPABASE_URL } from "./config.js";
 import { hasStorageBinding, verifyStorageUser } from "./storage-api.js";
 import { json } from "./routing.js";
 import { workerLog } from "./server-runtime.js";
@@ -60,7 +61,7 @@ async function fetchOwnerLabels(secret, ownerIds) {
   const labels = new Map();
   for (let index = 0; index < unique.length; index += 100) {
     const chunk = unique.slice(index, index + 100);
-    const url = new URL("https://qssedalto.supabase.co/rest/v1/profiles");
+    const url = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
     url.searchParams.set("select", "id,username,display_name");
     url.searchParams.set("id", `in.(${chunk.join(",")})`);
     try {
