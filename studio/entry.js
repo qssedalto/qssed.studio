@@ -4,7 +4,8 @@ import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./
 import { handleSummaries } from "./summary-api.js";
 import { handleNotes } from "./notes-api.js";
 import { handleUserLinks } from "./user-links-api.js";
-import { curatedLinksUserEnhancer } from "./curated-links-user.js";
+import { curatedLinksAccountContent } from "./curated-links-account.js";
+import { researchNotesContent } from "./ui-notes.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
@@ -18,6 +19,25 @@ function localizedPage(markup, locale, status = 200) {
     `$1${label}$2`
   );
   return html(localizedMarkup, status);
+}
+
+function appendToOsContent(markup, content) {
+  const marker = "\n      </section>\n    </main>";
+  const end = markup.lastIndexOf(marker);
+  if (end < 0) return markup;
+  return markup.slice(0, end) + "\n        " + content + markup.slice(end);
+}
+
+function replaceOsContent(markup, content) {
+  const opening = '<section id="os-content"';
+  const start = markup.indexOf(opening);
+  if (start < 0) return markup;
+  const startTagEnd = markup.indexOf(">", start);
+  if (startTagEnd < 0) return markup;
+  const marker = "\n      </section>\n    </main>";
+  const end = markup.lastIndexOf(marker);
+  if (end < 0 || end <= startTagEnd) return markup;
+  return markup.slice(0, startTagEnd + 1) + "\n        " + content + markup.slice(end);
 }
 
 export default {
@@ -77,8 +97,10 @@ export default {
 
     if (OS_PATHS.has(pathname)) {
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
+      const zh = locale === "zh";
       let markup = osPage(t, links, pathname, ipInfo, cachedOsUserLabel);
-      if (pathname === "/info/links") markup = markup.replace("</body>", `${curatedLinksUserEnhancer(locale === "zh")}</body>`);
+      if (pathname === "/info/links") markup = appendToOsContent(markup, curatedLinksAccountContent(zh));
+      if (pathname === "/info/notes") markup = replaceOsContent(markup, researchNotesContent(zh));
       return localizedPage(markup, locale);
     }
 
