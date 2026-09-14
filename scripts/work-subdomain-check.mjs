@@ -37,6 +37,10 @@ assert(workTexUi.includes('id="qsseda-work-tex-only"'), "Work TeX must include t
 assert(workTexUi.includes('.tex-workbench .tex-hero{display:none!important}'), "Work must hide Studio/TeX product chrome above the workspace");
 assert(workTexUi.includes('.os-sidebar'), "Work must remove the Studio sidebar from layout");
 assert(workTexUi.includes('height:calc(100vh - 16px)!important'), "Work TeX must own the viewport");
+assert(workTexUi.includes('tex-connection-check'), "Work TeX must expose a manual compiler connection check");
+assert(workTexUi.includes("targetAddressSpace: 'loopback'"), "Manual Work TeX connection checks must remain scoped to loopback");
+assert(workTexUi.includes("loopbackFetch(base, '/tex/status')"), "Manual Work TeX connection checks must verify TeX availability after Bridge health");
+assert(workTexUi.includes("fetch('/api/tex/status'"), "Manual Work TeX connection checks must also verify cloud compiler availability");
 
 assert(workWrangler.name === "qsseda-work", "Work Worker must use a dedicated script name");
 assert(workWrangler.main === "worker.js", "Work Worker must reuse the hardened Studio facade");
