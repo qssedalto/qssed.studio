@@ -214,30 +214,36 @@ export function workLocalBridgeContent(zh) {
 
           if (!connectedBase || !health) {
             setState("offline", text.offline);
-            if (versionLabel) versionLabel.textContent = ${JSON.stringify(zh ? "协议：未连接" : "Protocol: offline")};
-            if (texLabel) texLabel.textContent = ${JSON.stringify(zh ? "TeX：未检测" : "TeX: not detected")};
+            if (versionLabel) versionLabel.textContent = ${JSON.stringify(zh ? "协议：未连接" : "Protocol: disconnected")};
+            if (texLabel) texLabel.textContent = ${JSON.stringify(zh ? "TeX：未知" : "TeX: unknown")};
             if (log) log.textContent = text.logOffline;
             button.disabled = false;
             button.textContent = text.retry;
             return;
           }
 
-          if (endpointLabel) endpointLabel.textContent = connectedBase.replace(/^https?:\/\//, "");
-          if (versionLabel) versionLabel.textContent = ${JSON.stringify(zh ? "协议：" : "Protocol: ")} + String(health?.service || "") + " v" + String(health?.protocol || "");
-          renderCapabilities(health?.capabilities || []);
-          let tex = null;
-          try { tex = await readJson(await loopbackFetch(connectedBase, "/tex/status")); } catch {}
-          if (texLabel) texLabel.textContent = tex?.available ? text.texReady : text.texMissing;
           setState("online", text.online);
+          if (endpointLabel) endpointLabel.textContent = connectedBase.replace(/^https?:\\/\\//, "");
+          if (versionLabel) versionLabel.textContent = "Bridge " + String(health.version || "unknown") + " · protocol " + String(health.protocol);
+          renderCapabilities(health.capabilities || []);
           if (log) log.textContent = text.logOnline;
+
+          try {
+            const tex = await readJson(await loopbackFetch(connectedBase, "/tex/status"));
+            if (texLabel) texLabel.textContent = tex.available ? text.texReady + (tex.version ? " · " + String(tex.version) : "") : text.texMissing;
+          } catch {
+            if (texLabel) texLabel.textContent = ${JSON.stringify(zh ? "TeX：状态读取失败" : "TeX: status unavailable")};
+          }
+
           button.disabled = false;
           button.textContent = text.retry;
         }
 
         async function autoProbeWhenAlreadyAllowed() {
           try {
-            const permissionState = await navigator.permissions?.query?.({ name: "local-network-access" });
-            if (permissionState?.state === "granted") return void probe();
+            if (!navigator.permissions?.query) return;
+            const permission = await navigator.permissions.query({ name: "loopback-network" });
+            if (permission?.state === "granted") void probe();
           } catch {}
         }
 
@@ -255,19 +261,17 @@ export function decorateWorkNavigation(markup, zh, pathname) {
         <section class="os-nav-group" data-qsseda-work-nav="1">
           <span class="os-nav-title">${zh ? "协作" : "Work"}</span>
           <div class="os-nav-items">
-            <a href="${workUrl}">${zh ? "Work" : "Work"}</a>
+            <a href="${workUrl}">Work</a>
           </div>
         </section>
       `;
 
-  // Keep exactly one Studio-side entry into the standalone Work product.
-  // Work Hub and Local Bridge are implementation details and must not appear
-  // as separate navigation destinations in Studio.
+  // Studio keeps one clean entry into the standalone Work product. The old
+  // Work Hub and Local Bridge routes remain internal/legacy routes only.
   output = output.replace(/\s*<section class="os-nav-group[^"]*" data-qsseda-work-nav="1">[\s\S]*?<\/section>\s*/g, "\n");
 
-  const adminAnchorZh = '<a class="os-nav-title" href="/zh-cn/admin">';
-  const adminAnchorEn = '<a class="os-nav-title" href="/en/admin">';
-  const adminAnchor = zh ? adminAnchorZh : adminAnchorEn;
+  const prefix = zh ? "/zh-cn" : "/en";
+  const adminAnchor = `<a class="os-nav-title" href="${prefix}/admin">`;
   const anchorIndex = output.indexOf(adminAnchor);
   const sectionIndex = anchorIndex >= 0 ? output.lastIndexOf('<section class="os-nav-group', anchorIndex) : -1;
   if (sectionIndex >= 0) output = output.slice(0, sectionIndex) + group + output.slice(sectionIndex);
