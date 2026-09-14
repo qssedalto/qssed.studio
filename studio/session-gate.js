@@ -39,7 +39,7 @@ export async function verifyStudioPageSession(request) {
   if (accessToken) {
     const verified = await verifyAccessToken(accessToken);
     if (verified.ok) {
-      return { ok: true, user: verified.user, cookies: [] };
+      return { ok: true, user: verified.user, accessToken, cookies: [] };
     }
   }
 
@@ -51,6 +51,7 @@ export async function verifyStudioPageSession(request) {
         return {
           ok: true,
           user: verified.user,
+          accessToken: refreshed.access_token,
           cookies: studioSessionCookies(refreshed.access_token, refreshed.refresh_token, refreshed.expires_in)
         };
       }
@@ -59,8 +60,13 @@ export async function verifyStudioPageSession(request) {
 
   return {
     ok: false,
+    accessToken: "",
     cookies: accessToken || refreshToken ? clearStudioSessionCookies() : []
   };
+}
+
+export async function verifyStudioApiSession(request) {
+  return verifyStudioPageSession(request);
 }
 
 export async function handleStudioSessionBootstrap(request) {
