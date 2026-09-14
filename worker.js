@@ -1,4 +1,6 @@
 import studio from "./studio/entry.js";
+import { handleKnowledgeSearch } from "./studio/knowledge-api.js";
+import { handleCuratedFavorites } from "./studio/favorites-api.js";
 
 const AUTH_ABUSE_PATHS = new Set([
   "/api/auth/login",
@@ -22,6 +24,9 @@ export default {
       const key = await rateLimitKey(request, `${isWrite ? "write" : "read"}:${pathname}`, true);
       if (!(await allowed(limiter, key))) return tooManyRequests();
     }
+
+    if (pathname === "/api/knowledge/search") return handleKnowledgeSearch(request, env);
+    if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
 
     return studio.fetch(request, env, ctx);
   }
