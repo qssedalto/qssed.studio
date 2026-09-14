@@ -18,6 +18,7 @@ import { draftsWorkspaceContent } from "./ui-drafts.js";
 import { workbenchContent } from "./ui-workbench.js";
 import { labContent } from "./ui-lab.js";
 import { texWorkbenchContent } from "./ui-tex-workbench.js";
+import { enhanceTexWorkbenchLocal } from "./ui-tex-local.js";
 import { decorateWorkNavigation, workHubContent, workLocalBridgeContent } from "./ui-work.js";
 import { enhanceWorkLocalBridgeNative } from "./ui-work-native.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
@@ -117,10 +118,10 @@ export default {
       if (pathname === "/workspace/tasks") markup = replaceOsContent(markup, tasksWorkspaceContent(zh));
       if (pathname === "/workspace/drafts") markup = replaceOsContent(markup, draftsWorkspaceContent(zh));
       if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh));
-      if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, texWorkbenchContent(zh));
+      if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh));
       if (pathname === "/work") markup = replaceOsContent(markup, workHubContent(zh));
       if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh), zh));
-      const pageOptions = pathname === "/work/local" ? { allowLoopback: true } : {};
+      const pageOptions = pathname === "/work/local" || pathname === "/workspace/experiments/tex" ? { allowLoopback: true } : {};
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }
 
