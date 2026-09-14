@@ -256,48 +256,26 @@ export function workLocalBridgeContent(zh) {
 
 export function decorateWorkNavigation(markup, zh, pathname) {
   let output = String(markup || "");
-  const prefix = zh ? "/zh-cn" : "/en";
-  const isWork = pathname === "/work" || pathname === "/work/local";
-  const rootCurrent = pathname === "/work" ? ' aria-current="page"' : "";
-  const localCurrent = pathname === "/work/local" ? ' aria-current="page"' : "";
+  const workUrl = zh ? "https://work.qsseda.studio/zh-cn/tex" : "https://work.qsseda.studio/en/tex";
   const group = `
-        <section class="os-nav-group ${isWork ? "is-active" : ""}" data-qsseda-work-nav="1">
-          <a class="os-nav-title" href="${prefix}/work">${zh ? "协作" : "Work"}</a>
+        <section class="os-nav-group" data-qsseda-work-nav="1">
+          <span class="os-nav-title">${zh ? "协作" : "Work"}</span>
           <div class="os-nav-items">
-            <a href="${prefix}/work"${rootCurrent}>${zh ? "协作中心" : "Work Hub"}</a>
-            <a href="${prefix}/work/local"${localCurrent}>${zh ? "本机桥接" : "Local Bridge"}</a>
+            <a href="${workUrl}">Work</a>
           </div>
         </section>
       `;
 
-  if (!output.includes('data-qsseda-work-nav="1"')) {
-    if (isWork) output = output.replaceAll("os-nav-group is-active", "os-nav-group ");
-    const adminAnchor = `<a class="os-nav-title" href="${prefix}/admin">`;
-    const anchorIndex = output.indexOf(adminAnchor);
-    const sectionIndex = anchorIndex >= 0 ? output.lastIndexOf('<section class="os-nav-group', anchorIndex) : -1;
-    if (sectionIndex >= 0) output = output.slice(0, sectionIndex) + group + output.slice(sectionIndex);
-    else output = output.replace("</nav>", group + "</nav>");
-  }
+  // Studio keeps one clean entry into the standalone Work product. The old
+  // Work Hub and Local Bridge routes remain internal/legacy routes only.
+  output = output.replace(/\s*<section class="os-nav-group[^"]*" data-qsseda-work-nav="1">[\s\S]*?<\/section>\s*/g, "\n");
 
-  if (!isWork) return output;
-
-  const title = pathname === "/work/local" ? (zh ? "本机协作" : "Local Collaboration") : (zh ? "协作" : "Work");
-  const description = pathname === "/work/local"
-    ? (zh ? "连接 QssedA Studio 与当前电脑上的受限 Local Bridge。" : "Connect QssedA Studio to a constrained Local Bridge on this computer.")
-    : (zh ? "连接网页工作区与本机能力，为 TeX、Git、文件与其他桌面工具建立统一协作入口。" : "Connect the web workspace with local capabilities for TeX, Git, files, and future desktop tools.");
-  const shellTitle = zh ? "工作区" : "Workspace";
-  const shellDescription = zh ? "工作区总览，用于查看并进入工作台、项目、实验、草稿与任务。" : "An overview for entering the Workbench, projects, experiments, drafts, and tasks.";
-
-  output = output.replace(`<h1>${shellTitle}</h1>`, `<h1>${title}</h1>`);
-  output = output.replace(`<p>${shellDescription}</p>`, `<p>${description}</p>`);
-  output = output.replace(`${shellTitle} · QssedA Studio`, `${title} · QssedA Studio`);
-  output = output.replace('const currentPath = "/workspace";', `const currentPath = ${JSON.stringify(pathname)};`);
-
-  if (pathname === "/work/local") {
-    output = output.replace(`data-fallback-href="${prefix}/dashboard"`, `data-fallback-href="${prefix}/work"`);
-    output = output.replace(`const compactFallbackHref = "${prefix}/dashboard";`, `const compactFallbackHref = "${prefix}/work";`);
-    output = output.replace("const compactMenuRoot = true;", "const compactMenuRoot = false;");
-  }
+  const prefix = zh ? "/zh-cn" : "/en";
+  const adminAnchor = `<a class="os-nav-title" href="${prefix}/admin">`;
+  const anchorIndex = output.indexOf(adminAnchor);
+  const sectionIndex = anchorIndex >= 0 ? output.lastIndexOf('<section class="os-nav-group', anchorIndex) : -1;
+  if (sectionIndex >= 0) output = output.slice(0, sectionIndex) + group + output.slice(sectionIndex);
+  else output = output.replace("</nav>", group + "</nav>");
 
   return output;
 }
