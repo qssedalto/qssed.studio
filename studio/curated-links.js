@@ -18,7 +18,7 @@ function safeHost(value) {
 }
 
 function originLabel(origin, zh) {
-  if (origin === "chat") return zh ? "来自对话" : "From chats";
+  if (origin === "chat") return zh ? "历史收录" : "Archived";
   return zh ? "官方 / 精选" : "Official / curated";
 }
 
@@ -45,7 +45,7 @@ function renderCategory(category, zh) {
 
 export function curatedLinksContent(zh) {
   const categories = Object.keys(CURATED_LINK_CATEGORIES).filter(category => CURATED_LINKS.some(link => link.category === category));
-  const chatCount = CURATED_LINKS.filter(link => link.origin === "chat").length;
+  const archivedCount = CURATED_LINKS.filter(link => link.origin === "chat").length;
   const featured = CURATED_LINKS.filter(link => link.featured).slice(0, 12);
   const categoryNav = categories.map(category => {
     const label = CURATED_LINK_CATEGORIES[category]?.[zh ? "zh" : "en"] || category;
@@ -79,14 +79,14 @@ export function curatedLinksContent(zh) {
   </style>
   <div class="curated-links-shell" data-curated-links-root>
     <section class="curated-links-overview">
-      <div><small>${zh ? "链接库" : "Link Library"}</small><h2>${zh ? "常用项目和网站" : "Projects and sites"}</h2><p>${zh ? "对话中使用过的项目、工具、服务和官方资料。" : "Projects, tools, services, and official references used in prior conversations."}</p></div>
-      <div class="curated-links-stats"><div class="curated-links-stat"><strong>${CURATED_LINKS.length}</strong><span>${zh ? "链接" : "links"}</span></div><div class="curated-links-stat"><strong>${chatCount}</strong><span>${zh ? "来自对话" : "from chats"}</span></div><div class="curated-links-stat"><strong>${categories.length}</strong><span>${zh ? "分类" : "categories"}</span></div></div>
+      <div><small>${zh ? "链接库" : "Link Library"}</small><h2>${zh ? "常用项目和网站" : "Projects and sites"}</h2><p>${zh ? "收录常用项目、工具、服务和官方资料。" : "A collection of useful projects, tools, services, and official references."}</p></div>
+      <div class="curated-links-stats"><div class="curated-links-stat"><strong>${CURATED_LINKS.length}</strong><span>${zh ? "链接" : "links"}</span></div><div class="curated-links-stat"><strong>${archivedCount}</strong><span>${zh ? "历史收录" : "archived"}</span></div><div class="curated-links-stat"><strong>${categories.length}</strong><span>${zh ? "分类" : "categories"}</span></div></div>
     </section>
     <section class="curated-filter-panel" aria-label="${zh ? "筛选链接" : "Filter links"}">
       <div class="curated-search-shell"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input class="curated-search-input" id="curated-link-search" type="search" autocomplete="off" spellcheck="false" placeholder="${zh ? "搜索链接" : "Search links"}" aria-label="${zh ? "搜索链接" : "Search links"}"><kbd aria-hidden="true">/</kbd></div>
       <div class="curated-filter-row">
         <label class="curated-filter-field"><span>${zh ? "分类" : "Category"}</span><select id="curated-link-category"><option value="all">${zh ? "全部" : "All"}</option>${categoryOptions}</select></label>
-        <label class="curated-filter-field"><span>${zh ? "来源" : "Source"}</span><select id="curated-link-origin"><option value="all">${zh ? "全部" : "All"}</option><option value="chat">${zh ? "来自对话" : "From chats"}</option><option value="related">${zh ? "官方 / 精选" : "Official / curated"}</option><option value="featured">${zh ? "优先" : "Priority"}</option></select></label>
+        <label class="curated-filter-field"><span>${zh ? "来源" : "Source"}</span><select id="curated-link-origin"><option value="all">${zh ? "全部" : "All"}</option><option value="chat">${zh ? "历史收录" : "Archived"}</option><option value="related">${zh ? "官方 / 精选" : "Official / curated"}</option><option value="featured">${zh ? "优先" : "Priority"}</option></select></label>
         <button class="curated-filter-reset" id="curated-link-reset" type="button">${zh ? "重置" : "Reset"}</button>
       </div>
       <div class="curated-filter-status" aria-live="polite"><strong id="curated-link-result-count">${CURATED_LINKS.length}</strong><span id="curated-link-result-label">${zh ? ` / ${CURATED_LINKS.length}` : `of ${CURATED_LINKS.length}`}</span></div>
@@ -95,7 +95,7 @@ export function curatedLinksContent(zh) {
     <section class="curated-featured" data-curated-featured-section><div class="curated-featured-head"><h2>${zh ? "优先" : "Priority"}</h2><p>${zh ? "常用入口" : "Common entries"}</p></div><div class="curated-featured-row">${featured.map(link => renderLink(link, zh)).join("")}</div></section>
     <div class="curated-links-empty" id="curated-links-empty"><strong>${zh ? "没有结果" : "No results"}</strong><span>${zh ? "换个关键词或筛选条件。" : "Try another keyword or filter."}</span></div>
     ${categories.map(category => renderCategory(category, zh)).join("")}
-    <div class="curated-links-note"><strong>${zh ? "来源：" : "Sources: "}</strong>${zh ? "“来自对话”表示曾在历史对话中使用；“官方 / 精选”是相关的官方文档或补充入口。搜索在当前页面本地完成。" : "“From chats” means the link appeared in prior conversations. “Official / curated” contains related primary references. Search runs locally on this page."}</div>
+    <div class="curated-links-note"><strong>${zh ? "来源：" : "Sources: "}</strong>${zh ? "“历史收录”表示长期保留的常用项目与资料；“官方 / 精选”表示相关官方文档或补充入口。搜索在当前页面本地完成。" : "“Archived” marks useful projects and references kept over time. “Official / curated” contains related primary references. Search runs locally on this page."}</div>
   </div>
   <script>(function(){
     const root=document.querySelector('[data-curated-links-root]');
