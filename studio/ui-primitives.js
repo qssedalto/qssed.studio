@@ -1,3 +1,5 @@
+import { researchNotesContent } from "./ui-notes.js";
+
 const STATUS_COPY = {
   "通知": ["通知尚未开放", "通知服务还没接入。"],
   "Notifications": ["Notifications aren’t available yet", "Notification delivery is not connected yet."],
@@ -8,6 +10,10 @@ const STATUS_COPY = {
 };
 
 export function statusContent(zh, zhTitle, zhBody, enTitle, enBody) {
+  if (zhTitle === "笔记尚未开放" && enTitle === "Notes aren’t available yet") {
+    return researchNotesContent(zh);
+  }
+
   const requestedTitle = zh ? zhTitle : enTitle;
   const fallbackBody = zh ? zhBody : enBody;
   const normalized = STATUS_COPY[requestedTitle];
