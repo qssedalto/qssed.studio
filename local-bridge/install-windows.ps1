@@ -15,7 +15,7 @@ function Find-XeLaTeX {
   }
 
   $command = Get-Command xelatex.exe -ErrorAction SilentlyContinue
-  if ($command?.Source -and (Test-Path -LiteralPath $command.Source)) {
+  if ($command -and $command.Source -and (Test-Path -LiteralPath $command.Source)) {
     return $command.Source
   }
 
@@ -45,7 +45,7 @@ function Find-XeLaTeX {
 }
 
 $node = Get-Command node.exe -ErrorAction SilentlyContinue
-if (-not $node?.Source) {
+if (-not $node -or -not $node.Source) {
   throw "Node.js 18+ is required for this pilot installer. Install Node.js, then run install-windows.cmd again."
 }
 
@@ -94,7 +94,7 @@ $health = $null
 try {
   $health = Invoke-RestMethod -Uri "http://127.0.0.1:32145/health" -Method Get -TimeoutSec 2
 } catch {}
-if ($health?.service -ne "qsseda-local-bridge") {
+if (-not $health -or $health.service -ne "qsseda-local-bridge") {
   Write-Warning "Autostart was installed, but another local process may currently own port 32145. Restart Windows or close the old manual bridge and run start-windows.ps1 once."
 }
 
