@@ -16,13 +16,7 @@ const profile = hardenBrowserMarkup(osPage(TEXT.zh, profileLinks, "/profile/acco
 assertContains(profile, "/api/account/summary", "Profile page must use the Worker summary endpoint");
 assertContains(profile, "/api/account/audit", "Profile page must use the Worker audit endpoint");
 assertContains(profile, "/api/account/device", "Profile page must use the Worker device endpoint");
-for (const forbidden of [
-  'from("profiles")',
-  'from("login_events")',
-  'from("user_devices")',
-  "user_devices\").select",
-  "login_events\").select"
-]) {
+for (const forbidden of ['from("profiles")', "login_events", "user_devices"]) {
   assertAbsent(profile, forbidden, `Profile page leaked database detail: ${forbidden}`);
 }
 
