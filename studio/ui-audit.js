@@ -112,6 +112,28 @@ export function auditClientScript(ipInfo) {
         } catch {}
       }
 
+      function restoreProfileCoverCache() {
+        const cover = document.getElementById("profile-cover");
+        if (!cover) return;
+        try {
+          const summary = readProfileCache(PROFILE_SUMMARY_CACHE_KEY);
+          const userId = summary?.user_id;
+          if (!userId) return;
+          const raw = sessionStorage.getItem("qssed-profile-home-v3:" + String(userId));
+          if (!raw) return;
+          const cached = JSON.parse(raw);
+          const personalization = cached?.personalization;
+          if (!personalization) return;
+          cover.dataset.coverStyle = personalization.cover_style || "aurora";
+          if (personalization.background_url) {
+            const safeUrl = String(personalization.background_url).replace(/"/g, "%22");
+            cover.style.backgroundColor = "var(--surface-soft)";
+            cover.style.backgroundImage = 'linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.08)),url("' + safeUrl + '")';
+            cover.classList.add("has-custom-background");
+          }
+        } catch {}
+      }
+
       function renderProfileSummarySnapshot(snapshot) {
         if (!snapshot) return;
         const root = document.getElementById("profile-summary");
@@ -247,6 +269,7 @@ export function auditClientScript(ipInfo) {
         renderSecurityAudit(events, devices, false, false);
       }
 
+      restoreProfileCoverCache();
       restoreProfileUiCaches();
       window.setTimeout(() => {
         try {
