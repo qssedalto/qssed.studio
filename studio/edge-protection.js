@@ -6,7 +6,6 @@ const MIB = 1024 * 1024;
 
 const AUTOMATION_UA = /(curl|wget|python-requests|python\/|scrapy|aiohttp|httpx|go-http-client|libwww-perl|apache-httpclient|okhttp|postmanruntime|insomnia|headlesschrome|phantomjs|selenium|puppeteer|playwright)/i;
 const SCANNER_PATH = /(?:^|\/)(?:\.env(?:\.|$)|\.git(?:\/|$)|wp-admin(?:\/|$)|wp-login\.php$|xmlrpc\.php$|phpmyadmin(?:\/|$)|adminer\.php$|vendor\/phpunit(?:\/|$)|cgi-bin(?:\/|$)|server-status$)/i;
-const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const EXPENSIVE_PATHS = new Set([
   "/api/knowledge/search",
   "/api/storage/files",
@@ -35,19 +34,22 @@ export async function protectEdgeRequest(request, env) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   if (!(await consume(env?.EDGE_GLOBAL_RATE_LIMITER, `edge:global:${ip}`))) return rateLimited(request);
 
-  const authenticated = hasStudioSessionCookie(request);
-  if (!authenticated) {
+  const claimedSession = hasStudioSessionCookie(request);
+  if (!claimedSession) {
     if (!(await consume(env?.EDGE_ANON_RATE_LIMITER, `edge:anon:${ip}`))) return rateLimited(request);
+  }
 
-    const bot = botSignals(request);
-    if (!bot.verified && bot.score >= 3) {
-      if (!(await consume(env?.EDGE_SUSPECT_RATE_LIMITER, `edge:suspect:${ip}`))) return rateLimited(request);
-    }
+  // Never trust the mere presence of a Cookie/Authorization header as proof that a caller is human.
+  // A crawler can forge those headers cheaply, so automation signals are enforced independently.
+  const bot = botSignals(request);
+  if (!bot.verified && bot.score >= 3) {
+    if (!(await consume(env?.EDGE_SUSPECT_RATE_LIMITER, `edge:suspect:${ip}`))) return rateLimited(request);
   }
 
   if (isExpensiveRequest(pathname, request.method)) {
-    const identity = await protectionIdentity(request, ip);
-    if (!(await consume(env?.EDGE_EXPENSIVE_RATE_LIMITER, `edge:expensive:${pathname}:${identity}`))) return rateLimited(request);
+    // Use the Cloudflare source IP as the abuse key. Cookie/token values are attacker-controlled
+    // before application authentication and must not be usable to manufacture fresh limiter buckets.
+    if (!(await consume(env?.EDGE_EXPENSIVE_RATE_LIMITER, `edge:expensive:${pathname}:ip:${ip}`))) return rateLimited(request);
   }
 
   return null;
@@ -114,14 +116,6 @@ function isExpensiveRequest(pathname, method) {
   return EXPENSIVE_PATHS.has(pathname);
 }
 
-async function protectionIdentity(request, ip) {
-  const authorization = request.headers.get("Authorization") || "";
-  if (authorization) return `auth:${await digest(authorization)}`;
-  const cookie = request.headers.get("Cookie") || "";
-  if (cookie) return `cookie:${await digest(cookie)}`;
-  return `ip:${ip}`;
-}
-
 async function consume(limiter, key) {
   if (!limiter?.limit) return true;
   try {
@@ -138,12 +132,6 @@ function declaredBodyLength(request) {
   if (!/^\d+$/.test(value)) return Number.POSITIVE_INFINITY;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : Number.POSITIVE_INFINITY;
-}
-
-async function digest(value) {
-  const bytes = new TextEncoder().encode(String(value || ""));
-  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
-  return Array.from(hash.slice(0, 16), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function rateLimited(request) {
