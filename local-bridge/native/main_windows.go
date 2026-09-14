@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,26 +14,46 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
+	"unicode/utf8"
 	"unsafe"
 )
 
 const (
-	bridgeHost    = "127.0.0.1"
-	bridgePort    = "32145"
-	bridgeService = "qsseda-local-bridge"
-	protocol      = 1
-	appName       = "QssedA Local Bridge"
-	exeName       = "QssedA-Local-Bridge.exe"
+	bridgeHost       = "127.0.0.1"
+	bridgePort       = "32145"
+	bridgeService    = "qsseda-local-bridge"
+	protocol         = 1
+	appName          = "QssedA Local Bridge"
+	exeName          = "QssedA-Local-Bridge.exe"
+	maxCompileBody   = 768 * 1024
+	maxSourceBytes   = 512 * 1024
+	maxSourceRunes   = 180000
+	maxResultBytes   = 16 * 1024 * 1024
+	compileTimeout   = 20 * time.Second
+	maxDiagnosticLen = 24000
 )
 
-var version = "0.2.0-dev"
+var version = "0.3.0-dev"
+var compileSlots = make(chan struct{}, 2)
 
 var allowedOrigins = map[string]bool{
 	"https://qsseda.studio":     true,
 	"https://www.qsseda.studio": true,
+}
+
+var allowedLocalEngines = map[string]bool{
+	"xelatex":  true,
+	"pdflatex": true,
+}
+
+type compileRequest struct {
+	Engine string `json:"engine"`
+	Source string `json:"source"`
+	Title  string `json:"title,omitempty"`
 }
 
 func main() {
@@ -57,7 +78,7 @@ func main() {
 	}
 	_ = launchBackground(installedExe)
 
-	tex := findXeLaTeX()
+	tex := findTeXExecutable("xelatex")
 	message := "QssedA Local Bridge 已安装。\n\n以后登录 Windows 后会自动在后台启动，不需要 Node.js，也不需要 PowerShell。"
 	if tex != "" {
 		message += "\n\n已检测到 XeLaTeX：\n" + tex
@@ -195,7 +216,6 @@ func samePath(a, b string) bool {
 }
 
 func launchBackground(executable string) error {
-	// If a bridge already owns the port, there is nothing to launch.
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort(bridgeHost, bridgePort), 250*time.Millisecond)
 	if err == nil {
 		_ = conn.Close()
@@ -210,13 +230,14 @@ func runBridge() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", handleHealth)
 	mux.HandleFunc("/tex/status", handleTexStatus)
+	mux.HandleFunc("/tex/compile", handleTexCompile)
 
 	server := &http.Server{
 		Addr:              net.JoinHostPort(bridgeHost, bridgePort),
 		Handler:           secureHandler(mux),
 		ReadHeaderTimeout: 3 * time.Second,
-		ReadTimeout:       5 * time.Second,
-		WriteTimeout:      5 * time.Second,
+		ReadTimeout:       8 * time.Second,
+		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       30 * time.Second,
 	}
 	return server.ListenAndServe()
@@ -235,6 +256,10 @@ func secureHandler(next http.Handler) http.Handler {
 			sendJSON(w, http.StatusForbidden, map[string]any{"error": "Origin is not allowed."})
 			return
 		}
+		if r.Method == http.MethodPost && origin == "" {
+			sendJSON(w, http.StatusForbidden, map[string]any{"error": "Origin is required for local actions."})
+			return
+		}
 
 		if origin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -248,7 +273,7 @@ func secureHandler(next http.Handler) http.Handler {
 				sendJSON(w, http.StatusBadRequest, map[string]any{"error": "Origin is required for preflight."})
 				return
 			}
-			w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type")
 			w.Header().Set("Access-Control-Max-Age", "600")
 			if strings.EqualFold(strings.TrimSpace(r.Header.Get("Access-Control-Request-Private-Network")), "true") {
@@ -258,7 +283,7 @@ func secureHandler(next http.Handler) http.Handler {
 			return
 		}
 
-		if r.Method != http.MethodGet {
+		if r.Method != http.MethodGet && r.Method != http.MethodPost {
 			sendJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "Method not allowed."})
 			return
 		}
@@ -266,18 +291,27 @@ func secureHandler(next http.Handler) http.Handler {
 	})
 }
 
-func handleHealth(w http.ResponseWriter, _ *http.Request) {
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		sendJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "Method not allowed."})
+		return
+	}
 	sendJSON(w, http.StatusOK, map[string]any{
 		"service":      bridgeService,
 		"protocol":     protocol,
 		"version":      version,
 		"runtime":      "native-windows",
-		"capabilities": []string{"health", "tex.status", "native.autostart"},
+		"capabilities": []string{"health", "tex.status", "tex.compile", "native.autostart"},
 	})
 }
 
-func handleTexStatus(w http.ResponseWriter, _ *http.Request) {
-	path := findXeLaTeX()
+func handleTexStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		sendJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "Method not allowed."})
+		return
+	}
+	engines := detectLocalEngines()
+	path := findTeXExecutable("xelatex")
 	available := path != ""
 	versionLine := ""
 	if available {
@@ -309,6 +343,7 @@ func handleTexStatus(w http.ResponseWriter, _ *http.Request) {
 	sendJSON(w, http.StatusOK, map[string]any{
 		"available":  available,
 		"engine":     "xelatex",
+		"engines":    engines,
 		"version":    versionLine,
 		"platform":   "win32",
 		"arch":       arch,
@@ -317,11 +352,139 @@ func handleTexStatus(w http.ResponseWriter, _ *http.Request) {
 	})
 }
 
-func findXeLaTeX() string {
-	if configured := strings.TrimSpace(os.Getenv("QSSEDA_XELATEX")); configured != "" && fileExists(configured) {
+func handleTexCompile(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		sendJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "Method not allowed."})
+		return
+	}
+
+	select {
+	case compileSlots <- struct{}{}:
+		defer func() { <-compileSlots }()
+	default:
+		sendJSON(w, http.StatusTooManyRequests, map[string]any{"error": "Too many local TeX jobs are already running."})
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxCompileBody)
+	decoder := json.NewDecoder(r.Body)
+	var payload compileRequest
+	if err := decoder.Decode(&payload); err != nil {
+		sendJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid compile request."})
+		return
+	}
+
+	engine := strings.ToLower(strings.TrimSpace(payload.Engine))
+	if !allowedLocalEngines[engine] {
+		sendJSON(w, http.StatusBadRequest, map[string]any{"error": "This engine is not enabled for local compilation."})
+		return
+	}
+	if payload.Source == "" {
+		sendJSON(w, http.StatusBadRequest, map[string]any{"error": "TeX source is empty."})
+		return
+	}
+	if len(payload.Source) > maxSourceBytes || utf8.RuneCountInString(payload.Source) > maxSourceRunes {
+		sendJSON(w, http.StatusRequestEntityTooLarge, map[string]any{"error": "TeX source is too large."})
+		return
+	}
+
+	executable := findTeXExecutable(engine)
+	if executable == "" {
+		sendJSON(w, http.StatusServiceUnavailable, map[string]any{"error": "The selected TeX engine is not installed locally."})
+		return
+	}
+
+	workDir, err := os.MkdirTemp("", "qsseda-tex-")
+	if err != nil {
+		sendJSON(w, http.StatusInternalServerError, map[string]any{"error": "Could not create an isolated TeX working directory."})
+		return
+	}
+	defer os.RemoveAll(workDir)
+
+	sourcePath := filepath.Join(workDir, "main.tex")
+	if err := os.WriteFile(sourcePath, []byte(payload.Source), 0o600); err != nil {
+		sendJSON(w, http.StatusInternalServerError, map[string]any{"error": "Could not prepare TeX source."})
+		return
+	}
+
+	started := time.Now()
+	ctx, cancel := context.WithTimeout(r.Context(), compileTimeout)
+	defer cancel()
+	args := []string{
+		"-no-shell-escape",
+		"-interaction=nonstopmode",
+		"-halt-on-error",
+		"-file-line-error",
+		"-output-directory=" + workDir,
+		"main.tex",
+	}
+	cmd := exec.CommandContext(ctx, executable, args...)
+	cmd.Dir = workDir
+	cmd.Env = texEnvironment(workDir)
+	hideWindow(cmd)
+	var output bytes.Buffer
+	cmd.Stdout = &output
+	cmd.Stderr = &output
+	err = cmd.Run()
+	elapsed := time.Since(started)
+	logText := cleanCompileLog(output.String(), workDir)
+
+	if ctx.Err() == context.DeadlineExceeded {
+		sendJSON(w, http.StatusRequestTimeout, map[string]any{"error": "Local TeX compilation timed out.", "log": logText})
+		return
+	}
+	if err != nil {
+		sendJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": "Local TeX compilation failed.", "log": logText})
+		return
+	}
+
+	pdfPath := filepath.Join(workDir, "main.pdf")
+	info, err := os.Stat(pdfPath)
+	if err != nil || info.IsDir() || info.Size() <= 4 {
+		sendJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": "TeX finished without producing a PDF.", "log": logText})
+		return
+	}
+	if info.Size() > maxResultBytes {
+		sendJSON(w, http.StatusRequestEntityTooLarge, map[string]any{"error": "Compiled PDF is too large."})
+		return
+	}
+	pdf, err := os.ReadFile(pdfPath)
+	if err != nil || len(pdf) < 5 || string(pdf[:5]) != "%PDF-" {
+		sendJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": "The local compiler returned an invalid PDF.", "log": logText})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", `inline; filename="qsseda-local.pdf"`)
+	w.Header().Set("Content-Length", strconv.Itoa(len(pdf)))
+	w.Header().Set("X-Qsseda-Tex-Engine", engine)
+	w.Header().Set("X-Qsseda-Compile-Ms", strconv.FormatInt(elapsed.Milliseconds(), 10))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(pdf)
+}
+
+func detectLocalEngines() []string {
+	engines := make([]string, 0, len(allowedLocalEngines))
+	for _, name := range []string{"xelatex", "pdflatex"} {
+		if findTeXExecutable(name) != "" {
+			engines = append(engines, name)
+		}
+	}
+	return engines
+}
+
+func findTeXExecutable(engine string) string {
+	engine = strings.ToLower(strings.TrimSpace(engine))
+	if !allowedLocalEngines[engine] {
+		return ""
+	}
+
+	envName := "QSSEDA_" + strings.ToUpper(engine)
+	if configured := strings.TrimSpace(os.Getenv(envName)); configured != "" && fileExists(configured) {
 		return configured
 	}
-	if path, err := exec.LookPath("xelatex.exe"); err == nil && fileExists(path) {
+	exe := engine + ".exe"
+	if path, err := exec.LookPath(exe); err == nil && fileExists(path) {
 		return path
 	}
 
@@ -336,7 +499,7 @@ func findXeLaTeX() string {
 			if !entry.IsDir() {
 				continue
 			}
-			candidate := filepath.Join(root, entry.Name(), "bin", "windows", "xelatex.exe")
+			candidate := filepath.Join(root, entry.Name(), "bin", "windows", exe)
 			if fileExists(candidate) {
 				candidates = append(candidates, candidate)
 			}
@@ -344,13 +507,13 @@ func findXeLaTeX() string {
 	}
 
 	if programFiles := strings.TrimSpace(os.Getenv("ProgramFiles")); programFiles != "" {
-		candidate := filepath.Join(programFiles, "MiKTeX", "miktex", "bin", "x64", "xelatex.exe")
+		candidate := filepath.Join(programFiles, "MiKTeX", "miktex", "bin", "x64", exe)
 		if fileExists(candidate) {
 			candidates = append(candidates, candidate)
 		}
 	}
 	if local := strings.TrimSpace(os.Getenv("LOCALAPPDATA")); local != "" {
-		candidate := filepath.Join(local, "Programs", "MiKTeX", "miktex", "bin", "x64", "xelatex.exe")
+		candidate := filepath.Join(local, "Programs", "MiKTeX", "miktex", "bin", "x64", exe)
 		if fileExists(candidate) {
 			candidates = append(candidates, candidate)
 		}
@@ -361,6 +524,35 @@ func findXeLaTeX() string {
 	}
 	sort.Slice(candidates, func(i, j int) bool { return strings.ToLower(candidates[i]) > strings.ToLower(candidates[j]) })
 	return candidates[0]
+}
+
+func texEnvironment(workDir string) []string {
+	keep := []string{"SystemRoot", "WINDIR", "PATH", "PATHEXT", "COMSPEC", "LOCALAPPDATA", "APPDATA", "USERPROFILE", "ProgramFiles", "ProgramFiles(x86)", "ProgramData"}
+	env := make([]string, 0, len(keep)+6)
+	for _, key := range keep {
+		if value, ok := os.LookupEnv(key); ok && value != "" {
+			env = append(env, key+"="+value)
+		}
+	}
+	env = append(env,
+		"TEMP="+workDir,
+		"TMP="+workDir,
+		"TEXMFOUTPUT="+workDir,
+		"openin_any=p",
+		"openout_any=p",
+	)
+	return env
+}
+
+func cleanCompileLog(value, workDir string) string {
+	text := strings.ReplaceAll(value, workDir, "<workdir>")
+	text = strings.ReplaceAll(text, filepath.ToSlash(workDir), "<workdir>")
+	text = strings.TrimSpace(text)
+	if len(text) > maxDiagnosticLen {
+		text = text[len(text)-maxDiagnosticLen:]
+		text = "…\n" + text
+	}
+	return text
 }
 
 func fileExists(path string) bool {
@@ -385,9 +577,9 @@ func showMessage(title, message string, isError bool) {
 	messageBox := user32.NewProc("MessageBoxW")
 	titlePtr, _ := syscall.UTF16PtrFromString(title)
 	messagePtr, _ := syscall.UTF16PtrFromString(message)
-	flags := uintptr(0x00000040) // MB_ICONINFORMATION
+	flags := uintptr(0x00000040)
 	if isError {
-		flags = 0x00000010 // MB_ICONERROR
+		flags = 0x00000010
 	}
 	_, _, _ = messageBox.Call(0, uintptr(unsafe.Pointer(messagePtr)), uintptr(unsafe.Pointer(titlePtr)), flags)
 }
