@@ -1,5 +1,17 @@
 export function dashboardStyles() {
-  return `    /* DASHBOARD_APPLE_V3 */
+  return `    /* GLOBAL_TOP_CONTROLS_HOVER */
+    @media (hover:hover) and (pointer:fine){
+      .top-controls-zone{width:176px!important;height:92px!important;pointer-events:auto!important}
+      .top-controls{opacity:0!important;transform:translateY(-8px)!important;pointer-events:none!important;transition:opacity .16s ease,transform .16s ease!important}
+      .top-controls-zone:hover .top-controls,.top-controls-zone:focus-within .top-controls{opacity:1!important;transform:translateY(0)!important;pointer-events:auto!important}
+    }
+    @media (hover:none), (pointer:coarse){
+      .top-controls-zone{width:176px!important;height:76px!important;pointer-events:none!important}
+      .top-controls{opacity:1!important;transform:none!important;pointer-events:auto!important}
+    }
+    html.profile-sheet-open .top-controls-zone .top-controls{opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translateY(-8px)!important}
+
+    /* DASHBOARD_APPLE_V3 */
     .dashboard-welcome{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,280px);gap:16px;min-height:230px;padding:22px;border:1px solid var(--border);border-radius:18px;background:var(--card)}
     .dashboard-welcome-copy{align-self:center}.dashboard-eyebrow{display:block;color:var(--muted);font-size:11px;font-weight:620;letter-spacing:.02em}.dashboard-welcome h2{margin:5px 0 7px;font-size:clamp(32px,4vw,48px);line-height:1.03;letter-spacing:-.045em}.dashboard-welcome p{max-width:680px;margin:0;color:var(--muted);font-size:14px;line-height:1.5}
     .dashboard-welcome-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.dashboard-primary-action,.dashboard-secondary-action{min-height:40px;display:inline-flex;align-items:center;gap:9px;padding:0 14px;border:0;border-radius:11px;color:var(--text);text-decoration:none;font-size:13px;font-weight:650;transition:background .12s ease,transform 100ms ease-out}.dashboard-primary-action{color:#fff;background:var(--primary)}.dashboard-secondary-action{background:var(--fill)}.dashboard-secondary-action:hover{background:var(--secondary)}.dashboard-primary-action:active,.dashboard-secondary-action:active{transform:scale(.97)}
