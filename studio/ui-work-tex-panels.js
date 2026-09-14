@@ -1,3 +1,5 @@
+import { enhanceWorkTexMobile } from "./ui-work-tex-mobile.js";
+
 export function enhanceWorkTexCollapsiblePanels(markup, zh) {
   const copy = zh ? {
     collapseDocuments: "隐藏文档栏",
@@ -173,5 +175,5 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
       })();
     </script>`;
 
-  return output;
+  return enhanceWorkTexMobile(output, zh);
 }
