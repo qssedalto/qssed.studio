@@ -32,7 +32,7 @@ function htmlSecurityHeaders(options = {}) {
     "font-src 'self' data:",
     "object-src 'none'",
     "base-uri 'none'",
-    "frame-src 'none'",
+    allowLoopback ? "frame-src blob:" : "frame-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
     "manifest-src 'self'",
