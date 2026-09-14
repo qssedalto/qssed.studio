@@ -7,6 +7,7 @@ const USER_LINKS_ROOT = "_system/user-links/";
 const MAX_LINK_BYTES = 16 * 1024;
 const MAX_OWN_LINKS = 240;
 const MAX_ADMIN_LINKS = 1000;
+const MAX_COMMUNITY_LINKS = 1000;
 
 function userLinksPrefix(userId) {
   return `${USER_LINKS_ROOT}${userId}/`;
@@ -41,6 +42,7 @@ function normalizeLink(input, ownerId, linkId, previous = null) {
     url: normalizeUrl(source.url),
     category: cleanText(source.category, 80) || "tools",
     description: cleanText(source.description, 1200),
+    community: typeof source.community === "boolean" ? source.community : Boolean(previous?.community),
     created_at: previous?.created_at || now,
     updated_at: now
   };
@@ -104,6 +106,16 @@ function parseStoredReference(key) {
   return { ownerId, linkId };
 }
 
+async function attachOwnerLabels(items, auth) {
+  const labels = await fetchOwnerLabels(auth.secret, items.map(item => item.owner_id));
+  for (const item of items) {
+    item.owner_label = labels.get(item.owner_id) || (item.owner_id === auth.user.id ? "当前账号" : `用户 ${String(item.owner_id).slice(0, 8)}`);
+    item.is_own = item.owner_id === auth.user.id;
+  }
+  items.sort((a, b) => String(b.updated_at || "").localeCompare(String(a.updated_at || "")));
+  return items;
+}
+
 async function listVisibleLinks(env, auth) {
   const result = [];
   const prefix = auth.isAdmin ? USER_LINKS_ROOT : userLinksPrefix(auth.user.id);
@@ -122,14 +134,27 @@ async function listVisibleLinks(env, auth) {
     cursor = page.cursor;
     if (!page.truncated || !cursor || result.length >= maximum) break;
   } while (cursor);
+  return attachOwnerLabels(result, auth);
+}
 
-  const labels = await fetchOwnerLabels(auth.secret, result.map(item => item.owner_id));
-  for (const item of result) {
-    item.owner_label = labels.get(item.owner_id) || (item.owner_id === auth.user.id ? "当前账号" : `用户 ${String(item.owner_id).slice(0, 8)}`);
-    item.is_own = item.owner_id === auth.user.id;
-  }
-  result.sort((a, b) => String(b.updated_at || "").localeCompare(String(a.updated_at || "")));
-  return result;
+async function listCommunityLinks(env, auth) {
+  const result = [];
+  let cursor;
+  let scanned = 0;
+  do {
+    const page = await env.STORAGE.list({ prefix: USER_LINKS_ROOT, cursor, limit: 1000 });
+    for (const object of page.objects) {
+      scanned += 1;
+      const reference = parseStoredReference(object.key);
+      if (!reference) continue;
+      const item = await readUserLink(env, reference.ownerId, reference.linkId);
+      if (item?.title && item?.url && item.community === true) result.push(item);
+      if (result.length >= MAX_COMMUNITY_LINKS) break;
+    }
+    cursor = page.cursor;
+    if (!page.truncated || !cursor || result.length >= MAX_COMMUNITY_LINKS || scanned >= 5000) break;
+  } while (cursor);
+  return attachOwnerLabels(result, auth);
 }
 
 async function parsePayload(request) {
@@ -152,6 +177,16 @@ function requestedReference(url, auth) {
   return { ownerId: owner, linkId: id };
 }
 
+function linkMetadata(link) {
+  return {
+    ownerId: link.owner_id,
+    hidden: "true",
+    kind: "user-link",
+    community: link.community ? "true" : "false",
+    title: link.title.slice(0, 120)
+  };
+}
+
 export async function handleUserLinks(request, env) {
   const auth = await verifyStorageUser(request, env);
   if (auth.error) return auth.error;
@@ -160,11 +195,18 @@ export async function handleUserLinks(request, env) {
   const url = new URL(request.url);
 
   if (request.method === "GET") {
+    const scope = url.searchParams.get("scope") === "community" ? "community" : "private";
     try {
-      const links = await listVisibleLinks(env, auth);
-      return json({ connected: true, is_admin: auth.isAdmin, links, count: links.length, scope: auth.isAdmin ? "all" : "own" });
+      const links = scope === "community" ? await listCommunityLinks(env, auth) : await listVisibleLinks(env, auth);
+      return json({
+        connected: true,
+        is_admin: auth.isAdmin,
+        links,
+        count: links.length,
+        scope: scope === "community" ? "community" : (auth.isAdmin ? "all" : "own")
+      });
     } catch (error) {
-      workerLog("error", "user_links.list.failed", { user_id: auth.user.id, admin: auth.isAdmin, message: String(error?.message || error) });
+      workerLog("error", "user_links.list.failed", { user_id: auth.user.id, admin: auth.isAdmin, scope, message: String(error?.message || error) });
       return json({ error: "Link storage is temporarily unavailable." }, 503);
     }
   }
@@ -181,7 +223,7 @@ export async function handleUserLinks(request, env) {
       if (existing.objects.length >= MAX_OWN_LINKS) return json({ error: "Link limit reached." }, 409);
       await env.STORAGE.put(userLinkKey(auth.user.id, linkId), JSON.stringify(link), {
         httpMetadata: { contentType: "application/json;charset=UTF-8" },
-        customMetadata: { ownerId: auth.user.id, hidden: "true", kind: "user-link", title: link.title.slice(0, 120) }
+        customMetadata: linkMetadata(link)
       });
       const labels = await fetchOwnerLabels(auth.secret, [auth.user.id]);
       link.owner_label = labels.get(auth.user.id) || "当前账号";
@@ -205,7 +247,7 @@ export async function handleUserLinks(request, env) {
       if (!link.title || !link.url) return json({ error: "A title and valid URL are required." }, 400);
       await env.STORAGE.put(userLinkKey(reference.ownerId, reference.linkId), JSON.stringify(link), {
         httpMetadata: { contentType: "application/json;charset=UTF-8" },
-        customMetadata: { ownerId: reference.ownerId, hidden: "true", kind: "user-link", title: link.title.slice(0, 120) }
+        customMetadata: linkMetadata(link)
       });
       return json({ link, saved: true });
     } catch (error) {
