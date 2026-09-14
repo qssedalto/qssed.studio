@@ -81,7 +81,7 @@ export function knowledgeSearchClientScript(zh) {
         noResultsHint: "换一个关键词，或缩短搜索内容。",
         resultSuffix: "条结果",
         loading: "正在搜索…",
-        supabaseUnavailable: "个人知识暂时不可用，已显示内置内容。"
+        personalUnavailable: "个人知识暂时不可用，已显示内置内容。"
       } : {
         builtin: "Built-in",
         personal: "Personal",
@@ -89,7 +89,7 @@ export function knowledgeSearchClientScript(zh) {
         noResultsHint: "Try another keyword or a shorter query.",
         resultSuffix: "results",
         loading: "Searching…",
-        supabaseUnavailable: "Personal knowledge is unavailable; showing built-in results."
+        personalUnavailable: "Personal knowledge is unavailable; showing built-in results."
       })};
 
       let sequence = 0;
@@ -133,7 +133,7 @@ export function knowledgeSearchClientScript(zh) {
 
         const meta = document.createElement("span");
         meta.className = "knowledge-search-result-meta";
-        meta.textContent = (doc.source === "supabase" ? copy.personal : copy.builtin) + " · " + (doc.category || "");
+        meta.textContent = (doc.source === "personal" ? copy.personal : copy.builtin) + " · " + (doc.category || "");
 
         const title = document.createElement("strong");
         title.textContent = doc.title || "";
@@ -190,16 +190,22 @@ export function knowledgeSearchClientScript(zh) {
         render(local, q, copy.loading);
 
         try {
-          if (typeof supabaseClient === "undefined") throw new Error("Supabase client unavailable");
-          const { data, error } = await supabaseClient.rpc("search_knowledge_documents", { p_query: raw.trim(), p_limit: 40 });
-          if (error) throw error;
+          const response = await fetch("/api/knowledge/search", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ query: raw.trim(), limit: 40 }),
+            cache: "no-store"
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload?.error || "Knowledge search failed");
           if (current !== sequence) return;
-          const personal = (data || []).map(doc => ({ ...doc, source: "supabase", rank: Number(doc.match_rank ?? 4) }));
+          const personal = (payload?.data || []).map(doc => ({ ...doc, source: "personal", rank: Number(doc.match_rank ?? 4) }));
           const combined = [...local, ...personal].sort((a, b) => a.rank - b.rank || String(a.title).localeCompare(String(b.title)));
           render(combined, q);
         } catch (error) {
-          console.warn("Knowledge search RPC failed", error);
-          if (current === sequence) render(local, q, copy.supabaseUnavailable);
+          console.warn("Personal knowledge search failed", error);
+          if (current === sequence) render(local, q, copy.personalUnavailable);
         }
       }
 
