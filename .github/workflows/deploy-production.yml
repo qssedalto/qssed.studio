@@ -145,10 +145,10 @@ jobs:
           set -euo pipefail
           ok=0
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
-            headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-work-body.txt --dump-header - 'https://work.qsseda.studio/tex' || true)"
+            headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-work-body.txt --dump-header - 'https://work.qsseda.studio/zh-cn/tex' || true)"
             status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
             location="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
-            if [ "$status" = "302" ] && printf '%s' "$location" | grep -q '^https://qsseda\.studio/work/handoff?next=%2Ftex'; then
+            if [ "$status" = "302" ] && printf '%s' "$location" | grep -q '^https://qsseda\.studio/work/handoff?next=%2Fzh-cn%2Ftex'; then
               ok=1
               break
             fi
@@ -156,8 +156,17 @@ jobs:
             sleep 4
           done
           if [ "$ok" -ne 1 ]; then
-            echo "Work custom domain regression: /tex did not enter the secure main-site session handoff."
+            echo "Work custom domain regression: /zh-cn/tex did not enter the secure localized main-site session handoff."
             cat /tmp/qsseda-work-body.txt || true
+            exit 1
+          fi
+
+          alias_headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-work-alias.txt --dump-header - -H 'Accept-Language: zh-CN,zh;q=0.9' 'https://work.qsseda.studio/tex' || true)"
+          alias_status="$(printf '%s\n' "$alias_headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
+          alias_location="$(printf '%s\n' "$alias_headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
+          if [ "$alias_status" != "302" ] || [ "$alias_location" != "https://work.qsseda.studio/zh-cn/tex" ]; then
+            echo "Work canonical regression: /tex did not redirect to the localized canonical route."
+            echo "HTTP status: ${alias_status:-unknown}; location: ${alias_location:-none}"
             exit 1
           fi
 
