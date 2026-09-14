@@ -36,12 +36,12 @@ export function dashboardContent(zh) {
     ["个人主页","可用","资料、状态、兴趣和链接。","profile",`${prefix}/profile`],
     ["私人存储","可用","Cloudflare R2 私人文件。","storage",`${prefix}/settings/storage`],
     ["工作区","部分可用","工作台、项目、实验、草稿和任务。","workbench",`${prefix}/workspace`],
-    ["信息中心","部分可用","知识库、链接和后续信息模块。","info",`${prefix}/info`]
+    ["信息中心","部分可用","知识库、链接和账号摘要。","info",`${prefix}/info`]
   ] : [
     ["Profile","Available","Profile details, presence, interests, and links.","profile",`${prefix}/profile`],
     ["Private Storage","Available","Private Cloudflare R2 files.","storage",`${prefix}/settings/storage`],
     ["Workspace","Partial","Workbench, projects, experiments, drafts, and tasks.","workbench",`${prefix}/workspace`],
-    ["Information","Partial","Knowledge, links, and upcoming information modules.","info",`${prefix}/info`]
+    ["Information","Partial","Knowledge, links, and account summaries.","info",`${prefix}/info`]
   ];
 
   return `
@@ -56,11 +56,17 @@ export function dashboardContent(zh) {
         </div>
       </div>
       <div class="dashboard-today-card" aria-label="${zh ? "当前时间" : "Current time"}">
-        ${dashboardIcon("clock")}
-        <div>
-          <small>${zh ? "现在" : "Now"}</small>
-          <strong id="dashboard-live-time">--:--</strong>
-          <span id="dashboard-live-date">----</span>
+        <div class="dashboard-today-main">
+          ${dashboardIcon("clock")}
+          <div class="dashboard-today-copy">
+            <small>${zh ? "现在" : "Now"}</small>
+            <strong id="dashboard-live-time">--:--</strong>
+            <span id="dashboard-live-date">----</span>
+          </div>
+        </div>
+        <div class="dashboard-today-meta">
+          <div><small>${zh ? "时区" : "Time zone"}</small><strong id="dashboard-live-zone">—</strong></div>
+          <div><small>${zh ? "日历" : "Calendar"}</small><strong id="dashboard-live-week">—</strong></div>
         </div>
       </div>
     </section>
@@ -113,12 +119,23 @@ export function dashboardContent(zh) {
       (() => {
         const time = document.getElementById("dashboard-live-time");
         const date = document.getElementById("dashboard-live-date");
+        const zone = document.getElementById("dashboard-live-zone");
+        const week = document.getElementById("dashboard-live-week");
         const theme = document.getElementById("dashboard-theme-label");
         const zh = ${zh ? "true" : "false"};
+        const isoWeek = value => {
+          const d = new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
+          const day = d.getUTCDay() || 7;
+          d.setUTCDate(d.getUTCDate() + 4 - day);
+          const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+          return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        };
         const paint = () => {
           const now = new Date();
           if (time) time.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { hour:"2-digit", minute:"2-digit", hour12:false }).format(now);
           if (date) date.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { year:"numeric", month:"long", day:"numeric", weekday:"short" }).format(now);
+          if (zone) zone.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || "Local";
+          if (week) week.textContent = zh ? ("第 " + isoWeek(now) + " 周") : ("Week " + isoWeek(now));
           if (theme) {
             const current = document.documentElement.dataset.theme || "light";
             theme.textContent = current === "dark" ? (zh ? "深色" : "Dark") : (zh ? "浅色" : "Light");
