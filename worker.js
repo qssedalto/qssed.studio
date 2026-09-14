@@ -1,11 +1,15 @@
 import studio from "./studio/entry.js";
 import { handleKnowledgeSearch } from "./studio/knowledge-api.js";
 import { handleCuratedFavorites } from "./studio/favorites-api.js";
+import { handleRegistrationUsernameCheck } from "./studio/registration-check-api.js";
+import { handleAccountSecurity } from "./studio/account-security-api.js";
+import { hardenBrowserResponse } from "./studio/browser-security.js";
 
 const AUTH_ABUSE_PATHS = new Set([
   "/api/auth/login",
   "/api/auth/signup",
   "/api/auth/bootstrap",
+  "/api/auth/username-check",
   "/auth/handoff"
 ]);
 const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -27,8 +31,14 @@ export default {
 
     if (pathname === "/api/knowledge/search") return handleKnowledgeSearch(request, env);
     if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
+    if (pathname === "/api/auth/username-check") return handleRegistrationUsernameCheck(request, env);
+    if (pathname.startsWith("/api/account/")) {
+      const action = pathname.slice("/api/account/".length);
+      return handleAccountSecurity(request, action);
+    }
 
-    return studio.fetch(request, env, ctx);
+    const response = await studio.fetch(request, env, ctx);
+    return hardenBrowserResponse(response, pathname);
   }
 };
 
