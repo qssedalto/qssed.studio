@@ -60,12 +60,8 @@ export async function handleAuthHandoff(request, env, locale) {
 export function normalizeHandoffNext(value, locale, workTarget = false) {
   const candidate = typeof value === "string" ? value.trim() : "";
   if (workTarget) {
-    if (["/zh-cn", "/en", "/zh-cn/tex", "/en/tex", "/zh-cn/local", "/en/local"].includes(candidate)) return candidate;
-    const prefix = locale === "zh" ? "/zh-cn" : "/en";
-    if (candidate === "/") return prefix;
-    if (candidate === "/local") return `${prefix}/local`;
-    if (candidate === "/tex") return `${prefix}/tex`;
-    return `${prefix}/tex`;
+    const candidateLocale = candidate === "/en" || candidate.startsWith("/en/") ? "en" : candidate === "/zh-cn" || candidate.startsWith("/zh-cn/") ? "zh" : locale;
+    return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/tex";
   }
   const fallback = locale === "zh" ? "/zh-cn/dashboard" : "/en/dashboard";
   if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\u0000")) return fallback;
