@@ -27,15 +27,15 @@ export async function protectAuthEdgeRequest(request, env) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   if (!(await consume(env?.AUTH_EDGE_GLOBAL_RATE_LIMITER, `auth-edge:global:${ip}`))) return rateLimited(request);
 
-  const hasIdentity = Boolean(request.headers.get("Authorization") || request.headers.get("Cookie"));
-  if (!hasIdentity) {
+  // OAuth protocol clients are intentionally programmatic and may legitimately use curl/SDK UAs.
+  // Their abuse boundary is the Auth-wide limiter plus the existing OAuth business limiter.
+  if (!OAUTH_PROTOCOL_PATHS.has(pathname)) {
+    // Do not treat attacker-controlled Cookie/Authorization headers as proof of a trusted identity.
     if (!(await consume(env?.AUTH_EDGE_ANON_RATE_LIMITER, `auth-edge:anon:${ip}`))) return rateLimited(request);
 
-    if (!OAUTH_PROTOCOL_PATHS.has(pathname)) {
-      const bot = botSignals(request);
-      if (!bot.verified && bot.score >= 3) {
-        if (!(await consume(env?.AUTH_EDGE_SUSPECT_RATE_LIMITER, `auth-edge:suspect:${ip}`))) return rateLimited(request);
-      }
+    const bot = botSignals(request);
+    if (!bot.verified && bot.score >= 3) {
+      if (!(await consume(env?.AUTH_EDGE_SUSPECT_RATE_LIMITER, `auth-edge:suspect:${ip}`))) return rateLimited(request);
     }
   }
 
