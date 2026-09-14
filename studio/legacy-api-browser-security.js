@@ -75,6 +75,10 @@ function hardenUserLinksClients(markup) {
     .replace(
       /function authHeaders\(\)\s*\{\s*return session\?\.access_token\s*\?\s*\{\s*Authorization:\s*'Bearer '\s*\+\s*session\.access_token\s*\}\s*:\s*\{\};\s*\}/g,
       "function authHeaders() { return {}; }"
+    )
+    .replace(
+      /fetch\((['"])\/api\/user-links([^'"]*)\1,\s*\{/g,
+      "fetch($1/api/user-links$2$1, { credentials:'same-origin',"
     );
 }
 
