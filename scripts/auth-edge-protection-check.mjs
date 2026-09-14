@@ -20,7 +20,7 @@ function request(path, options = {}) {
   return {
     url: `https://auth.qsseda.studio${path}`,
     method: options.method || "GET",
-    headers: new Headers(options.headers || {}),
+    headers: new Headers({ "CF-Connecting-IP": "203.0.113.88", ...(options.headers || {}) }),
     cf: options.cf || undefined
   };
 }
@@ -55,12 +55,25 @@ assert(authBotSignals(curlLogin).score >= 3, "Auth page command-line automation 
 result = await protectAuthEdgeRequest(curlLogin, env({ AUTH_EDGE_SUSPECT_RATE_LIMITER: deny }));
 assert(result?.status === 429, "Suspicious Auth page automation must use the strict limiter");
 
+const forgedIdentityLogin = request("/login", {
+  headers: {
+    "User-Agent": "curl/8.12.0",
+    Accept: "*/*",
+    Authorization: "Bearer forged-token",
+    Cookie: "fake-session=fake"
+  }
+});
+result = await protectAuthEdgeRequest(forgedIdentityLogin, env({ AUTH_EDGE_SUSPECT_RATE_LIMITER: deny }));
+assert(result?.status === 429, "Forged identity headers must not bypass Auth page crawler limiting");
+result = await protectAuthEdgeRequest(browser("/login", { Authorization: "Bearer forged-token" }), env({ AUTH_EDGE_ANON_RATE_LIMITER: deny }));
+assert(result?.status === 429, "Forged identity headers must not bypass Auth page surge limiting");
+
 const oauthClient = request("/oauth/token", {
   method: "POST",
   headers: { "User-Agent": "curl/8.12.0", Accept: "application/json" }
 });
-result = await protectAuthEdgeRequest(oauthClient, env({ AUTH_EDGE_SUSPECT_RATE_LIMITER: deny }));
-assert(result === null, "OAuth protocol clients must not be rejected by page crawler heuristics");
+result = await protectAuthEdgeRequest(oauthClient, env({ AUTH_EDGE_ANON_RATE_LIMITER: deny, AUTH_EDGE_SUSPECT_RATE_LIMITER: deny }));
+assert(result === null, "OAuth protocol clients must not be rejected by page crawler/anonymous heuristics");
 
 const identifiedOauthClient = request("/oauth/token", {
   method: "POST",
@@ -71,7 +84,7 @@ const identifiedOauthClient = request("/oauth/token", {
   }
 });
 result = await protectAuthEdgeRequest(identifiedOauthClient, env({ AUTH_EDGE_ANON_RATE_LIMITER: deny, AUTH_EDGE_SUSPECT_RATE_LIMITER: deny }));
-assert(result === null, "Authenticated OAuth clients should not consume anonymous edge capacity");
+assert(result === null, "OAuth protocol clients must remain compatible with programmatic authentication");
 
 const verifiedBot = request("/login", {
   headers: { "User-Agent": "Googlebot/2.1", Accept: "text/html" },
@@ -82,7 +95,7 @@ result = await protectAuthEdgeRequest(verifiedBot, env({ AUTH_EDGE_SUSPECT_RATE_
 assert(result === null, "Verified bots should not be sent to the suspicious limiter");
 
 result = await protectAuthEdgeRequest(browser(), env({ AUTH_EDGE_ANON_RATE_LIMITER: deny }));
-assert(result?.status === 429, "Auth anonymous traffic must have a dedicated surge limiter");
+assert(result?.status === 429, "Auth page traffic must have a dedicated surge limiter");
 
 result = await protectAuthEdgeRequest(browser(), env({ AUTH_EDGE_GLOBAL_RATE_LIMITER: deny }));
 assert(result?.status === 429, "Auth global per-IP limiter must execute before routing");
