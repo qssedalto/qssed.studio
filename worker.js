@@ -3,6 +3,7 @@ import { handleKnowledgeSearch } from "./studio/knowledge-api.js";
 import { handleCuratedFavorites } from "./studio/favorites-api.js";
 import { handleRegistrationUsernameCheck } from "./studio/registration-check-api.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
+import { handleProfileApi } from "./studio/profile-api.js";
 import { hardenBrowserResponse } from "./studio/browser-security.js";
 
 const AUTH_ABUSE_PATHS = new Set([
@@ -35,6 +36,10 @@ export default {
     if (pathname.startsWith("/api/account/")) {
       const action = pathname.slice("/api/account/".length);
       return handleAccountSecurity(request, action);
+    }
+    if (pathname.startsWith("/api/profile/")) {
+      const action = pathname.slice("/api/profile/".length);
+      return handleProfileApi(request, action);
     }
 
     const response = await studio.fetch(request, env, ctx);
