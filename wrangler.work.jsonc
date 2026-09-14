@@ -1,0 +1,40 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "qsseda-work",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-14",
+  "workers_dev": false,
+  "preview_urls": false,
+  "minify": true,
+  "keep_names": false,
+  "upload_source_maps": false,
+  "keep_vars": true,
+  "ratelimits": [
+    { "name": "AUTH_RATE_LIMITER", "namespace_id": "730101", "simple": { "limit": 20, "period": 60 } },
+    { "name": "API_READ_RATE_LIMITER", "namespace_id": "730102", "simple": { "limit": 300, "period": 60 } },
+    { "name": "API_WRITE_RATE_LIMITER", "namespace_id": "730103", "simple": { "limit": 90, "period": 60 } },
+    { "name": "EDGE_GLOBAL_RATE_LIMITER", "namespace_id": "730104", "simple": { "limit": 600, "period": 60 } },
+    { "name": "EDGE_ANON_RATE_LIMITER", "namespace_id": "730105", "simple": { "limit": 120, "period": 60 } },
+    { "name": "EDGE_SUSPECT_RATE_LIMITER", "namespace_id": "730106", "simple": { "limit": 20, "period": 60 } },
+    { "name": "EDGE_EXPENSIVE_RATE_LIMITER", "namespace_id": "730107", "simple": { "limit": 45, "period": 60 } }
+  ],
+  "r2_buckets": [
+    { "binding": "STORAGE", "bucket_name": "qsseda-studio-storage" }
+  ],
+  "routes": [
+    { "pattern": "work.qsseda.studio", "custom_domain": true }
+  ],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": false,
+      "head_sampling_rate": 1,
+      "persist": true
+    }
+  }
+}
