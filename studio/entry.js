@@ -19,6 +19,7 @@ import { workbenchContent } from "./ui-workbench.js";
 import { labContent } from "./ui-lab.js";
 import { texWorkbenchContent } from "./ui-tex-workbench.js";
 import { decorateWorkNavigation, workHubContent, workLocalBridgeContent } from "./ui-work.js";
+import { enhanceWorkLocalBridgeNative } from "./ui-work-native.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
@@ -118,7 +119,7 @@ export default {
       if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh));
       if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, texWorkbenchContent(zh));
       if (pathname === "/work") markup = replaceOsContent(markup, workHubContent(zh));
-      if (pathname === "/work/local") markup = replaceOsContent(markup, workLocalBridgeContent(zh));
+      if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh), zh));
       const pageOptions = pathname === "/work/local" ? { allowLoopback: true } : {};
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }
