@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { html, json } from "./routing.js";
 import { baseHead, supabaseScript } from "./ui-page.js";
+import { studioSessionCookies, withStudioSessionCookies } from "./session-gate.js";
 
 export async function handleAuthHandoff(request, env, locale) {
   const origin = request.headers.get("Origin") || "";
@@ -46,7 +47,8 @@ export async function handleAuthHandoff(request, env, locale) {
   const profiles = await profileResponse.json();
   if (!Array.isArray(profiles) || profiles[0]?.status !== "active") return json({ error: "Account is not active" }, 403);
 
-  return authHandoffHtml(accessToken, refreshToken, next);
+  const response = authHandoffHtml(accessToken, refreshToken, next);
+  return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken));
 }
 
 export function normalizeHandoffNext(value, locale) {
@@ -66,4 +68,3 @@ export function authHandoffHtml(accessToken, refreshToken, next) {
   const page = `<!DOCTYPE html><html><head>${baseHead("QssedA Studio")}</head><body><main style="min-height:100vh;display:grid;place-items:center;padding:24px"><section style="text-align:center"><h1 style="font-size:24px;margin:0 0 8px">QssedA Studio</h1><p id="handoff-status" style="color:var(--muted,#8e8e93)">正在同步登录状态…</p></section></main>${supabaseScript()}<script>(async()=>{const status=document.getElementById("handoff-status");const result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}});if(result.error){status.textContent="登录状态同步失败，请返回认证中心重试。";return}location.replace(${scriptLiteral(next)})})().catch(()=>{document.getElementById("handoff-status").textContent="登录状态同步失败，请返回认证中心重试。"})</script></body></html>`;
   return new Response(page, { status: 200, headers: { "content-type": "text/html;charset=UTF-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" } });
 }
-

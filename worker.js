@@ -3,6 +3,7 @@ import studio from "./studio/entry.js";
 const AUTH_ABUSE_PATHS = new Set([
   "/api/auth/login",
   "/api/auth/signup",
+  "/api/auth/bootstrap",
   "/auth/handoff"
 ]);
 const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
