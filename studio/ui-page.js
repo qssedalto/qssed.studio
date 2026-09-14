@@ -219,6 +219,7 @@ export function baseHead(title) {
         line-height:1;
         transition:background .12s ease,transform 100ms ease-out;
       }
+      .language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}
       .theme-toggle:hover,.language-toggle:hover{background:color-mix(in srgb,var(--glass-heavy) 82%,var(--surface-strong) 18%);filter:none;transform:none}
       .theme-toggle:active,.language-toggle:active{transform:scale(.92)}
       .theme-toggle .theme-sun,:root[data-theme="light"] .theme-toggle .theme-moon{display:none}
