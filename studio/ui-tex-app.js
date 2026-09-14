@@ -47,7 +47,7 @@ export function polishTexWorkbenchApp(markup, zh) {
     .replace(oldPlaceholder, startSurface)
     .replace(
       /<label class="tex-live-preview-toggle"><input id="tex-live-preview-toggle" type="checkbox" checked><span>[^<]*<\/span><\/label>/,
-      `<label class="tex-live-preview-toggle"><span class="tex-live-switch"><input id="tex-live-preview-toggle" type="checkbox" checked><span aria-hidden="true"></span></span><span>${copy.previewToggle}</span></label>`
+      `<label class="tex-live-preview-toggle"><span class="tex-live-preview-switch"><input id="tex-live-preview-toggle" type="checkbox" checked><span aria-hidden="true"></span></span><span>${copy.previewToggle}</span></label>`
     );
 
   output += `
@@ -83,19 +83,20 @@ export function polishTexWorkbenchApp(markup, zh) {
       .tex-live-preview-card.is-unavailable{opacity:1!important}
 
       .tex-start-surface{display:flex!important;flex-direction:column;justify-content:center;align-items:center;gap:18px!important;padding:42px 36px!important;background:radial-gradient(circle at 50% 38%,rgba(10,132,255,.045),transparent 42%)}
-      .tex-start-mark{display:grid!important;place-items:center;width:52px!important;height:52px!important;border-radius:16px!important;background:var(--fill)!important;box-shadow:inset 0 0 0 1px var(--hairline);font:700 13px ui-monospace,SFMono-Regular,Menlo,monospace!important}
-      .tex-start-copy{display:grid;gap:6px;max-width:560px;text-align:center}
+      .tex-start-surface>.tex-start-mark{display:grid!important;place-items:center!important;width:52px!important;height:52px!important;border-radius:16px!important;background:var(--fill)!important;box-shadow:inset 0 0 0 1px var(--hairline);font:700 13px ui-monospace,SFMono-Regular,Menlo,monospace!important}
+      .tex-start-surface>.tex-start-copy{display:grid!important;place-items:stretch!important;gap:6px!important;width:min(100%,560px)!important;height:auto!important;border-radius:0!important;background:transparent!important;font:inherit!important;text-align:center}
       .tex-start-copy strong{font-size:18px!important;letter-spacing:-.025em}
       .tex-start-copy span{font-size:11px!important;line-height:1.55;color:var(--muted)}
-      .tex-start-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;width:min(100%,650px)}
-      .tex-start-card{appearance:none;display:grid;gap:5px;min-height:92px;padding:14px;border:0;border-radius:14px;background:var(--card);color:var(--text);text-align:left;box-shadow:inset 0 0 0 1px var(--border);cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+      .tex-start-surface>.tex-start-grid{display:grid!important;place-items:stretch!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px!important;width:min(100%,650px)!important;height:auto!important;border-radius:0!important;background:transparent!important;font:inherit!important}
+      .tex-start-card{appearance:none;display:grid;gap:5px;min-width:0;min-height:92px;padding:14px;border:0;border-radius:14px;background:var(--card);color:var(--text);text-align:left;box-shadow:inset 0 0 0 1px var(--border);cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
       .tex-start-card:hover{transform:translateY(-1px);background:var(--surface);box-shadow:inset 0 0 0 1px rgba(10,132,255,.28),0 8px 24px rgba(0,0,0,.04)}
       .tex-start-card:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(10,132,255,.1),inset 0 0 0 1px rgba(10,132,255,.55)}
       .tex-start-card b{font-size:11px}.tex-start-card span{font-size:9px!important;line-height:1.45;color:var(--muted);text-align:left}
-      .tex-start-features{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;color:var(--quiet);font-size:8px}
+      .tex-start-surface>.tex-start-features{display:flex!important;place-items:initial!important;flex-wrap:wrap;justify-content:center;gap:12px!important;width:auto!important;height:auto!important;border-radius:0!important;background:transparent!important;font:inherit!important;color:var(--quiet)}
+      .tex-start-features span{font-size:8px!important}
       .tex-start-features span::first-letter{color:var(--primary)}
 
-      @media(max-width:760px){.tex-start-grid{grid-template-columns:1fr}.tex-start-surface{padding:28px 18px!important}.tex-work-app .tex-hero{padding:14px}.tex-work-app .tex-hero p{display:none}}
+      @media(max-width:760px){.tex-start-surface>.tex-start-grid{grid-template-columns:1fr}.tex-start-surface{padding:28px 18px!important}.tex-work-app .tex-hero{padding:14px}.tex-work-app .tex-hero p{display:none}}
     </style>
     <script>
       (() => {
