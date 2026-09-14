@@ -2,7 +2,7 @@ import { TEXT } from "../studio/config.js";
 import { buildLinks } from "../studio/routing.js";
 import { signUpPage } from "../studio/auth-pages.js";
 import { osPage } from "../studio/ui-shell.js";
-import { storageSettingsContent } from "../studio/ui-storage.js";
+import { storageSettingsContent, storageClientScript } from "../studio/ui-storage.js";
 import { researchNotesContent } from "../studio/ui-notes.js";
 import { summariesContent } from "../studio/ui-information.js";
 import { privateLinksPageContent } from "../studio/ui-links-workspace.js";
@@ -44,7 +44,7 @@ assertContains(dashboard, "/api/admin/", "Dashboard shared admin runtime must us
 assertBrowserInternalsHidden(dashboard, "Dashboard");
 
 const cookieClients = [
-  ["Storage", harden(storageSettingsContent(true)), ["/api/storage/files", "/api/storage/upload", "/api/storage/object"]],
+  ["Storage", harden(storageSettingsContent(true) + storageClientScript(true, "/zh-cn/login")), ["/api/storage/files", "/api/storage/upload", "/api/storage/object"]],
   ["Notes", harden(researchNotesContent(true)), ["/api/notes"]],
   ["Summaries", harden(summariesContent(true)), ["/api/summaries"]],
   ["Private links", harden(privateLinksPageContent(true)), ["/api/user-links"]],
