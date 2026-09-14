@@ -58,6 +58,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (workHost) {
     const mapped = rewriteWorkSubdomainRequest(request);
     if (mapped.redirect) return redirect(mapped.redirect);
+    if (mapped.canonical) return redirect(mapped.canonical);
     request = mapped.request;
     workPageNext = mapped.pageNext;
     url = new URL(request.url);
