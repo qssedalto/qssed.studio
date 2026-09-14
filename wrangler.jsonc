@@ -4,7 +4,10 @@
   "main": "worker.js",
   "compatibility_date": "2026-05-25",
   "workers_dev": false,
-  "preview_urls": true,
+  "preview_urls": false,
+  "minify": true,
+  "keep_names": false,
+  "upload_source_maps": false,
   "keep_vars": true,
   "r2_buckets": [
     {

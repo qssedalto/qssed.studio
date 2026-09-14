@@ -3,9 +3,7 @@ import { KNOWLEDGE_PATHS } from "./knowledge-routes.js";
 export const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 export const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 export const ZH_COUNTRIES = ["CN", "HK", "MO", "TW", "SG"];
-export const ADMIN_EMAILS = [
-  "qssed_a@icloud.com"
-];
+export const ADMIN_EMAILS = [""];
 export const MAX_STORAGE_FILE_BYTES = 50 * 1024 * 1024;
 export const MAX_STORAGE_LIST_OBJECTS = 10000;
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -62,7 +60,7 @@ export const TEXT = {
     birthYear: "Year",
     birthMonth: "Month",
     birthDay: "Day",
-    adminApprovalMessage: "Account created. An administrator will assign access permissions. You can sign in now. For help, email:",
+    adminApprovalMessage: "Account created. You can sign in now.",
     selectGender: "Gender",
     male: "Male",
     female: "Female",
@@ -95,7 +93,7 @@ export const TEXT = {
     birthYear: "年",
     birthMonth: "月",
     birthDay: "日",
-    adminApprovalMessage: "账号已创建。管理员会分配访问权限，现在可以先登录。如需帮助，请联系：",
+    adminApprovalMessage: "账号已创建，现在可以登录。",
     selectGender: "性别",
     male: "男",
     female: "女",

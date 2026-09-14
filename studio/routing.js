@@ -1,4 +1,49 @@
-import { ZH_COUNTRIES } from "./config.js";
+import { ZH_COUNTRIES, SUPABASE_URL } from "./config.js";
+
+const SUPABASE_ORIGIN = new URL(SUPABASE_URL).origin;
+const SUPABASE_WS_ORIGIN = SUPABASE_ORIGIN.replace(/^https:/, "wss:");
+
+function securityHeaders(contentType) {
+  const headers = new Headers();
+  headers.set("content-type", contentType);
+  headers.set("x-content-type-options", "nosniff");
+  headers.set("x-frame-options", "DENY");
+  headers.set("referrer-policy", "strict-origin-when-cross-origin");
+  headers.set("permissions-policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=(), browsing-topics=()");
+  headers.set("strict-transport-security", "max-age=31536000");
+  headers.set("x-dns-prefetch-control", "off");
+  headers.set("x-permitted-cross-domain-policies", "none");
+  headers.set("cross-origin-resource-policy", "same-origin");
+  return headers;
+}
+
+function htmlSecurityHeaders() {
+  const headers = securityHeaders("text/html;charset=UTF-8");
+  headers.set(
+    "content-security-policy",
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      `connect-src 'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN}`,
+      "font-src 'self' data:",
+      "object-src 'none'",
+      "base-uri 'none'",
+      "frame-src 'none'",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      "manifest-src 'self'",
+      "worker-src 'self' blob:",
+      "upgrade-insecure-requests"
+    ].join("; ")
+  );
+  headers.set("x-robots-tag", "noindex, nofollow, noarchive, nosnippet, noimageindex");
+  headers.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
+  headers.set("pragma", "no-cache");
+  headers.set("expires", "0");
+  return headers;
+}
 
 export function getRouteInfo(request) {
   const url = new URL(request.url);
@@ -63,12 +108,7 @@ export function buildLinks(locale, pathname) {
 export function html(content, status = 200) {
   return new Response(content, {
     status,
-    headers: {
-      "content-type": "text/html;charset=UTF-8",
-      "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
-      "pragma": "no-cache",
-      "expires": "0"
-    }
+    headers: htmlSecurityHeaders()
   });
 }
 
@@ -80,11 +120,10 @@ export function localizedRedirect(request, locale, pathname) {
 }
 
 export function json(data, status = 200) {
+  const headers = securityHeaders("application/json;charset=UTF-8");
+  headers.set("cache-control", "no-store");
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      "content-type": "application/json;charset=UTF-8",
-      "cache-control": "no-store"
-    }
+    headers
   });
 }
