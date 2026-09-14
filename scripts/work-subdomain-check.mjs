@@ -3,6 +3,7 @@ import fs from "node:fs";
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
 const work = fs.readFileSync(new URL("../studio/work-subdomain.js", import.meta.url), "utf8");
 const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta.url), "utf8");
+const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
 const workTexUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
 const bridge = fs.readFileSync(new URL("../local-bridge/server.mjs", import.meta.url), "utf8");
 const nativeOrigin = fs.readFileSync(new URL("../local-bridge/native/origins_work_windows.go", import.meta.url), "utf8");
@@ -32,6 +33,12 @@ assert(!work.includes('internalPath = `/${locale}/work`'), "Work must not expose
 assert(handoff.includes('const WORK_HOST = "work.qsseda.studio"'), "Auth handoff must identify the Work host");
 assert(handoff.includes("new Set([AUTH_ORIGIN, MAIN_ORIGIN])"), "Work handoff must allow only Auth and the trusted main-site origin");
 assert(handoff.includes('return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/tex"'), "Every Work handoff must land on localized TeX");
+
+assert(authEntry.includes('pathname === "/continue" && isLoginRedirect(response)'), "Auth entry must preserve app return targets when /continue requires login");
+assert(authEntry.includes('/login?next=${encodeURIComponent(next)}'), "Auth login redirect must retain the validated next path");
+assert(authEntry.includes('id="qsseda-auth-return-target"'), "Auth login UI must resume the preserved return target after sign-in");
+assert(authEntry.includes('location.replace(target)'), "Auth login must resume the original app handoff instead of falling back to Dashboard");
+assert(authEntry.includes('path.startsWith("/")') && authEntry.includes('path.startsWith("//")'), "Auth return target must remain constrained to same-origin paths");
 
 assert(workTexUi.includes('id="qsseda-work-tex-only"'), "Work TeX must include the dedicated full-viewport shell override");
 assert(workTexUi.includes('.tex-workbench .tex-hero{display:none!important}'), "Work must hide Studio/TeX product chrome above the workspace");
