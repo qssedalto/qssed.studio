@@ -43,6 +43,55 @@ function parseObjectReference(value) {
   return { ownerId: parts[0], objectId: parts[1] };
 }
 
+function cleanProfileLabel(value, maximum = 120) {
+  return String(value || "")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maximum);
+}
+
+async function fetchOwnerProfiles(secret, ownerIds) {
+  const map = new Map();
+  const ids = [...new Set(ownerIds.filter(isStorageObjectId))];
+  for (let index = 0; index < ids.length; index += 100) {
+    const chunk = ids.slice(index, index + 100);
+    const url = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
+    url.searchParams.set("select", "id,username,display_name");
+    url.searchParams.set("id", `in.(${chunk.join(",")})`);
+    try {
+      const response = await fetch(url.toString(), { headers: serviceHeaders(secret) });
+      if (!response.ok) {
+        workerLog("warn", "storage.owner_profiles.failed", { upstream_status: response.status, owner_count: chunk.length });
+        continue;
+      }
+      const rows = await response.json();
+      if (!Array.isArray(rows)) continue;
+      for (const row of rows) {
+        if (!isStorageObjectId(row?.id)) continue;
+        map.set(row.id, {
+          username: cleanProfileLabel(row?.username, 80),
+          displayName: cleanProfileLabel(row?.display_name, 120)
+        });
+      }
+    } catch (error) {
+      workerLog("warn", "storage.owner_profiles.error", { error_type: error?.name || "Error", owner_count: chunk.length });
+    }
+  }
+  return map;
+}
+
+function ownerDisplay(profile, ownerId) {
+  const username = profile?.username || "";
+  const displayName = profile?.displayName || "";
+  if (displayName && username && displayName.toLocaleLowerCase() !== username.toLocaleLowerCase()) {
+    return `${displayName} · @${username}`;
+  }
+  if (username) return `@${username}`;
+  if (displayName) return displayName;
+  return `用户 ${String(ownerId || "").slice(0, 8)}`;
+}
+
 export function cleanStorageFilename(value) {
   const normalized = String(value || "")
     .normalize("NFC")
@@ -156,7 +205,7 @@ export async function handleStorageFiles(request, env) {
   if (!hasStorageBinding(env)) return storageUnavailable();
 
   const files = [];
-  const prefix = storagePrefix(auth.user.id);
+  const prefix = auth.isAdmin ? "users/" : storagePrefix(auth.user.id);
   let cursor;
   let scanned = 0;
   let partial = false;
@@ -174,10 +223,13 @@ export async function handleStorageFiles(request, env) {
 
       for (const object of page.objects) {
         const parsed = parseStorageKey(object.key);
-        if (!parsed || parsed.ownerId !== auth.user.id) continue;
+        if (!parsed) continue;
+        if (!auth.isAdmin && parsed.ownerId !== auth.user.id) continue;
+
         const mediaType = storageContentType(object.httpMetadata?.contentType);
         files.push({
-          id: parsed.objectId,
+          id: auth.isAdmin ? `${parsed.ownerId}:${parsed.objectId}` : parsed.objectId,
+          ownerId: auth.isAdmin ? parsed.ownerId : undefined,
           name: cleanStorageFilename(object.customMetadata?.originalName),
           size: Number(object.size) || 0,
           uploadedAt: object.uploaded?.toISOString?.() || null,
@@ -194,8 +246,18 @@ export async function handleStorageFiles(request, env) {
       }
     } while (cursor);
   } catch (error) {
-    workerLog("error", "storage.list.failed", { message: String(error?.message || error), user_id: auth.user.id });
+    workerLog("error", "storage.list.failed", { message: String(error?.message || error), admin: auth.isAdmin, user_id: auth.user.id });
     return storageUnavailable();
+  }
+
+  if (auth.isAdmin && files.length) {
+    const owners = await fetchOwnerProfiles(auth.secret, files.map(file => file.ownerId));
+    for (const file of files) {
+      const profile = owners.get(file.ownerId);
+      file.ownerUsername = profile?.username || null;
+      file.ownerDisplayName = profile?.displayName || null;
+      file.ownerLabel = ownerDisplay(profile, file.ownerId);
+    }
   }
 
   let bucketUsage;
@@ -209,8 +271,8 @@ export async function handleStorageFiles(request, env) {
   files.sort((a, b) => String(b.uploadedAt || "").localeCompare(String(a.uploadedAt || "")));
   return json({
     connected: true,
-    scope: "own",
-    is_admin: false,
+    scope: auth.isAdmin ? "all" : "own",
+    is_admin: auth.isAdmin,
     account_is_admin: auth.isAdmin,
     files,
     file_count: files.length,
