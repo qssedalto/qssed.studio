@@ -48,7 +48,7 @@ for (const required of [
   "targetAddressSpace: 'loopback'",
   "tex.compile",
   "本机 TeX 已连接",
-  "source: source.value",
+  "source: sourceText",
   "tex-live-preview-frame",
   "PDF 实时预览",
   "markPreviewDirty(1500)",
