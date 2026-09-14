@@ -136,7 +136,7 @@ export function globalSearchContent(zh) {
           let activeFilter='all';
           const prefix=location.pathname.startsWith('/zh-cn/')?'/zh-cn':location.pathname.startsWith('/en/')?'/en':'';
 
-          function internalHref(value){if(!value)return '#';if(/^https?:\/\//i.test(value))return value;return prefix+value;}
+          function internalHref(value){if(!value)return '#';if(String(value).startsWith('https://')||String(value).startsWith('http://'))return value;return prefix+value;}
           function setStatus(value){status.textContent=value;}
           function resetEmpty(title,detail){empty.hidden=false;empty.querySelector('strong').textContent=title;empty.querySelector('span').textContent=detail;}
           function filterResults(){return activeFilter==='all'?allResults:allResults.filter(item=>item.type===activeFilter);}
@@ -171,7 +171,7 @@ export function globalSearchContent(zh) {
             try{
               const response=await fetch('/api/search/global',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json;charset=UTF-8',Accept:'application/json'},body:JSON.stringify({query,limit:80}),cache:'no-store'});
               const payload=await response.json().catch(()=>({}));if(current!==sequence)return;if(!response.ok)throw new Error(payload?.error||${JSON.stringify(copy.error)});
-              allResults=Array.isArray(payload?.results)?payload.results:[];toolbar.hidden=false;updateCounts(payload);setStatus= setStatus;setStatus(String(payload.returned||0)+' '+${JSON.stringify(copy.result)});
+              allResults=Array.isArray(payload?.results)?payload.results:[];toolbar.hidden=false;updateCounts(payload);setStatus(String(payload.returned||0)+' '+${JSON.stringify(copy.result)});
               if(payload.partial){notice.hidden=false;notice.textContent=${JSON.stringify(copy.partial)};}else notice.hidden=true;
               render();
             }catch(error){if(current!==sequence)return;allResults=[];toolbar.hidden=true;notice.hidden=true;results.replaceChildren();resetEmpty(error?.message||${JSON.stringify(copy.error)},${JSON.stringify(copy.emptyDetail)});setStatus(${JSON.stringify(copy.error)});}
