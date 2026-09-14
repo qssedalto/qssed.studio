@@ -42,9 +42,10 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
   return output;
 }
 
-export function polishWorkHubTexRoute(markup, zh = true) {
-  const workPrefix = zh ? "https://work.qsseda.studio/zh-cn" : "https://work.qsseda.studio/en";
-  return String(markup || "")
+export function polishWorkHubTexRoute(markup) {
+  const source = String(markup || "");
+  const workPrefix = source.includes("Open TeX Workbench") ? "https://work.qsseda.studio/en" : "https://work.qsseda.studio/zh-cn";
+  return source
     .replaceAll("/workspace/experiments/tex", `${workPrefix}/tex`)
     .replaceAll("/work/tex", `${workPrefix}/tex`);
 }
