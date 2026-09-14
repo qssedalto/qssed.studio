@@ -65,7 +65,10 @@ export function html(content, status = 200) {
     status,
     headers: {
       "content-type": "text/html;charset=UTF-8",
-    },
+      "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+      "pragma": "no-cache",
+      "expires": "0"
+    }
   });
 }
 
@@ -85,4 +88,3 @@ export function json(data, status = 200) {
     }
   });
 }
-
