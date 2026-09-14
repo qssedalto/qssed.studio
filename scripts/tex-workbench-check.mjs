@@ -48,6 +48,10 @@ for (const zh of [true, false]) {
   assert(workMarkup.includes("visualViewport"), "Mobile Work TeX must respond to the on-screen keyboard viewport");
   assert(workMarkup.includes("qsseda.work.tex.mobile-pane.v1"), "Mobile Work TeX must preserve the active pane within the session");
   assert(workMarkup.includes("pointer:coarse"), "Phone landscape layouts must use the mobile workspace on touch devices");
+  assert(workMarkup.includes('id="qsseda-work-tex-mobile-tools"'), "Mobile Work TeX must include the quick-input toolbar styles");
+  assert(workMarkup.includes("tex-mobile-inputbar"), "Mobile Work TeX must expose the TeX quick-input toolbar");
+  assert(workMarkup.includes("setRangeText"), "Mobile TeX quick input must insert at the current selection");
+  assert(workMarkup.includes("pointerdown") && workMarkup.includes("preventDefault"), "Mobile TeX quick input must preserve textarea focus while tapping toolbar buttons");
   const appScripts = [...workMarkup.matchAll(/<script(?: [^>]*)?>([\s\S]*?)<\/script>/g)].map(match => match[1]);
   for (const code of appScripts) new Function(code);
 }
