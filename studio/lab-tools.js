@@ -47,7 +47,7 @@ export const LAB_TOOLS = [
     id: "tex-workbench",
     category: "tex",
     status: "ready",
-    href: "/workspace/experiments/tex",
+    href: "/work/tex",
     title: { zh: "TeX 工作台", en: "TeX Workbench" },
     description: { zh: "账号级 TeX 源码编辑、模板、自动保存与安全编译桥接。", en: "Account-scoped TeX editing, templates, autosave, and a protected compiler bridge." },
     capabilities: { zh: ["源码编辑", "自动保存", "编译桥接"], en: ["Source editor", "Autosave", "Compiler bridge"] }
