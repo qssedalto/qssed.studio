@@ -5,6 +5,7 @@ on:
     paths:
       - "worker.js"
       - "studio/**"
+      - "local-bridge/**"
       - "scripts/security-markup-check.mjs"
       - "scripts/security-architecture-check.mjs"
       - "scripts/edge-protection-check.mjs"
@@ -15,6 +16,7 @@ on:
       - "scripts/workbench-check.mjs"
       - "scripts/lab-check.mjs"
       - "scripts/tex-workbench-check.mjs"
+      - "scripts/work-local-bridge-check.mjs"
       - "wrangler.jsonc"
       - ".github/workflows/studio-check.yml"
   push:
@@ -23,6 +25,7 @@ on:
     paths:
       - "worker.js"
       - "studio/**"
+      - "local-bridge/**"
       - "scripts/security-markup-check.mjs"
       - "scripts/security-architecture-check.mjs"
       - "scripts/edge-protection-check.mjs"
@@ -33,6 +36,7 @@ on:
       - "scripts/workbench-check.mjs"
       - "scripts/lab-check.mjs"
       - "scripts/tex-workbench-check.mjs"
+      - "scripts/work-local-bridge-check.mjs"
       - "wrangler.jsonc"
       - ".github/workflows/studio-check.yml"
   workflow_dispatch:
@@ -51,6 +55,7 @@ jobs:
         run: |
           node --check worker.js
           for file in studio/*.js; do node --check "$file"; done
+          node --check local-bridge/server.mjs
           node --check scripts/security-markup-check.mjs
           node --check scripts/security-architecture-check.mjs
           node --check scripts/edge-protection-check.mjs
@@ -61,6 +66,7 @@ jobs:
           node --check scripts/workbench-check.mjs
           node --check scripts/lab-check.mjs
           node --check scripts/tex-workbench-check.mjs
+          node --check scripts/work-local-bridge-check.mjs
 
       - name: Verify browser security markup
         run: node scripts/security-markup-check.mjs
@@ -91,6 +97,9 @@ jobs:
 
       - name: Verify TeX Workbench
         run: node scripts/tex-workbench-check.mjs
+
+      - name: Verify Work local bridge pilot
+        run: node scripts/work-local-bridge-check.mjs
 
       - name: Bundle Studio Worker
         run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check
