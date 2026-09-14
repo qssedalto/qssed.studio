@@ -9,6 +9,7 @@ const SCANNER_PATH = /(?:^|\/)(?:\.env(?:\.|$)|\.git(?:\/|$)|wp-admin(?:\/|$)|wp
 const EXPENSIVE_PATHS = new Set([
   "/api/knowledge/search",
   "/api/search/global",
+  "/api/projects",
   "/api/storage/files",
   "/api/summaries",
   "/api/user-links",
