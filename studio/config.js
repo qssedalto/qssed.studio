@@ -28,6 +28,7 @@ export const OS_PATHS = new Set([
   "/workspace/tasks",
   "/work",
   "/work/local",
+  "/work/tex",
   "/admin",
   "/admin/general",
   "/admin/users",
@@ -49,7 +50,8 @@ export const LEGACY_REDIRECTS = new Map([
   ["/general", "/dashboard"],
   ["/general/infohub", "/info"],
   ["/personal", "/profile"],
-  ["/profile/security", "/settings/security"]
+  ["/profile/security", "/settings/security"],
+  ["/workspace/experiments/tex", "/work/tex"]
 ]);
 export const TEXT = {
   en: {
