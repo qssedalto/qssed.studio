@@ -8,6 +8,8 @@ on:
       - "auth-login-identifier.js"
       - "auth-oauth.js"
       - "auth-pkce-test.js"
+      - "auth-edge-protection.js"
+      - "scripts/auth-edge-protection-check.mjs"
       - "wrangler.auth.jsonc"
       - "AUTH_PORTAL.md"
       - "supabase/migrations/**"
@@ -21,6 +23,8 @@ on:
       - "auth-login-identifier.js"
       - "auth-oauth.js"
       - "auth-pkce-test.js"
+      - "auth-edge-protection.js"
+      - "scripts/auth-edge-protection-check.mjs"
       - "wrangler.auth.jsonc"
       - "supabase/migrations/**"
       - ".github/workflows/auth-check.yml"
@@ -42,6 +46,11 @@ jobs:
           node --check auth-login-identifier.js
           node --check auth-oauth.js
           node --check auth-pkce-test.js
+          node --check auth-edge-protection.js
+          node --check scripts/auth-edge-protection-check.mjs
+
+      - name: Verify Auth edge anti-crawl and surge protection
+        run: node scripts/auth-edge-protection-check.mjs
 
       - name: Bundle Auth Worker
         run: npx --yes wrangler@4 deploy -c wrangler.auth.jsonc --dry-run --outdir .wrangler-dry-run
@@ -58,6 +67,10 @@ jobs:
           if (config.main !== 'auth-entry.js') throw new Error('wrangler.auth.jsonc must point to auth-entry.js');
           if (!Array.isArray(config.routes) || !config.routes.some(r => r.pattern === 'auth.qsseda.studio' && r.custom_domain === true)) {
             throw new Error('auth.qsseda.studio custom domain route is missing');
+          }
+          const limiterNames = new Set((config.ratelimits || []).map(item => item.name));
+          for (const required of ['AUTH_LOGIN_RATE_LIMITER','AUTH_OAUTH_RATE_LIMITER','AUTH_EDGE_GLOBAL_RATE_LIMITER','AUTH_EDGE_ANON_RATE_LIMITER','AUTH_EDGE_SUSPECT_RATE_LIMITER']) {
+            if (!limiterNames.has(required)) throw new Error(`Missing Auth rate limiter binding: ${required}`);
           }
           console.log('Auth Wrangler configuration looks valid.');
           NODE
