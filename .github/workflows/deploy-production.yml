@@ -8,6 +8,7 @@ on:
       - worker.js
       - studio/**
       - scripts/security-markup-check.mjs
+      - scripts/security-architecture-check.mjs
       - auth-entry.js
       - auth-worker.js
       - auth-login-identifier.js
@@ -39,6 +40,8 @@ jobs:
           for file in studio/*.js; do node --check "$file"; done
           node --check scripts/security-markup-check.mjs
           node scripts/security-markup-check.mjs
+          node --check scripts/security-architecture-check.mjs
+          node scripts/security-architecture-check.mjs
           node --check auth-entry.js
           node --check auth-worker.js
           node --check auth-login-identifier.js
