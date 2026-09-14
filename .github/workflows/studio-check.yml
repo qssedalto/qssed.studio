@@ -14,6 +14,7 @@ on:
       - "scripts/drafts-check.mjs"
       - "scripts/workbench-check.mjs"
       - "scripts/lab-check.mjs"
+      - "scripts/tex-workbench-check.mjs"
       - "wrangler.jsonc"
       - ".github/workflows/studio-check.yml"
   push:
@@ -31,6 +32,7 @@ on:
       - "scripts/drafts-check.mjs"
       - "scripts/workbench-check.mjs"
       - "scripts/lab-check.mjs"
+      - "scripts/tex-workbench-check.mjs"
       - "wrangler.jsonc"
       - ".github/workflows/studio-check.yml"
   workflow_dispatch:
@@ -58,6 +60,7 @@ jobs:
           node --check scripts/drafts-check.mjs
           node --check scripts/workbench-check.mjs
           node --check scripts/lab-check.mjs
+          node --check scripts/tex-workbench-check.mjs
 
       - name: Verify browser security markup
         run: node scripts/security-markup-check.mjs
@@ -85,6 +88,9 @@ jobs:
 
       - name: Verify Lab registry
         run: node scripts/lab-check.mjs
+
+      - name: Verify TeX Workbench
+        run: node scripts/tex-workbench-check.mjs
 
       - name: Bundle Studio Worker
         run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check

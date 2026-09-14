@@ -25,10 +25,11 @@ for (const tool of LAB_TOOLS) {
   }
 }
 
-assert(LAB_TOOLS.some(tool => tool.category === "tex" && tool.status === "planned"), "Lab registry needs a TeX expansion slot");
+assert(LAB_TOOLS.some(tool => tool.id === "tex-workbench" && tool.status === "ready"), "Lab registry must expose the live TeX Workbench");
+assert(LAB_TOOLS.some(tool => tool.category === "tex" && tool.status === "planned"), "Lab registry should retain a TeX/document expansion slot");
 assert(LAB_TOOLS.some(tool => tool.category === "ai" && tool.status === "planned"), "Lab registry needs an AI expansion slot");
 assert(LAB_TOOLS.some(tool => tool.category === "media" && tool.status === "planned"), "Lab registry needs a media expansion slot");
-assert(LAB_TOOLS.filter(tool => tool.status === "ready").length >= 4, "Lab should expose the existing live Studio tools");
+assert(LAB_TOOLS.filter(tool => tool.status === "ready").length >= 5, "Lab should expose the existing live Studio tools and TeX Workbench");
 assert(!registrySource.includes("api_key"), "Lab registry must not contain API keys");
 assert(!registrySource.includes("secret"), "Lab registry must not contain secrets");
 
@@ -39,7 +40,7 @@ for (const zh of [true, false]) {
   assert(markup.includes("data-lab-status=\"planned\""), "Lab planned filter is missing");
   assert(markup.includes("data-lab-category"), "Lab category filters are missing");
   assert(markup.includes("data-lab-search"), "Lab searchable registry data is missing");
-  assert(!markup.includes("fetch("), "Lab foundation must not introduce an unnecessary backend API");
+  assert(!markup.includes("fetch("), "Lab registry page must not introduce an unnecessary backend API");
   const scripts = [...markup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
   assert(scripts.length > 0, "Lab must include a filter/search runtime");
   for (const code of scripts) new Function(code);

@@ -16,6 +16,7 @@ on:
       - scripts/drafts-check.mjs
       - scripts/workbench-check.mjs
       - scripts/lab-check.mjs
+      - scripts/tex-workbench-check.mjs
       - auth-entry.js
       - auth-worker.js
       - auth-login-identifier.js
@@ -65,6 +66,8 @@ jobs:
           node scripts/workbench-check.mjs
           node --check scripts/lab-check.mjs
           node scripts/lab-check.mjs
+          node --check scripts/tex-workbench-check.mjs
+          node scripts/tex-workbench-check.mjs
           node --check auth-entry.js
           node --check auth-worker.js
           node --check auth-login-identifier.js
