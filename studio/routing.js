@@ -23,6 +23,11 @@ function htmlSecurityHeaders(options = {}) {
   const connectSources = allowLoopback
     ? `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN} http://127.0.0.1:32145 http://localhost:32145`
     : `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN}`;
+  const localNetworkPolicy = allowLoopback
+    ? "local-network-access=(self), local-network=(self), loopback-network=(self)"
+    : "local-network-access=(), local-network=(), loopback-network=()";
+  const basePermissionsPolicy = headers.get("permissions-policy") || "";
+  headers.set("permissions-policy", `${basePermissionsPolicy}, ${localNetworkPolicy}`);
   const directives = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
