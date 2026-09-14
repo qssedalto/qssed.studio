@@ -1,4 +1,5 @@
 import { enhanceWorkTexMobile } from "./ui-work-tex-mobile.js";
+import { enhanceWorkTexMobileTools } from "./ui-work-tex-mobile-tools.js";
 
 export function enhanceWorkTexCollapsiblePanels(markup, zh) {
   const copy = zh ? {
@@ -175,5 +176,5 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
       })();
     </script>`;
 
-  return enhanceWorkTexMobile(output, zh);
+  return enhanceWorkTexMobileTools(enhanceWorkTexMobile(output, zh), zh);
 }
