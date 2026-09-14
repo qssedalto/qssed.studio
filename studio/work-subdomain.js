@@ -17,17 +17,15 @@ export function isMainWorkHandoffPath(pathname) {
 export function mainWorkRedirect(pathname) {
   const clean = normalizePath(pathname);
 
-  if (clean === "/zh-cn/work/tex" || clean === "/zh-cn/workspace/experiments/tex") return `${WORK_ORIGIN}/zh-cn/tex`;
-  if (clean === "/en/work/tex" || clean === "/en/workspace/experiments/tex") return `${WORK_ORIGIN}/en/tex`;
-  if (clean === "/work/tex" || clean === "/workspace/experiments/tex") return `${WORK_ORIGIN}/tex`;
-
-  if (clean === "/zh-cn/work/local") return `${WORK_ORIGIN}/zh-cn/local`;
-  if (clean === "/en/work/local") return `${WORK_ORIGIN}/en/local`;
-  if (clean === "/work/local") return `${WORK_ORIGIN}/local`;
-
-  if (clean === "/zh-cn/work") return `${WORK_ORIGIN}/zh-cn`;
-  if (clean === "/en/work") return `${WORK_ORIGIN}/en`;
-  if (clean === "/work") return `${WORK_ORIGIN}/`;
+  if (clean === "/zh-cn/work" || clean === "/zh-cn/work/local" || clean === "/zh-cn/work/tex" || clean === "/zh-cn/workspace/experiments/tex") {
+    return `${WORK_ORIGIN}/zh-cn/tex`;
+  }
+  if (clean === "/en/work" || clean === "/en/work/local" || clean === "/en/work/tex" || clean === "/en/workspace/experiments/tex") {
+    return `${WORK_ORIGIN}/en/tex`;
+  }
+  if (clean === "/work" || clean === "/work/local" || clean === "/work/tex" || clean === "/workspace/experiments/tex") {
+    return `${WORK_ORIGIN}/tex`;
+  }
 
   return "";
 }
@@ -41,57 +39,40 @@ export function rewriteWorkSubdomainRequest(request) {
   }
 
   const locale = preferredLocale(request, pathname);
-  let internalPath = "";
-  let pageNext = "";
-  let canonical = "";
+  const canonicalPath = `/${locale}/tex`;
 
-  if (pathname === "/") {
-    internalPath = `/${locale}/work`;
-    pageNext = "/";
-    canonical = `${WORK_ORIGIN}/${locale}${url.search}`;
-  } else if (pathname === "/tex") {
-    internalPath = `/${locale}/work/tex`;
-    pageNext = "/tex";
-    canonical = `${WORK_ORIGIN}/${locale}/tex${url.search}`;
-  } else if (pathname === "/local") {
-    internalPath = `/${locale}/work/local`;
-    pageNext = "/local";
-    canonical = `${WORK_ORIGIN}/${locale}/local${url.search}`;
-  } else if (pathname === "/zh-cn/tex" || pathname === "/en/tex") {
-    internalPath = pathname.startsWith("/en/") ? "/en/work/tex" : "/zh-cn/work/tex";
-    pageNext = pathname;
-  } else if (pathname === "/zh-cn/local" || pathname === "/en/local") {
-    internalPath = pathname.startsWith("/en/") ? "/en/work/local" : "/zh-cn/work/local";
-    pageNext = pathname;
-  } else if (pathname === "/zh-cn" || pathname === "/en") {
-    internalPath = `${pathname}/work`;
-    pageNext = pathname;
-  } else if (pathname === "/zh-cn/work" || pathname === "/en/work") {
-    const workLocale = pathname.startsWith("/en") ? "en" : "zh-cn";
-    internalPath = pathname;
-    pageNext = `/${workLocale}`;
-    canonical = `${WORK_ORIGIN}/${workLocale}${url.search}`;
-  } else if (pathname === "/zh-cn/work/tex" || pathname === "/en/work/tex") {
-    const workLocale = pathname.startsWith("/en/") ? "en" : "zh-cn";
-    internalPath = pathname;
-    pageNext = `/${workLocale}/tex`;
-    canonical = `${WORK_ORIGIN}/${workLocale}/tex${url.search}`;
-  } else if (pathname === "/zh-cn/work/local" || pathname === "/en/work/local") {
-    const workLocale = pathname.startsWith("/en/") ? "en" : "zh-cn";
-    internalPath = pathname;
-    pageNext = `/${workLocale}/local`;
-    canonical = `${WORK_ORIGIN}/${workLocale}/local${url.search}`;
-  } else {
-    return { request, pageNext: "", redirect: `${MAIN_ORIGIN}${url.pathname}${url.search}`, canonical: "" };
+  if (pathname === "/zh-cn/tex" || pathname === "/en/tex") {
+    const internalUrl = new URL(url.toString());
+    internalUrl.pathname = pathname.startsWith("/en/") ? "/en/work/tex" : "/zh-cn/work/tex";
+    return {
+      request: new Request(internalUrl.toString(), request),
+      pageNext: pathname,
+      redirect: "",
+      canonical: ""
+    };
   }
 
-  const internalUrl = new URL(url.toString());
-  internalUrl.pathname = internalPath;
-  return { request: new Request(internalUrl.toString(), request), pageNext, redirect: "", canonical };
+  if ([
+    "/", "/tex", "/local",
+    "/zh-cn", "/en",
+    "/zh-cn/local", "/en/local",
+    "/zh-cn/work", "/en/work",
+    "/zh-cn/work/local", "/en/work/local",
+    "/zh-cn/work/tex", "/en/work/tex"
+  ].includes(pathname)) {
+    return {
+      request,
+      pageNext: "",
+      redirect: "",
+      canonical: `${WORK_ORIGIN}${canonicalPath}${url.search}`
+    };
+  }
+
+  return { request, pageNext: "", redirect: `${MAIN_ORIGIN}${url.pathname}${url.search}`, canonical: "" };
 }
 
 export function workSessionRedirect(next = "/tex") {
-  const safeNext = safeWorkPath(next);
+  const safeNext = canonicalWorkPath(next, localeFromPath(next));
   const target = new URL("/work/handoff", MAIN_ORIGIN);
   target.searchParams.set("next", safeNext);
   return redirect(target.toString());
@@ -102,7 +83,7 @@ export async function handleMainWorkHandoff(request) {
 
   const requestUrl = new URL(request.url);
   const requestedNext = safeWorkPath(requestUrl.searchParams.get("next"));
-  const locale = preferredLocale(request, requestUrl.pathname);
+  const locale = localeFromPath(requestedNext) || preferredLocale(request, requestUrl.pathname);
   const next = canonicalWorkPath(requestedNext, locale);
   const gate = await verifyStudioPageSession(request);
   let refreshToken = requestCookie(request, REFRESH_COOKIE);
@@ -110,7 +91,7 @@ export async function handleMainWorkHandoff(request) {
   if (rotatedRefresh) refreshToken = rotatedRefresh;
 
   if (!gate.ok || !gate.accessToken || !refreshToken) {
-    const returnPath = `/${locale}/work/handoff?next=${encodeURIComponent(requestedNext)}`;
+    const returnPath = `/${locale}/work/handoff?next=${encodeURIComponent(next)}`;
     const authUrl = new URL("/continue", AUTH_ORIGIN);
     authUrl.searchParams.set("next", returnPath);
     return withStudioSessionCookies(redirect(authUrl.toString()), gate.cookies || []);
@@ -134,6 +115,13 @@ function preferredLocale(request, pathname) {
   return language.includes("zh") ? "zh-cn" : "en";
 }
 
+function localeFromPath(pathname) {
+  const path = typeof pathname === "string" ? pathname.trim() : "";
+  if (path === "/en" || path.startsWith("/en/")) return "en";
+  if (path === "/zh-cn" || path.startsWith("/zh-cn/")) return "zh-cn";
+  return "";
+}
+
 function normalizePath(pathname) {
   if (!pathname || pathname === "/") return "/";
   return pathname.replace(/\/+$/, "") || "/";
@@ -141,19 +129,13 @@ function normalizePath(pathname) {
 
 function safeWorkPath(value) {
   const path = typeof value === "string" ? value.trim() : "";
-  return [
-    "/", "/tex", "/local",
-    "/zh-cn", "/en",
-    "/zh-cn/tex", "/en/tex",
-    "/zh-cn/local", "/en/local"
-  ].includes(path) ? path : "/tex";
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "/tex";
+  return path;
 }
 
 function canonicalWorkPath(path, locale) {
-  if (path === "/zh-cn" || path === "/en" || path === "/zh-cn/tex" || path === "/en/tex" || path === "/zh-cn/local" || path === "/en/local") return path;
-  if (path === "/") return `/${locale}`;
-  if (path === "/local") return `/${locale}/local`;
-  return `/${locale}/tex`;
+  const normalizedLocale = locale === "en" ? "en" : "zh-cn";
+  return `/${normalizedLocale}/tex`;
 }
 
 function requestCookie(request, name) {
