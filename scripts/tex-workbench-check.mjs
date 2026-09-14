@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
 import { polishTexWorkbenchApp } from "../studio/ui-tex-app.js";
+import { enhanceWorkTexCollapsiblePanels } from "../studio/ui-work-tex-panels.js";
 import { LAB_TOOLS } from "../studio/lab-tools.js";
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
@@ -25,7 +26,7 @@ for (const zh of [true, false]) {
   assert(scripts.length > 0, "TeX Workbench must include a client runtime");
   for (const code of scripts) new Function(code);
 
-  const workMarkup = polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh);
+  const workMarkup = enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh), zh);
   assert(workMarkup.includes("tex-work-app"), "Work TeX route must render the dedicated app surface");
   assert(workMarkup.includes("tex-live-preview-switch"), "Live preview must use the custom switch instead of a native checkbox UI");
   assert(!workMarkup.includes('class="tex-live-switch"'), "Live preview switch class must match its CSS selector");
@@ -35,7 +36,12 @@ for (const zh of [true, false]) {
   assert(workMarkup.includes(".tex-start-surface>.tex-start-copy"), "Start copy must escape the legacy 52px placeholder box");
   assert(workMarkup.includes("focus-within"), "TeX search focus styling must be explicitly controlled");
   assert(workMarkup.includes("appearance:none!important"), "TeX selectors must use the controlled arrow treatment");
-  const appScripts = [...workMarkup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+  assert(workMarkup.includes('class="tex-panel-title"'), "Document count must sit beside the Documents label");
+  assert(workMarkup.includes('id="tex-left-panel-toggle"'), "Work TeX must expose a left-panel collapse control");
+  assert(workMarkup.includes('id="tex-right-panel-toggle"'), "Work TeX must expose a right-panel collapse control");
+  assert(workMarkup.includes("is-left-collapsed") && workMarkup.includes("is-right-collapsed"), "Work TeX must implement independent panel states");
+  assert(workMarkup.includes("qsseda.work.tex.panel-layout.v1"), "Work TeX panel state must persist across reloads");
+  const appScripts = [...workMarkup.matchAll(/<script(?: [^>]*)?>([\s\S]*?)<\/script>/g)].map(match => match[1]);
   for (const code of appScripts) new Function(code);
 }
 
@@ -46,6 +52,7 @@ assert(texTool?.href === "/work/tex", "TeX Workbench registry must point at the 
 assert(config.includes('"/work/tex"'), "Work TeX route is missing from protected OS routes");
 assert(config.includes('["/workspace/experiments/tex", "/work/tex"]'), "Legacy TeX route must redirect to Work TeX");
 assert(entry.includes('pathname === "/work/tex"'), "Studio entry does not mount the Work TeX app");
+assert(entry.includes("enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)"), "Work TeX collapsible panel renderer is not wired");
 assert(entry.includes("polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh)"), "Work TeX app renderer is not wired");
 assert(entry.includes('pathname === "/work/tex" ? { allowLoopback: true }') || entry.includes('pathname === "/work/tex" || pathname === "/workspace/experiments/tex"'), "Work TeX must keep scoped loopback CSP access");
 assert(worker.includes('pathname.startsWith("/api/tex/")'), "Worker is missing the TeX API boundary");
