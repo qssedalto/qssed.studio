@@ -33,8 +33,7 @@ export function curatedLinksFavoritesEnhancer(zh) {
     const groups=Array.from(root.querySelectorAll('[data-curated-group]'));
     const primaryCards=groups.flatMap(group=>Array.from(group.querySelectorAll('[data-curated-card]')));
     let favorites=new Set();
-    let accountUser=null;
-    let accountReady=false;
+    let accountUserId='';
     let syncSequence=0;
 
     function readSet(key){
@@ -43,13 +42,10 @@ export function curatedLinksFavoritesEnhancer(zh) {
         return new Set(Array.isArray(stored)?stored.filter(value=>typeof value==='string'&&value.startsWith('https://')):[]);
       }catch{return new Set();}
     }
-    function writeSet(key,set){
-      try{localStorage.setItem(key,JSON.stringify(Array.from(set)));}catch{}
-    }
+    function writeSet(key,set){try{localStorage.setItem(key,JSON.stringify(Array.from(set)));}catch{}}
     function accountStorageKey(userId){return accountStoragePrefix+userId+'.v1';}
-    function activeStorageKey(){return accountUser?.id?accountStorageKey(accountUser.id):anonymousStorageKey;}
+    function activeStorageKey(){return accountUserId?accountStorageKey(accountUserId):anonymousStorageKey;}
     function persist(){writeSet(activeStorageKey(),favorites);}
-
     favorites=readSet(anonymousStorageKey);
 
     if(origin&&!Array.from(origin.options).some(option=>option.value==='favorite')){
@@ -78,16 +74,11 @@ export function curatedLinksFavoritesEnhancer(zh) {
       if(card.parentElement?.classList.contains('curated-link-card-wrap'))return card.parentElement;
       const wrapper=document.createElement('div');
       wrapper.className='curated-link-card-wrap';
-      card.replaceWith(wrapper);
-      wrapper.append(card);
+      card.replaceWith(wrapper);wrapper.append(card);
       const button=document.createElement('button');
-      button.type='button';
-      button.className='curated-star-button';
-      button.dataset.favoriteUrl=cardUrl(card);
-      wrapper.append(button);
+      button.type='button';button.className='curated-star-button';button.dataset.favoriteUrl=cardUrl(card);wrapper.append(button);
       return wrapper;
     }
-
     primaryCards.forEach(wrapCard);
     Array.from(root.querySelectorAll('[data-curated-featured-section] [data-curated-card]')).forEach(wrapCard);
 
@@ -112,22 +103,12 @@ export function curatedLinksFavoritesEnhancer(zh) {
       favoriteGrid.innerHTML='';
       const matched=primaryCards.filter(matchesFavoriteView);
       matched.forEach(card=>{
-        const clone=card.cloneNode(true);
-        clone.hidden=false;
-        const wrapper=document.createElement('div');
-        wrapper.className='curated-link-card-wrap';
-        wrapper.append(clone);
-        const button=document.createElement('button');
-        button.type='button';
-        button.className='curated-star-button';
-        button.dataset.favoriteUrl=cardUrl(card);
-        wrapper.append(button);
+        const clone=card.cloneNode(true);clone.hidden=false;
+        const wrapper=document.createElement('div');wrapper.className='curated-link-card-wrap';wrapper.append(clone);
+        const button=document.createElement('button');button.type='button';button.className='curated-star-button';button.dataset.favoriteUrl=cardUrl(card);wrapper.append(button);
         favoriteGrid.append(wrapper);
       });
-      favoriteGrid.hidden=matched.length===0;
-      favoriteEmpty.hidden=matched.length!==0;
-      syncButtons();
-      return matched.length;
+      favoriteGrid.hidden=matched.length===0;favoriteEmpty.hidden=matched.length!==0;syncButtons();return matched.length;
     }
     function applyFavoriteMode(){
       const favoriteMode=origin?.value==='favorite';
@@ -135,120 +116,67 @@ export function curatedLinksFavoritesEnhancer(zh) {
       const matched=renderFavorites();
       localSection.classList.toggle('is-visible',favoriteMode||favorites.size>0&&noOtherFilters);
       if(favoriteMode){
-        groups.forEach(group=>group.hidden=true);
-        if(featured)featured.hidden=true;
-        if(resultCount)resultCount.textContent=String(matched);
-        if(resultLabel)resultLabel.textContent=${zh ? "' 个星标'" : "' favorites'"};
-        if(empty)empty.classList.remove('is-visible');
+        groups.forEach(group=>group.hidden=true);if(featured)featured.hidden=true;
+        if(resultCount)resultCount.textContent=String(matched);if(resultLabel)resultLabel.textContent=${zh ? "' 个星标'" : "' favorites'"};if(empty)empty.classList.remove('is-visible');
       }
     }
     function refresh(){syncButtons();applyFavoriteMode();}
 
-    async function loadAccountFavorites(user){
-      const sequence=++syncSequence;
-      accountUser=user||null;
-      accountReady=false;
-      if(!accountUser){
-        favorites=readSet(anonymousStorageKey);
-        setStorageLabel('local');
-        refresh();
-        return;
-      }
-      favorites=readSet(accountStorageKey(accountUser.id));
-      setStorageLabel('syncing');
-      refresh();
+    async function api(pathOptions={}){
+      const response=await fetch('/api/curated-favorites',{
+        credentials:'same-origin',cache:'no-store',...pathOptions,
+        headers:{Accept:'application/json',...(pathOptions.body?{'Content-Type':'application/json'}:{}),...(pathOptions.headers||{})}
+      });
+      const payload=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(payload?.error||'Favorites request failed');
+      return payload;
+    }
+
+    async function loadAccountFavorites(){
+      const sequence=++syncSequence;setStorageLabel('syncing');refresh();
       try{
-        if(typeof supabaseClient==='undefined')throw new Error('Supabase client unavailable');
-        const {data,error}=await supabaseClient.from('curated_link_favorites').select('url').eq('user_id',accountUser.id);
-        if(error)throw error;
+        const payload=await api();
         if(sequence!==syncSequence)return;
-        const cloud=new Set((data||[]).map(row=>row.url).filter(Boolean));
+        accountUserId=String(payload?.user_id||'');
+        if(!accountUserId)throw new Error('Missing account');
+        const cloud=new Set(Array.isArray(payload?.urls)?payload.urls.filter(Boolean):[]);
+        const cached=readSet(accountStorageKey(accountUserId));
         const anonymous=readSet(anonymousStorageKey);
-        const merged=new Set([...cloud,...anonymous]);
-        const missing=Array.from(anonymous).filter(url=>!cloud.has(url));
+        const toMerge=new Set([...cached,...anonymous]);
+        const missing=Array.from(toMerge).filter(url=>!cloud.has(url));
         if(missing.length){
-          const rows=missing.map(url=>({user_id:accountUser.id,url}));
-          const {error:mergeError}=await supabaseClient.from('curated_link_favorites').upsert(rows,{onConflict:'user_id,url',ignoreDuplicates:true});
-          if(mergeError)throw mergeError;
+          await api({method:'PUT',body:JSON.stringify({urls:missing})});
+          missing.forEach(url=>cloud.add(url));
         }
         if(sequence!==syncSequence)return;
-        favorites=merged;
-        writeSet(accountStorageKey(accountUser.id),favorites);
+        favorites=cloud;writeSet(accountStorageKey(accountUserId),favorites);
         try{localStorage.removeItem(anonymousStorageKey);}catch{}
-        accountReady=true;
-        setStorageLabel('cloud');
-        refresh();
+        setStorageLabel('cloud');refresh();
       }catch(error){
-        console.error('Favorite account sync failed',error);
-        if(sequence!==syncSequence)return;
-        accountReady=false;
-        setStorageLabel('error');
-        refresh();
+        console.error('Favorite account sync failed',error);accountUserId='';favorites=readSet(anonymousStorageKey);setStorageLabel('error');refresh();
       }
     }
 
     async function syncToggle(url,shouldFavorite,previous){
-      if(!accountUser)return;
       try{
-        if(typeof supabaseClient==='undefined')throw new Error('Supabase client unavailable');
-        const result=shouldFavorite
-          ? await supabaseClient.from('curated_link_favorites').upsert({user_id:accountUser.id,url},{onConflict:'user_id,url',ignoreDuplicates:true})
-          : await supabaseClient.from('curated_link_favorites').delete().eq('user_id',accountUser.id).eq('url',url);
-        if(result.error)throw result.error;
-        accountReady=true;
+        if(!accountUserId)throw new Error('Account not ready');
+        await api({method:'POST',body:JSON.stringify({url,favorite:shouldFavorite})});
         setStorageLabel('cloud');
       }catch(error){
-        console.error('Favorite write failed',error);
-        favorites=new Set(previous);
-        persist();
-        accountReady=false;
-        setStorageLabel('error');
-        refresh();
+        console.error('Favorite write failed',error);favorites=new Set(previous);persist();setStorageLabel('error');refresh();
       }
     }
 
     root.addEventListener('click',event=>{
-      const button=event.target.closest('.curated-star-button');
-      if(!button)return;
-      event.preventDefault();
-      event.stopPropagation();
-      const url=button.dataset.favoriteUrl||'';
-      if(!url)return;
-      const previous=new Set(favorites);
-      const shouldFavorite=!favorites.has(url);
-      if(shouldFavorite)favorites.add(url);else favorites.delete(url);
-      persist();
-      refresh();
-      syncToggle(url,shouldFavorite,previous);
+      const button=event.target.closest('.curated-star-button');if(!button)return;
+      event.preventDefault();event.stopPropagation();const url=button.dataset.favoriteUrl||'';if(!url)return;
+      const previous=new Set(favorites);const shouldFavorite=!favorites.has(url);
+      if(shouldFavorite)favorites.add(url);else favorites.delete(url);persist();refresh();syncToggle(url,shouldFavorite,previous);
     });
-    search?.addEventListener('input',applyFavoriteMode);
-    category?.addEventListener('change',applyFavoriteMode);
-    origin?.addEventListener('change',applyFavoriteMode);
-    reset?.addEventListener('click',()=>setTimeout(applyFavoriteMode,0));
-    window.addEventListener('storage',event=>{
-      if(event.key!==activeStorageKey())return;
-      favorites=readSet(activeStorageKey());
-      refresh();
-    });
+    search?.addEventListener('input',applyFavoriteMode);category?.addEventListener('change',applyFavoriteMode);origin?.addEventListener('change',applyFavoriteMode);reset?.addEventListener('click',()=>setTimeout(applyFavoriteMode,0));
+    window.addEventListener('storage',event=>{if(event.key!==activeStorageKey())return;favorites=readSet(activeStorageKey());refresh();});
 
-    async function initializeAccount(){
-      try{
-        if(typeof supabaseClient==='undefined')throw new Error('Supabase client unavailable');
-        const {data}=await supabaseClient.auth.getSession();
-        await loadAccountFavorites(data?.session?.user||null);
-        supabaseClient.auth.onAuthStateChange((_event,session)=>{
-          loadAccountFavorites(session?.user||null);
-        });
-      }catch(error){
-        console.error('Favorite session initialization failed',error);
-        setStorageLabel('local');
-        refresh();
-      }
-    }
-
-    refresh();
-    setStorageLabel('syncing');
-    if(document.readyState==='complete')initializeAccount();
-    else window.addEventListener('load',initializeAccount,{once:true});
+    refresh();setStorageLabel('syncing');
+    if(document.readyState==='complete')loadAccountFavorites();else window.addEventListener('load',loadAccountFavorites,{once:true});
   })();</script>`;
 }
