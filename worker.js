@@ -4,7 +4,7 @@ import { handleCuratedFavorites } from "./studio/favorites-api.js";
 import { handleRegistrationUsernameCheck } from "./studio/registration-check-api.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
 import { handleProfileApi } from "./studio/profile-api.js";
-import { hardenBrowserResponse } from "./studio/browser-security.js";
+import { hardenGlobalBrowserResponse } from "./studio/global-browser-security.js";
 
 const AUTH_ABUSE_PATHS = new Set([
   "/api/auth/login",
@@ -43,7 +43,7 @@ export default {
     }
 
     const response = await studio.fetch(request, env, ctx);
-    return hardenBrowserResponse(response, pathname);
+    return hardenGlobalBrowserResponse(response);
   }
 };
 
