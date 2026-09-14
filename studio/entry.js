@@ -12,6 +12,7 @@ import { polishLinksContent } from "./ui-links-polish.js";
 import { enhanceLinksHubWithCommunity, communityLinksPageContent } from "./ui-links-community.js";
 import { researchNotesContent } from "./ui-notes.js";
 import { globalSearchContent } from "./ui-global-search.js";
+import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
@@ -50,7 +51,8 @@ function hardenSessionClientMarkup(markup) {
 
 function localizedPage(markup, locale, status = 200) {
   const label = locale === "zh" ? "ZH" : "EN";
-  const privacySafeMarkup = normalizePublicPrivacyCopy(markup);
+  const currentFeatureMarkup = normalizeFeatureAvailabilityCopy(markup);
+  const privacySafeMarkup = normalizePublicPrivacyCopy(currentFeatureMarkup);
   const localizedMarkup = privacySafeMarkup.replace(/(<a\b[^>]*class="[^"]*\blanguage-toggle\b[^"]*"[^>]*>)[^<]*(<\/a>)/g,`$1${label}$2`);
   return html(localizedMarkup, status);
 }
