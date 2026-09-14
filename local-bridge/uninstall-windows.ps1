@@ -19,7 +19,7 @@ if (Test-Path -LiteralPath $pidPath) {
     try {
       $processInfo = Get-CimInstance Win32_Process -Filter "ProcessId=$bridgePid" -ErrorAction SilentlyContinue
       $commandLine = [string]$processInfo.CommandLine
-      if ($commandLine -and $commandLine.Contains($serverPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+      if ($commandLine -and $commandLine.IndexOf($serverPath, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
         Stop-Process -Id $bridgePid -Force -ErrorAction SilentlyContinue
       }
     } catch {}
