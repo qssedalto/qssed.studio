@@ -11,12 +11,27 @@ const signup = hardenBrowserMarkup(signUpPage(TEXT.zh, links, ipInfo));
 assertContains(signup, "/api/auth/username-check", "Sign-up page must use the Worker username endpoint");
 assertAbsent(signup, "check_registration_username", "Sign-up page leaked the registration RPC name");
 
-const profileLinks = buildLinks("zh", "/profile/account");
-const profile = hardenBrowserMarkup(osPage(TEXT.zh, profileLinks, "/profile/account", ipInfo, "Test User"));
-assertContains(profile, "/api/account/summary", "Profile page must use the Worker summary endpoint");
-assertContains(profile, "/api/account/audit", "Profile page must use the Worker audit endpoint");
-assertContains(profile, "/api/account/device", "Profile page must use the Worker device endpoint");
-for (const forbidden of ['from("profiles")', "login_events", "user_devices"]) {
+const profileLinks = buildLinks("zh", "/profile/details");
+const profile = hardenBrowserMarkup(osPage(TEXT.zh, profileLinks, "/profile/details", ipInfo, "Test User"));
+for (const endpoint of [
+  "/api/account/summary",
+  "/api/account/audit",
+  "/api/account/device",
+  "/api/profile/home",
+  "/api/profile/personalization",
+  "/api/profile/link",
+  "/api/profile/media"
+]) {
+  assertContains(profile, endpoint, `Profile page must use ${endpoint}`);
+}
+for (const forbidden of [
+  'from("profiles")',
+  "login_events",
+  "user_devices",
+  "profile_personalization",
+  "profile_links",
+  "supabaseClient.storage.from("
+]) {
   assertAbsent(profile, forbidden, `Profile page leaked database detail: ${forbidden}`);
 }
 
