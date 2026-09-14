@@ -33,6 +33,38 @@
         "limit": 90,
         "period": 60
       }
+    },
+    {
+      "name": "EDGE_GLOBAL_RATE_LIMITER",
+      "namespace_id": "730104",
+      "simple": {
+        "limit": 600,
+        "period": 60
+      }
+    },
+    {
+      "name": "EDGE_ANON_RATE_LIMITER",
+      "namespace_id": "730105",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
+      "name": "EDGE_SUSPECT_RATE_LIMITER",
+      "namespace_id": "730106",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
+    },
+    {
+      "name": "EDGE_EXPENSIVE_RATE_LIMITER",
+      "namespace_id": "730107",
+      "simple": {
+        "limit": 45,
+        "period": 60
+      }
     }
   ],
   "r2_buckets": [
