@@ -4,7 +4,7 @@ import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./
 import { handleSummaries } from "./summary-api.js";
 import { handleNotes } from "./notes-api.js";
 import { handleUserLinks } from "./user-links-api.js";
-import { linksWorkspaceContent } from "./ui-links-workspace.js";
+import { linksHubContent, privateLinksPageContent, curatedLinksPageContent } from "./ui-links-workspace.js";
 import { researchNotesContent } from "./ui-notes.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
@@ -87,12 +87,16 @@ export default {
 
     const t = TEXT[locale];
     const links = buildLinks(locale, pathname);
+    const linksSubroute = pathname === "/info/links/mine" || pathname === "/info/links/curated";
 
-    if (OS_PATHS.has(pathname)) {
+    if (OS_PATHS.has(pathname) || linksSubroute) {
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
       const zh = locale === "zh";
-      let markup = osPage(t, links, pathname, ipInfo, cachedOsUserLabel);
-      if (pathname === "/info/links") markup = replaceOsContent(markup, linksWorkspaceContent(zh));
+      const shellPath = linksSubroute ? "/info/links" : pathname;
+      let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel);
+      if (pathname === "/info/links") markup = replaceOsContent(markup, linksHubContent(zh));
+      if (pathname === "/info/links/mine") markup = replaceOsContent(markup, privateLinksPageContent(zh));
+      if (pathname === "/info/links/curated") markup = replaceOsContent(markup, curatedLinksPageContent(zh));
       if (pathname === "/info/notes") markup = replaceOsContent(markup, researchNotesContent(zh));
       return localizedPage(markup, locale);
     }
