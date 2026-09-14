@@ -4,6 +4,7 @@ import { handleCuratedFavorites } from "./studio/favorites-api.js";
 import { handleRegistrationUsernameCheck } from "./studio/registration-check-api.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
 import { handleProfileApi } from "./studio/profile-api.js";
+import { handleAdminAccess, handleAdminAction } from "./studio/admin-api.js";
 import { isLegacyCookieApiPath, handleLegacyCookieApi } from "./studio/legacy-cookie-api.js";
 import { hardenGlobalBrowserResponse } from "./studio/global-browser-security.js";
 
@@ -34,6 +35,14 @@ export default {
     if (pathname === "/api/knowledge/search") return handleKnowledgeSearch(request, env);
     if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
     if (pathname === "/api/auth/username-check") return handleRegistrationUsernameCheck(request, env);
+    if (pathname === "/api/admin/access") {
+      if (request.method !== "GET") return methodNotAllowed();
+      return handleAdminAccess(request);
+    }
+    if (pathname.startsWith("/api/admin/")) {
+      const action = pathname.slice("/api/admin/".length);
+      return handleAdminAction(request, env, action);
+    }
     if (pathname.startsWith("/api/account/")) {
       const action = pathname.slice("/api/account/".length);
       return handleAccountSecurity(request, action);
@@ -77,6 +86,17 @@ async function digest(value) {
   const bytes = new TextEncoder().encode(String(value || ""));
   const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   return Array.from(hash.slice(0, 16), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function methodNotAllowed() {
+  return new Response(JSON.stringify({ error: "Method not allowed" }), {
+    status: 405,
+    headers: {
+      "content-type": "application/json;charset=UTF-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff"
+    }
+  });
 }
 
 function tooManyRequests() {
