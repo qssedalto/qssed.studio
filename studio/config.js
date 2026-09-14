@@ -23,6 +23,7 @@ export const OS_PATHS = new Set([
   "/workspace/workbench",
   "/workspace/projects",
   "/workspace/experiments",
+  "/workspace/experiments/tex",
   "/workspace/drafts",
   "/workspace/tasks",
   "/admin",
