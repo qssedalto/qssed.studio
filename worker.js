@@ -4,6 +4,7 @@ import { handleCuratedFavorites } from "./studio/favorites-api.js";
 import { handleRegistrationUsernameCheck } from "./studio/registration-check-api.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
 import { handleProfileApi } from "./studio/profile-api.js";
+import { isLegacyCookieApiPath, handleLegacyCookieApi } from "./studio/legacy-cookie-api.js";
 import { hardenGlobalBrowserResponse } from "./studio/global-browser-security.js";
 
 const AUTH_ABUSE_PATHS = new Set([
@@ -41,6 +42,7 @@ export default {
       const action = pathname.slice("/api/profile/".length);
       return handleProfileApi(request, action);
     }
+    if (isLegacyCookieApiPath(pathname)) return handleLegacyCookieApi(request, env, pathname);
 
     const response = await studio.fetch(request, env, ctx);
     return hardenGlobalBrowserResponse(response);
