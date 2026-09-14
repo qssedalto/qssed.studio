@@ -46,11 +46,11 @@ export const LAB_TOOLS = [
   {
     id: "tex-workbench",
     category: "tex",
-    status: "planned",
-    href: "",
+    status: "ready",
+    href: "/workspace/experiments/tex",
     title: { zh: "TeX 工作台", en: "TeX Workbench" },
-    description: { zh: "面向 LaTeX / TeX 的编译、预览与文件工作流容器。", en: "A future compile, preview, and file workflow for LaTeX / TeX." },
-    capabilities: { zh: ["LaTeX", "编译", "PDF 预览"], en: ["LaTeX", "Compile", "PDF preview"] }
+    description: { zh: "账号级 TeX 源码编辑、模板、自动保存与安全编译桥接。", en: "Account-scoped TeX editing, templates, autosave, and a protected compiler bridge." },
+    capabilities: { zh: ["源码编辑", "自动保存", "编译桥接"], en: ["Source editor", "Autosave", "Compiler bridge"] }
   },
   {
     id: "document-pipeline",
