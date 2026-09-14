@@ -47,9 +47,18 @@ async function routeAuthRequest(request, env, ctx) {
   }
 
   const response = await authWorker.fetch(request, env, ctx);
+
+  if (pathname === "/continue" && isLoginRedirect(response)) {
+    const next = safeNextPath(url.searchParams.get("next"));
+    if (next) return redirectWithPreservedHeaders(response, `/login?next=${encodeURIComponent(next)}`);
+  }
+
   if ((pathname === "/" || pathname === "/login") && (response.headers.get("content-type") || "").includes("text/html")) {
-    const markup = rewriteIdentifierLoginPage(await response.text());
-    return new Response(markup, { status: response.status, headers: response.headers });
+    let markup = rewriteIdentifierLoginPage(await response.text());
+    if (pathname === "/login") markup = rewriteLoginReturnTarget(markup, url.searchParams.get("next"));
+    const headers = new Headers(response.headers);
+    headers.delete("content-length");
+    return new Response(markup, { status: response.status, headers });
   }
   return response;
 }
@@ -57,6 +66,43 @@ async function routeAuthRequest(request, env, ctx) {
 function normalizePath(pathname) {
   if (!pathname || pathname === "/") return "/";
   return pathname.replace(/\/+$/, "") || "/";
+}
+
+function safeNextPath(value) {
+  const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "";
+  return path;
+}
+
+function isLoginRedirect(response) {
+  if (!response || response.status < 300 || response.status >= 400) return false;
+  const location = response.headers.get("location") || "";
+  try {
+    const parsed = new URL(location, "https://auth.qsseda.studio");
+    return parsed.origin === "https://auth.qsseda.studio" && normalizePath(parsed.pathname) === "/login";
+  } catch {
+    return false;
+  }
+}
+
+function redirectWithPreservedHeaders(response, location) {
+  const headers = new Headers(response.headers);
+  headers.set("location", location);
+  headers.set("cache-control", "no-store");
+  headers.delete("content-length");
+  return new Response(null, { status: response.status, headers });
+}
+
+function rewriteLoginReturnTarget(markup, value) {
+  const next = safeNextPath(value);
+  if (!next) return markup;
+  const continueTarget = `/continue?next=${encodeURIComponent(next)}`;
+  const script = `<script id="qsseda-auth-return-target">(()=>{const target=${scriptLiteral(continueTarget)};const signedIn=document.getElementById("signedIn");const studioButton=document.getElementById("studioButton");const accountStudioButton=document.getElementById("accountStudioButton");if(studioButton)studioButton.href=target;if(accountStudioButton)accountStudioButton.href=target;let leaving=false;const resume=()=>{if(leaving||!signedIn||signedIn.classList.contains("hidden")||!studioButton||studioButton.classList.contains("hidden"))return;leaving=true;location.replace(target)};const observer=new MutationObserver(resume);if(signedIn)observer.observe(signedIn,{attributes:true,attributeFilter:["class"]});if(studioButton)observer.observe(studioButton,{attributes:true,attributeFilter:["class"]});queueMicrotask(resume)})()</script>`;
+  return String(markup || "").replace("</body>", `${script}</body>`);
+}
+
+function scriptLiteral(value) {
+  return JSON.stringify(String(value || "")).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
 
 async function allowed(limiter, key) {
