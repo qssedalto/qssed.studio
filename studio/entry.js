@@ -17,6 +17,7 @@ import { tasksWorkspaceContent } from "./ui-tasks.js";
 import { draftsWorkspaceContent } from "./ui-drafts.js";
 import { workbenchContent } from "./ui-workbench.js";
 import { labContent } from "./ui-lab.js";
+import { texWorkbenchContent } from "./ui-tex-workbench.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
@@ -89,6 +90,7 @@ export default {
     const t = TEXT[locale];
     const links = buildLinks(locale, pathname);
     const linksSubroute = pathname === "/info/links/mine" || pathname === "/info/links/community" || pathname === "/info/links/curated";
+    const labSubroute = pathname === "/workspace/experiments/tex";
     const isProtectedOsRoute = OS_PATHS.has(pathname) || linksSubroute;
 
     if (isProtectedOsRoute) {
@@ -97,7 +99,7 @@ export default {
 
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
       const zh = locale === "zh";
-      const shellPath = linksSubroute ? "/info/links" : pathname;
+      const shellPath = linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : pathname;
       let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel);
       markup = hardenSessionClientMarkup(markup);
       if (pathname === "/info/links") { const baseContent = polishLinksContent(linksHubContent(zh), pathname, zh); markup = replaceOsContent(markup, enhanceLinksHubWithCommunity(baseContent, zh)); }
@@ -111,6 +113,7 @@ export default {
       if (pathname === "/workspace/tasks") markup = replaceOsContent(markup, tasksWorkspaceContent(zh));
       if (pathname === "/workspace/drafts") markup = replaceOsContent(markup, draftsWorkspaceContent(zh));
       if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh));
+      if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, texWorkbenchContent(zh));
       return withStudioSessionCookies(localizedPage(markup, locale), gate.cookies);
     }
 
