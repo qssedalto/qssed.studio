@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { getWorkerRequestId, recordServerLoginEvent } from "./account-api.js";
+import { studioSessionCookies, withStudioSessionCookies } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 
 export async function handleIdentifierPasswordLogin(request, env, ipInfo) {
@@ -86,7 +87,13 @@ export async function handleIdentifierPasswordLogin(request, env, ipInfo) {
   if (!authResponse.ok && authResponse.status === 401) {
     return json({ error: "用户名、邮箱或密码不正确", code: authData?.code || "invalid_credentials" }, 401);
   }
-  return json(authData, authResponse.status);
+
+  const response = json(authData, authResponse.status);
+  if (!authResponse.ok || !authData?.access_token || !authData?.refresh_token) return response;
+  return withStudioSessionCookies(
+    response,
+    studioSessionCookies(authData.access_token, authData.refresh_token, authData.expires_in)
+  );
 }
 
 export function identifierLoginPage(markup, t, zh) {
