@@ -16,14 +16,16 @@ export async function handleRegistrationUsernameCheck(request, env) {
   const secret = getSupabaseSecret(env);
   if (!secret) return json({ error: "Registration service is temporarily unavailable." }, 503);
 
-  const url = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
-  url.searchParams.set("select", "id");
-  url.searchParams.set("username", `eq.${username}`);
-  url.searchParams.set("limit", "1");
-
   let response;
   try {
-    response = await fetch(url.toString(), { headers: serviceHeaders(secret) });
+    response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/check_registration_username`, {
+      method: "POST",
+      headers: {
+        ...serviceHeaders(secret),
+        "content-type": "application/json;charset=UTF-8"
+      },
+      body: JSON.stringify({ p_username: username })
+    });
   } catch (error) {
     workerLog("warn", "registration.username_check.upstream_error", { error_type: error?.name || "Error" });
     return json({ error: "Username check is temporarily unavailable." }, 503);
@@ -33,10 +35,10 @@ export async function handleRegistrationUsernameCheck(request, env) {
     return json({ error: "Username check is temporarily unavailable." }, 502);
   }
 
-  let rows;
-  try { rows = await response.json(); } catch { rows = null; }
-  if (!Array.isArray(rows)) return json({ error: "Username check returned an invalid response." }, 502);
-  return json({ available: rows.length === 0, reason: rows.length ? "taken" : "" });
+  let payload;
+  try { payload = await response.json(); } catch { payload = null; }
+  if (!payload || typeof payload !== "object") return json({ error: "Username check returned an invalid response." }, 502);
+  return json({ available: Boolean(payload.available), reason: payload.reason || "" });
 }
 
 function serviceHeaders(secret) {
