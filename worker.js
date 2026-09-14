@@ -1,1 +1,69 @@
-export { default } from "./studio/entry.js";
+import studio from "./studio/entry.js";
+
+const AUTH_ABUSE_PATHS = new Set([
+  "/api/auth/login",
+  "/api/auth/signup",
+  "/auth/handoff"
+]);
+const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+
+    if (AUTH_ABUSE_PATHS.has(pathname)) {
+      const key = await rateLimitKey(request, `auth:${pathname}`, false);
+      if (!(await allowed(env?.AUTH_RATE_LIMITER, key))) return tooManyRequests();
+    } else if (pathname.startsWith("/api/")) {
+      const isWrite = WRITE_METHODS.has(request.method.toUpperCase());
+      const limiter = isWrite ? env?.API_WRITE_RATE_LIMITER : env?.API_READ_RATE_LIMITER;
+      const key = await rateLimitKey(request, `${isWrite ? "write" : "read"}:${pathname}`, true);
+      if (!(await allowed(limiter, key))) return tooManyRequests();
+    }
+
+    return studio.fetch(request, env, ctx);
+  }
+};
+
+async function allowed(limiter, key) {
+  if (!limiter?.limit) return true;
+  try {
+    const result = await limiter.limit({ key });
+    return result?.success !== false;
+  } catch (error) {
+    console.error("Rate limiter unavailable", error);
+    return true;
+  }
+}
+
+async function rateLimitKey(request, scope, preferAuthenticatedIdentity) {
+  if (preferAuthenticatedIdentity) {
+    const authorization = request.headers.get("Authorization") || "";
+    if (authorization) return `${scope}:auth:${await digest(authorization)}`;
+
+    const cookie = request.headers.get("Cookie") || "";
+    if (cookie) return `${scope}:cookie:${await digest(cookie)}`;
+  }
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  return `${scope}:ip:${ip}`;
+}
+
+async function digest(value) {
+  const bytes = new TextEncoder().encode(String(value || ""));
+  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return Array.from(hash.slice(0, 16), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function tooManyRequests() {
+  return new Response(JSON.stringify({ error: "Too many requests. Please try again shortly." }), {
+    status: 429,
+    headers: {
+      "content-type": "application/json;charset=UTF-8",
+      "cache-control": "no-store",
+      "retry-after": "60",
+      "x-content-type-options": "nosniff"
+    }
+  });
+}

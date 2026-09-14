@@ -8,6 +8,24 @@
   "minify": true,
   "keep_names": false,
   "upload_source_maps": false,
+  "ratelimits": [
+    {
+      "name": "AUTH_LOGIN_RATE_LIMITER",
+      "namespace_id": "730201",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
+    },
+    {
+      "name": "AUTH_OAUTH_RATE_LIMITER",
+      "namespace_id": "730202",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    }
+  ],
   // Deployment touchpoint for Auth OAuth/PKCE and protected token introspection.
   "routes": [
     {
