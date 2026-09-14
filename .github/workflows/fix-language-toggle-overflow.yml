@@ -1,0 +1,45 @@
+name: Fix Language Toggle Overflow
+
+on:
+  push:
+    branches:
+      - fix/language-toggle-overflow
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/language-toggle-overflow
+          fetch-depth: 0
+      - name: Apply narrow language-toggle CSS fix
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('studio/ui-page.js')
+          s = p.read_text()
+          old = '''        transition:background .12s ease,transform 100ms ease-out;\n      }\n      .theme-toggle:hover,.language-toggle:hover'''
+          new = '''        transition:background .12s ease,transform 100ms ease-out;\n      }\n      .language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}\n      .theme-toggle:hover,.language-toggle:hover'''
+          if old not in s:
+              raise SystemExit('expected language-toggle CSS anchor not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Check JavaScript syntax
+        run: node --check studio/ui-page.js
+      - name: Bundle Studio Worker
+        run: npx --yes wrangler deploy --config wrangler.jsonc --dry-run --outdir .wrangler-language-toggle-check
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/fix-language-toggle-overflow.yml
+      - name: Commit runtime fix only
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add studio/ui-page.js .github/workflows/fix-language-toggle-overflow.yml
+          git commit -m "fix(ui): keep language label inside toggle"
+          git push origin HEAD:fix/language-toggle-overflow
