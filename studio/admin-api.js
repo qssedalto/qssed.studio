@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStorageUser } from "./storage-api.js";
+import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 
 const ACTIONS = {
@@ -29,21 +29,28 @@ const ACTIONS = {
   }
 };
 
-export async function handleAdminAccess(request, env) {
-  const auth = await verifyStorageUser(request, env);
-  if (auth.error) return auth.error;
-  if (!auth.isAdmin) return json({ is_admin: false, error: "Administrator access required." }, 403);
-  return json({ is_admin: true, user_id: auth.user.id });
+export async function handleAdminAccess(request) {
+  const session = await verifyStudioApiSession(request);
+  if (!session.ok) return withStudioSessionCookies(json({ is_admin: false, error: "Authentication required." }, 401), session.cookies);
+
+  const admin = await checkAdmin(session);
+  if (!admin.ok) return adminFailure(session, "admin.access.failed", admin.status);
+  if (!admin.isAdmin) return withStudioSessionCookies(json({ is_admin: false, error: "Administrator access required." }, 403), session.cookies);
+  return withStudioSessionCookies(json({ is_admin: true, user_id: session.user.id }), session.cookies);
 }
 
-export async function handleAdminAction(request, env, action) {
+export async function handleAdminAction(request, _env, action) {
   const spec = ACTIONS[action];
   if (!spec) return json({ error: "Unknown administrator action." }, 404);
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
 
-  const auth = await verifyStorageUser(request, env);
-  if (auth.error) return auth.error;
-  if (!auth.isAdmin) return json({ error: "Administrator access required." }, 403);
+  const session = await verifyStudioApiSession(request);
+  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+
+  const admin = await checkAdmin(session);
+  if (!admin.ok) return adminFailure(session, "admin.access.failed", admin.status);
+  if (!admin.isAdmin) return withStudioSessionCookies(json({ error: "Administrator access required." }, 403), session.cookies);
 
   let incoming = {};
   try {
@@ -52,7 +59,7 @@ export async function handleAdminAction(request, env, action) {
     incoming = {};
   }
   if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) {
-    return json({ error: "Invalid request body." }, 400);
+    return withStudioSessionCookies(json({ error: "Invalid request body." }, 400), session.cookies);
   }
 
   const params = {};
@@ -74,74 +81,83 @@ export async function handleAdminAction(request, env, action) {
 
   if (action === "user-role") {
     if (!isUuid(params.p_user_id) || !["admin", "editor", "user"].includes(params.p_role)) {
-      return json({ error: "Invalid user role request." }, 400);
+      return withStudioSessionCookies(json({ error: "Invalid user role request." }, 400), session.cookies);
     }
   }
 
   if (action === "user-status") {
     if (!isUuid(params.p_user_id) || !["active", "suspended", "banned"].includes(params.p_status)) {
-      return json({ error: "Invalid user status request." }, 400);
+      return withStudioSessionCookies(json({ error: "Invalid user status request." }, 400), session.cookies);
     }
   }
 
   if (action === "permissions") {
     if (!["admin", "editor", "user"].includes(params.p_role) || !Array.isArray(params.p_permissions)) {
-      return json({ error: "Invalid role permission request." }, 400);
+      return withStudioSessionCookies(json({ error: "Invalid role permission request." }, 400), session.cookies);
     }
     params.p_permissions = [...new Set(params.p_permissions.map(value => String(value || "").trim()).filter(Boolean))].slice(0, 200);
   }
 
-  const authorization = request.headers.get("Authorization") || "";
-  let upstream;
-  try {
-    upstream = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${spec.rpc}`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: authorization,
-        "content-type": "application/json;charset=UTF-8",
-        Accept: "application/json"
-      },
-      body: JSON.stringify(params)
-    });
-  } catch (error) {
-    workerLog("error", "admin.proxy.upstream_error", {
-      action,
-      user_id: auth.user.id,
-      error_type: error?.name || "Error"
-    });
-    return json({ error: "Administrator service is temporarily unavailable." }, 503);
-  }
-
-  const text = await upstream.text();
-  let payload = null;
-  if (text) {
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      payload = { error: "Administrator service returned an invalid response." };
-    }
-  }
-
-  if (!upstream.ok) {
+  const result = await callRpc(session.accessToken, spec.rpc, params);
+  if (!result.ok) {
     workerLog("warn", "admin.proxy.rpc_failed", {
       action,
-      user_id: auth.user.id,
-      upstream_status: upstream.status
+      user_id: session.user.id,
+      upstream_status: result.status
     });
-    return json({
-      error: cleanError(payload) || "Administrator action failed."
-    }, normalizeUpstreamStatus(upstream.status));
+    return withStudioSessionCookies(json({
+      error: cleanError(result.payload) || "Administrator action failed."
+    }, normalizeUpstreamStatus(result.status)), session.cookies);
   }
 
   if (spec.write) {
     workerLog("info", "admin.proxy.write", {
       action,
-      user_id: auth.user.id
+      user_id: session.user.id
     });
   }
 
-  return json({ data: payload });
+  return withStudioSessionCookies(json({ data: result.payload }), session.cookies);
+}
+
+async function checkAdmin(session) {
+  const result = await callRpc(session.accessToken, "is_admin", {});
+  return {
+    ok: result.ok,
+    status: result.status,
+    isAdmin: result.ok && result.payload === true
+  };
+}
+
+async function callRpc(accessToken, rpc, params) {
+  let upstream;
+  try {
+    upstream = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${accessToken}`,
+        "content-type": "application/json;charset=UTF-8",
+        Accept: "application/json"
+      },
+      body: JSON.stringify(params || {})
+    });
+  } catch (error) {
+    return { ok: false, status: 503, payload: { error: error?.name || "Error" } };
+  }
+
+  const text = await upstream.text();
+  let payload = null;
+  if (text) {
+    try { payload = JSON.parse(text); }
+    catch { payload = { error: "Administrator service returned an invalid response." }; }
+  }
+  return { ok: upstream.ok, status: upstream.status, payload };
+}
+
+function adminFailure(session, event, upstreamStatus) {
+  workerLog("warn", event, { user_id: session.user.id, upstream_status: upstreamStatus });
+  return withStudioSessionCookies(json({ error: "Administrator service is temporarily unavailable." }, normalizeUpstreamStatus(upstreamStatus)), session.cookies);
 }
 
 function cleanError(payload) {
@@ -156,7 +172,13 @@ function normalizeUpstreamStatus(status) {
   if (status === 404) return 404;
   if (status === 409) return 409;
   if (status === 429) return 429;
+  if (status === 503) return 503;
   return 502;
+}
+
+function sameOrigin(request) {
+  const url = new URL(request.url);
+  return (request.headers.get("Origin") || "") === url.origin;
 }
 
 function isUuid(value) {
