@@ -214,36 +214,30 @@ export function workLocalBridgeContent(zh) {
 
           if (!connectedBase || !health) {
             setState("offline", text.offline);
-            if (versionLabel) versionLabel.textContent = ${JSON.stringify(zh ? "协议：未连接" : "Protocol: disconnected")};
-            if (texLabel) texLabel.textContent = ${JSON.stringify(zh ? "TeX：未知" : "TeX: unknown")};
+            if (versionLabel) versionLabel.textContent = ${JSON.stringify(zh ? "协议：未连接" : "Protocol: offline")};
+            if (texLabel) texLabel.textContent = ${JSON.stringify(zh ? "TeX：未检测" : "TeX: not detected")};
             if (log) log.textContent = text.logOffline;
             button.disabled = false;
             button.textContent = text.retry;
             return;
           }
 
+          if (endpointLabel) endpointLabel.textContent = connectedBase.replace(/^https?:\/\//, "");
+          if (versionLabel) versionLabel.textContent = ${JSON.stringify(zh ? "协议：" : "Protocol: ")} + String(health?.service || "") + " v" + String(health?.protocol || "");
+          renderCapabilities(health?.capabilities || []);
+          let tex = null;
+          try { tex = await readJson(await loopbackFetch(connectedBase, "/tex/status")); } catch {}
+          if (texLabel) texLabel.textContent = tex?.available ? text.texReady : text.texMissing;
           setState("online", text.online);
-          if (endpointLabel) endpointLabel.textContent = connectedBase.replace(/^https?:\\/\\//, "");
-          if (versionLabel) versionLabel.textContent = "Bridge " + String(health.version || "unknown") + " · protocol " + String(health.protocol);
-          renderCapabilities(health.capabilities || []);
           if (log) log.textContent = text.logOnline;
-
-          try {
-            const tex = await readJson(await loopbackFetch(connectedBase, "/tex/status"));
-            if (texLabel) texLabel.textContent = tex.available ? text.texReady + (tex.version ? " · " + String(tex.version) : "") : text.texMissing;
-          } catch {
-            if (texLabel) texLabel.textContent = ${JSON.stringify(zh ? "TeX：状态读取失败" : "TeX: status unavailable")};
-          }
-
           button.disabled = false;
           button.textContent = text.retry;
         }
 
         async function autoProbeWhenAlreadyAllowed() {
           try {
-            if (!navigator.permissions?.query) return;
-            const permission = await navigator.permissions.query({ name: "loopback-network" });
-            if (permission?.state === "granted") void probe();
+            const permissionState = await navigator.permissions?.query?.({ name: "local-network-access" });
+            if (permissionState?.state === "granted") return void probe();
           } catch {}
         }
 
@@ -256,48 +250,28 @@ export function workLocalBridgeContent(zh) {
 
 export function decorateWorkNavigation(markup, zh, pathname) {
   let output = String(markup || "");
-  const prefix = zh ? "/zh-cn" : "/en";
-  const isWork = pathname === "/work" || pathname === "/work/local";
-  const rootCurrent = pathname === "/work" ? ' aria-current="page"' : "";
-  const localCurrent = pathname === "/work/local" ? ' aria-current="page"' : "";
+  const workUrl = zh ? "https://work.qsseda.studio/zh-cn/tex" : "https://work.qsseda.studio/en/tex";
   const group = `
-        <section class="os-nav-group ${isWork ? "is-active" : ""}" data-qsseda-work-nav="1">
-          <a class="os-nav-title" href="${prefix}/work">${zh ? "协作" : "Work"}</a>
+        <section class="os-nav-group" data-qsseda-work-nav="1">
+          <span class="os-nav-title">${zh ? "协作" : "Work"}</span>
           <div class="os-nav-items">
-            <a href="${prefix}/work"${rootCurrent}>${zh ? "协作中心" : "Work Hub"}</a>
-            <a href="${prefix}/work/local"${localCurrent}>${zh ? "本机桥接" : "Local Bridge"}</a>
+            <a href="${workUrl}">${zh ? "Work" : "Work"}</a>
           </div>
         </section>
       `;
 
-  if (!output.includes('data-qsseda-work-nav="1"')) {
-    if (isWork) output = output.replaceAll("os-nav-group is-active", "os-nav-group ");
-    const adminAnchor = `<a class="os-nav-title" href="${prefix}/admin">`;
-    const anchorIndex = output.indexOf(adminAnchor);
-    const sectionIndex = anchorIndex >= 0 ? output.lastIndexOf('<section class="os-nav-group', anchorIndex) : -1;
-    if (sectionIndex >= 0) output = output.slice(0, sectionIndex) + group + output.slice(sectionIndex);
-    else output = output.replace("</nav>", group + "</nav>");
-  }
+  // Keep exactly one Studio-side entry into the standalone Work product.
+  // Work Hub and Local Bridge are implementation details and must not appear
+  // as separate navigation destinations in Studio.
+  output = output.replace(/\s*<section class="os-nav-group[^"]*" data-qsseda-work-nav="1">[\s\S]*?<\/section>\s*/g, "\n");
 
-  if (!isWork) return output;
-
-  const title = pathname === "/work/local" ? (zh ? "本机协作" : "Local Collaboration") : (zh ? "协作" : "Work");
-  const description = pathname === "/work/local"
-    ? (zh ? "连接 QssedA Studio 与当前电脑上的受限 Local Bridge。" : "Connect QssedA Studio to a constrained Local Bridge on this computer.")
-    : (zh ? "连接网页工作区与本机能力，为 TeX、Git、文件与其他桌面工具建立统一协作入口。" : "Connect the web workspace with local capabilities for TeX, Git, files, and future desktop tools.");
-  const shellTitle = zh ? "工作区" : "Workspace";
-  const shellDescription = zh ? "工作区总览，用于查看并进入工作台、项目、实验、草稿与任务。" : "An overview for entering the Workbench, projects, experiments, drafts, and tasks.";
-
-  output = output.replace(`<h1>${shellTitle}</h1>`, `<h1>${title}</h1>`);
-  output = output.replace(`<p>${shellDescription}</p>`, `<p>${description}</p>`);
-  output = output.replace(`${shellTitle} · QssedA Studio`, `${title} · QssedA Studio`);
-  output = output.replace('const currentPath = "/workspace";', `const currentPath = ${JSON.stringify(pathname)};`);
-
-  if (pathname === "/work/local") {
-    output = output.replace(`data-fallback-href="${prefix}/dashboard"`, `data-fallback-href="${prefix}/work"`);
-    output = output.replace(`const compactFallbackHref = "${prefix}/dashboard";`, `const compactFallbackHref = "${prefix}/work";`);
-    output = output.replace("const compactMenuRoot = true;", "const compactMenuRoot = false;");
-  }
+  const adminAnchorZh = '<a class="os-nav-title" href="/zh-cn/admin">';
+  const adminAnchorEn = '<a class="os-nav-title" href="/en/admin">';
+  const adminAnchor = zh ? adminAnchorZh : adminAnchorEn;
+  const anchorIndex = output.indexOf(adminAnchor);
+  const sectionIndex = anchorIndex >= 0 ? output.lastIndexOf('<section class="os-nav-group', anchorIndex) : -1;
+  if (sectionIndex >= 0) output = output.slice(0, sectionIndex) + group + output.slice(sectionIndex);
+  else output = output.replace("</nav>", group + "</nav>");
 
   return output;
 }
