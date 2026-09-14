@@ -1,13 +1,19 @@
 export function polishWorkTexNavigation(markup, zh, pathname) {
   let output = String(markup || "");
   const prefix = zh ? "/zh-cn" : "/en";
+  const workPrefix = zh ? "https://work.qsseda.studio/zh-cn" : "https://work.qsseda.studio/en";
   const localLabel = zh ? "本机桥接" : "Local Bridge";
   const texLabel = zh ? "TeX 工作台" : "TeX Workbench";
-  const localPlain = `<a href="${prefix}/work/local">${localLabel}</a>`;
-  const localCurrent = `<a href="${prefix}/work/local" aria-current="page">${localLabel}</a>`;
-  const texLink = `<a href="${prefix}/work/tex"${pathname === "/work/tex" ? ' aria-current="page"' : ""}>${texLabel}</a>`;
+  const localPlain = `<a href="${workPrefix}/local">${localLabel}</a>`;
+  const localCurrent = `<a href="${workPrefix}/local" aria-current="page">${localLabel}</a>`;
+  const texLink = `<a href="${workPrefix}/tex"${pathname === "/work/tex" ? ' aria-current="page"' : ""}>${texLabel}</a>`;
 
-  if (!output.includes(`href="${prefix}/work/tex"`)) {
+  output = output
+    .replaceAll(`href="${prefix}/work"`, `href="${workPrefix}"`)
+    .replaceAll(`href="${prefix}/work/local"`, `href="${workPrefix}/local"`)
+    .replaceAll(`href="${prefix}/work/tex"`, `href="${workPrefix}/tex"`);
+
+  if (!output.includes(`href="${workPrefix}/tex"`)) {
     if (output.includes(localCurrent)) output = output.replace(localCurrent, localCurrent + texLink);
     else if (output.includes(localPlain)) output = output.replace(localPlain, localPlain + texLink);
   }
@@ -28,14 +34,17 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
 
   output = output.replace(`<h1>${shellTitle}</h1>`, `<h1>${title}</h1>`);
   output = output.replace(`<p>${shellDescription}</p>`, `<p>${description}</p>`);
-  output = output.replace(`${shellTitle} · QssedA Studio`, `${title} · QssedA Studio`);
-  output = output.replace('const currentPath = "/workspace";', 'const currentPath = "/work/tex";');
-  output = output.replace(`data-fallback-href="${prefix}/dashboard"`, `data-fallback-href="${prefix}/work"`);
-  output = output.replace(`const compactFallbackHref = "${prefix}/dashboard";`, `const compactFallbackHref = "${prefix}/work";`);
+  output = output.replace(`${shellTitle} · QssedA Studio`, `${title} · QssedA Work`);
+  output = output.replace('const currentPath = "/workspace";', `const currentPath = ${JSON.stringify(`${prefix}/tex`)};`);
+  output = output.replace(`data-fallback-href="${prefix}/dashboard"`, `data-fallback-href="${workPrefix}"`);
+  output = output.replace(`const compactFallbackHref = "${prefix}/dashboard";`, `const compactFallbackHref = "${workPrefix}";`);
   output = output.replace("const compactMenuRoot = true;", "const compactMenuRoot = false;");
   return output;
 }
 
-export function polishWorkHubTexRoute(markup) {
-  return String(markup || "").replaceAll("/workspace/experiments/tex", "/work/tex");
+export function polishWorkHubTexRoute(markup, zh = true) {
+  const workPrefix = zh ? "https://work.qsseda.studio/zh-cn" : "https://work.qsseda.studio/en";
+  return String(markup || "")
+    .replaceAll("/workspace/experiments/tex", `${workPrefix}/tex`)
+    .replaceAll("/work/tex", `${workPrefix}/tex`);
 }
