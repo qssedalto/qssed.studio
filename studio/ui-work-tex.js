@@ -4,11 +4,9 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
   const workTexUrl = zh ? "https://work.qsseda.studio/zh-cn/tex" : "https://work.qsseda.studio/en/tex";
   const texLabel = zh ? "TeX 工作台" : "TeX Workbench";
 
-  // Work is intentionally a single-purpose TeX product. Any stale Work hub or
-  // Local Bridge navigation entry resolves back to the one public Work surface.
+  // Studio's Collaboration Hub and Local Bridge are distinct products. Only
+  // TeX aliases normalize to the standalone Work TeX surface.
   output = output
-    .replaceAll(`href="${prefix}/work"`, `href="${workTexUrl}"`)
-    .replaceAll(`href="${prefix}/work/local"`, `href="${workTexUrl}"`)
     .replaceAll(`href="${prefix}/work/tex"`, `href="${workTexUrl}"`)
     .replaceAll(`href="https://work.qsseda.studio/${zh ? "zh-cn" : "en"}"`, `href="${workTexUrl}"`)
     .replaceAll(`href="https://work.qsseda.studio/${zh ? "zh-cn" : "en"}/local"`, `href="${workTexUrl}"`);
@@ -293,7 +291,5 @@ export function polishWorkHubTexRoute(markup) {
     : "https://work.qsseda.studio/zh-cn/tex";
   return source
     .replaceAll("/workspace/experiments/tex", workTexUrl)
-    .replaceAll("/work/local", workTexUrl)
-    .replaceAll("/work/tex", workTexUrl)
-    .replaceAll("/work", workTexUrl);
+    .replaceAll("/work/tex", workTexUrl);
 }
