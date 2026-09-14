@@ -15,6 +15,8 @@ on:
       - auth-login-identifier.js
       - auth-oauth.js
       - auth-pkce-test.js
+      - auth-edge-protection.js
+      - scripts/auth-edge-protection-check.mjs
       - wrangler.jsonc
       - wrangler.auth.jsonc
       - .github/workflows/deploy-production.yml
@@ -50,6 +52,9 @@ jobs:
           node --check auth-login-identifier.js
           node --check auth-oauth.js
           node --check auth-pkce-test.js
+          node --check auth-edge-protection.js
+          node --check scripts/auth-edge-protection-check.mjs
+          node scripts/auth-edge-protection-check.mjs
 
       - name: Deploy QssedA Studio
         env:
@@ -107,3 +112,23 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4 deploy -c wrangler.auth.jsonc
+
+      - name: Verify Auth edge protection
+        shell: bash
+        run: |
+          set -euo pipefail
+          robots_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-robots.txt --write-out '%{http_code}' 'https://auth.qsseda.studio/robots.txt' || true)"
+          if [ "$robots_status" != "200" ] || ! grep -q '^Disallow: /$' /tmp/qsseda-auth-robots.txt; then
+            echo "Auth edge protection regression: robots.txt is not denying crawler access."
+            echo "HTTP status: ${robots_status:-unknown}"
+            cat /tmp/qsseda-auth-robots.txt || true
+            exit 1
+          fi
+
+          probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-probe.txt --write-out '%{http_code}' 'https://auth.qsseda.studio/.env' || true)"
+          if [ "$probe_status" != "404" ]; then
+            echo "Auth edge protection regression: scanner probe was not rejected before Auth routing."
+            echo "HTTP status: ${probe_status:-unknown}"
+            cat /tmp/qsseda-auth-probe.txt || true
+            exit 1
+          fi
