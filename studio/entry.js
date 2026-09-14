@@ -1,6 +1,7 @@
 import { OS_PATHS, LEGACY_REDIRECTS, TEXT } from "./config.js";
 import { handleAuthHandoff } from "./auth-handoff.js";
 import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./storage-api.js";
+import { handleSummaries } from "./summary-api.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
@@ -48,6 +49,11 @@ export default {
     if (pathname === "/api/storage/object") {
       if (request.method !== "GET" && request.method !== "DELETE") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
       return handleStorageObject(request, env);
+    }
+
+    if (pathname === "/api/summaries") {
+      if (!new Set(["GET", "PUT", "DELETE"]).has(request.method)) return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
+      return handleSummaries(request, env);
     }
 
     const legacyTarget = LEGACY_REDIRECTS.get(pathname);
