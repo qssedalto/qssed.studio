@@ -5,6 +5,13 @@ import { handleSummaries } from "./summary-api.js";
 import { handleNotes } from "./notes-api.js";
 import { handleUserLinks } from "./user-links-api.js";
 import { handleAdminAccess, handleAdminAction } from "./admin-api.js";
+import {
+  handleStudioSessionBootstrap,
+  handleStudioSessionLogout,
+  studioSessionBootstrapPage,
+  verifyStudioPageSession,
+  withStudioSessionCookies
+} from "./session-gate.js";
 import { linksHubContent, privateLinksPageContent, curatedLinksPageContent } from "./ui-links-workspace.js";
 import { polishLinksContent } from "./ui-links-polish.js";
 import { enhanceLinksHubWithCommunity, communityLinksPageContent } from "./ui-links-community.js";
@@ -156,6 +163,20 @@ function hardenAdminClientMarkup(markup) {
   return output;
 }
 
+function hardenSessionClientMarkup(markup) {
+  return String(markup || "").replace(
+    'const { error } = await supabaseClient.auth.signOut({ scope: "local" });',
+    `await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: "{}",
+          cache: "no-store"
+        }).catch(() => {});
+        const { error } = await supabaseClient.auth.signOut({ scope: "local" });`
+  );
+}
+
 function localizedPage(markup, locale, status = 200) {
   const label = locale === "zh" ? "ZH" : "EN";
   const privacySafeMarkup = normalizePublicPrivacyCopy(markup);
@@ -190,6 +211,16 @@ export default {
     if (pathname === "/api/auth/login") {
       if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
       return handleIdentifierPasswordLogin(request, env, ipInfo);
+    }
+
+    if (pathname === "/api/auth/bootstrap") {
+      if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
+      return handleStudioSessionBootstrap(request);
+    }
+
+    if (pathname === "/api/auth/logout") {
+      if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
+      return handleStudioSessionLogout(request);
     }
 
     if (pathname === "/auth/handoff") {
@@ -243,12 +274,19 @@ export default {
     const t = TEXT[locale];
     const links = buildLinks(locale, pathname);
     const linksSubroute = pathname === "/info/links/mine" || pathname === "/info/links/community" || pathname === "/info/links/curated";
+    const isProtectedOsRoute = OS_PATHS.has(pathname) || linksSubroute;
 
-    if (OS_PATHS.has(pathname) || linksSubroute) {
+    if (isProtectedOsRoute) {
+      const gate = await verifyStudioPageSession(request);
+      if (!gate.ok) {
+        return withStudioSessionCookies(studioSessionBootstrapPage(locale), gate.cookies);
+      }
+
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
       const zh = locale === "zh";
       const shellPath = linksSubroute ? "/info/links" : pathname;
       let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel);
+      markup = hardenSessionClientMarkup(markup);
       if (pathname.startsWith("/admin")) markup = hardenAdminClientMarkup(markup);
       if (pathname === "/info/links") {
         const baseContent = polishLinksContent(linksHubContent(zh), pathname, zh);
@@ -258,7 +296,7 @@ export default {
       if (pathname === "/info/links/community") markup = replaceOsContent(markup, communityLinksPageContent(zh));
       if (pathname === "/info/links/curated") markup = replaceOsContent(markup, polishLinksContent(curatedLinksPageContent(zh), pathname, zh));
       if (pathname === "/info/notes") markup = replaceOsContent(markup, researchNotesContent(zh));
-      return localizedPage(markup, locale);
+      return withStudioSessionCookies(localizedPage(markup, locale), gate.cookies);
     }
 
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
