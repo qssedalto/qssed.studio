@@ -42,6 +42,14 @@ export function normalizeFeatureAvailabilityCopy(markup) {
       "Search Knowledge, research notes, summaries, account links, community links, and curated links from one place."
     ],
     [
+      "尚未接入项目数据表。",
+      "项目与当前账号关联保存，可管理状态、优先级、链接、标签和下一步行动。"
+    ],
+    [
+      "No projects table is connected yet.",
+      "Projects are saved to the current account with status, priority, links, tags, and next actions."
+    ],
+    [
       "知识库、收藏链接和账号摘要可以使用；笔记与全局搜索还在接入。",
       "知识库、收藏链接、研究笔记、内容摘要和全局搜索均已可用，并继续沿用各模块原有的内容可见范围。"
     ],
@@ -80,6 +88,22 @@ export function normalizeFeatureAvailabilityCopy(markup) {
     [
       "The cross-module search index is not connected yet.",
       "Search across Knowledge, research notes, summaries, and the available link scopes."
+    ],
+    [
+      "项目尚未开放",
+      "项目管理"
+    ],
+    [
+      "Projects aren’t available yet",
+      "Project Management"
+    ],
+    [
+      "项目数据表还没接入。",
+      "项目已与当前账号关联保存。"
+    ],
+    [
+      "Project data is not connected yet.",
+      "Projects are saved with the current account."
     ]
   ];
 
