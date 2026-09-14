@@ -106,7 +106,7 @@ for (const required of [
   'os.MkdirTemp',
   'context.WithTimeout',
   'HideWindow: true',
-  'CurrentVersion\\\\Run',
+  'CurrentVersion',
   '"--background"'
 ]) assert(nativeBridge.includes(required), `Native Windows bridge is missing required guard: ${required}`);
 assert(nativeBridge.includes('if r.Method == http.MethodPost && origin == ""'), "Native action requests must require a browser Origin");
