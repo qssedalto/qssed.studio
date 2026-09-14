@@ -5,6 +5,10 @@ const config = fs.readFileSync(new URL("../studio/config.js", import.meta.url), 
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
 const routing = fs.readFileSync(new URL("../studio/routing.js", import.meta.url), "utf8");
 const bridge = fs.readFileSync(new URL("../local-bridge/server.mjs", import.meta.url), "utf8");
+const windowsInstall = fs.readFileSync(new URL("../local-bridge/install-windows.ps1", import.meta.url), "utf8");
+const windowsStart = fs.readFileSync(new URL("../local-bridge/start-windows.ps1", import.meta.url), "utf8");
+const windowsUninstall = fs.readFileSync(new URL("../local-bridge/uninstall-windows.ps1", import.meta.url), "utf8");
+const windowsCmd = fs.readFileSync(new URL("../local-bridge/install-windows.cmd", import.meta.url), "utf8");
 const zhHub = workHubContent(true);
 const zhLocal = workLocalBridgeContent(true);
 const enLocal = workLocalBridgeContent(false);
@@ -44,6 +48,22 @@ for (const required of [
 assert(!bridge.includes("request.body"), "Pilot bridge must not expose a request-body command channel");
 assert(!bridge.includes("exec("), "Pilot bridge must not use generic exec()");
 assert(!bridge.includes("shell: true"), "Pilot bridge must never spawn through a shell");
+
+for (const required of [
+  "%LOCALAPPDATA%",
+  "CurrentVersion\\Run",
+  "QssedA Local Bridge",
+  "node.exe",
+  "xelatex.exe",
+  "start-windows.ps1"
+]) assert(windowsInstall.includes(required.replace("%LOCALAPPDATA%", "LOCALAPPDATA")) || windowsInstall.includes(required), `Windows installer is missing: ${required}`);
+assert(windowsInstall.includes("HKCU:"), "Windows installer must use per-user autostart instead of a machine-wide key");
+assert(!windowsInstall.includes("HKLM:"), "Windows installer must not request machine-wide registry persistence");
+assert(windowsStart.includes("WindowStyle Hidden"), "Windows launcher should keep the background bridge hidden");
+assert(windowsStart.includes("http://127.0.0.1:32145/health"), "Windows launcher must check the fixed local bridge health endpoint");
+assert(windowsStart.includes("Start-Process") && windowsStart.includes("server.mjs"), "Windows launcher must start the fixed bridge server");
+assert(windowsUninstall.includes("Remove-ItemProperty") && windowsUninstall.includes("CurrentVersion\\Run"), "Windows uninstaller must remove only the per-user autostart registration");
+assert(windowsCmd.includes("install-windows.ps1"), "Double-click installer must invoke the PowerShell installer");
 
 console.log("Work localhost bridge checks passed.");
 
