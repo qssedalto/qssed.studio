@@ -2,6 +2,8 @@ import fs from "node:fs";
 
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
+const edge = fs.readFileSync(new URL("../studio/edge-protection.js", import.meta.url), "utf8");
+const wrangler = fs.readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8");
 
 for (const forbidden of [
   "hardenAdminClientMarkup",
@@ -24,12 +26,43 @@ for (const required of [
   'pathname.startsWith("/api/admin/")',
   "isLegacyCookieApiPath(pathname)",
   "handleLegacyCookieApi(request, env, pathname)",
-  "hardenGlobalBrowserResponse(response)"
+  "hardenGlobalBrowserResponse(response)",
+  'import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js"',
+  "await protectEdgeRequest(request, env)",
+  "applyEdgeProtectionHeaders(request, response)"
 ]) {
   assertContains(worker, required, `worker.js is missing the routing/security boundary: ${required}`);
 }
 
-console.log("Studio API routing architecture check passed.");
+const protectionPosition = worker.indexOf("await protectEdgeRequest(request, env)");
+const routingPosition = worker.indexOf("await routeStudioRequest(request, env, ctx)");
+if (protectionPosition < 0 || routingPosition < 0 || protectionPosition >= routingPosition) {
+  throw new Error("Edge protection must execute before Studio/API routing");
+}
+
+for (const required of [
+  "EDGE_GLOBAL_RATE_LIMITER",
+  "EDGE_ANON_RATE_LIMITER",
+  "EDGE_SUSPECT_RATE_LIMITER",
+  "EDGE_EXPENSIVE_RATE_LIMITER",
+  "SCANNER_PATH",
+  'pathname === "/robots.txt"',
+  "x-robots-tag",
+  "requestBodyLimit(pathname)"
+]) {
+  assertContains(edge, required, `edge-protection.js is missing required protection: ${required}`);
+}
+
+for (const binding of [
+  "EDGE_GLOBAL_RATE_LIMITER",
+  "EDGE_ANON_RATE_LIMITER",
+  "EDGE_SUSPECT_RATE_LIMITER",
+  "EDGE_EXPENSIVE_RATE_LIMITER"
+]) {
+  assertContains(wrangler, `\"name\": \"${binding}\"`, `wrangler.jsonc is missing edge limiter binding: ${binding}`);
+}
+
+console.log("Studio API routing and edge protection architecture check passed.");
 
 function assertContains(source, needle, message) {
   if (!source.includes(needle)) throw new Error(message);

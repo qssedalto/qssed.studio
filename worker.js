@@ -7,6 +7,7 @@ import { handleProfileApi } from "./studio/profile-api.js";
 import { handleAdminAccess, handleAdminAction } from "./studio/admin-api.js";
 import { isLegacyCookieApiPath, handleLegacyCookieApi } from "./studio/legacy-cookie-api.js";
 import { hardenGlobalBrowserResponse } from "./studio/global-browser-security.js";
+import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js";
 
 const AUTH_ABUSE_PATHS = new Set([
   "/api/auth/login",
@@ -19,44 +20,52 @@ const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const pathname = url.pathname;
+    const blocked = await protectEdgeRequest(request, env);
+    if (blocked) return applyEdgeProtectionHeaders(request, blocked);
 
-    if (AUTH_ABUSE_PATHS.has(pathname)) {
-      const key = await rateLimitKey(request, `auth:${pathname}`, false);
-      if (!(await allowed(env?.AUTH_RATE_LIMITER, key))) return tooManyRequests();
-    } else if (pathname.startsWith("/api/")) {
-      const isWrite = WRITE_METHODS.has(request.method.toUpperCase());
-      const limiter = isWrite ? env?.API_WRITE_RATE_LIMITER : env?.API_READ_RATE_LIMITER;
-      const key = await rateLimitKey(request, `${isWrite ? "write" : "read"}:${pathname}`, true);
-      if (!(await allowed(limiter, key))) return tooManyRequests();
-    }
-
-    if (pathname === "/api/knowledge/search") return handleKnowledgeSearch(request, env);
-    if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
-    if (pathname === "/api/auth/username-check") return handleRegistrationUsernameCheck(request, env);
-    if (pathname === "/api/admin/access") {
-      if (request.method !== "GET") return methodNotAllowed();
-      return handleAdminAccess(request);
-    }
-    if (pathname.startsWith("/api/admin/")) {
-      const action = pathname.slice("/api/admin/".length);
-      return handleAdminAction(request, env, action);
-    }
-    if (pathname.startsWith("/api/account/")) {
-      const action = pathname.slice("/api/account/".length);
-      return handleAccountSecurity(request, action);
-    }
-    if (pathname.startsWith("/api/profile/")) {
-      const action = pathname.slice("/api/profile/".length);
-      return handleProfileApi(request, action);
-    }
-    if (isLegacyCookieApiPath(pathname)) return handleLegacyCookieApi(request, env, pathname);
-
-    const response = await studio.fetch(request, env, ctx);
-    return hardenGlobalBrowserResponse(response);
+    const response = await routeStudioRequest(request, env, ctx);
+    return applyEdgeProtectionHeaders(request, response);
   }
 };
+
+async function routeStudioRequest(request, env, ctx) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+
+  if (AUTH_ABUSE_PATHS.has(pathname)) {
+    const key = await rateLimitKey(request, `auth:${pathname}`, false);
+    if (!(await allowed(env?.AUTH_RATE_LIMITER, key))) return tooManyRequests();
+  } else if (pathname.startsWith("/api/")) {
+    const isWrite = WRITE_METHODS.has(request.method.toUpperCase());
+    const limiter = isWrite ? env?.API_WRITE_RATE_LIMITER : env?.API_READ_RATE_LIMITER;
+    const key = await rateLimitKey(request, `${isWrite ? "write" : "read"}:${pathname}`, true);
+    if (!(await allowed(limiter, key))) return tooManyRequests();
+  }
+
+  if (pathname === "/api/knowledge/search") return handleKnowledgeSearch(request, env);
+  if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
+  if (pathname === "/api/auth/username-check") return handleRegistrationUsernameCheck(request, env);
+  if (pathname === "/api/admin/access") {
+    if (request.method !== "GET") return methodNotAllowed();
+    return handleAdminAccess(request);
+  }
+  if (pathname.startsWith("/api/admin/")) {
+    const action = pathname.slice("/api/admin/".length);
+    return handleAdminAction(request, env, action);
+  }
+  if (pathname.startsWith("/api/account/")) {
+    const action = pathname.slice("/api/account/".length);
+    return handleAccountSecurity(request, action);
+  }
+  if (pathname.startsWith("/api/profile/")) {
+    const action = pathname.slice("/api/profile/".length);
+    return handleProfileApi(request, action);
+  }
+  if (isLegacyCookieApiPath(pathname)) return handleLegacyCookieApi(request, env, pathname);
+
+  const response = await studio.fetch(request, env, ctx);
+  return hardenGlobalBrowserResponse(response);
+}
 
 async function allowed(limiter, key) {
   if (!limiter?.limit) return true;
