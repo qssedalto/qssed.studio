@@ -10,6 +10,7 @@ on:
       - scripts/security-markup-check.mjs
       - scripts/security-architecture-check.mjs
       - scripts/edge-protection-check.mjs
+      - scripts/global-search-check.mjs
       - auth-entry.js
       - auth-worker.js
       - auth-login-identifier.js
@@ -47,6 +48,8 @@ jobs:
           node scripts/security-architecture-check.mjs
           node --check scripts/edge-protection-check.mjs
           node scripts/edge-protection-check.mjs
+          node --check scripts/global-search-check.mjs
+          node scripts/global-search-check.mjs
           node --check auth-entry.js
           node --check auth-worker.js
           node --check auth-login-identifier.js
@@ -73,7 +76,6 @@ jobs:
             cat /tmp/qsseda-robots.txt || true
             exit 1
           fi
-
           probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-probe.txt --write-out '%{http_code}' 'https://qsseda.studio/.env' || true)"
           if [ "$probe_status" != "404" ]; then
             echo "Edge protection regression: scanner probe was not rejected before Studio routing."
@@ -90,10 +92,7 @@ jobs:
           ok=0
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
             status="$(curl --silent --show-error --location --max-time 20 --output /tmp/qsseda-dashboard.html --write-out '%{http_code}' "$URL" || true)"
-            if [ "$status" = "401" ] \
-              && grep -q 'studio-session-status' /tmp/qsseda-dashboard.html \
-              && ! grep -q 'id="os-content"' /tmp/qsseda-dashboard.html \
-              && ! grep -q '<body class="os-shell"' /tmp/qsseda-dashboard.html; then
+            if [ "$status" = "401" ] && grep -q 'studio-session-status' /tmp/qsseda-dashboard.html && ! grep -q 'id="os-content"' /tmp/qsseda-dashboard.html && ! grep -q '<body class="os-shell"' /tmp/qsseda-dashboard.html; then
               ok=1
               break
             fi
@@ -124,7 +123,6 @@ jobs:
             cat /tmp/qsseda-auth-robots.txt || true
             exit 1
           fi
-
           probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-probe.txt --write-out '%{http_code}' 'https://auth.qsseda.studio/.env' || true)"
           if [ "$probe_status" != "404" ]; then
             echo "Auth edge protection regression: scanner probe was not rejected before Auth routing."
