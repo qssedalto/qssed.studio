@@ -3,6 +3,7 @@ import { handleAuthHandoff } from "./auth-handoff.js";
 import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./storage-api.js";
 import { handleSummaries } from "./summary-api.js";
 import { handleNotes } from "./notes-api.js";
+import { handleUserLinks } from "./user-links-api.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
@@ -60,6 +61,11 @@ export default {
     if (pathname === "/api/notes") {
       if (!new Set(["GET", "POST", "PUT", "DELETE"]).has(request.method)) return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
       return handleNotes(request, env);
+    }
+
+    if (pathname === "/api/user-links") {
+      if (!new Set(["GET", "POST", "PUT", "DELETE"]).has(request.method)) return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
+      return handleUserLinks(request, env);
     }
 
     const legacyTarget = LEGACY_REDIRECTS.get(pathname);
