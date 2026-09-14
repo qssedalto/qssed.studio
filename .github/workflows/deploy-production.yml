@@ -13,6 +13,7 @@ on:
       - scripts/global-search-check.mjs
       - scripts/projects-check.mjs
       - scripts/tasks-check.mjs
+      - scripts/drafts-check.mjs
       - auth-entry.js
       - auth-worker.js
       - auth-login-identifier.js
@@ -56,6 +57,8 @@ jobs:
           node scripts/projects-check.mjs
           node --check scripts/tasks-check.mjs
           node scripts/tasks-check.mjs
+          node --check scripts/drafts-check.mjs
+          node scripts/drafts-check.mjs
           node --check auth-entry.js
           node --check auth-worker.js
           node --check auth-login-identifier.js
