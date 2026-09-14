@@ -123,8 +123,12 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
     localDetail: "已检测到本机 QssedA Local Bridge",
     cloudReady: "云端编译服务已连接",
     cloudDetail: "本机 Bridge 未连接；当前可使用已配置的云端 TeX 编译服务。",
+    permissionPromptTitle: "需要本机网络权限",
+    permissionPromptDetail: "work.qsseda.studio 需要单独获得浏览器的本机网络访问权限。检测时请允许它访问这台电脑，然后会连接 127.0.0.1:32145。",
+    permissionDeniedTitle: "本机网络权限已被阻止",
+    permissionDeniedDetail: "浏览器已阻止 work.qsseda.studio 访问这台电脑。请在地址栏左侧的网站权限中，把“本地网络访问”改为允许，然后重新检测。",
     offline: "编译服务尚未连接",
-    offlineDetail: "仍未检测到本机 TeX Bridge，云端编译服务也不可用。请确认 QssedA Local Bridge 已启动，然后重新检测。"
+    offlineDetail: "仍未检测到本机 TeX Bridge，云端编译服务也不可用。若“本机桥接”页已经显示连接，请检查 Work 子域名的本地网络权限，并确认 Bridge 已更新到支持 work.qsseda.studio 的版本。"
   } : {
     check: "Check connection",
     recheck: "Check again",
@@ -135,8 +139,12 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
     localDetail: "QssedA Local Bridge detected",
     cloudReady: "Cloud compiler connected",
     cloudDetail: "Local Bridge is offline; the configured cloud TeX compiler is available.",
+    permissionPromptTitle: "Local network permission required",
+    permissionPromptDetail: "work.qsseda.studio needs its own browser permission to access this computer. Allow local network access when prompted, then it can connect to 127.0.0.1:32145.",
+    permissionDeniedTitle: "Local network access is blocked",
+    permissionDeniedDetail: "Your browser is blocking work.qsseda.studio from accessing this computer. Open the site's permissions from the address bar, allow Local network access, then check again.",
     offline: "Compiler not connected",
-    offlineDetail: "Local TeX Bridge is still unavailable and the cloud compiler is offline. Start QssedA Local Bridge, then check again."
+    offlineDetail: "Local TeX Bridge is still unavailable and the cloud compiler is offline. If the Local Bridge page is already connected, check the Work subdomain's local-network permission and update Bridge to a build that trusts work.qsseda.studio."
   };
 
   output = output.replace(
@@ -148,6 +156,22 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
         const expectedService = "qsseda-local-bridge";
         const expectedProtocol = 1;
         let checking = false;
+        let loopbackPermission = 'unknown';
+
+        async function readLoopbackPermission() {
+          if (!navigator.permissions?.query) return 'unknown';
+          for (const name of ['loopback-network', 'local-network-access']) {
+            try {
+              const permission = await navigator.permissions.query({ name });
+              const state = String(permission?.state || 'unknown');
+              permission?.addEventListener?.('change', () => {
+                loopbackPermission = String(permission.state || 'unknown');
+              }, { once: true });
+              return state;
+            } catch {}
+          }
+          return 'unknown';
+        }
 
         function install() {
           const card = document.querySelector('.tex-compiler-card');
@@ -158,6 +182,8 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
             return;
           }
           if (document.getElementById('tex-connection-check')) return;
+
+          void readLoopbackPermission().then(value => { loopbackPermission = value; });
 
           const actions = document.createElement('div');
           actions.className = 'tex-connection-actions';
@@ -183,9 +209,23 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
             checking = true;
             button.disabled = true;
             button.textContent = copy.checking;
-            setSurface(copy.checkingTitle, copy.checkingDetail, false);
+
+            if (loopbackPermission === 'denied') {
+              setSurface(copy.permissionDeniedTitle, copy.permissionDeniedDetail, false);
+              checking = false;
+              button.disabled = false;
+              button.textContent = copy.recheck;
+              return;
+            }
+
+            if (loopbackPermission === 'prompt') {
+              setSurface(copy.permissionPromptTitle, copy.permissionPromptDetail, false);
+            } else {
+              setSurface(copy.checkingTitle, copy.checkingDetail, false);
+            }
 
             const [local, cloud] = await Promise.all([probeLocal(), probeCloud()]);
+            loopbackPermission = await readLoopbackPermission();
             if (local) {
               const engineText = local.engines.length ? ' · ' + local.engines.join(' / ') : '';
               setSurface(copy.localReady, copy.localDetail + ' · ' + local.host + engineText, true);
@@ -202,7 +242,13 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
               return;
             }
 
-            setSurface(copy.offline, copy.offlineDetail, false);
+            if (loopbackPermission === 'denied') {
+              setSurface(copy.permissionDeniedTitle, copy.permissionDeniedDetail, false);
+            } else if (loopbackPermission === 'prompt') {
+              setSurface(copy.permissionPromptTitle, copy.permissionPromptDetail, false);
+            } else {
+              setSurface(copy.offline, copy.offlineDetail, false);
+            }
             checking = false;
             button.disabled = false;
             button.textContent = copy.recheck;
@@ -222,7 +268,7 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
 
           async function loopbackFetch(base, path) {
             const controller = new AbortController();
-            const timer = window.setTimeout(() => controller.abort(), 2200);
+            const timer = window.setTimeout(() => controller.abort(), 3000);
             try {
               return await fetch(new Request(base + path, {
                 method: 'GET',
