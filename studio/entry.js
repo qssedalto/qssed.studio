@@ -12,6 +12,7 @@ import { polishLinksContent } from "./ui-links-polish.js";
 import { enhanceLinksHubWithCommunity, communityLinksPageContent } from "./ui-links-community.js";
 import { researchNotesContent } from "./ui-notes.js";
 import { globalSearchContent } from "./ui-global-search.js";
+import { projectsWorkspaceContent } from "./ui-projects.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
@@ -101,6 +102,7 @@ export default {
       if (pathname === "/info/links/curated") markup = replaceOsContent(markup, polishLinksContent(curatedLinksPageContent(zh), pathname, zh));
       if (pathname === "/info/notes") markup = replaceOsContent(markup, researchNotesContent(zh));
       if (pathname === "/info/search") markup = replaceOsContent(markup, globalSearchContent(zh));
+      if (pathname === "/workspace/projects") markup = replaceOsContent(markup, projectsWorkspaceContent(zh));
       return withStudioSessionCookies(localizedPage(markup, locale), gate.cookies);
     }
 
