@@ -4,6 +4,7 @@ import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./
 import { handleSummaries } from "./summary-api.js";
 import { handleNotes } from "./notes-api.js";
 import { handleUserLinks } from "./user-links-api.js";
+import { curatedLinksUserEnhancer } from "./curated-links-user.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
@@ -76,7 +77,9 @@ export default {
 
     if (OS_PATHS.has(pathname)) {
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
-      return localizedPage(osPage(t, links, pathname, ipInfo, cachedOsUserLabel), locale);
+      let markup = osPage(t, links, pathname, ipInfo, cachedOsUserLabel);
+      if (pathname === "/info/links") markup = markup.replace("</body>", `${curatedLinksUserEnhancer(locale === "zh")}</body>`);
+      return localizedPage(markup, locale);
     }
 
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
