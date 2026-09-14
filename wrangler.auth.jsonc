@@ -4,7 +4,10 @@
   "main": "auth-entry.js",
   "compatibility_date": "2026-09-12",
   "workers_dev": false,
-  "preview_urls": true,
+  "preview_urls": false,
+  "minify": true,
+  "keep_names": false,
+  "upload_source_maps": false,
   // Deployment touchpoint for Auth OAuth/PKCE and protected token introspection.
   "routes": [
     {
