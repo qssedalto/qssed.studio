@@ -36,7 +36,7 @@ function fakeRequest(path, options = {}) {
   const request = {
     url: `https://qsseda.studio${path}`,
     method: options.method || "GET",
-    headers: new Headers(options.headers || {}),
+    headers: new Headers({ "CF-Connecting-IP": "203.0.113.77", ...(options.headers || {}) }),
     cf: options.cf || undefined
   };
   return request;
@@ -63,16 +63,22 @@ assert(botSignals(curlRequest).score >= 3, "Command-line automation should be cl
 result = await protectEdgeRequest(curlRequest, env({ EDGE_SUSPECT_RATE_LIMITER: deny }));
 assert(result?.status === 429, "Suspicious anonymous automation must use the strict limiter");
 
-const authenticatedCurl = fakeRequest("/zh-cn/dashboard", {
+const forgedSessionCurl = fakeRequest("/zh-cn/dashboard", {
   headers: {
     "User-Agent": "curl/8.12.0",
     Accept: "*/*",
-    Cookie: "__Host-qsseda-studio-access=test-token"
+    Cookie: "__Host-qsseda-studio-access=forged-token"
   }
 });
-assert(hasStudioSessionCookie(authenticatedCurl), "Studio session cookie detection failed");
-result = await protectEdgeRequest(authenticatedCurl, env({ EDGE_ANON_RATE_LIMITER: deny, EDGE_SUSPECT_RATE_LIMITER: deny }));
-assert(result === null, "Authenticated requests should not be subjected to anonymous bot heuristics");
+assert(hasStudioSessionCookie(forgedSessionCurl), "Studio session cookie shape detection failed");
+result = await protectEdgeRequest(forgedSessionCurl, env({ EDGE_ANON_RATE_LIMITER: deny, EDGE_SUSPECT_RATE_LIMITER: deny }));
+assert(result?.status === 429, "A forged session cookie must not bypass suspicious automation limiting");
+
+const normalClaimedSession = browserRequest("/zh-cn/dashboard", {
+  Cookie: "__Host-qsseda-studio-access=session-token"
+});
+result = await protectEdgeRequest(normalClaimedSession, env({ EDGE_ANON_RATE_LIMITER: deny }));
+assert(result === null, "Normal Studio sessions should retain the anonymous-capacity exemption");
 
 const verifiedBot = fakeRequest("/zh-cn/login", {
   headers: { "User-Agent": "Googlebot/2.1", Accept: "text/html" },
@@ -101,6 +107,27 @@ const expensive = fakeRequest("/api/knowledge/search", {
 });
 result = await protectEdgeRequest(expensive, env({ EDGE_EXPENSIVE_RATE_LIMITER: deny }));
 assert(result?.status === 429, "Expensive endpoints must have a dedicated limiter");
+
+const expensiveKeys = [];
+const recordingExpensiveLimiter = {
+  limit: async ({ key }) => {
+    expensiveKeys.push(key);
+    return { success: true };
+  }
+};
+for (const cookie of ["first-forged-cookie", "second-forged-cookie"]) {
+  await protectEdgeRequest(fakeRequest("/api/knowledge/search", {
+    method: "POST",
+    headers: {
+      "User-Agent": "Mozilla/5.0 Chrome/142.0 Safari/537.36",
+      Accept: "application/json",
+      Cookie: `__Host-qsseda-studio-access=${cookie}`
+    }
+  }), env({ EDGE_EXPENSIVE_RATE_LIMITER: recordingExpensiveLimiter }));
+}
+assert(expensiveKeys.length === 2, "Expensive limiter was not invoked for both requests");
+assert(expensiveKeys[0] === expensiveKeys[1], "Rotating attacker-controlled cookies must not create new expensive-endpoint limiter buckets");
+assert(expensiveKeys[0].endsWith(":ip:203.0.113.77"), "Expensive endpoint limiter must be keyed by Cloudflare source IP");
 
 assert(requestBodyLimit("/api/storage/upload") === 52 * 1024 * 1024, "Storage upload body ceiling changed unexpectedly");
 assert(requestBodyLimit("/api/profile/media") === 10 * 1024 * 1024, "Profile media body ceiling changed unexpectedly");
