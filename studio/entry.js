@@ -18,6 +18,7 @@ import { draftsWorkspaceContent } from "./ui-drafts.js";
 import { workbenchContent } from "./ui-workbench.js";
 import { labContent } from "./ui-lab.js";
 import { texWorkbenchContent } from "./ui-tex-workbench.js";
+import { decorateWorkNavigation, workHubContent, workLocalBridgeContent } from "./ui-work.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
@@ -55,12 +56,12 @@ function hardenSessionClientMarkup(markup) {
   );
 }
 
-function localizedPage(markup, locale, status = 200) {
+function localizedPage(markup, locale, status = 200, options = {}) {
   const label = locale === "zh" ? "ZH" : "EN";
   const currentFeatureMarkup = normalizeFeatureAvailabilityCopy(markup);
   const privacySafeMarkup = normalizePublicPrivacyCopy(currentFeatureMarkup);
   const localizedMarkup = privacySafeMarkup.replace(/(<a\b[^>]*class="[^"]*\blanguage-toggle\b[^"]*"[^>]*>)[^<]*(<\/a>)/g,`$1${label}$2`);
-  return html(localizedMarkup, status);
+  return html(localizedMarkup, status, options);
 }
 
 function replaceOsContent(markup, content) {
@@ -91,6 +92,7 @@ export default {
     const links = buildLinks(locale, pathname);
     const linksSubroute = pathname === "/info/links/mine" || pathname === "/info/links/community" || pathname === "/info/links/curated";
     const labSubroute = pathname === "/workspace/experiments/tex";
+    const workRoute = pathname === "/work" || pathname === "/work/local";
     const isProtectedOsRoute = OS_PATHS.has(pathname) || linksSubroute;
 
     if (isProtectedOsRoute) {
@@ -99,8 +101,9 @@ export default {
 
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
       const zh = locale === "zh";
-      const shellPath = linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : pathname;
+      const shellPath = linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
       let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel);
+      markup = decorateWorkNavigation(markup, zh, pathname);
       markup = hardenSessionClientMarkup(markup);
       if (pathname === "/info/links") { const baseContent = polishLinksContent(linksHubContent(zh), pathname, zh); markup = replaceOsContent(markup, enhanceLinksHubWithCommunity(baseContent, zh)); }
       if (pathname === "/info/links/mine") markup = replaceOsContent(markup, polishLinksContent(privateLinksPageContent(zh), pathname, zh));
@@ -114,7 +117,10 @@ export default {
       if (pathname === "/workspace/drafts") markup = replaceOsContent(markup, draftsWorkspaceContent(zh));
       if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh));
       if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, texWorkbenchContent(zh));
-      return withStudioSessionCookies(localizedPage(markup, locale), gate.cookies);
+      if (pathname === "/work") markup = replaceOsContent(markup, workHubContent(zh));
+      if (pathname === "/work/local") markup = replaceOsContent(markup, workLocalBridgeContent(zh));
+      const pageOptions = pathname === "/work/local" ? { allowLoopback: true } : {};
+      return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }
 
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
