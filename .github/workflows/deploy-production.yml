@@ -12,6 +12,7 @@ on:
       - scripts/edge-protection-check.mjs
       - scripts/global-search-check.mjs
       - scripts/projects-check.mjs
+      - scripts/tasks-check.mjs
       - auth-entry.js
       - auth-worker.js
       - auth-login-identifier.js
@@ -53,6 +54,8 @@ jobs:
           node scripts/global-search-check.mjs
           node --check scripts/projects-check.mjs
           node scripts/projects-check.mjs
+          node --check scripts/tasks-check.mjs
+          node scripts/tasks-check.mjs
           node --check auth-entry.js
           node --check auth-worker.js
           node --check auth-login-identifier.js

@@ -10,6 +10,7 @@ on:
       - "scripts/edge-protection-check.mjs"
       - "scripts/global-search-check.mjs"
       - "scripts/projects-check.mjs"
+      - "scripts/tasks-check.mjs"
       - "wrangler.jsonc"
       - ".github/workflows/studio-check.yml"
   push:
@@ -23,6 +24,7 @@ on:
       - "scripts/edge-protection-check.mjs"
       - "scripts/global-search-check.mjs"
       - "scripts/projects-check.mjs"
+      - "scripts/tasks-check.mjs"
       - "wrangler.jsonc"
       - ".github/workflows/studio-check.yml"
   workflow_dispatch:
@@ -46,6 +48,7 @@ jobs:
           node --check scripts/edge-protection-check.mjs
           node --check scripts/global-search-check.mjs
           node --check scripts/projects-check.mjs
+          node --check scripts/tasks-check.mjs
 
       - name: Verify browser security markup
         run: node scripts/security-markup-check.mjs
@@ -61,6 +64,9 @@ jobs:
 
       - name: Verify project workspace
         run: node scripts/projects-check.mjs
+
+      - name: Verify task center
+        run: node scripts/tasks-check.mjs
 
       - name: Bundle Studio Worker
         run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check

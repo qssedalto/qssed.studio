@@ -50,6 +50,14 @@ export function normalizeFeatureAvailabilityCopy(markup) {
       "Projects are saved to the current account with status, priority, links, tags, and next actions."
     ],
     [
+      "尚未接入任务数据表。",
+      "任务与当前账号关联保存，可关联项目并管理状态、优先级与截止时间。"
+    ],
+    [
+      "No tasks table is connected yet.",
+      "Tasks are saved to the current account and can be linked to projects with status, priority, and due dates."
+    ],
+    [
       "知识库、收藏链接和账号摘要可以使用；笔记与全局搜索还在接入。",
       "知识库、收藏链接、研究笔记、内容摘要和全局搜索均已可用，并继续沿用各模块原有的内容可见范围。"
     ],
@@ -104,6 +112,22 @@ export function normalizeFeatureAvailabilityCopy(markup) {
     [
       "Project data is not connected yet.",
       "Projects are saved with the current account."
+    ],
+    [
+      "任务尚未开放",
+      "任务中心"
+    ],
+    [
+      "Tasks aren’t available yet",
+      "Task Center"
+    ],
+    [
+      "任务数据表还没接入。",
+      "任务已与当前账号关联保存，并可直接关联项目。"
+    ],
+    [
+      "Task data is not connected yet.",
+      "Tasks are saved with the current account and can attach directly to projects."
     ]
   ];
 

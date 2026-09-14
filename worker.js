@@ -2,6 +2,7 @@ import studio from "./studio/entry.js";
 import { handleKnowledgeSearch } from "./studio/knowledge-api.js";
 import { handleGlobalSearch } from "./studio/global-search-api.js";
 import { handleProjects } from "./studio/projects-api.js";
+import { handleTasks } from "./studio/tasks-api.js";
 import { handleCuratedFavorites } from "./studio/favorites-api.js";
 import { handleRegistrationUsernameCheck } from "./studio/registration-check-api.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
@@ -47,6 +48,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (pathname === "/api/knowledge/search") return handleKnowledgeSearch(request, env);
   if (pathname === "/api/search/global") return handleGlobalSearch(request, env);
   if (pathname === "/api/projects") return handleProjects(request, env);
+  if (pathname === "/api/tasks") return handleTasks(request, env);
   if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
   if (pathname === "/api/auth/username-check") return handleRegistrationUsernameCheck(request, env);
   if (pathname === "/api/admin/access") {
