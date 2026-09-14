@@ -27,8 +27,12 @@ for (const zh of [true, false]) {
 
   const workMarkup = polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh);
   assert(workMarkup.includes("tex-work-app"), "Work TeX route must render the dedicated app surface");
-  assert(workMarkup.includes("tex-live-switch"), "Live preview must use the custom switch instead of a native checkbox UI");
+  assert(workMarkup.includes("tex-live-preview-switch"), "Live preview must use the custom switch instead of a native checkbox UI");
+  assert(!workMarkup.includes('class="tex-live-switch"'), "Live preview switch class must match its CSS selector");
   assert(workMarkup.includes("data-tex-start-template=\"blank\""), "Work TeX start surface must expose quick templates");
+  assert(workMarkup.includes(".tex-start-surface>.tex-start-grid"), "Start grid must override the legacy placeholder direct-child sizing rule");
+  assert(workMarkup.includes("width:min(100%,650px)!important"), "Start grid must retain a usable responsive width");
+  assert(workMarkup.includes(".tex-start-surface>.tex-start-copy"), "Start copy must escape the legacy 52px placeholder box");
   assert(workMarkup.includes("focus-within"), "TeX search focus styling must be explicitly controlled");
   assert(workMarkup.includes("appearance:none!important"), "TeX selectors must use the controlled arrow treatment");
   const appScripts = [...workMarkup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
