@@ -7,6 +7,15 @@ import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js"
 import { osPage } from "./ui-shell.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 
+function localizedPage(markup, locale, status = 200) {
+  const label = locale === "zh" ? "ZH" : "EN";
+  const localizedMarkup = markup.replace(
+    /(<a\b[^>]*class="[^"]*\blanguage-toggle\b[^"]*"[^>]*>)[^<]*(<\/a>)/g,
+    `$1${label}$2`
+  );
+  return html(localizedMarkup, status);
+}
+
 export default {
   async fetch(request, env) {
     const { pathname, locale, ipInfo } = getRouteInfo(request);
@@ -49,11 +58,11 @@ export default {
 
     if (OS_PATHS.has(pathname)) {
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
-      return html(osPage(t, links, pathname, ipInfo, cachedOsUserLabel));
+      return localizedPage(osPage(t, links, pathname, ipInfo, cachedOsUserLabel), locale);
     }
 
-    if (pathname === "/sign-up") return html(signUpPage(t, links, ipInfo));
-    if (pathname === "/login") return html(identifierLoginPage(loginPage(t, links, ipInfo), t, locale === "zh"));
-    return html(notFoundPage(t, links), 404);
+    if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
+    if (pathname === "/login") return localizedPage(identifierLoginPage(loginPage(t, links, ipInfo), t, locale === "zh"), locale);
+    return localizedPage(notFoundPage(t, links), locale, 404);
   }
 };
