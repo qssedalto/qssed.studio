@@ -7,6 +7,7 @@ on:
       - "studio/**"
       - "scripts/security-markup-check.mjs"
       - "scripts/security-architecture-check.mjs"
+      - "scripts/edge-protection-check.mjs"
       - "wrangler.jsonc"
       - ".github/workflows/studio-check.yml"
   push:
@@ -17,6 +18,7 @@ on:
       - "studio/**"
       - "scripts/security-markup-check.mjs"
       - "scripts/security-architecture-check.mjs"
+      - "scripts/edge-protection-check.mjs"
       - "wrangler.jsonc"
       - ".github/workflows/studio-check.yml"
   workflow_dispatch:
@@ -37,12 +39,16 @@ jobs:
           for file in studio/*.js; do node --check "$file"; done
           node --check scripts/security-markup-check.mjs
           node --check scripts/security-architecture-check.mjs
+          node --check scripts/edge-protection-check.mjs
 
       - name: Verify browser security markup
         run: node scripts/security-markup-check.mjs
 
       - name: Verify Studio API routing architecture
         run: node scripts/security-architecture-check.mjs
+
+      - name: Verify edge anti-crawl and surge protection
+        run: node scripts/edge-protection-check.mjs
 
       - name: Bundle Studio Worker
         run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check
@@ -59,6 +65,10 @@ jobs:
           if (config.main !== 'worker.js') throw new Error('wrangler.jsonc must retain the worker.js compatibility facade');
           if (!Array.isArray(config.r2_buckets) || !config.r2_buckets.some(b => b.binding === 'STORAGE' && b.bucket_name === 'qsseda-studio-storage')) {
             throw new Error('Studio STORAGE R2 binding is missing');
+          }
+          const limiterNames = new Set((config.ratelimits || []).map(item => item.name));
+          for (const required of ['AUTH_RATE_LIMITER','API_READ_RATE_LIMITER','API_WRITE_RATE_LIMITER','EDGE_GLOBAL_RATE_LIMITER','EDGE_ANON_RATE_LIMITER','EDGE_SUSPECT_RATE_LIMITER','EDGE_EXPENSIVE_RATE_LIMITER']) {
+            if (!limiterNames.has(required)) throw new Error(`Missing rate limiter binding: ${required}`);
           }
           console.log('Studio Wrangler configuration looks valid.');
           NODE
