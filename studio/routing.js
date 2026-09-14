@@ -17,27 +17,29 @@ function securityHeaders(contentType) {
   return headers;
 }
 
-function htmlSecurityHeaders() {
+function htmlSecurityHeaders(options = {}) {
   const headers = securityHeaders("text/html;charset=UTF-8");
-  headers.set(
-    "content-security-policy",
-    [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https:",
-      `connect-src 'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN}`,
-      "font-src 'self' data:",
-      "object-src 'none'",
-      "base-uri 'none'",
-      "frame-src 'none'",
-      "frame-ancestors 'none'",
-      "form-action 'self'",
-      "manifest-src 'self'",
-      "worker-src 'self' blob:",
-      "upgrade-insecure-requests"
-    ].join("; ")
-  );
+  const allowLoopback = options?.allowLoopback === true;
+  const connectSources = allowLoopback
+    ? `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN} http://127.0.0.1:32145 http://localhost:32145`
+    : `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN}`;
+  const directives = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    `connect-src ${connectSources}`,
+    "font-src 'self' data:",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "frame-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "manifest-src 'self'",
+    "worker-src 'self' blob:"
+  ];
+  if (!allowLoopback) directives.push("upgrade-insecure-requests");
+  headers.set("content-security-policy", directives.join("; "));
   headers.set("x-robots-tag", "noindex, nofollow, noarchive, nosnippet, noimageindex");
   headers.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
   headers.set("pragma", "no-cache");
@@ -105,10 +107,10 @@ export function buildLinks(locale, pathname) {
   };
 }
 
-export function html(content, status = 200) {
+export function html(content, status = 200, options = {}) {
   return new Response(content, {
     status,
-    headers: htmlSecurityHeaders()
+    headers: htmlSecurityHeaders(options)
   });
 }
 
