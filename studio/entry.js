@@ -3,6 +3,8 @@ import { handleAuthHandoff } from "./auth-handoff.js";
 import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./storage-api.js";
 import { handleSummaries } from "./summary-api.js";
 import { handleNotes } from "./notes-api.js";
+import { handleUserLinks } from "./user-links-api.js";
+import { curatedLinksUserEnhancer } from "./curated-links-user.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
@@ -62,6 +64,11 @@ export default {
       return handleNotes(request, env);
     }
 
+    if (pathname === "/api/user-links") {
+      if (!new Set(["GET", "POST", "PUT", "DELETE"]).has(request.method)) return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
+      return handleUserLinks(request, env);
+    }
+
     const legacyTarget = LEGACY_REDIRECTS.get(pathname);
     if (legacyTarget) return localizedRedirect(request, locale, legacyTarget);
 
@@ -70,7 +77,9 @@ export default {
 
     if (OS_PATHS.has(pathname)) {
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
-      return localizedPage(osPage(t, links, pathname, ipInfo, cachedOsUserLabel), locale);
+      let markup = osPage(t, links, pathname, ipInfo, cachedOsUserLabel);
+      if (pathname === "/info/links") markup = markup.replace("</body>", `${curatedLinksUserEnhancer(locale === "zh")}</body>`);
+      return localizedPage(markup, locale);
     }
 
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
