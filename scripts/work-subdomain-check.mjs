@@ -11,19 +11,24 @@ const workWrangler = JSON.parse(workWranglerText.replace(/^\s*\/\/.*$/gm, "").re
 assert(worker.includes("rewriteWorkSubdomainRequest"), "Worker must route the Work custom domain explicitly");
 assert(worker.includes("handleMainWorkHandoff"), "Main Studio must expose the Work session handoff");
 assert(worker.includes("workSessionRedirect"), "Unauthenticated Work pages must return through the main-site handoff");
+assert(worker.includes("mapped.canonical"), "Work aliases must redirect to localized canonical URLs");
 
 for (const required of [
   'const WORK_ORIGIN = "https://work.qsseda.studio"',
-  'return `${WORK_ORIGIN}/tex`',
+  'return `${WORK_ORIGIN}/zh-cn/tex`',
+  'return `${WORK_ORIGIN}/en/tex`',
+  'canonical = `${WORK_ORIGIN}/${locale}/tex${url.search}`',
   'internalPath = `/${locale}/work/tex`',
   'action="${WORK_ORIGIN}/auth/handoff"',
+  'canonicalWorkPath',
   'safeWorkPath',
   '__Host-qsseda-studio-refresh'
 ]) assert(work.includes(required), `Work subdomain module is missing: ${required}`);
 
 assert(handoff.includes('const WORK_HOST = "work.qsseda.studio"'), "Auth handoff must identify the Work host");
 assert(handoff.includes("new Set([AUTH_ORIGIN, MAIN_ORIGIN])"), "Work handoff must allow only Auth and the trusted main-site origin");
-assert(handoff.includes('candidate === "/tex"'), "Work handoff must preserve the clean /tex path");
+assert(handoff.includes('"/zh-cn/tex"'), "Work handoff must preserve the Chinese localized TeX path");
+assert(handoff.includes('"/en/tex"'), "Work handoff must preserve the English localized TeX path");
 
 assert(workWrangler.name === "qsseda-work", "Work Worker must use a dedicated script name");
 assert(workWrangler.main === "worker.js", "Work Worker must reuse the hardened Studio facade");
