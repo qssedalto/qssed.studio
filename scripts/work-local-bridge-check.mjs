@@ -22,7 +22,7 @@ const enLocal = workLocalBridgeContent(false);
 const zhNativeLocal = enhanceWorkLocalBridgeNative(zhLocal, true);
 const zhTexLocal = enhanceTexWorkbenchLocal(texWorkbenchContent(true), true);
 
-for (const route of ["/work", "/work/local"]) {
+for (const route of ["/work", "/work/local", "/work/tex"]) {
   assert(config.includes(`"${route}"`), `${route} is missing from protected Studio routes`);
   assert(entry.includes(`pathname === "${route}"`), `${route} is not mounted in Studio entry`);
 }
@@ -30,7 +30,7 @@ for (const route of ["/work", "/work/local"]) {
 assert(entry.includes("decorateWorkNavigation"), "Studio shell does not inject the Work navigation group");
 assert(entry.includes("enhanceWorkLocalBridgeNative"), "Native Bridge installer experience is not mounted");
 assert(entry.includes("enhanceTexWorkbenchLocal"), "TeX Workbench is not enhanced with local compilation");
-assert(entry.includes('pathname === "/workspace/experiments/tex" ? { allowLoopback: true }') || entry.includes('pathname === "/work/local" || pathname === "/workspace/experiments/tex"'), "TeX Workbench must enable scoped loopback CSP access");
+assert(entry.includes('pathname === "/work/tex"') && entry.includes("allowLoopback"), "Work TeX must enable scoped loopback CSP access");
 assert(zhHub.includes("/zh-cn/work/local"), "Chinese Work hub is missing the local bridge entry");
 assert(zhLocal.includes("http://127.0.0.1:32145"), "Local bridge page must use the fixed loopback endpoint");
 assert(zhLocal.includes("targetAddressSpace: \"loopback\""), "Local bridge request should identify the loopback target address space");
