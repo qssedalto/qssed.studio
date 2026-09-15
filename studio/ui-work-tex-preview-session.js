@@ -22,6 +22,7 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
         let restoredUrl = '';
         let restoring = false;
         let persistToken = 0;
+        let identityPromise = null;
 
         const activeDocumentId = () => String(
           root.dataset.texCollaborationDocumentId ||
@@ -45,30 +46,56 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           sourceHash: fastHash(document.getElementById('tex-source')?.value || '')
         });
 
-        const readHistoryCache = () => {
+        const currentUserId = () => {
+          if (identityPromise) return identityPromise;
+          identityPromise = (async () => {
+            try {
+              if (typeof supabaseClient === 'undefined') return '';
+              const result = await supabaseClient.auth.getSession();
+              return String(result?.data?.session?.user?.id || '').trim();
+            } catch {
+              return '';
+            }
+          })();
+          return identityPromise;
+        };
+
+        const clearPreviewCache = () => {
+          try { window.sessionStorage.removeItem(STORAGE_KEY); } catch {}
+          try {
+            const state = window.history.state;
+            if (state && typeof state === 'object' && Object.prototype.hasOwnProperty.call(state, HISTORY_KEY)) {
+              const next = { ...state };
+              delete next[HISTORY_KEY];
+              window.history.replaceState(next, document.title);
+            }
+          } catch {}
+        };
+
+        const readHistoryCache = userId => {
           try {
             const value = window.history.state?.[HISTORY_KEY];
             const blob = value?.blob;
-            if (!value || value.version !== 2 || !(blob instanceof Blob) || blob.size <= 0 || !String(blob.type || '').toLowerCase().includes('pdf')) return null;
+            if (!value || value.version !== 2 || value.userId !== userId || !(blob instanceof Blob) || blob.size <= 0 || !String(blob.type || '').toLowerCase().includes('pdf')) return null;
             return { ...value, blob };
           } catch {
             return null;
           }
         };
 
-        const readSessionCache = () => {
+        const readSessionCache = userId => {
           try {
             const raw = window.sessionStorage.getItem(STORAGE_KEY);
             if (!raw) return null;
             const value = JSON.parse(raw);
-            if (!value || value.version !== 2 || typeof value.data !== 'string' || !value.data.startsWith('data:application/pdf')) return null;
+            if (!value || value.version !== 2 || value.userId !== userId || typeof value.data !== 'string' || !value.data.startsWith('data:application/pdf')) return null;
             return value;
           } catch {
             return null;
           }
         };
 
-        const readCache = () => readHistoryCache() || readSessionCache();
+        const readCache = userId => readHistoryCache(userId) || readSessionCache(userId);
 
         const dataUrlToBlob = dataUrl => {
           const comma = dataUrl.indexOf(',');
@@ -82,9 +109,19 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           return new Blob([bytes], { type });
         };
 
-        const restoreImmediately = () => {
-          const cached = readCache();
-          if (!cached) return;
+        const restoreImmediately = async () => {
+          const userId = await currentUserId();
+          if (!userId) {
+            clearPreviewCache();
+            return;
+          }
+          const cached = readCache(userId);
+          if (!cached) {
+            // Old unscoped caches are deliberately discarded instead of being
+            // displayed first and validated later.
+            clearPreviewCache();
+            return;
+          }
           try {
             const blob = cached.blob instanceof Blob ? cached.blob : dataUrlToBlob(cached.data);
             if (!blob) return;
@@ -101,6 +138,7 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
             statusRow?.classList.add('is-ready');
             window.__qssedaTexSessionPreview = {
               restored: true,
+              userId,
               documentId: String(cached.documentId || ''),
               engine: String(cached.engine || ''),
               sourceHash: String(cached.sourceHash || '')
@@ -109,11 +147,11 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           } catch {}
         };
 
-        const persistHistoryBlob = (blob, meta) => {
-          if (!(blob instanceof Blob) || blob.size <= 0 || blob.size > MAX_HISTORY_PDF_BYTES) return false;
+        const persistHistoryBlob = (blob, meta, userId) => {
+          if (!(blob instanceof Blob) || blob.size <= 0 || blob.size > MAX_HISTORY_PDF_BYTES || !userId) return false;
           try {
             const base = window.history.state && typeof window.history.state === 'object' ? window.history.state : {};
-            const next = { ...base, [HISTORY_KEY]: { version: 2, savedAt: Date.now(), blob, ...meta } };
+            const next = { ...base, [HISTORY_KEY]: { version: 2, savedAt: Date.now(), blob, userId, ...meta } };
             window.history.replaceState(next, document.title);
             return true;
           } catch {
@@ -121,8 +159,8 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           }
         };
 
-        const persistSessionData = async (blob, meta, token) => {
-          if (!(blob instanceof Blob) || blob.size <= 0 || blob.size > MAX_SESSION_PDF_BYTES) return;
+        const persistSessionData = async (blob, meta, userId, token) => {
+          if (!(blob instanceof Blob) || blob.size <= 0 || blob.size > MAX_SESSION_PDF_BYTES || !userId) return;
           try {
             const reader = new FileReader();
             const data = await new Promise((resolve, reject) => {
@@ -131,7 +169,7 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
               reader.readAsDataURL(blob);
             });
             if (token !== persistToken || !String(data).startsWith('data:application/pdf')) return;
-            const payload = JSON.stringify({ version: 2, savedAt: Date.now(), data, ...meta });
+            const payload = JSON.stringify({ version: 2, savedAt: Date.now(), data, userId, ...meta });
             try { window.sessionStorage.setItem(STORAGE_KEY, payload); } catch {}
           } catch {}
         };
@@ -142,18 +180,25 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           if (base === restoredUrl) return;
           const token = ++persistToken;
           try {
+            const userId = await currentUserId();
+            if (!userId) return;
             const response = await fetch(base);
             if (!response.ok) return;
             const blob = await response.blob();
             if (token !== persistToken || !String(blob.type || '').toLowerCase().includes('pdf') || blob.size <= 0) return;
             const meta = currentMeta();
-            persistHistoryBlob(blob, meta);
-            void persistSessionData(blob, meta, token);
+            persistHistoryBlob(blob, meta, userId);
+            void persistSessionData(blob, meta, userId, token);
           } catch {}
         };
 
-        const validateRestoredPreview = () => {
-          const cached = readCache();
+        const validateRestoredPreview = async () => {
+          const userId = await currentUserId();
+          if (!userId) {
+            clearPreviewCache();
+            return;
+          }
+          const cached = readCache(userId);
           if (!cached || !restoredUrl) return;
           const meta = currentMeta();
           if (!meta.documentId || !meta.engine) return;
@@ -169,7 +214,7 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           }
         };
 
-        restoreImmediately();
+        void restoreImmediately();
 
         const frameObserver = new MutationObserver(() => {
           const src = frame.getAttribute('src') || '';
@@ -178,10 +223,10 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
         frameObserver.observe(frame, { attributes: true, attributeFilter: ['src'] });
 
         const documentList = document.getElementById('tex-document-list');
-        const documentObserver = documentList ? new MutationObserver(() => window.setTimeout(validateRestoredPreview, 0)) : null;
+        const documentObserver = documentList ? new MutationObserver(() => window.setTimeout(() => void validateRestoredPreview(), 0)) : null;
         documentObserver?.observe(documentList, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 
-        window.setTimeout(validateRestoredPreview, 700);
+        window.setTimeout(() => void validateRestoredPreview(), 700);
         window.addEventListener('pagehide', () => {
           frameObserver.disconnect();
           documentObserver?.disconnect();
