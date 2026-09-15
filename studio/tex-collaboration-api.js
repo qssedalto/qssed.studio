@@ -42,10 +42,26 @@ export async function handleTexCollaborationApi(request, env) {
 }
 
 async function getCollaboration(request, env, user, accessToken) {
-  const documentId = cleanObjectId(new URL(request.url).searchParams.get("document"));
+  const url = new URL(request.url);
+  const documentId = cleanObjectId(url.searchParams.get("document"));
   if (!documentId) return json({ error: "Invalid TeX document identifier." }, 400);
   if (!(await ownsDocument(env, user.id, documentId))) return json({ error: "TeX document not found." }, 404);
+
+  if (url.searchParams.get("action") === "search") {
+    return searchCollaborators(url.searchParams.get("q"), accessToken);
+  }
   return collaborationSnapshot(accessToken, user.id, documentId);
+}
+
+async function searchCollaborators(rawQuery, accessToken) {
+  const query = cleanSearchQuery(rawQuery);
+  if (!query) return json({ results: [] });
+  const result = await rpc(accessToken, "tex_search_collaborators", { p_query: query, p_limit: 8 });
+  if (result.error) return collaborationBackendError(result.error);
+  const results = Array.isArray(result.data)
+    ? result.data.map(normalizeSearchResult).filter(Boolean).slice(0, 8)
+    : [];
+  return json({ query, results });
 }
 
 async function addCollaborator(request, env, user, accessToken) {
@@ -160,6 +176,18 @@ function normalizeParticipant(value) {
   };
 }
 
+function normalizeSearchResult(value) {
+  if (!value || !isStorageObjectId(value.id)) return null;
+  const username = cleanText(value.username, 80);
+  if (!username) return null;
+  return {
+    id: value.id,
+    username,
+    display_name: cleanText(value.display_name, 120),
+    avatar_url: safeAvatarUrl(value.avatar_url)
+  };
+}
+
 async function verifyActiveUser(accessToken) {
   const headers = authHeaders(accessToken);
   let userResponse;
@@ -271,6 +299,11 @@ function cleanRole(value) {
 function cleanUsername(value) {
   const username = String(value || "").trim().replace(/^@+/, "").slice(0, 80);
   return /^[a-zA-Z0-9._-]{2,80}$/.test(username) ? username : "";
+}
+
+function cleanSearchQuery(value) {
+  const query = String(value || "").trim().replace(/^@+/, "").slice(0, 80);
+  return /^[a-zA-Z0-9._-]{2,80}$/.test(query) ? query : "";
 }
 
 function cleanText(value, maximum) {
