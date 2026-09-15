@@ -23,9 +23,7 @@ export async function handleAuthHandoff(request, env, locale) {
   const trustedRefererFallback = missingOrigin && trustedOrigins.has(refererOrigin);
   const trustedSameSiteNavigation = missingOrigin && (fetchSite === "same-site" || fetchSite === "same-origin") && (fetchMode === "navigate" || fetchMode === "") && (fetchDest === "document" || fetchDest === "");
   const trustedProductionHandoff = trustedOrigins.has(origin) || trustedRefererFallback || trustedSameSiteNavigation;
-  if (!trustedProductionHandoff && !previewAllowed) {
-    return json({ error: "Invalid authentication origin" }, 403);
-  }
+  if (!trustedProductionHandoff && !previewAllowed) return json({ error: "Invalid authentication origin" }, 403);
 
   let form;
   try { form = await request.formData(); } catch { return json({ error: "Invalid handoff request" }, 400); }
@@ -35,20 +33,14 @@ export async function handleAuthHandoff(request, env, locale) {
   if (!accessToken || !refreshToken) return json({ error: "Missing session" }, 400);
 
   let userResponse;
-  try {
-    userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` } });
-  } catch {
-    return json({ error: "Authentication service unavailable" }, 503);
-  }
+  try { userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` } }); }
+  catch { return json({ error: "Authentication service unavailable" }, 503); }
   if (!userResponse.ok) return json({ error: "Session is invalid or expired" }, 401);
   const authUser = await userResponse.json();
 
   let profileResponse;
-  try {
-    profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(authUser.id)}&limit=1`, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` } });
-  } catch {
-    return json({ error: "Account service unavailable" }, 503);
-  }
+  try { profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(authUser.id)}&limit=1`, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` } }); }
+  catch { return json({ error: "Account service unavailable" }, 503); }
   if (!profileResponse.ok) return json({ error: "Account service unavailable" }, 503);
   const profiles = await profileResponse.json();
   if (!Array.isArray(profiles) || profiles[0]?.status !== "active") return json({ error: "Account is not active" }, 403);
@@ -61,7 +53,8 @@ export function normalizeHandoffNext(value, locale, workTarget = false) {
   const candidate = typeof value === "string" ? value.trim() : "";
   if (workTarget) {
     const candidateLocale = candidate === "/en" || candidate.startsWith("/en/") ? "en" : candidate === "/zh-cn" || candidate.startsWith("/zh-cn/") ? "zh" : locale;
-    return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/tex";
+    const prefix = candidateLocale === "zh" ? "/zh-cn" : "/en";
+    return candidate.includes("/discussion") ? `${prefix}/discussion` : `${prefix}/tex`;
   }
   const fallback = locale === "zh" ? "/zh-cn/dashboard" : "/en/dashboard";
   if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\u0000")) return fallback;
