@@ -33,14 +33,9 @@ const AUTH_ABUSE_PATHS = new Set([
   "/auth/handoff"
 ]);
 const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const WECHAT_SITE_VERIFICATION_PATH = "/82a7bfa65dff29dbf7f57f06c67aa7c9.txt";
-const WECHAT_SITE_VERIFICATION_TOKEN = "00e8405cbbcec4e4243d9df303261372d526d3e2";
 
 export default {
   async fetch(request, env, ctx) {
-    const verification = wechatSiteVerificationResponse(request);
-    if (verification) return verification;
-
     const blocked = await protectEdgeRequest(request, env);
     if (blocked) return applyEdgeProtectionHeaders(request, blocked);
     const response = await routeStudioRequest(request, env, ctx);
@@ -133,33 +128,6 @@ async function suppressWorkClientSessionBounce(response) {
     status: response.status,
     statusText: response.statusText,
     headers
-  });
-}
-
-function wechatSiteVerificationResponse(request) {
-  const url = new URL(request.url);
-  if (url.hostname !== "qsseda.studio" || url.pathname !== WECHAT_SITE_VERIFICATION_PATH) return null;
-
-  const method = request.method.toUpperCase();
-  if (method !== "GET" && method !== "HEAD") {
-    return new Response("Method not allowed.", {
-      status: 405,
-      headers: {
-        "content-type": "text/plain;charset=UTF-8",
-        "cache-control": "no-store",
-        "allow": "GET, HEAD",
-        "x-content-type-options": "nosniff"
-      }
-    });
-  }
-
-  return new Response(method === "HEAD" ? null : WECHAT_SITE_VERIFICATION_TOKEN, {
-    status: 200,
-    headers: {
-      "content-type": "text/plain;charset=UTF-8",
-      "cache-control": "public, max-age=300",
-      "x-content-type-options": "nosniff"
-    }
   });
 }
 
