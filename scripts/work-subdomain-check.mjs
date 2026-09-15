@@ -4,6 +4,7 @@ const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8")
 const workAuditWrapper = fs.readFileSync(new URL("../studio/worker-audit.js", import.meta.url), "utf8");
 const work = fs.readFileSync(new URL("../studio/work-subdomain.js", import.meta.url), "utf8");
 const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta.url), "utf8");
+const sessionGate = fs.readFileSync(new URL("../studio/session-gate.js", import.meta.url), "utf8");
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
 const workTexUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
 const bridge = fs.readFileSync(new URL("../local-bridge/server.mjs", import.meta.url), "utf8");
@@ -37,6 +38,14 @@ assert(!work.includes('internalPath = `/${locale}/work`'), "Work must not expose
 assert(handoff.includes('const WORK_HOST = "work.qsseda.studio"'), "Auth handoff must identify the Work host");
 assert(handoff.includes("new Set([AUTH_ORIGIN, MAIN_ORIGIN])"), "Work handoff must allow only Auth and the trusted main-site origin");
 assert(handoff.includes('return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/tex"'), "Every Work handoff must land on localized TeX");
+
+assert(sessionGate.includes('const ACCOUNT_COOKIE = "__Secure-qsseda-account-id"'), "Work sessions must use a domain-wide account identity marker");
+assert(sessionGate.includes('const COOKIE_DOMAIN = "qsseda.studio"'), "The account identity marker must cover qsseda.studio subdomains");
+assert(sessionGate.includes('if (workHost && !accountId) return false'), "Work must fail closed when the domain-wide account marker is missing");
+assert(sessionGate.includes('if (accountId && accountId !== userId) return false'), "Work must reject a host session belonging to a different account");
+assert(sessionGate.includes('accountId !== verified.user.id'), "Work bootstrap must not recreate a stale local account session");
+assert(sessionGate.includes('globalLogoutCookies()'), "Logout must invalidate the domain-wide account identity marker");
+assert(sessionGate.includes('Domain=${COOKIE_DOMAIN}'), "The identity marker must be sent across qsseda.studio subdomains");
 
 assert(authEntry.includes('pathname === "/continue" && isLoginRedirect(response)'), "Auth entry must preserve app return targets when /continue requires login");
 assert(authEntry.includes('/login?next=${encodeURIComponent(effectiveReturn)}'), "Auth login redirect must retain the validated next path");
