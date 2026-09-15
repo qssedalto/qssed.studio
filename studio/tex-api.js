@@ -1,6 +1,7 @@
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
-import { hasStorageBinding, isStorageObjectId, verifyStorageUser } from "./storage-api.js";
+import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
@@ -17,11 +18,7 @@ export async function handleTexApi(request, env, action) {
   const session = await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
 
-  const authRequest = new Request(request.url, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${session.accessToken}` }
-  });
-  const auth = await verifyStorageUser(authRequest, env);
+  const auth = await verifyTexUser(session.accessToken);
   if (auth.error) return withStudioSessionCookies(auth.error, session.cookies);
 
   if (isMutation(request.method) && !isSameOriginMutation(request)) {
@@ -37,6 +34,65 @@ export async function handleTexApi(request, env, action) {
   else response = json({ error: "Unknown TeX API action." }, 404);
 
   return withStudioSessionCookies(response, session.cookies);
+}
+
+async function verifyTexUser(accessToken) {
+  const token = String(accessToken || "").trim();
+  if (!token) return { error: json({ error: "Authentication required." }, 401) };
+
+  const headers = {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${token}`
+  };
+
+  let userResponse;
+  try {
+    userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers });
+  } catch {
+    return { error: json({ error: "Authentication service is temporarily unavailable." }, 503) };
+  }
+
+  if (userResponse.status === 401 || userResponse.status === 403) {
+    return { error: json({ error: "Session is invalid or expired." }, 401) };
+  }
+  if (!userResponse.ok) {
+    return { error: json({ error: "Authentication service is temporarily unavailable." }, 503) };
+  }
+
+  let user;
+  try {
+    user = await userResponse.json();
+  } catch {
+    return { error: json({ error: "Authentication service is temporarily unavailable." }, 503) };
+  }
+  if (!isStorageObjectId(user?.id)) {
+    return { error: json({ error: "Session is invalid or expired." }, 401) };
+  }
+
+  let profiles;
+  try {
+    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status,role&id=eq.${encodeURIComponent(user.id)}`, { headers });
+    if (profileResponse.status === 401 || profileResponse.status === 403) {
+      return { error: json({ error: "Session is invalid or expired." }, 401) };
+    }
+    if (!profileResponse.ok) {
+      return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
+    }
+    profiles = await profileResponse.json();
+  } catch {
+    return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
+  }
+
+  if (!Array.isArray(profiles) || profiles.length !== 1 || profiles[0]?.status !== "active") {
+    return { error: json({ error: "Account is not authorized to use TeX storage." }, 403) };
+  }
+
+  const metadata = user?.app_metadata || {};
+  const isAdmin = profiles[0]?.role === "admin"
+    || metadata.role === "admin"
+    || metadata.is_admin === true
+    || metadata.is_admin === "true";
+  return { user, isAdmin };
 }
 
 function handleStatus(request, env) {
