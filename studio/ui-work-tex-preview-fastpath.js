@@ -13,10 +13,27 @@ export function enhanceWorkTexPreviewFastPath(markup) {
     `          async function probeLocal() {\n            localBase = '';\n            localEngines = [];\n            for (const base of endpoints) {\n              try {\n                const health = await readJson(await loopbackFetch(base, '/health'));\n                if (health?.service !== expectedService || Number(health?.protocol) !== expectedProtocol) continue;\n                if (!Array.isArray(health?.capabilities) || !health.capabilities.includes('tex.compile')) continue;\n\n                // Health is enough to put the loopback compiler on the critical path.\n                // /tex/status executes the TeX binary and can take seconds, so verify it\n                // in the background instead of blocking the first preview.\n                localBase = base;\n                localEngines = ['xelatex', 'pdflatex'];\n                syncCompiler();\n\n                void loopbackFetch(base, '/tex/status')\n                  .then(response => readJson(response))\n                  .then(tex => {\n                    if (localBase !== base) return;\n                    if (!tex?.available) {\n                      localBase = '';\n                      localEngines = [];\n                    } else {\n                      localEngines = Array.isArray(tex.engines)\n                        ? tex.engines.map(value => String(value).toLowerCase())\n                        : [String(tex.engine || 'xelatex').toLowerCase()];\n                    }\n                    syncCompiler();\n                  })\n                  .catch(() => {});\n                break;\n              } catch {}\n            }\n            syncCompiler();\n          }`
   );
 
+  // The base local-preview script can finish probing 127.0.0.1 before the
+  // document request has opened the initial TeX document. In that race the
+  // editor is still hidden, so the original end-of-start schedule is skipped and
+  // the preview remains on "waiting for changes" forever until the user types.
+  // Schedule again whenever the initial document becomes visible or the active
+  // document list changes programmatically.
+  output = replaceExact(
+    output,
+    `          const observer = new MutationObserver(() => syncCompiler());\n          observer.observe(editor, { attributes: true, attributeFilter: ['hidden'] });\n          observer.observe(compile, { attributes: true, attributeFilter: ['disabled'] });`,
+    `          let loadedPreviewSnapshot = '';\n          let loadedPreviewTimer = 0;\n          function scheduleLoadedDocumentPreview(delay = 0) {\n            window.clearTimeout(loadedPreviewTimer);\n            loadedPreviewTimer = window.setTimeout(() => {\n              if (destroyed || !previewEnabled || !supportsCurrentEngine() || !hasDocument()) return;\n              const nextSnapshot = currentPreviewSnapshot();\n              if (!nextSnapshot) return;\n              if (nextSnapshot === loadedPreviewSnapshot && (previewUrl || localBusy || previewDirty)) return;\n              loadedPreviewSnapshot = nextSnapshot;\n              previewDirty = true;\n              schedulePreview(0);\n            }, delay);\n          }\n\n          const observer = new MutationObserver(() => {\n            syncCompiler();\n            if (!editor.hidden) {\n              // Let the document loader finish assigning source/title/engine before\n              // taking the snapshot used for the first compile.\n              scheduleLoadedDocumentPreview(0);\n              window.setTimeout(() => scheduleLoadedDocumentPreview(0), 60);\n            }\n          });\n          observer.observe(editor, { attributes: true, attributeFilter: ['hidden'] });\n          observer.observe(compile, { attributes: true, attributeFilter: ['disabled'] });\n\n          const loadedDocumentList = document.getElementById('tex-document-list');\n          const documentListObserver = loadedDocumentList ? new MutationObserver(() => {\n            if (!editor.hidden) scheduleLoadedDocumentPreview(20);\n          }) : null;\n          documentListObserver?.observe(loadedDocumentList, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });`
+  );
+
+  output = output.replace(
+    `            observer.disconnect();\n            window.clearTimeout(previewTimer);`,
+    `            observer.disconnect();\n            documentListObserver?.disconnect();\n            window.clearTimeout(loadedPreviewTimer);\n            window.clearTimeout(previewTimer);`
+  );
+
   // Once the lightweight /health check succeeds, do not add another visible
   // half-second before the first background refresh. A restored preview remains
   // visible while this refresh runs.
-  output = output.replaceAll('schedulePreview(450);', 'schedulePreview(40);');
+  output = output.replaceAll('schedulePreview(450);', 'schedulePreview(0);');
 
   return output;
 }
