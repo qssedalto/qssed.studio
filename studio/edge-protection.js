@@ -81,66 +81,44 @@ export function botSignals(request) {
   return { verified: false, score };
 }
 
-function requestBodyLimit(pathname) {
-  if (pathname === "/api/profile/avatar" || pathname === "/api/profile/background") return 10 * MIB;
-  if (pathname.startsWith("/api/storage/")) return 20 * MIB;
-  return 2 * MIB;
-}
-
-function declaredBodyLength(request) {
-  const raw = request.headers.get("Content-Length");
-  if (!raw) return null;
-  const value = Number(raw);
-  return Number.isFinite(value) && value >= 0 ? value : null;
-}
-
-function hasStudioSessionCookie(request) {
+export function hasStudioSessionCookie(request) {
   const cookie = request.headers.get("Cookie") || "";
   return cookie.includes(`${ACCESS_COOKIE}=`) || cookie.includes(`${REFRESH_COOKIE}=`);
 }
 
+export function requestBodyLimit(pathname) {
+  if (pathname === "/api/storage/upload") return 52 * MIB;
+  if (pathname === "/api/profile/media") return 10 * MIB;
+  if (pathname === "/api/auth/signup") return 6 * MIB;
+  if (pathname.startsWith("/api/") || pathname === "/auth/handoff") return 2 * MIB;
+  return 8 * MIB;
+}
+
 function isExpensiveRequest(pathname, method) {
-  if (!EXPENSIVE_PATHS.has(pathname)) return false;
-  const verb = String(method || "GET").toUpperCase();
-  return verb !== "OPTIONS" && verb !== "HEAD";
+  if (method !== "GET" && method !== "POST") return false;
+  return EXPENSIVE_PATHS.has(pathname);
 }
 
 async function consume(limiter, key) {
   if (!limiter?.limit) return true;
-  try {
-    const result = await limiter.limit({ key });
-    return result?.success !== false;
-  } catch (error) {
-    console.error("Edge rate limiter unavailable", error);
-    return true;
-  }
+  try { const result = await limiter.limit({ key }); return result?.success !== false; } catch { return true; }
 }
-
+function declaredBodyLength(request) {
+  const value = request.headers.get("Content-Length");
+  if (!value) return null;
+  if (!/^\d+$/.test(value)) return Number.POSITIVE_INFINITY;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : Number.POSITIVE_INFINITY;
+}
 function rateLimited(request) {
-  return compactError(request, 429, "Too many requests.", { "retry-after": "60" });
+  const response = compactError(request, 429, "Too many requests. Please try again shortly.");
+  const headers = new Headers(response.headers); headers.set("retry-after", "60");
+  return new Response(response.body, { status: response.status, headers });
 }
-
-function compactError(request, status, message, extraHeaders = {}) {
-  const wantsJson = (request.headers.get("Accept") || "").includes("application/json") || new URL(request.url).pathname.startsWith("/api/");
-  const headers = {
-    "cache-control": "no-store",
-    "content-type": wantsJson ? "application/json;charset=UTF-8" : "text/plain;charset=UTF-8",
-    "x-content-type-options": "nosniff",
-    ...extraHeaders
-  };
-  return new Response(wantsJson ? JSON.stringify({ error: message }) : message, { status, headers });
+function compactError(request, status, message) {
+  const pathname = new URL(request.url).pathname;
+  const isApi = pathname.startsWith("/api/") || pathname === "/auth/handoff";
+  return new Response(isApi ? JSON.stringify({ error: message }) : message, { status, headers: { "content-type": isApi ? "application/json;charset=UTF-8" : "text/plain;charset=UTF-8", "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex, nofollow, noarchive, nosnippet" } });
 }
-
-function scannerNotFound() {
-  return new Response("Not found.", {
-    status: 404,
-    headers: { "content-type": "text/plain;charset=UTF-8", "cache-control": "no-store", "x-content-type-options": "nosniff" }
-  });
-}
-
-function robotsResponse() {
-  return new Response("User-agent: *\nDisallow: /\n", {
-    status: 200,
-    headers: { "content-type": "text/plain;charset=UTF-8", "cache-control": "public, max-age=3600" }
-  });
-}
+function scannerNotFound() { return new Response("Not found.", { status: 404, headers: { "content-type": "text/plain;charset=UTF-8", "cache-control": "public, max-age=300", "x-content-type-options": "nosniff", "x-robots-tag": "noindex, nofollow, noarchive, nosnippet" } }); }
+function robotsResponse() { return new Response("User-agent: *\nDisallow: /\n", { status: 200, headers: { "content-type": "text/plain;charset=UTF-8", "cache-control": "public, max-age=3600", "x-content-type-options": "nosniff" } }); }
