@@ -37,6 +37,7 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
       .tex-work-app .tex-panel-head{justify-content:flex-start!important}
       .tex-work-app .tex-panel-title{display:flex;align-items:center;gap:8px;min-width:0}
       .tex-work-app .tex-panel-title strong{white-space:nowrap}
+      .tex-work-app #tex-editor-placeholder[hidden]{display:none!important}
       .tex-work-app .tex-side-toggle{
         display:grid!important;
         place-items:center!important;
