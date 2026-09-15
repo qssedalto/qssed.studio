@@ -29,7 +29,10 @@ export async function handleTexApi(request, env, action) {
       if (document?.id && document?.owner_id) {
         await snapshotDocumentVersion(env, document.owner_id, document, {
           reason: request.method === "POST" ? "created" : "autosave",
-          force: request.method === "POST"
+          // A PUT already represents one completed cloud autosave. Keep every
+          // content-changing autosave as its own version; the version layer still
+          // fingerprints identical content, so no-op saves are not duplicated.
+          force: true
         });
       }
     } catch {}
