@@ -318,7 +318,7 @@ export function enhanceWorkTexDesktopTypography(markup) {
         }
 
         async function previewCacheKey(engine, source) {
-          return previewPrefix + await digestText(String(engine || '').toLowerCase() + '\n' + String(source || ''));
+          return previewPrefix + await digestText(String(engine || '').toLowerCase() + String.fromCharCode(10) + String(source || ''));
         }
 
         async function cachePdfResponse(engine, source, response) {
