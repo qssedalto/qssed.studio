@@ -360,7 +360,7 @@ export function enhanceWorkTexMobile(markup, zh) {
         const tabs = document.createElement('nav');
         tabs.id = 'tex-mobile-tabs';
         tabs.className = 'tex-mobile-tabs';
-        tabs.setAttribute('aria-label', zh ? 'TeX 工作区视图' : 'TeX workspace views');
+        tabs.setAttribute('aria-label', ${JSON.stringify(zh ? "TeX 工作区视图" : "TeX workspace views")});
         tabs.innerHTML = [
           ['documents', labels.documents, labels.documentsAria, '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20.5H6z"></path><path d="M14 3.5v4h4"></path><path d="M9 12h6M9 15.5h5"></path></svg>'],
           ['editor', labels.edit, labels.editAria, '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8-4 4 4 4"></path><path d="m16 8 4 4-4 4"></path><path d="m14 5-4 14"></path></svg>'],
