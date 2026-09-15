@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "qsseda-auth",
-  "main": "auth-audit-entry.js",
+  "main": "studio/auth-audit-entry.js",
   "compatibility_date": "2026-09-12",
   "workers_dev": false,
   "preview_urls": false,
