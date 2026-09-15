@@ -6,7 +6,7 @@ const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
 const workTexUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
 const bridge = fs.readFileSync(new URL("../local-bridge/server.mjs", import.meta.url), "utf8");
-const nativeOrigin = fs.readFileSync(new URL("../local-bridge/native/origins_work_windows.go", import.meta.url), "utf8");
+const nativeOrigin = fs.readFileSync(new URL("../local-bridge/native/origins_work_windows.go"), "utf8");
 const workWranglerText = fs.readFileSync(new URL("../wrangler.work.jsonc", import.meta.url), "utf8");
 const workWrangler = JSON.parse(workWranglerText.replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 
@@ -14,6 +14,9 @@ assert(worker.includes("rewriteWorkSubdomainRequest"), "Worker must route the Wo
 assert(worker.includes("handleMainWorkHandoff"), "Main Studio must expose the Work session handoff");
 assert(worker.includes("workSessionRedirect"), "Unauthenticated Work pages must return through the main-site handoff");
 assert(worker.includes("mapped.canonical"), "Work aliases must redirect to localized canonical URLs");
+assert(worker.includes("suppressWorkClientSessionBounce"), "Authenticated Work HTML must suppress the Studio origin-local session bounce");
+assert(worker.includes('markup.replace(\n    "    hydrateOsUser();"'), "Work suppression must target the inherited Studio hydrateOsUser call only");
+assert(worker.includes("server-side host-only session gate"), "Work session suppression must document that the server-side gate remains authoritative");
 
 for (const required of [
   'const WORK_ORIGIN = "https://work.qsseda.studio"',
