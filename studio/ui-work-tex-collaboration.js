@@ -17,7 +17,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     removeConfirm: "确定从这份文档中移除该成员吗？",
     loading: "正在读取协作设置…",
     empty: "还没有其他协作者",
-    error: "无法读取协作设置",
+    error: "无法读取协作设置，请稍后重试。",
     liveTitle: "实时共同编辑",
     livePreparing: "CRDT 同步通道准备中",
     liveDetail: "这一阶段先完成成员与权限基础。下一阶段会把编辑器接入 CodeMirror + Yjs，届时启用多人光标、选区和并发编辑。",
@@ -32,7 +32,14 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     ownerHint: "所有者拥有完整管理权限",
     permissionHint: "“可编辑”权限已经可以保存到协作配置，但实时源码同步会等 CRDT 通道完成后再开放。",
     saved: "协作设置已更新",
-    unavailable: "协作数据库尚未部署或暂时不可用"
+    unavailable: "协作服务暂时不可用，请稍后重试。",
+    previous: "上一步",
+    next: "下一步",
+    done: "完成",
+    pageMembers: "成员与权限",
+    pageLive: "实时协作",
+    pageLinks: "链接共享",
+    pageOf: "页"
   } : {
     open: "Collaborate",
     title: "Collaboration settings",
@@ -51,7 +58,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     removeConfirm: "Remove this person from the document?",
     loading: "Loading collaboration settings…",
     empty: "No other collaborators yet",
-    error: "Could not load collaboration settings",
+    error: "Could not load collaboration settings. Please try again.",
     liveTitle: "Live co-editing",
     livePreparing: "CRDT sync channel is being prepared",
     liveDetail: "This phase establishes members and permissions first. The next phase will connect CodeMirror + Yjs for concurrent editing, selections, and remote cursors.",
@@ -66,7 +73,14 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     ownerHint: "The owner has full management access",
     permissionHint: "Editor permission can already be stored, but live source synchronization will remain disabled until the CRDT channel is ready.",
     saved: "Collaboration settings updated",
-    unavailable: "The collaboration database is not deployed or is temporarily unavailable"
+    unavailable: "Collaboration is temporarily unavailable. Please try again.",
+    previous: "Back",
+    next: "Next",
+    done: "Done",
+    pageMembers: "People & access",
+    pageLive: "Live collaboration",
+    pageLinks: "Link sharing",
+    pageOf: "page"
   };
 
   let output = String(markup || "");
@@ -92,52 +106,61 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     <style id="qsseda-work-tex-collaboration-style">
       .tex-work-app .tex-editor-toolbar{align-items:end!important}
       .tex-work-app .tex-collaboration-button{
-        appearance:none!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;
-        flex:0 0 auto!important;width:auto!important;min-width:88px!important;height:38px!important;min-height:38px!important;margin:0!important;padding:0 12px!important;
-        border:0!important;border-radius:11px!important;background:var(--fill)!important;color:var(--text)!important;
-        box-shadow:inset 0 0 0 1px var(--border)!important;font-size:10px!important;font-weight:700!important;white-space:nowrap!important;
+        appearance:none!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;
+        flex:0 0 auto!important;width:auto!important;min-width:94px!important;height:40px!important;min-height:40px!important;margin:0!important;padding:0 14px!important;
+        border:0!important;border-radius:12px!important;background:var(--fill)!important;color:var(--text)!important;
+        box-shadow:inset 0 0 0 1px var(--border)!important;font-size:12px!important;font-weight:700!important;white-space:nowrap!important;
         cursor:pointer!important;transition:background .16s ease,box-shadow .16s ease,transform .16s ease,opacity .16s ease!important
       }
       .tex-work-app .tex-collaboration-button:hover:not(:disabled){background:var(--card)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 30%,var(--border))!important}
       .tex-work-app .tex-collaboration-button:active:not(:disabled){transform:scale(.97)}
       .tex-work-app .tex-collaboration-button:disabled{opacity:.38!important;cursor:not-allowed!important}
-      .tex-work-app .tex-collaboration-button svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+      .tex-work-app .tex-collaboration-button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
       .tex-collaboration-avatars{display:flex;align-items:center;margin-left:1px}
-      .tex-collaboration-avatar-dot{display:grid;place-items:center;width:19px;height:19px;margin-left:-5px;border:2px solid var(--fill);border-radius:50%;background:var(--surface);color:var(--muted);font-size:7px;font-weight:800;overflow:hidden}
+      .tex-collaboration-avatar-dot{display:grid;place-items:center;width:21px;height:21px;margin-left:-5px;border:2px solid var(--fill);border-radius:50%;background:var(--surface);color:var(--muted);font-size:8px;font-weight:800;overflow:hidden}
       .tex-collaboration-avatar-dot:first-child{margin-left:0}.tex-collaboration-avatar-dot img{width:100%;height:100%;object-fit:cover}
 
       body.tex-collaboration-open{overflow:hidden!important}
       .tex-collaboration-backdrop{position:fixed;inset:0;z-index:2147482000;background:rgba(0,0,0,.20);opacity:0;pointer-events:none;transition:opacity .2s ease}
       .tex-collaboration-backdrop.is-open{opacity:1;pointer-events:auto}
-      .tex-collaboration-drawer{position:fixed;top:8px;right:8px;bottom:8px;z-index:2147482001;display:flex;flex-direction:column;width:min(430px,calc(100vw - 24px));min-width:0;overflow:hidden;border-radius:22px;background:color-mix(in srgb,var(--surface) 97%,transparent);box-shadow:0 24px 80px rgba(0,0,0,.22),inset 0 0 0 1px var(--border);-webkit-backdrop-filter:blur(26px) saturate(155%);backdrop-filter:blur(26px) saturate(155%);transform:translateX(calc(100% + 18px));transition:transform .28s cubic-bezier(.22,1,.36,1)}
+      .tex-collaboration-drawer{position:fixed;top:10px;right:10px;bottom:10px;z-index:2147482001;display:flex;flex-direction:column;width:min(520px,calc(100vw - 28px));min-width:0;overflow:hidden;border-radius:24px;background:color-mix(in srgb,var(--surface) 97%,transparent);box-shadow:0 24px 80px rgba(0,0,0,.22),inset 0 0 0 1px var(--border);-webkit-backdrop-filter:blur(26px) saturate(155%);backdrop-filter:blur(26px) saturate(155%);transform:translateX(calc(100% + 20px));transition:transform .28s cubic-bezier(.22,1,.36,1)}
       .tex-collaboration-drawer.is-open{transform:translateX(0)}
-      .tex-collaboration-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 18px 13px;border-bottom:1px solid var(--hairline)}
-      .tex-collaboration-heading{display:grid;gap:4px;min-width:0}.tex-collaboration-heading strong{font-size:17px;letter-spacing:-.025em}.tex-collaboration-heading span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:10px}
-      .tex-collaboration-close{display:grid;place-items:center;width:30px;height:30px;min-width:30px;margin:0;padding:0;border:0;border-radius:10px;background:var(--fill);color:var(--muted);box-shadow:inset 0 0 0 1px var(--border);font-size:18px;line-height:1;cursor:pointer}.tex-collaboration-close:hover{color:var(--text);background:var(--card)}
-      .tex-collaboration-scroll{display:grid;gap:12px;min-height:0;padding:14px 14px 24px;overflow:auto;overscroll-behavior:contain}
-      .tex-collaboration-section{display:grid;gap:10px;padding:14px;border-radius:17px;background:var(--card);box-shadow:inset 0 0 0 1px var(--hairline)}
-      .tex-collaboration-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.tex-collaboration-section-head>div{display:grid;gap:4px}.tex-collaboration-section-head strong{font-size:12px;letter-spacing:-.01em}.tex-collaboration-section-head span{color:var(--muted);font-size:9px;line-height:1.45}
-      .tex-collaboration-count{display:grid;place-items:center;min-width:28px;height:23px;padding:0 7px;border-radius:999px;background:var(--fill);color:var(--muted);font-size:8px;font-weight:750}
-      .tex-collaboration-state{display:flex;align-items:flex-start;gap:9px;padding:11px;border-radius:13px;background:var(--fill)}.tex-collaboration-state-dot{width:8px;height:8px;margin-top:4px;border-radius:50%;background:var(--primary);flex:0 0 auto}.tex-collaboration-state>div{display:grid;gap:3px;min-width:0}.tex-collaboration-state strong{font-size:10px}.tex-collaboration-state span{color:var(--muted);font-size:9px;line-height:1.45}
-      .tex-collaboration-invite{display:grid;grid-template-columns:minmax(0,1fr) 98px 70px;gap:7px}
-      .tex-collaboration-invite input,.tex-collaboration-invite select,.tex-collaboration-member select{min-width:0;height:36px;margin:0;padding:0 10px;border:0;border-radius:10px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);font-size:9px;outline:none}
+      .tex-collaboration-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:24px 24px 17px;border-bottom:1px solid var(--hairline)}
+      .tex-collaboration-heading{display:grid;gap:6px;min-width:0}.tex-collaboration-heading strong{font-size:24px;line-height:1.2;letter-spacing:-.03em}.tex-collaboration-heading span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:14px}
+      .tex-collaboration-close{display:grid;place-items:center;width:44px;height:44px;min-width:44px;margin:0;padding:0;border:0;border-radius:14px;background:var(--fill);color:var(--muted);box-shadow:inset 0 0 0 1px var(--border);font-size:25px;line-height:1;cursor:pointer}.tex-collaboration-close:hover{color:var(--text);background:var(--card)}
+      .tex-collaboration-progress{display:grid;grid-template-columns:1fr auto;align-items:center;gap:14px;padding:15px 24px;border-bottom:1px solid var(--hairline);background:color-mix(in srgb,var(--fill) 55%,transparent)}
+      .tex-collaboration-progress-copy{display:grid;gap:3px}.tex-collaboration-progress-copy strong{font-size:14px}.tex-collaboration-progress-copy span{font-size:11px;color:var(--muted)}
+      .tex-collaboration-progress-dots{display:flex;align-items:center;gap:7px}.tex-collaboration-progress-dot{width:8px;height:8px;border:0;border-radius:999px;padding:0;background:var(--border);cursor:pointer}.tex-collaboration-progress-dot.is-active{width:22px;background:var(--primary)}
+      .tex-collaboration-pages{position:relative;flex:1;min-height:0;overflow:hidden}
+      .tex-collaboration-page{height:100%;overflow:auto;overscroll-behavior:contain;padding:22px 22px 28px}.tex-collaboration-page[hidden]{display:none!important}
+      .tex-collaboration-section{display:grid;gap:16px;padding:20px;border-radius:20px;background:var(--card);box-shadow:inset 0 0 0 1px var(--hairline)}
+      .tex-collaboration-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.tex-collaboration-section-head>div{display:grid;gap:7px}.tex-collaboration-section-head strong{font-size:17px;letter-spacing:-.015em}.tex-collaboration-section-head span{color:var(--muted);font-size:13px;line-height:1.55}
+      .tex-collaboration-count{display:grid;place-items:center;min-width:34px;height:28px;padding:0 9px;border-radius:999px;background:var(--fill);color:var(--muted);font-size:12px;font-weight:750}
+      .tex-collaboration-state{display:flex;align-items:flex-start;gap:12px;padding:15px;border-radius:15px;background:var(--fill)}.tex-collaboration-state-dot{width:9px;height:9px;margin-top:5px;border-radius:50%;background:var(--primary);flex:0 0 auto}.tex-collaboration-state>div{display:grid;gap:5px;min-width:0}.tex-collaboration-state strong{font-size:14px}.tex-collaboration-state span{color:var(--muted);font-size:12px;line-height:1.55}
+      .tex-collaboration-invite{display:grid;grid-template-columns:minmax(0,1fr) 112px 80px;gap:9px}
+      .tex-collaboration-invite input,.tex-collaboration-invite select,.tex-collaboration-member select{min-width:0;height:44px;margin:0;padding:0 12px;border:0;border-radius:12px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);font-size:13px;outline:none}
       .tex-collaboration-invite input:focus,.tex-collaboration-invite select:focus,.tex-collaboration-member select:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 10%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--primary) 60%,var(--border))}
-      .tex-collaboration-invite button,.tex-collaboration-remove{appearance:none;border:0;border-radius:10px;background:var(--primary);color:#fff;font-size:9px;font-weight:750;cursor:pointer}.tex-collaboration-invite button:disabled{opacity:.45;cursor:not-allowed}
-      .tex-collaboration-list{display:grid;gap:7px}.tex-collaboration-member{display:grid;grid-template-columns:34px minmax(0,1fr) 88px 52px;align-items:center;gap:8px;padding:8px;border-radius:12px;background:var(--fill)}.tex-collaboration-member.is-owner{grid-template-columns:34px minmax(0,1fr) 88px}
-      .tex-collaboration-member-avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;overflow:hidden;background:color-mix(in srgb,var(--primary) 9%,var(--surface));color:var(--primary);font-size:10px;font-weight:800}.tex-collaboration-member-avatar img{width:100%;height:100%;object-fit:cover}
-      .tex-collaboration-member-copy{display:grid;gap:2px;min-width:0}.tex-collaboration-member-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}.tex-collaboration-member-copy span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:8px}
-      .tex-collaboration-role-pill{display:grid;place-items:center;height:28px;padding:0 8px;border-radius:9px;background:var(--surface);color:var(--muted);font-size:8px;font-weight:700}
-      .tex-collaboration-remove{height:30px;padding:0 7px;background:color-mix(in srgb,var(--danger) 10%,var(--fill));color:var(--danger)}.tex-collaboration-remove:hover{background:color-mix(in srgb,var(--danger) 15%,var(--fill))}
-      .tex-collaboration-empty{padding:15px 8px;text-align:center;color:var(--muted);font-size:9px}.tex-collaboration-note{color:var(--quiet);font-size:8px;line-height:1.5}
-      .tex-collaboration-message{display:none;padding:9px 10px;border-radius:10px;background:var(--fill);color:var(--muted);font-size:9px;line-height:1.45}.tex-collaboration-message.is-visible{display:block}.tex-collaboration-message.is-error{background:color-mix(in srgb,var(--danger) 8%,var(--fill));color:var(--danger)}
-      .tex-collaboration-disabled-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;border-radius:12px;background:var(--fill);opacity:.72}.tex-collaboration-disabled-row>div{display:grid;gap:3px}.tex-collaboration-disabled-row strong{font-size:9px}.tex-collaboration-disabled-row span{color:var(--muted);font-size:8px;line-height:1.4}.tex-collaboration-disabled-badge{flex:0 0 auto;padding:4px 7px;border-radius:999px;background:var(--surface);color:var(--quiet);font-size:7px;font-weight:750}
+      .tex-collaboration-invite button,.tex-collaboration-remove{appearance:none;border:0;border-radius:12px;background:var(--primary);color:#fff;font-size:13px;font-weight:750;cursor:pointer}.tex-collaboration-invite button:disabled{opacity:.45;cursor:not-allowed}
+      .tex-collaboration-list{display:grid;gap:9px}.tex-collaboration-member{display:grid;grid-template-columns:42px minmax(0,1fr) 96px 60px;align-items:center;gap:10px;padding:11px;border-radius:14px;background:var(--fill)}.tex-collaboration-member.is-owner{grid-template-columns:42px minmax(0,1fr) 96px}
+      .tex-collaboration-member-avatar{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;overflow:hidden;background:color-mix(in srgb,var(--primary) 9%,var(--surface));color:var(--primary);font-size:12px;font-weight:800}.tex-collaboration-member-avatar img{width:100%;height:100%;object-fit:cover}
+      .tex-collaboration-member-copy{display:grid;gap:3px;min-width:0}.tex-collaboration-member-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.tex-collaboration-member-copy span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11px}
+      .tex-collaboration-role-pill{display:grid;place-items:center;height:34px;padding:0 10px;border-radius:10px;background:var(--surface);color:var(--muted);font-size:11px;font-weight:700}
+      .tex-collaboration-remove{height:34px;padding:0 9px;background:color-mix(in srgb,var(--danger) 10%,var(--fill));color:var(--danger);font-size:11px}.tex-collaboration-remove:hover{background:color-mix(in srgb,var(--danger) 15%,var(--fill))}
+      .tex-collaboration-empty{padding:22px 10px;text-align:center;color:var(--muted);font-size:13px}.tex-collaboration-note{color:var(--quiet);font-size:11px;line-height:1.55}
+      .tex-collaboration-message{display:none;padding:12px 13px;border-radius:12px;background:var(--fill);color:var(--muted);font-size:12px;line-height:1.5}.tex-collaboration-message.is-visible{display:block}.tex-collaboration-message.is-error{background:color-mix(in srgb,var(--danger) 8%,var(--fill));color:var(--danger)}
+      .tex-collaboration-disabled-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border-radius:14px;background:var(--fill);opacity:.76}.tex-collaboration-disabled-row>div{display:grid;gap:5px}.tex-collaboration-disabled-row strong{font-size:13px}.tex-collaboration-disabled-row span{color:var(--muted);font-size:11px;line-height:1.45}.tex-collaboration-disabled-badge{flex:0 0 auto;padding:6px 9px;border-radius:999px;background:var(--surface);color:var(--quiet);font-size:10px;font-weight:750}
+      .tex-collaboration-footer{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:14px 18px;border-top:1px solid var(--hairline);background:color-mix(in srgb,var(--surface) 96%,transparent)}
+      .tex-collaboration-footer-status{color:var(--muted);font-size:11px}.tex-collaboration-nav-button{height:40px;min-width:88px;padding:0 14px;border:0;border-radius:12px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);font-size:12px;font-weight:700;cursor:pointer}.tex-collaboration-nav-button.is-primary{background:var(--primary);color:#fff;box-shadow:none}.tex-collaboration-nav-button:disabled{opacity:.35;cursor:not-allowed}
 
       @media(max-width:760px), (max-width:950px) and (pointer:coarse){
         .tex-work-app .tex-editor-toolbar{align-items:stretch!important}
         .tex-work-app .tex-collaboration-button{width:100%!important;min-width:0!important}
-        .tex-collaboration-drawer{top:auto;left:6px;right:6px;bottom:6px;width:auto;max-height:calc(100dvh - 18px);border-radius:22px;transform:translateY(calc(100% + 14px))}.tex-collaboration-drawer.is-open{transform:translateY(0)}
-        .tex-collaboration-invite{grid-template-columns:minmax(0,1fr) 92px}.tex-collaboration-invite button{grid-column:1/-1;height:38px}
-        .tex-collaboration-member{grid-template-columns:34px minmax(0,1fr) 86px}.tex-collaboration-member:not(.is-owner) .tex-collaboration-remove{grid-column:2/-1;width:100%;height:32px}.tex-collaboration-member.is-owner{grid-template-columns:34px minmax(0,1fr) 80px}
+        .tex-collaboration-drawer{top:auto;left:6px;right:6px;bottom:6px;width:auto;max-height:calc(100dvh - 12px);border-radius:24px;transform:translateY(calc(100% + 14px))}.tex-collaboration-drawer.is-open{transform:translateY(0)}
+        .tex-collaboration-drawer-head{padding:20px 18px 14px}.tex-collaboration-heading strong{font-size:22px}.tex-collaboration-heading span{font-size:13px}
+        .tex-collaboration-progress{padding:13px 18px}.tex-collaboration-page{padding:16px 14px 22px}.tex-collaboration-section{padding:17px}
+        .tex-collaboration-invite{grid-template-columns:minmax(0,1fr) 110px}.tex-collaboration-invite button{grid-column:1/-1;height:44px}
+        .tex-collaboration-member{grid-template-columns:42px minmax(0,1fr) 92px}.tex-collaboration-member:not(.is-owner) .tex-collaboration-remove{grid-column:2/-1;width:100%;height:36px}.tex-collaboration-member.is-owner{grid-template-columns:42px minmax(0,1fr) 88px}
+        .tex-collaboration-footer{grid-template-columns:1fr 1fr;padding:12px}.tex-collaboration-footer-status{grid-column:1/-1;text-align:center}.tex-collaboration-nav-button{width:100%}
       }
     </style>
     <script id="qsseda-work-tex-collaboration-runtime">
@@ -153,6 +176,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         let loading = false;
         let opened = false;
         let requestSequence = 0;
+        let pageIndex = 0;
 
         const openButton = document.createElement('button');
         openButton.id = 'tex-collaboration-open';
@@ -177,33 +201,59 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             '<div class="tex-collaboration-heading"><strong>' + labels.title + '</strong><span id="tex-collaboration-document"></span></div>' +
             '<button class="tex-collaboration-close" type="button" aria-label="' + labels.close + '">×</button>' +
           '</div>' +
-          '<div class="tex-collaboration-scroll">' +
-            '<section class="tex-collaboration-section">' +
-              '<div class="tex-collaboration-section-head"><div><strong>' + labels.members + '</strong><span>' + labels.membersDetail + '</span></div><span id="tex-collaboration-count" class="tex-collaboration-count">0</span></div>' +
-              '<form id="tex-collaboration-invite" class="tex-collaboration-invite">' +
-                '<input id="tex-collaboration-username" type="text" autocomplete="off" spellcheck="false" placeholder="' + labels.username + '" aria-label="' + labels.username + '">' +
-                '<select id="tex-collaboration-role" aria-label="' + labels.invite + '"><option value="editor">' + labels.editor + '</option><option value="viewer">' + labels.viewer + '</option></select>' +
-                '<button id="tex-collaboration-add" type="submit">' + labels.add + '</button>' +
-              '</form>' +
-              '<div id="tex-collaboration-message" class="tex-collaboration-message"></div>' +
-              '<div id="tex-collaboration-list" class="tex-collaboration-list"></div>' +
-              '<div class="tex-collaboration-note">' + labels.permissionHint + '</div>' +
+          '<div class="tex-collaboration-progress">' +
+            '<div class="tex-collaboration-progress-copy"><strong id="tex-collaboration-page-title"></strong><span id="tex-collaboration-page-status"></span></div>' +
+            '<div class="tex-collaboration-progress-dots" aria-label="' + labels.title + '">' +
+              '<button class="tex-collaboration-progress-dot is-active" type="button" data-page-index="0" aria-label="' + labels.pageMembers + '"></button>' +
+              '<button class="tex-collaboration-progress-dot" type="button" data-page-index="1" aria-label="' + labels.pageLive + '"></button>' +
+              '<button class="tex-collaboration-progress-dot" type="button" data-page-index="2" aria-label="' + labels.pageLinks + '"></button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="tex-collaboration-pages">' +
+            '<section class="tex-collaboration-page" data-page="members">' +
+              '<div class="tex-collaboration-section">' +
+                '<div class="tex-collaboration-section-head"><div><strong>' + labels.members + '</strong><span>' + labels.membersDetail + '</span></div><span id="tex-collaboration-count" class="tex-collaboration-count">0</span></div>' +
+                '<form id="tex-collaboration-invite" class="tex-collaboration-invite">' +
+                  '<input id="tex-collaboration-username" type="text" autocomplete="off" spellcheck="false" placeholder="' + labels.username + '" aria-label="' + labels.username + '">' +
+                  '<select id="tex-collaboration-role" aria-label="' + labels.invite + '"><option value="editor">' + labels.editor + '</option><option value="viewer">' + labels.viewer + '</option></select>' +
+                  '<button id="tex-collaboration-add" type="submit">' + labels.add + '</button>' +
+                '</form>' +
+                '<div id="tex-collaboration-message" class="tex-collaboration-message"></div>' +
+                '<div id="tex-collaboration-list" class="tex-collaboration-list"></div>' +
+                '<div class="tex-collaboration-note">' + labels.permissionHint + '</div>' +
+              '</div>' +
             '</section>' +
-            '<section class="tex-collaboration-section">' +
-              '<div class="tex-collaboration-section-head"><div><strong>' + labels.liveTitle + '</strong></div></div>' +
-              '<div class="tex-collaboration-state"><span class="tex-collaboration-state-dot"></span><div><strong>' + labels.livePreparing + '</strong><span>' + labels.liveDetail + '</span></div></div>' +
-              '<div class="tex-collaboration-disabled-row"><div><strong>' + labels.remoteCursor + '</strong><span>' + labels.remoteCursorDetail + '</span></div><span class="tex-collaboration-disabled-badge">CRDT</span></div>' +
-              '<div class="tex-collaboration-disabled-row"><div><strong>' + labels.follow + '</strong><span>' + labels.followDetail + '</span></div><span class="tex-collaboration-disabled-badge">Yjs</span></div>' +
+            '<section class="tex-collaboration-page" data-page="live" hidden>' +
+              '<div class="tex-collaboration-section">' +
+                '<div class="tex-collaboration-section-head"><div><strong>' + labels.liveTitle + '</strong></div></div>' +
+                '<div class="tex-collaboration-state"><span class="tex-collaboration-state-dot"></span><div><strong>' + labels.livePreparing + '</strong><span>' + labels.liveDetail + '</span></div></div>' +
+                '<div class="tex-collaboration-disabled-row"><div><strong>' + labels.remoteCursor + '</strong><span>' + labels.remoteCursorDetail + '</span></div><span class="tex-collaboration-disabled-badge">CRDT</span></div>' +
+                '<div class="tex-collaboration-disabled-row"><div><strong>' + labels.follow + '</strong><span>' + labels.followDetail + '</span></div><span class="tex-collaboration-disabled-badge">Yjs</span></div>' +
+              '</div>' +
             '</section>' +
-            '<section class="tex-collaboration-section">' +
-              '<div class="tex-collaboration-section-head"><div><strong>' + labels.linkTitle + '</strong><span>' + labels.linkDetail + '</span></div></div>' +
-              '<div class="tex-collaboration-disabled-row"><div><strong>' + labels.linkPreparing + '</strong><span>' + labels.shareAfter + '</span></div><span class="tex-collaboration-disabled-badge">OFF</span></div>' +
+            '<section class="tex-collaboration-page" data-page="links" hidden>' +
+              '<div class="tex-collaboration-section">' +
+                '<div class="tex-collaboration-section-head"><div><strong>' + labels.linkTitle + '</strong><span>' + labels.linkDetail + '</span></div></div>' +
+                '<div class="tex-collaboration-disabled-row"><div><strong>' + labels.linkPreparing + '</strong><span>' + labels.shareAfter + '</span></div><span class="tex-collaboration-disabled-badge">OFF</span></div>' +
+              '</div>' +
             '</section>' +
+          '</div>' +
+          '<div class="tex-collaboration-footer">' +
+            '<span id="tex-collaboration-footer-status" class="tex-collaboration-footer-status"></span>' +
+            '<button id="tex-collaboration-prev" class="tex-collaboration-nav-button" type="button">' + labels.previous + '</button>' +
+            '<button id="tex-collaboration-next" class="tex-collaboration-nav-button is-primary" type="button">' + labels.next + '</button>' +
           '</div>';
         document.body.append(backdrop, drawer);
 
         const closeButton = drawer.querySelector('.tex-collaboration-close');
         const documentLabel = drawer.querySelector('#tex-collaboration-document');
+        const pageTitle = drawer.querySelector('#tex-collaboration-page-title');
+        const pageStatus = drawer.querySelector('#tex-collaboration-page-status');
+        const footerStatus = drawer.querySelector('#tex-collaboration-footer-status');
+        const pages = Array.from(drawer.querySelectorAll('.tex-collaboration-page'));
+        const dots = Array.from(drawer.querySelectorAll('.tex-collaboration-progress-dot'));
+        const previousButton = drawer.querySelector('#tex-collaboration-prev');
+        const nextButton = drawer.querySelector('#tex-collaboration-next');
         const count = drawer.querySelector('#tex-collaboration-count');
         const form = drawer.querySelector('#tex-collaboration-invite');
         const username = drawer.querySelector('#tex-collaboration-username');
@@ -212,11 +262,23 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         const message = drawer.querySelector('#tex-collaboration-message');
         const list = drawer.querySelector('#tex-collaboration-list');
         const avatars = openButton.querySelector('.tex-collaboration-avatars');
+        const pageNames = [labels.pageMembers, labels.pageLive, labels.pageLinks];
 
         function activeDocumentId() {
           const stored = String(root.dataset.texCollaborationDocumentId || '').trim();
           if (stored) return stored;
           return String(documentList?.querySelector('.tex-document-item.is-active')?.dataset?.texDocumentId || '').trim();
+        }
+
+        function setPage(nextIndex) {
+          pageIndex = Math.max(0, Math.min(pages.length - 1, Number(nextIndex) || 0));
+          pages.forEach((page, index) => { page.hidden = index !== pageIndex; if (index === pageIndex) page.scrollTop = 0; });
+          dots.forEach((dot, index) => dot.classList.toggle('is-active', index === pageIndex));
+          pageTitle.textContent = pageNames[pageIndex] || labels.title;
+          pageStatus.textContent = (pageIndex + 1) + ' / ' + pages.length + ' ' + labels.pageOf;
+          footerStatus.textContent = (pageIndex + 1) + ' / ' + pages.length;
+          previousButton.disabled = pageIndex === 0;
+          nextButton.textContent = pageIndex === pages.length - 1 ? labels.done : labels.next;
         }
 
         async function api(path, options = {}) {
@@ -237,6 +299,13 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             throw error;
           }
           return payload;
+        }
+
+        function friendlyError(error) {
+          const text = String(error?.message || '').trim();
+          if (!text) return labels.error;
+          if (/UNION|INTERSECT|EXCEPT|ORDER BY|PGRST|postgres|syntax error/i.test(text)) return labels.unavailable;
+          return text;
         }
 
         function showMessage(text, error = false) {
@@ -358,7 +427,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             if (sequence !== requestSequence) return;
             snapshot = null;
             renderParticipants();
-            showMessage(error?.message || labels.unavailable, true);
+            showMessage(friendlyError(error), true);
           } finally {
             if (sequence === requestSequence) setBusy(false);
           }
@@ -373,7 +442,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             showMessage(labels.saved);
             renderParticipants();
           } catch (error) {
-            showMessage(error?.message || labels.error, true);
+            showMessage(friendlyError(error), true);
             await loadSnapshot(false);
           }
         }
@@ -387,7 +456,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             showMessage(labels.saved);
             renderParticipants();
           } catch (error) {
-            showMessage(error?.message || labels.error, true);
+            showMessage(friendlyError(error), true);
             button.disabled = false;
           }
         }
@@ -406,7 +475,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             showMessage(labels.saved);
             renderParticipants();
           } catch (error) {
-            showMessage(error?.message || labels.error, true);
+            showMessage(friendlyError(error), true);
           } finally {
             add.textContent = labels.add;
             setBusy(false);
@@ -416,6 +485,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         function openDrawer() {
           if (!activeDocumentId()) return;
           opened = true;
+          setPage(0);
           drawer.hidden = false;
           backdrop.hidden = false;
           document.body.classList.add('tex-collaboration-open');
@@ -455,6 +525,12 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         openButton.addEventListener('click', openDrawer);
         closeButton.addEventListener('click', closeDrawer);
         backdrop.addEventListener('click', closeDrawer);
+        previousButton.addEventListener('click', () => setPage(pageIndex - 1));
+        nextButton.addEventListener('click', () => {
+          if (pageIndex >= pages.length - 1) closeDrawer();
+          else setPage(pageIndex + 1);
+        });
+        dots.forEach(dot => dot.addEventListener('click', () => setPage(Number(dot.dataset.pageIndex || 0))));
         titleInput?.addEventListener('input', () => {
           if (opened) documentLabel.textContent = titleInput.value.trim() || activeDocumentId();
         });
@@ -465,6 +541,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         const listObserver = documentList ? new MutationObserver(syncDocument) : null;
         listObserver?.observe(documentList, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-tex-document-id'] });
         window.addEventListener('pagehide', () => listObserver?.disconnect(), { once: true });
+        setPage(0);
         syncDocument();
       })();
     </script>`;
