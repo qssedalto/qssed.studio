@@ -8,12 +8,16 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
     collapseDocuments: "隐藏文档栏",
     expandDocuments: "展开文档栏",
     collapsePreview: "隐藏预览栏",
-    expandPreview: "展开预览栏"
+    expandPreview: "展开预览栏",
+    expandPdf: "放大 PDF 预览",
+    restorePdf: "退出全屏预览"
   } : {
     collapseDocuments: "Hide documents panel",
     expandDocuments: "Show documents panel",
     collapsePreview: "Hide preview panel",
-    expandPreview: "Show preview panel"
+    expandPreview: "Show preview panel",
+    expandPdf: "Expand PDF preview",
+    restorePdf: "Exit full preview"
   };
 
   let output = String(markup || "");
@@ -67,12 +71,84 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
       .tex-work-app .tex-runs-panel{position:relative}
       .tex-work-app .tex-right-panel-toggle{position:absolute!important;top:16px!important;left:16px!important;z-index:6}
       .tex-work-app .tex-runs-panel .tex-live-preview-head{padding-left:34px}
+      .tex-work-app .tex-live-preview-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-left:auto}
+      .tex-work-app .tex-preview-expand{
+        display:grid;
+        place-items:center;
+        width:28px;
+        min-width:28px;
+        height:28px;
+        min-height:28px;
+        margin:0;
+        padding:0;
+        border:0;
+        border-radius:9px;
+        background:var(--fill);
+        color:var(--muted);
+        box-shadow:inset 0 0 0 1px var(--border);
+        cursor:pointer;
+        transition:background .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease;
+      }
+      .tex-work-app .tex-preview-expand svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+      .tex-work-app .tex-preview-expand:hover{background:var(--surface-strong);color:var(--text);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 28%,var(--border))}
+      .tex-work-app .tex-preview-expand:active{transform:scale(.94)}
+      .tex-work-app .tex-preview-expand:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 14%,transparent),inset 0 0 0 1px var(--primary)}
+      body.tex-preview-expanded{overflow:hidden!important}
+      body.tex-preview-expanded .tex-live-preview-card.is-expanded{
+        position:fixed!important;
+        inset:8px!important;
+        z-index:2147483000!important;
+        width:auto!important;
+        height:auto!important;
+        min-height:0!important;
+        margin:0!important;
+        padding:14px!important;
+        border-radius:20px!important;
+        background:var(--surface)!important;
+        box-shadow:0 24px 80px rgba(0,0,0,.22),inset 0 0 0 1px var(--border)!important;
+        grid-template-rows:auto auto minmax(0,1fr) auto!important;
+      }
+      body.tex-preview-expanded .tex-live-preview-card.is-expanded .tex-live-preview-head{padding-left:0!important}
+      body.tex-preview-expanded .tex-live-preview-card.is-expanded .tex-live-preview-viewport{height:auto!important;min-height:0!important}
+      body.tex-preview-expanded .tex-live-preview-card.is-expanded #tex-live-preview-frame{width:100%!important;height:100%!important}
 
       @media(min-width:1081px){
         .tex-work-app .tex-shell{
           grid-template-columns:230px minmax(420px,1fr) minmax(350px,.82fr)!important;
           transition:grid-template-columns .2s ease!important;
         }
+        .tex-work-app .tex-runs-panel{
+          display:flex!important;
+          flex-direction:column!important;
+          min-height:0!important;
+          overflow-x:hidden!important;
+          overflow-y:auto!important;
+          overscroll-behavior:contain;
+          scrollbar-gutter:stable;
+        }
+        .tex-work-app .tex-live-preview-card{
+          flex:0 0 calc(100% - 18px)!important;
+          width:auto!important;
+          height:calc(100% - 18px)!important;
+          min-height:calc(100% - 18px)!important;
+          grid-template-rows:auto auto minmax(0,1fr) auto!important;
+        }
+        .tex-work-app .tex-live-preview-viewport{
+          height:auto!important;
+          min-height:0!important;
+        }
+        .tex-work-app #tex-live-preview-frame{
+          display:block!important;
+          width:100%!important;
+          height:100%!important;
+          min-width:100%!important;
+          min-height:100%!important;
+          border:0!important;
+          background:#fff!important;
+        }
+        .tex-work-app #tex-live-preview-frame[hidden]{display:none!important}
+        .tex-work-app .tex-compiler-card{flex:0 0 auto!important}
+        .tex-work-app .tex-run-list{flex:0 0 auto!important;min-height:240px!important}
         .tex-work-app .tex-shell.is-left-collapsed{
           grid-template-columns:44px minmax(420px,1fr) minmax(350px,.82fr)!important;
         }
@@ -121,6 +197,7 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
 
       @media(max-width:1080px){
         .tex-work-app .tex-side-toggle{display:none!important}
+        .tex-work-app .tex-preview-expand{display:none!important}
         .tex-work-app .tex-runs-panel .tex-live-preview-head{padding-left:0}
       }
     </style>
@@ -175,6 +252,65 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
         });
 
         apply();
+      })();
+    </script>
+    <script id="qsseda-work-tex-preview-layout">
+      (() => {
+        const labels = ${JSON.stringify(copy)};
+        const previewCard = document.getElementById('tex-live-preview-card');
+        const previewHead = previewCard?.querySelector('.tex-live-preview-head');
+        const previewToggle = previewHead?.querySelector('.tex-live-preview-toggle');
+        const previewFrame = document.getElementById('tex-live-preview-frame');
+        if (!previewCard || !previewHead || !previewToggle || !previewFrame) return;
+
+        previewFrame.classList.add('tex-live-preview-frame');
+
+        const actions = document.createElement('div');
+        actions.className = 'tex-live-preview-actions';
+        previewToggle.before(actions);
+        actions.append(previewToggle);
+
+        const expandButton = document.createElement('button');
+        expandButton.id = 'tex-preview-expand';
+        expandButton.className = 'tex-preview-expand';
+        expandButton.type = 'button';
+        expandButton.setAttribute('aria-expanded', 'false');
+        expandButton.setAttribute('aria-label', labels.expandPdf);
+        expandButton.title = labels.expandPdf;
+        expandButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>';
+        actions.append(expandButton);
+
+        const setExpanded = expanded => {
+          previewCard.classList.toggle('is-expanded', expanded);
+          document.body.classList.toggle('tex-preview-expanded', expanded);
+          expandButton.setAttribute('aria-expanded', String(expanded));
+          expandButton.setAttribute('aria-label', expanded ? labels.restorePdf : labels.expandPdf);
+          expandButton.title = expanded ? labels.restorePdf : labels.expandPdf;
+          expandButton.innerHTML = expanded
+            ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6"/></svg>'
+            : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>';
+          window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+        };
+
+        expandButton.addEventListener('click', () => {
+          setExpanded(!previewCard.classList.contains('is-expanded'));
+        });
+
+        document.addEventListener('keydown', event => {
+          if (event.key === 'Escape' && previewCard.classList.contains('is-expanded')) setExpanded(false);
+        });
+
+        const normalizePdfZoom = () => {
+          const src = previewFrame.getAttribute('src') || '';
+          if (!src.startsWith('blob:') || src.includes('#zoom=page-width')) return;
+          const base = src.split('#')[0];
+          previewFrame.setAttribute('src', base + '#zoom=page-width');
+        };
+
+        const frameObserver = new MutationObserver(normalizePdfZoom);
+        frameObserver.observe(previewFrame, { attributes: true, attributeFilter: ['src'] });
+        normalizePdfZoom();
+        window.addEventListener('pagehide', () => frameObserver.disconnect(), { once: true });
       })();
     </script>`;
 
