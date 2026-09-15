@@ -47,41 +47,63 @@ export function enhanceWorkTexMobileApple(markup) {
           width:100%!important;
           max-width:none!important;
           grid-template-columns:1fr!important;
+          justify-items:stretch!important;
+          align-items:stretch!important;
           gap:10px!important;
           margin-top:20px!important;
         }
-        .tex-work-app .tex-start-card{
-          display:grid!important;
-          align-content:center!important;
-          justify-items:start!important;
+        .tex-work-app .tex-start-surface>.tex-start-grid>.tex-start-card{
+          appearance:none!important;
+          -webkit-appearance:none!important;
+          display:flex!important;
+          flex-direction:column!important;
+          align-items:flex-start!important;
+          justify-content:center!important;
+          justify-self:stretch!important;
+          width:100%!important;
+          min-width:0!important;
           min-height:82px!important;
+          margin:0!important;
           padding:15px 16px!important;
+          border:0!important;
           border-radius:16px!important;
           text-align:left!important;
           background:var(--card)!important;
+          color:var(--text)!important;
           box-shadow:inset 0 0 0 1px var(--hairline)!important;
+          cursor:pointer!important;
+          pointer-events:auto!important;
+          touch-action:manipulation!important;
           transition:transform .14s ease,background .14s ease,box-shadow .14s ease!important;
-          -webkit-tap-highlight-color:transparent;
+          -webkit-tap-highlight-color:transparent!important;
         }
-        .tex-work-app .tex-start-card:hover{
+        .tex-work-app .tex-start-surface>.tex-start-grid>.tex-start-card:hover{
           transform:none!important;
           background:var(--card)!important;
           box-shadow:inset 0 0 0 1px var(--hairline)!important;
         }
-        .tex-work-app .tex-start-card:active{
+        .tex-work-app .tex-start-surface>.tex-start-grid>.tex-start-card:active{
           transform:scale(.985)!important;
           background:color-mix(in srgb,var(--primary) 4%,var(--card))!important;
         }
-        .tex-work-app .tex-start-card b{
+        .tex-work-app .tex-start-surface>.tex-start-grid>.tex-start-card>b,
+        .tex-work-app .tex-start-surface>.tex-start-grid>.tex-start-card>span{
+          display:block!important;
+          align-self:stretch!important;
           width:100%!important;
+          min-width:0!important;
+          margin:0!important;
+          padding:0!important;
           text-align:left!important;
+        }
+        .tex-work-app .tex-start-surface>.tex-start-grid>.tex-start-card>b{
           font-size:15px!important;
           line-height:1.3!important;
           letter-spacing:-.012em!important;
         }
-        .tex-work-app .tex-start-card span{
-          width:100%!important;
-          text-align:left!important;
+        .tex-work-app .tex-start-surface>.tex-start-grid>.tex-start-card>span{
+          margin-top:5px!important;
+          color:var(--muted)!important;
           font-size:12px!important;
           line-height:1.45!important;
         }
@@ -144,5 +166,46 @@ export function enhanceWorkTexMobileApple(markup) {
           transform:translateY(100%)!important;
         }
       }
-    </style>`;
+    </style>
+    <script id="qsseda-work-tex-mobile-template-runtime">
+      (() => {
+        const media = window.matchMedia('(max-width:760px), (max-width:950px) and (pointer:coarse)');
+        let lastTouchButton = null;
+        let lastTouchAt = 0;
+
+        const activate = button => {
+          const template = document.getElementById('tex-template');
+          const create = document.getElementById('tex-create');
+          if (!button || !template || !create) return;
+          template.value = button.dataset.texStartTemplate || 'blank';
+          template.dispatchEvent(new Event('change', { bubbles: true }));
+          create.click();
+        };
+
+        document.addEventListener('pointerup', event => {
+          if (!media.matches || event.pointerType === 'mouse') return;
+          const button = event.target?.closest?.('[data-tex-start-template]');
+          if (!button) return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          lastTouchButton = button;
+          lastTouchAt = Date.now();
+          activate(button);
+        }, true);
+
+        document.addEventListener('click', event => {
+          if (!media.matches) return;
+          const button = event.target?.closest?.('[data-tex-start-template]');
+          if (!button) return;
+          if (button === lastTouchButton && Date.now() - lastTouchAt < 800) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+          }
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          activate(button);
+        }, true);
+      })();
+    </script>`;
 }
