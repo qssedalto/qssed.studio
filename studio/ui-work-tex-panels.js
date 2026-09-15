@@ -2,7 +2,7 @@ import { enhanceWorkTexMobile } from "./ui-work-tex-mobile.js";
 import { enhanceWorkTexMobileTools } from "./ui-work-tex-mobile-tools.js";
 import { enhanceWorkTexMobileApple } from "./ui-work-tex-mobile-apple.js";
 import { enhanceWorkTexDesktopTypography } from "./ui-work-tex-desktop-type.js";
-import { enhanceWorkTexCollaboration } from "./ui-work-tex-collaboration.js";
+import { enhanceWorkTexCollaboration } from "./ui-work-tex-collaboration-performance.js";
 
 export function enhanceWorkTexCollapsiblePanels(markup, zh) {
   const copy = zh ? {
