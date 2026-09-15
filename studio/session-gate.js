@@ -5,6 +5,10 @@ import { workerLog } from "./server-runtime.js";
 
 const ACCESS_COOKIE = "__Host-qsseda-studio-access";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
+const ACCOUNT_COOKIE = "__Secure-qsseda-account-id";
+const ACCOUNT_SIGNED_OUT = "signed-out";
+const COOKIE_DOMAIN = "qsseda.studio";
+const WORK_HOST = "work.qsseda.studio";
 const ACCESS_MAX_AGE = 60 * 60;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
@@ -13,11 +17,17 @@ export function studioSessionCookies(accessToken, refreshToken, expiresIn = ACCE
   const cookies = [];
   if (accessToken) cookies.push(cookie(ACCESS_COOKIE, accessToken, accessAge));
   if (refreshToken) cookies.push(cookie(REFRESH_COOKIE, refreshToken, REFRESH_MAX_AGE));
+  const userId = jwtSubject(accessToken);
+  if (userId) cookies.push(accountCookie(userId, REFRESH_MAX_AGE));
   return cookies;
 }
 
 export function clearStudioSessionCookies() {
   return [cookie(ACCESS_COOKIE, "", 0), cookie(REFRESH_COOKIE, "", 0)];
+}
+
+function globalLogoutCookies() {
+  return [...clearStudioSessionCookies(), accountCookie(ACCOUNT_SIGNED_OUT, REFRESH_MAX_AGE)];
 }
 
 export function withStudioSessionCookies(response, cookies = []) {
@@ -32,14 +42,32 @@ export function withStudioSessionCookies(response, cookies = []) {
 }
 
 export async function verifyStudioPageSession(request) {
+  const url = new URL(request.url);
+  const hostname = url.hostname.toLowerCase();
+  const workHost = hostname === WORK_HOST;
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   const accessToken = cookies[ACCESS_COOKIE] || "";
   const refreshToken = cookies[REFRESH_COOKIE] || "";
+  const accountMarker = String(cookies[ACCOUNT_COOKIE] || "").trim();
+  const accountId = isUuid(accountMarker) ? accountMarker : "";
+  const markerBlocksSession = Boolean(accountMarker && !accountId);
+
+  const identityMatches = userId => {
+    if (!isUuid(userId) || markerBlocksSession) return false;
+    if (accountId && accountId !== userId) return false;
+    // Work is a separate host. It must never trust a legacy host-only session
+    // unless a domain-wide identity marker confirms the same account.
+    if (workHost && !accountId) return false;
+    return true;
+  };
 
   if (accessToken) {
     const verified = await verifyAccessToken(accessToken);
-    if (verified.ok) {
-      return { ok: true, user: verified.user, accessToken, cookies: [] };
+    if (verified.ok && identityMatches(verified.user.id)) {
+      const migrationCookies = !accountId && !workHost
+        ? [accountCookie(verified.user.id, REFRESH_MAX_AGE)]
+        : [];
+      return { ok: true, user: verified.user, accessToken, cookies: migrationCookies };
     }
   }
 
@@ -47,7 +75,7 @@ export async function verifyStudioPageSession(request) {
     const refreshed = await refreshSession(refreshToken);
     if (refreshed?.access_token && refreshed?.refresh_token) {
       const verified = await verifyAccessToken(refreshed.access_token);
-      if (verified.ok) {
+      if (verified.ok && identityMatches(verified.user.id)) {
         return {
           ok: true,
           user: verified.user,
@@ -88,6 +116,24 @@ export async function handleStudioSessionBootstrap(request) {
   const verified = await verifyAccessToken(accessToken);
   if (!verified.ok) return withStudioSessionCookies(json({ error: "Session is invalid or expired" }, 401), clearStudioSessionCookies());
 
+  // A Work-local Supabase session can itself be stale after an account switch on
+  // another qsseda.studio host. Do not let it recreate the old Work HttpOnly
+  // session unless the domain-wide account marker says it is the same user.
+  if (url.hostname.toLowerCase() === WORK_HOST) {
+    const cookies = parseCookies(request.headers.get("Cookie") || "");
+    const accountId = String(cookies[ACCOUNT_COOKIE] || "").trim();
+    if (!isUuid(accountId) || accountId !== verified.user.id) {
+      workerLog("warn", "session_gate.work_identity_mismatch", {
+        work_user_id: verified.user.id,
+        marker_present: Boolean(accountId)
+      });
+      return withStudioSessionCookies(
+        json({ error: "Work session does not match the active QssedA account." }, 409),
+        clearStudioSessionCookies()
+      );
+    }
+  }
+
   const response = json({ ok: true, user_id: verified.user.id });
   return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken));
 }
@@ -96,7 +142,7 @@ export function handleStudioSessionLogout(request) {
   const url = new URL(request.url);
   const origin = request.headers.get("Origin") || "";
   if (origin && origin !== url.origin) return json({ error: "Invalid origin" }, 403);
-  return withStudioSessionCookies(json({ ok: true }), clearStudioSessionCookies());
+  return withStudioSessionCookies(json({ ok: true }), globalLogoutCookies());
 }
 
 export function studioSessionBootstrapPage(locale) {
@@ -224,6 +270,10 @@ function cookie(name, value, maxAge) {
   return `${name}=${encodeURIComponent(value || "")}; Path=/; Max-Age=${Math.max(0, Number(maxAge) || 0)}; HttpOnly; Secure; SameSite=Lax`;
 }
 
+function accountCookie(value, maxAge) {
+  return `${ACCOUNT_COOKIE}=${encodeURIComponent(value || "")}; Path=/; Domain=${COOKIE_DOMAIN}; Max-Age=${Math.max(0, Number(maxAge) || 0)}; HttpOnly; Secure; SameSite=Lax`;
+}
+
 function parseCookies(header) {
   const result = {};
   for (const part of String(header || "").split(";")) {
@@ -241,6 +291,21 @@ function cleanToken(value, maximum) {
   const token = value.trim();
   if (!token || token.length > maximum || /[\u0000-\u001f\u007f\s]/.test(token)) return "";
   return token;
+}
+
+function jwtSubject(token) {
+  try {
+    const parts = String(token || "").split(".");
+    if (parts.length !== 3 || !parts[1]) return "";
+    const normalized = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder().decode(bytes));
+    return isUuid(payload?.sub) ? payload.sub : "";
+  } catch {
+    return "";
+  }
 }
 
 function scriptLiteral(value) {
