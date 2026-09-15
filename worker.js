@@ -87,7 +87,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (pathname === "/api/workbench/overview") return handleWorkbenchOverview(request, env);
   if (pathname === "/api/tex/collaboration/realtime") return handleTexCollaborationRealtime(request, env);
   if (pathname === "/api/tex/collaboration/shared") return handleTexSharedCollaboration(request, env);
-  if (pathname === "/api/tex/collaboration") return handleTexCollaborationApi(request, env);
+  if (pathname === "/api/tex/collaboration") return handleTexCollaborationRoute(request, env);
   if (pathname.startsWith("/api/tex/")) return handleTexApi(request, env, pathname.slice("/api/tex/".length));
   if (pathname.startsWith("/api/work/")) return handleWorkApi(request, env, pathname.slice("/api/work/".length));
   if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
@@ -114,6 +114,16 @@ async function routeStudioRequest(request, env, ctx) {
   if (workHost && workPageNext && response.status === 401) return workSessionRedirect(workPageNext);
   if (workHost && workPageNext && response.status === 200) response = await suppressWorkClientSessionBounce(response);
   return hardenGlobalBrowserResponse(response);
+}
+
+async function handleTexCollaborationRoute(request, env) {
+  const primary = await handleTexCollaborationApi(request, env);
+  if (request.method !== "GET" || primary.status !== 404) return primary;
+  const url = new URL(request.url);
+  if (url.searchParams.get("action") || !url.searchParams.get("document")) return primary;
+  url.pathname = "/api/tex/collaboration/shared";
+  url.searchParams.set("participants", "1");
+  return handleTexSharedCollaboration(new Request(url.toString(), request), env);
 }
 
 async function suppressWorkClientSessionBounce(response) {
