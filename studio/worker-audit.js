@@ -1,6 +1,7 @@
 import worker from "../worker.js";
 import { cleanupAccessAudit, handleAccessAuditAdmin, recordAccessAudit } from "./access-audit.js";
 import { handleAccessAuditPage } from "./access-audit-page.js";
+export { TexCollaborationRoom } from "./tex-collaboration-room.js";
 
 const ACCESS_AUDIT_API = "/api/admin/access-audit";
 const ACCESS_AUDIT_PAGES = new Set([
