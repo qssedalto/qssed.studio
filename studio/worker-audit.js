@@ -1,7 +1,13 @@
 import worker from "../worker.js";
 import { cleanupAccessAudit, handleAccessAuditAdmin, recordAccessAudit } from "./access-audit.js";
+import { handleAccessAuditPage } from "./access-audit-page.js";
 
 const ACCESS_AUDIT_API = "/api/admin/access-audit";
+const ACCESS_AUDIT_PAGES = new Set([
+  "/admin/access-audit",
+  "/zh-cn/admin/access-audit",
+  "/en/admin/access-audit"
+]);
 
 export default {
   async fetch(request, env, ctx) {
@@ -12,6 +18,9 @@ export default {
       const url = new URL(request.url);
       if (url.hostname === "qsseda.studio" && url.pathname === ACCESS_AUDIT_API) {
         response = await handleAccessAuditAdmin(request, env);
+      } else if (url.hostname === "qsseda.studio" && ACCESS_AUDIT_PAGES.has(url.pathname)) {
+        const zh = url.pathname.startsWith("/zh-cn/") || (url.pathname === "/admin/access-audit" && /^zh(?:-|_|,|;|$)/i.test(request.headers.get("Accept-Language") || ""));
+        response = await handleAccessAuditPage(request, zh);
       } else {
         response = await worker.fetch(request, env, ctx);
       }
