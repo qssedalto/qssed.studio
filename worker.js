@@ -6,6 +6,7 @@ import { handleTasks } from "./studio/tasks-api.js";
 import { handleDrafts } from "./studio/drafts-api.js";
 import { handleWorkbenchOverview } from "./studio/workbench-api.js";
 import { handleTexApi } from "./studio/tex-api.js";
+import { handleTexCollaborationApi } from "./studio/tex-collaboration-api.js";
 import { handleWorkApi } from "./studio/work-api.js";
 import { handleCuratedFavorites } from "./studio/favorites-api.js";
 import { handleRegistrationUsernameCheck } from "./studio/registration-check-api.js";
@@ -86,6 +87,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (pathname === "/api/tasks") return handleTasks(request, env);
   if (pathname === "/api/drafts") return handleDrafts(request, env);
   if (pathname === "/api/workbench/overview") return handleWorkbenchOverview(request, env);
+  if (pathname === "/api/tex/collaboration") return handleTexCollaborationApi(request, env);
   if (pathname.startsWith("/api/tex/")) return handleTexApi(request, env, pathname.slice("/api/tex/".length));
   if (pathname.startsWith("/api/work/")) return handleWorkApi(request, env, pathname.slice("/api/work/".length));
   if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
