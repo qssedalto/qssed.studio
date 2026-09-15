@@ -1,6 +1,7 @@
 import fs from "node:fs";
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
+const workAuditWrapper = fs.readFileSync(new URL("../studio/worker-audit.js", import.meta.url), "utf8");
 const work = fs.readFileSync(new URL("../studio/work-subdomain.js", import.meta.url), "utf8");
 const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta.url), "utf8");
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
@@ -57,7 +58,9 @@ assert(workTexUi.includes("loopbackFetch(base, '/tex/status')"), "Manual Work Te
 assert(workTexUi.includes("fetch('/api/tex/status'"), "Manual Work TeX connection checks must also verify cloud compiler availability");
 
 assert(workWrangler.name === "qsseda-work", "Work Worker must use a dedicated script name");
-assert(workWrangler.main === "worker.js", "Work Worker must reuse the hardened Studio facade");
+assert(workWrangler.main === "studio/worker-audit.js", "Work Worker must enter through the audited Studio facade");
+assert(workAuditWrapper.includes('import worker from "../worker.js"'), "Work audit wrapper must reuse the hardened Studio facade");
+assert(workAuditWrapper.includes("recordAccessAudit"), "Work audit wrapper must preserve private access auditing");
 assert(workWrangler.routes?.some(route => route.pattern === "work.qsseda.studio" && route.custom_domain === true), "work.qsseda.studio custom domain route is missing");
 assert(workWrangler.r2_buckets?.some(bucket => bucket.binding === "STORAGE" && bucket.bucket_name === "qsseda-studio-storage"), "Work Worker must share the protected Studio storage binding");
 
