@@ -28,10 +28,22 @@ export function enhanceWorkTexPreviewDirectCache(markup) {
           return (hash >>> 0).toString(36);
         };
 
-        const onPreviewBlob = event => {
+        const currentUserId = async () => {
+          try {
+            if (typeof supabaseClient === 'undefined') return '';
+            const result = await supabaseClient.auth.getSession();
+            return String(result?.data?.session?.user?.id || '').trim();
+          } catch {
+            return '';
+          }
+        };
+
+        const onPreviewBlob = async event => {
           const blob = event?.detail?.blob;
           if (!(blob instanceof Blob) || blob.size <= 0 || blob.size > MAX_PDF_BYTES) return;
           if (!String(blob.type || '').toLowerCase().includes('pdf')) return;
+          const userId = await currentUserId();
+          if (!userId) return;
           const token = ++writeToken;
           const documentId = activeDocumentId();
           const engine = String(document.getElementById('tex-engine')?.value || '').toLowerCase();
@@ -46,6 +58,7 @@ export function enhanceWorkTexPreviewDirectCache(markup) {
                 version: 2,
                 savedAt: Date.now(),
                 data,
+                userId,
                 documentId,
                 engine,
                 sourceHash
