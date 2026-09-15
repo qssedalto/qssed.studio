@@ -8,28 +8,31 @@ import { enhanceWorkTexPreviewFastPath } from "./ui-work-tex-preview-fastpath.js
 import { enhanceWorkTexPreviewDirectCache } from "./ui-work-tex-preview-direct-cache.js";
 import { enhanceWorkTexRealtime } from "./ui-work-tex-realtime.js";
 import { enhanceWorkTexCodeMirror } from "./ui-work-tex-codemirror.js";
+import { enhanceWorkTexSharedStable } from "./ui-work-tex-shared-stable.js";
 
 export function enhanceWorkTexCollaboration(markup, zh) {
-  return enhanceWorkTexCodeMirror(
-    enhanceWorkTexRealtime(
-      enhanceWorkTexPreviewDirectCache(
-        enhanceWorkTexPreviewFastPath(
-          enhanceWorkTexPreviewSession(
-            enhanceWorkTexEditorRefine(
-              enhanceWorkTexVersionDensity(
-                enhanceWorkTexEditorTools(
-                  enhanceWorkTexVersionHistory(enhanceCoreWorkTexCollaboration(markup, zh), zh),
-                  zh
-                )
+  return enhanceWorkTexSharedStable(
+    enhanceWorkTexCodeMirror(
+      enhanceWorkTexRealtime(
+        enhanceWorkTexPreviewDirectCache(
+          enhanceWorkTexPreviewFastPath(
+            enhanceWorkTexPreviewSession(
+              enhanceWorkTexEditorRefine(
+                enhanceWorkTexVersionDensity(
+                  enhanceWorkTexEditorTools(
+                    enhanceWorkTexVersionHistory(enhanceCoreWorkTexCollaboration(markup, zh), zh),
+                    zh
+                  )
+                ),
+                zh
               ),
               zh
-            ),
-            zh
+            )
           )
-        )
+        ),
+        zh
       ),
       zh
-    ),
-    zh
+    )
   );
 }
