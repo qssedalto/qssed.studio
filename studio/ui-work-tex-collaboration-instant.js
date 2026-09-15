@@ -45,5 +45,64 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     `        setPage(0);\n        restoreUserDirectory();\n        syncDocument();`
   );
 
+  // Initial document loading stays entirely inside the existing TeX state machine.
+  // We only replace the misleading empty state with temporary skeleton rows; the
+  // existing renderDocuments() call clears these rows as soon as real data arrives.
+  output = output.replace(
+    '<div id="tex-document-list" class="tex-document-list"></div>',
+    `<div id="tex-document-list" class="tex-document-list tex-document-list-loading" aria-busy="true">
+      <div class="tex-document-loading-card" aria-hidden="true"><i></i><span></span><small></small></div>
+      <div class="tex-document-loading-card" aria-hidden="true"><i></i><span></span><small></small></div>
+      <div class="tex-document-loading-card" aria-hidden="true"><i></i><span></span><small></small></div>
+    </div>`
+  );
+  output = output.replace(
+    '<div id="tex-documents-empty" class="tex-empty">',
+    '<div id="tex-documents-empty" class="tex-empty" hidden>'
+  );
+
+  output += `
+    <style id="qsseda-work-tex-safe-loading-and-chevron">
+      .tex-work-app .tex-document-list-loading .tex-document-loading-card{
+        display:grid;
+        gap:8px;
+        min-height:76px;
+        padding:11px 10px;
+        border-radius:11px;
+        background:transparent;
+      }
+      .tex-work-app .tex-document-loading-card i,
+      .tex-work-app .tex-document-loading-card span,
+      .tex-work-app .tex-document-loading-card small{
+        display:block;
+        border-radius:999px;
+        background:color-mix(in srgb,var(--muted) 14%,transparent);
+        animation:qssedaTexDocumentPulse 1.05s ease-in-out infinite alternate;
+      }
+      .tex-work-app .tex-document-loading-card i{width:42%;height:13px}
+      .tex-work-app .tex-document-loading-card span{width:82%;height:9px}
+      .tex-work-app .tex-document-loading-card small{width:56%;height:8px}
+      .tex-work-app .tex-document-loading-card:nth-child(2) i{width:58%}
+      .tex-work-app .tex-document-loading-card:nth-child(2) span{width:72%}
+      .tex-work-app .tex-document-loading-card:nth-child(3) i{width:49%}
+      .tex-work-app .tex-document-loading-card:nth-child(3) span{width:88%}
+      @keyframes qssedaTexDocumentPulse{from{opacity:.44}to{opacity:.88}}
+
+      .tex-collaboration-invite select,
+      .tex-collaboration-member select{
+        appearance:none!important;
+        -webkit-appearance:none!important;
+        padding-right:40px!important;
+        background-color:var(--fill)!important;
+        background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4.25 6.1 8 9.85l3.75-3.75' stroke='%2395959d' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+        background-repeat:no-repeat!important;
+        background-position:right 14px center!important;
+        background-size:16px 16px!important;
+      }
+      .tex-collaboration-member-actions select{
+        background-position:right 13px center!important;
+      }
+    </style>`;
+
   return output;
 }
