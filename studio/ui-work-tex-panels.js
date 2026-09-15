@@ -2,6 +2,7 @@ import { enhanceWorkTexMobile } from "./ui-work-tex-mobile.js";
 import { enhanceWorkTexMobileTools } from "./ui-work-tex-mobile-tools.js";
 import { enhanceWorkTexMobileApple } from "./ui-work-tex-mobile-apple.js";
 import { enhanceWorkTexDesktopTypography } from "./ui-work-tex-desktop-type.js";
+import { enhanceWorkTexCollaboration } from "./ui-work-tex-collaboration.js";
 
 export function enhanceWorkTexCollapsiblePanels(markup, zh) {
   const copy = zh ? {
@@ -316,5 +317,6 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
     </script>`;
 
   output = enhanceWorkTexDesktopTypography(output);
-  return enhanceWorkTexMobileApple(enhanceWorkTexMobileTools(enhanceWorkTexMobile(output, zh), zh));
+  output = enhanceWorkTexMobileApple(enhanceWorkTexMobileTools(enhanceWorkTexMobile(output, zh), zh));
+  return enhanceWorkTexCollaboration(output, zh);
 }
