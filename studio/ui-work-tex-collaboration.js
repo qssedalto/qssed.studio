@@ -20,8 +20,8 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     error: "无法读取协作设置，请稍后重试。",
     searching: "正在搜索用户…",
     noMatches: "没有找到相关用户",
-    searchHint: "输入至少 2 个字符搜索用户名",
     alreadyMember: "已在成员中",
+    userNotFound: "没有找到这个用户名对应的活跃用户。",
     liveTitle: "实时共同编辑",
     livePreparing: "CRDT 同步通道准备中",
     liveDetail: "这一阶段先完成成员与权限基础。下一阶段会把编辑器接入 CodeMirror + Yjs，届时启用多人光标、选区和并发编辑。",
@@ -34,12 +34,12 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     linkDetail: "公开或受控分享链接暂时保持关闭，避免在权限模型完成前产生绕过成员列表的入口。",
     shareAfter: "成员权限验证完成后再开放分享链接。",
     ownerHint: "所有者拥有完整管理权限",
-    permissionHint: "“可编辑”权限已经可以保存到协作配置，但实时源码同步会等 CRDT 通道完成后再开放。",
+    permissionHint: "修改会先保留在当前面板中，点击“保存更改”后才会写入协作配置。实时源码同步会等 CRDT 通道完成后再开放。",
     saved: "协作设置已更新",
+    saving: "正在保存更改…",
     unavailable: "协作服务暂时不可用，请稍后重试。",
-    previous: "上一步",
-    next: "下一步",
-    done: "完成",
+    cancel: "取消",
+    saveChanges: "保存更改",
     pageMembers: "成员与权限",
     pageLive: "实时协作",
     pageLinks: "链接共享"
@@ -64,8 +64,8 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     error: "Could not load collaboration settings. Please try again.",
     searching: "Searching users…",
     noMatches: "No matching users",
-    searchHint: "Type at least 2 characters to search usernames",
     alreadyMember: "Already a member",
+    userNotFound: "No active user matches that username.",
     liveTitle: "Live co-editing",
     livePreparing: "CRDT sync channel is being prepared",
     liveDetail: "This phase establishes members and permissions first. The next phase will connect CodeMirror + Yjs for concurrent editing, selections, and remote cursors.",
@@ -78,12 +78,12 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     linkDetail: "Public or controlled share links stay disabled until the permission model is fully enforced, so there is no alternate path around the member list.",
     shareAfter: "Share links will be enabled after member access is fully enforced.",
     ownerHint: "The owner has full management access",
-    permissionHint: "Editor permission can already be stored, but live source synchronization will remain disabled until the CRDT channel is ready.",
+    permissionHint: "Changes stay local in this panel until Save changes is pressed. Live source synchronization remains disabled until the CRDT channel is ready.",
     saved: "Collaboration settings updated",
+    saving: "Saving changes…",
     unavailable: "Collaboration is temporarily unavailable. Please try again.",
-    previous: "Back",
-    next: "Next",
-    done: "Done",
+    cancel: "Cancel",
+    saveChanges: "Save changes",
     pageMembers: "People & access",
     pageLive: "Live collaboration",
     pageLinks: "Link sharing"
@@ -151,13 +151,15 @@ export function enhanceWorkTexCollaboration(markup, zh) {
       .tex-collaboration-count{display:grid;place-items:center;min-width:34px;height:28px;padding:0 9px;border-radius:999px;background:var(--fill);color:var(--muted);font-size:12px;font-weight:750}
       .tex-collaboration-state{display:flex;align-items:flex-start;gap:12px;padding:15px;border-radius:15px;background:var(--fill)}.tex-collaboration-state-dot{width:9px;height:9px;margin-top:5px;border-radius:50%;background:var(--primary);flex:0 0 auto}.tex-collaboration-state>div{display:grid;gap:5px;min-width:0}.tex-collaboration-state strong{font-size:14px}.tex-collaboration-state span{color:var(--muted);font-size:12px;line-height:1.55}
 
-      .tex-collaboration-invite{display:grid;grid-template-columns:minmax(0,1fr) 112px 80px;align-items:start;gap:9px}
-      .tex-collaboration-user-search{position:relative;min-width:0}
-      .tex-collaboration-invite input,.tex-collaboration-invite select,.tex-collaboration-member select{width:100%;min-width:0;height:44px;margin:0;padding:0 12px;border:0;border-radius:12px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);font-size:13px;outline:none}
+      .tex-collaboration-invite{display:flex!important;align-items:stretch!important;width:100%!important;gap:9px!important}
+      .tex-collaboration-user-search{position:relative!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;height:46px!important}
+      .tex-collaboration-invite input,.tex-collaboration-invite select,.tex-collaboration-member select{box-sizing:border-box;width:100%;min-width:0;height:46px;margin:0;padding:0 12px;border:0;border-radius:12px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);font-size:13px;outline:none}
       .tex-collaboration-invite input:focus,.tex-collaboration-invite select:focus,.tex-collaboration-member select:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 10%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--primary) 60%,var(--border))}
-      .tex-collaboration-invite button,.tex-collaboration-remove{appearance:none;border:0;border-radius:12px;background:var(--primary);color:#fff;font-size:13px;font-weight:750;cursor:pointer}.tex-collaboration-invite>button{height:44px}.tex-collaboration-invite button:disabled{opacity:.45;cursor:not-allowed}
+      #tex-collaboration-role{flex:0 0 112px!important;width:112px!important}
+      #tex-collaboration-add{box-sizing:border-box;flex:0 0 80px!important;width:80px!important;height:46px!important;min-height:46px!important;margin:0!important;padding:0 12px!important}
+      .tex-collaboration-invite button,.tex-collaboration-remove{appearance:none;border:0;border-radius:12px;background:var(--primary);color:#fff;font-size:13px;font-weight:750;cursor:pointer}.tex-collaboration-invite button:disabled{opacity:.45;cursor:not-allowed}
 
-      .tex-collaboration-search-results{position:absolute;top:calc(100% + 7px);left:0;right:0;z-index:30;display:grid;gap:4px;max-height:260px;padding:6px;overflow:auto;border-radius:14px;background:var(--surface);box-shadow:0 18px 46px rgba(0,0,0,.16),inset 0 0 0 1px var(--border)}
+      .tex-collaboration-search-results{position:absolute;top:53px;left:0;right:0;z-index:200;display:grid;gap:4px;max-height:260px;padding:6px;overflow:auto;border-radius:14px;background:var(--surface);box-shadow:0 18px 46px rgba(0,0,0,.16),inset 0 0 0 1px var(--border)}
       .tex-collaboration-search-results[hidden]{display:none!important}
       .tex-collaboration-search-state{padding:12px 11px;color:var(--muted);font-size:12px;line-height:1.4}
       .tex-collaboration-search-result{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;min-width:0;padding:8px;border:0;border-radius:10px;background:transparent;color:var(--text);text-align:left;cursor:pointer}
@@ -166,16 +168,20 @@ export function enhanceWorkTexCollaboration(markup, zh) {
       .tex-collaboration-search-result-copy{display:grid;gap:2px;min-width:0}.tex-collaboration-search-result-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.tex-collaboration-search-result-copy span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11px}
       .tex-collaboration-search-result-meta{padding:5px 7px;border-radius:999px;background:var(--fill);color:var(--quiet);font-size:9px;font-weight:750;white-space:nowrap}
 
-      .tex-collaboration-list{display:grid;gap:9px}.tex-collaboration-member{display:grid;grid-template-columns:42px minmax(0,1fr) 96px 60px;align-items:center;gap:10px;padding:11px;border-radius:14px;background:var(--fill)}.tex-collaboration-member.is-owner{grid-template-columns:42px minmax(0,1fr) 96px}
+      .tex-collaboration-list{display:grid;gap:9px}
+      .tex-collaboration-member{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:10px;padding:11px;border-radius:14px;background:var(--fill)}
       .tex-collaboration-member-avatar{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;overflow:hidden;background:color-mix(in srgb,var(--primary) 9%,var(--surface));color:var(--primary);font-size:12px;font-weight:800}.tex-collaboration-member-avatar img{width:100%;height:100%;object-fit:cover}
       .tex-collaboration-member-copy{display:grid;gap:3px;min-width:0}.tex-collaboration-member-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.tex-collaboration-member-copy span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11px}
+      .tex-collaboration-member-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+      .tex-collaboration-member-actions select{width:96px!important;height:40px!important;flex:0 0 96px}
       .tex-collaboration-role-pill{display:grid;place-items:center;height:34px;padding:0 10px;border-radius:10px;background:var(--surface);color:var(--muted);font-size:11px;font-weight:700}
-      .tex-collaboration-remove{height:34px;padding:0 9px;background:color-mix(in srgb,var(--danger) 10%,var(--fill));color:var(--danger);font-size:11px}.tex-collaboration-remove:hover{background:color-mix(in srgb,var(--danger) 15%,var(--fill))}
+      .tex-collaboration-remove{height:40px;min-width:62px;padding:0 10px;background:color-mix(in srgb,var(--danger) 10%,var(--fill));color:var(--danger);font-size:11px}.tex-collaboration-remove:hover{background:color-mix(in srgb,var(--danger) 15%,var(--fill))}
       .tex-collaboration-empty{padding:22px 10px;text-align:center;color:var(--muted);font-size:13px}.tex-collaboration-note{color:var(--quiet);font-size:11px;line-height:1.55}
       .tex-collaboration-message{display:none;padding:12px 13px;border-radius:12px;background:var(--fill);color:var(--muted);font-size:12px;line-height:1.5}.tex-collaboration-message.is-visible{display:block}.tex-collaboration-message.is-error{background:color-mix(in srgb,var(--danger) 8%,var(--fill));color:var(--danger)}
       .tex-collaboration-disabled-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border-radius:14px;background:var(--fill);opacity:.76}.tex-collaboration-disabled-row>div{display:grid;gap:5px}.tex-collaboration-disabled-row strong{font-size:13px}.tex-collaboration-disabled-row span{color:var(--muted);font-size:11px;line-height:1.45}.tex-collaboration-disabled-badge{flex:0 0 auto;padding:6px 9px;border-radius:999px;background:var(--surface);color:var(--quiet);font-size:10px;font-weight:750}
-      .tex-collaboration-footer{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:14px 18px;border-top:1px solid var(--hairline);background:color-mix(in srgb,var(--surface) 96%,transparent)}
-      .tex-collaboration-footer-status{color:var(--muted);font-size:11px}.tex-collaboration-nav-button{height:40px;min-width:88px;padding:0 14px;border:0;border-radius:12px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);font-size:12px;font-weight:700;cursor:pointer}.tex-collaboration-nav-button.is-primary{background:var(--primary);color:#fff;box-shadow:none}.tex-collaboration-nav-button:disabled{opacity:.35;cursor:not-allowed}
+
+      .tex-collaboration-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:14px 18px;border-top:1px solid var(--hairline);background:color-mix(in srgb,var(--surface) 96%,transparent)}
+      .tex-collaboration-nav-button{height:42px;min-width:104px;padding:0 16px;border:0;border-radius:12px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);font-size:12px;font-weight:700;cursor:pointer}.tex-collaboration-nav-button.is-primary{background:var(--primary);color:#fff;box-shadow:none}.tex-collaboration-nav-button:disabled{opacity:.35;cursor:not-allowed}
 
       @media(max-width:760px), (max-width:950px) and (pointer:coarse){
         .tex-work-app .tex-editor-toolbar{align-items:stretch!important}
@@ -184,9 +190,15 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         .tex-collaboration-drawer-head{padding:20px 18px 14px}.tex-collaboration-heading strong{font-size:22px}.tex-collaboration-heading span{font-size:13px}
         .tex-collaboration-stepper{gap:5px;padding:10px}.tex-collaboration-step{height:40px;gap:5px;padding:0 6px;font-size:10px}.tex-collaboration-step-index{width:20px;height:20px;min-width:20px;font-size:9px}
         .tex-collaboration-page{padding:16px 14px 22px}.tex-collaboration-section{padding:17px}
-        .tex-collaboration-invite{grid-template-columns:minmax(0,1fr) 88px 64px;gap:7px}.tex-collaboration-invite>button{grid-column:auto;height:44px}.tex-collaboration-invite input,.tex-collaboration-invite select{font-size:12px;padding:0 10px}.tex-collaboration-invite>button{font-size:12px}
-        .tex-collaboration-member{grid-template-columns:42px minmax(0,1fr) 92px}.tex-collaboration-member:not(.is-owner) .tex-collaboration-remove{grid-column:2/-1;width:100%;height:36px}.tex-collaboration-member.is-owner{grid-template-columns:42px minmax(0,1fr) 88px}
-        .tex-collaboration-footer{grid-template-columns:1fr 1fr;padding:12px}.tex-collaboration-footer-status{grid-column:1/-1;text-align:center}.tex-collaboration-nav-button{width:100%}
+        .tex-collaboration-invite{gap:7px!important}
+        #tex-collaboration-role{flex-basis:92px!important;width:92px!important}
+        #tex-collaboration-add{flex-basis:70px!important;width:70px!important;padding:0 8px!important}
+        .tex-collaboration-invite input,.tex-collaboration-invite select{font-size:12px;padding:0 10px}
+        .tex-collaboration-member{grid-template-columns:42px minmax(0,1fr);align-items:center}
+        .tex-collaboration-member.is-owner{grid-template-columns:42px minmax(0,1fr) auto}
+        .tex-collaboration-member:not(.is-owner) .tex-collaboration-member-actions{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;width:100%}
+        .tex-collaboration-member-actions select,.tex-collaboration-member-actions .tex-collaboration-remove{box-sizing:border-box;width:100%!important;min-width:0!important;height:44px!important;min-height:44px!important;margin:0!important}
+        .tex-collaboration-footer{display:grid;grid-template-columns:1fr 1fr;padding:12px;gap:9px}.tex-collaboration-nav-button{width:100%;min-width:0;height:44px}
       }
     </style>
     <script id="qsseda-work-tex-collaboration-runtime">
@@ -199,12 +211,15 @@ export function enhanceWorkTexCollaboration(markup, zh) {
 
         const labels = ${JSON.stringify(copy)};
         let snapshot = null;
+        let draftParticipants = [];
         let loading = false;
+        let saving = false;
         let opened = false;
         let requestSequence = 0;
         let pageIndex = 0;
         let searchTimer = 0;
         let searchSequence = 0;
+        let selectedSearchPerson = null;
 
         const openButton = document.createElement('button');
         openButton.id = 'tex-collaboration-open';
@@ -267,19 +282,17 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             '</section>' +
           '</div>' +
           '<div class="tex-collaboration-footer">' +
-            '<span id="tex-collaboration-footer-status" class="tex-collaboration-footer-status"></span>' +
-            '<button id="tex-collaboration-prev" class="tex-collaboration-nav-button" type="button">' + labels.previous + '</button>' +
-            '<button id="tex-collaboration-next" class="tex-collaboration-nav-button is-primary" type="button">' + labels.next + '</button>' +
+            '<button id="tex-collaboration-cancel" class="tex-collaboration-nav-button" type="button">' + labels.cancel + '</button>' +
+            '<button id="tex-collaboration-save" class="tex-collaboration-nav-button is-primary" type="button">' + labels.saveChanges + '</button>' +
           '</div>';
         document.body.append(backdrop, drawer);
 
         const closeButton = drawer.querySelector('.tex-collaboration-close');
         const documentLabel = drawer.querySelector('#tex-collaboration-document');
-        const footerStatus = drawer.querySelector('#tex-collaboration-footer-status');
         const pages = Array.from(drawer.querySelectorAll('.tex-collaboration-page'));
         const steps = Array.from(drawer.querySelectorAll('.tex-collaboration-step'));
-        const previousButton = drawer.querySelector('#tex-collaboration-prev');
-        const nextButton = drawer.querySelector('#tex-collaboration-next');
+        const cancelButton = drawer.querySelector('#tex-collaboration-cancel');
+        const saveButton = drawer.querySelector('#tex-collaboration-save');
         const count = drawer.querySelector('#tex-collaboration-count');
         const form = drawer.querySelector('#tex-collaboration-invite');
         const searchWrap = drawer.querySelector('.tex-collaboration-user-search');
@@ -306,9 +319,6 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             if (active) step.setAttribute('aria-current', 'step');
             else step.removeAttribute('aria-current');
           });
-          footerStatus.textContent = (pageIndex + 1) + ' / ' + pages.length;
-          previousButton.disabled = pageIndex === 0;
-          nextButton.textContent = pageIndex === pages.length - 1 ? labels.done : labels.next;
           if (pageIndex !== 0) hideSearchResults();
         }
 
@@ -369,20 +379,45 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           return value === 'owner' ? labels.owner : value === 'editor' ? labels.editor : labels.viewer;
         }
 
+        function cloneParticipants(items) {
+          return Array.isArray(items) ? items.map(item => ({ ...item })) : [];
+        }
+
+        function syncDraftFromSnapshot() {
+          draftParticipants = cloneParticipants(snapshot?.participants);
+          updateSaveState();
+        }
+
+        function normalizedAccess(items) {
+          return (Array.isArray(items) ? items : [])
+            .filter(item => !item?.is_owner)
+            .map(item => ({ id: String(item?.id || ''), role: item?.role === 'editor' ? 'editor' : 'viewer' }))
+            .sort((a, b) => a.id.localeCompare(b.id));
+        }
+
+        function hasDraftChanges() {
+          return JSON.stringify(normalizedAccess(snapshot?.participants)) !== JSON.stringify(normalizedAccess(draftParticipants));
+        }
+
+        function updateSaveState() {
+          saveButton.disabled = loading || saving || !hasDraftChanges();
+          cancelButton.disabled = saving;
+        }
+
         function isExistingMember(person) {
+          const id = String(person?.id || '');
           const handle = String(person?.username || '').toLowerCase();
-          if (!handle) return false;
-          return Array.isArray(snapshot?.participants) && snapshot.participants.some(item => String(item?.username || '').toLowerCase() === handle);
+          return draftParticipants.some(item => (id && String(item?.id || '') === id) || (handle && String(item?.username || '').toLowerCase() === handle));
         }
 
         function renderAvatars() {
           avatars.replaceChildren();
-          const participants = Array.isArray(snapshot?.participants) ? snapshot.participants.slice(0, 3) : [];
-          for (const participant of participants) avatars.append(makeAvatar(participant, 'tex-collaboration-avatar-dot'));
+          const participants = (opened ? draftParticipants : snapshot?.participants) || [];
+          for (const participant of participants.slice(0, 3)) avatars.append(makeAvatar(participant, 'tex-collaboration-avatar-dot'));
         }
 
         function renderParticipants() {
-          const participants = Array.isArray(snapshot?.participants) ? snapshot.participants : [];
+          const participants = draftParticipants;
           count.textContent = String(participants.length);
           list.replaceChildren();
           renderAvatars();
@@ -415,24 +450,37 @@ export function enhanceWorkTexCollaboration(markup, zh) {
               badge.title = labels.ownerHint;
               row.append(badge);
             } else {
+              const actions = document.createElement('div');
+              actions.className = 'tex-collaboration-member-actions';
+
               const select = document.createElement('select');
               select.setAttribute('aria-label', roleLabel(participant.role));
               select.innerHTML = '<option value="editor">' + labels.editor + '</option><option value="viewer">' + labels.viewer + '</option>';
               select.value = participant.role === 'editor' ? 'editor' : 'viewer';
-              select.disabled = !snapshot?.can_manage;
-              select.addEventListener('change', () => void changeRole(participant.id, select.value, select));
-              row.append(select);
+              select.disabled = !snapshot?.can_manage || saving;
+              select.addEventListener('change', () => {
+                participant.role = select.value === 'editor' ? 'editor' : 'viewer';
+                updateSaveState();
+              });
+              actions.append(select);
 
               const remove = document.createElement('button');
               remove.className = 'tex-collaboration-remove';
               remove.type = 'button';
               remove.textContent = labels.remove;
-              remove.disabled = !snapshot?.can_manage;
-              remove.addEventListener('click', () => void removeMember(participant.id, remove));
-              row.append(remove);
+              remove.disabled = !snapshot?.can_manage || saving;
+              remove.addEventListener('click', () => {
+                if (!window.confirm(labels.removeConfirm)) return;
+                draftParticipants = draftParticipants.filter(item => item.id !== participant.id);
+                renderParticipants();
+                updateSaveState();
+              });
+              actions.append(remove);
+              row.append(actions);
             }
             list.append(row);
           }
+          updateSaveState();
         }
 
         function hideSearchResults() {
@@ -447,6 +495,13 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           state.textContent = text;
           searchResults.append(state);
           searchResults.hidden = false;
+        }
+
+        function selectSearchPerson(person) {
+          selectedSearchPerson = person || null;
+          username.value = person?.username || '';
+          hideSearchResults();
+          role.focus();
         }
 
         function renderSearchResults(results) {
@@ -476,11 +531,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             meta.textContent = isExistingMember(person) ? labels.alreadyMember : '+';
             option.append(meta);
 
-            option.addEventListener('click', () => {
-              username.value = person.username;
-              hideSearchResults();
-              role.focus();
-            });
+            option.addEventListener('click', () => selectSearchPerson(person));
             searchResults.append(option);
           }
           searchResults.hidden = false;
@@ -490,36 +541,41 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           const id = activeDocumentId();
           const query = String(rawQuery || '').trim().replace(/^@+/, '');
           const sequence = ++searchSequence;
-          if (!id || query.length < 2) {
+          if (!id || query.length < 1) {
             hideSearchResults();
-            return;
+            return [];
           }
           showSearchState(labels.searching);
           try {
             const data = await api('/api/tex/collaboration?action=search&document=' + encodeURIComponent(id) + '&q=' + encodeURIComponent(query));
-            if (sequence !== searchSequence || query !== String(username.value || '').trim().replace(/^@+/, '')) return;
-            renderSearchResults(data?.results || []);
+            if (sequence !== searchSequence || query !== String(username.value || '').trim().replace(/^@+/, '')) return [];
+            const results = data?.results || [];
+            renderSearchResults(results);
+            return results;
           } catch (error) {
-            if (sequence !== searchSequence) return;
+            if (sequence !== searchSequence) return [];
             showSearchState(friendlyError(error));
+            return [];
           }
         }
 
         function scheduleSearch() {
           window.clearTimeout(searchTimer);
+          selectedSearchPerson = null;
           const query = String(username.value || '').trim().replace(/^@+/, '');
-          if (query.length < 2) {
+          if (query.length < 1) {
             hideSearchResults();
             return;
           }
-          searchTimer = window.setTimeout(() => void searchUsers(query), 280);
+          searchTimer = window.setTimeout(() => void searchUsers(query), 220);
         }
 
         function setBusy(value) {
           loading = value;
-          add.disabled = value || !activeDocumentId();
-          username.disabled = value;
-          role.disabled = value;
+          add.disabled = value || saving || !activeDocumentId();
+          username.disabled = value || saving;
+          role.disabled = value || saving;
+          updateSaveState();
         }
 
         async function loadSnapshot(showLoading = true) {
@@ -527,6 +583,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           const sequence = ++requestSequence;
           if (!id) {
             snapshot = null;
+            draftParticipants = [];
             renderParticipants();
             return;
           }
@@ -538,11 +595,13 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             const data = await api('/api/tex/collaboration?document=' + encodeURIComponent(id));
             if (sequence !== requestSequence || id !== activeDocumentId()) return;
             snapshot = data;
+            syncDraftFromSnapshot();
             showMessage('');
             renderParticipants();
           } catch (error) {
             if (sequence !== requestSequence) return;
             snapshot = null;
+            draftParticipants = [];
             renderParticipants();
             showMessage(friendlyError(error), true);
           } finally {
@@ -550,48 +609,44 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           }
         }
 
-        async function changeRole(memberId, nextRole, select) {
-          const id = activeDocumentId();
-          if (!id || !memberId) return;
-          select.disabled = true;
-          try {
-            snapshot = await api('/api/tex/collaboration', { method: 'PATCH', body: JSON.stringify({ document_id: id, member_id: memberId, role: nextRole }) });
-            showMessage(labels.saved);
-            renderParticipants();
-          } catch (error) {
-            showMessage(friendlyError(error), true);
-            await loadSnapshot(false);
-          }
-        }
-
-        async function removeMember(memberId, button) {
-          const id = activeDocumentId();
-          if (!id || !memberId || !window.confirm(labels.removeConfirm)) return;
-          button.disabled = true;
-          try {
-            snapshot = await api('/api/tex/collaboration?document=' + encodeURIComponent(id) + '&member=' + encodeURIComponent(memberId), { method: 'DELETE' });
-            showMessage(labels.saved);
-            renderParticipants();
-          } catch (error) {
-            showMessage(friendlyError(error), true);
-            button.disabled = false;
-          }
+        async function resolveDraftPerson(handle) {
+          const normalized = String(handle || '').trim().replace(/^@+/, '').toLowerCase();
+          if (!normalized) return null;
+          if (selectedSearchPerson && String(selectedSearchPerson.username || '').toLowerCase() === normalized) return selectedSearchPerson;
+          const data = await api('/api/tex/collaboration?action=search&document=' + encodeURIComponent(activeDocumentId()) + '&q=' + encodeURIComponent(normalized));
+          return (Array.isArray(data?.results) ? data.results : []).find(person => String(person?.username || '').toLowerCase() === normalized) || null;
         }
 
         form.addEventListener('submit', async event => {
           event.preventDefault();
           const id = activeDocumentId();
           const handle = username.value.trim();
-          if (!id || !handle || loading) return;
+          if (!id || !handle || loading || saving) return;
           hideSearchResults();
           setBusy(true);
           add.textContent = labels.adding;
           showMessage('');
           try {
-            snapshot = await api('/api/tex/collaboration', { method: 'POST', body: JSON.stringify({ document_id: id, username: handle, role: role.value }) });
+            const person = await resolveDraftPerson(handle);
+            if (!person) {
+              showMessage(labels.userNotFound, true);
+              return;
+            }
+            if (isExistingMember(person)) {
+              showMessage(labels.alreadyMember, true);
+              return;
+            }
+            draftParticipants.push({
+              ...person,
+              role: role.value === 'viewer' ? 'viewer' : 'editor',
+              is_owner: false,
+              created_at: '',
+              updated_at: ''
+            });
             username.value = '';
-            showMessage(labels.saved);
+            selectedSearchPerson = null;
             renderParticipants();
+            updateSaveState();
           } catch (error) {
             showMessage(friendlyError(error), true);
           } finally {
@@ -599,6 +654,47 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             setBusy(false);
           }
         });
+
+        async function saveDraft() {
+          const id = activeDocumentId();
+          if (!id || saving || !snapshot || !hasDraftChanges()) return;
+          saving = true;
+          setBusy(true);
+          saveButton.textContent = labels.saving;
+          showMessage(labels.saving);
+          renderParticipants();
+
+          const original = (snapshot.participants || []).filter(item => !item.is_owner);
+          const desired = draftParticipants.filter(item => !item.is_owner);
+          const originalById = new Map(original.map(item => [item.id, item]));
+          const desiredById = new Map(desired.map(item => [item.id, item]));
+          const additions = desired.filter(item => !originalById.has(item.id));
+          const changes = desired.filter(item => originalById.has(item.id) && originalById.get(item.id).role !== item.role);
+          const removals = original.filter(item => !desiredById.has(item.id));
+
+          try {
+            for (const item of additions) {
+              await api('/api/tex/collaboration', { method: 'POST', body: JSON.stringify({ document_id: id, username: item.username, role: item.role }) });
+            }
+            for (const item of changes) {
+              await api('/api/tex/collaboration', { method: 'PATCH', body: JSON.stringify({ document_id: id, member_id: item.id, role: item.role }) });
+            }
+            for (const item of removals) {
+              await api('/api/tex/collaboration?document=' + encodeURIComponent(id) + '&member=' + encodeURIComponent(item.id), { method: 'DELETE' });
+            }
+            await loadSnapshot(false);
+            showMessage(labels.saved);
+            closeDrawer(true);
+          } catch (error) {
+            showMessage(friendlyError(error), true);
+            await loadSnapshot(false);
+          } finally {
+            saving = false;
+            setBusy(false);
+            saveButton.textContent = labels.saveChanges;
+            renderParticipants();
+          }
+        }
 
         function openDrawer() {
           if (!activeDocumentId()) return;
@@ -616,12 +712,14 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           void loadSnapshot(true);
         }
 
-        function closeDrawer() {
-          if (!opened) return;
+        function closeDrawer(preserveSnapshot = false) {
+          if (!opened || saving) return;
           opened = false;
           window.clearTimeout(searchTimer);
           searchSequence += 1;
+          selectedSearchPerson = null;
           hideSearchResults();
+          if (!preserveSnapshot) syncDraftFromSnapshot();
           drawer.classList.remove('is-open');
           backdrop.classList.remove('is-open');
           document.body.classList.remove('tex-collaboration-open');
@@ -639,25 +737,25 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           openButton.title = id ? labels.open : labels.noDocument;
           documentLabel.textContent = titleInput?.value?.trim() || id || labels.noDocument;
           snapshot = null;
+          draftParticipants = [];
           username.value = '';
+          selectedSearchPerson = null;
           hideSearchResults();
           renderAvatars();
+          updateSaveState();
           if (opened) void loadSnapshot(true);
         }
 
         openButton.addEventListener('click', openDrawer);
-        closeButton.addEventListener('click', closeDrawer);
-        backdrop.addEventListener('click', closeDrawer);
-        previousButton.addEventListener('click', () => setPage(pageIndex - 1));
-        nextButton.addEventListener('click', () => {
-          if (pageIndex >= pages.length - 1) closeDrawer();
-          else setPage(pageIndex + 1);
-        });
+        closeButton.addEventListener('click', () => closeDrawer(false));
+        backdrop.addEventListener('click', () => closeDrawer(false));
+        cancelButton.addEventListener('click', () => closeDrawer(false));
+        saveButton.addEventListener('click', () => void saveDraft());
         steps.forEach(step => step.addEventListener('click', () => setPage(Number(step.dataset.pageIndex || 0))));
         username.addEventListener('input', scheduleSearch);
         username.addEventListener('focus', () => {
           const query = String(username.value || '').trim().replace(/^@+/, '');
-          if (query.length >= 2) scheduleSearch();
+          if (query.length >= 1) scheduleSearch();
         });
         drawer.addEventListener('pointerdown', event => {
           if (!searchWrap.contains(event.target)) hideSearchResults();
@@ -671,7 +769,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             username.focus();
             return;
           }
-          if (event.key === 'Escape' && opened) closeDrawer();
+          if (event.key === 'Escape' && opened) closeDrawer(false);
         });
 
         const listObserver = documentList ? new MutationObserver(syncDocument) : null;
