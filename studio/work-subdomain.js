@@ -19,10 +19,18 @@ export function mainWorkRedirect(pathname) {
 
   // Collaboration Hub and Local Bridge stay in Studio as distinct interfaces.
   // Only TeX routes move to the standalone Work product.
-  if (clean === "/zh-cn/work/tex" || clean === "/zh-cn/workspace/experiments/tex") {
+  if (
+    clean === "/zh-cn/work/tex"
+    || clean === "/zh-cn/workspace/experiments/tex"
+    || clean === "/zh-cnhttps://work.qsseda.studio/zh-cn/tex"
+  ) {
     return `${WORK_ORIGIN}/zh-cn/tex`;
   }
-  if (clean === "/en/work/tex" || clean === "/en/workspace/experiments/tex") {
+  if (
+    clean === "/en/work/tex"
+    || clean === "/en/workspace/experiments/tex"
+    || clean === "/enhttps://work.qsseda.studio/en/tex"
+  ) {
     return `${WORK_ORIGIN}/en/tex`;
   }
   if (clean === "/work/tex" || clean === "/workspace/experiments/tex") {
