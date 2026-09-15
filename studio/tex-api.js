@@ -12,15 +12,36 @@ export async function handleTexApi(request, env, action) {
 
   let deleteOwnerId = "";
   let deleteDocumentId = "";
-  if (action === "documents" && request.method === "DELETE") {
+  let sharedFallbackRequest = null;
+
+  if (action === "documents") {
     try {
-      deleteDocumentId = new URL(request.url).searchParams.get("id") || "";
-      const identity = await identifyTexVersionUser(request);
-      deleteOwnerId = identity.userId || "";
+      const url = new URL(request.url);
+      const documentId = url.searchParams.get("id") || "";
+      if (request.method === "DELETE") {
+        deleteDocumentId = documentId;
+        const identity = await identifyTexVersionUser(request);
+        deleteOwnerId = identity.userId || "";
+      } else if (documentId && (request.method === "GET" || request.method === "PUT")) {
+        // Keep an untouched request body for the shared-document fallback. The
+        // account-scoped core PUT parser consumes the original request before it
+        // can discover that the document belongs to another owner.
+        sharedFallbackRequest = request.clone();
+      }
     } catch {}
   }
 
   let response = await handleCoreTexApi(request, env, action);
+
+  // The browser always opens/saves TeX through /api/tex/documents. If the
+  // account-scoped lookup misses, resolve the exact same document through the
+  // collaboration ACL on the server. This makes shared-document access
+  // independent from client-side fetch interception or script initialization
+  // order, while still requiring an explicit collaborator row.
+  if (action === "documents" && response.status === 404 && sharedFallbackRequest) {
+    response = await handleSharedDocumentFallback(sharedFallbackRequest, env);
+  }
+
   if (action !== "documents" || !response.ok) return response;
 
   if (request.method === "GET") {
@@ -44,6 +65,27 @@ export async function handleTexApi(request, env, action) {
   }
 
   return response;
+}
+
+async function handleSharedDocumentFallback(request, env) {
+  try {
+    const url = new URL(request.url);
+    const documentId = String(url.searchParams.get("id") || "").trim();
+    if (!documentId) return new Response(JSON.stringify({ error: "TeX document not found." }), {
+      status: 404,
+      headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" }
+    });
+
+    url.pathname = "/api/tex/collaboration/shared";
+    url.searchParams.delete("id");
+    url.searchParams.set("document", documentId);
+    return handleTexSharedCollaboration(new Request(url.toString(), request), env);
+  } catch {
+    return new Response(JSON.stringify({ error: "TeX document not found." }), {
+      status: 404,
+      headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" }
+    });
+  }
 }
 
 async function mergeSharedDocumentList(request, env, ownResponse) {
