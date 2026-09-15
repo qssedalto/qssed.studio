@@ -1,4 +1,5 @@
 import { handleTexApi as handleCoreTexApi } from "./tex-api-core.js";
+import { handleTexSharedCollaboration } from "./tex-collaboration-shared.js";
 import {
   handleTexVersionApi,
   identifyTexVersionUser,
@@ -19,10 +20,12 @@ export async function handleTexApi(request, env, action) {
     } catch {}
   }
 
-  const response = await handleCoreTexApi(request, env, action);
+  let response = await handleCoreTexApi(request, env, action);
   if (action !== "documents" || !response.ok) return response;
 
-  if (request.method === "POST" || request.method === "PUT") {
+  if (request.method === "GET") {
+    response = await mergeSharedDocumentList(request, env, response);
+  } else if (request.method === "POST" || request.method === "PUT") {
     try {
       const payload = await response.clone().json();
       const document = payload?.document;
@@ -41,4 +44,47 @@ export async function handleTexApi(request, env, action) {
   }
 
   return response;
+}
+
+async function mergeSharedDocumentList(request, env, ownResponse) {
+  const url = new URL(request.url);
+  if (url.searchParams.get("id")) return ownResponse;
+
+  try {
+    const ownData = await ownResponse.clone().json();
+    const sharedResponse = await handleTexSharedCollaboration(request, env);
+    if (!sharedResponse.ok) return ownResponse;
+
+    const sharedData = await sharedResponse.clone().json().catch(() => null);
+    const ownDocuments = Array.isArray(ownData?.documents) ? ownData.documents : [];
+    const sharedDocuments = Array.isArray(sharedData?.documents) ? sharedData.documents : [];
+    if (!sharedDocuments.length) return ownResponse;
+
+    const documents = [];
+    const seen = new Set();
+    for (const document of [...ownDocuments, ...sharedDocuments]) {
+      const id = String(document?.id || "").trim();
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      documents.push(document);
+    }
+    documents.sort((a, b) => String(b?.updated_at || "").localeCompare(String(a?.updated_at || "")));
+
+    const headers = new Headers(ownResponse.headers);
+    headers.set("content-type", "application/json;charset=UTF-8");
+    headers.set("cache-control", "private, no-store");
+    headers.delete("content-length");
+    return new Response(JSON.stringify({
+      ...ownData,
+      documents,
+      count: documents.length,
+      scope: "own-and-shared"
+    }), {
+      status: ownResponse.status,
+      statusText: ownResponse.statusText,
+      headers
+    });
+  } catch {
+    return ownResponse;
+  }
 }
