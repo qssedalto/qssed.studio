@@ -6,7 +6,7 @@ const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
 const workTexUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
 const bridge = fs.readFileSync(new URL("../local-bridge/server.mjs", import.meta.url), "utf8");
-const nativeOrigin = fs.readFileSync(new URL("../local-bridge/native/origins_work_windows.go"), "utf8");
+const nativeOrigin = fs.readFileSync(new URL("../local-bridge/native/origins_work_windows.go", import.meta.url), "utf8");
 const workWranglerText = fs.readFileSync(new URL("../wrangler.work.jsonc", import.meta.url), "utf8");
 const workWrangler = JSON.parse(workWranglerText.replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 
