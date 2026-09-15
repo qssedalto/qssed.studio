@@ -29,6 +29,7 @@ export const OS_PATHS = new Set([
   "/work",
   "/work/local",
   "/work/tex",
+  "/work/discussion",
   "/admin",
   "/admin/general",
   "/admin/users",
