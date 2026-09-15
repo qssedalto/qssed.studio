@@ -136,7 +136,6 @@ export function enhanceWorkTexMobileApple(markup) {
         body.tex-mobile-keyboard-open .tex-work-app .tex-shell>.tex-documents-panel,
         body.tex-mobile-keyboard-open .tex-work-app .tex-shell>.tex-editor-panel,
         body.tex-mobile-keyboard-open .tex-work-app .tex-shell>.tex-runs-panel{
-          inset-bottom:0!important;
           bottom:0!important;
         }
         body.tex-mobile-keyboard-open .tex-mobile-tabs{
