@@ -35,7 +35,11 @@ assert(handoff.includes("new Set([AUTH_ORIGIN, MAIN_ORIGIN])"), "Work handoff mu
 assert(handoff.includes('return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/tex"'), "Every Work handoff must land on localized TeX");
 
 assert(authEntry.includes('pathname === "/continue" && isLoginRedirect(response)'), "Auth entry must preserve app return targets when /continue requires login");
-assert(authEntry.includes('/login?next=${encodeURIComponent(next)}'), "Auth login redirect must retain the validated next path");
+assert(authEntry.includes('/login?next=${encodeURIComponent(effectiveReturn)}'), "Auth login redirect must retain the validated next path");
+assert(authEntry.includes('const RETURN_COOKIE = "__Host-qsseda-auth-return"'), "Auth must keep a host-only pending return target for mobile login reloads");
+assert(authEntry.includes("HttpOnly; Secure; SameSite=Lax"), "Pending Auth return target must use hardened host-only cookie attributes");
+assert(authEntry.includes("requestedReturn || pendingReturn"), "Auth must recover the return target from the pending cookie when the query is lost");
+assert(authEntry.includes("clearReturnCookie()"), "Auth must clear the pending return target after a successful continue handoff");
 assert(authEntry.includes('id="qsseda-auth-return-target"'), "Auth login UI must resume the preserved return target after sign-in");
 assert(authEntry.includes('location.replace(target)'), "Auth login must resume the original app handoff instead of falling back to Dashboard");
 assert(authEntry.includes('path.startsWith("/")') && authEntry.includes('path.startsWith("//")'), "Auth return target must remain constrained to same-origin paths");
