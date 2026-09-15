@@ -13,6 +13,8 @@ const OAUTH_MUTATION_PATHS = new Set([
   "/oauth/revoke",
   "/oauth/introspect"
 ]);
+const RETURN_COOKIE = "__Host-qsseda-auth-return";
+const RETURN_COOKIE_MAX_AGE = 10 * 60;
 
 export default {
   async fetch(request, env, ctx) {
@@ -27,6 +29,9 @@ export default {
 async function routeAuthRequest(request, env, ctx) {
   const url = new URL(request.url);
   const pathname = normalizePath(url.pathname);
+  const pendingReturn = safeNextPath(readCookie(request, RETURN_COOKIE));
+  const requestedReturn = safeNextPath(url.searchParams.get("next"));
+  const effectiveReturn = requestedReturn || pendingReturn;
 
   if (pathname === "/api/login") {
     const key = await rateLimitKey(request, "auth-login", false);
@@ -46,20 +51,39 @@ async function routeAuthRequest(request, env, ctx) {
     return handleIdentifierLogin(request);
   }
 
-  const response = await authWorker.fetch(request, env, ctx);
+  let routedRequest = request;
+  if (pathname === "/continue" && !requestedReturn && pendingReturn) {
+    const routedUrl = new URL(request.url);
+    routedUrl.searchParams.set("next", pendingReturn);
+    routedRequest = new Request(routedUrl.toString(), request);
+  }
+
+  const response = await authWorker.fetch(routedRequest, env, ctx);
 
   if (pathname === "/continue" && isLoginRedirect(response)) {
-    const next = safeNextPath(url.searchParams.get("next"));
-    if (next) return redirectWithPreservedHeaders(response, `/login?next=${encodeURIComponent(next)}`);
+    if (effectiveReturn) {
+      return redirectWithPreservedHeaders(
+        response,
+        `/login?next=${encodeURIComponent(effectiveReturn)}`,
+        returnCookie(effectiveReturn)
+      );
+    }
+    return response;
   }
 
   if ((pathname === "/" || pathname === "/login") && (response.headers.get("content-type") || "").includes("text/html")) {
     let markup = rewriteIdentifierLoginPage(await response.text());
-    if (pathname === "/login") markup = rewriteLoginReturnTarget(markup, url.searchParams.get("next"));
+    if (pathname === "/login") markup = rewriteLoginReturnTarget(markup, effectiveReturn);
     const headers = new Headers(response.headers);
     headers.delete("content-length");
+    if (effectiveReturn) headers.append("set-cookie", returnCookie(effectiveReturn));
     return new Response(markup, { status: response.status, headers });
   }
+
+  if (pathname === "/continue" && effectiveReturn && response.status >= 200 && response.status < 300) {
+    return withCookie(response, clearReturnCookie());
+  }
+
   return response;
 }
 
@@ -85,11 +109,12 @@ function isLoginRedirect(response) {
   }
 }
 
-function redirectWithPreservedHeaders(response, location) {
+function redirectWithPreservedHeaders(response, location, cookieValue = "") {
   const headers = new Headers(response.headers);
   headers.set("location", location);
   headers.set("cache-control", "no-store");
   headers.delete("content-length");
+  if (cookieValue) headers.append("set-cookie", cookieValue);
   return new Response(null, { status: response.status, headers });
 }
 
@@ -99,6 +124,37 @@ function rewriteLoginReturnTarget(markup, value) {
   const continueTarget = `/continue?next=${encodeURIComponent(next)}`;
   const script = `<script id="qsseda-auth-return-target">(()=>{const target=${scriptLiteral(continueTarget)};const signedIn=document.getElementById("signedIn");const studioButton=document.getElementById("studioButton");const accountStudioButton=document.getElementById("accountStudioButton");if(studioButton)studioButton.href=target;if(accountStudioButton)accountStudioButton.href=target;let leaving=false;const resume=()=>{if(leaving||!signedIn||signedIn.classList.contains("hidden")||!studioButton||studioButton.classList.contains("hidden"))return;leaving=true;location.replace(target)};const observer=new MutationObserver(resume);if(signedIn)observer.observe(signedIn,{attributes:true,attributeFilter:["class"]});if(studioButton)observer.observe(studioButton,{attributes:true,attributeFilter:["class"]});queueMicrotask(resume)})()</script>`;
   return String(markup || "").replace("</body>", `${script}</body>`);
+}
+
+function readCookie(request, name) {
+  const header = request.headers.get("Cookie") || "";
+  for (const part of header.split(";")) {
+    const index = part.indexOf("=");
+    if (index <= 0 || part.slice(0, index).trim() !== name) continue;
+    const raw = part.slice(index + 1).trim();
+    try { return decodeURIComponent(raw); }
+    catch { return raw; }
+  }
+  return "";
+}
+
+function returnCookie(next) {
+  return `${RETURN_COOKIE}=${encodeURIComponent(next)}; Path=/; Max-Age=${RETURN_COOKIE_MAX_AGE}; HttpOnly; Secure; SameSite=Lax`;
+}
+
+function clearReturnCookie() {
+  return `${RETURN_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
+}
+
+function withCookie(response, cookieValue) {
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  headers.append("set-cookie", cookieValue);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
 }
 
 function scriptLiteral(value) {
