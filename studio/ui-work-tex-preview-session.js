@@ -6,8 +6,10 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
         if (window.__qssedaTexPreviewSessionReady) return;
         window.__qssedaTexPreviewSessionReady = true;
 
-        const STORAGE_KEY = 'qsseda.tex.preview-session.v1';
-        const MAX_PDF_BYTES = 2.75 * 1024 * 1024;
+        const STORAGE_KEY = 'qsseda.tex.preview-session.v2';
+        const HISTORY_KEY = '__qssedaTexPreviewBlobV2';
+        const MAX_SESSION_PDF_BYTES = 2.75 * 1024 * 1024;
+        const MAX_HISTORY_PDF_BYTES = 12 * 1024 * 1024;
         const restoredLabel = ${JSON.stringify(restoredLabel)};
         const root = document.querySelector('.tex-work-app[data-tex-root], [data-tex-root]');
         const frame = document.getElementById('tex-live-preview-frame');
@@ -43,17 +45,30 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           sourceHash: fastHash(document.getElementById('tex-source')?.value || '')
         });
 
-        const readCache = () => {
+        const readHistoryCache = () => {
+          try {
+            const value = window.history.state?.[HISTORY_KEY];
+            const blob = value?.blob;
+            if (!value || value.version !== 2 || !(blob instanceof Blob) || blob.size <= 0 || !String(blob.type || '').toLowerCase().includes('pdf')) return null;
+            return { ...value, blob };
+          } catch {
+            return null;
+          }
+        };
+
+        const readSessionCache = () => {
           try {
             const raw = window.sessionStorage.getItem(STORAGE_KEY);
             if (!raw) return null;
             const value = JSON.parse(raw);
-            if (!value || value.version !== 1 || typeof value.data !== 'string' || !value.data.startsWith('data:application/pdf')) return null;
+            if (!value || value.version !== 2 || typeof value.data !== 'string' || !value.data.startsWith('data:application/pdf')) return null;
             return value;
           } catch {
             return null;
           }
         };
+
+        const readCache = () => readHistoryCache() || readSessionCache();
 
         const dataUrlToBlob = dataUrl => {
           const comma = dataUrl.indexOf(',');
@@ -71,11 +86,11 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           const cached = readCache();
           if (!cached) return;
           try {
-            const blob = dataUrlToBlob(cached.data);
+            const blob = cached.blob instanceof Blob ? cached.blob : dataUrlToBlob(cached.data);
             if (!blob) return;
             restoredUrl = URL.createObjectURL(blob);
             restoring = true;
-            frame.src = restoredUrl + '#view=FitH';
+            frame.src = restoredUrl + '#zoom=page-width';
             frame.hidden = false;
             if (placeholder) placeholder.hidden = true;
             if (open) {
@@ -94,6 +109,33 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           } catch {}
         };
 
+        const persistHistoryBlob = (blob, meta) => {
+          if (!(blob instanceof Blob) || blob.size <= 0 || blob.size > MAX_HISTORY_PDF_BYTES) return false;
+          try {
+            const base = window.history.state && typeof window.history.state === 'object' ? window.history.state : {};
+            const next = { ...base, [HISTORY_KEY]: { version: 2, savedAt: Date.now(), blob, ...meta } };
+            window.history.replaceState(next, document.title);
+            return true;
+          } catch {
+            return false;
+          }
+        };
+
+        const persistSessionData = async (blob, meta, token) => {
+          if (!(blob instanceof Blob) || blob.size <= 0 || blob.size > MAX_SESSION_PDF_BYTES) return;
+          try {
+            const reader = new FileReader();
+            const data = await new Promise((resolve, reject) => {
+              reader.onload = () => resolve(String(reader.result || ''));
+              reader.onerror = () => reject(reader.error || new Error('read failed'));
+              reader.readAsDataURL(blob);
+            });
+            if (token !== persistToken || !String(data).startsWith('data:application/pdf')) return;
+            const payload = JSON.stringify({ version: 2, savedAt: Date.now(), data, ...meta });
+            try { window.sessionStorage.setItem(STORAGE_KEY, payload); } catch {}
+          } catch {}
+        };
+
         const persistBlobUrl = async src => {
           if (restoring || !src.startsWith('blob:')) return;
           const base = src.split('#')[0];
@@ -103,24 +145,10 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
             const response = await fetch(base);
             if (!response.ok) return;
             const blob = await response.blob();
-            if (token !== persistToken || !blob.type.toLowerCase().includes('pdf') || blob.size <= 0 || blob.size > MAX_PDF_BYTES) return;
-            const reader = new FileReader();
-            const data = await new Promise((resolve, reject) => {
-              reader.onload = () => resolve(String(reader.result || ''));
-              reader.onerror = () => reject(reader.error || new Error('read failed'));
-              reader.readAsDataURL(blob);
-            });
-            if (token !== persistToken || !String(data).startsWith('data:application/pdf')) return;
+            if (token !== persistToken || !String(blob.type || '').toLowerCase().includes('pdf') || blob.size <= 0) return;
             const meta = currentMeta();
-            const payload = JSON.stringify({ version: 1, savedAt: Date.now(), data, ...meta });
-            try {
-              window.sessionStorage.setItem(STORAGE_KEY, payload);
-            } catch {
-              try {
-                window.sessionStorage.removeItem(STORAGE_KEY);
-                window.sessionStorage.setItem(STORAGE_KEY, payload);
-              } catch {}
-            }
+            persistHistoryBlob(blob, meta);
+            void persistSessionData(blob, meta, token);
           } catch {}
         };
 
