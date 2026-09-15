@@ -3,14 +3,18 @@ import { enhanceWorkTexVersionHistory } from "./ui-work-tex-version-history.js";
 import { enhanceWorkTexEditorTools } from "./ui-work-tex-editor-tools.js";
 import { enhanceWorkTexVersionDensity } from "./ui-work-tex-version-density.js";
 import { enhanceWorkTexEditorRefine } from "./ui-work-tex-editor-refine.js";
+import { enhanceWorkTexPreviewSession } from "./ui-work-tex-preview-session.js";
 
 export function enhanceWorkTexCollaboration(markup, zh) {
-  return enhanceWorkTexEditorRefine(
-    enhanceWorkTexVersionDensity(
-      enhanceWorkTexEditorTools(
-        enhanceWorkTexVersionHistory(enhanceCoreWorkTexCollaboration(markup, zh), zh),
-        zh
-      )
+  return enhanceWorkTexPreviewSession(
+    enhanceWorkTexEditorRefine(
+      enhanceWorkTexVersionDensity(
+        enhanceWorkTexEditorTools(
+          enhanceWorkTexVersionHistory(enhanceCoreWorkTexCollaboration(markup, zh), zh),
+          zh
+        )
+      ),
+      zh
     ),
     zh
   );
