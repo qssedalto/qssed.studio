@@ -14,6 +14,9 @@ assert(worker.includes("rewriteWorkSubdomainRequest"), "Worker must route the Wo
 assert(worker.includes("handleMainWorkHandoff"), "Main Studio must expose the Work session handoff");
 assert(worker.includes("workSessionRedirect"), "Unauthenticated Work pages must return through the main-site handoff");
 assert(worker.includes("mapped.canonical"), "Work aliases must redirect to localized canonical URLs");
+assert(worker.includes("suppressWorkClientSessionBounce"), "Authenticated Work HTML must suppress the Studio origin-local session bounce");
+assert(worker.includes('markup.replace(\n    "    hydrateOsUser();"'), "Work suppression must target the inherited Studio hydrateOsUser call only");
+assert(worker.includes("server-side host-only session gate"), "Work session suppression must document that the server-side gate remains authoritative");
 
 for (const required of [
   'const WORK_ORIGIN = "https://work.qsseda.studio"',

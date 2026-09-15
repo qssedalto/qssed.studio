@@ -103,9 +103,30 @@ async function routeStudioRequest(request, env, ctx) {
   }
   if (isLegacyCookieApiPath(pathname)) return handleLegacyCookieApi(request, env, pathname);
 
-  const response = await studio.fetch(request, env, ctx);
+  let response = await studio.fetch(request, env, ctx);
   if (workHost && workPageNext && response.status === 401) return workSessionRedirect(workPageNext);
+  if (workHost && workPageNext && response.status === 200) response = await suppressWorkClientSessionBounce(response);
   return hardenGlobalBrowserResponse(response);
+}
+
+async function suppressWorkClientSessionBounce(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("text/html")) return response;
+
+  const markup = await response.text();
+  const guardedMarkup = markup.replace(
+    "    hydrateOsUser();",
+    "    // Work has already passed the server-side host-only session gate.\n    // Browser auth storage is origin-isolated, so do not reclassify Work as signed out here."
+  );
+  if (guardedMarkup === markup) return new Response(markup, { status: response.status, statusText: response.statusText, headers: response.headers });
+
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  return new Response(guardedMarkup, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
 }
 
 async function allowed(limiter, key) {
