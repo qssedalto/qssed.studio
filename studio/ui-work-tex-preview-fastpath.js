@@ -13,6 +13,15 @@ export function enhanceWorkTexPreviewFastPath(markup) {
     `          async function probeLocal() {\n            localBase = '';\n            localEngines = [];\n            for (const base of endpoints) {\n              try {\n                const health = await readJson(await loopbackFetch(base, '/health'));\n                if (health?.service !== expectedService || Number(health?.protocol) !== expectedProtocol) continue;\n                if (!Array.isArray(health?.capabilities) || !health.capabilities.includes('tex.compile')) continue;\n\n                // Health is enough to put the loopback compiler on the critical path.\n                // /tex/status executes the TeX binary and can take seconds, so verify it\n                // in the background instead of blocking the first preview.\n                localBase = base;\n                localEngines = ['xelatex', 'pdflatex'];\n                syncCompiler();\n\n                void loopbackFetch(base, '/tex/status')\n                  .then(response => readJson(response))\n                  .then(tex => {\n                    if (localBase !== base) return;\n                    if (!tex?.available) {\n                      localBase = '';\n                      localEngines = [];\n                    } else {\n                      localEngines = Array.isArray(tex.engines)\n                        ? tex.engines.map(value => String(value).toLowerCase())\n                        : [String(tex.engine || 'xelatex').toLowerCase()];\n                    }\n                    syncCompiler();\n                  })\n                  .catch(() => {});\n                break;\n              } catch {}\n            }\n            syncCompiler();\n          }`
   );
 
+  // Persist from the actual successful PDF Blob instead of observing iframe.src
+  // and fetching the blob URL back later. The latter loses races during quick
+  // refreshes/replacements and was the reason the tab cache sometimes stayed empty.
+  output = replaceExact(
+    output,
+    `          function installPreviewBlob(blob, snapshot, elapsed) {\n            if (snapshot !== currentPreviewSnapshot()) return false;`,
+    `          function installPreviewBlob(blob, snapshot, elapsed) {\n            if (snapshot !== currentPreviewSnapshot()) return false;\n            try {\n              window.dispatchEvent(new CustomEvent('qsseda:tex-preview-blob', { detail: { blob, snapshot } }));\n            } catch {}`
+  );
+
   // The base local-preview script can finish probing 127.0.0.1 before the
   // document request has opened the initial TeX document. In that race the
   // editor is still hidden, so the original end-of-start schedule is skipped and
