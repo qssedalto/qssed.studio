@@ -1,22 +1,4 @@
 export function enhanceWorkTexMobileApple(markup, zh) {
-  const templates = {
-    blank: {
-      title: zh ? "空白 TeX 文档" : "Blank TeX Document",
-      engine: "xelatex",
-      source: "\\documentclass{article}\n\\begin{document}\n\nHello, TeX!\n\n\\end{document}\n"
-    },
-    article: {
-      title: zh ? "中文文章" : "Chinese Article",
-      engine: "xelatex",
-      source: "\\documentclass[12pt]{ctexart}\n\\usepackage{amsmath,amssymb}\n\\usepackage[a4paper,margin=2.5cm]{geometry}\n\\title{标题}\n\\author{}\n\\date{}\n\n\\begin{document}\n\\maketitle\n\n\\section{引言}\n在这里开始写作。\n\n\\end{document}\n"
-    },
-    math: {
-      title: zh ? "数学笔记" : "Math Notes",
-      engine: "xelatex",
-      source: "\\documentclass[12pt]{ctexart}\n\\usepackage{amsmath,amssymb,mathtools}\n\\usepackage[a4paper,margin=2.4cm]{geometry}\n\\title{数学笔记}\n\\date{}\n\n\\begin{document}\n\\maketitle\n\n\\section{公式}\n\\[\n  e^{i\\pi}+1=0\n\\]\n\n\\end{document}\n"
-    }
-  };
-
   const labels = zh ? {
     creating: "正在创建",
     preparing: "正在准备编辑器…",
@@ -35,6 +17,30 @@ export function enhanceWorkTexMobileApple(markup, zh) {
     <style id="qsseda-work-tex-mobile-apple-polish">
       @media (max-width:760px), (max-width:950px) and (pointer:coarse){
         :root{--tex-mobile-tabs-h:calc(52px + env(safe-area-inset-bottom,0px))}
+
+        /* The base TeX layout still caps this panel at 330px on phones.
+           Work uses a full-height tab instead, so remove that legacy cap. */
+        .tex-work-app .tex-shell>.tex-documents-panel,
+        .tex-work-app .tex-shell>.tex-runs-panel{
+          max-height:none!important;
+        }
+        .tex-work-app .tex-documents-panel{
+          overflow:hidden!important;
+        }
+        .tex-work-app .tex-document-list{
+          flex:1 1 auto!important;
+          min-height:0!important;
+          overflow-x:hidden!important;
+          overflow-y:auto!important;
+          overscroll-behavior:contain!important;
+          -webkit-overflow-scrolling:touch!important;
+          padding:0 10px calc(22px + env(safe-area-inset-bottom,0px))!important;
+        }
+        .tex-work-app #tex-documents-empty{
+          flex:1 1 auto!important;
+          min-height:0!important;
+          align-content:start!important;
+        }
 
         .tex-work-app .tex-editor-panel{position:relative!important}
         .tex-work-app .tex-start-surface{
@@ -129,9 +135,9 @@ export function enhanceWorkTexMobileApple(markup, zh) {
           background:color-mix(in srgb,var(--primary) 5%,var(--card))!important;
         }
         .tex-work-app .tex-start-surface>.tex-start-grid>.tex-start-card.is-selected{
+          transform:scale(.985)!important;
           background:color-mix(in srgb,var(--primary) 7%,var(--card))!important;
           box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 38%,var(--hairline))!important;
-          transform:scale(.985)!important;
         }
         .tex-work-app .tex-start-surface>.tex-start-grid>.tex-start-card[aria-disabled="true"]:not(.is-selected){opacity:.42!important}
         .tex-work-app .tex-start-surface>.tex-start-grid>.tex-start-card>b,
@@ -154,18 +160,6 @@ export function enhanceWorkTexMobileApple(markup, zh) {
           color:var(--muted)!important;
           font-size:12px!important;
           line-height:1.45!important;
-        }
-        .tex-work-app .tex-start-surface>.tex-start-features{
-          width:100%!important;
-          justify-content:flex-start!important;
-          gap:8px 14px!important;
-          margin-top:16px!important;
-          padding:0 2px!important;
-          color:var(--quiet)!important;
-        }
-        .tex-work-app .tex-start-features span{
-          font-size:9px!important;
-          line-height:1.35!important;
         }
 
         .tex-mobile-create-transition{
@@ -245,7 +239,6 @@ export function enhanceWorkTexMobileApple(markup, zh) {
         .tex-work-app .tex-live-preview-viewport{
           height:calc(var(--tex-mobile-vh) - var(--tex-mobile-tabs-h) - 170px)!important;
         }
-
         .tex-mobile-tabs{
           height:var(--tex-mobile-tabs-h)!important;
           padding:2px 10px env(safe-area-inset-bottom,0px)!important;
@@ -264,24 +257,14 @@ export function enhanceWorkTexMobileApple(markup, zh) {
           font-weight:550!important;
           line-height:1.1!important;
         }
-        .tex-mobile-tab svg{
-          width:22px!important;
-          height:22px!important;
-          stroke-width:1.75!important;
-        }
-        .tex-mobile-tab[aria-selected="true"]{
-          color:var(--primary)!important;
-          font-weight:650!important;
-          background:transparent!important;
-        }
+        .tex-mobile-tab svg{width:22px!important;height:22px!important;stroke-width:1.75!important}
+        .tex-mobile-tab[aria-selected="true"]{color:var(--primary)!important;font-weight:650!important;background:transparent!important}
         .tex-mobile-tab[aria-selected="true"] svg{stroke-width:2!important}
         .tex-mobile-tab:active{background:color-mix(in srgb,var(--fill) 72%,transparent)!important}
 
         body.tex-mobile-keyboard-open .tex-work-app .tex-shell>.tex-documents-panel,
         body.tex-mobile-keyboard-open .tex-work-app .tex-shell>.tex-editor-panel,
-        body.tex-mobile-keyboard-open .tex-work-app .tex-shell>.tex-runs-panel{
-          bottom:0!important;
-        }
+        body.tex-mobile-keyboard-open .tex-work-app .tex-shell>.tex-runs-panel{bottom:0!important}
         body.tex-mobile-keyboard-open .tex-mobile-tabs{
           opacity:0!important;
           pointer-events:none!important;
@@ -305,14 +288,17 @@ export function enhanceWorkTexMobileApple(markup, zh) {
         const media = window.matchMedia('(max-width:760px), (max-width:950px) and (pointer:coarse)');
         if (!media.matches) return;
 
-        const templates = ${JSON.stringify(templates)};
         const labels = ${JSON.stringify(labels)};
-        const enterKey = 'qsseda.work.tex.mobile-enter.v1';
         const panel = document.querySelector('.tex-work-app .tex-editor-panel');
         const surface = document.querySelector('.tex-work-app .tex-start-surface');
         const editor = document.getElementById('tex-editor');
+        const template = document.getElementById('tex-template');
+        const create = document.getElementById('tex-create');
+        const message = document.getElementById('tex-message');
         let busy = false;
         let transition = null;
+        let lastPointerButton = null;
+        let lastPointerAt = 0;
 
         const ensureTransition = () => {
           if (transition || !panel) return transition;
@@ -324,136 +310,138 @@ export function enhanceWorkTexMobileApple(markup, zh) {
           return transition;
         };
 
-        const setTransition = (title, detail, visible = true) => {
+        const setTransition = (title, detail) => {
           const layer = ensureTransition();
           if (!layer) return;
           layer.querySelector('strong').textContent = title || '';
           layer.querySelector('span').textContent = detail || '';
           layer.querySelector('.tex-mobile-create-error').classList.remove('is-visible');
-          layer.classList.toggle('is-visible', visible);
+          layer.classList.add('is-visible');
         };
 
-        const showError = message => {
+        const showError = errorText => {
           const layer = ensureTransition();
           if (!layer) return;
           layer.querySelector('strong').textContent = labels.failed;
           layer.querySelector('span').textContent = labels.retry;
           const error = layer.querySelector('.tex-mobile-create-error');
-          error.textContent = message || labels.failed;
+          error.textContent = errorText || labels.failed;
           error.classList.add('is-visible');
           layer.classList.add('is-visible');
         };
 
-        const resetCards = () => {
+        const reset = () => {
+          busy = false;
           surface?.classList.remove('is-leaving');
+          editor?.classList.remove('tex-mobile-editor-enter', 'is-visible');
           for (const card of document.querySelectorAll('[data-tex-start-template]')) {
             card.classList.remove('is-selected');
             card.removeAttribute('aria-disabled');
           }
         };
 
-        const createTemplate = async button => {
-          if (busy || !button) return;
-          const key = button.dataset.texStartTemplate || 'blank';
-          const payload = templates[key] || templates.blank;
-          const label = button.querySelector('b')?.textContent?.trim() || payload.title;
+        const finishOpen = () => {
+          if (!editor || editor.hidden) return false;
+          document.querySelector('.tex-mobile-tab[data-mobile-pane="editor"]')?.click();
+          if (transition) transition.classList.remove('is-visible');
+          window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => editor.classList.add('is-visible'));
+          });
+          window.setTimeout(() => {
+            editor.classList.remove('tex-mobile-editor-enter', 'is-visible');
+            surface?.classList.remove('is-leaving');
+            busy = false;
+            for (const card of document.querySelectorAll('[data-tex-start-template]')) {
+              card.classList.remove('is-selected');
+              card.removeAttribute('aria-disabled');
+            }
+          }, 420);
+          return true;
+        };
+
+        const createTemplate = button => {
+          if (busy || !button || !template || !create || !editor) return;
           busy = true;
+          const key = button.dataset.texStartTemplate || 'blank';
+          const label = button.querySelector('b')?.textContent?.trim() || key;
 
           for (const card of document.querySelectorAll('[data-tex-start-template]')) {
             card.setAttribute('aria-disabled', 'true');
           }
           button.classList.add('is-selected');
-          setTransition(labels.creating + '“' + label + '”', labels.preparing, true);
+          editor.classList.add('tex-mobile-editor-enter');
+          setTransition(labels.creating + '“' + label + '”', labels.preparing);
           window.requestAnimationFrame(() => surface?.classList.add('is-leaving'));
 
-          try {
-            const response = await fetch('/api/tex/documents', {
-              method: 'POST',
-              credentials: 'same-origin',
-              cache: 'no-store',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json;charset=UTF-8'
-              },
-              body: JSON.stringify(payload)
-            });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok || !data?.document?.id) {
-              throw new Error(data?.error || ('HTTP ' + response.status));
-            }
+          template.value = key;
+          template.dispatchEvent(new Event('change', { bubbles: true }));
 
-            try {
-              window.sessionStorage.setItem(enterKey, JSON.stringify({
-                id: data.document.id,
-                label,
-                at: Date.now()
-              }));
-              window.sessionStorage.setItem('qsseda.work.tex.mobile-pane.v1', 'editor');
-            } catch {}
+          let settled = false;
+          let editorObserver = null;
+          let messageObserver = null;
+          const cleanup = () => {
+            editorObserver?.disconnect();
+            messageObserver?.disconnect();
+          };
+          const succeed = () => {
+            if (settled || !finishOpen()) return false;
+            settled = true;
+            cleanup();
+            return true;
+          };
+          const fail = () => {
+            if (settled || !message || message.hidden || !message.textContent?.trim()) return false;
+            settled = true;
+            cleanup();
+            reset();
+            showError(message.textContent.trim());
+            window.setTimeout(() => transition?.classList.remove('is-visible'), 2600);
+            return true;
+          };
 
-            setTransition(label, labels.opening, true);
-            window.setTimeout(() => window.location.reload(), 180);
-          } catch (error) {
-            busy = false;
-            resetCards();
-            showError(String(error?.message || error || labels.failed));
-            window.setTimeout(() => {
-              transition?.classList.remove('is-visible');
-            }, 2600);
+          editorObserver = new MutationObserver(() => void succeed());
+          editorObserver.observe(editor, { attributes: true, attributeFilter: ['hidden'] });
+          if (message) {
+            messageObserver = new MutationObserver(() => void fail());
+            messageObserver.observe(message, { attributes: true, childList: true, subtree: true, characterData: true });
           }
+
+          create.click();
+          if (succeed()) return;
+
+          window.setTimeout(() => {
+            if (settled) return;
+            if (succeed() || fail()) return;
+            settled = true;
+            cleanup();
+            reset();
+            showError(labels.failed);
+            window.setTimeout(() => transition?.classList.remove('is-visible'), 2200);
+          }, 9000);
         };
 
         const intercept = event => {
           const button = event.target?.closest?.('[data-tex-start-template]');
           if (!button) return;
           if (event.type === 'pointerup' && event.pointerType === 'mouse') return;
+
+          if (event.type === 'click' && button === lastPointerButton && Date.now() - lastPointerAt < 900) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+          }
+
           event.preventDefault();
           event.stopImmediatePropagation();
-          if (!busy) void createTemplate(button);
+          if (event.type === 'pointerup') {
+            lastPointerButton = button;
+            lastPointerAt = Date.now();
+          }
+          createTemplate(button);
         };
 
         document.addEventListener('pointerup', intercept, true);
         document.addEventListener('click', intercept, true);
-
-        let pending = null;
-        try {
-          const value = JSON.parse(window.sessionStorage.getItem(enterKey) || 'null');
-          if (value && Date.now() - Number(value.at || 0) < 15000) pending = value;
-          else window.sessionStorage.removeItem(enterKey);
-        } catch {}
-
-        if (pending && editor) {
-          const label = pending.label || '';
-          setTransition(label, labels.opening, true);
-          surface?.classList.add('is-leaving');
-          editor.classList.add('tex-mobile-editor-enter');
-
-          const reveal = () => {
-            if (editor.hidden) return false;
-            transition?.classList.remove('is-visible');
-            window.requestAnimationFrame(() => {
-              window.requestAnimationFrame(() => editor.classList.add('is-visible'));
-            });
-            window.setTimeout(() => {
-              editor.classList.remove('tex-mobile-editor-enter', 'is-visible');
-              surface?.classList.remove('is-leaving');
-              try { window.sessionStorage.removeItem(enterKey); } catch {}
-            }, 420);
-            return true;
-          };
-
-          if (!reveal()) {
-            const observer = new MutationObserver(() => {
-              if (!reveal()) return;
-              observer.disconnect();
-            });
-            observer.observe(editor, { attributes: true, attributeFilter: ['hidden'] });
-            window.setTimeout(() => {
-              observer.disconnect();
-              reveal();
-            }, 6000);
-          }
-        }
       })();
     </script>`;
 }
