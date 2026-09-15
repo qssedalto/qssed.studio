@@ -303,7 +303,7 @@ function cleanUsername(value) {
 
 function cleanSearchQuery(value) {
   const query = String(value || "").trim().replace(/^@+/, "").slice(0, 80);
-  return /^[a-zA-Z0-9._-]{2,80}$/.test(query) ? query : "";
+  return /^[a-zA-Z0-9._-]{1,80}$/.test(query) ? query : "";
 }
 
 function cleanText(value, maximum) {
