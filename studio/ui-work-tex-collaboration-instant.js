@@ -10,8 +10,24 @@ import { enhanceWorkTexRealtime } from "./ui-work-tex-realtime.js";
 import { enhanceWorkTexCodeMirror } from "./ui-work-tex-codemirror.js";
 import { enhanceWorkTexSharedStable } from "./ui-work-tex-shared-stable.js";
 
+function stabilizeInvitedCollaborationControls(markup) {
+  let output = String(markup || "");
+
+  output = output.replace(
+    `        const observer = new MutationObserver(() => {\n          if (!drawer.classList.contains('is-open')) return;\n          applyAccess();\n        });\n        observer.observe(drawer, { childList: true, subtree: true });`,
+    `        const refreshAccessControls = () => {\n          if (!drawer.classList.contains('is-open')) return;\n          window.requestAnimationFrame(() => applyAccess());\n          window.setTimeout(() => applyAccess(), 90);\n          window.setTimeout(() => applyAccess(), 320);\n        };\n        drawer.addEventListener('transitionend', refreshAccessControls);\n        window.addEventListener('qsseda:tex-collaboration-snapshot', refreshAccessControls);`
+  );
+
+  output = output.replace(
+    `        window.addEventListener('pagehide', () => observer.disconnect(), { once: true });`,
+    `        window.addEventListener('pagehide', () => {\n          drawer.removeEventListener('transitionend', refreshAccessControls);\n          window.removeEventListener('qsseda:tex-collaboration-snapshot', refreshAccessControls);\n        }, { once: true });`
+  );
+
+  return output;
+}
+
 export function enhanceWorkTexCollaboration(markup, zh) {
-  return enhanceWorkTexSharedStable(
+  const output = enhanceWorkTexSharedStable(
     enhanceWorkTexCodeMirror(
       enhanceWorkTexRealtime(
         enhanceWorkTexPreviewDirectCache(
@@ -36,4 +52,6 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     ),
     zh
   );
+
+  return stabilizeInvitedCollaborationControls(output);
 }
