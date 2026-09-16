@@ -31,6 +31,48 @@ export function enhanceWorkTexSharedStable(markup) {
         align-items:center!important;
         justify-content:space-between!important;
       }
+
+      @media (max-width:760px), (max-width:950px) and (pointer:coarse){
+        .tex-work-app .tex-editor-toolbar{
+          display:grid!important;
+          grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+          grid-template-rows:auto auto!important;
+          align-items:end!important;
+          gap:8px!important;
+        }
+        .tex-work-app .tex-editor-toolbar>input{
+          grid-column:1/-1!important;
+          grid-row:1!important;
+          width:100%!important;
+          min-width:0!important;
+          height:42px!important;
+          min-height:42px!important;
+        }
+        .tex-work-app .tex-editor-toolbar>label{
+          grid-column:1!important;
+          grid-row:2!important;
+          width:100%!important;
+          min-width:0!important;
+          margin:0!important;
+        }
+        .tex-work-app .tex-editor-toolbar>label select{
+          width:100%!important;
+          min-width:0!important;
+          height:42px!important;
+          min-height:42px!important;
+        }
+        .tex-work-app .tex-editor-toolbar>.tex-collaboration-button{
+          grid-column:2!important;
+          grid-row:2!important;
+          align-self:end!important;
+          width:100%!important;
+          min-width:0!important;
+          height:42px!important;
+          min-height:42px!important;
+          margin:0!important;
+          padding:0 10px!important;
+        }
+      }
     </style>`;
 
   return output;
