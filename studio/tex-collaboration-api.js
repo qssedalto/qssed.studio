@@ -45,12 +45,31 @@ async function getCollaboration(request, env, user, accessToken) {
   const url = new URL(request.url);
   const documentId = cleanObjectId(url.searchParams.get("document"));
   if (!documentId) return json({ error: "Invalid TeX document identifier." }, 400);
-  if (!(await ownsDocument(env, user.id, documentId))) return json({ error: "TeX document not found." }, 404);
 
-  if (url.searchParams.get("action") === "search") {
-    return searchCollaborators(url.searchParams.get("q"), accessToken);
+  const owned = await ownsDocument(env, user.id, documentId);
+  if (owned) {
+    if (url.searchParams.get("action") === "search") {
+      return searchCollaborators(url.searchParams.get("q"), accessToken);
+    }
+    return collaborationSnapshot(accessToken, user.id, documentId, {
+      canManage: true,
+      currentUserId: user.id,
+      currentUserRole: "owner"
+    });
   }
-  return collaborationSnapshot(accessToken, user.id, documentId);
+
+  const membership = await sharedDocumentMembership(accessToken, user.id, documentId);
+  if (membership.error) return collaborationBackendError(membership.error);
+  if (!membership.data) return json({ error: "TeX document not found." }, 404);
+  if (url.searchParams.get("action") === "search") {
+    return json({ error: "Only the document owner can invite collaborators." }, 403);
+  }
+
+  return collaborationSnapshot(accessToken, membership.data.owner_id, documentId, {
+    canManage: false,
+    currentUserId: user.id,
+    currentUserRole: membership.data.role
+  });
 }
 
 async function searchCollaborators(rawQuery, accessToken) {
@@ -95,7 +114,11 @@ async function addCollaborator(request, env, user, accessToken) {
     })
   });
   if (!write.ok) return collaborationBackendError(write);
-  return collaborationSnapshot(accessToken, user.id, documentId);
+  return collaborationSnapshot(accessToken, user.id, documentId, {
+    canManage: true,
+    currentUserId: user.id,
+    currentUserRole: "owner"
+  });
 }
 
 async function updateCollaborator(request, env, user, accessToken) {
@@ -120,11 +143,19 @@ async function updateCollaborator(request, env, user, accessToken) {
   });
   if (!write.ok) return collaborationBackendError(write);
   if (!Array.isArray(write.data) || !write.data.length) return json({ error: "Collaborator not found." }, 404);
-  return collaborationSnapshot(accessToken, user.id, documentId);
+  return collaborationSnapshot(accessToken, user.id, documentId, {
+    canManage: true,
+    currentUserId: user.id,
+    currentUserRole: "owner"
+  });
 }
 
 async function removeCollaborator(request, env, user, accessToken) {
   const url = new URL(request.url);
+  if (url.searchParams.get("action") === "leave") {
+    return leaveCollaboration(url, user, accessToken);
+  }
+
   const documentId = cleanObjectId(url.searchParams.get("document"));
   const memberId = cleanObjectId(url.searchParams.get("member"));
   if (!documentId || !memberId) return json({ error: "Invalid collaboration member identifier." }, 400);
@@ -140,24 +171,74 @@ async function removeCollaborator(request, env, user, accessToken) {
     headers: { Prefer: "return=representation" }
   });
   if (!write.ok) return collaborationBackendError(write);
-  return collaborationSnapshot(accessToken, user.id, documentId);
+  return collaborationSnapshot(accessToken, user.id, documentId, {
+    canManage: true,
+    currentUserId: user.id,
+    currentUserRole: "owner"
+  });
 }
 
-async function collaborationSnapshot(accessToken, ownerId, documentId) {
+async function leaveCollaboration(url, user, accessToken) {
+  const documentId = cleanObjectId(url.searchParams.get("document"));
+  if (!documentId) return json({ error: "Invalid TeX document identifier." }, 400);
+
+  const membership = await sharedDocumentMembership(accessToken, user.id, documentId);
+  if (membership.error) return collaborationBackendError(membership.error);
+  if (!membership.data) return json({ error: "Collaboration membership not found." }, 404);
+
+  const query = new URLSearchParams({
+    owner_id: `eq.${membership.data.owner_id}`,
+    document_id: `eq.${documentId}`,
+    member_id: `eq.${user.id}`
+  });
+  const write = await supabaseRequest(accessToken, `/rest/v1/tex_document_collaborators?${query.toString()}`, {
+    method: "DELETE",
+    headers: { Prefer: "return=representation" }
+  });
+  if (!write.ok) return collaborationBackendError(write);
+  if (!Array.isArray(write.data) || !write.data.length) return json({ error: "Collaboration membership not found." }, 404);
+
+  return json({
+    document_id: documentId,
+    owner_id: membership.data.owner_id,
+    left: true
+  });
+}
+
+async function collaborationSnapshot(accessToken, ownerId, documentId, options = {}) {
   const result = await rpc(accessToken, "tex_collaboration_participants", {
     p_owner_id: ownerId,
     p_document_id: documentId
   });
   if (result.error) return collaborationBackendError(result.error);
   const participants = Array.isArray(result.data) ? result.data.map(normalizeParticipant).filter(Boolean) : [];
+  const canManage = options.canManage === true;
+  const currentUserId = isStorageObjectId(options.currentUserId) ? options.currentUserId : ownerId;
+  const currentUserRole = canManage ? "owner" : cleanRole(options.currentUserRole) || "viewer";
   return json({
     document_id: documentId,
     owner_id: ownerId,
-    can_manage: true,
+    current_user_id: currentUserId,
+    current_user_role: currentUserRole,
+    can_manage: canManage,
+    can_leave: !canManage && currentUserId !== ownerId,
     realtime_ready: false,
     sync_mode: "permissions-only",
     participants
   });
+}
+
+async function sharedDocumentMembership(accessToken, userId, documentId) {
+  const response = await supabaseRequest(
+    accessToken,
+    `/rest/v1/tex_document_collaborators?select=owner_id,role&member_id=eq.${encodeURIComponent(userId)}&document_id=eq.${encodeURIComponent(documentId)}&limit=1`
+  );
+  if (!response.ok) return { data: null, error: response };
+  const row = Array.isArray(response.data) ? response.data[0] : null;
+  if (!row || !isStorageObjectId(row.owner_id)) return { data: null, error: null };
+  const role = cleanRole(row.role);
+  if (!role) return { data: null, error: null };
+  return { data: { owner_id: row.owner_id, role }, error: null };
 }
 
 function normalizeParticipant(value) {
