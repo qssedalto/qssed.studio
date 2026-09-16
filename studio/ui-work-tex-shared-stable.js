@@ -32,6 +32,70 @@ export function enhanceWorkTexSharedStable(markup) {
         justify-content:space-between!important;
       }
 
+      .tex-collaboration-drawer .tex-role-segment{
+        box-sizing:border-box!important;
+        display:grid!important;
+        grid-template-columns:1fr 1fr!important;
+        align-items:center!important;
+        width:148px!important;
+        min-width:148px!important;
+        height:38px!important;
+        min-height:38px!important;
+        padding:2px!important;
+        gap:2px!important;
+        overflow:hidden!important;
+        border-radius:11px!important;
+        background:color-mix(in srgb,var(--fill) 92%,var(--surface))!important;
+        box-shadow:inset 0 0 0 1px var(--border)!important;
+      }
+      .tex-collaboration-drawer .tex-role-segment button{
+        box-sizing:border-box!important;
+        display:flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        width:100%!important;
+        min-width:0!important;
+        height:34px!important;
+        min-height:34px!important;
+        margin:0!important;
+        padding:0 8px!important;
+        border:0!important;
+        border-radius:9px!important;
+        background:transparent!important;
+        color:var(--muted)!important;
+        box-shadow:none!important;
+        transform:none!important;
+        font-size:11.5px!important;
+        font-weight:700!important;
+        line-height:1!important;
+        white-space:nowrap!important;
+      }
+      .tex-collaboration-drawer .tex-role-segment button.is-active{
+        background:var(--surface)!important;
+        color:var(--text)!important;
+        box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 22%,var(--border))!important;
+      }
+      .tex-collaboration-drawer .tex-role-segment button:disabled{
+        opacity:.72!important;
+        cursor:default!important;
+      }
+      .tex-collaboration-drawer .tex-role-segment button.is-active:disabled{
+        opacity:1!important;
+        color:var(--text)!important;
+      }
+      .tex-collaboration-drawer .tex-collaboration-member-actions>.tex-role-segment{
+        width:148px!important;
+        min-width:148px!important;
+        height:38px!important;
+        min-height:38px!important;
+        padding:2px!important;
+      }
+      .tex-collaboration-drawer .tex-collaboration-member-actions>.tex-role-segment button{
+        height:34px!important;
+        min-height:34px!important;
+        font-size:11px!important;
+      }
+
       @media (max-width:760px), (max-width:950px) and (pointer:coarse){
         .tex-work-app .tex-editor-toolbar{
           display:grid!important;
@@ -71,6 +135,24 @@ export function enhanceWorkTexSharedStable(markup) {
           min-height:42px!important;
           margin:0!important;
           padding:0 10px!important;
+        }
+        .tex-collaboration-drawer .tex-collaboration-invite>.tex-role-segment{
+          width:132px!important;
+          min-width:132px!important;
+          height:38px!important;
+          min-height:38px!important;
+        }
+        .tex-collaboration-drawer .tex-collaboration-member-actions{
+          grid-template-columns:140px 76px!important;
+          justify-content:end!important;
+          width:100%!important;
+          min-width:0!important;
+        }
+        .tex-collaboration-drawer .tex-collaboration-member-actions>.tex-role-segment{
+          width:140px!important;
+          min-width:140px!important;
+          height:38px!important;
+          min-height:38px!important;
         }
       }
     </style>`;
