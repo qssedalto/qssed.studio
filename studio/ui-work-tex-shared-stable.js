@@ -1,4 +1,4 @@
-export function enhanceWorkTexSharedStable(markup) {
+export function enhanceWorkTexSharedStable(markup, zh) {
   let output = String(markup || "");
 
   const original = `            rememberSharedDocuments(shared);\n            const documents = [...(Array.isArray(ownData.documents) ? ownData.documents : []), ...shared]\n              .sort((a, b) => String(b?.updated_at || '').localeCompare(String(a?.updated_at || '')));\n            return responseJson({ ...ownData, documents, count: documents.length, scope: shared.length ? 'own-and-shared' : (ownData.scope || 'own') });`;
