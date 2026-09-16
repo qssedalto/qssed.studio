@@ -33,6 +33,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         zh
       ),
       zh
-    )
+    ),
+    zh
   );
 }
