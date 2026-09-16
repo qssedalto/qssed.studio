@@ -167,6 +167,146 @@ function refineCollaborationMobileUx(markup, zh) {
   return output;
 }
 
+function optimizeCollaborationSwitching(markup) {
+  let output = String(markup || "");
+
+  // Access snapshots are the same permission snapshot already loaded for the
+  // collaboration drawer. Avoid a second uncached action=access request.
+  output = output.replace(
+    `          const documentId = activeDocumentId();\n          const sequence = ++accessSequence;`,
+    `          const documentId = activeDocumentId();\n          if (access && accessDocumentId === documentId && Array.isArray(access.participants)) {\n            applyAccess();\n            return;\n          }\n          const sequence = ++accessSequence;`
+  );
+  output = output.replace(
+    `            const response = await fetch('/api/tex/collaboration?document=' + encodeURIComponent(documentId) + '&action=access', {`,
+    `            const response = await fetch('/api/tex/collaboration?document=' + encodeURIComponent(documentId), {`
+  );
+
+  // Keep access state synchronized from the warm collaboration snapshot even
+  // while the drawer is closed, so opening it never starts from a blank state.
+  output = output.replace(
+    `        window.addEventListener('qsseda:tex-collaboration-snapshot', refreshAccessControls);`,
+    `        const syncAccessSnapshot = event => {\n          const data = event?.detail;\n          const id = activeDocumentId();\n          const dataId = String(data?.document_id || '');\n          if (id && dataId === id && Array.isArray(data?.participants)) {\n            access = data;\n            accessDocumentId = id;\n            applyAccess();\n          }\n          refreshAccessControls();\n        };\n        window.addEventListener('qsseda:tex-collaboration-snapshot', syncAccessSnapshot);`
+  );
+  output = output.replace(
+    `          window.removeEventListener('qsseda:tex-collaboration-snapshot', refreshAccessControls);`,
+    `          window.removeEventListener('qsseda:tex-collaboration-snapshot', syncAccessSnapshot);`
+  );
+
+  output += `
+    <script id="qsseda-work-tex-collaboration-instant-switch">
+      (() => {
+        if (window.__qssedaCollaborationInstantSwitchReady) return;
+        window.__qssedaCollaborationInstantSwitchReady = true;
+
+        const root = document.querySelector('.tex-work-app[data-tex-root]');
+        const list = document.getElementById('tex-document-list');
+        if (!root || !list) return;
+
+        const cachePrefix = 'qsseda.tex.collaboration.snapshot.';
+        const maxAge = 5 * 60 * 1000;
+        const freshAge = 30 * 1000;
+        const inflight = new Map();
+        let activeId = String(root.dataset.texCollaborationDocumentId || '');
+
+        const readCached = id => {
+          const key = String(id || '');
+          if (!key) return null;
+          try {
+            const parsed = JSON.parse(window.sessionStorage.getItem(cachePrefix + key) || 'null');
+            if (!parsed?.data || !Array.isArray(parsed.data.participants) || !Number.isFinite(Number(parsed.ts))) return null;
+            if (Date.now() - Number(parsed.ts) > maxAge) return null;
+            return parsed;
+          } catch {
+            return null;
+          }
+        };
+
+        const publish = (id, data, persist = true) => {
+          const key = String(id || data?.document_id || '');
+          if (!key || !data || !Array.isArray(data.participants)) return;
+          if (persist) {
+            try {
+              window.sessionStorage.setItem(cachePrefix + key, JSON.stringify({ ts: Date.now(), data }));
+            } catch {}
+          }
+          if (String(root.dataset.texCollaborationDocumentId || '') === key) {
+            window.dispatchEvent(new CustomEvent('qsseda:tex-collaboration-snapshot', { detail: data }));
+          }
+        };
+
+        const prefetch = id => {
+          const key = String(id || '').trim();
+          if (!key) return Promise.resolve(null);
+          const cached = readCached(key);
+          if (cached) {
+            publish(key, cached.data, false);
+            if (Date.now() - Number(cached.ts) < freshAge) return Promise.resolve(cached.data);
+          }
+          if (inflight.has(key)) return inflight.get(key);
+
+          const request = fetch('/api/tex/collaboration?document=' + encodeURIComponent(key), {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { Accept: 'application/json' }
+          }).then(async response => {
+            if (!response.ok) return cached?.data || null;
+            const data = await response.json().catch(() => null);
+            if (data?.document_id === key && Array.isArray(data?.participants)) publish(key, data, true);
+            return data;
+          }).catch(() => cached?.data || null).finally(() => {
+            inflight.delete(key);
+          });
+          inflight.set(key, request);
+          return request;
+        };
+
+        const hydrateActive = () => {
+          const id = String(root.dataset.texCollaborationDocumentId || '').trim();
+          if (!id) return;
+          const cached = readCached(id);
+          if (cached) publish(id, cached.data, false);
+          void prefetch(id);
+        };
+
+        const onDocumentIntent = event => {
+          const target = event.target instanceof Element ? event.target.closest('.tex-document-item[data-tex-document-id]') : null;
+          const id = String(target?.dataset?.texDocumentId || '').trim();
+          if (id) void prefetch(id);
+        };
+        list.addEventListener('pointerdown', onDocumentIntent, true);
+        list.addEventListener('click', onDocumentIntent, true);
+
+        const activeObserver = new MutationObserver(() => {
+          const next = String(root.dataset.texCollaborationDocumentId || '').trim();
+          if (!next || next === activeId) return;
+          activeId = next;
+          hydrateActive();
+        });
+        activeObserver.observe(root, { attributes: true, attributeFilter: ['data-tex-collaboration-document-id'] });
+
+        const warmDocumentList = () => {
+          const ids = Array.from(list.querySelectorAll('.tex-document-item[data-tex-document-id]'))
+            .map(item => String(item.dataset.texDocumentId || '').trim())
+            .filter(Boolean)
+            .slice(0, 8);
+          ids.forEach((id, index) => window.setTimeout(() => void prefetch(id), index * 70));
+        };
+
+        if ('requestIdleCallback' in window) window.requestIdleCallback(warmDocumentList, { timeout: 500 });
+        else window.setTimeout(warmDocumentList, 120);
+        hydrateActive();
+
+        window.addEventListener('pagehide', () => {
+          activeObserver.disconnect();
+          list.removeEventListener('pointerdown', onDocumentIntent, true);
+          list.removeEventListener('click', onDocumentIntent, true);
+        }, { once: true });
+      })();
+    </script>`;
+
+  return output;
+}
+
 export function enhanceWorkTexCollaboration(markup, zh) {
   const output = enhanceWorkTexSharedStable(
     enhanceWorkTexCodeMirror(
@@ -194,5 +334,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     zh
   );
 
-  return refineCollaborationMobileUx(stabilizeInvitedCollaborationControls(output), zh);
+  return optimizeCollaborationSwitching(
+    refineCollaborationMobileUx(stabilizeInvitedCollaborationControls(output), zh)
+  );
 }
