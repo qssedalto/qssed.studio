@@ -25,6 +25,37 @@ export function notFoundPage(t, links) {
 `;
 }
 
+
+function socialAuthStyles() {
+  return `<style>
+    .social-auth{margin:0 0 18px}
+    .social-google{display:flex;align-items:center;justify-content:center;gap:10px;min-height:46px;margin-top:0;border:1px solid var(--border-strong);background:var(--card);color:var(--text);font-weight:700;text-decoration:none;box-shadow:var(--shadow-soft)}
+    .social-google:hover{background:var(--surface-soft)}
+    .social-google:active{transform:scale(.985)}
+    .social-google svg{width:18px;height:18px;flex:0 0 auto}
+    .social-divider{display:flex;align-items:center;gap:12px;margin:16px 2px 0;color:var(--quiet);font-size:12px}
+    .social-divider:before,.social-divider:after{content:"";height:1px;flex:1;background:var(--border)}
+    .social-divider span{white-space:nowrap}
+  </style>`;
+}
+
+function googleAuthCta(t, nextPath, mode = "login") {
+  const zh = t === TEXT.zh;
+  const label = mode === "signup"
+    ? (zh ? "使用 Google 创建或继续" : "Create or continue with Google")
+    : (zh ? "使用 Google 继续" : "Continue with Google");
+  const divider = zh ? "或使用 QssedA 账号" : "or use your QssedA account";
+  const href = `https://auth.qsseda.studio/oauth/google?next=${encodeURIComponent(nextPath || "/dashboard")}`;
+  return `
+    <div class="social-auth">
+      <a class="button social-google" href="${href}">
+        <svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.716v2.259h2.909c1.703-1.568 2.684-3.879 2.684-6.616Z"/><path fill="#34A853" d="M9 18c2.43 0 4.468-.806 5.956-2.179l-2.909-2.259c-.806.54-1.835.859-3.047.859-2.344 0-4.328-1.585-5.037-3.714H.956v2.333A9 9 0 0 0 9 18Z"/><path fill="#FBBC05" d="M3.963 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.169.281-1.707V4.96H.956A9 9 0 0 0 0 9c0 1.452.347 2.827.956 4.04l3.007-2.333Z"/><path fill="#EA4335" d="M9 3.579c1.321 0 2.507.454 3.441 1.346l2.581-2.581C13.464.892 11.427 0 9 0A9 9 0 0 0 .956 4.96l3.007 2.333C4.672 5.164 6.656 3.579 9 3.579Z"/></svg>
+        <span>${label}</span>
+      </a>
+      <div class="social-divider"><span>${divider}</span></div>
+    </div>`;
+}
+
 export function signUpPage(t, links, ipInfo) {
   const zh = t === TEXT.zh;
   const enforceChineseNameRules = ZH_COUNTRIES.includes(ipInfo?.country || "");
@@ -113,6 +144,7 @@ export function signUpPage(t, links, ipInfo) {
 <html>
 <head>
   ${baseHead(t.studioName)}
+  ${socialAuthStyles()}
   <style>
     .signup-help{display:block;margin:6px 0 2px;color:var(--quiet);font-size:13px;line-height:1.55}
     .signup-status{min-height:22px;margin-top:8px;font-size:13px;color:var(--muted)}
@@ -237,6 +269,7 @@ export function signUpPage(t, links, ipInfo) {
   ${topControls(links, t)}
   <div class="card">
     <h1 class="brand-title">${t.studioName}</h1>
+    ${googleAuthCta(t, links.dashboard, "signup")}
 
     <div id="step-username">
       <p>${t.chooseUsername}</p>
@@ -863,12 +896,14 @@ export function loginPage(t, links, ipInfo) {
 <html>
 <head>
   ${baseHead(t.signIn)}
+  ${socialAuthStyles()}
 </head>
 <body>
   ${topControls(links, t)}
   <div class="card">
     <h1>${t.signIn}</h1>
     <p id="login-description">${t.loginDescription}</p>
+    ${googleAuthCta(t, links.dashboard, "login")}
 
     <input id="email" type="email" placeholder="${t.emailPlaceholder}">
     <input id="password" type="password" placeholder="${t.passwordPlaceholder}">
