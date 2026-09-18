@@ -33,8 +33,8 @@ async function routeAuthRequest(request, env, ctx) {
   const requestedReturn = safeNextPath(url.searchParams.get("next"));
   const effectiveReturn = requestedReturn || pendingReturn;
 
-  if (pathname === "/api/login") {
-    const key = await rateLimitKey(request, "auth-login", false);
+  if (pathname === "/api/login" || pathname === "/oauth/google") {
+    const key = await rateLimitKey(request, pathname === "/oauth/google" ? "auth-google" : "auth-login", false);
     if (!(await allowed(env?.AUTH_LOGIN_RATE_LIMITER, key))) return tooManyRequests();
   } else if (OAUTH_MUTATION_PATHS.has(pathname)) {
     const key = await rateLimitKey(request, `oauth:${pathname}`, true);
@@ -122,7 +122,7 @@ function rewriteLoginReturnTarget(markup, value) {
   const next = safeNextPath(value);
   if (!next) return markup;
   const continueTarget = `/continue?next=${encodeURIComponent(next)}`;
-  const script = `<script id="qsseda-auth-return-target">(()=>{const target=${scriptLiteral(continueTarget)};const signedIn=document.getElementById("signedIn");const studioButton=document.getElementById("studioButton");const accountStudioButton=document.getElementById("accountStudioButton");if(studioButton)studioButton.href=target;if(accountStudioButton)accountStudioButton.href=target;let leaving=false;const resume=()=>{if(leaving||!signedIn||signedIn.classList.contains("hidden")||!studioButton||studioButton.classList.contains("hidden"))return;leaving=true;location.replace(target)};const observer=new MutationObserver(resume);if(signedIn)observer.observe(signedIn,{attributes:true,attributeFilter:["class"]});if(studioButton)observer.observe(studioButton,{attributes:true,attributeFilter:["class"]});queueMicrotask(resume)})()</script>`;
+  const script = `<script id="qsseda-auth-return-target">(()=>{const target=${scriptLiteral(continueTarget)};const googleTarget=${scriptLiteral(`/oauth/google?next=${encodeURIComponent(next)}`)};const signedIn=document.getElementById("signedIn");const studioButton=document.getElementById("studioButton");const accountStudioButton=document.getElementById("accountStudioButton");const googleButton=document.getElementById("googleButton");if(studioButton)studioButton.href=target;if(accountStudioButton)accountStudioButton.href=target;if(googleButton)googleButton.href=googleTarget;let leaving=false;const resume=()=>{if(leaving||!signedIn||signedIn.classList.contains("hidden")||!studioButton||studioButton.classList.contains("hidden"))return;leaving=true;location.replace(target)};const observer=new MutationObserver(resume);if(signedIn)observer.observe(signedIn,{attributes:true,attributeFilter:["class"]});if(studioButton)observer.observe(studioButton,{attributes:true,attributeFilter:["class"]});queueMicrotask(resume)})()</script>`;
   return String(markup || "").replace("</body>", `${script}</body>`);
 }
 
