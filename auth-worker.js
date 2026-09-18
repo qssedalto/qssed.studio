@@ -1,4 +1,5 @@
 import { handleOAuthRequest } from "./auth-oauth.js";
+import { SOCIAL_AUTH_PATHS, handleSocialAuthRequest } from "./auth-social.js";
 
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
@@ -22,6 +23,7 @@ export default {
     const url = new URL(request.url);
     const pathname = normalizePath(url.pathname);
 
+    if (SOCIAL_AUTH_PATHS.has(pathname)) return handleSocialAuthRequest(request);
     if (OAUTH_PATHS.has(pathname)) return handleOAuthRequest(request);
 
     if (pathname === "/api/login") {
@@ -406,6 +408,12 @@ function authPage(pathname, request) {
     password: "密码",
     continue: "继续",
     create: "创建账号",
+    google: "使用 Google 继续",
+    orAccount: "或使用 QssedA 账号",
+    googleUnavailable: "Google 登录暂不可用，请使用 QssedA 账号继续。",
+    googleCancelled: "Google 登录已取消。",
+    googleExpired: "Google 登录请求已过期，请重新尝试。",
+    googleFailed: "Google 登录未完成，请稍后重试。",
     signedTitle: "你已登录",
     signedLead: "QssedA Auth 已识别当前会话。",
     openStudio: "继续前往 QssedA Studio",
@@ -441,6 +449,12 @@ function authPage(pathname, request) {
     password: "Password",
     continue: "Continue",
     create: "Create account",
+    google: "Continue with Google",
+    orAccount: "or use your QssedA account",
+    googleUnavailable: "Google sign-in is not available yet. Continue with your QssedA account.",
+    googleCancelled: "Google sign-in was cancelled.",
+    googleExpired: "The Google sign-in request expired. Please try again.",
+    googleFailed: "Google sign-in could not be completed. Please try again.",
     signedTitle: "You're signed in",
     signedLead: "QssedA Auth recognized your current session.",
     openStudio: "Continue to QssedA Studio",
@@ -486,7 +500,7 @@ function authPage(pathname, request) {
     .card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);backdrop-filter:blur(30px) saturate(150%);-webkit-backdrop-filter:blur(30px) saturate(150%);box-shadow:var(--shadow);padding:30px}.card:before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);opacity:.65}h1{margin:0;font-size:31px;line-height:1.08;letter-spacing:-.04em;font-weight:760}.lead{margin:10px 0 24px;color:var(--muted);font-size:14px;line-height:1.55}.hidden{display:none!important}
     .loading{display:flex;align-items:center;gap:12px;color:var(--muted);padding:8px 0}.spinner{width:18px;height:18px;border:2px solid var(--line-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}label{display:block;margin:0 0 8px;color:var(--muted);font-size:13px;font-weight:600}.field{margin-top:16px}input{width:100%;height:50px;border-radius:var(--control);border:1px solid var(--line);padding:0 14px;background:var(--surface);color:var(--text);font:inherit;font-size:15px;outline:none;transition:.18s ease border-color,.18s ease box-shadow,.18s ease background}input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(10,132,255,.14);background:var(--panel-strong)}
     button,.button{width:100%;min-height:50px;margin-top:18px;border:0;border-radius:var(--control);padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:var(--accent);color:white;font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.16s ease transform,.16s ease background,.16s ease opacity}button:hover,.button:hover{background:var(--accent-hover)}button:active,.button:active{transform:scale(.985)}button:disabled{opacity:.48;cursor:not-allowed}.secondary{background:var(--surface);color:var(--text);border:1px solid var(--line)}.secondary:hover{background:var(--surface-hover)}.message{min-height:20px;margin:13px 0 0;color:var(--muted);font-size:13px;line-height:1.45}.message.error{color:var(--danger)}
-    .account{display:flex;align-items:center;gap:14px;padding:16px;border-radius:17px;background:var(--surface);border:1px solid var(--line)}.avatar{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#5e5ce6,#0a84ff);color:#fff;font-weight:800;font-size:17px}.avatar img{width:100%;height:100%;object-fit:cover}.identity{min-width:0;flex:1}.identity strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.identity span{display:block;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px}.badge{display:inline-flex;align-items:center;gap:6px;margin-top:9px;color:var(--muted);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(48,209,88,.12)}.dot.warning{background:var(--warning);box-shadow:none}.dot.danger{background:var(--danger);box-shadow:none}.details{margin-top:18px;border:1px solid var(--line);border-radius:17px;overflow:hidden;background:var(--surface)}.detail{display:flex;justify-content:space-between;gap:18px;padding:13px 15px;border-bottom:1px solid var(--line);font-size:13px}.detail:last-child{border-bottom:0}.detail span{color:var(--muted)}.detail strong{min-width:0;text-align:right;overflow-wrap:anywhere}.security-note{margin:14px 2px 0;color:var(--quiet);font-size:12px;line-height:1.55}.divider{height:1px;background:var(--line);margin:22px 0}.app-box{padding:16px;border:1px solid var(--line);border-radius:17px;background:var(--surface)}.app-name{font-weight:700;font-size:15px}.app-id{margin-top:5px;color:var(--quiet);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.permissions{margin:16px 0 0;padding:0;list-style:none}.permissions li{display:flex;gap:10px;padding:9px 0;color:var(--muted);font-size:13px;border-bottom:1px solid var(--line)}.permissions li:last-child{border-bottom:0}.tick{color:var(--accent);font-weight:900}.foot{margin:16px 2px 0;text-align:center;color:var(--quiet);font-size:11px;line-height:1.5}
+    .account{display:flex;align-items:center;gap:14px;padding:16px;border-radius:17px;background:var(--surface);border:1px solid var(--line)}.avatar{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#5e5ce6,#0a84ff);color:#fff;font-weight:800;font-size:17px}.avatar img{width:100%;height:100%;object-fit:cover}.identity{min-width:0;flex:1}.identity strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.identity span{display:block;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px}.badge{display:inline-flex;align-items:center;gap:6px;margin-top:9px;color:var(--muted);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(48,209,88,.12)}.dot.warning{background:var(--warning);box-shadow:none}.dot.danger{background:var(--danger);box-shadow:none}.details{margin-top:18px;border:1px solid var(--line);border-radius:17px;overflow:hidden;background:var(--surface)}.detail{display:flex;justify-content:space-between;gap:18px;padding:13px 15px;border-bottom:1px solid var(--line);font-size:13px}.detail:last-child{border-bottom:0}.detail span{color:var(--muted)}.detail strong{min-width:0;text-align:right;overflow-wrap:anywhere}.security-note{margin:14px 2px 0;color:var(--quiet);font-size:12px;line-height:1.55}.divider{height:1px;background:var(--line);margin:22px 0}.app-box{padding:16px;border:1px solid var(--line);border-radius:17px;background:var(--surface)}.app-name{font-weight:700;font-size:15px}.app-id{margin-top:5px;color:var(--quiet);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.permissions{margin:16px 0 0;padding:0;list-style:none}.permissions li{display:flex;gap:10px;padding:9px 0;color:var(--muted);font-size:13px;border-bottom:1px solid var(--line)}.permissions li:last-child{border-bottom:0}.tick{color:var(--accent);font-weight:900}.provider-button{display:flex;align-items:center;justify-content:center;gap:10px;min-height:46px;margin:0 0 12px;padding:0 16px;border:1px solid var(--line-strong);border-radius:var(--control);background:var(--panel-strong);color:var(--text);font-size:14px;font-weight:700;text-decoration:none;box-shadow:none;transition:background .14s ease,border-color .14s ease,transform .1s ease}.provider-button:hover{background:var(--surface-hover);border-color:var(--line-strong)}.provider-button:active{transform:scale(.985)}.provider-button svg{width:18px;height:18px;flex:0 0 auto}.provider-divider{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--quiet);font-size:11px}.provider-divider:before,.provider-divider:after{content:"";height:1px;flex:1;background:var(--line)}.provider-divider span{white-space:nowrap}.foot{margin:16px 2px 0;text-align:center;color:var(--quiet);font-size:11px;line-height:1.5}
     @media(max-width:520px){.card{padding:24px 20px;border-radius:20px}h1{font-size:28px}.brand{margin-left:2px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
   </style>
 </head>
@@ -497,6 +511,11 @@ function authPage(pathname, request) {
       <div id="loading" class="loading"><span class="spinner"></span><span>${copy.checking}</span></div>
       <div id="signedOut" class="hidden">
         <h1>${copy.loginTitle}</h1><p id="signedOutLead" class="lead">${copy.loginLead}</p>
+        <a id="googleButton" class="provider-button hidden" href="/oauth/google" aria-label="${copy.google}">
+          <svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.716v2.259h2.909c1.703-1.568 2.684-3.879 2.684-6.616Z"/><path fill="#34A853" d="M9 18c2.43 0 4.468-.806 5.956-2.179l-2.909-2.259c-.806.54-1.835.859-3.047.859-2.344 0-4.328-1.585-5.037-3.714H.956v2.333A9 9 0 0 0 9 18Z"/><path fill="#FBBC05" d="M3.963 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.169.281-1.707V4.96H.956A9 9 0 0 0 0 9c0 1.452.347 2.827.956 4.04l3.007-2.333Z"/><path fill="#EA4335" d="M9 3.579c1.321 0 2.507.454 3.441 1.346l2.581-2.581C13.464.892 11.427 0 9 0A9 9 0 0 0 .956 4.96l3.007 2.333C4.672 5.164 6.656 3.579 9 3.579Z"/></svg>
+          <span>${copy.google}</span>
+        </a>
+        <div id="providerDivider" class="provider-divider hidden"><span>${copy.orAccount}</span></div>
         <form id="loginForm" autocomplete="on">
           <div class="field"><label for="email">${copy.email}</label><input id="email" name="email" type="email" autocomplete="username" inputmode="email" required></div>
           <div class="field"><label for="password">${copy.password}</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
@@ -519,11 +538,12 @@ function authPage(pathname, request) {
 <script>
 (function(){
   var page=document.body.dataset.page||"home";
-  var loading=document.getElementById("loading"),signedOut=document.getElementById("signedOut"),signedIn=document.getElementById("signedIn"),loginForm=document.getElementById("loginForm"),loginButton=document.getElementById("loginButton"),loginMessage=document.getElementById("loginMessage"),logoutButton=document.getElementById("logoutButton"),homeLogoutButton=document.getElementById("homeLogoutButton");
+  var loading=document.getElementById("loading"),signedOut=document.getElementById("signedOut"),signedIn=document.getElementById("signedIn"),loginForm=document.getElementById("loginForm"),loginButton=document.getElementById("loginButton"),loginMessage=document.getElementById("loginMessage"),logoutButton=document.getElementById("logoutButton"),homeLogoutButton=document.getElementById("homeLogoutButton"),googleButton=document.getElementById("googleButton"),providerDivider=document.getElementById("providerDivider");
   var copy=${JSON.stringify(copy)};
   function initials(name){var chars=Array.from(String(name||"Q").trim());return(chars.slice(0,2).join("")||"Q").toUpperCase()}
   function statusLabel(status){if(status==="active")return copy.active;if(status==="suspended")return copy.suspended;if(status==="banned")return copy.banned;return status||copy.active}
-  function showLoggedOut(){loading.classList.add("hidden");signedIn.classList.add("hidden");signedOut.classList.remove("hidden");if(page==="authorize")document.getElementById("signedOutLead").textContent=copy.signInFirst}
+  function socialErrorMessage(code){if(code==="google_unavailable")return copy.googleUnavailable;if(code==="google_cancelled")return copy.googleCancelled;if(code==="google_flow_expired")return copy.googleExpired;if(code==="google_exchange_failed")return copy.googleFailed;return ""}
+  function showLoggedOut(){loading.classList.add("hidden");signedIn.classList.add("hidden");signedOut.classList.remove("hidden");if(page==="authorize")document.getElementById("signedOutLead").textContent=copy.signInFirst;var socialError=socialErrorMessage(new URLSearchParams(location.search).get("social_error"));if(socialError){loginMessage.textContent=socialError;loginMessage.classList.add("error")}}
   function showLoggedIn(data){
     var user=data.user||{};loading.classList.add("hidden");signedOut.classList.add("hidden");signedIn.classList.remove("hidden");document.getElementById("displayName").textContent=user.displayName||user.username||"QssedA User";document.getElementById("emailText").textContent=user.email||"";document.getElementById("statusText").textContent=statusLabel(user.status);
     var dot=document.getElementById("statusDot");dot.className="dot"+(user.status==="suspended"?" warning":user.status==="banned"?" danger":"");
@@ -533,11 +553,13 @@ function authPage(pathname, request) {
     if(page==="account"){document.getElementById("signedInTitle").textContent=copy.accountTitle;document.getElementById("signedInLead").textContent=copy.accountLead}
     if(page==="authorize"){document.getElementById("signedInTitle").textContent=copy.authorizeTitle;document.getElementById("signedInLead").textContent=copy.authorizeLead;var params=new URLSearchParams(location.search);document.getElementById("clientId").textContent=params.get("client_id")||"client_id: —";document.getElementById("clientName").textContent=params.get("client_name")||copy.appRequest}
   }
+  async function configureProviders(){try{var response=await fetch("/api/providers",{credentials:"same-origin",cache:"no-store"});var data=await response.json();var enabled=response.ok&&data.google===true;if(googleButton)googleButton.classList.toggle("hidden",!enabled);if(providerDivider)providerDivider.classList.toggle("hidden",!enabled)}catch(e){if(googleButton)googleButton.classList.add("hidden");if(providerDivider)providerDivider.classList.add("hidden")}}
   async function checkSession(){try{var response=await fetch("/api/session",{credentials:"same-origin",cache:"no-store"});var data=await response.json();if(response.ok&&data.authenticated&&data.user)showLoggedIn(data);else showLoggedOut()}catch(e){showLoggedOut();loginMessage.textContent=copy.connectError;loginMessage.classList.add("error")}}
   loginForm.addEventListener("submit",async function(event){event.preventDefault();loginMessage.textContent=copy.loggingIn;loginMessage.classList.remove("error");loginButton.disabled=true;try{var response=await fetch("/api/login",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({email:document.getElementById("email").value,password:document.getElementById("password").value})});var data=await response.json();if(!response.ok||!data.authenticated)throw new Error(data.error||"Login failed");document.getElementById("password").value="";showLoggedIn(data)}catch(error){loginMessage.textContent=error&&error.message?error.message:"Login failed";loginMessage.classList.add("error")}finally{loginButton.disabled=false}});
   async function signOut(button){if(button)button.disabled=true;try{await fetch("/api/logout",{method:"POST",credentials:"same-origin"})}catch(e){}location.replace("/login")}
   if(logoutButton)logoutButton.addEventListener("click",function(){signOut(logoutButton)});
   if(homeLogoutButton)homeLogoutButton.addEventListener("click",function(){signOut(homeLogoutButton)});
+  configureProviders();
   checkSession();
 })();
 </script>
