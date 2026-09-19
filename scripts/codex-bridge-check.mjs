@@ -71,7 +71,8 @@ for (const required of [
   'env.GPT_CODEX.idFromName(INSTANCE_NAME)',
   'env.GPT_CODEX.get(id)',
   '"x-qsseda-user-id"',
-  '"provider_owner_mismatch"'
+  '"provider_owner_mismatch"',
+  'route.claim && ownerId !== userId'
 ]) assert(cloudController.includes(required), `Cloud Codex controller is missing invariant: ${required}`);
 
 assert(!cloudController.includes("access_token"), "Cloud controller must not surface ChatGPT access tokens");
