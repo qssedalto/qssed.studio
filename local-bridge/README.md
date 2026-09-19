@@ -121,6 +121,21 @@ The bridge:
 This is an experimental QssedA integration built on the documented Codex App Server interface. The public WebSocket transport remains deliberately unused because OpenAI currently marks it experimental.
 
 
-### Cloud provider relationship
 
-Cloud Codex is now the default provider for `gpt.qsseda.studio`. The localhost Codex Bridge on port `32146` remains an optional capability for workflows that deliberately need the user's local machine. Ordinary cross-device chat does not require installing this bridge.
+### Cross-device GPT tunnel
+
+The Codex Bridge remains bound to `127.0.0.1:32146`; it is never changed into a public listening socket. Cross-device access is provided by a remotely-managed Cloudflare Tunnel running on the same Windows account.
+
+Configure the Tunnel public hostname to forward to:
+
+```text
+http://127.0.0.1:32146
+```
+
+The Windows Codex installer can store both the Tunnel token and the independent QssedA Bridge bearer token using the current Windows user's DPAPI protection. At login, `start-codex-windows.ps1` starts the Bridge and, when configured, `cloudflared` in the background.
+
+The GPT Worker must receive the matching HTTPS Tunnel hostname as `GPT_CODEX_BRIDGE_URL` and matching bearer token as `GPT_CODEX_BRIDGE_TOKEN`.
+
+If the host is shut down, sleeping, the Bridge exits, or the Tunnel disconnects, the Worker maps the unreachable-origin response to `gpt_offline`. The GPT page polls the status endpoint every five seconds and automatically switches between online and offline states.
+
+Tunnel traffic must carry the shared bearer token. A forged `Origin: https://gpt.qsseda.studio` header is not sufficient to bypass it because the browser-origin exception applies only when the request also uses the literal localhost Host header.
