@@ -9,6 +9,7 @@ const ACCOUNT_COOKIE = "__Secure-qsseda-account-id";
 const ACCOUNT_SIGNED_OUT = "signed-out";
 const COOKIE_DOMAIN = "qsseda.studio";
 const WORK_HOST = "work.qsseda.studio";
+const GPT_HOST = "gpt.qsseda.studio";
 const ACCESS_MAX_AGE = 60 * 60;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
@@ -45,6 +46,7 @@ export async function verifyStudioPageSession(request) {
   const url = new URL(request.url);
   const hostname = url.hostname.toLowerCase();
   const workHost = hostname === WORK_HOST;
+  const isolatedAppHost = workHost || hostname === GPT_HOST;
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   const accessToken = cookies[ACCESS_COOKIE] || "";
   const refreshToken = cookies[REFRESH_COOKIE] || "";
@@ -57,7 +59,7 @@ export async function verifyStudioPageSession(request) {
     if (accountId && accountId !== userId) return false;
     // Work is a separate host. It must never trust a legacy host-only session
     // unless a domain-wide identity marker confirms the same account.
-    if (workHost && !accountId) return false;
+    if (isolatedAppHost && !accountId) return false;
     return true;
   };
 
