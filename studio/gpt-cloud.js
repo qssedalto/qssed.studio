@@ -134,9 +134,8 @@ export class CodexCloudContainer extends DurableObject {
     if (!ready) throw new Error(`Cloud Codex container did not become ready: ${lastError || "timeout"}`);
 
     if (!this.restoredForProcess) {
-      const authJson = typeof await this.ctx.storage.get(AUTH_KEY) === "string"
-        ? await this.ctx.storage.get(AUTH_KEY)
-        : "";
+      const storedAuth = await this.ctx.storage.get(AUTH_KEY);
+      const authJson = typeof storedAuth === "string" ? storedAuth : "";
       const restore = await port.fetch("http://container/internal/auth/restore", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -160,8 +159,9 @@ export class CodexCloudContainer extends DurableObject {
 }
 
 export async function handleCloudCodexApi(request, env, userId) {
-  if (!env?.GPT_CODEX?.getByName) return responseJson({ error: "Cloud Codex binding is unavailable." }, 503);
-  const stub = env.GPT_CODEX.getByName(INSTANCE_NAME);
+  if (!env?.GPT_CODEX?.idFromName || !env?.GPT_CODEX?.get) return responseJson({ error: "Cloud Codex binding is unavailable." }, 503);
+  const id = env.GPT_CODEX.idFromName(INSTANCE_NAME);
+  const stub = env.GPT_CODEX.get(id);
   const url = new URL(request.url);
   const internalUrl = new URL(url.pathname + url.search, "https://qsseda-codex.internal");
   const headers = new Headers();
