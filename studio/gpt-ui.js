@@ -389,12 +389,12 @@ export function renderGptApp(locale) {
         if (done) break;
         buffer += decoder.decode(value, {stream:true});
         let boundary;
-        while ((boundary = buffer.indexOf("\n\n")) >= 0) {
+        while ((boundary = buffer.indexOf("\\n\\n")) >= 0) {
           const block = buffer.slice(0, boundary);
           buffer = buffer.slice(boundary + 2);
           let event = "message";
           let payload = null;
-          for (const line of block.split("\n")) {
+          for (const line of block.split("\\n")) {
             if (line.startsWith("event:")) event = line.slice(6).trim();
             if (line.startsWith("data:")) {
               try { payload = JSON.parse(line.slice(5).trim()); } catch {}
