@@ -6,7 +6,7 @@ on:
       - "worker.js"
       - "studio/**"
       - "local-bridge/**"
-      - "cloud-codex/**"
+
       - "scripts/security-markup-check.mjs"
       - "scripts/security-architecture-check.mjs"
       - "scripts/edge-protection-check.mjs"
@@ -33,7 +33,7 @@ on:
       - "worker.js"
       - "studio/**"
       - "local-bridge/**"
-      - "cloud-codex/**"
+
       - "scripts/security-markup-check.mjs"
       - "scripts/security-architecture-check.mjs"
       - "scripts/edge-protection-check.mjs"
@@ -69,7 +69,7 @@ jobs:
           for file in studio/*.js; do node --check "$file"; done
           node --check local-bridge/server.mjs
           node --check local-bridge/codex-server.mjs
-          node --check cloud-codex/server.mjs
+
           node --check scripts/security-markup-check.mjs
           node --check scripts/security-architecture-check.mjs
           node --check scripts/edge-protection-check.mjs
@@ -133,9 +133,6 @@ jobs:
 
       - name: Bundle Work Worker
         run: npx --yes wrangler@4 deploy -c wrangler.work.jsonc --dry-run --outdir .wrangler-work-check
-
-      - name: Build Cloud Codex container image
-        run: docker build -f cloud-codex/Dockerfile cloud-codex -t qsseda-cloud-codex:ci
 
       - name: Bundle GPT Worker
         run: npx --yes wrangler@4 deploy -c wrangler.gpt.jsonc --dry-run --outdir .wrangler-gpt-check
