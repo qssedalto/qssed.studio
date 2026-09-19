@@ -14,6 +14,28 @@
       "custom_domain": true
     }
   ],
+  "containers": [
+    {
+      "class_name": "CodexCloudContainer",
+      "image": "./cloud-codex/Dockerfile",
+      "max_instances": 1,
+      "instance_type": "basic"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GPT_CODEX",
+        "class_name": "CodexCloudContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "gpt-cloud-v1",
+      "new_sqlite_classes": ["CodexCloudContainer"]
+    }
+  ],
   "observability": {
     "logs": {
       "enabled": true,

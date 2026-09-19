@@ -2,6 +2,7 @@ import { verifyStudioPageSession, withStudioSessionCookies } from "./studio/sess
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp } from "./studio/gpt-ui.js";
+import { CodexCloudContainer, handleCloudCodexApi } from "./studio/gpt-cloud.js";
 
 const GPT_ORIGIN = "https://gpt.qsseda.studio";
 
@@ -26,6 +27,15 @@ export default {
       if (request.method !== "POST") return text("Method not allowed", 405);
       const locale = preferredLocale(request) === "en" ? "en" : "zh";
       return handleAuthHandoff(request, env, locale);
+    }
+
+    if (pathname.startsWith("/api/gpt/")) {
+      const gate = await verifyStudioPageSession(request);
+      if (!gate.ok) {
+        return withStudioSessionCookies(json({ error: "Authentication required." }, 401), gate.cookies || []);
+      }
+      const response = await handleCloudCodexApi(request, env, gate.user.id);
+      return withStudioSessionCookies(response, gate.cookies || []);
     }
 
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -75,7 +85,7 @@ function securityHeaders(contentType) {
     "x-frame-options": "DENY",
     "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
     "strict-transport-security": "max-age=31536000; includeSubDomains",
-    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src http://127.0.0.1:32146 http://localhost:32146; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
   });
 }
 
@@ -102,3 +112,5 @@ function redirect(location) {
     }
   });
 }
+
+export { CodexCloudContainer };

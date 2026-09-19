@@ -8,6 +8,7 @@ on:
       - worker.js
       - studio/**
       - local-bridge/**
+      - cloud-codex/**
       - scripts/security-markup-check.mjs
       - scripts/security-architecture-check.mjs
       - scripts/edge-protection-check.mjs
@@ -58,6 +59,7 @@ jobs:
           for file in studio/*.js; do node --check "$file"; done
           node --check local-bridge/server.mjs
           node --check local-bridge/codex-server.mjs
+          node --check cloud-codex/server.mjs
           node --check scripts/security-markup-check.mjs
           node scripts/security-markup-check.mjs
           node --check scripts/security-architecture-check.mjs
