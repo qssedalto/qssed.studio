@@ -34,6 +34,8 @@ export class CodexCloudContainer extends DurableObject {
     if (route.claim && !ownerId) {
       await this.ctx.storage.put(OWNER_KEY, userId);
       ownerId = userId;
+    } else if (route.claim && ownerId !== userId) {
+      return responseJson({ error: "Cloud Codex belongs to another QssedA account.", code: "provider_owner_mismatch" }, 403);
     }
 
     if (route.owner && ownerId !== userId) {
