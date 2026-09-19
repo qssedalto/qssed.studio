@@ -65,3 +65,57 @@ Then sign in to QssedA Studio and open `/zh-cn/work/local` or `/en/work/local`. 
 - Windows autostart is per-user and points only to the installed fixed launcher; it does not grant elevated privileges.
 
 Future compile, Git, or filesystem capabilities must add device pairing, signed requests, explicit per-action authorization, sandboxing, and capability-specific allowlists before they are enabled.
+
+
+## QssedA Codex Bridge
+
+The GPT subdomain uses a separate localhost service on `127.0.0.1:32146`. It is intentionally independent from the Work/TeX bridge on port `32145`.
+
+The Codex bridge launches the official `codex app-server` using its default stdio JSONL transport. QssedA does not expose Codex's experimental WebSocket transport to the browser.
+
+### Windows installation
+
+Prerequisites:
+
+- Node.js 18 or newer.
+- OpenAI Codex CLI installed and available as `codex`.
+- Install Codex CLI with `npm install -g @openai/codex` if needed.
+
+From a repository checkout, double-click:
+
+```text
+local-bridge\install-codex-windows.cmd
+```
+
+The installer copies only the Codex bridge files into `%LOCALAPPDATA%\QssedA\CodexBridge`, records the detected Node/Codex executable paths, creates a per-user HKCU Run entry, and starts the bridge hidden in the background.
+
+Then open `https://gpt.qsseda.studio`. The page connects only to `http://127.0.0.1:32146`.
+
+### Authentication
+
+The browser never receives a ChatGPT access token. The bridge asks Codex App Server to start the official `chatgptDeviceCode` flow. Codex owns token persistence and refresh inside a dedicated `CODEX_HOME` under the bridge install directory.
+
+The web UI receives only:
+
+- account email and plan type returned by `account/read`;
+- the device-login verification URL and short user code;
+- available models and reasoning efforts;
+- rate-limit metadata;
+- thread identifiers and streamed assistant text.
+
+### Chat safety boundary
+
+QssedA GPT starts threads with `approvalPolicy: "never"` and the legacy `readOnly` sandbox. Every chat turn further applies a restricted read-only sandbox rooted at an empty bridge-owned chat workspace. The browser has no generic command, filesystem, MCP, or process endpoint.
+
+The bridge:
+
+- binds only to loopback;
+- enforces exact Host headers;
+- accepts browser CORS only from `https://gpt.qsseda.studio`;
+- supports private-network preflight;
+- spawns `codex app-server` with `shell: false`;
+- uses a dedicated `CODEX_HOME`, so it does not inherit the user's normal Codex project configuration, plugins, skills, or MCP setup;
+- sanitizes all data before returning it to the browser;
+- never returns raw authentication tokens.
+
+This is an experimental QssedA integration built on the documented Codex App Server interface. The public WebSocket transport remains deliberately unused because OpenAI currently marks it experimental.
