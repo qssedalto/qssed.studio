@@ -112,16 +112,7 @@ jobs:
             echo "::error title=Cloudflare Containers unavailable::Cloud Codex needs a Workers Paid account and a Cloudflare API token with Containers Write/Edit permission. The Containers capability probe returned HTTP ${status:-unknown}."
             echo "Update the CLOUDFLARE_API_TOKEN GitHub Actions secret after enabling Workers Paid and granting Containers Write/Edit, then re-run this workflow."
             if [ -s /tmp/qsseda-containers-access.json ]; then
-              node - <<'NODE'
-          const fs = require("fs");
-          try {
-            const data = JSON.parse(fs.readFileSync("/tmp/qsseda-containers-access.json", "utf8"));
-            const errors = Array.isArray(data?.errors)
-              ? data.errors.map(item => String(item?.message || "")).filter(Boolean).slice(0, 3)
-              : [];
-            if (errors.length) console.log("Cloudflare response:", errors.join(" | "));
-          } catch {}
-          NODE
+              node -e 'const fs=require("fs");try{const data=JSON.parse(fs.readFileSync("/tmp/qsseda-containers-access.json","utf8"));const errors=Array.isArray(data?.errors)?data.errors.map(x=>String(x?.message||"")).filter(Boolean).slice(0,3):[];if(errors.length)console.log("Cloudflare response:",errors.join(" | "))}catch{}'
             fi
             exit 1
           fi
