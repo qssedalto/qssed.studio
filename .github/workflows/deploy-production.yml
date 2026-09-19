@@ -98,6 +98,27 @@ jobs:
           node --check scripts/auth-edge-protection-check.mjs
           node scripts/auth-edge-protection-check.mjs
 
+      - name: Verify Cloudflare Containers deployment access
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          endpoint="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/containers/me"
+          status="$(curl --silent --show-error --max-time 20             --output /tmp/qsseda-containers-access.json             --write-out '%{http_code}'             --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"             --header 'Content-Type: application/json'             "$endpoint" || true)"
+
+          if [ "$status" != "200" ]; then
+            echo "::error title=Cloudflare Containers unavailable::Cloud Codex needs a Workers Paid account and a Cloudflare API token with Containers Write/Edit permission. The Containers capability probe returned HTTP ${status:-unknown}."
+            echo "Update the CLOUDFLARE_API_TOKEN GitHub Actions secret after enabling Workers Paid and granting Containers Write/Edit, then re-run this workflow."
+            if [ -s /tmp/qsseda-containers-access.json ]; then
+              node -e 'const fs=require("fs");try{const data=JSON.parse(fs.readFileSync("/tmp/qsseda-containers-access.json","utf8"));const errors=Array.isArray(data?.errors)?data.errors.map(x=>String(x?.message||"")).filter(Boolean).slice(0,3):[];if(errors.length)console.log("Cloudflare response:",errors.join(" | "))}catch{}'
+            fi
+            exit 1
+          fi
+
+          echo "Cloudflare Containers access is available."
+
       - name: Deploy QssedA Studio
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
