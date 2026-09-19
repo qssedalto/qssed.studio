@@ -93,3 +93,14 @@ For structural/runtime changes:
 6. require production validation plus Studio/Auth deployment after merge.
 
 Git history is the recovery mechanism for previous implementations and historical snapshots; large obsolete snapshots should not be kept in the active repository tree solely as backups.
+
+
+## GPT / Cloud Codex
+
+`gpt.qsseda.studio` uses Cloud Codex as its default provider. The browser talks only to same-origin `/api/gpt/*` routes after the normal QssedA session gate. The GPT Worker forwards those authenticated requests to one Cloudflare Container managed by the `CodexCloudContainer` Durable Object.
+
+The container runs the official `codex app-server` over stdio. ChatGPT is connected once through the official device-code login flow. The resulting Codex credential file is copied into Durable Object storage and restored whenever the ephemeral container restarts, so phones, tablets and arbitrary computers can reuse the backend login without receiving ChatGPT credentials.
+
+The first authenticated QssedA account that starts the ChatGPT device-login flow becomes the Cloud Codex owner. Subsequent login, model, conversation and logout operations are restricted to that QssedA account.
+
+The existing Windows localhost Codex Bridge remains available as an optional future provider for operations that intentionally need access to local files or projects; it is no longer the default chat backend.
