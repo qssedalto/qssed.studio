@@ -44,6 +44,8 @@ on:
       - "scripts/work-subdomain-check.mjs"
       - "wrangler.jsonc"
       - "wrangler.work.jsonc"
+      - "gpt-worker.js"
+      - "wrangler.gpt.jsonc"
       - ".github/workflows/studio-check.yml"
   workflow_dispatch:
 
