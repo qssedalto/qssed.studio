@@ -26,6 +26,10 @@ import {
   rewriteWorkSubdomainRequest,
   workSessionRedirect
 } from "./studio/work-subdomain.js";
+import {
+  handleMainGptHandoff,
+  isMainGptHandoffPath
+} from "./studio/gpt-subdomain.js";
 
 const AUTH_ABUSE_PATHS = new Set([
   "/api/auth/login",
@@ -52,6 +56,7 @@ async function routeStudioRequest(request, env, ctx) {
   const workHost = isWorkSubdomainRequest(request);
 
   if (!workHost && isMainWorkHandoffPath(pathname)) return handleMainWorkHandoff(request);
+  if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);
 
   if (!workHost) {
     const workTarget = mainWorkRedirect(pathname);

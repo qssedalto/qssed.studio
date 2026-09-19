@@ -6,17 +6,21 @@ import { studioSessionCookies, withStudioSessionCookies } from "./session-gate.j
 const AUTH_ORIGIN = "https://auth.qsseda.studio";
 const MAIN_ORIGIN = "https://qsseda.studio";
 const WORK_HOST = "work.qsseda.studio";
+const GPT_HOST = "gpt.qsseda.studio";
 
 export async function handleAuthHandoff(request, env, locale) {
   const requestUrl = new URL(request.url);
-  const workTarget = requestUrl.hostname.toLowerCase() === WORK_HOST;
+  const hostname = requestUrl.hostname.toLowerCase();
+  const workTarget = hostname === WORK_HOST;
+  const gptTarget = hostname === GPT_HOST;
+  const isolatedTarget = workTarget || gptTarget;
   const origin = request.headers.get("Origin") || "";
   const referer = request.headers.get("Referer") || "";
   const fetchSite = (request.headers.get("Sec-Fetch-Site") || "").toLowerCase();
   const fetchMode = (request.headers.get("Sec-Fetch-Mode") || "").toLowerCase();
   const fetchDest = (request.headers.get("Sec-Fetch-Dest") || "").toLowerCase();
   const previewAllowed = env?.AUTH_PREVIEW_ALLOW_WORKERS_DEV === "1";
-  const trustedOrigins = workTarget ? new Set([AUTH_ORIGIN, MAIN_ORIGIN]) : new Set([AUTH_ORIGIN]);
+  const trustedOrigins = isolatedTarget ? new Set([AUTH_ORIGIN, MAIN_ORIGIN]) : new Set([AUTH_ORIGIN]);
   let refererOrigin = "";
   try { refererOrigin = referer ? new URL(referer).origin : ""; } catch {}
   const missingOrigin = origin === "" || origin === "null";
@@ -31,7 +35,7 @@ export async function handleAuthHandoff(request, env, locale) {
   try { form = await request.formData(); } catch { return json({ error: "Invalid handoff request" }, 400); }
   const accessToken = typeof form.get("access_token") === "string" ? form.get("access_token") : "";
   const refreshToken = typeof form.get("refresh_token") === "string" ? form.get("refresh_token") : "";
-  const next = normalizeHandoffNext(form.get("next"), locale, workTarget);
+  const next = normalizeHandoffNext(form.get("next"), locale, workTarget, gptTarget);
   if (!accessToken || !refreshToken) return json({ error: "Missing session" }, 400);
 
   let userResponse;
@@ -53,15 +57,19 @@ export async function handleAuthHandoff(request, env, locale) {
   const profiles = await profileResponse.json();
   if (!Array.isArray(profiles) || profiles[0]?.status !== "active") return json({ error: "Account is not active" }, 403);
 
-  const response = authHandoffHtml(accessToken, refreshToken, next, workTarget);
+  const response = authHandoffHtml(accessToken, refreshToken, next, workTarget, gptTarget);
   return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken));
 }
 
-export function normalizeHandoffNext(value, locale, workTarget = false) {
+export function normalizeHandoffNext(value, locale, workTarget = false, gptTarget = false) {
   const candidate = typeof value === "string" ? value.trim() : "";
   if (workTarget) {
     const candidateLocale = candidate === "/en" || candidate.startsWith("/en/") ? "en" : candidate === "/zh-cn" || candidate.startsWith("/zh-cn/") ? "zh" : locale;
     return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/tex";
+  }
+  if (gptTarget) {
+    const candidateLocale = candidate === "/en" || candidate.startsWith("/en/") ? "en" : candidate === "/zh-cn" || candidate.startsWith("/zh-cn/") ? "zh" : locale;
+    return candidateLocale === "zh" ? "/zh-cn" : "/en";
   }
   const fallback = locale === "zh" ? "/zh-cn/dashboard" : "/en/dashboard";
   if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\u0000")) return fallback;
@@ -74,8 +82,8 @@ export function scriptLiteral(value) {
   return JSON.stringify(String(value || "")).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
 
-export function authHandoffHtml(accessToken, refreshToken, next, workTarget = false) {
-  const product = workTarget ? "QssedA Work" : "QssedA Studio";
+export function authHandoffHtml(accessToken, refreshToken, next, workTarget = false, gptTarget = false) {
+  const product = workTarget ? "QssedA Work" : gptTarget ? "QssedA GPT" : "QssedA Studio";
   const page = `<!DOCTYPE html><html><head>${baseHead(product)}</head><body><main style="min-height:100vh;display:grid;place-items:center;padding:24px"><section style="text-align:center"><h1 style="font-size:24px;margin:0 0 8px">${product}</h1><p id="handoff-status" style="color:var(--muted,#8e8e93)">正在同步登录状态…</p></section></main>${supabaseScript()}<script>(async()=>{const status=document.getElementById("handoff-status");const result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}});if(result.error){status.textContent="登录状态同步失败，请返回认证中心重试。";return}location.replace(${scriptLiteral(next)})})().catch(()=>{document.getElementById("handoff-status").textContent="登录状态同步失败，请返回认证中心重试。"})</script></body></html>`;
   return new Response(page, { status: 200, headers: { "content-type": "text/html;charset=UTF-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" } });
 }
