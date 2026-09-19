@@ -6,7 +6,7 @@ RUN npm install -g "@openai/codex@${CODEX_VERSION}" \
     && chown -R node:node /app /data
 
 WORKDIR /app
-COPY --chown=node:node cloud-codex/server.mjs /app/server.mjs
+COPY --chown=node:node server.mjs /app/server.mjs
 
 ENV NODE_ENV=production
 ENV PORT=8080
