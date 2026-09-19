@@ -2,7 +2,7 @@ import { verifyStudioPageSession, withStudioSessionCookies } from "./studio/sess
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp } from "./studio/gpt-ui.js";
-import { CodexCloudContainer, handleCloudCodexApi } from "./studio/gpt-cloud.js";
+import { handleRemoteCodexApi } from "./studio/gpt-bridge.js";
 
 const GPT_ORIGIN = "https://gpt.qsseda.studio";
 
@@ -34,7 +34,7 @@ export default {
       if (!gate.ok) {
         return withStudioSessionCookies(json({ error: "Authentication required." }, 401), gate.cookies || []);
       }
-      const response = await handleCloudCodexApi(request, env, gate.user.id);
+      const response = await handleRemoteCodexApi(request, env);
       return withStudioSessionCookies(response, gate.cookies || []);
     }
 
@@ -113,4 +113,3 @@ function redirect(location) {
   });
 }
 
-export { CodexCloudContainer };
