@@ -41,7 +41,7 @@ assert(handoff.includes('return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/t
 
 assert(sessionGate.includes('const ACCOUNT_COOKIE = "__Secure-qsseda-account-id"'), "Work sessions must use a domain-wide account identity marker");
 assert(sessionGate.includes('const COOKIE_DOMAIN = "qsseda.studio"'), "The account identity marker must cover qsseda.studio subdomains");
-assert(sessionGate.includes('if (workHost && !accountId) return false'), "Work must fail closed when the domain-wide account marker is missing");
+assert(sessionGate.includes('if (isolatedAppHost && !accountId) return false'), "Work and other isolated app hosts must fail closed when the domain-wide account marker is missing");
 assert(sessionGate.includes('if (accountId && accountId !== userId) return false'), "Work must reject a host session belonging to a different account");
 assert(sessionGate.includes('accountId !== verified.user.id'), "Work bootstrap must not recreate a stale local account session");
 assert(sessionGate.includes('globalLogoutCookies()'), "Logout must invalidate the domain-wide account identity marker");
