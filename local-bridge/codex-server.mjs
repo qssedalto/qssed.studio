@@ -18,6 +18,7 @@ const EXTRA_ORIGINS = String(process.env.QSSEDA_CODEX_BRIDGE_ORIGINS || "")
   .filter(Boolean);
 const ALLOWED_ORIGINS = new Set([...DEFAULT_ORIGINS, ...EXTRA_ORIGINS]);
 const ALLOWED_HOSTS = new Set([`${HOST}:${PORT}`, `localhost:${PORT}`]);
+const BRIDGE_TOKEN = String(process.env.QSSEDA_CODEX_BRIDGE_TOKEN || "").trim();
 const CODEX_COMMAND = String(process.env.QSSEDA_CODEX || "codex").trim() || "codex";
 const DATA_ROOT = process.env.QSSEDA_CODEX_BRIDGE_HOME
   ? path.resolve(process.env.QSSEDA_CODEX_BRIDGE_HOME)
@@ -159,7 +160,9 @@ const codex = new CodexAppServer();
 
 const server = http.createServer(async (request, response) => {
   const host = String(request.headers.host || "").toLowerCase();
-  if (!ALLOWED_HOSTS.has(host)) return sendJson(response, 421, { error: "Unrecognized local host." });
+  const remoteAddress = String(request.socket?.remoteAddress || "");
+  const localRequest = isLoopback(remoteAddress);
+  if (!localRequest) return sendJson(response, 403, { error: "Bridge accepts loopback connections only." });
 
   const origin = String(request.headers.origin || "");
   if (origin && !ALLOWED_ORIGINS.has(origin)) return sendJson(response, 403, { error: "Origin is not allowed." });
@@ -174,8 +177,12 @@ const server = http.createServer(async (request, response) => {
     return response.end();
   }
 
-  const url = new URL(request.url || "/", `http://${host}`);
+  const url = new URL(request.url || "/", `http://${ALLOWED_HOSTS.has(host) ? host : `${HOST}:${PORT}`}`);
   applyCors(response, origin, request);
+
+  if (!isAuthorizedBridgeRequest(request, url.pathname, origin, host)) {
+    return sendJson(response, 401, { error: "Bridge authentication required." });
+  }
 
   try {
     if (request.method === "GET" && url.pathname === "/health") {
@@ -390,6 +397,18 @@ async function streamTurn(request, response, origin) {
     cleanup();
     try { response.end(); } catch {}
   }
+}
+
+function isAuthorizedBridgeRequest(request, pathname, origin, host) {
+  const browserLocalRequest = ALLOWED_HOSTS.has(host) && Boolean(origin) && ALLOWED_ORIGINS.has(origin);
+  if (browserLocalRequest) return true;
+  if (!BRIDGE_TOKEN) return false;
+  const header = String(request.headers.authorization || "");
+  return header === `Bearer ${BRIDGE_TOKEN}`;
+}
+
+function isLoopback(address) {
+  return address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
 }
 
 function applyCors(response, origin, request) {

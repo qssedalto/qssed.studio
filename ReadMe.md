@@ -95,12 +95,24 @@ For structural/runtime changes:
 Git history is the recovery mechanism for previous implementations and historical snapshots; large obsolete snapshots should not be kept in the active repository tree solely as backups.
 
 
-## GPT / Cloud Codex
 
-`gpt.qsseda.studio` uses Cloud Codex as its default provider. The browser talks only to same-origin `/api/gpt/*` routes after the normal QssedA session gate. The GPT Worker forwards those authenticated requests to one Cloudflare Container managed by the `CodexCloudContainer` Durable Object.
+## GPT / Remote Local Codex
 
-The container runs the official `codex app-server` over stdio. ChatGPT is connected once through the official device-code login flow. The resulting Codex credential file is copied into Durable Object storage and restored whenever the ephemeral container restarts, so phones, tablets and arbitrary computers can reuse the backend login without receiving ChatGPT credentials.
+`gpt.qsseda.studio` is always served by the Cloudflare GPT Worker, but its AI backend intentionally follows the power state of the user's Windows Codex host.
 
-The first authenticated QssedA account that starts the ChatGPT device-login flow becomes the Cloud Codex owner. Subsequent login, model, conversation and logout operations are restricted to that QssedA account.
+The browser talks only to same-origin `/api/gpt/*` routes after the normal QssedA session gate. The GPT Worker forwards those authenticated requests to a remotely-managed Cloudflare Tunnel whose origin is the loopback-only Codex Bridge on `127.0.0.1:32146`.
 
-The existing Windows localhost Codex Bridge remains available as an optional future provider for operations that intentionally need access to local files or projects; it is no longer the default chat backend.
+Runtime states:
+
+- Windows host off/asleep, Bridge stopped, or Tunnel disconnected -> GPT reports offline.
+- Host online with Bridge/Tunnel but Codex not signed in -> GPT reports online and offers ChatGPT/Codex device login.
+- Host online and Codex signed in -> GPT chat, model discovery and streamed turns are enabled.
+
+The Tunnel endpoint is not trusted by hostname alone. Worker-to-Bridge requests carry a separate shared bearer token. The Bridge accepts browser-origin requests without that token only when the HTTP Host is the literal local loopback endpoint. The Bridge continues to run Codex in a restricted read-only chat workspace with no generic process, filesystem or command API.
+
+The GPT Worker expects two protected runtime values:
+
+- `GPT_CODEX_BRIDGE_URL` — HTTPS hostname routed by Cloudflare Tunnel to `http://127.0.0.1:32146`.
+- `GPT_CODEX_BRIDGE_TOKEN` — independent random bearer token shared with the local Bridge.
+
+Neither value is embedded in the browser bundle.
