@@ -1,6 +1,6 @@
 # QssedA Studio
 
-QssedA Studio is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.studio`.
+QssedA Studio is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.studio`, a standalone Work surface at `work.qsseda.studio`, and an independent AI interface at `gpt.qsseda.studio`.
 
 ## Runtime architecture
 
@@ -22,6 +22,13 @@ The independent Auth service uses:
 - `auth-pkce-test.js` — browser PKCE self-test.
 
 Cloudflare R2 storage is bound as `STORAGE` to `qsseda-studio-storage`.
+
+The independent GPT surface uses:
+
+- `gpt-worker.js` — standalone AI interface entrypoint, localized shell, health endpoint and security headers;
+- `wrangler.gpt.jsonc` — Cloudflare Worker configuration binding the custom domain `gpt.qsseda.studio`.
+
+The GPT surface intentionally starts as an isolated interface boundary so chat, model selection, history and AI tools can evolve without coupling those concerns to the main Studio Worker.
 
 ## Studio routes and contracts
 
@@ -71,7 +78,7 @@ See [`AUTH_PORTAL.md`](./AUTH_PORTAL.md) for browser sessions, Studio handoff, O
 
 - `Studio Worker Check` syntax-checks every `studio/*.js` module and runs a Wrangler dry-run bundle.
 - `Auth Worker Check` validates and bundles the independent Auth Worker.
-- `Deploy QssedA Production` validates and deploys Studio and Auth from `main` after relevant runtime files change.
+- `Deploy QssedA Production` validates and deploys Studio, Work, GPT and Auth from `main` after relevant runtime files change.
 - Cloudflare branch previews are required for structural Studio PRs before merge.
 
 ## Development safety
