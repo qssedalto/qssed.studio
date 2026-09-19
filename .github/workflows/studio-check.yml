@@ -18,6 +18,7 @@ on:
       - "scripts/tex-workbench-check.mjs"
       - "scripts/work-local-bridge-check.mjs"
       - "scripts/work-subdomain-check.mjs"
+      - "scripts/gpt-subdomain-check.mjs"
       - "wrangler.jsonc"
       - "wrangler.work.jsonc"
       - "gpt-worker.js"
@@ -76,6 +77,7 @@ jobs:
           node --check scripts/tex-workbench-check.mjs
           node --check scripts/work-local-bridge-check.mjs
           node --check scripts/work-subdomain-check.mjs
+          node --check scripts/gpt-subdomain-check.mjs
           node --check gpt-worker.js
 
       - name: Verify browser security markup
@@ -113,6 +115,9 @@ jobs:
 
       - name: Verify Work custom domain
         run: node scripts/work-subdomain-check.mjs
+
+      - name: Verify GPT authentication handoff
+        run: node scripts/gpt-subdomain-check.mjs
 
       - name: Bundle Studio Worker
         run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check
