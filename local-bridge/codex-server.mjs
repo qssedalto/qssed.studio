@@ -180,7 +180,7 @@ const server = http.createServer(async (request, response) => {
   const url = new URL(request.url || "/", `http://${ALLOWED_HOSTS.has(host) ? host : `${HOST}:${PORT}`}`);
   applyCors(response, origin, request);
 
-  if (!isAuthorizedBridgeRequest(request, url.pathname, origin)) {
+  if (!isAuthorizedBridgeRequest(request, url.pathname, origin, host)) {
     return sendJson(response, 401, { error: "Bridge authentication required." });
   }
 
@@ -399,8 +399,8 @@ async function streamTurn(request, response, origin) {
   }
 }
 
-function isAuthorizedBridgeRequest(request, pathname, origin) {
-  const browserLocalRequest = Boolean(origin) && ALLOWED_ORIGINS.has(origin);
+function isAuthorizedBridgeRequest(request, pathname, origin, host) {
+  const browserLocalRequest = ALLOWED_HOSTS.has(host) && Boolean(origin) && ALLOWED_ORIGINS.has(origin);
   if (browserLocalRequest) return true;
   if (!BRIDGE_TOKEN) return false;
   const header = String(request.headers.authorization || "");
