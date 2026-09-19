@@ -1,7 +1,11 @@
+import { verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
+import { handleAuthHandoff } from "./studio/auth-handoff.js";
+import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
+
 const GPT_ORIGIN = "https://gpt.qsseda.studio";
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     const pathname = normalizePath(url.pathname);
 
@@ -17,6 +21,12 @@ export default {
       return text("User-agent: *\nDisallow: /\n", 200, "text/plain;charset=UTF-8");
     }
 
+    if (pathname === "/auth/handoff") {
+      if (request.method !== "POST") return text("Method not allowed", 405);
+      const locale = preferredLocale(request) === "en" ? "en" : "zh";
+      return handleAuthHandoff(request, env, locale);
+    }
+
     if (request.method !== "GET" && request.method !== "HEAD") {
       return text("Method not allowed", 405);
     }
@@ -28,7 +38,11 @@ export default {
 
     if (pathname === "/zh-cn" || pathname === "/en") {
       const locale = pathname === "/en" ? "en" : "zh-cn";
-      const response = html(renderShell(locale));
+      const gate = await verifyStudioPageSession(request);
+      if (!gate.ok) {
+        return withStudioSessionCookies(gptSessionRedirect(pathname), gate.cookies || []);
+      }
+      const response = withStudioSessionCookies(html(renderShell(locale)), gate.cookies || []);
       return request.method === "HEAD"
         ? new Response(null, { status: response.status, headers: response.headers })
         : response;
