@@ -119,3 +119,8 @@ The bridge:
 - never returns raw authentication tokens.
 
 This is an experimental QssedA integration built on the documented Codex App Server interface. The public WebSocket transport remains deliberately unused because OpenAI currently marks it experimental.
+
+
+### Cloud provider relationship
+
+Cloud Codex is now the default provider for `gpt.qsseda.studio`. The localhost Codex Bridge on port `32146` remains an optional capability for workflows that deliberately need the user's local machine. Ordinary cross-device chat does not require installing this bridge.
