@@ -24,6 +24,7 @@ import { decorateWorkNavigation, workHubContent, workLocalBridgeContent } from "
 import { enhanceWorkLocalBridgeNative } from "./ui-work-native.js";
 import { polishWorkHubTexRoute, polishWorkTexNavigation } from "./ui-work-tex.js";
 import { enhanceWorkTexCollapsiblePanels } from "./ui-work-tex-panels.js";
+import { polishWorkDiscussionShell, workDiscussionContent } from "./ui-work-discussion.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
@@ -97,7 +98,7 @@ export default {
     const links = buildLinks(locale, pathname);
     const linksSubroute = pathname === "/info/links/mine" || pathname === "/info/links/community" || pathname === "/info/links/curated";
     const labSubroute = pathname === "/workspace/experiments/tex";
-    const workRoute = pathname === "/work" || pathname === "/work/local" || pathname === "/work/tex";
+    const workRoute = pathname === "/work" || pathname === "/work/local" || pathname === "/work/tex" || pathname === "/work/discussion";
     const isProtectedOsRoute = OS_PATHS.has(pathname) || linksSubroute;
 
     if (isProtectedOsRoute) {
@@ -126,6 +127,7 @@ export default {
       if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh)));
       if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh), zh));
       if (pathname === "/work/tex") markup = replaceOsContent(markup, enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh));
+      if (pathname === "/work/discussion") markup = polishWorkDiscussionShell(replaceOsContent(markup, workDiscussionContent(zh)), zh, pathname);
       const pageOptions = pathname === "/work/local" || pathname === "/work/tex" || pathname === "/workspace/experiments/tex" ? { allowLoopback: true } : {};
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }
