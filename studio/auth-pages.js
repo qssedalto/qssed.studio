@@ -5,21 +5,173 @@ import { baseHead, supabaseScript, themeScript, topControls } from "./ui-page.js
 
 export function notFoundPage(t, links) {
   const zh = t === TEXT.zh;
+  const title = zh ? "找不到该网页" : "Page not found";
+  const action = zh ? "返回 qsseda.studio" : "Return to qsseda.studio";
+  const copyright = zh
+    ? "Copyright © 2026 qsseda.studio. 保留所有权利。"
+    : "Copyright © 2026 qsseda.studio. All rights reserved.";
+
   return `
 <!DOCTYPE html>
-<html>
+<html lang="${zh ? "zh-CN" : "en"}">
 <head>
-  ${baseHead("404 · " + t.studioName)}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>404 · ${t.studioName}</title>
+  <style>
+    :root{
+      color-scheme:light dark;
+      --bg:#f5f5f7;
+      --fg:#1d1d1f;
+      --muted:#6e6e73;
+      --quiet:#8e8e93;
+      --line:#424245;
+      --icon-fill:#ffffff;
+      --icon-soft:#e8e8ed;
+      --shadow:rgba(0,0,0,.16);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",system-ui,sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg)}
+    body{min-height:100svh}
+    .nf-page{
+      min-height:100svh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:max(54px,8svh) 24px max(28px,env(safe-area-inset-bottom));
+      text-align:center;
+    }
+    .nf-main{
+      width:min(100%,760px);
+      display:flex;
+      flex:1;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding-top:clamp(16px,5svh,72px);
+    }
+    .nf-art{
+      width:clamp(168px,32vw,236px);
+      height:auto;
+      display:block;
+      margin:0 0 clamp(34px,5vw,54px);
+      overflow:visible;
+    }
+    .nf-title{
+      margin:0;
+      color:var(--fg);
+      font-size:clamp(38px,7vw,64px);
+      font-weight:500;
+      line-height:1.08;
+      letter-spacing:-.045em;
+      text-wrap:balance;
+    }
+    .nf-link{
+      display:inline-flex;
+      align-items:center;
+      gap:.12em;
+      margin-top:clamp(28px,4vw,40px);
+      color:var(--muted);
+      font-size:clamp(19px,3vw,25px);
+      font-weight:600;
+      line-height:1.25;
+      text-decoration:none;
+      transition:color .15s ease,transform .12s ease;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .nf-link:hover{color:var(--fg)}
+    .nf-link:active{transform:scale(.98)}
+    .nf-link:focus-visible{outline:3px solid color-mix(in srgb,var(--fg) 25%,transparent);outline-offset:7px;border-radius:4px}
+    .nf-chevron{
+      width:.58em;
+      height:.58em;
+      border-top:2.5px solid currentColor;
+      border-right:2.5px solid currentColor;
+      transform:rotate(45deg);
+      margin-left:.18em;
+    }
+    .nf-footer{
+      flex:0 0 auto;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:13px;
+      margin-top:44px;
+      color:var(--quiet);
+    }
+    .nf-mark{
+      display:grid;
+      grid-template-columns:repeat(2,13px);
+      grid-template-rows:repeat(2,13px);
+      gap:3px;
+      transform:rotate(45deg);
+      opacity:.62;
+    }
+    .nf-mark span{
+      display:block;
+      border-radius:3px;
+      background:currentColor;
+    }
+    .nf-mark span:nth-child(4){opacity:.42}
+    .nf-copy{
+      margin:0;
+      font-size:clamp(13px,2vw,17px);
+      font-weight:600;
+      line-height:1.45;
+    }
+    @media (prefers-color-scheme:dark){
+      :root{
+        --bg:#6b6b6d;
+        --fg:#ffffff;
+        --muted:#dedee2;
+        --quiet:#b6b6ba;
+        --line:#3b3b3d;
+        --icon-fill:#f7f7f8;
+        --icon-soft:#d8d8dc;
+        --shadow:rgba(0,0,0,.28);
+      }
+    }
+    @media (max-width:520px){
+      .nf-page{padding-left:20px;padding-right:20px}
+      .nf-main{padding-top:clamp(22px,7svh,58px)}
+      .nf-art{width:min(48vw,204px)}
+      .nf-title{font-weight:500}
+    }
+  </style>
 </head>
 <body>
-  ${topControls(links, t)}
-  <div class="card">
-    <h1 class="brand-title">404</h1>
-    <p>${zh ? "没有找到这个页面。" : "This page could not be found."}</p>
-    <a class="button" href="${links.dashboard}">${zh ? "返回首页" : "Back to dashboard"}</a>
-    <a class="button secondary" href="${links.login}">${t.signIn}</a>
-  </div>
-  ${themeScript()}
+  <main class="nf-page">
+    <section class="nf-main" aria-labelledby="nf-title">
+      <svg class="nf-art" viewBox="0 0 260 170" role="img" aria-label="${zh ? "页面未找到" : "Page not found"}">
+        <defs>
+          <filter id="nf-shadow" x="-25%" y="-25%" width="160%" height="170%">
+            <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="var(--shadow)"/>
+          </filter>
+        </defs>
+        <g filter="url(#nf-shadow)">
+          <rect x="39" y="34" width="154" height="104" rx="28" fill="var(--icon-fill)"/>
+          <path d="M39 65h154" fill="none" stroke="var(--icon-soft)" stroke-width="4"/>
+          <circle cx="61" cy="50" r="4" fill="var(--line)" opacity=".72"/>
+          <circle cx="76" cy="50" r="4" fill="var(--line)" opacity=".42"/>
+          <path d="M72 93h54M72 111h36" fill="none" stroke="var(--line)" stroke-width="7" stroke-linecap="round" opacity=".68"/>
+          <circle cx="173" cy="91" r="40" fill="var(--icon-fill)" stroke="var(--line)" stroke-width="5"/>
+          <path d="M202 120l25 28" fill="none" stroke="var(--line)" stroke-width="11" stroke-linecap="round"/>
+          <path d="M161 77l24 28M185 77l-24 28" fill="none" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <h1 class="nf-title" id="nf-title">${title}</h1>
+      <a class="nf-link" href="${links.dashboard}">
+        <span>${action}</span><span class="nf-chevron" aria-hidden="true"></span>
+      </a>
+    </section>
+    <footer class="nf-footer">
+      <div class="nf-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <p class="nf-copy">${copyright}</p>
+    </footer>
+  </main>
 </body>
 </html>
 `;
