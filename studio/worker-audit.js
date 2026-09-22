@@ -1,3 +1,4 @@
+import { huaweiHarmonyGate } from "./huawei-harmony-gate.js";
 import worker from "../worker.js";
 import { cleanupAccessAudit, handleAccessAuditAdmin, recordAccessAudit } from "./access-audit.js";
 import { handleAccessAuditPage } from "./access-audit-page.js";
@@ -12,6 +13,9 @@ const ACCESS_AUDIT_PAGES = new Set([
 
 export default {
   async fetch(request, env, ctx) {
+    const deviceGate = huaweiHarmonyGate(request);
+    if (deviceGate) return deviceGate;
+
     const startedAt = Date.now();
     let response;
 
