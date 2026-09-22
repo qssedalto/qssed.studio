@@ -1,8 +1,12 @@
+import { huaweiHarmonyGate } from "./huawei-harmony-gate.js";
 import authEntry from "../auth-entry.js";
 import { recordAccessAudit } from "./access-audit.js";
 
 export default {
   async fetch(request, env, ctx) {
+    const deviceGate = huaweiHarmonyGate(request);
+    if (deviceGate) return deviceGate;
+
     const startedAt = Date.now();
     let response;
 
