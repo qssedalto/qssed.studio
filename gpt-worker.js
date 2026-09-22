@@ -1,3 +1,4 @@
+import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
 import { verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
@@ -8,6 +9,9 @@ const GPT_ORIGIN = "https://gpt.qsseda.studio";
 
 export default {
   async fetch(request, env) {
+    const deviceGate = huaweiHarmonyGate(request);
+    if (deviceGate) return deviceGate;
+
     const url = new URL(request.url);
     const pathname = normalizePath(url.pathname);
 
