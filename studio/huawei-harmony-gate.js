@@ -1,17 +1,8 @@
 const DETECTION_RE = /(HarmonyOS|OpenHarmony|HuaweiBrowser|HUAWEI)/i;
 
 export function huaweiHarmonyGate(request) {
-  if (!isHuaweiOrHarmonyRequest(request) && !isExplicitTestRequest(request)) return null;
+  if (!isHuaweiOrHarmonyRequest(request)) return null;
   return renderHuaweiUnsupportedPage(request);
-}
-
-function isExplicitTestRequest(request) {
-  try {
-    const url = new URL(request.url);
-    return url.pathname === "/__test/huawei-device-gate";
-  } catch {
-    return false;
-  }
 }
 
 export function isHuaweiOrHarmonyRequest(request) {
