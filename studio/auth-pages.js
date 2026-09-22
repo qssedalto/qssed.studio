@@ -7,9 +7,10 @@ export function notFoundPage(t, links) {
   const zh = t === TEXT.zh;
   const title = zh ? "找不到该网页" : "Page not found";
   const action = zh ? "返回 qsseda.studio" : "Return to qsseda.studio";
+  const year = new Date().getFullYear();
   const copyright = zh
-    ? "Copyright © 2026 qsseda.studio. 保留所有权利。"
-    : "Copyright © 2026 qsseda.studio. All rights reserved.";
+    ? `Copyright © ${year} qsseda.studio. 保留所有权利。`
+    : `Copyright © ${year} qsseda.studio. All rights reserved.`;
 
   return `
 <!DOCTYPE html>
