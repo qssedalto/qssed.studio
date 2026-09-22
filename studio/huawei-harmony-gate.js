@@ -34,21 +34,42 @@ function renderHuaweiUnsupportedPage(request) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
 <title>暂未适配华为设备</title>
 <style>
-  :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;color:#111827;background:#f7f9fc}
+  :root{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;
+    color-scheme:light dark;
+    --page-bg:#f7f9fc;
+    --surface:#ffffff;
+    --text:#111827;
+    --muted:#4b5563;
+    --card-border:#dfe4ea;
+    --card-top:#fbfcfd;
+    --card-bottom:#f6f8fa;
+  }
   *{box-sizing:border-box}
-  html,body{margin:0;min-height:100%;background:#f7f9fc}
+  html,body{margin:0;min-height:100%;background:var(--page-bg);color:var(--text)}
   body{display:flex;justify-content:center}
-  main{width:min(100%,760px);min-height:100vh;padding:clamp(40px,8vw,84px) clamp(24px,7vw,56px) 64px;background:#fff}
+  main{width:min(100%,760px);min-height:100vh;padding:clamp(40px,8vw,84px) clamp(24px,7vw,56px) 64px;background:var(--surface)}
   h1{margin:0 0 38px;font-size:clamp(34px,7vw,54px);line-height:1.18;letter-spacing:-.03em;font-weight:800}
-  .lead{margin:0 0 58px;font-size:clamp(21px,4.4vw,31px);line-height:1.85;color:#4b5563}
-  .notice{margin:0 0 52px;font-size:clamp(22px,4.5vw,32px);line-height:1.8;font-weight:800;color:#111827}
-  .card{border:1px solid #dfe4ea;border-radius:34px;padding:clamp(30px,6vw,48px);background:linear-gradient(180deg,#fbfcfd 0%,#f6f8fa 100%)}
+  .lead{margin:0 0 58px;font-size:clamp(21px,4.4vw,31px);line-height:1.85;color:var(--muted)}
+  .notice{margin:0 0 52px;font-size:clamp(22px,4.5vw,32px);line-height:1.8;font-weight:800;color:var(--text)}
+  .card{border:1px solid var(--card-border);border-radius:34px;padding:clamp(30px,6vw,48px);background:linear-gradient(180deg,var(--card-top) 0%,var(--card-bottom) 100%)}
   .card h2{margin:0 0 34px;font-size:clamp(27px,5vw,38px);line-height:1.35}
-  .card p{margin:0 0 34px;font-size:clamp(19px,4vw,28px);line-height:1.9;color:#4b5563}
+  .card p{margin:0 0 34px;font-size:clamp(19px,4vw,28px);line-height:1.9;color:var(--muted)}
   .card p:last-child{margin-bottom:0}
+  @media (prefers-color-scheme:dark){
+    :root{
+      --page-bg:#090d12;
+      --surface:#0d1218;
+      --text:#f3f6fa;
+      --muted:#b3bdc9;
+      --card-border:#303943;
+      --card-top:#151b22;
+      --card-bottom:#11171e;
+    }
+  }
 </style>
 </head>
 <body>
