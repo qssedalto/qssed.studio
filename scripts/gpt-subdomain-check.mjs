@@ -28,7 +28,7 @@ for (const required of [
 }
 
 for (const required of [
-  'const GPT_ORIGIN = "https://gpt.qsseda.studio"',
+  'const GPT_ORIGIN = "https://gpt.qsseda.com"',
   'new URL("/continue", AUTH_ORIGIN)',
   'action="${GPT_ORIGIN}/auth/handoff"',
   'name="access_token"',
@@ -40,9 +40,9 @@ for (const required of [
 
 assert(!handoff.includes("access_token="), "GPT handoff must not place access tokens in a URL");
 assert(!handoff.includes("refresh_token="), "GPT handoff must not place refresh tokens in a URL");
-assert(session.includes('const GPT_HOST = "gpt.qsseda.studio"'), "Session gate must recognize GPT as an isolated host");
+assert(session.includes('const GPT_HOST = "gpt.qsseda.com"'), "Session gate must recognize GPT as an isolated host");
 assert(session.includes("isolatedAppHost && !accountId"), "Isolated GPT session must require the domain-wide account marker");
-assert(authHandoff.includes('const GPT_HOST = "gpt.qsseda.studio"'), "Auth handoff must recognize the GPT host");
+assert(authHandoff.includes('const GPT_HOST = "gpt.qsseda.com"'), "Auth handoff must recognize the GPT host");
 assert(authHandoff.includes('gptTarget ? "QssedA GPT"'), "Auth handoff must render the GPT product handoff");
 assert(authHandoff.includes('return candidateLocale === "zh" ? "/zh-cn" : "/en"'), "GPT handoff must constrain return paths to GPT locale roots");
 
