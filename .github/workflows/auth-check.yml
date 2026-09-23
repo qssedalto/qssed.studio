@@ -13,7 +13,6 @@ on:
       - "auth-edge-protection.js"
       - "scripts/auth-edge-protection-check.mjs"
       - "scripts/brand-check.mjs"
-      - "scripts/brand-check.mjs"
       - "wrangler.auth.jsonc"
       - "AUTH_PORTAL.md"
       - "supabase/migrations/**"
