@@ -90,7 +90,7 @@ class CodexAppServer extends EventEmitter {
     await this.rpc("initialize", {
       clientInfo: {
         name: "qsseda_gpt_local_bridge",
-        title: "QssedA GPT Local Bridge",
+        title: "AERTEX Bridge",
         version: VERSION
       }
     }, 15000, true);
@@ -285,13 +285,13 @@ const server = http.createServer(async (request, response) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`QssedA Codex Bridge ${VERSION} listening on http://${HOST}:${PORT}`);
+  console.log(`AERTEX Bridge ${VERSION} listening on http://${HOST}:${PORT}`);
   console.log("Allowed web origins:", [...ALLOWED_ORIGINS].join(", "));
   console.log("Codex home:", CODEX_HOME);
 });
 
 server.on("error", error => {
-  console.error("QssedA Codex Bridge failed:", error?.message || error);
+  console.error("AERTEX Bridge failed:", error?.message || error);
   process.exitCode = 1;
 });
 
