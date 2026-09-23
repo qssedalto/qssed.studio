@@ -12,6 +12,7 @@ on:
       - "auth-pkce-test.js"
       - "auth-edge-protection.js"
       - "scripts/auth-edge-protection-check.mjs"
+      - "scripts/brand-check.mjs"
       - "wrangler.auth.jsonc"
       - "AUTH_PORTAL.md"
       - "supabase/migrations/**"
@@ -29,6 +30,7 @@ on:
       - "auth-pkce-test.js"
       - "auth-edge-protection.js"
       - "scripts/auth-edge-protection-check.mjs"
+      - "scripts/brand-check.mjs"
       - "wrangler.auth.jsonc"
       - "supabase/migrations/**"
       - ".github/workflows/auth-check.yml"
@@ -58,9 +60,13 @@ jobs:
           node --check auth-pkce-test.js
           node --check auth-edge-protection.js
           node --check scripts/auth-edge-protection-check.mjs
+          node --check scripts/brand-check.mjs
 
       - name: Verify Auth edge anti-crawl and surge protection
         run: node scripts/auth-edge-protection-check.mjs
+
+      - name: Verify AERTEX product naming
+        run: node scripts/brand-check.mjs
 
       - name: Verify three-domain SSO contract
         run: |

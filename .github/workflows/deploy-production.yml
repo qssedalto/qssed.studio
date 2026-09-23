@@ -94,6 +94,8 @@ jobs:
           node scripts/gpt-subdomain-check.mjs
           node --check scripts/codex-bridge-check.mjs
           node scripts/codex-bridge-check.mjs
+          node --check scripts/brand-check.mjs
+          node scripts/brand-check.mjs
           node --check auth-entry.js
           node --check auth-sso.js
           node --check auth-worker.js
@@ -117,7 +119,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.work.jsonc
 
-      - name: Deploy AERTEX AI
+      - name: Deploy AERTEX Intelligence
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

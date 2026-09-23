@@ -1,6 +1,6 @@
 # AERTEX
 
-AERTEX is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.com`, a standalone Work surface at `work.qsseda.com`, and an independent AI interface at `gpt.qsseda.com`.
+AERTEX is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.com`, a standalone Work surface at `work.qsseda.com`, and the **AERTEX Intelligence** interface at `gpt.qsseda.com`.
 
 ## Runtime architecture
 
