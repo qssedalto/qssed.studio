@@ -28,7 +28,7 @@ function Test-QssedACodexBridge {
 }
 
 if (-not (Test-Path -LiteralPath $serverPath)) {
-  throw "QssedA Codex Bridge server is missing: $serverPath"
+  throw "AERTEX Bridge server is missing: $serverPath"
 }
 
 $config = $null
@@ -39,8 +39,8 @@ if (Test-Path -LiteralPath $configPath) {
 $nodePath = [string]$config.node
 $codexPath = [string]$config.codex
 $cloudflaredPath = [string]$config.cloudflared
-if (-not $nodePath -or -not (Test-Path -LiteralPath $nodePath)) { throw "Node.js was not found. Reinstall QssedA Codex Bridge." }
-if (-not $codexPath -or -not (Test-Path -LiteralPath $codexPath)) { throw "OpenAI Codex CLI was not found. Reinstall Codex CLI and QssedA Codex Bridge." }
+if (-not $nodePath -or -not (Test-Path -LiteralPath $nodePath)) { throw "Node.js was not found. Reinstall AERTEX Bridge." }
+if (-not $codexPath -or -not (Test-Path -LiteralPath $codexPath)) { throw "OpenAI Codex CLI was not found. Reinstall Codex CLI and AERTEX Bridge." }
 
 $bridgeToken = Unprotect-LocalSecret (Join-Path $InstallRoot "bridge-token.dpapi")
 $tunnelToken = Unprotect-LocalSecret (Join-Path $InstallRoot "tunnel-token.dpapi")
@@ -55,9 +55,9 @@ if (-not (Test-QssedACodexBridge)) {
   for ($attempt = 0; $attempt -lt 30; $attempt += 1) {
     Start-Sleep -Milliseconds 150
     if (Test-QssedACodexBridge) { break }
-    if ($process.HasExited) { throw "QssedA Codex Bridge exited before becoming ready." }
+    if ($process.HasExited) { throw "AERTEX Bridge exited before becoming ready." }
   }
-  if (-not (Test-QssedACodexBridge)) { throw "QssedA Codex Bridge did not become ready on 127.0.0.1:32146." }
+  if (-not (Test-QssedACodexBridge)) { throw "AERTEX Bridge did not become ready on 127.0.0.1:32146." }
 }
 
 if ($tunnelToken -and $cloudflaredPath -and (Test-Path -LiteralPath $cloudflaredPath)) {
