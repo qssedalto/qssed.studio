@@ -62,7 +62,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
       <a class="os-brand" href="${links.dashboard}">
         <span class="os-brand-mark" aria-hidden="true"><img src="/favicon.svg" alt=""></span>
         <span>
-          <strong>QssedA</strong>
+          <strong>AERTEX</strong>
           <small>${copy.platform}</small>
         </span>
       </a>
@@ -363,7 +363,7 @@ export function buildOsCopy(zh) {
 
   if (zh) {
     return {
-      platform: "个人 AI 知识工作平台",
+      platform: "个人工作空间",
       kicker: "个人智能工作台",
       aiLabel: "工作流",
       aiTitle: "实验与工具入口",
@@ -372,7 +372,7 @@ export function buildOsCopy(zh) {
       nav: [
         { id: "dashboard", label: "首页", href: `${prefix}/dashboard`, items: [] },
         { id: "info", label: "信息中心", href: `${prefix}/info`, items: [
-          ["知识库", `${prefix}/info/knowledge`],
+          ["AERTEX Knowledge", `${prefix}/info/knowledge`],
           ["收藏链接", `${prefix}/info/links`],
           ["研究笔记", `${prefix}/info/notes`],
           ["内容摘要", `${prefix}/info/summaries`],
@@ -390,7 +390,7 @@ export function buildOsCopy(zh) {
           ["草稿箱", `${prefix}/workspace/drafts`],
           ["任务中心", `${prefix}/workspace/tasks`]
         ] },
-        { id: "admin", label: "管理", href: `${prefix}/admin`, items: [
+        { id: "admin", label: "控制台", href: `${prefix}/admin`, items: [
           ["通用", `${prefix}/admin/general`],
           ["用户管理", `${prefix}/admin/users`],
           ["角色权限", `${prefix}/admin/roles`],
@@ -405,7 +405,7 @@ export function buildOsCopy(zh) {
           ["通知", `${prefix}/settings/notifications`],
           ["AI 设置", `${prefix}/settings/ai`],
           ["第三方集成", `${prefix}/settings/integrations`],
-          ["存储管理", `${prefix}/settings/storage`]
+          ["AERTEX Drive", `${prefix}/settings/storage`]
         ] }
       ],
       pages: buildOsPages(true)
@@ -413,7 +413,7 @@ export function buildOsCopy(zh) {
   }
 
   return {
-    platform: "Personal AI Knowledge Platform",
+    platform: "Personal Workspace",
     kicker: "Personal Intelligence Workspace",
     aiLabel: "Workflow",
     aiTitle: "Experiments & tools",
@@ -422,7 +422,7 @@ export function buildOsCopy(zh) {
     nav: [
       { id: "dashboard", label: "Dashboard", href: `${prefix}/dashboard`, items: [] },
       { id: "info", label: "Information", href: `${prefix}/info`, items: [
-        ["Knowledge base", `${prefix}/info/knowledge`],
+        ["AERTEX Knowledge", `${prefix}/info/knowledge`],
         ["Links", `${prefix}/info/links`],
         ["Notes", `${prefix}/info/notes`],
         ["Summaries", `${prefix}/info/summaries`],
@@ -440,7 +440,7 @@ export function buildOsCopy(zh) {
         ["Drafts", `${prefix}/workspace/drafts`],
         ["Tasks", `${prefix}/workspace/tasks`]
       ] },
-      { id: "admin", label: "Admin", href: `${prefix}/admin`, items: [
+      { id: "admin", label: "Console", href: `${prefix}/admin`, items: [
         ["General", `${prefix}/admin/general`],
         ["Users", `${prefix}/admin/users`],
         ["Roles", `${prefix}/admin/roles`],
@@ -455,7 +455,7 @@ export function buildOsCopy(zh) {
         ["Notifications", `${prefix}/settings/notifications`],
         ["AI", `${prefix}/settings/ai`],
         ["Integrations", `${prefix}/settings/integrations`],
-        ["Storage", `${prefix}/settings/storage`]
+        ["AERTEX Drive", `${prefix}/settings/storage`]
       ] }
     ],
     pages: buildOsPages(false)
