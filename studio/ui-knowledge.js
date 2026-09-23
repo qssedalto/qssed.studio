@@ -83,7 +83,7 @@ function knowledgeRootContent(zh) {
       ${knowledgeSearchPanel(zh)}
       <section class="knowledge-intro-panel">
         <div>
-          <span class="knowledge-overline">QssedA Knowledge</span>
+          <span class="knowledge-overline">AERTEX Knowledge</span>
           <h2>${zh ? "项目、技术和学习资料" : "Projects, technology, and study notes"}</h2>
           <p>${zh ? "按分类保存项目说明、开发记录、课程内容和常用资料。每个主题都有固定页面，可以直接搜索和回看。" : "Project notes, development records, course material, and references are organized by category. Each topic has a stable page and can be searched directly."}</p>
         </div>
