@@ -14,7 +14,7 @@ export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "http
   if (pathname !== "/work/tex") return output;
 
   const shellTitle = zh ? "工作区" : "Workspace";
-  output = output.replace(`${shellTitle} · QssedA`, `${texLabel} · QssedA Work`);
+  output = output.replace(`${shellTitle} · AERTEX`, `${texLabel} · AERTEX Work`);
 
   // The Work host must expose only the TeX application itself. The Studio shell
   // remains in the document for its shared session/client plumbing, but all of
@@ -118,9 +118,9 @@ export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "http
     recheck: "重新检测",
     checking: "正在检测…",
     checkingTitle: "正在检测编译连接",
-    checkingDetail: "正在检测本机 QssedA Local Bridge 与云端 TeX 编译服务。",
+    checkingDetail: "正在检测本机 AERTEX Bridge 与云端 TeX 编译服务。",
     localReady: "本机 TeX 已连接",
-    localDetail: "已检测到本机 QssedA Local Bridge",
+    localDetail: "已检测到本机 AERTEX Bridge",
     cloudReady: "云端编译服务已连接",
     cloudDetail: "本机 Bridge 未连接；当前可使用已配置的云端 TeX 编译服务。",
     permissionPromptTitle: "需要本机网络权限",
@@ -134,9 +134,9 @@ export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "http
     recheck: "Check again",
     checking: "Checking…",
     checkingTitle: "Checking compiler connection",
-    checkingDetail: "Checking QssedA Local Bridge on this computer and the cloud TeX compiler.",
+    checkingDetail: "Checking AERTEX Bridge on this computer and the cloud TeX compiler.",
     localReady: "Local TeX connected",
-    localDetail: "QssedA Local Bridge detected",
+    localDetail: "AERTEX Bridge detected",
     cloudReady: "Cloud compiler connected",
     cloudDetail: "Local Bridge is offline; the configured cloud TeX compiler is available.",
     permissionPromptTitle: "Local network permission required",
