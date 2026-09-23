@@ -78,7 +78,9 @@ assert(worker.includes("connect-src 'self'"), "GPT page networking must remain s
 
 assert(!wrangler.containers, "GPT Wrangler config must not require Cloudflare Containers");
 assert(!wrangler.durable_objects, "GPT Wrangler config must not require Durable Objects");
-assert(!wrangler.migrations, "GPT Wrangler config must not carry legacy Cloud Codex migrations");
+assert(Array.isArray(wrangler.migrations) && wrangler.migrations.length === 2, "GPT Wrangler config must preserve the full Durable Object migration history");
+assert(wrangler.migrations[0]?.tag === "gpt-cloud-v1" && wrangler.migrations[0]?.new_sqlite_classes?.includes("CodexCloudContainer"), "GPT migration history must retain the original CodexCloudContainer creation");
+assert(wrangler.migrations[1]?.tag === "gpt-cloud-v2-remove-container" && wrangler.migrations[1]?.deleted_classes?.includes("CodexCloudContainer"), "GPT migration history must delete CodexCloudContainer after its original creation");
 
 for (const required of [
   "LOCALAPPDATA",
