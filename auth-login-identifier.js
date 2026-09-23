@@ -104,7 +104,7 @@ function publicUser(user, profile) {
   return {
     id: String(user?.id || ""),
     email: cleanText(user?.email, 180),
-    displayName: displayName || username || cleanText(user?.email, 180) || "QssedA User",
+    displayName: displayName || username || cleanText(user?.email, 180) || "AERTEX User",
     username,
     avatarUrl: safeAvatarUrl(profile?.avatar_url || metadata.avatar_url || metadata.picture),
     role: cleanText(profile?.role, 32) || "user",

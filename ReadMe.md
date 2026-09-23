@@ -1,6 +1,6 @@
-# QssedA
+# AERTEX
 
-QssedA is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.com`, a standalone Work surface at `work.qsseda.com`, and an independent AI interface at `gpt.qsseda.com`.
+AERTEX is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.com`, a standalone Work surface at `work.qsseda.com`, and an independent AI interface at `gpt.qsseda.com`.
 
 ## Runtime architecture
 
@@ -78,7 +78,7 @@ See [`AUTH_PORTAL.md`](./AUTH_PORTAL.md) for browser sessions, Studio handoff, O
 
 - `Studio Worker Check` syntax-checks every `studio/*.js` module and runs a Wrangler dry-run bundle.
 - `Auth Worker Check` validates and bundles the independent Auth Worker.
-- `Deploy QssedA Production` validates and deploys Studio, Work, GPT and Auth from `main` after relevant runtime files change.
+- `Deploy AERTEX Production` validates and deploys Studio, Work, GPT and Auth from `main` after relevant runtime files change.
 - Cloudflare branch previews are required for structural Studio PRs before merge.
 
 ## Development safety
@@ -100,7 +100,7 @@ Git history is the recovery mechanism for previous implementations and historica
 
 `gpt.qsseda.com` is always served by the Cloudflare GPT Worker, but its AI backend intentionally follows the power state of the user's Windows Codex host.
 
-The browser talks only to same-origin `/api/gpt/*` routes after the normal QssedA session gate. The GPT Worker forwards those authenticated requests to a remotely-managed Cloudflare Tunnel whose origin is the loopback-only Codex Bridge on `127.0.0.1:32146`.
+The browser talks only to same-origin `/api/gpt/*` routes after the normal AERTEX session gate. The GPT Worker forwards those authenticated requests to a remotely-managed Cloudflare Tunnel whose origin is the loopback-only Codex Bridge on `127.0.0.1:32146`.
 
 Runtime states:
 
@@ -116,3 +116,8 @@ The GPT Worker expects two protected runtime values:
 - `GPT_CODEX_BRIDGE_TOKEN` — independent random bearer token shared with the local Bridge.
 
 Neither value is embedded in the browser bundle.
+
+
+## Branding and technical namespace
+
+The user-facing product brand is **AERTEX**. Existing `qsseda` domains, Worker names, cookie names, storage keys, OAuth client IDs, and other protocol identifiers remain unchanged as the stable technical namespace. This avoids breaking sessions, redirects, storage objects, and deployed infrastructure while allowing the product UI to use the AERTEX family consistently.

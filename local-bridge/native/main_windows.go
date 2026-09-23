@@ -27,8 +27,8 @@ const (
 	bridgePort       = "32145"
 	bridgeService    = "qsseda-local-bridge"
 	protocol         = 1
-	appName          = "QssedA Local Bridge"
-	exeName          = "QssedA-Local-Bridge.exe"
+	appName          = "AERTEX Bridge"
+	exeName          = "AERTEX-Bridge.exe"
 	maxCompileBody   = 768 * 1024
 	maxSourceBytes   = 512 * 1024
 	maxSourceRunes   = 180000
@@ -71,7 +71,7 @@ func main() {
 			showMessage(appName, "卸载自动启动失败：\n"+err.Error(), true)
 			return
 		}
-		showMessage(appName, "已移除 QssedA Local Bridge 的自动启动。\n已安装的 EXE 会保留在本机，便于检查或手动删除。", false)
+		showMessage(appName, "已移除 AERTEX Bridge 的自动启动。\n已安装的 EXE 会保留在本机，便于检查或手动删除。", false)
 		return
 	}
 
@@ -83,7 +83,7 @@ func main() {
 	_ = launchBackground(installedExe)
 
 	tex := findTeXExecutable("xelatex")
-	message := "QssedA Local Bridge 已安装。\n\n以后登录 Windows 后会自动在后台启动，不需要 Node.js，也不需要 PowerShell。"
+	message := "AERTEX Bridge 已安装。\n\n以后登录 Windows 后会自动在后台启动，不需要 Node.js，也不需要 PowerShell。"
 	if tex != "" {
 		message += "\n\n已检测到 XeLaTeX：\n" + tex
 	} else {
@@ -132,7 +132,7 @@ func installSelf() (string, error) {
 	uninstallKey := `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\QssedALocalBridge`
 	_ = regAdd(uninstallKey, "DisplayName", appName)
 	_ = regAdd(uninstallKey, "DisplayVersion", version)
-	_ = regAdd(uninstallKey, "Publisher", "QssedA")
+	_ = regAdd(uninstallKey, "Publisher", "AERTEX")
 	_ = regAdd(uninstallKey, "InstallLocation", installDir)
 	_ = regAdd(uninstallKey, "UninstallString", fmt.Sprintf("\"%s\" --uninstall", installedExe))
 	_ = regAdd(uninstallKey, "NoModify", "1")

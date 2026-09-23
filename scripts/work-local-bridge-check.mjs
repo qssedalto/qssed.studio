@@ -88,7 +88,7 @@ assert(!bridge.includes("shell: true"), "Legacy pilot bridge must never spawn th
 for (const required of [
   "%LOCALAPPDATA%",
   "CurrentVersion\\Run",
-  "QssedA Local Bridge",
+  "AERTEX Bridge",
   "node.exe",
   "xelatex.exe",
   "start-windows.ps1"
@@ -132,7 +132,7 @@ assert(!nativeBridge.includes("powershell.exe"), "Native Bridge must not depend 
 assert(!nativeBridge.includes("node.exe"), "Native Bridge must not depend on Node.js");
 
 assert(worker.includes('pathname.startsWith("/api/work/")'), "Worker is missing the Work API boundary");
-assert(workApi.includes("verifyStudioApiSession"), "Bridge download must require a QssedA session");
+assert(workApi.includes("verifyStudioApiSession"), "Bridge download must require a AERTEX session");
 assert(workApi.includes("_system/releases/local-bridge/windows-amd64/QssedA-Local-Bridge.exe"), "Bridge download must read the fixed hidden R2 release key");
 assert(workApi.includes("application/vnd.microsoft.portable-executable"), "Bridge download must use an executable content type");
 assert(nativeWorkflow.includes("GOOS: windows") && nativeWorkflow.includes("GOARCH: amd64"), "Native Bridge workflow must target Windows amd64");

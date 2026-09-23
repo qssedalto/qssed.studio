@@ -47,7 +47,7 @@ export function dashboardContent(zh) {
   return `
     <section class="dashboard-welcome">
       <div class="dashboard-welcome-copy">
-        <span class="dashboard-eyebrow">QssedA</span>
+        <span class="dashboard-eyebrow">AERTEX</span>
         <h2>${zh ? "欢迎回来" : "Welcome back"}</h2>
         <p>${zh ? "继续上次的工作，或者直接打开常用功能。" : "Pick up where you left off or open a common tool."}</p>
         <div class="dashboard-welcome-actions">

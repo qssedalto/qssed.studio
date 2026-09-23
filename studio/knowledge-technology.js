@@ -22,16 +22,16 @@ export const TECHNOLOGY_KNOWLEDGE = {
   },
   "cloudflare-workers": {
     zh: {
-      summary: "Cloudflare Workers 是 QssedA 的主要服务端运行环境。开发时需要同时理解 fetch handler、bindings、Wrangler 配置、Custom Domain、Preview 和边缘运行限制。",
+      summary: "Cloudflare Workers 是 AERTEX 的主要服务端运行环境。开发时需要同时理解 fetch handler、bindings、Wrangler 配置、Custom Domain、Preview 和边缘运行限制。",
       sections: [
         { title: "基本 Worker", code: "export default {\n  async fetch(request, env, ctx) {\n    const url = new URL(request.url);\n    return new Response('ok');\n  }\n};" },
-        { title: "Bindings", bullets: ["R2、KV、D1、Durable Objects、环境变量都通过 env 获取。", "QssedA Studio 的私人文件使用 env.STORAGE R2 binding。", "敏感值用 Worker secrets，不写 wrangler.jsonc 明文。"] },
+        { title: "Bindings", bullets: ["R2、KV、D1、Durable Objects、环境变量都通过 env 获取。", "AERTEX Studio 的私人文件使用 env.STORAGE R2 binding。", "敏感值用 Worker secrets，不写 wrangler.jsonc 明文。"] },
         { title: "Wrangler", code: "npx wrangler deploy --dry-run -c wrangler.jsonc\nnpx wrangler deploy -c wrangler.jsonc\nnpx wrangler deploy --dry-run -c wrangler.auth.jsonc" },
         { title: "常见注意点", bullets: ["node --check 只能检查语法，Wrangler dry-run 才能覆盖打包。", "不同 Worker 使用独立配置时要确认 main 入口。", "Custom Domain 与 workers.dev Preview 是不同访问路径。", "生产日志不要打印 token、密码、Cookie 或完整敏感 payload。"] }
       ]
     },
     en: {
-      summary: "Cloudflare Workers is QssedA's main server runtime. Important concepts are fetch handlers, bindings, Wrangler, custom domains, previews, and edge-runtime constraints.",
+      summary: "Cloudflare Workers is AERTEX's main server runtime. Important concepts are fetch handlers, bindings, Wrangler, custom domains, previews, and edge-runtime constraints.",
       sections: [
         { title: "Worker", code: "export default { async fetch(request, env, ctx) { return new Response('ok'); } };" },
         { title: "Bindings", bullets: ["Access R2 and other bindings through env.", "Keep sensitive values in Worker secrets."] },
@@ -62,7 +62,7 @@ export const TECHNOLOGY_KNOWLEDGE = {
   },
   "oauth-pkce": {
     zh: {
-      summary: "OAuth 2.0 Authorization Code + PKCE 用于让桌面公共客户端安全获得 QssedA 应用 token，而不把可复用 client_secret 放进客户端。QssedA 只接受 S256。",
+      summary: "OAuth 2.0 Authorization Code + PKCE 用于让桌面公共客户端安全获得 AERTEX 应用 token，而不把可复用 client_secret 放进客户端。AERTEX 只接受 S256。",
       sections: [
         { title: "核心流程", code: "App 生成 code_verifier + state\n→ SHA-256 + Base64URL 得到 code_challenge\n→ 系统浏览器 GET /authorize\n→ 用户登录并允许\n→ callback?code=...&state=...\n→ App 校验 state\n→ POST /oauth/token + code_verifier\n→ access_token + refresh_token" },
         { title: "安全要求", bullets: ["state 防止请求被替换/混淆。", "authorization code 短期、一次性、绑定 client_id / redirect_uri / scope / challenge。", "access token 短期；refresh token 每次刷新都轮换并撤销旧值。", "数据库存哈希，不存 raw token。", "桌面端不内置 client_secret。"] },
@@ -71,7 +71,7 @@ export const TECHNOLOGY_KNOWLEDGE = {
       ]
     },
     en: {
-      summary: "Authorization Code + PKCE lets public desktop clients obtain QssedA application tokens without embedding a reusable client secret. QssedA requires S256.",
+      summary: "Authorization Code + PKCE lets public desktop clients obtain AERTEX application tokens without embedding a reusable client secret. AERTEX requires S256.",
       sections: [
         { title: "Flow", code: "verifier + state → challenge → /authorize → code → validate state → /oauth/token → access + refresh" },
         { title: "Security", bullets: ["Short-lived single-use codes.", "Rotating refresh tokens.", "Hash persisted token material.", "No desktop client secret."] },
@@ -85,7 +85,7 @@ export const TECHNOLOGY_KNOWLEDGE = {
       summary: "GitHub Actions 用于把检查、Preview 前的验证和生产发布自动化。核心原则是：PR head 必须跑最终代码的检查，合并后生产部署也必须再次验证。",
       sections: [
         { title: "Workflow 基本结构", code: "name: Check\non:\n  pull_request:\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v7\n      - run: node --check worker.js" },
-        { title: "QssedA 永久检查", bullets: ["Studio Worker Check：检查 studio/*.js、Wrangler bundle、配置形状。", "Auth Worker Check：检查 Auth JS、Auth bundle 和 wrangler.auth.jsonc。", "Deploy QssedA Production：main 变更后验证并依次部署 Studio/Auth。"] },
+        { title: "AERTEX 永久检查", bullets: ["Studio Worker Check：检查 studio/*.js、Wrangler bundle、配置形状。", "Auth Worker Check：检查 Auth JS、Auth bundle 和 wrangler.auth.jsonc。", "Deploy AERTEX Production：main 变更后验证并依次部署 Studio/Auth。"] },
         { title: "一次性 Workflow", bullets: ["仅在远程无法运行脚本时用于安全迁移/验证。", "完成后必须从最终分支删除，不能把临时自动改代码 Workflow 留在 main。", "Bot push 可能不会触发后续 push workflow，需要显式设计。"] },
         { title: "安全", bullets: ["Secrets 通过 GitHub Secrets 注入。", "日志避免 echo secret。", "workflow 权限按需最小化。"] }
       ]
@@ -93,7 +93,7 @@ export const TECHNOLOGY_KNOWLEDGE = {
     en: {
       summary: "GitHub Actions automates checks and production release. Final PR heads must be validated, and production validates again after merge.",
       sections: [
-        { title: "Permanent workflows", bullets: ["Studio Worker Check.", "Auth Worker Check.", "Deploy QssedA Production."] },
+        { title: "Permanent workflows", bullets: ["Studio Worker Check.", "Auth Worker Check.", "Deploy AERTEX Production."] },
         { title: "One-off workflows", bullets: ["Use only for focused remote migration/validation.", "Remove them from the final branch.", "Do not assume bot pushes trigger downstream push workflows."] },
         { title: "Security", bullets: ["Use repository secrets and minimal permissions.", "Never print secret values."] }
       ]
@@ -101,7 +101,7 @@ export const TECHNOLOGY_KNOWLEDGE = {
   },
   "tex-latex": {
     zh: {
-      summary: "TeX/LaTeX 适合可重复编译的技术文档、数学公式、论文与报告。知识库主要保存最常用结构、排错方法和未来 QssedA 桌面端的本地编译约定。",
+      summary: "TeX/LaTeX 适合可重复编译的技术文档、数学公式、论文与报告。知识库主要保存最常用结构、排错方法和未来 AERTEX 桌面端的本地编译约定。",
       sections: [
         { title: "最小文档", code: "\\documentclass{article}\n\\usepackage{amsmath}\n\\begin{document}\n\\section{Example}\n$P(A\\mid B)=\\frac{P(A\\cap B)}{P(B)}$\n\\end{document}" },
         { title: "常用包", bullets: ["amsmath/amssymb：数学。", "graphicx：图片。", "booktabs：高质量表格。", "hyperref：链接和 PDF metadata。", "ctex：中文文档。"] },
@@ -120,7 +120,7 @@ export const TECHNOLOGY_KNOWLEDGE = {
   },
   "ios-windows": {
     zh: {
-      summary: "QssedA 的桌面方向以 Windows 为首个完整客户端，iPhone/iPad 更适合轻入口、浏览器和系统能力集成。跨平台设计时要区分“系统浏览器授权”和“应用自身 UI”。",
+      summary: "AERTEX 的桌面方向以 Windows 为首个完整客户端，iPhone/iPad 更适合轻入口、浏览器和系统能力集成。跨平台设计时要区分“系统浏览器授权”和“应用自身 UI”。",
       sections: [
         { title: "Windows", bullets: ["桌面 OAuth 使用系统默认浏览器 + loopback 或自定义 scheme 回调。", "本地 Git/TeX 需要明确可执行文件发现、工作目录、进程输出和取消机制。", "Token 存储应使用操作系统安全凭据能力，而不是明文配置文件。"] },
         { title: "iOS/iPadOS", bullets: ["系统限制使本地后台服务、任意进程和文件系统行为不同于 Windows。", "Web/轻应用适合账户、状态、项目控制和查看，不适合假装拥有完整桌面执行能力。", "认证仍优先使用系统浏览器会话，不把密码交给第三方 WebView。"] },

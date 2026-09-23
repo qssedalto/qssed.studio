@@ -5,7 +5,7 @@ export const REFERENCE_KNOWLEDGE = {
       sections: [
         { title: "收录标准", bullets: ["维护活跃或历史价值明确。", "README/文档完整，能解释设计。", "代码结构能代表某种工程实践。", "License 清楚。", "记录具体参考点，而不是只有 star 数。"] },
         { title: "建议记录字段", code: "项目名 / 仓库\n用途\n值得看的目录或文件\n核心技术\n可借鉴点\n不适合直接照搬的地方\n最后检查日期" },
-        { title: "适合 QssedA 的类别", bullets: ["Cloudflare Worker 工程模板。", "OAuth/PKCE 公共客户端实现。", "Git GUI / libgit2 / dulwich 相关项目。", "TeX 编辑器和编译管理器。", "Apple 风格但重视可访问性的 Web UI。", "知识库、Markdown、全文检索与双向链接项目。"] }
+        { title: "适合 AERTEX 的类别", bullets: ["Cloudflare Worker 工程模板。", "OAuth/PKCE 公共客户端实现。", "Git GUI / libgit2 / dulwich 相关项目。", "TeX 编辑器和编译管理器。", "Apple 风格但重视可访问性的 Web UI。", "知识库、Markdown、全文检索与双向链接项目。"] }
       ]
     },
     en: { summary: "Curate repositories with notes about why they matter, where to look, and what should or should not be copied.", sections: [
@@ -32,13 +32,13 @@ export const REFERENCE_KNOWLEDGE = {
       summary: "官方文档是涉及协议、API 行为、安全和版本兼容时的第一参考来源。知识库应记录具体章节与项目结论。",
       sections: [
         { title: "优先级", bullets: ["标准/RFC。", "产品官方文档。", "官方 SDK/API reference。", "官方 GitHub 示例。", "社区文章用于补充经验，不代替规范。"] },
-        { title: "QssedA 常用文档域", bullets: ["Cloudflare Workers / Wrangler / R2。", "Supabase Auth / Database / RLS / PostgREST。", "GitHub Actions / REST API。", "OAuth 2.0 / PKCE / native app best practices。", "Python / Qt / Git / TeX 官方资料。"] },
-        { title: "记录方式", paragraphs: ["不要大段复制官方文档。记录链接、版本/日期、关键结论、QssedA 采用的做法和与当前代码关联的文件。这样升级版本时能快速重新验证。"] }
+        { title: "AERTEX 常用文档域", bullets: ["Cloudflare Workers / Wrangler / R2。", "Supabase Auth / Database / RLS / PostgREST。", "GitHub Actions / REST API。", "OAuth 2.0 / PKCE / native app best practices。", "Python / Qt / Git / TeX 官方资料。"] },
+        { title: "记录方式", paragraphs: ["不要大段复制官方文档。记录链接、版本/日期、关键结论、AERTEX 采用的做法和与当前代码关联的文件。这样升级版本时能快速重新验证。"] }
       ]
     },
     en: { summary: "Standards and official documentation are the first source for protocol, API, security, and compatibility questions.", sections: [
       { title: "Priority", bullets: ["Standards/RFCs", "Official product docs", "SDK/API references", "Official examples", "Community experience as secondary evidence"] },
-      { title: "Record", paragraphs: ["Store the link, version/date, project conclusion, and related QssedA files rather than copying entire documents."] }
+      { title: "Record", paragraphs: ["Store the link, version/date, project conclusion, and related AERTEX files rather than copying entire documents."] }
     ] }
   },
   papers: {
@@ -105,7 +105,7 @@ export const REFERENCE_KNOWLEDGE = {
       sections: [
         { title: "记录字段", code: "Skill 名称\n用途\n什么时候触发\n需要的工具/环境\n输入格式\n执行步骤\n输出\n限制\n失败时怎么处理" },
         { title: "使用原则", bullets: ["先确认 Skill 是否真的安装/可调用，不把 GitHub 上读过的 SKILL.md 说成已安装 Skill。", "Skill 要求的工具不可用时明确说明限制。", "涉及代码执行时遵循 Skill 指定的执行环境。", "外部仓库 Skill 可以作为参考，但要区分“阅读并采用原则”和“系统 Skill 已安装”。"] },
-        { title: "QssedA 例子", paragraphs: ["Apple Design Skills 曾作为外部 GitHub 设计指南被读取，用来改进 QssedA Auth UI 的普通语言、渐进披露、触摸目标和 reduced-motion 支持；它不是当时系统中已安装的 Skill。"] }
+        { title: "AERTEX 例子", paragraphs: ["Apple Design Skills 曾作为外部 GitHub 设计指南被读取，用来改进 AERTEX Auth UI 的普通语言、渐进披露、触摸目标和 reduced-motion 支持；它不是当时系统中已安装的 Skill。"] }
       ]
     },
     en: { summary: "Document a skill's trigger, inputs, dependencies, workflow, outputs, limitations, and verification. Reading a SKILL.md from GitHub is not the same as having an installed system skill.", sections: [

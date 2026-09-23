@@ -1,4 +1,4 @@
-name: Build Native Local Bridge
+name: Build AERTEX Bridge
 
 on:
   pull_request:
@@ -50,14 +50,14 @@ jobs:
           CGO_ENABLED: "0"
         run: |
           mkdir -p dist
-          go build -trimpath -ldflags "-s -w -H=windowsgui -X main.version=0.3.0-${GITHUB_SHA::7}" -o dist/QssedA-Local-Bridge.exe .
-          test -s dist/QssedA-Local-Bridge.exe
+          go build -trimpath -ldflags "-s -w -H=windowsgui -X main.version=0.3.0-${GITHUB_SHA::7}" -o dist/AERTEX-Bridge.exe .
+          test -s dist/AERTEX-Bridge.exe
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v7
         with:
           name: qsseda-local-bridge-windows-amd64
-          path: local-bridge/native/dist/QssedA-Local-Bridge.exe
+          path: local-bridge/native/dist/AERTEX-Bridge.exe
           if-no-files-found: error
           retention-days: 30
 
@@ -69,5 +69,5 @@ jobs:
         run: >-
           npx --yes wrangler@4.136.3 r2 object put
           qsseda-studio-storage/_system/releases/local-bridge/windows-amd64/QssedA-Local-Bridge.exe
-          --file local-bridge/native/dist/QssedA-Local-Bridge.exe
+          --file local-bridge/native/dist/AERTEX-Bridge.exe
           --remote

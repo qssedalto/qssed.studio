@@ -345,7 +345,7 @@ export function workHubContent(zh, workOrigin = "https://work.qsseda.com") {
     <div class="work-shell" id="work-hub-root">
       <section class="work-hero-card">
         <div class="work-hero-copy">
-          <p class="work-eyebrow">QssedA Work</p>
+          <p class="work-eyebrow">AERTEX Work</p>
           <h2>${zh ? "让网页和这台电脑一起工作。" : "Let the web and this computer work together."}</h2>
           <p class="work-hero-description">${zh ? "连接这台电脑后，Work 可以使用本机的 TeX 等工具。连接只在当前设备上进行，账号信息不会发送到本机服务。" : "Connect this computer so Work can use local tools such as TeX. The connection stays on this device, and account credentials are never sent to the local service."}</p>
           <div class="work-actions">
@@ -532,7 +532,7 @@ export function workLocalBridgeContent(zh) {
     <div class="work-shell" id="work-local-root">
       <section class="work-hero-card">
         <div class="work-hero-copy">
-          <p class="work-eyebrow">QssedA Work</p>
+          <p class="work-eyebrow">AERTEX Work</p>
           <h2>${zh ? "连接这台电脑。" : "Connect this computer."}</h2>
           <p class="work-hero-description">${zh ? "连接完成后，Work 可以发现这台电脑上可用的 TeX 等工具。连接检查只发生在本机，不会把账号凭据或文档内容发送给连接组件。" : "Once connected, Work can discover local tools such as TeX. Connection checks happen locally and do not send account credentials or document content to the connection component."}</p>
           <div class="work-actions">
@@ -793,14 +793,14 @@ export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https
 
   const title = pathname === "/work/local" ? (zh ? "本机连接" : "Computer Connection") : "Work";
   const description = pathname === "/work/local"
-    ? (zh ? "管理这台电脑与 QssedA Work 的连接。" : "Manage the connection between this computer and QssedA Work.")
+    ? (zh ? "管理这台电脑与 AERTEX Work 的连接。" : "Manage the connection between this computer and AERTEX Work.")
     : (zh ? "让网页工作区与这台电脑配合使用。" : "Let the web workspace work together with this computer.");
   const shellTitle = zh ? "工作区" : "Workspace";
   const shellDescription = zh ? "工作区总览，用于查看并进入工作台、项目、实验、草稿与任务。" : "An overview for entering the Workbench, projects, experiments, drafts, and tasks.";
 
   output = output.replace(`<h1>${shellTitle}</h1>`, `<h1>${title}</h1>`);
   output = output.replace(`<p>${shellDescription}</p>`, `<p>${description}</p>`);
-  output = output.replace(`${shellTitle} · QssedA`, `${title} · QssedA`);
+  output = output.replace(`${shellTitle} · AERTEX`, `${title} · AERTEX`);
   output = output.replace('const currentPath = "/workspace";', `const currentPath = ${JSON.stringify(pathname)};`);
 
   if (pathname === "/work/local") {

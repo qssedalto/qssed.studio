@@ -1,5 +1,5 @@
 export const LAB_TOOL_CATEGORIES = {
-  core: { zh: "QssedA 工具", en: "QssedA Tools" },
+  core: { zh: "AERTEX 工具", en: "AERTEX Tools" },
   tex: { zh: "TeX 与文档", en: "TeX & Documents" },
   ai: { zh: "AI 工具", en: "AI Tools" },
   media: { zh: "媒体处理", en: "Media Processing" },

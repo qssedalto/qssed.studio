@@ -4,7 +4,7 @@ export const ARCHIVE_KNOWLEDGE = {
       summary: "项目版本历史页不追求记录每个 commit，而是保存会改变架构、数据模型、用户体验或部署方式的重要版本节点。",
       sections: [
         { title: "建议记录格式", code: "日期 / 版本或 PR\n做了什么\n为什么做\n迁移影响\n兼容性\n验证结果\n相关 commit / PR" },
-        { title: "QssedA 关键阶段", bullets: ["主站从单体 worker.js 拆为模块化结构。", "Auth 独立为 auth.qsseda.com。", "OAuth 2.0 + PKCE、refresh rotation、revoke 与 introspection 接入。", "Profile、Settings、Storage、Admin、Dashboard 等 UI 域独立。", "Phase 4 共享层清理完成，架构进入稳定 baseline。", "Knowledge Base v1 建立长期知识路由和静态内容体系。"] },
+        { title: "AERTEX 关键阶段", bullets: ["主站从单体 worker.js 拆为模块化结构。", "Auth 独立为 auth.qsseda.com。", "OAuth 2.0 + PKCE、refresh rotation、revoke 与 introspection 接入。", "Profile、Settings、Storage、Admin、Dashboard 等 UI 域独立。", "Phase 4 共享层清理完成，架构进入稳定 baseline。", "Knowledge Base v1 建立长期知识路由和静态内容体系。"] },
         { title: "什么时候写", bullets: ["一次迁移影响多个模块。", "数据库 schema 或安全边界改变。", "产品行为有明显新能力。", "部署方式或客户端协议改变。"] }
       ]
     },
@@ -32,7 +32,7 @@ export const ARCHIVE_KNOWLEDGE = {
       summary: "已废弃方案页保存被替换的实现及废弃原因。重点不是保留旧代码全文，而是让未来知道“为什么不要再走回去”。",
       sections: [
         { title: "记录内容", bullets: ["旧方案解决什么问题。", "为什么最终失败或成本过高。", "替代方案是什么。", "是否还有数据/兼容包袱。", "什么情况下可以重新考虑。"] },
-        { title: "QssedA 示例", bullets: ["单体 7,544 行 worker.js：难以维护，已分阶段模块化。", "把协议技术细节直接暴露给普通 Auth 用户：已改为普通语言并将技术信息折叠。", "伪造 Dashboard 统计/活动：改为只显示真实入口与真实数据。", "一次性自修改 Workflow 长期保留：迁移完成后删除，避免意外再次改代码。"] },
+        { title: "AERTEX 示例", bullets: ["单体 7,544 行 worker.js：难以维护，已分阶段模块化。", "把协议技术细节直接暴露给普通 Auth 用户：已改为普通语言并将技术信息折叠。", "伪造 Dashboard 统计/活动：改为只显示真实入口与真实数据。", "一次性自修改 Workflow 长期保留：迁移完成后删除，避免意外再次改代码。"] },
         { title: "与 Git 历史的关系", paragraphs: ["旧实现的完整源码由 Git 历史保留。知识库只保存废弃原因和迁移上下文，避免在当前树里长期堆大型快照。"] }
       ]
     },
@@ -62,7 +62,7 @@ export const ARCHIVE_KNOWLEDGE = {
       summary: "技术选型对比页保存“为什么选 A 不选 B”的可重复评估框架。选型看约束，不追求绝对最好。",
       sections: [
         { title: "对比维度", bullets: ["部署环境与平台限制。", "安全模型。", "维护成本和生态。", "性能与资源占用。", "离线/本地能力。", "用户体验。", "迁移成本和锁定风险。"] },
-        { title: "示例：Worker vs 传统服务器", bullets: ["Workers：部署轻、边缘、无需维护 VM；但运行模型和原生进程能力受限。", "传统服务器：系统控制更完整；但运维、补丁和扩缩容成本更高。", "QssedA Web API 目前更适合 Worker，桌面本地 Git/TeX 则必须在客户端执行。"] },
+        { title: "示例：Worker vs 传统服务器", bullets: ["Workers：部署轻、边缘、无需维护 VM；但运行模型和原生进程能力受限。", "传统服务器：系统控制更完整；但运维、补丁和扩缩容成本更高。", "AERTEX Web API 目前更适合 Worker，桌面本地 Git/TeX 则必须在客户端执行。"] },
         { title: "示例：自定义 URI vs loopback", bullets: ["自定义 URI：回跳简单，但需要 OS scheme 注册并处理抢占风险。", "loopback：RFC 8252 推荐的 native app 模式之一，Windows 可临时监听动态端口。", "可以同时支持，按客户端安装方式选择。"] },
         { title: "结论格式", paragraphs: ["每次技术选型最后写：当前选择、关键理由、已知代价、重新评估触发条件。"] }
       ]
@@ -77,7 +77,7 @@ export const ARCHIVE_KNOWLEDGE = {
     zh: {
       summary: "以后可能重新启用的思路用于保存“现在不做，但值得保留”的方案，避免它们散落在聊天记录里。每条都要写清为什么现在不做。",
       sections: [
-        { title: "候选方向", bullets: ["知识库持久化编辑、标签、全文检索和 AI RAG。", "QssedA Desktop 的 Git + TeX 一体化客户端。", "项目/任务/草稿统一数据模型。", "移动端轻入口或 App Clip 类体验。", "更完整的跨设备活动流。", "Resource server API 层和细粒度 OAuth scopes。"] },
+        { title: "候选方向", bullets: ["知识库持久化编辑、标签、全文检索和 AI RAG。", "AERTEX Desktop 的 Git + TeX 一体化客户端。", "项目/任务/草稿统一数据模型。", "移动端轻入口或 App Clip 类体验。", "更完整的跨设备活动流。", "Resource server API 层和细粒度 OAuth scopes。"] },
         { title: "暂缓原因模板", code: "想法\n价值\n现在不做的原因\n依赖条件\n最小验证方式\n重新评估时间/触发事件" },
         { title: "原则", bullets: ["暂缓不等于否定。", "没有依赖条件和触发点的“以后做”通常会永久遗忘。", "当依赖成熟后重新从当前架构评估，不直接照旧方案实现。"] }
       ]

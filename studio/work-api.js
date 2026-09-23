@@ -26,7 +26,7 @@ export async function handleWorkApi(request, env, action) {
 
   const headers = new Headers();
   headers.set("content-type", "application/vnd.microsoft.portable-executable");
-  headers.set("content-disposition", 'attachment; filename="QssedA-Local-Bridge.exe"');
+  headers.set("content-disposition", 'attachment; filename="AERTEX-Bridge.exe"');
   headers.set("cache-control", "private, no-store");
   headers.set("x-content-type-options", "nosniff");
   if (Number.isFinite(object.size)) headers.set("content-length", String(object.size));

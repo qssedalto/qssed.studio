@@ -4,9 +4,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install-windows.ps
 set EXITCODE=%ERRORLEVEL%
 echo.
 if "%EXITCODE%"=="0" (
-  echo QssedA Local Bridge setup completed.
+  echo AERTEX Bridge setup completed.
 ) else (
-  echo QssedA Local Bridge setup failed with exit code %EXITCODE%.
+  echo AERTEX Bridge setup failed with exit code %EXITCODE%.
 )
 echo.
 pause

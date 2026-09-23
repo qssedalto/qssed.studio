@@ -89,7 +89,7 @@ export function languageSettingsContent(zh) {
   return `
     <section class="os-card is-large settings-detail-card">
       <h2>${zh ? "显示语言" : "Language"}</h2>
-      <p>${zh ? "选择 QssedA 的界面语言。" : "Choose the interface language for QssedA."}</p>
+      <p>${zh ? "选择 AERTEX 的界面语言。" : "Choose the interface language for AERTEX."}</p>
       <div class="settings-choice-grid">
         <a class="settings-choice ${zh ? "is-selected" : ""}" href="/zh-cn/settings/language"><strong>中文</strong><span>简体中文</span></a>
         <a class="settings-choice ${zh ? "" : "is-selected"}" href="/en/settings/language"><strong>English</strong><span>English</span></a>

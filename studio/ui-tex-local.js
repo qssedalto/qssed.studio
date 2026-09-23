@@ -2,7 +2,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
   const copy = zh ? {
     localReady: "本机 TeX 已连接",
     localUnsupported: "本机不支持当前引擎",
-    localDetail: "编译会直接在这台电脑的 QssedA Local Bridge 中完成；源码不会上传到 QssedA TeX 编译服务器。",
+    localDetail: "编译会直接在这台电脑的 AERTEX Bridge 中完成；源码不会上传到 AERTEX TeX 编译服务器。",
     localUnsupportedDetail: "本机 Bridge 当前只开放 XeLaTeX 与 pdfLaTeX。可切换引擎，或在云端编译服务可用时继续使用其他引擎。",
     cloudReady: "云端编译服务已连接",
     offline: "编译服务尚未连接",
@@ -29,7 +29,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
   } : {
     localReady: "Local TeX connected",
     localUnsupported: "Current engine is not enabled locally",
-    localDetail: "Compilation runs directly through QssedA Local Bridge on this computer; source is not uploaded to the QssedA TeX compiler service.",
+    localDetail: "Compilation runs directly through AERTEX Bridge on this computer; source is not uploaded to the AERTEX TeX compiler service.",
     localUnsupportedDetail: "The local Bridge currently enables XeLaTeX and pdfLaTeX only. Switch engines or use the cloud compiler when another engine is required.",
     cloudReady: "Cloud compiler connected",
     offline: "Compiler not connected",
@@ -210,7 +210,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
               description = localCopy.localUnsupportedDetail;
             } else if (kind === 'cloud') {
               label = localCopy.cloudReady;
-              description = ${JSON.stringify(zh ? "当前引擎将使用已配置的 QssedA 云端 TeX 编译服务。" : "The current engine will use the configured QssedA cloud TeX compiler service.")};
+              description = ${JSON.stringify(zh ? "当前引擎将使用已配置的 AERTEX 云端 TeX 编译服务。" : "The current engine will use the configured AERTEX cloud TeX compiler service.")};
             }
             if (pillText) pillText.textContent = label;
             if (stateText) stateText.textContent = label;

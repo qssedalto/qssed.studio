@@ -55,7 +55,7 @@ export const LEGACY_REDIRECTS = new Map([
 ]);
 export const TEXT = {
   en: {
-    studioName: "QssedA",
+    studioName: "AERTEX",
     signIn: "Sign In",
     signUp: "Create Account",
     continue: "Continue",
@@ -77,8 +77,8 @@ export const TEXT = {
     setPassword: "Create a password",
     alreadyHaveAccount: "Already have an account? Sign in",
     dontHaveAccount: "Need an account? Create one",
-    loginDescription: "Sign in to QssedA.",
-    signUpDescription: "Create your QssedA account.",
+    loginDescription: "Sign in to AERTEX.",
+    signUpDescription: "Create your AERTEX account.",
     usernamePlaceholder: "Username",
     firstNamePlaceholder: "First name",
     lastNamePlaceholder: "Last name",
@@ -88,7 +88,7 @@ export const TEXT = {
     account: "Account"
   },
   zh: {
-    studioName: "QssedA",
+    studioName: "AERTEX",
     signIn: "登录",
     signUp: "创建账号",
     continue: "继续",
@@ -110,8 +110,8 @@ export const TEXT = {
     setPassword: "设置密码",
     alreadyHaveAccount: "已有账号？登录",
     dontHaveAccount: "没有账号？创建一个",
-    loginDescription: "登录 QssedA。",
-    signUpDescription: "创建 QssedA 账号。",
+    loginDescription: "登录 AERTEX。",
+    signUpDescription: "创建 AERTEX 账号。",
     usernamePlaceholder: "用户名",
     firstNamePlaceholder: "姓",
     lastNamePlaceholder: "名",

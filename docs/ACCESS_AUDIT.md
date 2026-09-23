@@ -1,6 +1,6 @@
-# QssedA Access Audit
+# AERTEX Access Audit
 
-QssedA Access Audit records edge access events for the main QssedA site, the Work custom domain, and the Auth custom domain.
+AERTEX Access Audit records edge access events for the main AERTEX site, the Work custom domain, and the Auth custom domain.
 
 ## Storage
 
@@ -51,7 +51,7 @@ https://qsseda.com/zh-cn/admin/access-audit
 https://qsseda.com/en/admin/access-audit
 ```
 
-Both the page and its API require a valid QssedA session plus the existing Supabase `is_admin` check. Non-admin access to the page returns a generic 404.
+Both the page and its API require a valid AERTEX session plus the existing Supabase `is_admin` check. Non-admin access to the page returns a generic 404.
 
 The API endpoint is:
 
@@ -67,10 +67,10 @@ Supported actions:
 
 ## Retention
 
-The default retention period is 30 days. The main QssedA Worker registers a daily cron at `03:17 UTC` and deletes older audit objects. The retention constant is `ACCESS_AUDIT_RETENTION_DAYS` in `studio/access-audit.js`.
+The default retention period is 30 days. The main AERTEX Worker registers a daily cron at `03:17 UTC` and deletes older audit objects. The retention constant is `ACCESS_AUDIT_RETENTION_DAYS` in `studio/access-audit.js`.
 
 Because raw IP addresses are personal data in many jurisdictions, retention should remain proportionate to the security/operations purpose and the site's privacy notice should accurately describe this logging.
 
 ## Cloudflare built-in logs
 
-Wrangler Observability remains enabled at 100% head sampling for QssedA, Work, and Auth. Access Audit is an application-owned searchable archive in addition to Cloudflare's own invocation logs; it does not replace Cloudflare observability.
+Wrangler Observability remains enabled at 100% head sampling for AERTEX, Work, and ID. Access Audit is an application-owned searchable archive in addition to Cloudflare's own invocation logs; it does not replace Cloudflare observability.

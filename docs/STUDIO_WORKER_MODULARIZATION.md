@@ -1,10 +1,10 @@
-# QssedA Worker modularization plan
+# AERTEX Worker modularization plan
 
 > Status: **completed sequencing record**. Phases 1–4 are production-verified. This document now records the constraints and results of the structural modularization rather than an active extraction queue.
 
 ## Why this document exists
 
-The original QssedA Worker grew into a single `worker.js` of 7,544 lines / 388,760 bytes. The project deliberately used staged, behavior-preserving extraction instead of a framework rewrite or big-bang split.
+The original AERTEX Worker grew into a single `worker.js` of 7,544 lines / 388,760 bytes. The project deliberately used staged, behavior-preserving extraction instead of a framework rewrite or big-bang split.
 
 ## Current architecture after Phase 4
 
