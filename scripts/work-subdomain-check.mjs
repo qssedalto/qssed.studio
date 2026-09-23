@@ -13,11 +13,11 @@ const workWranglerText = fs.readFileSync(new URL("../wrangler.work.jsonc", impor
 const workWrangler = JSON.parse(workWranglerText.replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 
 assert(worker.includes("rewriteWorkSubdomainRequest"), "Worker must route the Work custom domain explicitly");
-assert(worker.includes("handleMainWorkHandoff"), "Main Studio must expose the Work session handoff");
+assert(worker.includes("handleMainWorkHandoff"), "Main site must expose the Work session handoff");
 assert(worker.includes("workSessionRedirect"), "Unauthenticated Work pages must return through the main-site handoff");
 assert(worker.includes("mapped.canonical"), "Work aliases must redirect to localized canonical URLs");
-assert(worker.includes("suppressWorkClientSessionBounce"), "Authenticated Work HTML must suppress the Studio origin-local session bounce");
-assert(worker.includes('markup.replace(\n    "    hydrateOsUser();"'), "Work suppression must target the inherited Studio hydrateOsUser call only");
+assert(worker.includes("suppressWorkClientSessionBounce"), "Authenticated Work HTML must suppress the main-site origin-local session bounce");
+assert(worker.includes('markup.replace(\n    "    hydrateOsUser();"'), "Work suppression must target the inherited main-site hydrateOsUser call only");
 assert(worker.includes("server-side host-only session gate"), "Work session suppression must document that the server-side gate remains authoritative");
 
 for (const required of [
@@ -58,8 +58,8 @@ assert(authEntry.includes('location.replace(target)'), "Auth login must resume t
 assert(authEntry.includes('path.startsWith("/")') && authEntry.includes('path.startsWith("//")'), "Auth return target must remain constrained to same-origin paths");
 
 assert(workTexUi.includes('id="qsseda-work-tex-only"'), "Work TeX must include the dedicated full-viewport shell override");
-assert(workTexUi.includes('.tex-workbench .tex-hero{display:none!important}'), "Work must hide Studio/TeX product chrome above the workspace");
-assert(workTexUi.includes('.os-sidebar'), "Work must remove the Studio sidebar from layout");
+assert(workTexUi.includes('.tex-workbench .tex-hero{display:none!important}'), "Work must hide inherited product chrome above the workspace");
+assert(workTexUi.includes('.os-sidebar'), "Work must remove the inherited sidebar from layout");
 assert(workTexUi.includes('height:calc(100vh - 16px)!important'), "Work TeX must own the viewport");
 assert(workTexUi.includes('tex-connection-check'), "Work TeX must expose a manual compiler connection check");
 assert(workTexUi.includes("targetAddressSpace: 'loopback'"), "Manual Work TeX connection checks must remain scoped to loopback");
@@ -67,11 +67,11 @@ assert(workTexUi.includes("loopbackFetch(base, '/tex/status')"), "Manual Work Te
 assert(workTexUi.includes("fetch('/api/tex/status'"), "Manual Work TeX connection checks must also verify cloud compiler availability");
 
 assert(workWrangler.name === "qsseda-work", "Work Worker must use a dedicated script name");
-assert(workWrangler.main === "studio/worker-audit.js", "Work Worker must enter through the audited Studio facade");
-assert(workAuditWrapper.includes('import worker from "../worker.js"'), "Work audit wrapper must reuse the hardened Studio facade");
+assert(workWrangler.main === "studio/worker-audit.js", "Work Worker must enter through the audited main-site facade");
+assert(workAuditWrapper.includes('import worker from "../worker.js"'), "Work audit wrapper must reuse the hardened main-site facade");
 assert(workAuditWrapper.includes("recordAccessAudit"), "Work audit wrapper must preserve private access auditing");
 assert(workWrangler.routes?.some(route => route.pattern === "work.qsseda.com" && route.custom_domain === true), "work.qsseda.com custom domain route is missing");
-assert(workWrangler.r2_buckets?.some(bucket => bucket.binding === "STORAGE" && bucket.bucket_name === "qsseda-studio-storage"), "Work Worker must share the protected Studio storage binding");
+assert(workWrangler.r2_buckets?.some(bucket => bucket.binding === "STORAGE" && bucket.bucket_name === "qsseda-studio-storage"), "Work Worker must share the protected main-site storage binding");
 
 assert(bridge.includes('"https://work.qsseda.com"'), "Legacy Bridge must allow the Work origin");
 assert(nativeOrigin.includes('allowedOrigins["https://work.qsseda.com"] = true'), "Native Bridge must allow the Work origin");
