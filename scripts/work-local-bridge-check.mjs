@@ -104,8 +104,8 @@ assert(windowsCmd.includes("install-windows.ps1"), "Legacy double-click installe
 for (const required of [
   'bridgeHost       = "127.0.0.1"',
   'bridgePort       = "32145"',
-  '"https://qsseda.studio"',
-  '"https://www.qsseda.studio"',
+  '"https://qsseda.com"',
+  '"https://www.qsseda.com"',
   'HandleFunc("/health"',
   'HandleFunc("/tex/status"',
   'HandleFunc("/tex/compile"',
