@@ -11,7 +11,7 @@ const PORT = 32146;
 const PROTOCOL = 1;
 const VERSION = "0.1.0";
 const SERVICE = "qsseda-codex-bridge";
-const DEFAULT_ORIGINS = ["https://gpt.qsseda.studio"];
+const DEFAULT_ORIGINS = ["https://gpt.qsseda.com"];
 const EXTRA_ORIGINS = String(process.env.QSSEDA_CODEX_BRIDGE_ORIGINS || "")
   .split(",")
   .map(value => value.trim())
