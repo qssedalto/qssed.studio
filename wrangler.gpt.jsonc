@@ -14,12 +14,6 @@
       "custom_domain": true
     }
   ],
-  "migrations": [
-    {
-      "tag": "gpt-cloud-v2-remove-container",
-      "deleted_classes": ["CodexCloudContainer"]
-    }
-  ],
   "observability": {
     "logs": {
       "enabled": true,
