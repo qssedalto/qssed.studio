@@ -71,8 +71,11 @@
     }
   ],
   "routes": [
+    { "pattern": "qsseda.com/*", "zone_name": "qsseda.com" },
     { "pattern": "*.qsseda.com/*", "zone_name": "qsseda.com" },
+    { "pattern": "qsseda.online/*", "zone_name": "qsseda.online" },
     { "pattern": "*.qsseda.online/*", "zone_name": "qsseda.online" },
+    { "pattern": "qsseda.studio/*", "zone_name": "qsseda.studio" },
     { "pattern": "*.qsseda.studio/*", "zone_name": "qsseda.studio" }
   ],
   "r2_buckets": [
