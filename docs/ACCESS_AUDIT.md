@@ -47,8 +47,8 @@ Sensitive query values are replaced with `[REDACTED]` before persistence.
 The private viewer is available at:
 
 ```text
-https://qsseda.studio/zh-cn/admin/access-audit
-https://qsseda.studio/en/admin/access-audit
+https://qsseda.com/zh-cn/admin/access-audit
+https://qsseda.com/en/admin/access-audit
 ```
 
 Both the page and its API require a valid Studio session plus the existing Supabase `is_admin` check. Non-admin access to the page returns a generic 404.
