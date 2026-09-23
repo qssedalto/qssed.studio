@@ -36,7 +36,7 @@ export function osStyles() {
       .os-sidebar:hover::-webkit-scrollbar-thumb{background:var(--border-strong);}
     }
     .os-brand{display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none;margin-bottom:16px;}
-    .os-brand-mark,.os-avatar{display:grid;place-items:center;width:42px;height:42px;border-radius:var(--radius);background:var(--primary);color:var(--primary-ink);font-weight:900;}
+    .os-brand-mark,.os-avatar{display:grid;place-items:center;width:42px;height:42px;border-radius:var(--radius);font-weight:900}.os-brand-mark{background:transparent;color:inherit;border-radius:0}.os-brand-mark img{display:block;width:100%;height:100%;object-fit:contain}.os-avatar{background:var(--primary);color:var(--primary-ink)}
     .os-brand strong,.os-brand small{display:block}.os-brand small{color:var(--muted);font-size:12px;margin-top:2px;}
     .os-user{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-soft);margin-bottom:16px;}
     .os-user strong,.os-user>span{display:block}.os-user strong{color:var(--quiet);font-size:12px;text-transform:uppercase}.os-user>span{margin-top:5px;color:var(--text);overflow-wrap:anywhere;}
