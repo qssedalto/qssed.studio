@@ -54,7 +54,7 @@ async function routeAuthRequest(request, env, ctx) {
   if (pathname === "/api/login") {
     if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
     if ((request.headers.get("Origin") || "") !== url.origin) return new Response(JSON.stringify({ error: "Invalid origin" }), { status: 403, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } });
-    return markSsoRequired(await handleIdentifierLogin(request));
+    return handleIdentifierLogin(request);
   }
 
   let routedRequest = request;
@@ -113,17 +113,6 @@ function isLoginRedirect(response, requestOrigin) {
   } catch {
     return false;
   }
-}
-
-async function markSsoRequired(response) {
-  if (!response?.ok || !(response.headers.get("content-type") || "").includes("application/json")) return response;
-  let data;
-  try { data = await response.json(); }
-  catch { return response; }
-  if (!data?.authenticated) return new Response(JSON.stringify(data), { status: response.status, headers: response.headers });
-  const headers = new Headers(response.headers);
-  headers.delete("content-length");
-  return new Response(JSON.stringify({ ...data, sso_sync_required: true }), { status: response.status, headers });
 }
 
 function redirectWithPreservedHeaders(response, location, cookieValue = "") {
