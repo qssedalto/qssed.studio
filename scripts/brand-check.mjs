@@ -19,6 +19,7 @@ const tools = read("studio/lab-tools.js");
 const favicon = read("studio/favicon.js");
 const workApi = read("studio/work-api.js");
 const native = read("local-bridge/native/main_windows.go");
+const portal = read("AUTH_PORTAL.md");
 
 assert(shell.includes("<strong>AERTEX</strong>"), "Main brand must be AERTEX");
 assert(shell.includes('platform: "个人工作空间"'), "Chinese main subtitle must be 个人工作空间");
@@ -50,13 +51,10 @@ assert(workApi.includes('filename="AERTEX-Bridge.exe"'), "Bridge download filena
 assert(native.includes('appName          = "AERTEX Bridge"'), "Native bridge visible name must be AERTEX Bridge");
 assert(native.includes('bridgeService    = "qsseda-local-bridge"'), "Bridge service ID must remain qsseda-local-bridge");
 
-for (const technical of [
-  "__Host-qsseda-access",
-  "__Host-qsseda-refresh",
-  "qsseda-git-desktop"
-]) {
+for (const technical of ["__Host-qsseda-access","__Host-qsseda-refresh"]) {
   const combined = [auth, oauth].join("\n");
   assert(combined.includes(technical), `Stable technical identifier changed unexpectedly: ${technical}`);
 }
+assert(portal.includes("client_id: qsseda-git-desktop"), "OAuth client_id must remain qsseda-git-desktop");
 
 console.log("AERTEX product naming contract matches the approved table.");
