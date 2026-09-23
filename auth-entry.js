@@ -2,6 +2,7 @@ import authWorker from "./auth-worker.js";
 import { handlePkceTestRequest } from "./auth-pkce-test.js";
 import { handleIdentifierLogin, rewriteIdentifierLoginPage } from "./auth-login-identifier.js";
 import { protectAuthEdgeRequest, applyAuthEdgeHeaders } from "./auth-edge-protection.js";
+import { handleAuthSsoRequest, isAuthSsoPath } from "./auth-sso.js";
 
 const PKCE_TEST_PATHS = new Set([
   "/pkce-test",
@@ -11,7 +12,8 @@ const OAUTH_MUTATION_PATHS = new Set([
   "/api/oauth/authorize",
   "/oauth/token",
   "/oauth/revoke",
-  "/oauth/introspect"
+  "/oauth/introspect",
+  "/sso/import"
 ]);
 const RETURN_COOKIE = "__Host-qsseda-auth-return";
 const RETURN_COOKIE_MAX_AGE = 10 * 60;
@@ -41,6 +43,10 @@ async function routeAuthRequest(request, env, ctx) {
     if (!(await allowed(env?.AUTH_OAUTH_RATE_LIMITER, key))) return tooManyRequests();
   }
 
+  if (isAuthSsoPath(pathname)) {
+    return handleAuthSsoRequest(request);
+  }
+
   if (PKCE_TEST_PATHS.has(pathname)) {
     return handlePkceTestRequest(request);
   }
@@ -60,7 +66,7 @@ async function routeAuthRequest(request, env, ctx) {
 
   const response = await authWorker.fetch(routedRequest, env, ctx);
 
-  if (pathname === "/continue" && isLoginRedirect(response)) {
+  if (pathname === "/continue" && isLoginRedirect(response, url.origin)) {
     if (effectiveReturn) {
       return redirectWithPreservedHeaders(
         response,
@@ -98,12 +104,12 @@ function safeNextPath(value) {
   return path;
 }
 
-function isLoginRedirect(response) {
+function isLoginRedirect(response, requestOrigin) {
   if (!response || response.status < 300 || response.status >= 400) return false;
   const location = response.headers.get("location") || "";
   try {
-    const parsed = new URL(location, "https://auth.qsseda.com");
-    return parsed.origin === "https://auth.qsseda.com" && normalizePath(parsed.pathname) === "/login";
+    const parsed = new URL(location, requestOrigin);
+    return parsed.origin === requestOrigin && normalizePath(parsed.pathname) === "/login";
   } catch {
     return false;
   }

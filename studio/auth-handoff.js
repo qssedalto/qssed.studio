@@ -2,17 +2,16 @@ import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { html, json } from "./routing.js";
 import { baseHead, supabaseScript } from "./ui-page.js";
 import { studioSessionCookies, withStudioSessionCookies } from "./session-gate.js";
-
-const AUTH_ORIGIN = "https://auth.qsseda.com";
-const MAIN_ORIGIN = "https://qsseda.com";
-const WORK_HOST = "work.qsseda.com";
-const GPT_HOST = "gpt.qsseda.com";
+import { isServiceHost, rootDomainForHost, serviceOrigin } from "./domain-family.js";
 
 export async function handleAuthHandoff(request, env, locale) {
   const requestUrl = new URL(request.url);
   const hostname = requestUrl.hostname.toLowerCase();
-  const workTarget = hostname === WORK_HOST;
-  const gptTarget = hostname === GPT_HOST;
+  const root = rootDomainForHost(hostname) || "qsseda.com";
+  const authOrigin = serviceOrigin(root, "auth");
+  const mainOrigin = serviceOrigin(root);
+  const workTarget = isServiceHost(hostname, "work");
+  const gptTarget = isServiceHost(hostname, "gpt");
   const isolatedTarget = workTarget || gptTarget;
   const origin = request.headers.get("Origin") || "";
   const referer = request.headers.get("Referer") || "";
@@ -20,7 +19,7 @@ export async function handleAuthHandoff(request, env, locale) {
   const fetchMode = (request.headers.get("Sec-Fetch-Mode") || "").toLowerCase();
   const fetchDest = (request.headers.get("Sec-Fetch-Dest") || "").toLowerCase();
   const previewAllowed = env?.AUTH_PREVIEW_ALLOW_WORKERS_DEV === "1";
-  const trustedOrigins = isolatedTarget ? new Set([AUTH_ORIGIN, MAIN_ORIGIN]) : new Set([AUTH_ORIGIN]);
+  const trustedOrigins = isolatedTarget ? new Set([authOrigin, mainOrigin]) : new Set([authOrigin]);
   let refererOrigin = "";
   try { refererOrigin = referer ? new URL(referer).origin : ""; } catch {}
   const missingOrigin = origin === "" || origin === "null";
@@ -58,7 +57,7 @@ export async function handleAuthHandoff(request, env, locale) {
   if (!Array.isArray(profiles) || profiles[0]?.status !== "active") return json({ error: "Account is not active" }, 403);
 
   const response = authHandoffHtml(accessToken, refreshToken, next, workTarget, gptTarget);
-  return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken));
+  return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken, undefined, request));
 }
 
 export function normalizeHandoffNext(value, locale, workTarget = false, gptTarget = false) {

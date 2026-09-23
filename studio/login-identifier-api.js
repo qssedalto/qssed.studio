@@ -92,7 +92,7 @@ export async function handleIdentifierPasswordLogin(request, env, ipInfo) {
   if (!authResponse.ok || !authData?.access_token || !authData?.refresh_token) return response;
   return withStudioSessionCookies(
     response,
-    studioSessionCookies(authData.access_token, authData.refresh_token, authData.expires_in)
+    studioSessionCookies(authData.access_token, authData.refresh_token, authData.expires_in, request)
   );
 }
 

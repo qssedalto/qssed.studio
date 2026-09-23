@@ -5,7 +5,11 @@ const HOST = "127.0.0.1";
 const PORT = 32145;
 const PROTOCOL = 1;
 const VERSION = "0.1.0";
-const DEFAULT_ORIGINS = ["https://qsseda.com", "https://www.qsseda.com", "https://work.qsseda.com"];
+const DEFAULT_ORIGINS = [
+  "https://qsseda.com", "https://www.qsseda.com", "https://work.qsseda.com",
+  "https://qsseda.online", "https://www.qsseda.online", "https://work.qsseda.online",
+  "https://qsseda.studio", "https://www.qsseda.studio", "https://work.qsseda.studio"
+];
 const EXTRA_ORIGINS = String(process.env.QSSEDA_BRIDGE_ORIGINS || "")
   .split(",")
   .map(value => value.trim())

@@ -2,24 +2,23 @@ import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { html, json } from "./routing.js";
 import { baseHead, supabaseScript } from "./ui-page.js";
 import { workerLog } from "./server-runtime.js";
+import { authOriginForRequest, isServiceHost, rootDomainForHost } from "./domain-family.js";
 
 const ACCESS_COOKIE = "__Host-qsseda-studio-access";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const ACCOUNT_COOKIE = "__Secure-qsseda-account-id";
 const ACCOUNT_SIGNED_OUT = "signed-out";
-const COOKIE_DOMAIN = "qsseda.com";
-const WORK_HOST = "work.qsseda.com";
-const GPT_HOST = "gpt.qsseda.com";
 const ACCESS_MAX_AGE = 60 * 60;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
-export function studioSessionCookies(accessToken, refreshToken, expiresIn = ACCESS_MAX_AGE) {
+export function studioSessionCookies(accessToken, refreshToken, expiresIn = ACCESS_MAX_AGE, requestOrHost = "qsseda.com") {
   const accessAge = Math.max(60, Math.min(Number(expiresIn) || ACCESS_MAX_AGE, ACCESS_MAX_AGE));
+  const cookieDomain = sessionRoot(requestOrHost);
   const cookies = [];
   if (accessToken) cookies.push(cookie(ACCESS_COOKIE, accessToken, accessAge));
   if (refreshToken) cookies.push(cookie(REFRESH_COOKIE, refreshToken, REFRESH_MAX_AGE));
   const userId = jwtSubject(accessToken);
-  if (userId) cookies.push(accountCookie(userId, REFRESH_MAX_AGE));
+  if (userId) cookies.push(accountCookie(userId, REFRESH_MAX_AGE, cookieDomain));
   return cookies;
 }
 
@@ -27,8 +26,8 @@ export function clearStudioSessionCookies() {
   return [cookie(ACCESS_COOKIE, "", 0), cookie(REFRESH_COOKIE, "", 0)];
 }
 
-function globalLogoutCookies() {
-  return [...clearStudioSessionCookies(), accountCookie(ACCOUNT_SIGNED_OUT, REFRESH_MAX_AGE)];
+function globalLogoutCookies(requestOrHost) {
+  return [...clearStudioSessionCookies(), accountCookie(ACCOUNT_SIGNED_OUT, REFRESH_MAX_AGE, sessionRoot(requestOrHost))];
 }
 
 export function withStudioSessionCookies(response, cookies = []) {
@@ -45,8 +44,9 @@ export function withStudioSessionCookies(response, cookies = []) {
 export async function verifyStudioPageSession(request) {
   const url = new URL(request.url);
   const hostname = url.hostname.toLowerCase();
-  const workHost = hostname === WORK_HOST;
-  const isolatedAppHost = workHost || hostname === GPT_HOST;
+  const workHost = isServiceHost(hostname, "work");
+  const gptHost = isServiceHost(hostname, "gpt");
+  const isolatedAppHost = workHost || gptHost;
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   const accessToken = cookies[ACCESS_COOKIE] || "";
   const refreshToken = cookies[REFRESH_COOKIE] || "";
@@ -67,7 +67,7 @@ export async function verifyStudioPageSession(request) {
     const verified = await verifyAccessToken(accessToken);
     if (verified.ok && identityMatches(verified.user.id)) {
       const migrationCookies = !accountId && !workHost
-        ? [accountCookie(verified.user.id, REFRESH_MAX_AGE)]
+        ? [accountCookie(verified.user.id, REFRESH_MAX_AGE, rootDomainForHost(hostname) || "qsseda.com")]
         : [];
       return { ok: true, user: verified.user, accessToken, cookies: migrationCookies };
     }
@@ -82,7 +82,7 @@ export async function verifyStudioPageSession(request) {
           ok: true,
           user: verified.user,
           accessToken: refreshed.access_token,
-          cookies: studioSessionCookies(refreshed.access_token, refreshed.refresh_token, refreshed.expires_in)
+          cookies: studioSessionCookies(refreshed.access_token, refreshed.refresh_token, refreshed.expires_in, request)
         };
       }
     }
@@ -121,7 +121,7 @@ export async function handleStudioSessionBootstrap(request) {
   // A Work-local Supabase session can itself be stale after an account switch on
   // another qsseda.com host. Do not let it recreate the old Work HttpOnly
   // session unless the domain-wide account marker says it is the same user.
-  if (url.hostname.toLowerCase() === WORK_HOST) {
+  if (isServiceHost(url.hostname.toLowerCase(), "work")) {
     const cookies = parseCookies(request.headers.get("Cookie") || "");
     const accountId = String(cookies[ACCOUNT_COOKIE] || "").trim();
     if (!isUuid(accountId) || accountId !== verified.user.id) {
@@ -137,19 +137,19 @@ export async function handleStudioSessionBootstrap(request) {
   }
 
   const response = json({ ok: true, user_id: verified.user.id });
-  return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken));
+  return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken, undefined, request));
 }
 
 export function handleStudioSessionLogout(request) {
   const url = new URL(request.url);
   const origin = request.headers.get("Origin") || "";
   if (origin && origin !== url.origin) return json({ error: "Invalid origin" }, 403);
-  return withStudioSessionCookies(json({ ok: true }), globalLogoutCookies());
+  return withStudioSessionCookies(json({ ok: true }), globalLogoutCookies(request));
 }
 
-export function studioSessionBootstrapPage(locale) {
+export function studioSessionBootstrapPage(locale, request) {
   const zh = locale === "zh";
-  const loginUrl = locale === "zh" ? "/zh-cn/login" : "/en/login";
+  const authOrigin = authOriginForRequest(request);
   const title = zh ? "正在验证登录状态…" : "Verifying your session…";
   const failed = zh ? "登录状态已失效，正在返回登录页…" : "Your session expired. Returning to sign in…";
 
@@ -172,7 +172,9 @@ export function studioSessionBootstrapPage(locale) {
       const goLogin = async () => {
         if (status) status.textContent = ${scriptLiteral(failed)};
         try { await supabaseClient.auth.signOut({ scope: "local" }); } catch {}
-        location.replace(${scriptLiteral(loginUrl)});
+        const target = new URL("/continue", ${scriptLiteral(authOrigin)});
+        target.searchParams.set("next", location.pathname + location.search);
+        location.replace(target.toString());
       };
 
       try {
@@ -272,8 +274,14 @@ function cookie(name, value, maxAge) {
   return `${name}=${encodeURIComponent(value || "")}; Path=/; Max-Age=${Math.max(0, Number(maxAge) || 0)}; HttpOnly; Secure; SameSite=Lax`;
 }
 
-function accountCookie(value, maxAge) {
-  return `${ACCOUNT_COOKIE}=${encodeURIComponent(value || "")}; Path=/; Domain=${COOKIE_DOMAIN}; Max-Age=${Math.max(0, Number(maxAge) || 0)}; HttpOnly; Secure; SameSite=Lax`;
+function accountCookie(value, maxAge, domain) {
+  return `${ACCOUNT_COOKIE}=${encodeURIComponent(value || "")}; Path=/; Domain=${domain}; Max-Age=${Math.max(0, Number(maxAge) || 0)}; HttpOnly; Secure; SameSite=Lax`;
+}
+
+function sessionRoot(requestOrHost) {
+  if (typeof requestOrHost === "string") return rootDomainForHost(requestOrHost) || "qsseda.com";
+  try { return rootDomainForHost(new URL(requestOrHost?.url || "").hostname) || "qsseda.com"; }
+  catch { return "qsseda.com"; }
 }
 
 function parseCookies(header) {

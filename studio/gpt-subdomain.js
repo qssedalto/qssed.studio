@@ -1,17 +1,15 @@
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
+import { authOriginForRequest, gptOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 
-const MAIN_ORIGIN = "https://qsseda.com";
-const GPT_ORIGIN = "https://gpt.qsseda.com";
-const AUTH_ORIGIN = "https://auth.qsseda.com";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 
 export function isMainGptHandoffPath(pathname) {
   return pathname === "/gpt/handoff" || pathname === "/zh-cn/gpt/handoff" || pathname === "/en/gpt/handoff";
 }
 
-export function gptSessionRedirect(next = "/zh-cn") {
+export function gptSessionRedirect(request, next = "/zh-cn") {
   const safeNext = canonicalGptPath(next, localeFromPath(next));
-  const target = new URL("/gpt/handoff", MAIN_ORIGIN);
+  const target = new URL("/gpt/handoff", mainOriginForRequest(request));
   target.searchParams.set("next", safeNext);
   return redirect(target.toString());
 }
@@ -34,21 +32,25 @@ export async function handleMainGptHandoff(request) {
   const rotatedRefresh = cookieValueFromSetCookies(gate.cookies || [], REFRESH_COOKIE);
   if (rotatedRefresh) refreshToken = rotatedRefresh;
 
-  if (!gate.ok || !gate.accessToken || !refreshToken) {
+  if (!gate.ok || !gate.accessToken) {
     const returnPath = `/${locale}/gpt/handoff?next=${encodeURIComponent(next)}`;
-    const authUrl = new URL("/continue", AUTH_ORIGIN);
+    const authUrl = new URL("/continue", authOriginForRequest(request));
     authUrl.searchParams.set("next", returnPath);
     return withStudioSessionCookies(redirect(authUrl.toString()), gate.cookies || []);
   }
 
-  const page = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QssedA GPT</title></head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><p>正在进入 QssedA GPT…</p></main><form id="handoff" method="post" action="${GPT_ORIGIN}/auth/handoff"><input type="hidden" name="access_token" value="${escapeHtml(gate.accessToken)}"><input type="hidden" name="refresh_token" value="${escapeHtml(refreshToken)}"><input type="hidden" name="next" value="${escapeHtml(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  const gptOrigin = gptOriginForRequest(request);
+  const refreshField = refreshToken
+    ? `<input type="hidden" name="refresh_token" value="${escapeHtml(refreshToken)}">`
+    : "";
+  const page = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QssedA GPT</title></head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><p>正在进入 QssedA GPT…</p></main><form id="handoff" method="post" action="${gptOrigin}/auth/handoff"><input type="hidden" name="access_token" value="${escapeHtml(gate.accessToken)}">${refreshField}<input type="hidden" name="next" value="${escapeHtml(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
 
   const headers = new Headers({
     "content-type": "text/html;charset=UTF-8",
     "cache-control": "no-store",
     "referrer-policy": "origin",
     "x-content-type-options": "nosniff",
-    "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${GPT_ORIGIN}; base-uri 'none'; frame-ancestors 'none'`
+    "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${gptOrigin}; base-uri 'none'; frame-ancestors 'none'`
   });
 
   return withStudioSessionCookies(new Response(page, { status: 200, headers }), gate.cookies || []);
@@ -74,7 +76,7 @@ function safeGptPath(value) {
   return path;
 }
 
-function canonicalGptPath(path, locale) {
+function canonicalGptPath(_path, locale) {
   const normalizedLocale = locale === "en" ? "en" : "zh-cn";
   return `/${normalizedLocale}`;
 }

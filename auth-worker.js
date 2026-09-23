@@ -1,4 +1,5 @@
 import { handleOAuthRequest } from "./auth-oauth.js";
+import { mainOriginForRequest } from "./studio/domain-family.js";
 
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
@@ -191,7 +192,7 @@ async function handleContinue(request, env) {
 
   const requestUrl = new URL(request.url);
   const next = safeNextPath(requestUrl.searchParams.get("next"));
-  const mainSite = safeHttpsOrigin(env?.MAIN_SITE_URL) || "https://qsseda.com";
+  const mainSite = mainOriginForRequest(request) || safeHttpsOrigin(env?.MAIN_SITE_URL) || "https://qsseda.com";
   const headers = new Headers(baseHeaders("text/html;charset=UTF-8"));
   headers.set("referrer-policy", "origin");
   headers.set("content-security-policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${mainSite}; base-uri 'none'; frame-ancestors 'none'`);
@@ -396,12 +397,14 @@ function html(content, status = 200) {
 
 function authPage(pathname, request) {
   const page = pathname === "/" ? "home" : pathname.slice(1);
+  const authHost = new URL(request.url).hostname;
+  const mainOrigin = mainOriginForRequest(request);
   const language = preferredLanguage(request);
   const zh = language === "zh";
   const copy = zh ? {
     checking: "正在检查登录状态…",
     loginTitle: "登录 QssedA",
-    loginLead: "使用你的 QssedA 账号继续。认证状态由 auth.qsseda.com 独立维护。",
+    loginLead: `使用你的 QssedA 账号继续。认证状态由 ${authHost} 独立维护。`,
     email: "邮箱",
     password: "密码",
     continue: "继续",
@@ -436,7 +439,7 @@ function authPage(pathname, request) {
   } : {
     checking: "Checking sign-in status…",
     loginTitle: "Sign in to QssedA",
-    loginLead: "Continue with your QssedA account. Authentication is maintained by auth.qsseda.com.",
+    loginLead: `Continue with your QssedA account. Authentication is maintained by ${authHost}.`,
     email: "Email",
     password: "Password",
     continue: "Continue",
@@ -502,7 +505,7 @@ function authPage(pathname, request) {
           <div class="field"><label for="password">${copy.password}</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
           <button id="loginButton" type="submit">${copy.continue}</button><div id="loginMessage" class="message" role="status" aria-live="polite"></div>
         </form>
-        <a class="button secondary" href="https://qsseda.com/sign-up">${copy.create}</a>
+        <a class="button secondary" href="${mainOrigin}/sign-up">${copy.create}</a>
       </div>
       <div id="signedIn" class="hidden">
         <h1 id="signedInTitle">${copy.signedTitle}</h1><p class="lead" id="signedInLead">${copy.signedLead}</p>
@@ -514,7 +517,7 @@ function authPage(pathname, request) {
         <div id="authorizePanel" class="hidden"><div class="divider"></div><div class="app-box"><div class="app-name" id="clientName">${copy.appRequest}</div><div class="app-id" id="clientId"></div></div><ul class="permissions"><li><span class="tick">✓</span><span>${copy.p1}</span></li><li><span class="tick">✓</span><span>${copy.p2}</span></li></ul><button id="allowButton" type="button" disabled>${copy.allowLater}</button><p class="message">${copy.later}</p></div>
       </div>
     </section>
-    <div class="foot">auth.qsseda.com · QssedA Identity</div>
+    <div class="foot">${authHost} · QssedA Identity</div>
   </main>
 <script>
 (function(){
@@ -534,7 +537,7 @@ function authPage(pathname, request) {
     if(page==="authorize"){document.getElementById("signedInTitle").textContent=copy.authorizeTitle;document.getElementById("signedInLead").textContent=copy.authorizeLead;var params=new URLSearchParams(location.search);document.getElementById("clientId").textContent=params.get("client_id")||"client_id: —";document.getElementById("clientName").textContent=params.get("client_name")||copy.appRequest}
   }
   async function checkSession(){try{var response=await fetch("/api/session",{credentials:"same-origin",cache:"no-store"});var data=await response.json();if(response.ok&&data.authenticated&&data.user)showLoggedIn(data);else showLoggedOut()}catch(e){showLoggedOut();loginMessage.textContent=copy.connectError;loginMessage.classList.add("error")}}
-  loginForm.addEventListener("submit",async function(event){event.preventDefault();loginMessage.textContent=copy.loggingIn;loginMessage.classList.remove("error");loginButton.disabled=true;try{var response=await fetch("/api/login",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({email:document.getElementById("email").value,password:document.getElementById("password").value})});var data=await response.json();if(!response.ok||!data.authenticated)throw new Error(data.error||"Login failed");document.getElementById("password").value="";showLoggedIn(data)}catch(error){loginMessage.textContent=error&&error.message?error.message:"Login failed";loginMessage.classList.add("error")}finally{loginButton.disabled=false}});
+  loginForm.addEventListener("submit",async function(event){event.preventDefault();loginMessage.textContent=copy.loggingIn;loginMessage.classList.remove("error");loginButton.disabled=true;try{var response=await fetch("/api/login",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({email:document.getElementById("email").value,password:document.getElementById("password").value})});var data=await response.json();if(!response.ok||!data.authenticated)throw new Error(data.error||"Login failed");document.getElementById("password").value="";var p=new URLSearchParams(location.search),n=p.get("next")||"";location.replace("/sso/start"+(n?"?next="+encodeURIComponent(n):""));return}catch(error){loginMessage.textContent=error&&error.message?error.message:"Login failed";loginMessage.classList.add("error")}finally{loginButton.disabled=false}});
   async function signOut(button){if(button)button.disabled=true;try{await fetch("/api/logout",{method:"POST",credentials:"same-origin"})}catch(e){}location.replace("/login")}
   if(logoutButton)logoutButton.addEventListener("click",function(){signOut(logoutButton)});
   if(homeLogoutButton)homeLogoutButton.addEventListener("click",function(){signOut(homeLogoutButton)});

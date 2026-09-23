@@ -1,15 +1,15 @@
-export function polishWorkTexNavigation(markup, zh, pathname) {
+export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "https://work.qsseda.com") {
   let output = String(markup || "");
   const prefix = zh ? "/zh-cn" : "/en";
-  const workTexUrl = zh ? "https://work.qsseda.com/zh-cn/tex" : "https://work.qsseda.com/en/tex";
+  const workTexUrl = `${workOrigin}${zh ? "/zh-cn/tex" : "/en/tex"}`;
   const texLabel = zh ? "TeX 工作台" : "TeX Workbench";
 
   // Studio's Collaboration Hub and Local Bridge are distinct products. Only
   // TeX aliases normalize to the standalone Work TeX surface.
   output = output
     .replaceAll(`href="${prefix}/work/tex"`, `href="${workTexUrl}"`)
-    .replaceAll(`href="https://work.qsseda.com/${zh ? "zh-cn" : "en"}"`, `href="${workTexUrl}"`)
-    .replaceAll(`href="https://work.qsseda.com/${zh ? "zh-cn" : "en"}/local"`, `href="${workTexUrl}"`);
+    .replaceAll(`href="${workOrigin}/${zh ? "zh-cn" : "en"}"`, `href="${workTexUrl}"`)
+    .replaceAll(`href="${workOrigin}/${zh ? "zh-cn" : "en"}/local"`, `href="${workTexUrl}"`);
 
   if (pathname !== "/work/tex") return output;
 
@@ -330,11 +330,9 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
   return output;
 }
 
-export function polishWorkHubTexRoute(markup) {
+export function polishWorkHubTexRoute(markup, workOrigin = "https://work.qsseda.com") {
   const source = String(markup || "");
-  const workTexUrl = source.includes("Open TeX Workbench")
-    ? "https://work.qsseda.com/en/tex"
-    : "https://work.qsseda.com/zh-cn/tex";
+  const workTexUrl = `${workOrigin}${source.includes("Open TeX Workbench") ? "/en/tex" : "/zh-cn/tex"}`;
   return source
     .replaceAll("/workspace/experiments/tex", workTexUrl)
     .replaceAll("/work/tex", workTexUrl);

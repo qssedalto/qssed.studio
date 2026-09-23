@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "auth-entry.js"
+      - "auth-sso.js"
+      - "studio/domain-family.js"
       - "auth-worker.js"
       - "auth-login-identifier.js"
       - "auth-oauth.js"
@@ -19,6 +21,8 @@ on:
       - main
     paths:
       - "auth-entry.js"
+      - "auth-sso.js"
+      - "studio/domain-family.js"
       - "auth-worker.js"
       - "auth-login-identifier.js"
       - "auth-oauth.js"
@@ -47,6 +51,7 @@ jobs:
       - name: Check Auth JavaScript syntax
         run: |
           node --check auth-entry.js
+          node --check auth-sso.js
           node --check auth-worker.js
           node --check auth-login-identifier.js
           node --check auth-oauth.js
@@ -56,6 +61,25 @@ jobs:
 
       - name: Verify Auth edge anti-crawl and surge protection
         run: node scripts/auth-edge-protection-check.mjs
+
+      - name: Verify three-domain SSO contract
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const sso = fs.readFileSync('auth-sso.js', 'utf8');
+          const auth = fs.readFileSync('auth-worker.js', 'utf8');
+          const entry = fs.readFileSync('auth-entry.js', 'utf8');
+          const family = fs.readFileSync('studio/domain-family.js', 'utf8');
+          for (const root of ['qsseda.com','qsseda.online','qsseda.studio']) {
+            if (!family.includes(`"${root}"`)) throw new Error(`Missing domain root: ${root}`);
+          }
+          for (const path of ['/sso/start','/sso/import','/sso/complete']) {
+            if (!sso.includes(`"${path}"`)) throw new Error(`Missing SSO path: ${path}`);
+          }
+          if (!entry.includes('handleAuthSsoRequest(request)')) throw new Error('Auth entry must route SSO requests');
+          if (!auth.includes('location.replace("/sso/start"')) throw new Error('Successful Auth login must start three-domain session synchronization');
+          console.log('Three-domain SSO contract looks valid.');
+          NODE
 
       - name: Bundle Auth Worker
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.auth.jsonc --dry-run --outdir .wrangler-dry-run

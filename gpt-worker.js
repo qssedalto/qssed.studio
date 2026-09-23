@@ -4,14 +4,11 @@ import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp } from "./studio/gpt-ui.js";
 import { handleRemoteCodexApi } from "./studio/gpt-bridge.js";
+import { gptOriginForRequest } from "./studio/domain-family.js";
 
-const GPT_ORIGIN = "https://gpt.qsseda.com";
 
 export default {
   async fetch(request, env) {
-    const alias = canonicalGptAlias(request);
-    if (alias) return alias;
-
     const deviceGate = huaweiHarmonyGate(request);
     if (deviceGate) return deviceGate;
 
@@ -22,7 +19,7 @@ export default {
       return json({
         service: "qsseda-gpt",
         status: "ok",
-        origin: GPT_ORIGIN
+        origin: gptOriginForRequest(request)
       });
     }
 
@@ -51,14 +48,14 @@ export default {
 
     if (pathname === "/") {
       const locale = preferredLocale(request);
-      return redirect(`${GPT_ORIGIN}/${locale}`);
+      return redirect(`${gptOriginForRequest(request)}/${locale}`);
     }
 
     if (pathname === "/zh-cn" || pathname === "/en") {
       const locale = pathname === "/en" ? "en" : "zh-cn";
       const gate = await verifyStudioPageSession(request);
       if (!gate.ok) {
-        return withStudioSessionCookies(gptSessionRedirect(pathname), gate.cookies || []);
+        return withStudioSessionCookies(gptSessionRedirect(request, pathname), gate.cookies || []);
       }
       const response = withStudioSessionCookies(html(renderShell(locale)), gate.cookies || []);
       return request.method === "HEAD"
@@ -121,28 +118,3 @@ function redirect(location) {
 }
 
 
-function canonicalGptAlias(request) {
-  try {
-    const url = new URL(request.url);
-    const host = url.hostname.toLowerCase();
-    if (host !== "gpt.qsseda.online" && host !== "gpt.qsseda.studio") return null;
-    url.protocol = "https:";
-    url.hostname = "gpt.qsseda.com";
-    url.port = "";
-    return permanentRedirect(url.toString());
-  } catch {
-    return null;
-  }
-}
-
-function permanentRedirect(location) {
-  return new Response(null, {
-    status: 308,
-    headers: {
-      location,
-      "cache-control": "no-store",
-      "referrer-policy": "no-referrer",
-      "x-content-type-options": "nosniff"
-    }
-  });
-}

@@ -156,8 +156,11 @@ jobs:
           if (!auditedFacade.includes('import worker from "../worker.js"')) throw new Error('Studio audit facade must reuse the hardened worker.js compatibility facade');
           if (!auditedFacade.includes('recordAccessAudit')) throw new Error('Studio audit facade must preserve access auditing');
           const expectedWildcardRoutes = new Map([
+            ['qsseda.com/*', 'qsseda.com'],
             ['*.qsseda.com/*', 'qsseda.com'],
+            ['qsseda.online/*', 'qsseda.online'],
             ['*.qsseda.online/*', 'qsseda.online'],
+            ['qsseda.studio/*', 'qsseda.studio'],
             ['*.qsseda.studio/*', 'qsseda.studio']
           ]);
           for (const route of config.routes || []) {

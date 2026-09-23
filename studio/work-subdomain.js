@@ -1,12 +1,10 @@
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
+import { authOriginForRequest, isServiceHost, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 
-const MAIN_ORIGIN = "https://qsseda.com";
-const WORK_ORIGIN = "https://work.qsseda.com";
-const AUTH_ORIGIN = "https://auth.qsseda.com";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 
 export function isWorkSubdomainRequest(request) {
-  try { return new URL(request.url).hostname.toLowerCase() === "work.qsseda.com"; }
+  try { return isServiceHost(new URL(request.url).hostname, "work"); }
   catch { return false; }
 }
 
@@ -14,27 +12,18 @@ export function isMainWorkHandoffPath(pathname) {
   return pathname === "/work/handoff" || pathname === "/zh-cn/work/handoff" || pathname === "/en/work/handoff";
 }
 
-export function mainWorkRedirect(pathname) {
+export function mainWorkRedirect(request, pathname) {
   const clean = normalizePath(pathname);
+  const workOrigin = workOriginForRequest(request);
 
-  // Collaboration Hub and Local Bridge stay in Studio as distinct interfaces.
-  // Only TeX routes move to the standalone Work product.
-  if (
-    clean === "/zh-cn/work/tex"
-    || clean === "/zh-cn/workspace/experiments/tex"
-    || clean === "/zh-cnhttps://work.qsseda.com/zh-cn/tex"
-  ) {
-    return `${WORK_ORIGIN}/zh-cn/tex`;
+  if (clean === "/zh-cn/work/tex" || clean === "/zh-cn/workspace/experiments/tex") {
+    return `${workOrigin}/zh-cn/tex`;
   }
-  if (
-    clean === "/en/work/tex"
-    || clean === "/en/workspace/experiments/tex"
-    || clean === "/enhttps://work.qsseda.com/en/tex"
-  ) {
-    return `${WORK_ORIGIN}/en/tex`;
+  if (clean === "/en/work/tex" || clean === "/en/workspace/experiments/tex") {
+    return `${workOrigin}/en/tex`;
   }
   if (clean === "/work/tex" || clean === "/workspace/experiments/tex") {
-    return `${WORK_ORIGIN}/tex`;
+    return `${workOrigin}/tex`;
   }
 
   return "";
@@ -43,6 +32,8 @@ export function mainWorkRedirect(pathname) {
 export function rewriteWorkSubdomainRequest(request) {
   const url = new URL(request.url);
   const pathname = normalizePath(url.pathname);
+  const workOrigin = workOriginForRequest(request);
+  const mainOrigin = mainOriginForRequest(request);
 
   if (pathname.startsWith("/api/") || pathname === "/auth/handoff" || pathname === "/robots.txt") {
     return { request, pageNext: "", redirect: "", canonical: "" };
@@ -74,16 +65,16 @@ export function rewriteWorkSubdomainRequest(request) {
       request,
       pageNext: "",
       redirect: "",
-      canonical: `${WORK_ORIGIN}${canonicalPath}${url.search}`
+      canonical: `${workOrigin}${canonicalPath}${url.search}`
     };
   }
 
-  return { request, pageNext: "", redirect: `${MAIN_ORIGIN}${url.pathname}${url.search}`, canonical: "" };
+  return { request, pageNext: "", redirect: `${mainOrigin}${url.pathname}${url.search}`, canonical: "" };
 }
 
-export function workSessionRedirect(next = "/tex") {
+export function workSessionRedirect(request, next = "/tex") {
   const safeNext = canonicalWorkPath(next, localeFromPath(next));
-  const target = new URL("/work/handoff", MAIN_ORIGIN);
+  const target = new URL("/work/handoff", mainOriginForRequest(request));
   target.searchParams.set("next", safeNext);
   return redirect(target.toString());
 }
@@ -100,20 +91,24 @@ export async function handleMainWorkHandoff(request) {
   const rotatedRefresh = cookieValueFromSetCookies(gate.cookies || [], REFRESH_COOKIE);
   if (rotatedRefresh) refreshToken = rotatedRefresh;
 
-  if (!gate.ok || !gate.accessToken || !refreshToken) {
+  if (!gate.ok || !gate.accessToken) {
     const returnPath = `/${locale}/work/handoff?next=${encodeURIComponent(next)}`;
-    const authUrl = new URL("/continue", AUTH_ORIGIN);
+    const authUrl = new URL("/continue", authOriginForRequest(request));
     authUrl.searchParams.set("next", returnPath);
     return withStudioSessionCookies(redirect(authUrl.toString()), gate.cookies || []);
   }
 
-  const page = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QssedA Work</title></head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><p>正在进入 QssedA Work…</p></main><form id="handoff" method="post" action="${WORK_ORIGIN}/auth/handoff"><input type="hidden" name="access_token" value="${escapeHtml(gate.accessToken)}"><input type="hidden" name="refresh_token" value="${escapeHtml(refreshToken)}"><input type="hidden" name="next" value="${escapeHtml(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  const workOrigin = workOriginForRequest(request);
+  const refreshField = refreshToken
+    ? `<input type="hidden" name="refresh_token" value="${escapeHtml(refreshToken)}">`
+    : "";
+  const page = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QssedA Work</title></head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><p>正在进入 QssedA Work…</p></main><form id="handoff" method="post" action="${workOrigin}/auth/handoff"><input type="hidden" name="access_token" value="${escapeHtml(gate.accessToken)}">${refreshField}<input type="hidden" name="next" value="${escapeHtml(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
   const headers = new Headers({
     "content-type": "text/html;charset=UTF-8",
     "cache-control": "no-store",
     "referrer-policy": "origin",
     "x-content-type-options": "nosniff",
-    "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${WORK_ORIGIN}; base-uri 'none'; frame-ancestors 'none'`
+    "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${workOrigin}; base-uri 'none'; frame-ancestors 'none'`
   });
   return withStudioSessionCookies(new Response(page, { status: 200, headers }), gate.cookies || []);
 }
@@ -143,7 +138,7 @@ function safeWorkPath(value) {
   return path;
 }
 
-function canonicalWorkPath(path, locale) {
+function canonicalWorkPath(_path, locale) {
   const normalizedLocale = locale === "en" ? "en" : "zh-cn";
   return `/${normalizedLocale}/tex`;
 }

@@ -30,6 +30,13 @@ import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-iden
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
 import { osPage } from "./ui-shell.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
+import { authOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
+
+function safeLocalNext(value) {
+  const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "";
+  return path;
+}
 
 function normalizePublicPrivacyCopy(markup) {
   let output = String(markup || "");
@@ -102,14 +109,16 @@ export default {
 
     if (isProtectedOsRoute) {
       const gate = await verifyStudioPageSession(request);
-      if (!gate.ok) return withStudioSessionCookies(studioSessionBootstrapPage(locale), gate.cookies);
+      if (!gate.ok) return withStudioSessionCookies(studioSessionBootstrapPage(locale, request), gate.cookies);
 
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
       const zh = locale === "zh";
+      const mainOrigin = mainOriginForRequest(request);
+      const workOrigin = workOriginForRequest(request);
       const shellPath = linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
       let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel);
-      markup = decorateWorkNavigation(markup, zh, pathname);
-      markup = polishWorkTexNavigation(markup, zh, pathname);
+      markup = decorateWorkNavigation(markup, zh, pathname, mainOrigin, workOrigin);
+      markup = polishWorkTexNavigation(markup, zh, pathname, workOrigin);
       markup = hardenSessionClientMarkup(markup);
       if (pathname === "/info/links") { const baseContent = polishLinksContent(linksHubContent(zh), pathname, zh); markup = replaceOsContent(markup, enhanceLinksHubWithCommunity(baseContent, zh)); }
       if (pathname === "/info/links/mine") markup = replaceOsContent(markup, polishLinksContent(privateLinksPageContent(zh), pathname, zh));
@@ -123,7 +132,7 @@ export default {
       if (pathname === "/workspace/drafts") markup = replaceOsContent(markup, draftsWorkspaceContent(zh));
       if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh));
       if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh));
-      if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh)));
+      if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin), workOrigin));
       if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh), zh));
       if (pathname === "/work/tex") markup = replaceOsContent(markup, enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh));
       const pageOptions = pathname === "/work/local" || pathname === "/work/tex" || pathname === "/workspace/experiments/tex" ? { allowLoopback: true } : {};
@@ -131,7 +140,13 @@ export default {
     }
 
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
-    if (pathname === "/login") return localizedPage(identifierLoginPage(loginPage(t, links, ipInfo), t, locale === "zh"), locale);
+    if (pathname === "/login") {
+      const authUrl = new URL("/login", authOriginForRequest(request));
+      const requestedNext = new URL(request.url).searchParams.get("next");
+      const fallbackNext = locale === "zh" ? "/zh-cn/dashboard" : "/en/dashboard";
+      authUrl.searchParams.set("next", safeLocalNext(requestedNext) || fallbackNext);
+      return Response.redirect(authUrl.toString(), 302);
+    }
     return localizedPage(notFoundPage(t, links), locale, 404);
   }
 };

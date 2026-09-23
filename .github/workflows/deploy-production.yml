@@ -24,6 +24,7 @@ on:
       - scripts/gpt-subdomain-check.mjs
       - scripts/codex-bridge-check.mjs
       - auth-entry.js
+      - auth-sso.js
       - auth-worker.js
       - auth-login-identifier.js
       - auth-oauth.js
@@ -94,6 +95,7 @@ jobs:
           node --check scripts/codex-bridge-check.mjs
           node scripts/codex-bridge-check.mjs
           node --check auth-entry.js
+          node --check auth-sso.js
           node --check auth-worker.js
           node --check auth-login-identifier.js
           node --check auth-oauth.js
@@ -175,38 +177,72 @@ jobs:
             exit 1
           fi
 
-      - name: Verify three-domain aliases
+      - name: Verify all three independent domains
         shell: bash
         run: |
           set -euo pipefail
-          verify_alias() {
-            source_url="$1"
-            expected_location="$2"
+
+          verify_health() {
+            url="$1"
+            service="$2"
+            expected_origin="${3:-}"
             ok=0
             for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-              headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-alias-body.txt --dump-header - "$source_url" || true)"
-              status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
-              location="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
-              if [ "$status" = "308" ] && [ "$location" = "$expected_location" ]; then
-                ok=1
-                break
+              status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-domain-health.json --write-out '%{http_code}' "$url" || true)"
+              if [ "$status" = "200" ] && grep -q "\"service\":\"${service}\"" /tmp/qsseda-domain-health.json; then
+                if [ -z "$expected_origin" ] || grep -q "\"origin\":\"${expected_origin}\"" /tmp/qsseda-domain-health.json; then
+                  ok=1
+                  break
+                fi
               fi
-              echo "Alias not ready: $source_url (HTTP ${status:-unknown}, location ${location:-none}); retrying..."
+              echo "Domain health not ready: $url (HTTP ${status:-unknown}); retrying..."
               sleep 4
             done
             if [ "$ok" -ne 1 ]; then
-              echo "Alias regression: $source_url did not canonicalize to $expected_location"
-              cat /tmp/qsseda-alias-body.txt || true
+              echo "Domain regression: $url did not stay on its own Worker."
+              cat /tmp/qsseda-domain-health.json || true
               exit 1
             fi
           }
 
-          verify_alias "https://gpt.qsseda.online/health" "https://gpt.qsseda.com/health"
-          verify_alias "https://gpt.qsseda.studio/health" "https://gpt.qsseda.com/health"
-          verify_alias "https://auth.qsseda.online/health" "https://auth.qsseda.com/health"
-          verify_alias "https://auth.qsseda.studio/health" "https://auth.qsseda.com/health"
-          verify_alias "https://work.qsseda.online/zh-cn/tex" "https://work.qsseda.com/zh-cn/tex"
-          verify_alias "https://work.qsseda.studio/zh-cn/tex" "https://work.qsseda.com/zh-cn/tex"
+          verify_work() {
+            url="$1"
+            expected_location="$2"
+            headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-work-family.txt --dump-header - "$url" || true)"
+            status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
+            location="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
+            if [ "$status" != "302" ] || [ "$location" != "$expected_location" ]; then
+              echo "Work family regression: $url (HTTP ${status:-unknown}, location ${location:-none})"
+              exit 1
+            fi
+          }
+
+          verify_main() {
+            url="$1"
+            status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-family-robots.txt --write-out '%{http_code}' "$url" || true)"
+            if [ "$status" != "200" ] || ! grep -q '^Disallow: /$' /tmp/qsseda-family-robots.txt; then
+              echo "Main domain regression: $url (HTTP ${status:-unknown})"
+              cat /tmp/qsseda-family-robots.txt || true
+              exit 1
+            fi
+          }
+
+          verify_health "https://gpt.qsseda.com/health" "qsseda-gpt" "https://gpt.qsseda.com"
+          verify_health "https://gpt.qsseda.online/health" "qsseda-gpt" "https://gpt.qsseda.online"
+          verify_health "https://gpt.qsseda.studio/health" "qsseda-gpt" "https://gpt.qsseda.studio"
+
+          verify_health "https://auth.qsseda.com/health" "qsseda-auth"
+          verify_health "https://auth.qsseda.online/health" "qsseda-auth"
+          verify_health "https://auth.qsseda.studio/health" "qsseda-auth"
+
+          verify_main "https://qsseda.com/robots.txt"
+          verify_main "https://qsseda.online/robots.txt"
+          verify_main "https://qsseda.studio/robots.txt"
+
+          verify_work "https://work.qsseda.com/zh-cn/tex" "https://qsseda.com/work/handoff?next=%2Fzh-cn%2Ftex"
+          verify_work "https://work.qsseda.online/zh-cn/tex" "https://qsseda.online/work/handoff?next=%2Fzh-cn%2Ftex"
+          verify_work "https://work.qsseda.studio/zh-cn/tex" "https://qsseda.studio/work/handoff?next=%2Fzh-cn%2Ftex"
+
       - name: Verify edge protection
         shell: bash
         run: |
