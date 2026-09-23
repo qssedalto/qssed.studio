@@ -95,7 +95,7 @@ export const METHODOLOGY_KNOWLEDGE = {
   },
   "ui-design": {
     zh: {
-      summary: "QssedA 的 UI 原则是清晰层级、普通语言、真实内容、渐进披露和移动端可用性。Apple 风格只借鉴交互原则，不做品牌模仿。",
+      summary: "AERTEX 的 UI 原则是清晰层级、普通语言、真实内容、渐进披露和移动端可用性。Apple 风格只借鉴交互原则，不做品牌模仿。",
       sections: [
         { title: "层级", bullets: ["一页一个主要任务。", "标题先说用户要做什么，不先讲协议名。", "主要动作只有一个明显高优先级。", "高级/技术信息放 details 或次级层。"] },
         { title: "视觉", bullets: ["系统字体优先。", "用间距、字号、字重建立层级，少靠装饰。", "透明材质克制使用，确保 reduced transparency 下仍可读。", "颜色遵循语义变量，不在组件里到处硬编码。"] },
@@ -103,7 +103,7 @@ export const METHODOLOGY_KNOWLEDGE = {
         { title: "真实性", bullets: ["没有数据源就明确说未接入。", "不制造假统计、假历史或假状态。", "用户看到的“成功”必须对应真实服务端结果。"] }
       ]
     },
-    en: { summary: "QssedA UI favors clear hierarchy, plain language, real data, progressive disclosure, and mobile usability. Apple-inspired principles are used without brand imitation.", sections: [
+    en: { summary: "AERTEX UI favors clear hierarchy, plain language, real data, progressive disclosure, and mobile usability. Apple-inspired principles are used without brand imitation.", sections: [
       { title: "Hierarchy", bullets: ["One primary task per page.", "Plain-language titles.", "One obvious primary action.", "Hide technical detail one level deeper."] },
       { title: "Accessibility", bullets: ["Large touch targets.", "Reduced motion/contrast/transparency support.", "System fonts and semantic colors."] },
       { title: "Truthfulness", bullets: ["Do not fabricate metrics, activity, or persistence."] }
