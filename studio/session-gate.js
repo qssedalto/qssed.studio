@@ -130,7 +130,7 @@ export async function handleStudioSessionBootstrap(request) {
         marker_present: Boolean(accountId)
       });
       return withStudioSessionCookies(
-        json({ error: "Work session does not match the active QssedA account." }, 409),
+        json({ error: "Work session does not match the active AERTEX account." }, 409),
         clearStudioSessionCookies()
       );
     }
@@ -161,7 +161,7 @@ export function studioSessionBootstrapPage(locale, request) {
 <body>
   <main style="min-height:100vh;display:grid;place-items:center;padding:24px">
     <section style="text-align:center;max-width:520px">
-      <h1 style="font-size:24px;margin:0 0 8px">QssedA</h1>
+      <h1 style="font-size:24px;margin:0 0 8px">AERTEX</h1>
       <p id="studio-session-status">${title}</p>
     </section>
   </main>
