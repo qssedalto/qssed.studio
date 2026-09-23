@@ -9,24 +9,12 @@
   "keep_names": false,
   "upload_source_maps": false,
   "routes": [
-    {
-      "pattern": "gpt.qsseda.com/*",
-      "zone_name": "qsseda.com"
-    },
-    {
-      "pattern": "gpt.qsseda.com",
-      "custom_domain": true
-    }
-  ],
-  "migrations": [
-    {
-      "tag": "gpt-cloud-v1",
-      "new_sqlite_classes": ["CodexCloudContainer"]
-    },
-    {
-      "tag": "gpt-cloud-v2-remove-container",
-      "deleted_classes": ["CodexCloudContainer"]
-    }
+    { "pattern": "gpt.qsseda.com/*", "zone_name": "qsseda.com" },
+    { "pattern": "gpt.qsseda.com", "custom_domain": true },
+    { "pattern": "gpt.qsseda.online/*", "zone_name": "qsseda.online" },
+    { "pattern": "gpt.qsseda.online", "custom_domain": true },
+    { "pattern": "gpt.qsseda.studio/*", "zone_name": "qsseda.studio" },
+    { "pattern": "gpt.qsseda.studio", "custom_domain": true }
   ],
   "observability": {
     "logs": {
