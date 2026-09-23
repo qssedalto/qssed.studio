@@ -1,6 +1,6 @@
-# QssedA
+# AERTEX
 
-QssedA is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.com`, a standalone Work surface at `work.qsseda.com`, and an independent AI interface at `gpt.qsseda.com`.
+AERTEX is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.com`, a standalone Work surface at `work.qsseda.com`, and an independent AI interface at `gpt.qsseda.com`.
 
 ## Runtime architecture
 
@@ -116,3 +116,8 @@ The GPT Worker expects two protected runtime values:
 - `GPT_CODEX_BRIDGE_TOKEN` — independent random bearer token shared with the local Bridge.
 
 Neither value is embedded in the browser bundle.
+
+
+## Branding and technical namespace
+
+The user-facing product brand is **AERTEX**. Existing `qsseda` domains, Worker names, cookie names, storage keys, OAuth client IDs, and other protocol identifiers remain unchanged as the stable technical namespace. This avoids breaking sessions, redirects, storage objects, and deployed infrastructure while allowing the product UI to use the AERTEX family consistently.
