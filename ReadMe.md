@@ -78,7 +78,7 @@ See [`AUTH_PORTAL.md`](./AUTH_PORTAL.md) for browser sessions, Studio handoff, O
 
 - `Studio Worker Check` syntax-checks every `studio/*.js` module and runs a Wrangler dry-run bundle.
 - `Auth Worker Check` validates and bundles the independent Auth Worker.
-- `Deploy QssedA Production` validates and deploys Studio, Work, GPT and Auth from `main` after relevant runtime files change.
+- `Deploy AERTEX Production` validates and deploys Studio, Work, GPT and Auth from `main` after relevant runtime files change.
 - Cloudflare branch previews are required for structural Studio PRs before merge.
 
 ## Development safety
@@ -100,7 +100,7 @@ Git history is the recovery mechanism for previous implementations and historica
 
 `gpt.qsseda.com` is always served by the Cloudflare GPT Worker, but its AI backend intentionally follows the power state of the user's Windows Codex host.
 
-The browser talks only to same-origin `/api/gpt/*` routes after the normal QssedA session gate. The GPT Worker forwards those authenticated requests to a remotely-managed Cloudflare Tunnel whose origin is the loopback-only Codex Bridge on `127.0.0.1:32146`.
+The browser talks only to same-origin `/api/gpt/*` routes after the normal AERTEX session gate. The GPT Worker forwards those authenticated requests to a remotely-managed Cloudflare Tunnel whose origin is the loopback-only Codex Bridge on `127.0.0.1:32146`.
 
 Runtime states:
 
