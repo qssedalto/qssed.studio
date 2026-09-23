@@ -32,7 +32,7 @@ jobs:
       - name: Bundle Auth Worker
         run: npx --yes wrangler@4 deploy -c wrangler.auth.jsonc --dry-run --outdir .wrangler-auth-check
 
-      - name: Deploy auth.qsseda.studio
+      - name: Deploy auth.qsseda.com
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          robots_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-robots.txt --write-out '%{http_code}' 'https://auth.qsseda.studio/robots.txt' || true)"
+          robots_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-robots.txt --write-out '%{http_code}' 'https://auth.qsseda.com/robots.txt' || true)"
           if [ "$robots_status" != "200" ] || ! grep -q '^Disallow: /$' /tmp/qsseda-auth-robots.txt; then
             echo "Auth edge protection regression: robots.txt is not denying crawler access."
             echo "HTTP status: ${robots_status:-unknown}"
@@ -50,7 +50,7 @@ jobs:
             exit 1
           fi
 
-          probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-probe.txt --write-out '%{http_code}' 'https://auth.qsseda.studio/.env' || true)"
+          probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-probe.txt --write-out '%{http_code}' 'https://auth.qsseda.com/.env' || true)"
           if [ "$probe_status" != "404" ]; then
             echo "Auth edge protection regression: scanner probe was not rejected before Auth routing."
             echo "HTTP status: ${probe_status:-unknown}"
