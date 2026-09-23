@@ -64,7 +64,7 @@ function renderPage(zh) {
   } : {
     title: "Access Audit",
     subtitle: "QssedA Access Audit",
-    description: "Administrator only. Edge access events for Studio, Work, and Auth.",
+    description: "Administrator only. Edge access events for Main, Work, and Auth.",
     today: "Today",
     requests: "Requests",
     unique: "Unique IPs",
@@ -99,7 +99,7 @@ function renderPage(zh) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>${escapeHtml(text.title)} · QssedA Studio</title>
+<title>${escapeHtml(text.title)} · QssedA</title>
 <style>
 :root{color-scheme:light dark;--bg:#f5f5f7;--surface:rgba(255,255,255,.82);--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--quiet:#86868b;--line:rgba(60,60,67,.15);--fill:rgba(118,118,128,.12);--blue:#007aff;--red:#ff3b30;--green:#34c759;--shadow:0 12px 40px rgba(0,0,0,.06)}
 @media(prefers-color-scheme:dark){:root{--bg:#000;--surface:rgba(28,28,30,.82);--card:#1c1c1e;--text:#f5f5f7;--muted:#aeaeb2;--quiet:#8e8e93;--line:rgba(84,84,88,.55);--fill:rgba(118,118,128,.24);--shadow:0 16px 46px rgba(0,0,0,.34)}}
@@ -119,7 +119,7 @@ function renderPage(zh) {
   </section>
   <section class="filters">
     <label class="field"><span>${escapeHtml(text.date)}</span><input id="f-date" type="date"></label>
-    <label class="field"><span>${escapeHtml(text.host)}</span><select id="f-host"><option value="">All</option><option>qsseda.studio</option><option>work.qsseda.studio</option><option>auth.qsseda.studio</option></select></label>
+    <label class="field"><span>${escapeHtml(text.host)}</span><select id="f-host"><option value="">All</option><option>qsseda.com</option><option>work.qsseda.com</option><option>auth.qsseda.com</option></select></label>
     <label class="field"><span>${escapeHtml(text.ip)}</span><input id="f-ip" autocomplete="off" spellcheck="false"></label>
     <label class="field"><span>${escapeHtml(text.path)}</span><input id="f-path" autocomplete="off" spellcheck="false"></label>
     <label class="field"><span>${escapeHtml(text.status)}</span><select id="f-status"><option value="">All</option><option value="200">200</option><option value="302">302</option><option value="400">400</option><option value="401">401</option><option value="403">403</option><option value="404">404</option><option value="429">429</option><option value="500">500</option></select></label>
