@@ -33,7 +33,7 @@ async function isAdministrator(accessToken) {
 function renderPage(zh) {
   const text = zh ? {
     title: "访问审计",
-    subtitle: "QssedA Access Audit",
+    subtitle: "AERTEX Access Audit",
     description: "仅管理员可见。记录主站、Work 与 Auth 的边缘访问事件。",
     today: "今天",
     requests: "请求",
@@ -63,7 +63,7 @@ function renderPage(zh) {
     failed: "读取失败"
   } : {
     title: "Access Audit",
-    subtitle: "QssedA Access Audit",
+    subtitle: "AERTEX Access Audit",
     description: "Administrator only. Edge access events for Main, Work, and Auth.",
     today: "Today",
     requests: "Requests",
@@ -99,7 +99,7 @@ function renderPage(zh) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>${escapeHtml(text.title)} · QssedA</title>
+<title>${escapeHtml(text.title)} · AERTEX</title>
 <style>
 :root{color-scheme:light dark;--bg:#f5f5f7;--surface:rgba(255,255,255,.82);--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--quiet:#86868b;--line:rgba(60,60,67,.15);--fill:rgba(118,118,128,.12);--blue:#007aff;--red:#ff3b30;--green:#34c759;--shadow:0 12px 40px rgba(0,0,0,.06)}
 @media(prefers-color-scheme:dark){:root{--bg:#000;--surface:rgba(28,28,30,.82);--card:#1c1c1e;--text:#f5f5f7;--muted:#aeaeb2;--quiet:#8e8e93;--line:rgba(84,84,88,.55);--fill:rgba(118,118,128,.24);--shadow:0 16px 46px rgba(0,0,0,.34)}}
