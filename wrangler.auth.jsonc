@@ -59,7 +59,7 @@
   // Deployment touchpoint for Auth OAuth/PKCE and protected token introspection.
   "routes": [
     {
-      "pattern": "auth.qsseda.studio",
+      "pattern": "auth.qsseda.com",
       "custom_domain": true
     }
   ],
