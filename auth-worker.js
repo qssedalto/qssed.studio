@@ -229,7 +229,7 @@ function htmlEscape(value) {
 }
 
 function handoffPage(mainSite, accessToken, refreshToken, next) {
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>QssedA Auth</title>${FAVICON_LINKS}<style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#0b0b0d;color:#f5f5f7;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid #3a3a3c;border-top-color:#0a84ff;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:#a1a1a6}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 QssedA</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(mainSite)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>AERTEX ID</title>${FAVICON_LINKS}<style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#0b0b0d;color:#f5f5f7;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid #3a3a3c;border-top-color:#0a84ff;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:#a1a1a6}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 AERTEX</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(mainSite)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
 }
 
 async function fetchUser(accessToken) {
@@ -309,7 +309,7 @@ function publicUser(user, profile) {
   return {
     id: String(user?.id || ""),
     email: cleanText(user?.email, 180),
-    displayName: displayName || username || cleanText(user?.email, 180) || "QssedA User",
+    displayName: displayName || username || cleanText(user?.email, 180) || "AERTEX User",
     username,
     avatarUrl: safeAvatarUrl(profile?.avatar_url || metadata.avatar_url || metadata.picture),
     role: cleanText(profile?.role, 32) || "user",
@@ -406,26 +406,26 @@ function authPage(pathname, request) {
   const zh = language === "zh";
   const copy = zh ? {
     checking: "正在检查登录状态…",
-    loginTitle: "登录 QssedA",
-    loginLead: `使用你的 QssedA 账号继续。认证状态由 ${authHost} 独立维护。`,
+    loginTitle: "登录 AERTEX",
+    loginLead: `使用你的 AERTEX 账号继续。认证状态由 ${authHost} 独立维护。`,
     email: "邮箱",
     password: "密码",
     continue: "继续",
     create: "创建账号",
     signedTitle: "你已登录",
-    signedLead: "QssedA Auth 已识别当前会话。",
-    openStudio: "继续前往 QssedA",
+    signedLead: "AERTEX ID 已识别当前会话。",
+    openStudio: "继续前往 AERTEX",
     account: "账号状态",
     signOut: "退出登录",
     authorizeTitle: "授权应用",
-    authorizeLead: "确认要使用哪个 QssedA 账号继续。",
+    authorizeLead: "确认要使用哪个 AERTEX 账号继续。",
     accountTitle: "账号状态",
     accountLead: "查看当前账号、会话与授权状态。",
     usernameLabel: "用户名",
     roleLabel: "角色",
     sessionLabel: "认证会话",
-    sessionProtected: "受 QssedA Auth 保护",
-    securityNote: "登录凭据保存在仅服务器可读取的安全 Cookie 中。其他 QssedA 应用通过授权或安全会话交接使用此身份。",
+    sessionProtected: "受 AERTEX ID 保护",
+    securityNote: "登录凭据保存在仅服务器可读取的安全 Cookie 中。其他 AERTEX 应用通过授权或安全会话交接使用此身份。",
     backAuth: "返回认证中心",
     active: "账号已启用",
     suspended: "账号已暂停",
@@ -441,26 +441,26 @@ function authPage(pathname, request) {
     connectError: "暂时无法连接认证服务，请稍后重试。"
   } : {
     checking: "Checking sign-in status…",
-    loginTitle: "Sign in to QssedA",
-    loginLead: `Continue with your QssedA account. Authentication is maintained by ${authHost}.`,
+    loginTitle: "Sign in to AERTEX",
+    loginLead: `Continue with your AERTEX account. Authentication is maintained by ${authHost}.`,
     email: "Email",
     password: "Password",
     continue: "Continue",
     create: "Create account",
     signedTitle: "You're signed in",
-    signedLead: "QssedA Auth recognized your current session.",
-    openStudio: "Continue to QssedA",
+    signedLead: "AERTEX ID recognized your current session.",
+    openStudio: "Continue to AERTEX",
     account: "Account status",
     signOut: "Sign out",
     authorizeTitle: "Authorize application",
-    authorizeLead: "Confirm which QssedA account you want to use.",
+    authorizeLead: "Confirm which AERTEX account you want to use.",
     accountTitle: "Account status",
     accountLead: "Review the current account, session and authorization state.",
     usernameLabel: "Username",
     roleLabel: "Role",
     sessionLabel: "Auth session",
-    sessionProtected: "Protected by QssedA Auth",
-    securityNote: "Credentials remain in secure server-only cookies. Other QssedA apps use authorization or a secure session handoff to consume this identity.",
+    sessionProtected: "Protected by AERTEX ID",
+    securityNote: "Credentials remain in secure server-only cookies. Other AERTEX apps use authorization or a secure session handoff to consume this identity.",
     backAuth: "Back to Auth",
     active: "Account active",
     suspended: "Account suspended",
@@ -483,7 +483,7 @@ function authPage(pathname, request) {
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
-  <title>QssedA Auth</title>
+  <title>AERTEX ID</title>
   ${FAVICON_LINKS}
   <style>
     :root{color-scheme:dark light;--bg:#07080a;--panel:rgba(27,28,32,.78);--panel-strong:#1d1f24;--surface:rgba(118,118,128,.16);--surface-hover:rgba(118,118,128,.23);--text:#f5f5f7;--muted:#a1a1a6;--quiet:#73737a;--line:rgba(255,255,255,.10);--line-strong:rgba(255,255,255,.17);--accent:#0a84ff;--accent-hover:#3198ff;--danger:#ff453a;--warning:#ffd60a;--success:#30d158;--shadow:0 28px 80px rgba(0,0,0,.46);--radius:22px;--control:14px}
@@ -499,7 +499,7 @@ function authPage(pathname, request) {
 </head>
 <body data-page="${page}">
   <main class="shell">
-    <div class="brand"><img class="mark" src="/favicon.svg" alt="" aria-hidden="true"><div class="brand-copy"><strong>QssedA Auth</strong><span>QssedA Account</span></div></div>
+    <div class="brand"><img class="mark" src="/favicon.svg" alt="" aria-hidden="true"><div class="brand-copy"><strong>AERTEX ID</strong><span>AERTEX Account</span></div></div>
     <section class="card">
       <div id="loading" class="loading"><span class="spinner"></span><span>${copy.checking}</span></div>
       <div id="signedOut" class="hidden">
@@ -513,7 +513,7 @@ function authPage(pathname, request) {
       </div>
       <div id="signedIn" class="hidden">
         <h1 id="signedInTitle">${copy.signedTitle}</h1><p class="lead" id="signedInLead">${copy.signedLead}</p>
-        <div class="account"><div id="avatar" class="avatar">Q</div><div class="identity"><strong id="displayName">QssedA User</strong><span id="emailText"></span><div class="badge"><span id="statusDot" class="dot"></span><span id="statusText">${copy.active}</span></div></div></div>
+        <div class="account"><div id="avatar" class="avatar">Q</div><div class="identity"><strong id="displayName">AERTEX User</strong><span id="emailText"></span><div class="badge"><span id="statusDot" class="dot"></span><span id="statusText">${copy.active}</span></div></div></div>
         <div id="blockedMessage" class="message error hidden">${copy.unavailable}</div>
         <div id="accountDetails" class="hidden"><div class="details"><div class="detail"><span>${copy.usernameLabel}</span><strong id="usernameText">—</strong></div><div class="detail"><span>${copy.roleLabel}</span><strong id="roleText">—</strong></div><div class="detail"><span>${copy.sessionLabel}</span><strong>${copy.sessionProtected}</strong></div></div><p class="security-note">${copy.securityNote}</p></div>
         <div id="homeActions"><a id="studioButton" class="button" href="/continue">${copy.openStudio}</a><a class="button secondary" href="/account">${copy.account}</a><button id="homeLogoutButton" class="secondary" type="button">${copy.signOut}</button></div>
@@ -521,7 +521,7 @@ function authPage(pathname, request) {
         <div id="authorizePanel" class="hidden"><div class="divider"></div><div class="app-box"><div class="app-name" id="clientName">${copy.appRequest}</div><div class="app-id" id="clientId"></div></div><ul class="permissions"><li><span class="tick">✓</span><span>${copy.p1}</span></li><li><span class="tick">✓</span><span>${copy.p2}</span></li></ul><button id="allowButton" type="button" disabled>${copy.allowLater}</button><p class="message">${copy.later}</p></div>
       </div>
     </section>
-    <div class="foot">${authHost} · QssedA Identity</div>
+    <div class="foot">${authHost} · AERTEX ID</div>
   </main>
 <script>
 (function(){
@@ -532,7 +532,7 @@ function authPage(pathname, request) {
   function statusLabel(status){if(status==="active")return copy.active;if(status==="suspended")return copy.suspended;if(status==="banned")return copy.banned;return status||copy.active}
   function showLoggedOut(){loading.classList.add("hidden");signedIn.classList.add("hidden");signedOut.classList.remove("hidden");if(page==="authorize")document.getElementById("signedOutLead").textContent=copy.signInFirst}
   function showLoggedIn(data){
-    var user=data.user||{};loading.classList.add("hidden");signedOut.classList.add("hidden");signedIn.classList.remove("hidden");document.getElementById("displayName").textContent=user.displayName||user.username||"QssedA User";document.getElementById("emailText").textContent=user.email||"";document.getElementById("statusText").textContent=statusLabel(user.status);
+    var user=data.user||{};loading.classList.add("hidden");signedOut.classList.add("hidden");signedIn.classList.remove("hidden");document.getElementById("displayName").textContent=user.displayName||user.username||"AERTEX User";document.getElementById("emailText").textContent=user.email||"";document.getElementById("statusText").textContent=statusLabel(user.status);
     var dot=document.getElementById("statusDot");dot.className="dot"+(user.status==="suspended"?" warning":user.status==="banned"?" danger":"");
     var blocked=!data.authorized;document.getElementById("blockedMessage").classList.toggle("hidden",!blocked);document.getElementById("studioButton").classList.toggle("hidden",blocked);document.getElementById("accountStudioButton").classList.toggle("hidden",blocked);document.getElementById("usernameText").textContent=user.username||"—";document.getElementById("roleText").textContent=user.role||"user";
     var avatar=document.getElementById("avatar");avatar.textContent=initials(user.displayName||user.username||user.email);if(user.avatarUrl){var img=document.createElement("img");img.alt="";img.src=user.avatarUrl;img.referrerPolicy="no-referrer";avatar.textContent="";avatar.appendChild(img)}
@@ -558,5 +558,5 @@ function preferredLanguage(request) {
 }
 
 function notFoundPage() {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>404 · QssedA Auth</title></head><body style="font-family:system-ui;margin:40px"><h1>404</h1><p>Authentication page not found.</p><a href="/">QssedA Auth</a></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>404 · AERTEX ID</title></head><body style="font-family:system-ui;margin:40px"><h1>404</h1><p>Authentication page not found.</p><a href="/">AERTEX ID</a></body></html>`;
 }
