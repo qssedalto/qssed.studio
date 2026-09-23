@@ -30,6 +30,7 @@
     { "binding": "STORAGE", "bucket_name": "qsseda-studio-storage" }
   ],
   "routes": [
+    { "pattern": "work.qsseda.com/*", "zone_name": "qsseda.com" },
     { "pattern": "work.qsseda.com", "custom_domain": true }
   ],
   "observability": {

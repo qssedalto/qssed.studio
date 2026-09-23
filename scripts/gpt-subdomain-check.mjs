@@ -10,6 +10,7 @@ const main = read("worker.js");
 const handoff = read("studio/gpt-subdomain.js");
 const session = read("studio/session-gate.js");
 const authHandoff = read("studio/auth-handoff.js");
+const gptWrangler = JSON.parse(read("wrangler.gpt.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 
 for (const required of [
   'verifyStudioPageSession(request)',
@@ -45,5 +46,7 @@ assert(session.includes("isolatedAppHost && !accountId"), "Isolated GPT session 
 assert(authHandoff.includes('const GPT_HOST = "gpt.qsseda.com"'), "Auth handoff must recognize the GPT host");
 assert(authHandoff.includes('gptTarget ? "QssedA GPT"'), "Auth handoff must render the GPT product handoff");
 assert(authHandoff.includes('return candidateLocale === "zh" ? "/zh-cn" : "/en"'), "GPT handoff must constrain return paths to GPT locale roots");
+assert(gptWrangler.routes?.some(route => route.pattern === "gpt.qsseda.com/*" && route.zone_name === "qsseda.com"), "gpt.qsseda.com exact Worker route must outrank the main-site wildcard route");
+assert(gptWrangler.routes?.some(route => route.pattern === "gpt.qsseda.com" && route.custom_domain === true), "gpt.qsseda.com custom domain route is missing");
 
 console.log("GPT authentication handoff looks valid.");

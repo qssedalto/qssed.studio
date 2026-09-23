@@ -10,6 +10,10 @@
   "upload_source_maps": false,
   "routes": [
     {
+      "pattern": "gpt.qsseda.com/*",
+      "zone_name": "qsseda.com"
+    },
+    {
       "pattern": "gpt.qsseda.com",
       "custom_domain": true
     }

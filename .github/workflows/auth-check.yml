@@ -65,7 +65,10 @@ jobs:
             .replace(/\/\*[\s\S]*?\*\//g, '');
           const config = JSON.parse(text);
           if (config.main !== 'studio/auth-audit-entry.js') throw new Error('wrangler.auth.jsonc must point to studio/auth-audit-entry.js');
-          if (!Array.isArray(config.routes) || !config.routes.some(r => r.pattern === 'auth.qsseda.com' && r.custom_domain === true)) {
+          if (!Array.isArray(config.routes) || !config.routes.some(r => r.pattern === 'auth.qsseda.com/*' && r.zone_name === 'qsseda.com')) {
+            throw new Error('auth.qsseda.com exact Worker route is missing');
+          }
+          if (!config.routes.some(r => r.pattern === 'auth.qsseda.com' && r.custom_domain === true)) {
             throw new Error('auth.qsseda.com custom domain route is missing');
           }
           const limiterNames = new Set((config.ratelimits || []).map(item => item.name));
