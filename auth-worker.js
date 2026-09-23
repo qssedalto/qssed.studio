@@ -191,7 +191,7 @@ async function handleContinue(request, env) {
 
   const requestUrl = new URL(request.url);
   const next = safeNextPath(requestUrl.searchParams.get("next"));
-  const mainSite = safeHttpsOrigin(env?.MAIN_SITE_URL) || "https://qsseda.studio";
+  const mainSite = safeHttpsOrigin(env?.MAIN_SITE_URL) || "https://qsseda.com";
   const headers = new Headers(baseHeaders("text/html;charset=UTF-8"));
   headers.set("referrer-policy", "origin");
   headers.set("content-security-policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${mainSite}; base-uri 'none'; frame-ancestors 'none'`);
@@ -225,7 +225,7 @@ function htmlEscape(value) {
 }
 
 function handoffPage(mainSite, accessToken, refreshToken, next) {
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>QssedA Auth</title><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#0b0b0d;color:#f5f5f7;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid #3a3a3c;border-top-color:#0a84ff;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:#a1a1a6}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 QssedA Studio</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(mainSite)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>QssedA Auth</title><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#0b0b0d;color:#f5f5f7;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid #3a3a3c;border-top-color:#0a84ff;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:#a1a1a6}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 QssedA</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(mainSite)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
 }
 
 async function fetchUser(accessToken) {
@@ -401,14 +401,14 @@ function authPage(pathname, request) {
   const copy = zh ? {
     checking: "正在检查登录状态…",
     loginTitle: "登录 QssedA",
-    loginLead: "使用你的 QssedA Studio 账号继续。认证状态由 auth.qsseda.studio 独立维护。",
+    loginLead: "使用你的 QssedA 账号继续。认证状态由 auth.qsseda.com 独立维护。",
     email: "邮箱",
     password: "密码",
     continue: "继续",
     create: "创建账号",
     signedTitle: "你已登录",
     signedLead: "QssedA Auth 已识别当前会话。",
-    openStudio: "继续前往 QssedA Studio",
+    openStudio: "继续前往 QssedA",
     account: "账号状态",
     signOut: "退出登录",
     authorizeTitle: "授权应用",
@@ -436,14 +436,14 @@ function authPage(pathname, request) {
   } : {
     checking: "Checking sign-in status…",
     loginTitle: "Sign in to QssedA",
-    loginLead: "Continue with your QssedA Studio account. Authentication is maintained by auth.qsseda.studio.",
+    loginLead: "Continue with your QssedA account. Authentication is maintained by auth.qsseda.com.",
     email: "Email",
     password: "Password",
     continue: "Continue",
     create: "Create account",
     signedTitle: "You're signed in",
     signedLead: "QssedA Auth recognized your current session.",
-    openStudio: "Continue to QssedA Studio",
+    openStudio: "Continue to QssedA",
     account: "Account status",
     signOut: "Sign out",
     authorizeTitle: "Authorize application",
@@ -492,7 +492,7 @@ function authPage(pathname, request) {
 </head>
 <body data-page="${page}">
   <main class="shell">
-    <div class="brand"><div class="mark" aria-hidden="true">Q</div><div class="brand-copy"><strong>QssedA Auth</strong><span>QssedA Studio Account</span></div></div>
+    <div class="brand"><div class="mark" aria-hidden="true">Q</div><div class="brand-copy"><strong>QssedA Auth</strong><span>QssedA Account</span></div></div>
     <section class="card">
       <div id="loading" class="loading"><span class="spinner"></span><span>${copy.checking}</span></div>
       <div id="signedOut" class="hidden">
@@ -502,7 +502,7 @@ function authPage(pathname, request) {
           <div class="field"><label for="password">${copy.password}</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
           <button id="loginButton" type="submit">${copy.continue}</button><div id="loginMessage" class="message" role="status" aria-live="polite"></div>
         </form>
-        <a class="button secondary" href="https://qsseda.studio/sign-up">${copy.create}</a>
+        <a class="button secondary" href="https://qsseda.com/sign-up">${copy.create}</a>
       </div>
       <div id="signedIn" class="hidden">
         <h1 id="signedInTitle">${copy.signedTitle}</h1><p class="lead" id="signedInLead">${copy.signedLead}</p>
@@ -514,7 +514,7 @@ function authPage(pathname, request) {
         <div id="authorizePanel" class="hidden"><div class="divider"></div><div class="app-box"><div class="app-name" id="clientName">${copy.appRequest}</div><div class="app-id" id="clientId"></div></div><ul class="permissions"><li><span class="tick">✓</span><span>${copy.p1}</span></li><li><span class="tick">✓</span><span>${copy.p2}</span></li></ul><button id="allowButton" type="button" disabled>${copy.allowLater}</button><p class="message">${copy.later}</p></div>
       </div>
     </section>
-    <div class="foot">auth.qsseda.studio · QssedA Studio Identity</div>
+    <div class="foot">auth.qsseda.com · QssedA Identity</div>
   </main>
 <script>
 (function(){
