@@ -97,7 +97,7 @@ async function addCollaborator(request, env, user, accessToken) {
   const resolved = await rpc(accessToken, "tex_resolve_collaborator", { p_username: username });
   if (resolved.error) return collaborationBackendError(resolved.error);
   const profile = Array.isArray(resolved.data) ? resolved.data[0] : null;
-  if (!profile?.id || !isStorageObjectId(profile.id)) return json({ error: "No active QssedA user matches that username." }, 404);
+  if (!profile?.id || !isStorageObjectId(profile.id)) return json({ error: "No active AERTEX user matches that username." }, 404);
   if (profile.id === user.id) return json({ error: "The document owner is already a collaborator." }, 409);
 
   const now = new Date().toISOString();
