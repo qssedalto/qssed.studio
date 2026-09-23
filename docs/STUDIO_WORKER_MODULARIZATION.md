@@ -1,20 +1,20 @@
-# QssedA Studio Worker modularization plan
+# QssedA Worker modularization plan
 
 > Status: **completed sequencing record**. Phases 1–4 are production-verified. This document now records the constraints and results of the structural modularization rather than an active extraction queue.
 
 ## Why this document exists
 
-The original Studio Worker grew into a single `worker.js` of 7,544 lines / 388,760 bytes. The project deliberately used staged, behavior-preserving extraction instead of a framework rewrite or big-bang split.
+The original QssedA Worker grew into a single `worker.js` of 7,544 lines / 388,760 bytes. The project deliberately used staged, behavior-preserving extraction instead of a framework rewrite or big-bang split.
 
 ## Current architecture after Phase 4
 
-`worker.js` remains the Wrangler compatibility facade and exports `studio/entry.js`. The Studio implementation is divided by responsibility:
+`worker.js` remains the Wrangler compatibility facade and exports `studio/entry.js`. The main-site implementation is divided by responsibility:
 
 - server/routing: `config.js`, `entry.js`, `routing.js`, `server-runtime.js`, `html-utils.js`, `account-api.js`, `storage-api.js`, `auth-handoff.js`;
 - shared page/runtime: `ui-page.js`, `ui-audit.js`, `ui-primitives.js`, `ui-shell.js`, `ui-styles.js`;
 - product domains: `ui-profile.js`, `ui-settings.js`, `ui-storage.js`, `ui-admin.js`, `ui-dashboard.js`, `ui-information.js`, `ui-workspace.js`;
 - clearly owned product CSS: `ui-style-profile.js`, `ui-style-admin.js`, `ui-style-dashboard.js`;
-- Studio public auth UI: `auth-pages.js`.
+- Main-site public auth UI: `auth-pages.js`.
 
 No product module depends on `ui-shell.js` merely to receive Hub/status render functions; those neutral primitives live in `ui-primitives.js`. The shared account/device/audit browser runtime lives in `ui-audit.js`, while common page head/Supabase/top-controls/theme infrastructure lives in `ui-page.js`.
 
@@ -31,7 +31,7 @@ No product module depends on `ui-shell.js` merely to receive Hub/status render f
 
 - retained `worker.js` as the Wrangler compatibility facade;
 - moved routing and coarse responsibility blocks into `studio/`;
-- connected Studio modules to syntax/bundle CI and production deployment;
+- connected main-site modules to syntax/bundle CI and production deployment;
 - preserved public behavior through route smoke tests.
 
 ## Phase 2 — backend/shared-server dependency separation
@@ -69,10 +69,10 @@ Detailed Phase 4 evidence and invariants remain in [`STUDIO_PHASE4_SHARED_INVENT
 
 These remain non-negotiable unless a separate reviewed behavior/architecture change explicitly modifies them:
 
-1. `worker.js` remains the Studio Wrangler compatibility entrypoint until the deployment contract is intentionally changed.
+1. `worker.js` remains the main-site Wrangler compatibility entrypoint until the deployment contract is intentionally changed.
 2. Public route semantics remain stable during behavior-neutral refactors.
-3. `auth.qsseda.studio` remains an independent Auth service.
-4. OAuth/PKCE security behavior must not be weakened by Studio changes.
+3. `auth.qsseda.com` remains an independent Auth service.
+4. OAuth/PKCE security behavior must not be weakened by main-site changes.
 5. R2 user isolation and the `STORAGE` binding remain intact.
 6. Supabase secrets remain in protected runtime configuration, never source control.
 7. Structural runtime changes require JavaScript syntax checks and Wrangler bundle validation.
