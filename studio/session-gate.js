@@ -172,7 +172,7 @@ export function studioSessionBootstrapPage(locale, request) {
       const goLogin = async () => {
         if (status) status.textContent = ${scriptLiteral(failed)};
         try { await supabaseClient.auth.signOut({ scope: "local" }); } catch {}
-        const target = new URL("/continue", ${scriptLiteral("${authOrigin}")});
+        const target = new URL("/continue", ${scriptLiteral(authOrigin)});
         target.searchParams.set("next", location.pathname + location.search);
         location.replace(target.toString());
       };
