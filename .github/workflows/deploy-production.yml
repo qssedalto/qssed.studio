@@ -24,6 +24,7 @@ on:
       - scripts/gpt-subdomain-check.mjs
       - scripts/codex-bridge-check.mjs
       - auth-entry.js
+      - auth-sso.js
       - auth-worker.js
       - auth-login-identifier.js
       - auth-oauth.js
