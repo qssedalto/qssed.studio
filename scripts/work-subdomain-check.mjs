@@ -14,20 +14,21 @@ const workWrangler = JSON.parse(workWranglerText.replace(/^\s*\/\/.*$/gm, "").re
 
 assert(worker.includes("rewriteWorkSubdomainRequest"), "Worker must route the Work custom domain explicitly");
 assert(worker.includes("handleMainWorkHandoff"), "Main site must expose the Work session handoff");
-assert(worker.includes("workSessionRedirect"), "Unauthenticated Work pages must return through the main-site handoff");
+assert(worker.includes("workSessionRedirect(request, workPageNext)"), "Unauthenticated Work pages must preserve domain-family context");
 assert(worker.includes("mapped.canonical"), "Work aliases must redirect to localized canonical URLs");
 assert(worker.includes("suppressWorkClientSessionBounce"), "Authenticated Work HTML must suppress the main-site origin-local session bounce");
 assert(worker.includes('markup.replace(\n    "    hydrateOsUser();"'), "Work suppression must target the inherited main-site hydrateOsUser call only");
 assert(worker.includes("server-side host-only session gate"), "Work session suppression must document that the server-side gate remains authoritative");
 
 for (const required of [
-  'const WORK_ORIGIN = "https://work.qsseda.com"',
-  'return `${WORK_ORIGIN}/zh-cn/tex`',
-  'return `${WORK_ORIGIN}/en/tex`',
+  'workOriginForRequest(request)',
+  'mainOriginForRequest(request)',
+  'authOriginForRequest(request)',
+  'isServiceHost(new URL(request.url).hostname, "work")',
   'const canonicalPath = `/${locale}/tex`',
   'internalUrl.pathname = pathname.startsWith("/en/") ? "/en/work/tex" : "/zh-cn/work/tex"',
   '"/zh-cn/local", "/en/local"',
-  'action="${WORK_ORIGIN}/auth/handoff"',
+  'action="${workOrigin}/auth/handoff"',
   'canonicalWorkPath',
   '__Host-qsseda-studio-refresh'
 ]) assert(work.includes(required), `Work subdomain module is missing: ${required}`);
@@ -35,19 +36,19 @@ for (const required of [
 assert(!work.includes('internalPath = `/${locale}/work/local`'), "Work must not expose the Local Bridge as a standalone product page");
 assert(!work.includes('internalPath = `/${locale}/work`'), "Work must not expose a standalone Work Hub page");
 
-assert(handoff.includes('const WORK_HOST = "work.qsseda.com"'), "Auth handoff must identify the Work host");
-assert(handoff.includes("new Set([AUTH_ORIGIN, MAIN_ORIGIN])"), "Work handoff must allow only Auth and the trusted main-site origin");
+assert(handoff.includes('isServiceHost(hostname, "work")'), "Auth handoff must identify Work on every domain family");
+assert(handoff.includes("new Set([authOrigin, mainOrigin])"), "Work handoff must allow only matching-family Auth and main-site origins");
 assert(handoff.includes('return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/tex"'), "Every Work handoff must land on localized TeX");
 
 assert(sessionGate.includes('const ACCOUNT_COOKIE = "__Secure-qsseda-account-id"'), "Work sessions must use a domain-wide account identity marker");
-assert(sessionGate.includes('const COOKIE_DOMAIN = "qsseda.com"'), "The account identity marker must cover qsseda.com subdomains");
+assert(sessionGate.includes("rootDomainForHost(hostname)"), "The account identity marker must follow the active root domain");
 assert(sessionGate.includes('if (isolatedAppHost && !accountId) return false'), "Work and other isolated app hosts must fail closed when the domain-wide account marker is missing");
 assert(sessionGate.includes('if (accountId && accountId !== userId) return false'), "Work must reject a host session belonging to a different account");
 assert(sessionGate.includes('accountId !== verified.user.id'), "Work bootstrap must not recreate a stale local account session");
 assert(sessionGate.includes('globalLogoutCookies()'), "Logout must invalidate the domain-wide account identity marker");
-assert(sessionGate.includes('Domain=${COOKIE_DOMAIN}'), "The identity marker must be sent across qsseda.com subdomains");
+assert(sessionGate.includes('Domain=${domain}'), "The identity marker must be sent across the active domain family");
 
-assert(authEntry.includes('pathname === "/continue" && isLoginRedirect(response)'), "Auth entry must preserve app return targets when /continue requires login");
+assert(authEntry.includes('pathname === "/continue" && isLoginRedirect(response, url.origin)'), "Auth entry must preserve app return targets on every Auth domain");
 assert(authEntry.includes('/login?next=${encodeURIComponent(effectiveReturn)}'), "Auth login redirect must retain the validated next path");
 assert(authEntry.includes('const RETURN_COOKIE = "__Host-qsseda-auth-return"'), "Auth must keep a host-only pending return target for mobile login reloads");
 assert(authEntry.includes("HttpOnly; Secure; SameSite=Lax"), "Pending Auth return target must use hardened host-only cookie attributes");
@@ -74,12 +75,13 @@ for (const [host, zone] of [["work.qsseda.com","qsseda.com"],["work.qsseda.onlin
   assert(workWrangler.routes?.some(route => route.pattern === `${host}/*` && route.zone_name === zone), `${host} exact Worker route must outrank the main-site wildcard route`);
   assert(workWrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
 }
-assert(workAuditWrapper.includes('host.endsWith(".qsseda.online")'), "Work aliases must canonicalize .online hosts to .com");
-assert(workAuditWrapper.includes('host.endsWith(".qsseda.studio")'), "Work aliases must canonicalize .studio hosts to .com");
+assert(!workAuditWrapper.includes("canonicalQssedaAlias"), "Work .online/.studio hosts must stay on their own domains");
 assert(workWrangler.r2_buckets?.some(bucket => bucket.binding === "STORAGE" && bucket.bucket_name === "qsseda-studio-storage"), "Work Worker must share the protected main-site storage binding");
 
-assert(bridge.includes('"https://work.qsseda.com"'), "Legacy Bridge must allow the Work origin");
-assert(nativeOrigin.includes('allowedOrigins["https://work.qsseda.com"] = true'), "Native Bridge must allow the Work origin");
+for (const host of ["work.qsseda.com","work.qsseda.online","work.qsseda.studio"]) {
+  assert(bridge.includes(`"https://${host}"`), `Legacy Bridge must allow ${host}`);
+  assert(nativeOrigin.includes(`allowedOrigins["https://${host}"] = true`), `Native Bridge must allow ${host}`);
+}
 
 console.log("Work TeX-only custom domain checks passed.");
 
