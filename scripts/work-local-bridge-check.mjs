@@ -133,7 +133,7 @@ assert(workApi.includes("_system/releases/local-bridge/windows-amd64/QssedA-Loca
 assert(workApi.includes("application/vnd.microsoft.portable-executable"), "Bridge download must use an executable content type");
 assert(nativeWorkflow.includes("GOOS: windows") && nativeWorkflow.includes("GOARCH: amd64"), "Native Bridge workflow must target Windows amd64");
 assert(nativeWorkflow.includes("-H=windowsgui"), "Native Bridge build should not open a console window for ordinary users");
-assert(nativeWorkflow.includes("wrangler@4 r2 object put"), "Native Bridge workflow must publish the built EXE to R2");
+assert(nativeWorkflow.includes("wrangler@4.136.3 r2 object put"), "Native Bridge workflow must publish the built EXE to R2 with the pinned Wrangler version");
 
 console.log("Work localhost bridge checks passed.");
 

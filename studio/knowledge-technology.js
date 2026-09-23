@@ -84,7 +84,7 @@ export const TECHNOLOGY_KNOWLEDGE = {
     zh: {
       summary: "GitHub Actions 用于把检查、Preview 前的验证和生产发布自动化。核心原则是：PR head 必须跑最终代码的检查，合并后生产部署也必须再次验证。",
       sections: [
-        { title: "Workflow 基本结构", code: "name: Check\non:\n  pull_request:\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: node --check worker.js" },
+        { title: "Workflow 基本结构", code: "name: Check\non:\n  pull_request:\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v7\n      - run: node --check worker.js" },
         { title: "QssedA 永久检查", bullets: ["Studio Worker Check：检查 studio/*.js、Wrangler bundle、配置形状。", "Auth Worker Check：检查 Auth JS、Auth bundle 和 wrangler.auth.jsonc。", "Deploy QssedA Production：main 变更后验证并依次部署 Studio/Auth。"] },
         { title: "一次性 Workflow", bullets: ["仅在远程无法运行脚本时用于安全迁移/验证。", "完成后必须从最终分支删除，不能把临时自动改代码 Workflow 留在 main。", "Bot push 可能不会触发后续 push workflow，需要显式设计。"] },
         { title: "安全", bullets: ["Secrets 通过 GitHub Secrets 注入。", "日志避免 echo secret。", "workflow 权限按需最小化。"] }

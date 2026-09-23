@@ -51,7 +51,12 @@ jobs:
     environment: production
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24.x"
 
       - name: Validate Workers
         run: |
@@ -102,25 +107,25 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4 deploy -c wrangler.jsonc
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.jsonc
 
       - name: Deploy QssedA Work
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4 deploy -c wrangler.work.jsonc
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.work.jsonc
 
       - name: Deploy QssedA GPT
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4 deploy -c wrangler.gpt.jsonc
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.gpt.jsonc
 
       - name: Deploy QssedA Auth
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4 deploy -c wrangler.auth.jsonc
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.auth.jsonc
 
       - name: Verify Auth custom domain
         shell: bash
