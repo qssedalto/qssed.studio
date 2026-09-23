@@ -23,11 +23,11 @@ const zhNativeLocal = enhanceWorkLocalBridgeNative(zhLocal, true);
 const zhTexLocal = enhanceTexWorkbenchLocal(texWorkbenchContent(true), true);
 
 for (const route of ["/work", "/work/local", "/work/tex"]) {
-  assert(config.includes(`"${route}"`), `${route} is missing from protected Studio routes`);
-  assert(entry.includes(`pathname === "${route}"`), `${route} is not mounted in Studio entry`);
+  assert(config.includes(`"${route}"`), `${route} is missing from protected main-site routes`);
+  assert(entry.includes(`pathname === "${route}"`), `${route} is not mounted in the main-site entry`);
 }
 
-assert(entry.includes("decorateWorkNavigation"), "Studio shell does not inject the Work navigation group");
+assert(entry.includes("decorateWorkNavigation"), "Main-site shell does not inject the Work navigation group");
 assert(entry.includes("enhanceWorkLocalBridgeNative"), "Native Bridge installer experience is not mounted");
 assert(entry.includes("enhanceTexWorkbenchLocal"), "TeX Workbench is not enhanced with local compilation");
 assert(entry.includes('pathname === "/work/tex"') && entry.includes("allowLoopback"), "Work TeX must enable scoped loopback CSP access");
@@ -128,7 +128,7 @@ assert(!nativeBridge.includes("powershell.exe"), "Native Bridge must not depend 
 assert(!nativeBridge.includes("node.exe"), "Native Bridge must not depend on Node.js");
 
 assert(worker.includes('pathname.startsWith("/api/work/")'), "Worker is missing the Work API boundary");
-assert(workApi.includes("verifyStudioApiSession"), "Bridge download must require a Studio session");
+assert(workApi.includes("verifyStudioApiSession"), "Bridge download must require a QssedA session");
 assert(workApi.includes("_system/releases/local-bridge/windows-amd64/QssedA-Local-Bridge.exe"), "Bridge download must read the fixed hidden R2 release key");
 assert(workApi.includes("application/vnd.microsoft.portable-executable"), "Bridge download must use an executable content type");
 assert(nativeWorkflow.includes("GOOS: windows") && nativeWorkflow.includes("GOARCH: amd64"), "Native Bridge workflow must target Windows amd64");
