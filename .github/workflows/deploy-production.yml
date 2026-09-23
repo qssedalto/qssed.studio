@@ -158,13 +158,13 @@ jobs:
           fi
           probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-probe.txt --write-out '%{http_code}' 'https://qsseda.com/.env' || true)"
           if [ "$probe_status" != "404" ]; then
-            echo "Edge protection regression: scanner probe was not rejected before Studio routing."
+            echo "Edge protection regression: scanner probe was not rejected before QssedA routing."
             echo "HTTP status: ${probe_status:-unknown}"
             cat /tmp/qsseda-probe.txt || true
             exit 1
           fi
 
-      - name: Verify Studio session gate
+      - name: Verify QssedA session gate
         shell: bash
         run: |
           set -euo pipefail
