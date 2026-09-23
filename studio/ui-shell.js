@@ -363,7 +363,7 @@ export function buildOsCopy(zh) {
 
   if (zh) {
     return {
-      platform: "个人工作空间",
+      platform: "Personal Intelligence",
       kicker: "个人智能工作台",
       aiLabel: "工作流",
       aiTitle: "实验与工具入口",
@@ -413,7 +413,7 @@ export function buildOsCopy(zh) {
   }
 
   return {
-    platform: "Personal Workspace",
+    platform: "Personal Intelligence",
     kicker: "Personal Intelligence Workspace",
     aiLabel: "Workflow",
     aiTitle: "Experiments & tools",

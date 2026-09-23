@@ -105,7 +105,7 @@ The web UI receives only:
 
 ### Chat safety boundary
 
-AERTEX Intelligence starts threads with `approvalPolicy: "never"` and the legacy `readOnly` sandbox. Every chat turn further applies a restricted read-only sandbox rooted at an empty bridge-owned chat workspace. The browser has no generic command, filesystem, MCP, or process endpoint.
+AERTEX AI starts threads with `approvalPolicy: "never"` and the legacy `readOnly` sandbox. Every chat turn further applies a restricted read-only sandbox rooted at an empty bridge-owned chat workspace. The browser has no generic command, filesystem, MCP, or process endpoint.
 
 The bridge:
 
