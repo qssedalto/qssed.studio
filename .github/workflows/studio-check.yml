@@ -61,7 +61,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24.x"
 
       - name: Check Studio JavaScript syntax
         run: |
@@ -129,13 +134,13 @@ jobs:
         run: node scripts/codex-bridge-check.mjs
 
       - name: Bundle Studio Worker
-        run: npx --yes wrangler@4 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check
 
       - name: Bundle Work Worker
-        run: npx --yes wrangler@4 deploy -c wrangler.work.jsonc --dry-run --outdir .wrangler-work-check
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.work.jsonc --dry-run --outdir .wrangler-work-check
 
       - name: Bundle GPT Worker
-        run: npx --yes wrangler@4 deploy -c wrangler.gpt.jsonc --dry-run --outdir .wrangler-gpt-check
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.gpt.jsonc --dry-run --outdir .wrangler-gpt-check
 
       - name: Validate Studio Wrangler JSONC shape
         shell: bash
