@@ -466,7 +466,7 @@ export function buildOsPages(zh) {
   const z = {
     dashboard: ["仪表盘", "汇总账号状态与核心模块，快速查看当前可用功能。"],
     info: ["信息中心", "知识模块尚未建立持久化数据表；当前仅保留清晰的模块入口。"],
-    knowledge: ["知识库", "整理值得长期保留的知识内容，方便持续积累、查找与回顾。"],
+    knowledge: ["AERTEX Knowledge", "整理值得长期保留的知识内容，方便持续积累、查找与回顾。"],
     links: ["收藏链接", "尚未接入收藏链接数据表。"],
     notes: ["研究笔记", "尚未接入笔记存储与 Markdown 保存接口。"],
     summaries: ["内容摘要", "尚未接入摘要数据源。"],
@@ -481,7 +481,7 @@ export function buildOsPages(zh) {
     experiments: ["实验室", "实验工具尚未接入持久化数据。"],
     drafts: ["草稿箱", "尚未接入草稿数据表。"],
     tasks: ["任务中心", "尚未接入任务数据表。"],
-    admin: ["管理", "显示真实用户与管理员数量、最近用户、操作日志和风险事件。"],
+    admin: ["AERTEX Console", "显示真实用户与管理员数量、最近用户、操作日志和风险事件。"],
     users: ["用户管理", "用户列表、权限管理和封禁管理。"],
     roles: ["角色权限", "查看管理员、编辑者与普通成员的权限范围，并管理角色授权。"],
     logs: ["操作日志", "查看账户与管理操作的审计记录。"],
@@ -493,12 +493,12 @@ export function buildOsPages(zh) {
     notifications: ["通知", "管理提醒、站内消息与其他通知偏好。"],
     ai: ["AI 设置", "当前没有浏览器端 API Key 配置功能；敏感密钥不应保存在前端。"],
     integrations: ["第三方集成", "当前站点运行依赖 Cloudflare 与 Supabase；此页尚无用户级集成配置。"],
-    storage: ["存储管理", "管理仅属于当前账号的私人 Cloudflare R2 文件。"]
+    storage: ["AERTEX Drive", "管理仅属于当前账号的私人 Cloudflare R2 文件。"]
   };
   const e = {
     dashboard: ["Dashboard", "Overview of your account status and core modules, with quick access to currently available features."],
     info: ["Information Center", "Persistent knowledge tables are not implemented yet; this area currently provides module entry points."],
-    knowledge: ["Knowledge Base", "Organize knowledge worth keeping so it stays easy to build on, find, and revisit."],
+    knowledge: ["AERTEX Knowledge", "Organize knowledge worth keeping so it stays easy to build on, find, and revisit."],
     links: ["Saved Links", "No saved-links table is connected yet."],
     notes: ["Research Notes", "Note storage and Markdown persistence are not connected yet."],
     summaries: ["Summaries", "No summary data source is connected yet."],
@@ -513,7 +513,7 @@ export function buildOsPages(zh) {
     experiments: ["Lab", "Experiment tools are not connected to persistent data yet."],
     drafts: ["Drafts", "No drafts table is connected yet."],
     tasks: ["Tasks", "No tasks table is connected yet."],
-    admin: ["Admin", "Shows live user/admin counts, recent users, operation logs, and risk events."],
+    admin: ["AERTEX Console", "Shows live user/admin counts, recent users, operation logs, and risk events."],
     users: ["User Management", "User list, permissions, and bans."],
     roles: ["Roles", "Review the access scope for administrators, editors, and members, and manage role permissions."],
     logs: ["Logs", "Review audit records for account and administrative actions."],
@@ -525,7 +525,7 @@ export function buildOsPages(zh) {
     notifications: ["Notifications", "Manage reminders, in-app messages, and other notification preferences."],
     ai: ["AI Settings", "There is no browser-side API-key configuration. Sensitive keys should not be stored in frontend code."],
     integrations: ["Integrations", "The site currently depends on Cloudflare and Supabase; user-configurable integrations are not implemented."],
-    storage: ["Storage", "Manage private Cloudflare R2 files belonging only to your account."]
+    storage: ["AERTEX Drive", "Manage private Cloudflare R2 files belonging only to your account."]
   };
   const s = zh ? z : e;
   return {
