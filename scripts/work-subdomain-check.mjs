@@ -70,6 +70,7 @@ assert(workWrangler.name === "qsseda-work", "Work Worker must use a dedicated sc
 assert(workWrangler.main === "studio/worker-audit.js", "Work Worker must enter through the audited main-site facade");
 assert(workAuditWrapper.includes('import worker from "../worker.js"'), "Work audit wrapper must reuse the hardened main-site facade");
 assert(workAuditWrapper.includes("recordAccessAudit"), "Work audit wrapper must preserve private access auditing");
+assert(workWrangler.routes?.some(route => route.pattern === "work.qsseda.com/*" && route.zone_name === "qsseda.com"), "work.qsseda.com exact Worker route must outrank the main-site wildcard route");
 assert(workWrangler.routes?.some(route => route.pattern === "work.qsseda.com" && route.custom_domain === true), "work.qsseda.com custom domain route is missing");
 assert(workWrangler.r2_buckets?.some(bucket => bucket.binding === "STORAGE" && bucket.bucket_name === "qsseda-studio-storage"), "Work Worker must share the protected main-site storage binding");
 
