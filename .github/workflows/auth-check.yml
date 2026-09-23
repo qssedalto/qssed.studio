@@ -65,11 +65,10 @@ jobs:
             .replace(/\/\*[\s\S]*?\*\//g, '');
           const config = JSON.parse(text);
           if (config.main !== 'studio/auth-audit-entry.js') throw new Error('wrangler.auth.jsonc must point to studio/auth-audit-entry.js');
-          if (!Array.isArray(config.routes) || !config.routes.some(r => r.pattern === 'auth.qsseda.com/*' && r.zone_name === 'qsseda.com')) {
-            throw new Error('auth.qsseda.com exact Worker route is missing');
-          }
-          if (!config.routes.some(r => r.pattern === 'auth.qsseda.com' && r.custom_domain === true)) {
-            throw new Error('auth.qsseda.com custom domain route is missing');
+          if (!Array.isArray(config.routes)) throw new Error('Auth routes are missing');
+          for (const [host, zone] of [['auth.qsseda.com','qsseda.com'],['auth.qsseda.online','qsseda.online'],['auth.qsseda.studio','qsseda.studio']]) {
+            if (!config.routes.some(r => r.pattern === `${host}/*` && r.zone_name === zone)) throw new Error(`${host} exact Worker route is missing`);
+            if (!config.routes.some(r => r.pattern === host && r.custom_domain === true)) throw new Error(`${host} custom domain route is missing`);
           }
           const limiterNames = new Set((config.ratelimits || []).map(item => item.name));
           for (const required of ['AUTH_LOGIN_RATE_LIMITER','AUTH_OAUTH_RATE_LIMITER','AUTH_EDGE_GLOBAL_RATE_LIMITER','AUTH_EDGE_ANON_RATE_LIMITER','AUTH_EDGE_SUSPECT_RATE_LIMITER']) {
