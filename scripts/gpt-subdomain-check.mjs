@@ -44,7 +44,7 @@ assert(!handoff.includes("refresh_token="), "GPT handoff must not place refresh 
 assert(session.includes('isServiceHost(hostname, "gpt")'), "Session gate must recognize GPT on every domain family");
 assert(session.includes("isolatedAppHost && !accountId"), "Isolated GPT session must require the domain-wide account marker");
 assert(authHandoff.includes('isServiceHost(hostname, "gpt")'), "Auth handoff must recognize GPT on every domain family");
-assert(authHandoff.includes('gptTarget ? "QssedA GPT"'), "Auth handoff must render the GPT product handoff");
+assert(authHandoff.includes('gptTarget ? "AERTEX Intelligence"'), "Auth handoff must render the AERTEX Intelligence product handoff");
 assert(authHandoff.includes('return candidateLocale === "zh" ? "/zh-cn" : "/en"'), "GPT handoff must constrain return paths to GPT locale roots");
 for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online","qsseda.online"],["gpt.qsseda.studio","qsseda.studio"]]) {
   assert(gptWrangler.routes?.some(route => route.pattern === `${host}/*` && route.zone_name === zone), `${host} exact Worker route must outrank the main-site wildcard route`);
