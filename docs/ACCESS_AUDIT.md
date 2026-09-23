@@ -51,7 +51,7 @@ https://qsseda.com/zh-cn/admin/access-audit
 https://qsseda.com/en/admin/access-audit
 ```
 
-Both the page and its API require a valid QssedA session plus the existing Supabase `is_admin` check. Non-admin access to the page returns a generic 404.
+Both the page and its API require a valid AERTEX session plus the existing Supabase `is_admin` check. Non-admin access to the page returns a generic 404.
 
 The API endpoint is:
 
@@ -73,4 +73,4 @@ Because raw IP addresses are personal data in many jurisdictions, retention shou
 
 ## Cloudflare built-in logs
 
-Wrangler Observability remains enabled at 100% head sampling for QssedA, Work, and Auth. Access Audit is an application-owned searchable archive in addition to Cloudflare's own invocation logs; it does not replace Cloudflare observability.
+Wrangler Observability remains enabled at 100% head sampling for AERTEX, Work, and ID. Access Audit is an application-owned searchable archive in addition to Cloudflare's own invocation logs; it does not replace Cloudflare observability.
