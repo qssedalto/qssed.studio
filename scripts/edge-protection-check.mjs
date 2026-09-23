@@ -34,7 +34,7 @@ function browserRequest(path = "/zh-cn/login", extraHeaders = {}) {
 
 function fakeRequest(path, options = {}) {
   const request = {
-    url: `https://qsseda.studio${path}`,
+    url: `https://qsseda.com${path}`,
     method: options.method || "GET",
     headers: new Headers({ "CF-Connecting-IP": "203.0.113.77", ...(options.headers || {}) }),
     cf: options.cf || undefined
