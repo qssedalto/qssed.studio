@@ -30,6 +30,13 @@ import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-iden
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
 import { osPage } from "./ui-shell.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
+import { authOriginForRequest } from "./domain-family.js";
+
+function safeLocalNext(value) {
+  const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "";
+  return path;
+}
 
 function normalizePublicPrivacyCopy(markup) {
   let output = String(markup || "");
@@ -102,7 +109,7 @@ export default {
 
     if (isProtectedOsRoute) {
       const gate = await verifyStudioPageSession(request);
-      if (!gate.ok) return withStudioSessionCookies(studioSessionBootstrapPage(locale), gate.cookies);
+      if (!gate.ok) return withStudioSessionCookies(studioSessionBootstrapPage(locale, request), gate.cookies);
 
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
       const zh = locale === "zh";
@@ -131,7 +138,13 @@ export default {
     }
 
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
-    if (pathname === "/login") return localizedPage(identifierLoginPage(loginPage(t, links, ipInfo), t, locale === "zh"), locale);
+    if (pathname === "/login") {
+      const authUrl = new URL("/login", authOriginForRequest(request));
+      const requestedNext = new URL(request.url).searchParams.get("next");
+      const fallbackNext = locale === "zh" ? "/zh-cn/dashboard" : "/en/dashboard";
+      authUrl.searchParams.set("next", safeLocalNext(requestedNext) || fallbackNext);
+      return Response.redirect(authUrl.toString(), 302);
+    }
     return localizedPage(notFoundPage(t, links), locale, 404);
   }
 };
