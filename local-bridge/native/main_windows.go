@@ -41,8 +41,8 @@ var version = "0.3.0-dev"
 var compileSlots = make(chan struct{}, 2)
 
 var allowedOrigins = map[string]bool{
-	"https://qsseda.studio":     true,
-	"https://www.qsseda.studio": true,
+	"https://qsseda.com":     true,
+	"https://www.qsseda.com": true,
 }
 
 var allowedLocalEngines = map[string]bool{

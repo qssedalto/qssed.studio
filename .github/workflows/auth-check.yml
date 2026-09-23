@@ -64,9 +64,9 @@ jobs:
             .replace(/^\s*\/\/.*$/gm, '')
             .replace(/\/\*[\s\S]*?\*\//g, '');
           const config = JSON.parse(text);
-          if (config.main !== 'auth-entry.js') throw new Error('wrangler.auth.jsonc must point to auth-entry.js');
-          if (!Array.isArray(config.routes) || !config.routes.some(r => r.pattern === 'auth.qsseda.studio' && r.custom_domain === true)) {
-            throw new Error('auth.qsseda.studio custom domain route is missing');
+          if (config.main !== 'studio/auth-audit-entry.js') throw new Error('wrangler.auth.jsonc must point to studio/auth-audit-entry.js');
+          if (!Array.isArray(config.routes) || !config.routes.some(r => r.pattern === 'auth.qsseda.com' && r.custom_domain === true)) {
+            throw new Error('auth.qsseda.com custom domain route is missing');
           }
           const limiterNames = new Set((config.ratelimits || []).map(item => item.name));
           for (const required of ['AUTH_LOGIN_RATE_LIMITER','AUTH_OAUTH_RATE_LIMITER','AUTH_EDGE_GLOBAL_RATE_LIMITER','AUTH_EDGE_ANON_RATE_LIMITER','AUTH_EDGE_SUSPECT_RATE_LIMITER']) {

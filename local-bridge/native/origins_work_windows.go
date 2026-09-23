@@ -1,5 +1,5 @@
 package main
 
 func init() {
-	allowedOrigins["https://work.qsseda.studio"] = true
+	allowedOrigins["https://work.qsseda.com"] = true
 }

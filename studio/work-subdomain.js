@@ -1,12 +1,12 @@
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 
-const MAIN_ORIGIN = "https://qsseda.studio";
-const WORK_ORIGIN = "https://work.qsseda.studio";
-const AUTH_ORIGIN = "https://auth.qsseda.studio";
+const MAIN_ORIGIN = "https://qsseda.com";
+const WORK_ORIGIN = "https://work.qsseda.com";
+const AUTH_ORIGIN = "https://auth.qsseda.com";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 
 export function isWorkSubdomainRequest(request) {
-  try { return new URL(request.url).hostname.toLowerCase() === "work.qsseda.studio"; }
+  try { return new URL(request.url).hostname.toLowerCase() === "work.qsseda.com"; }
   catch { return false; }
 }
 
@@ -22,14 +22,14 @@ export function mainWorkRedirect(pathname) {
   if (
     clean === "/zh-cn/work/tex"
     || clean === "/zh-cn/workspace/experiments/tex"
-    || clean === "/zh-cnhttps://work.qsseda.studio/zh-cn/tex"
+    || clean === "/zh-cnhttps://work.qsseda.com/zh-cn/tex"
   ) {
     return `${WORK_ORIGIN}/zh-cn/tex`;
   }
   if (
     clean === "/en/work/tex"
     || clean === "/en/workspace/experiments/tex"
-    || clean === "/enhttps://work.qsseda.studio/en/tex"
+    || clean === "/enhttps://work.qsseda.com/en/tex"
   ) {
     return `${WORK_ORIGIN}/en/tex`;
   }

@@ -14,7 +14,7 @@ const en = renderGptApp("en");
 for (const required of [
   'const HOST = "127.0.0.1"',
   'const PORT = 32146',
-  '"https://gpt.qsseda.studio"',
+  '"https://gpt.qsseda.com"',
   'QSSEDA_CODEX_BRIDGE_TOKEN',
   'spawn(CODEX_COMMAND, ["app-server"]',
   'shell: false',

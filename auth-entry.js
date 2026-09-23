@@ -102,8 +102,8 @@ function isLoginRedirect(response) {
   if (!response || response.status < 300 || response.status >= 400) return false;
   const location = response.headers.get("location") || "";
   try {
-    const parsed = new URL(location, "https://auth.qsseda.studio");
-    return parsed.origin === "https://auth.qsseda.studio" && normalizePath(parsed.pathname) === "/login";
+    const parsed = new URL(location, "https://auth.qsseda.com");
+    return parsed.origin === "https://auth.qsseda.com" && normalizePath(parsed.pathname) === "/login";
   } catch {
     return false;
   }

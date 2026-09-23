@@ -18,7 +18,7 @@ function env(overrides = {}) {
 
 function request(path, options = {}) {
   return {
-    url: `https://auth.qsseda.studio${path}`,
+    url: `https://auth.qsseda.com${path}`,
     method: options.method || "GET",
     headers: new Headers({ "CF-Connecting-IP": "203.0.113.88", ...(options.headers || {}) }),
     cf: options.cf || undefined

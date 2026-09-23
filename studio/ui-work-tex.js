@@ -1,20 +1,20 @@
 export function polishWorkTexNavigation(markup, zh, pathname) {
   let output = String(markup || "");
   const prefix = zh ? "/zh-cn" : "/en";
-  const workTexUrl = zh ? "https://work.qsseda.studio/zh-cn/tex" : "https://work.qsseda.studio/en/tex";
+  const workTexUrl = zh ? "https://work.qsseda.com/zh-cn/tex" : "https://work.qsseda.com/en/tex";
   const texLabel = zh ? "TeX 工作台" : "TeX Workbench";
 
   // Studio's Collaboration Hub and Local Bridge are distinct products. Only
   // TeX aliases normalize to the standalone Work TeX surface.
   output = output
     .replaceAll(`href="${prefix}/work/tex"`, `href="${workTexUrl}"`)
-    .replaceAll(`href="https://work.qsseda.studio/${zh ? "zh-cn" : "en"}"`, `href="${workTexUrl}"`)
-    .replaceAll(`href="https://work.qsseda.studio/${zh ? "zh-cn" : "en"}/local"`, `href="${workTexUrl}"`);
+    .replaceAll(`href="https://work.qsseda.com/${zh ? "zh-cn" : "en"}"`, `href="${workTexUrl}"`)
+    .replaceAll(`href="https://work.qsseda.com/${zh ? "zh-cn" : "en"}/local"`, `href="${workTexUrl}"`);
 
   if (pathname !== "/work/tex") return output;
 
   const shellTitle = zh ? "工作区" : "Workspace";
-  output = output.replace(`${shellTitle} · QssedA Studio`, `${texLabel} · QssedA Work`);
+  output = output.replace(`${shellTitle} · QssedA`, `${texLabel} · QssedA Work`);
 
   // The Work host must expose only the TeX application itself. The Studio shell
   // remains in the document for its shared session/client plumbing, but all of
@@ -124,11 +124,11 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
     cloudReady: "云端编译服务已连接",
     cloudDetail: "本机 Bridge 未连接；当前可使用已配置的云端 TeX 编译服务。",
     permissionPromptTitle: "需要本机网络权限",
-    permissionPromptDetail: "work.qsseda.studio 需要单独获得浏览器的本机网络访问权限。检测时请允许它访问这台电脑，然后会连接 127.0.0.1:32145。",
+    permissionPromptDetail: "work.qsseda.com 需要单独获得浏览器的本机网络访问权限。检测时请允许它访问这台电脑，然后会连接 127.0.0.1:32145。",
     permissionDeniedTitle: "本机网络权限已被阻止",
-    permissionDeniedDetail: "浏览器已阻止 work.qsseda.studio 访问这台电脑。请在地址栏左侧的网站权限中，把“本地网络访问”改为允许，然后重新检测。",
+    permissionDeniedDetail: "浏览器已阻止 work.qsseda.com 访问这台电脑。请在地址栏左侧的网站权限中，把“本地网络访问”改为允许，然后重新检测。",
     offline: "编译服务尚未连接",
-    offlineDetail: "仍未检测到本机 TeX Bridge，云端编译服务也不可用。若“本机桥接”页已经显示连接，请检查 Work 子域名的本地网络权限，并确认 Bridge 已更新到支持 work.qsseda.studio 的版本。"
+    offlineDetail: "仍未检测到本机 TeX Bridge，云端编译服务也不可用。若“本机桥接”页已经显示连接，请检查 Work 子域名的本地网络权限，并确认 Bridge 已更新到支持 work.qsseda.com 的版本。"
   } : {
     check: "Check connection",
     recheck: "Check again",
@@ -140,11 +140,11 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
     cloudReady: "Cloud compiler connected",
     cloudDetail: "Local Bridge is offline; the configured cloud TeX compiler is available.",
     permissionPromptTitle: "Local network permission required",
-    permissionPromptDetail: "work.qsseda.studio needs its own browser permission to access this computer. Allow local network access when prompted, then it can connect to 127.0.0.1:32145.",
+    permissionPromptDetail: "work.qsseda.com needs its own browser permission to access this computer. Allow local network access when prompted, then it can connect to 127.0.0.1:32145.",
     permissionDeniedTitle: "Local network access is blocked",
-    permissionDeniedDetail: "Your browser is blocking work.qsseda.studio from accessing this computer. Open the site's permissions from the address bar, allow Local network access, then check again.",
+    permissionDeniedDetail: "Your browser is blocking work.qsseda.com from accessing this computer. Open the site's permissions from the address bar, allow Local network access, then check again.",
     offline: "Compiler not connected",
-    offlineDetail: "Local TeX Bridge is still unavailable and the cloud compiler is offline. If the Local Bridge page is already connected, check the Work subdomain's local-network permission and update Bridge to a build that trusts work.qsseda.studio."
+    offlineDetail: "Local TeX Bridge is still unavailable and the cloud compiler is offline. If the Local Bridge page is already connected, check the Work subdomain's local-network permission and update Bridge to a build that trusts work.qsseda.com."
   };
 
   output = output.replace(
@@ -333,8 +333,8 @@ export function polishWorkTexNavigation(markup, zh, pathname) {
 export function polishWorkHubTexRoute(markup) {
   const source = String(markup || "");
   const workTexUrl = source.includes("Open TeX Workbench")
-    ? "https://work.qsseda.studio/en/tex"
-    : "https://work.qsseda.studio/zh-cn/tex";
+    ? "https://work.qsseda.com/en/tex"
+    : "https://work.qsseda.com/zh-cn/tex";
   return source
     .replaceAll("/workspace/experiments/tex", workTexUrl)
     .replaceAll("/work/tex", workTexUrl);

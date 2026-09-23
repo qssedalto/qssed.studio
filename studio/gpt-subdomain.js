@@ -1,8 +1,8 @@
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 
-const MAIN_ORIGIN = "https://qsseda.studio";
-const GPT_ORIGIN = "https://gpt.qsseda.studio";
-const AUTH_ORIGIN = "https://auth.qsseda.studio";
+const MAIN_ORIGIN = "https://qsseda.com";
+const GPT_ORIGIN = "https://gpt.qsseda.com";
+const AUTH_ORIGIN = "https://auth.qsseda.com";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 
 export function isMainGptHandoffPath(pathname) {

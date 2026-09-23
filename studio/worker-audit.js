@@ -21,9 +21,9 @@ export default {
 
     try {
       const url = new URL(request.url);
-      if (url.hostname === "qsseda.studio" && url.pathname === ACCESS_AUDIT_API) {
+      if (url.hostname === "qsseda.com" && url.pathname === ACCESS_AUDIT_API) {
         response = await handleAccessAuditAdmin(request, env);
-      } else if (url.hostname === "qsseda.studio" && ACCESS_AUDIT_PAGES.has(url.pathname)) {
+      } else if (url.hostname === "qsseda.com" && ACCESS_AUDIT_PAGES.has(url.pathname)) {
         const zh = url.pathname.startsWith("/zh-cn/") || (url.pathname === "/admin/access-audit" && /^zh(?:-|_|,|;|$)/i.test(request.headers.get("Accept-Language") || ""));
         response = await handleAccessAuditPage(request, zh);
       } else {
@@ -56,8 +56,8 @@ function scheduleAudit(ctx, request, response, env, startedAt, source) {
 function auditSource(request) {
   try {
     const host = new URL(request.url).hostname;
-    if (host === "work.qsseda.studio") return "work";
-    if (host === "qsseda.studio") return "studio";
+    if (host === "work.qsseda.com") return "work";
+    if (host === "qsseda.com") return "studio";
     return host || "studio";
   } catch {
     return "studio";

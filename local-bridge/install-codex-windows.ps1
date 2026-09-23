@@ -28,7 +28,7 @@ if (-not $codex -or -not $codex.Source) {
 $cloudflared = Get-Command cloudflared.exe -ErrorAction SilentlyContinue
 if (-not $cloudflared -or -not $cloudflared.Source) { $cloudflared = Get-Command cloudflared -ErrorAction SilentlyContinue }
 if (-not $cloudflared -or -not $cloudflared.Source) {
-  Write-Warning "cloudflared was not found. The local Bridge can still be installed, but gpt.qsseda.studio will stay offline from other devices until Cloudflare Tunnel is configured."
+  Write-Warning "cloudflared was not found. The local Bridge can still be installed, but gpt.qsseda.com will stay offline from other devices until Cloudflare Tunnel is configured."
 }
 
 New-Item -ItemType Directory -Force -Path $installRoot | Out-Null

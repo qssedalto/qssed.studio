@@ -1,7 +1,7 @@
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 const ACCESS_COOKIE = "__Host-qsseda-access";
-const ISSUER = "https://auth.qsseda.studio";
+const ISSUER = "https://auth.qsseda.com";
 const DEFAULT_SCOPE = "profile.read session.read";
 const CODE_CHALLENGE_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
 const STATE_PATTERN = /^[\x21-\x7E]{16,512}$/;

@@ -20,7 +20,7 @@ function Unprotect-LocalSecret([string]$Path) {
 
 function Test-QssedACodexBridge {
   try {
-    $health = Invoke-RestMethod -Uri $serviceUrl -Method Get -Headers @{ Origin = "https://gpt.qsseda.studio" } -TimeoutSec 1
+    $health = Invoke-RestMethod -Uri $serviceUrl -Method Get -Headers @{ Origin = "https://gpt.qsseda.com" } -TimeoutSec 1
     return $health.service -eq "qsseda-codex-bridge" -and [int]$health.protocol -eq 1
   } catch {
     return $false

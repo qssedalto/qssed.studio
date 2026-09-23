@@ -6,11 +6,11 @@ import { baseHead, supabaseScript, themeScript, topControls } from "./ui-page.js
 export function notFoundPage(t, links) {
   const zh = t === TEXT.zh;
   const title = zh ? "找不到该网页" : "Page not found";
-  const action = zh ? "返回 qsseda.studio" : "Return to qsseda.studio";
+  const action = zh ? "返回 qsseda.com" : "Return to qsseda.com";
   const year = new Date().getFullYear();
   const copyright = zh
-    ? `Copyright © ${year} qsseda.studio. 保留所有权利。`
-    : `Copyright © ${year} qsseda.studio. All rights reserved.`;
+    ? `Copyright © ${year} qsseda.com. 保留所有权利。`
+    : `Copyright © ${year} qsseda.com. All rights reserved.`;
 
   return `
 <!DOCTYPE html>

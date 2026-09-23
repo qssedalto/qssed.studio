@@ -1,6 +1,6 @@
-# QssedA Studio
+# QssedA
 
-QssedA Studio is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.studio`, a standalone Work surface at `work.qsseda.studio`, and an independent AI interface at `gpt.qsseda.studio`.
+QssedA is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.com`, a standalone Work surface at `work.qsseda.com`, and an independent AI interface at `gpt.qsseda.com`.
 
 ## Runtime architecture
 
@@ -26,7 +26,7 @@ Cloudflare R2 storage is bound as `STORAGE` to `qsseda-studio-storage`.
 The independent GPT surface uses:
 
 - `gpt-worker.js` — standalone AI interface entrypoint, localized shell, health endpoint and security headers;
-- `wrangler.gpt.jsonc` — Cloudflare Worker configuration binding the custom domain `gpt.qsseda.studio`.
+- `wrangler.gpt.jsonc` — Cloudflare Worker configuration binding the custom domain `gpt.qsseda.com`.
 
 The GPT surface intentionally starts as an isolated interface boundary so chat, model selection, history and AI tools can evolve without coupling those concerns to the main Studio Worker.
 
@@ -98,7 +98,7 @@ Git history is the recovery mechanism for previous implementations and historica
 
 ## GPT / Remote Local Codex
 
-`gpt.qsseda.studio` is always served by the Cloudflare GPT Worker, but its AI backend intentionally follows the power state of the user's Windows Codex host.
+`gpt.qsseda.com` is always served by the Cloudflare GPT Worker, but its AI backend intentionally follows the power state of the user's Windows Codex host.
 
 The browser talks only to same-origin `/api/gpt/*` routes after the normal QssedA session gate. The GPT Worker forwards those authenticated requests to a remotely-managed Cloudflare Tunnel whose origin is the loopback-only Codex Bridge on `127.0.0.1:32146`.
 

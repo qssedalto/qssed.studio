@@ -1,13 +1,13 @@
 # QssedA Auth Portal
 
-`auth.qsseda.studio` is the standalone identity and application-authorization service for QssedA web, desktop, and future mobile clients.
+`auth.qsseda.com` is the standalone identity and application-authorization service for QssedA web, desktop, and future mobile clients.
 
 ## Core routes
 
 - `/` checks the current browser authentication session automatically.
 - `/login` signs in with the existing Supabase project.
 - `/account` shows the current authenticated account and supports sign-out.
-- `/continue` performs the verified browser-session handoff into `qsseda.studio`.
+- `/continue` performs the verified browser-session handoff into `qsseda.com`.
 - `/api/login`, `/api/session`, `/api/logout` manage the browser Auth session.
 - `/health` is the service health endpoint.
 
@@ -58,7 +58,7 @@ code_challenge = BASE64URL(SHA256(code_verifier))
 and opens the system browser at a URL equivalent to:
 
 ```text
-https://auth.qsseda.studio/authorize
+https://auth.qsseda.com/authorize
   ?response_type=code
   &client_id=qsseda-git-desktop
   &redirect_uri=qsseda-git%3A%2F%2Fauth%2Fcallback
@@ -116,11 +116,11 @@ The session response distinguishes:
 
 Suspended or banned accounts remain identifiable but fail closed for application authorization.
 
-## qsseda.studio web handoff
+## qsseda.com web handoff
 
-The main `qsseda.studio` site has its own Supabase browser session. Browser storage is origin-isolated, so Auth does not read the main site's `localStorage` directly.
+The main `qsseda.com` site has its own Supabase browser session. Browser storage is origin-isolated, so Auth does not read the main site's `localStorage` directly.
 
-`/continue` instead performs a verified POST handoff to `qsseda.studio/auth/handoff`. The receiving Worker validates the Supabase session and active account before establishing the main-site browser session. Raw credentials are never placed in the URL.
+`/continue` instead performs a verified POST handoff to `qsseda.com/auth/handoff`. The receiving Worker validates the Supabase session and active account before establishing the main-site browser session. Raw credentials are never placed in the URL.
 
 This web handoff is separate from the OAuth/PKCE flow used by desktop applications.
 
@@ -132,7 +132,7 @@ Auth has a dedicated Wrangler configuration:
 npx wrangler deploy -c wrangler.auth.jsonc
 ```
 
-`wrangler.auth.jsonc` declares `auth.qsseda.studio` as a Cloudflare Worker Custom Domain.
+`wrangler.auth.jsonc` declares `auth.qsseda.com` as a Cloudflare Worker Custom Domain.
 
 Production deployment validates and deploys the complete Auth entry graph: `auth-entry.js`, `auth-worker.js`, `auth-oauth.js`, and `auth-pkce-test.js`.
 

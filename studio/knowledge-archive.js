@@ -4,7 +4,7 @@ export const ARCHIVE_KNOWLEDGE = {
       summary: "项目版本历史页不追求记录每个 commit，而是保存会改变架构、数据模型、用户体验或部署方式的重要版本节点。",
       sections: [
         { title: "建议记录格式", code: "日期 / 版本或 PR\n做了什么\n为什么做\n迁移影响\n兼容性\n验证结果\n相关 commit / PR" },
-        { title: "QssedA 关键阶段", bullets: ["Studio 从单体 worker.js 拆为模块化结构。", "Auth 独立为 auth.qsseda.studio。", "OAuth 2.0 + PKCE、refresh rotation、revoke 与 introspection 接入。", "Profile、Settings、Storage、Admin、Dashboard 等 UI 域独立。", "Phase 4 共享层清理完成，架构进入稳定 baseline。", "Knowledge Base v1 建立长期知识路由和静态内容体系。"] },
+        { title: "QssedA 关键阶段", bullets: ["主站从单体 worker.js 拆为模块化结构。", "Auth 独立为 auth.qsseda.com。", "OAuth 2.0 + PKCE、refresh rotation、revoke 与 introspection 接入。", "Profile、Settings、Storage、Admin、Dashboard 等 UI 域独立。", "Phase 4 共享层清理完成，架构进入稳定 baseline。", "Knowledge Base v1 建立长期知识路由和静态内容体系。"] },
         { title: "什么时候写", bullets: ["一次迁移影响多个模块。", "数据库 schema 或安全边界改变。", "产品行为有明显新能力。", "部署方式或客户端协议改变。"] }
       ]
     },

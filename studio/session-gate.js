@@ -7,9 +7,9 @@ const ACCESS_COOKIE = "__Host-qsseda-studio-access";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const ACCOUNT_COOKIE = "__Secure-qsseda-account-id";
 const ACCOUNT_SIGNED_OUT = "signed-out";
-const COOKIE_DOMAIN = "qsseda.studio";
-const WORK_HOST = "work.qsseda.studio";
-const GPT_HOST = "gpt.qsseda.studio";
+const COOKIE_DOMAIN = "qsseda.com";
+const WORK_HOST = "work.qsseda.com";
+const GPT_HOST = "gpt.qsseda.com";
 const ACCESS_MAX_AGE = 60 * 60;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
@@ -119,7 +119,7 @@ export async function handleStudioSessionBootstrap(request) {
   if (!verified.ok) return withStudioSessionCookies(json({ error: "Session is invalid or expired" }, 401), clearStudioSessionCookies());
 
   // A Work-local Supabase session can itself be stale after an account switch on
-  // another qsseda.studio host. Do not let it recreate the old Work HttpOnly
+  // another qsseda.com host. Do not let it recreate the old Work HttpOnly
   // session unless the domain-wide account marker says it is the same user.
   if (url.hostname.toLowerCase() === WORK_HOST) {
     const cookies = parseCookies(request.headers.get("Cookie") || "");
@@ -156,12 +156,12 @@ export function studioSessionBootstrapPage(locale) {
   const page = `<!DOCTYPE html>
 <html>
 <head>
-  ${baseHead("QssedA Studio")}
+  ${baseHead("QssedA")}
 </head>
 <body>
   <main style="min-height:100vh;display:grid;place-items:center;padding:24px">
     <section style="text-align:center;max-width:520px">
-      <h1 style="font-size:24px;margin:0 0 8px">QssedA Studio</h1>
+      <h1 style="font-size:24px;margin:0 0 8px">QssedA</h1>
       <p id="studio-session-status">${title}</p>
     </section>
   </main>
