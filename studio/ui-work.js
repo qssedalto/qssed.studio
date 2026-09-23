@@ -297,9 +297,9 @@ function workIcon(kind) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 2.8 8.2 7 10 4.2-1.8 7-5.6 7-10V6z"></path><path d="m9.2 12 1.8 1.8 3.8-4"></path></svg>`;
 }
 
-export function workHubContent(zh) {
+export function workHubContent(zh, workOrigin = "https://work.qsseda.com") {
   const prefix = zh ? "/zh-cn" : "/en";
-  const workTexUrl = zh ? "https://work.qsseda.com/zh-cn/tex" : "https://work.qsseda.com/en/tex";
+  const workTexUrl = `${workOrigin}${zh ? "/zh-cn/tex" : "/en/tex"}`;
   const copy = zh ? {
     statusLabel: "本机连接",
     idle: "尚未连接",
@@ -762,11 +762,10 @@ export function workLocalBridgeContent(zh) {
   `;
 }
 
-export function decorateWorkNavigation(markup, zh, pathname) {
+export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https://qsseda.com", workOrigin = "https://work.qsseda.com") {
   let output = String(markup || "");
   const prefix = zh ? "/zh-cn" : "/en";
-  const mainOrigin = "https://qsseda.com";
-  const workTexUrl = zh ? "https://work.qsseda.com/zh-cn/tex" : "https://work.qsseda.com/en/tex";
+  const workTexUrl = `${workOrigin}${zh ? "/zh-cn/tex" : "/en/tex"}`;
   const isWork = pathname === "/work" || pathname === "/work/local";
   const rootCurrent = pathname === "/work" ? ' aria-current="page"' : "";
   const localCurrent = pathname === "/work/local" ? ' aria-current="page"' : "";
