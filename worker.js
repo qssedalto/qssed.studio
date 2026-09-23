@@ -59,7 +59,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);
 
   if (!workHost) {
-    const workTarget = mainWorkRedirect(pathname);
+    const workTarget = mainWorkRedirect(request, pathname);
     if (workTarget) return redirect(workTarget);
   }
 
@@ -116,7 +116,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (isLegacyCookieApiPath(pathname)) return handleLegacyCookieApi(request, env, pathname);
 
   let response = await studio.fetch(request, env, ctx);
-  if (workHost && workPageNext && response.status === 401) return workSessionRedirect(workPageNext);
+  if (workHost && workPageNext && response.status === 401) return workSessionRedirect(request, workPageNext);
   if (workHost && workPageNext && response.status === 200) response = await suppressWorkClientSessionBounce(response);
   return hardenGlobalBrowserResponse(response);
 }
