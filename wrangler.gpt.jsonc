@@ -16,6 +16,16 @@
     { "pattern": "gpt.qsseda.studio/*", "zone_name": "qsseda.studio" },
     { "pattern": "gpt.qsseda.studio", "custom_domain": true }
   ],
+  "migrations": [
+    {
+      "tag": "gpt-cloud-v1",
+      "new_sqlite_classes": ["CodexCloudContainer"]
+    },
+    {
+      "tag": "gpt-cloud-v2-remove-container",
+      "deleted_classes": ["CodexCloudContainer"]
+    }
+  ],
   "observability": {
     "logs": {
       "enabled": true,
