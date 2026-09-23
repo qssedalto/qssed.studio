@@ -1,4 +1,4 @@
-name: Deploy QssedA Auth
+name: Deploy AERTEX ID
 
 on:
   workflow_dispatch:
