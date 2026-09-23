@@ -1,4 +1,4 @@
-name: Build Native Local Bridge
+name: Build AERTEX Bridge
 
 on:
   pull_request:
