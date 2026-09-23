@@ -2,6 +2,7 @@ import { huaweiHarmonyGate } from "./huawei-harmony-gate.js";
 import worker from "../worker.js";
 import { cleanupAccessAudit, handleAccessAuditAdmin, recordAccessAudit } from "./access-audit.js";
 import { handleAccessAuditPage } from "./access-audit-page.js";
+import { isMainHost, isServiceHost } from "./domain-family.js";
 export { TexCollaborationRoom } from "./tex-collaboration-room.js";
 
 const ACCESS_AUDIT_API = "/api/admin/access-audit";
@@ -13,9 +14,6 @@ const ACCESS_AUDIT_PAGES = new Set([
 
 export default {
   async fetch(request, env, ctx) {
-    const alias = canonicalQssedaAlias(request);
-    if (alias) return alias;
-
     const deviceGate = huaweiHarmonyGate(request);
     if (deviceGate) return deviceGate;
 
@@ -24,9 +22,9 @@ export default {
 
     try {
       const url = new URL(request.url);
-      if (url.hostname === "qsseda.com" && url.pathname === ACCESS_AUDIT_API) {
+      if (isMainHost(url.hostname) && url.pathname === ACCESS_AUDIT_API) {
         response = await handleAccessAuditAdmin(request, env);
-      } else if (url.hostname === "qsseda.com" && ACCESS_AUDIT_PAGES.has(url.pathname)) {
+      } else if (isMainHost(url.hostname) && ACCESS_AUDIT_PAGES.has(url.pathname)) {
         const zh = url.pathname.startsWith("/zh-cn/") || (url.pathname === "/admin/access-audit" && /^zh(?:-|_|,|;|$)/i.test(request.headers.get("Accept-Language") || ""));
         response = await handleAccessAuditPage(request, zh);
       } else {
@@ -59,39 +57,10 @@ function scheduleAudit(ctx, request, response, env, startedAt, source) {
 function auditSource(request) {
   try {
     const host = new URL(request.url).hostname;
-    if (host === "work.qsseda.com") return "work";
-    if (host === "qsseda.com") return "studio";
+    if (isServiceHost(host, "work")) return "work";
+    if (isMainHost(host)) return "studio";
     return host || "studio";
   } catch {
     return "studio";
-  }
-}
-function canonicalQssedaAlias(request) {
-  try {
-    const url = new URL(request.url);
-    const host = url.hostname.toLowerCase();
-    let canonicalHost = "";
-    if (host === "qsseda.online" || host === "qsseda.studio") {
-      canonicalHost = "qsseda.com";
-    } else if (host.endsWith(".qsseda.online")) {
-      canonicalHost = host.slice(0, -".qsseda.online".length) + ".qsseda.com";
-    } else if (host.endsWith(".qsseda.studio")) {
-      canonicalHost = host.slice(0, -".qsseda.studio".length) + ".qsseda.com";
-    }
-    if (!canonicalHost || canonicalHost === host) return null;
-    url.protocol = "https:";
-    url.hostname = canonicalHost;
-    url.port = "";
-    return new Response(null, {
-      status: 308,
-      headers: {
-        location: url.toString(),
-        "cache-control": "no-store",
-        "referrer-policy": "no-referrer",
-        "x-content-type-options": "nosniff"
-      }
-    });
-  } catch {
-    return null;
   }
 }
