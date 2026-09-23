@@ -12,7 +12,7 @@ export function renderGptApp(locale) {
     newChat:"新对话", send:"发送", placeholder:"给 Codex 发消息…", loadingModels:"正在读取模型…",
     noModels:"没有读取到可用模型", reasoning:"推理", thinking:"Codex 正在思考…",
     empty:"开始一个新的对话", emptyHint:"这次对话会通过你开机中的电脑运行 Codex，并使用已登录 ChatGPT 账号的 Codex 权益。",
-    error:"发生错误", privateNote:"AI 后端运行在你的电脑上。电脑关机或休眠时，GPT 会显示离线。",
+    error:"发生错误", privateNote:"AI 后端运行在你的电脑上。电脑关机或休眠时，Intelligence 会显示离线。",
     bridgeAuth:"本机 Bridge 的安全凭据配置不一致。"
   } : {
     title:"AERTEX Intelligence", subtitle:"Local Intelligence", online:"Intelligence online", offline:"Intelligence offline",
@@ -24,7 +24,7 @@ export function renderGptApp(locale) {
     newChat:"New chat", send:"Send", placeholder:"Message Codex…", loadingModels:"Loading models…",
     noModels:"No available models were returned", reasoning:"Reasoning", thinking:"Codex is thinking…",
     empty:"Start a new conversation", emptyHint:"This conversation runs Codex on your powered-on computer and uses the Codex allowance of the connected ChatGPT account.",
-    error:"Error", privateNote:"The AI backend runs on your computer. GPT goes offline when that computer is shut down or asleep.",
+    error:"Error", privateNote:"The AI backend runs on your computer. Intelligence goes offline when that computer is shut down or asleep.",
     bridgeAuth:"The local Bridge security credentials do not match."
   };
 
