@@ -1,6 +1,6 @@
-# QssedA Local Bridge pilot
+# AERTEX Bridge
 
-This is the first read-only localhost bridge for QssedA Work.
+This is the first read-only localhost bridge for AERTEX Work.
 
 ## Scope
 
@@ -33,7 +33,7 @@ The installer:
 - launches the bridge hidden in the background;
 - does not require administrator rights.
 
-After that, the bridge starts automatically when the Windows account signs in. QssedA Work also probes localhost automatically when the local-collaboration page opens, so normal use should not require a terminal or a manual Connect click.
+After that, the bridge starts automatically when the Windows account signs in. AERTEX Work also probes localhost automatically when the local-collaboration page opens, so normal use should not require a terminal or a manual Connect click.
 
 To remove autostart later, run the installed `uninstall-windows.ps1` or the repository copy with PowerShell. It removes only the per-user Run entry and stops the installed bridge process when it can safely identify it.
 
@@ -51,7 +51,7 @@ If XeLaTeX is not on `PATH`, point the bridge at the exact local executable befo
 $env:QSSEDA_XELATEX='D:\texlive\2026\bin\windows\xelatex.exe'; node local-bridge/server.mjs
 ```
 
-Then sign in to QssedA and open `/zh-cn/work/local` or `/en/work/local`. The browser may request loopback/local-network permission before the page can reach the bridge.
+Then sign in to AERTEX and open `/zh-cn/work/local` or `/en/work/local`. The browser may request loopback/local-network permission before the page can reach the bridge.
 
 ## Security boundary
 
@@ -67,11 +67,11 @@ Then sign in to QssedA and open `/zh-cn/work/local` or `/en/work/local`. The bro
 Future compile, Git, or filesystem capabilities must add device pairing, signed requests, explicit per-action authorization, sandboxing, and capability-specific allowlists before they are enabled.
 
 
-## QssedA Codex Bridge
+## AERTEX Bridge
 
 The GPT subdomain uses a separate localhost service on `127.0.0.1:32146`. It is intentionally independent from the Work/TeX bridge on port `32145`.
 
-The Codex bridge launches the official `codex app-server` using its default stdio JSONL transport. QssedA does not expose Codex's experimental WebSocket transport to the browser.
+The Codex bridge launches the official `codex app-server` using its default stdio JSONL transport. AERTEX does not expose Codex's experimental WebSocket transport to the browser.
 
 ### Windows installation
 
@@ -105,7 +105,7 @@ The web UI receives only:
 
 ### Chat safety boundary
 
-QssedA GPT starts threads with `approvalPolicy: "never"` and the legacy `readOnly` sandbox. Every chat turn further applies a restricted read-only sandbox rooted at an empty bridge-owned chat workspace. The browser has no generic command, filesystem, MCP, or process endpoint.
+AERTEX Intelligence starts threads with `approvalPolicy: "never"` and the legacy `readOnly` sandbox. Every chat turn further applies a restricted read-only sandbox rooted at an empty bridge-owned chat workspace. The browser has no generic command, filesystem, MCP, or process endpoint.
 
 The bridge:
 
@@ -118,7 +118,7 @@ The bridge:
 - sanitizes all data before returning it to the browser;
 - never returns raw authentication tokens.
 
-This is an experimental QssedA integration built on the documented Codex App Server interface. The public WebSocket transport remains deliberately unused because OpenAI currently marks it experimental.
+This is an experimental AERTEX integration built on the documented Codex App Server interface. The public WebSocket transport remains deliberately unused because OpenAI currently marks it experimental.
 
 
 
@@ -132,7 +132,7 @@ Configure the Tunnel public hostname to forward to:
 http://127.0.0.1:32146
 ```
 
-The Windows Codex installer can store both the Tunnel token and the independent QssedA Bridge bearer token using the current Windows user's DPAPI protection. At login, `start-codex-windows.ps1` starts the Bridge and, when configured, `cloudflared` in the background.
+The Windows Codex installer can store both the Tunnel token and the independent AERTEX Bridge bearer token using the current Windows user's DPAPI protection. At login, `start-codex-windows.ps1` starts the Bridge and, when configured, `cloudflared` in the background.
 
 The GPT Worker must receive the matching HTTPS Tunnel hostname as `GPT_CODEX_BRIDGE_URL` and matching bearer token as `GPT_CODEX_BRIDGE_TOKEN`.
 
