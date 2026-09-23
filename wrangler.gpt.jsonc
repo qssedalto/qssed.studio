@@ -10,7 +10,7 @@
   "upload_source_maps": false,
   "routes": [
     {
-      "pattern": "gpt.qsseda.studio",
+      "pattern": "gpt.qsseda.com",
       "custom_domain": true
     }
   ],
