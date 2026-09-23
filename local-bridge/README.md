@@ -11,7 +11,7 @@ The pilot binds only to `127.0.0.1:32145` and exposes two read-only routes:
 
 There is no generic command endpoint, no web-controlled executable name, and no TeX source upload in this phase.
 
-The default browser origins are `https://qsseda.studio` and `https://www.qsseda.studio`. Additional development origins can be supplied explicitly through `QSSEDA_BRIDGE_ORIGINS`.
+The default browser origins are `https://qsseda.com` and `https://www.qsseda.com`. Additional development origins can be supplied explicitly through `QSSEDA_BRIDGE_ORIGINS`.
 
 ## Recommended Windows setup: install once, start automatically
 
@@ -51,7 +51,7 @@ If XeLaTeX is not on `PATH`, point the bridge at the exact local executable befo
 $env:QSSEDA_XELATEX='D:\texlive\2026\bin\windows\xelatex.exe'; node local-bridge/server.mjs
 ```
 
-Then sign in to QssedA Studio and open `/zh-cn/work/local` or `/en/work/local`. The browser may request loopback/local-network permission before the page can reach the bridge.
+Then sign in to QssedA and open `/zh-cn/work/local` or `/en/work/local`. The browser may request loopback/local-network permission before the page can reach the bridge.
 
 ## Security boundary
 
@@ -89,7 +89,7 @@ local-bridge\install-codex-windows.cmd
 
 The installer copies only the Codex bridge files into `%LOCALAPPDATA%\QssedA\CodexBridge`, records the detected Node/Codex executable paths, creates a per-user HKCU Run entry, and starts the bridge hidden in the background.
 
-Then open `https://gpt.qsseda.studio`. The page connects only to `http://127.0.0.1:32146`.
+Then open `https://gpt.qsseda.com`. The page connects only to `http://127.0.0.1:32146`.
 
 ### Authentication
 
@@ -111,7 +111,7 @@ The bridge:
 
 - binds only to loopback;
 - enforces exact Host headers;
-- accepts browser CORS only from `https://gpt.qsseda.studio`;
+- accepts browser CORS only from `https://gpt.qsseda.com`;
 - supports private-network preflight;
 - spawns `codex app-server` with `shell: false`;
 - uses a dedicated `CODEX_HOME`, so it does not inherit the user's normal Codex project configuration, plugins, skills, or MCP setup;
@@ -138,4 +138,4 @@ The GPT Worker must receive the matching HTTPS Tunnel hostname as `GPT_CODEX_BRI
 
 If the host is shut down, sleeping, the Bridge exits, or the Tunnel disconnects, the Worker maps the unreachable-origin response to `gpt_offline`. The GPT page polls the status endpoint every five seconds and automatically switches between online and offline states.
 
-Tunnel traffic must carry the shared bearer token. A forged `Origin: https://gpt.qsseda.studio` header is not sufficient to bypass it because the browser-origin exception applies only when the request also uses the literal localhost Host header.
+Tunnel traffic must carry the shared bearer token. A forged `Origin: https://gpt.qsseda.com` header is not sufficient to bypass it because the browser-origin exception applies only when the request also uses the literal localhost Host header.
