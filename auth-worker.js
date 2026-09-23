@@ -398,12 +398,13 @@ function html(content, status = 200) {
 function authPage(pathname, request) {
   const page = pathname === "/" ? "home" : pathname.slice(1);
   const authHost = new URL(request.url).hostname;
+  const mainOrigin = mainOriginForRequest(request);
   const language = preferredLanguage(request);
   const zh = language === "zh";
   const copy = zh ? {
     checking: "正在检查登录状态…",
     loginTitle: "登录 QssedA",
-    loginLead: "使用你的 QssedA 账号继续。认证状态由 auth.qsseda.com 独立维护。",
+    loginLead: `使用你的 QssedA 账号继续。认证状态由 ${authHost} 独立维护。`,
     email: "邮箱",
     password: "密码",
     continue: "继续",
@@ -438,7 +439,7 @@ function authPage(pathname, request) {
   } : {
     checking: "Checking sign-in status…",
     loginTitle: "Sign in to QssedA",
-    loginLead: "Continue with your QssedA account. Authentication is maintained by auth.qsseda.com.",
+    loginLead: `Continue with your QssedA account. Authentication is maintained by ${authHost}.`,
     email: "Email",
     password: "Password",
     continue: "Continue",
@@ -504,7 +505,7 @@ function authPage(pathname, request) {
           <div class="field"><label for="password">${copy.password}</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
           <button id="loginButton" type="submit">${copy.continue}</button><div id="loginMessage" class="message" role="status" aria-live="polite"></div>
         </form>
-        <a class="button secondary" href="https://qsseda.com/sign-up">${copy.create}</a>
+        <a class="button secondary" href="${mainOrigin}/sign-up">${copy.create}</a>
       </div>
       <div id="signedIn" class="hidden">
         <h1 id="signedInTitle">${copy.signedTitle}</h1><p class="lead" id="signedInLead">${copy.signedLead}</p>
