@@ -22,7 +22,7 @@ if (Test-QssedABridge) {
 }
 
 if (-not (Test-Path -LiteralPath $serverPath)) {
-  throw "QssedA Local Bridge server is missing: $serverPath"
+  throw "AERTEX Bridge server is missing: $serverPath"
 }
 
 $config = $null
@@ -36,7 +36,7 @@ if (-not $nodePath) {
   $nodePath = [string]$nodeCommand.Source
 }
 if (-not $nodePath -or -not (Test-Path -LiteralPath $nodePath)) {
-  throw "Node.js was not found. Install Node.js 18+ and run the QssedA Local Bridge installer again."
+  throw "Node.js was not found. Install Node.js 18+ and run the AERTEX Bridge installer again."
 }
 
 $xelatexPath = [string]$config.xelatex
@@ -53,8 +53,8 @@ for ($attempt = 0; $attempt -lt 15; $attempt += 1) {
     exit 0
   }
   if ($process.HasExited) {
-    throw "QssedA Local Bridge exited before becoming ready."
+    throw "AERTEX Bridge exited before becoming ready."
   }
 }
 
-throw "QssedA Local Bridge did not become ready on 127.0.0.1:32145."
+throw "AERTEX Bridge did not become ready on 127.0.0.1:32145."
