@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 $installRoot = Join-Path $env:LOCALAPPDATA "QssedA\CodexBridge"
 $runKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-$runName = "QssedA Codex Bridge"
+$runName = "AERTEX Bridge"
 
 $node = Get-Command node.exe -ErrorAction SilentlyContinue
 if (-not $node -or -not $node.Source) {
@@ -69,11 +69,11 @@ Set-ItemProperty -Path $runKey -Name $runName -Value $runCommand -Type String
 
 & $launcher -InstallRoot $installRoot
 if ($LASTEXITCODE -ne 0) {
-  throw "QssedA Codex Bridge could not be started after installation."
+  throw "AERTEX Bridge could not be started after installation."
 }
 
 Write-Host ""
-Write-Host "QssedA Codex Bridge is installed for this Windows account." -ForegroundColor Green
+Write-Host "AERTEX Bridge is installed for this Windows account." -ForegroundColor Green
 Write-Host "Install root: $installRoot"
 Write-Host "Codex: $($codex.Source)"
 Write-Host "Local endpoint: http://127.0.0.1:32146"
