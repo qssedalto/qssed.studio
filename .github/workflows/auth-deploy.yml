@@ -26,6 +26,7 @@ jobs:
       - name: Check Auth Worker syntax
         run: |
           node --check auth-entry.js
+          node --check auth-sso.js
           node --check auth-worker.js
           node --check auth-login-identifier.js
           node --check auth-oauth.js
