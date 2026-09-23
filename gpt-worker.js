@@ -5,6 +5,7 @@ import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp } from "./studio/gpt-ui.js";
 import { handleRemoteCodexApi } from "./studio/gpt-bridge.js";
 import { gptOriginForRequest } from "./studio/domain-family.js";
+import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 
 
 export default {
@@ -14,6 +15,8 @@ export default {
 
     const url = new URL(request.url);
     const pathname = normalizePath(url.pathname);
+
+    if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
 
     if (pathname === "/health") {
       return json({

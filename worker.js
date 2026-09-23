@@ -18,6 +18,7 @@ import { handleAdminAccess, handleAdminAction } from "./studio/admin-api.js";
 import { isLegacyCookieApiPath, handleLegacyCookieApi } from "./studio/legacy-cookie-api.js";
 import { hardenGlobalBrowserResponse } from "./studio/global-browser-security.js";
 import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js";
+import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import {
   handleMainWorkHandoff,
   isMainWorkHandoffPath,
@@ -54,6 +55,8 @@ async function routeStudioRequest(request, env, ctx) {
   let url = new URL(request.url);
   let pathname = url.pathname;
   const workHost = isWorkSubdomainRequest(request);
+
+  if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
 
   if (!workHost && isMainWorkHandoffPath(pathname)) return handleMainWorkHandoff(request);
   if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);
