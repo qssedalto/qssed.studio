@@ -78,10 +78,7 @@ assert(worker.includes("connect-src 'self'"), "GPT page networking must remain s
 
 assert(!wrangler.containers, "GPT Wrangler config must not require Cloudflare Containers");
 assert(!wrangler.durable_objects, "GPT Wrangler config must not require Durable Objects");
-assert(Array.isArray(wrangler.migrations), "GPT Wrangler config must declare the one-time Cloud Codex cleanup migration");
-assert(wrangler.migrations.length === 1, "GPT Wrangler config must contain only the cleanup migration");
-assert(wrangler.migrations[0]?.tag === "gpt-cloud-v2-remove-container", "GPT cleanup migration tag is unexpected");
-assert(Array.isArray(wrangler.migrations[0]?.deleted_classes) && wrangler.migrations[0].deleted_classes.includes("CodexCloudContainer"), "GPT cleanup migration must delete the legacy CodexCloudContainer class");
+assert(!wrangler.migrations, "GPT Wrangler config must not carry legacy Cloud Codex migrations");
 
 for (const required of [
   "LOCALAPPDATA",
