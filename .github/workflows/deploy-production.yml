@@ -105,7 +105,7 @@ jobs:
           node --check scripts/auth-edge-protection-check.mjs
           node scripts/auth-edge-protection-check.mjs
 
-      - name: Deploy QssedA
+      - name: Deploy AERTEX
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -256,13 +256,13 @@ jobs:
           fi
           probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-probe.txt --write-out '%{http_code}' 'https://qsseda.com/.env' || true)"
           if [ "$probe_status" != "404" ]; then
-            echo "Edge protection regression: scanner probe was not rejected before QssedA routing."
+            echo "Edge protection regression: scanner probe was not rejected before AERTEX routing."
             echo "HTTP status: ${probe_status:-unknown}"
             cat /tmp/qsseda-probe.txt || true
             exit 1
           fi
 
-      - name: Verify QssedA session gate
+      - name: Verify AERTEX session gate
         shell: bash
         run: |
           set -euo pipefail
