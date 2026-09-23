@@ -1,1 +1,63 @@
-export const QSS_DOMAIN_ROOTS = Object.freeze([\n  "qsseda.com",\n  "qsseda.online",\n  "qsseda.studio"\n]);\n\nexport function rootDomainForHost(hostname) {\n  const host = String(hostname || "").trim().toLowerCase().replace(/\.$/, "");\n  for (const root of QSS_DOMAIN_ROOTS) {\n    if (host === root || host.endsWith(`.${root}`)) return root;\n  }\n  return "";\n}\n\nexport function rootDomainForRequest(request) {\n  try { return rootDomainForHost(new URL(request.url).hostname); }\n  catch { return ""; }\n}\n\nexport function serviceHost(root, service = "") {\n  const normalizedRoot = QSS_DOMAIN_ROOTS.includes(root) ? root : "qsseda.com";\n  const label = String(service || "").trim().toLowerCase();\n  return label ? `${label}.${normalizedRoot}` : normalizedRoot;\n}\n\nexport function serviceOrigin(root, service = "") {\n  return `https://${serviceHost(root, service)}`;\n}\n\nexport function mainOriginForRequest(request) {\n  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com");\n}\n\nexport function authOriginForRequest(request) {\n  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "auth");\n}\n\nexport function workOriginForRequest(request) {\n  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "work");\n}\n\nexport function gptOriginForRequest(request) {\n  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "gpt");\n}\n\nexport function isServiceHost(hostname, service) {\n  const root = rootDomainForHost(hostname);\n  return Boolean(root) && String(hostname || "").toLowerCase() === serviceHost(root, service);\n}\n\nexport function isMainHost(hostname) {\n  const root = rootDomainForHost(hostname);\n  return Boolean(root) && String(hostname || "").toLowerCase() === root;\n}\n\nexport function authOrigins() {\n  return QSS_DOMAIN_ROOTS.map(root => serviceOrigin(root, "auth"));\n}\n\nexport function isAuthOrigin(value) {\n  try { return authOrigins().includes(new URL(value).origin); }\n  catch { return false; }\n}\n
+export const QSS_DOMAIN_ROOTS = Object.freeze([
+  "qsseda.com",
+  "qsseda.online",
+  "qsseda.studio"
+]);
+
+export function rootDomainForHost(hostname) {
+  const host = String(hostname || "").trim().toLowerCase().replace(/\.$/, "");
+  for (const root of QSS_DOMAIN_ROOTS) {
+    if (host === root || host.endsWith(`.${root}`)) return root;
+  }
+  return "";
+}
+
+export function rootDomainForRequest(request) {
+  try { return rootDomainForHost(new URL(request.url).hostname); }
+  catch { return ""; }
+}
+
+export function serviceHost(root, service = "") {
+  const normalizedRoot = QSS_DOMAIN_ROOTS.includes(root) ? root : "qsseda.com";
+  const label = String(service || "").trim().toLowerCase();
+  return label ? `${label}.${normalizedRoot}` : normalizedRoot;
+}
+
+export function serviceOrigin(root, service = "") {
+  return `https://${serviceHost(root, service)}`;
+}
+
+export function mainOriginForRequest(request) {
+  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com");
+}
+
+export function authOriginForRequest(request) {
+  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "auth");
+}
+
+export function workOriginForRequest(request) {
+  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "work");
+}
+
+export function gptOriginForRequest(request) {
+  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "gpt");
+}
+
+export function isServiceHost(hostname, service) {
+  const root = rootDomainForHost(hostname);
+  return Boolean(root) && String(hostname || "").toLowerCase() === serviceHost(root, service);
+}
+
+export function isMainHost(hostname) {
+  const root = rootDomainForHost(hostname);
+  return Boolean(root) && String(hostname || "").toLowerCase() === root;
+}
+
+export function authOrigins() {
+  return QSS_DOMAIN_ROOTS.map(root => serviceOrigin(root, "auth"));
+}
+
+export function isAuthOrigin(value) {
+  try { return authOrigins().includes(new URL(value).origin); }
+  catch { return false; }
+}
