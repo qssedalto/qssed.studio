@@ -30,16 +30,16 @@ function startPage(origin) {
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
-  <title>登录流程测试 · QssedA</title>
+  <title>登录流程测试 · AERTEX</title>
   <style>${css()}</style>
 </head>
 <body>
   <main class="shell">
-    <div class="brand"><img class="mark" src="/favicon.svg" alt="" aria-hidden="true"><div><strong>QssedA</strong><span>登录流程测试</span></div></div>
+    <div class="brand"><img class="mark" src="/favicon.svg" alt="" aria-hidden="true"><div><strong>AERTEX</strong><span>登录流程测试</span></div></div>
     <section class="card">
       <div class="hero-icon" aria-hidden="true">✓</div>
       <h1>测试应用登录</h1>
-      <p class="lead">确认 QssedA 可以正常完成应用登录与授权。</p>
+      <p class="lead">确认 AERTEX 可以正常完成应用登录与授权。</p>
 
       <button id="startButton" type="button">开始测试</button>
       <a class="button secondary" href="/">返回</a>
@@ -54,7 +54,7 @@ function startPage(origin) {
         </div>
       </details>
     </section>
-    <div class="foot">QssedA</div>
+    <div class="foot">AERTEX</div>
   </main>
 <script>
 (function(){
@@ -122,12 +122,12 @@ function callbackPage(origin) {
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
-  <title>登录流程测试 · QssedA</title>
+  <title>登录流程测试 · AERTEX</title>
   <style>${css()}</style>
 </head>
 <body>
   <main class="shell">
-    <div class="brand"><img class="mark" src="/favicon.svg" alt="" aria-hidden="true"><div><strong>QssedA</strong><span>登录流程测试</span></div></div>
+    <div class="brand"><img class="mark" src="/favicon.svg" alt="" aria-hidden="true"><div><strong>AERTEX</strong><span>登录流程测试</span></div></div>
     <section class="card">
       <div id="statusIcon" class="result-icon pending" aria-hidden="true">…</div>
       <h1 id="title">正在检查</h1>
@@ -156,9 +156,9 @@ function callbackPage(origin) {
       </details>
 
       <a class="button ghost" href="/pkce-test">重新测试</a>
-      <a class="button ghost" href="/">返回 QssedA</a>
+      <a class="button ghost" href="/">返回 AERTEX</a>
     </section>
-    <div class="foot">QssedA</div>
+    <div class="foot">AERTEX</div>
   </main>
 <script>
 (async function(){
@@ -251,7 +251,7 @@ function callbackPage(origin) {
     icon.textContent='✓';
     icon.className='result-icon success';
     title.textContent='登录流程正常';
-    lead.textContent='QssedA 已成功完成应用登录与授权。';
+    lead.textContent='AERTEX 已成功完成应用登录与授权。';
     showTokens(token);
     sessionStorage.removeItem('qsseda_pkce_verifier');
     sessionStorage.removeItem('qsseda_pkce_state');
