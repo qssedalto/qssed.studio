@@ -59,7 +59,7 @@ assert(!proxy.includes("refresh_token"), "Worker proxy must not handle ChatGPT r
 
 for (const markup of [zh, en]) {
   assert(markup.includes('raw("/status")'), "Intelligence UI must probe backend status");
-  assert(markup.includes("GPT 离线") || markup.includes("GPT offline"), "Intelligence UI must expose offline state");
+  assert(markup.includes("Intelligence 离线") || markup.includes("Intelligence offline"), "Intelligence UI must expose offline state");
   assert(markup.includes("setInterval(checkStatus,5000)"), "Intelligence UI must refresh online state automatically");
   assert(markup.includes('fetch("/api/gpt/turn"'), "Intelligence UI must stream through the authenticated Worker");
   assert(markup.includes("/login/device"), "Intelligence UI is missing ChatGPT device login");
@@ -73,9 +73,9 @@ const scripts = [...zh.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => m
 assert(scripts.length === 1, "Intelligence UI should contain one application script");
 for (const script of scripts) new Function(script);
 
-assert(worker.includes("handleRemoteCodexApi"), "GPT Worker must route through the remote local bridge proxy");
+assert(worker.includes("handleRemoteCodexApi"), "Intelligence Worker must route through the remote local bridge proxy");
 assert(worker.includes("verifyStudioPageSession(request)"), "GPT API must remain behind AERTEX authentication");
-assert(!worker.includes("CodexCloudContainer"), "GPT Worker must not depend on Cloudflare Containers");
+assert(!worker.includes("CodexCloudContainer"), "Intelligence Worker must not depend on Cloudflare Containers");
 assert(worker.includes("connect-src 'self'"), "GPT page networking must remain same-origin");
 
 assert(!wrangler.containers, "GPT Wrangler config must not require Cloudflare Containers");
