@@ -98,7 +98,7 @@ jobs:
           node --check scripts/auth-edge-protection-check.mjs
           node scripts/auth-edge-protection-check.mjs
 
-      - name: Deploy QssedA Studio
+      - name: Deploy QssedA
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -122,7 +122,7 @@ jobs:
           set -euo pipefail
           ok=0
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
-            status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-gpt-health.json --write-out '%{http_code}' 'https://gpt.qsseda.studio/health' || true)"
+            status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-gpt-health.json --write-out '%{http_code}' 'https://gpt.qsseda.com/health' || true)"
             if [ "$status" = "200" ] && grep -q '"service":"qsseda-gpt"' /tmp/qsseda-gpt-health.json && grep -q '"status":"ok"' /tmp/qsseda-gpt-health.json; then
               ok=1
               break
@@ -136,7 +136,7 @@ jobs:
             exit 1
           fi
 
-          headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-gpt-guest.html --dump-header - 'https://gpt.qsseda.studio/zh-cn' || true)"
+          headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-gpt-guest.html --dump-header - 'https://gpt.qsseda.com/zh-cn' || true)"
           guest_status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
           guest_location="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
           if [ "$guest_status" != "302" ] || ! printf '%s' "$guest_location" | grep -q '^https://qsseda\.studio/gpt/handoff?next=%2Fzh-cn'; then
@@ -149,14 +149,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          robots_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-robots.txt --write-out '%{http_code}' 'https://qsseda.studio/robots.txt' || true)"
+          robots_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-robots.txt --write-out '%{http_code}' 'https://qsseda.com/robots.txt' || true)"
           if [ "$robots_status" != "200" ] || ! grep -q '^Disallow: /$' /tmp/qsseda-robots.txt; then
             echo "Edge protection regression: robots.txt is not denying crawler access."
             echo "HTTP status: ${robots_status:-unknown}"
             cat /tmp/qsseda-robots.txt || true
             exit 1
           fi
-          probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-probe.txt --write-out '%{http_code}' 'https://qsseda.studio/.env' || true)"
+          probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-probe.txt --write-out '%{http_code}' 'https://qsseda.com/.env' || true)"
           if [ "$probe_status" != "404" ]; then
             echo "Edge protection regression: scanner probe was not rejected before Studio routing."
             echo "HTTP status: ${probe_status:-unknown}"
@@ -168,7 +168,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL="https://qsseda.studio/zh-cn/dashboard"
+          URL="https://qsseda.com/zh-cn/dashboard"
           ok=0
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
             status="$(curl --silent --show-error --location --max-time 20 --output /tmp/qsseda-dashboard.html --write-out '%{http_code}' "$URL" || true)"
@@ -192,7 +192,7 @@ jobs:
           set -euo pipefail
           ok=0
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
-            headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-work-body.txt --dump-header - 'https://work.qsseda.studio/zh-cn/tex' || true)"
+            headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-work-body.txt --dump-header - 'https://work.qsseda.com/zh-cn/tex' || true)"
             status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
             location="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
             if [ "$status" = "302" ] && printf '%s' "$location" | grep -q '^https://qsseda\.studio/work/handoff?next=%2Fzh-cn%2Ftex'; then
@@ -208,10 +208,10 @@ jobs:
             exit 1
           fi
 
-          alias_headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-work-alias.txt --dump-header - -H 'Accept-Language: zh-CN,zh;q=0.9' 'https://work.qsseda.studio/tex' || true)"
+          alias_headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-work-alias.txt --dump-header - -H 'Accept-Language: zh-CN,zh;q=0.9' 'https://work.qsseda.com/tex' || true)"
           alias_status="$(printf '%s\n' "$alias_headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
           alias_location="$(printf '%s\n' "$alias_headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
-          if [ "$alias_status" != "302" ] || [ "$alias_location" != "https://work.qsseda.studio/zh-cn/tex" ]; then
+          if [ "$alias_status" != "302" ] || [ "$alias_location" != "https://work.qsseda.com/zh-cn/tex" ]; then
             echo "Work canonical regression: /tex did not redirect to the localized canonical route."
             echo "HTTP status: ${alias_status:-unknown}; location: ${alias_location:-none}"
             exit 1
@@ -227,14 +227,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          robots_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-robots.txt --write-out '%{http_code}' 'https://auth.qsseda.studio/robots.txt' || true)"
+          robots_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-robots.txt --write-out '%{http_code}' 'https://auth.qsseda.com/robots.txt' || true)"
           if [ "$robots_status" != "200" ] || ! grep -q '^Disallow: /$' /tmp/qsseda-auth-robots.txt; then
             echo "Auth edge protection regression: robots.txt is not denying crawler access."
             echo "HTTP status: ${robots_status:-unknown}"
             cat /tmp/qsseda-auth-robots.txt || true
             exit 1
           fi
-          probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-probe.txt --write-out '%{http_code}' 'https://auth.qsseda.studio/.env' || true)"
+          probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-auth-probe.txt --write-out '%{http_code}' 'https://auth.qsseda.com/.env' || true)"
           if [ "$probe_status" != "404" ]; then
             echo "Auth edge protection regression: scanner probe was not rejected before Auth routing."
             echo "HTTP status: ${probe_status:-unknown}"
