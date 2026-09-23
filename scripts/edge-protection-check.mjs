@@ -70,7 +70,7 @@ const forgedSessionCurl = fakeRequest("/zh-cn/dashboard", {
     Cookie: "__Host-qsseda-studio-access=forged-token"
   }
 });
-assert(hasStudioSessionCookie(forgedSessionCurl), "Studio session cookie shape detection failed");
+assert(hasStudioSessionCookie(forgedSessionCurl), "QssedA session cookie shape detection failed");
 result = await protectEdgeRequest(forgedSessionCurl, env({ EDGE_ANON_RATE_LIMITER: deny, EDGE_SUSPECT_RATE_LIMITER: deny }));
 assert(result?.status === 429, "A forged session cookie must not bypass suspicious automation limiting");
 
@@ -78,7 +78,7 @@ const normalClaimedSession = browserRequest("/zh-cn/dashboard", {
   Cookie: "__Host-qsseda-studio-access=session-token"
 });
 result = await protectEdgeRequest(normalClaimedSession, env({ EDGE_ANON_RATE_LIMITER: deny }));
-assert(result === null, "Normal Studio sessions should retain the anonymous-capacity exemption");
+assert(result === null, "Normal QssedA sessions should retain the anonymous-capacity exemption");
 
 const verifiedBot = fakeRequest("/zh-cn/login", {
   headers: { "User-Agent": "Googlebot/2.1", Accept: "text/html" },
