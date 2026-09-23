@@ -1,6 +1,6 @@
-# QssedA Auth Portal
+# AERTEX ID Portal
 
-`auth.qsseda.com` is the standalone identity and application-authorization service for QssedA web, desktop, and future mobile clients.
+`auth.qsseda.com` is the standalone identity and application-authorization service for AERTEX web, desktop, and future mobile clients.
 
 ## Core routes
 
@@ -15,18 +15,18 @@
 
 Desktop applications are public OAuth clients. They do not receive or embed a reusable `client_secret`.
 
-QssedA Auth implements the Authorization Code flow with PKCE and requires `S256`:
+AERTEX ID implements the Authorization Code flow with PKCE and requires `S256`:
 
 - `GET /authorize` — validates the client, redirect URI, requested scopes, `state`, and PKCE challenge, then shows the account/consent UI.
 - `POST /api/oauth/authorize` — issues a short-lived one-time authorization code after explicit approval.
 - `POST /oauth/token` — exchanges an authorization code + `code_verifier`, or rotates a refresh token.
-- `POST /oauth/revoke` — revokes a QssedA access or refresh token.
-- `POST /oauth/introspect` — allows an authenticated QssedA resource server to validate an opaque access token.
+- `POST /oauth/revoke` — revokes a AERTEX access or refresh token.
+- `POST /oauth/introspect` — allows an authenticated AERTEX resource server to validate an opaque access token.
 - `GET /.well-known/oauth-authorization-server` — publishes OAuth server metadata.
 
 Authorization codes expire after **5 minutes** and are single-use. Access tokens expire after **30 minutes**. Refresh tokens expire after **30 days** and rotate every time they are used.
 
-QssedA application tokens are opaque random values. Only SHA-256 hashes of authorization codes, access tokens, and refresh tokens are persisted in PostgreSQL.
+AERTEX application tokens are opaque random values. Only SHA-256 hashes of authorization codes, access tokens, and refresh tokens are persisted in PostgreSQL.
 
 ### Initial desktop client
 
@@ -34,7 +34,7 @@ The first registered public client is:
 
 ```text
 client_id: qsseda-git-desktop
-name: QssedA Git
+name: AERTEX Git
 scopes: profile.read session.read
 ```
 
@@ -97,7 +97,7 @@ The OAuth tables have RLS enabled and are not directly readable/writable by brow
 
 ## Resource-server token validation
 
-QssedA application access tokens are opaque, so API/resource servers validate them through `POST /oauth/introspect`. This endpoint is not a public-client API: the caller must authenticate with HTTP Basic credentials for a registered resource server.
+AERTEX application access tokens are opaque, so API/resource servers validate them through `POST /oauth/introspect`. This endpoint is not a public-client API: the caller must authenticate with HTTP Basic credentials for a registered resource server.
 
 Resource-server credentials are represented by `oauth_resource_servers`. Only a SHA-256 hash of the resource-server secret is persisted, and a resource server can be restricted to tokens issued for specific OAuth client IDs. Invalid server credentials fail with `401 invalid_client`; a valid server querying an invalid, expired, revoked, inactive-account, or disallowed-client token receives `{ "active": false }`.
 
