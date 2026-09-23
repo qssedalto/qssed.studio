@@ -150,6 +150,15 @@ jobs:
           if (config.main !== 'studio/worker-audit.js') throw new Error('wrangler.jsonc must enter through the audited Studio facade');
           if (!auditedFacade.includes('import worker from "../worker.js"')) throw new Error('Studio audit facade must reuse the hardened worker.js compatibility facade');
           if (!auditedFacade.includes('recordAccessAudit')) throw new Error('Studio audit facade must preserve access auditing');
+          const expectedWildcardRoutes = new Map([
+            ['*.qsseda.com/*', 'qsseda.com'],
+            ['*.qsseda.online/*', 'qsseda.online'],
+            ['*.qsseda.studio/*', 'qsseda.studio']
+          ]);
+          for (const route of config.routes || []) {
+            if (expectedWildcardRoutes.get(route.pattern) === route.zone_name) expectedWildcardRoutes.delete(route.pattern);
+          }
+          if (expectedWildcardRoutes.size) throw new Error('Missing wildcard Worker routes: ' + [...expectedWildcardRoutes.keys()].join(', '));
           if (!Array.isArray(config.r2_buckets) || !config.r2_buckets.some(b => b.binding === 'STORAGE' && b.bucket_name === 'qsseda-studio-storage')) throw new Error('Studio STORAGE R2 binding is missing');
           const limiterNames = new Set((config.ratelimits || []).map(item => item.name));
           for (const required of ['AUTH_RATE_LIMITER','API_READ_RATE_LIMITER','API_WRITE_RATE_LIMITER','EDGE_GLOBAL_RATE_LIMITER','EDGE_ANON_RATE_LIMITER','EDGE_SUSPECT_RATE_LIMITER','EDGE_EXPENSIVE_RATE_LIMITER']) if (!limiterNames.has(required)) throw new Error(`Missing rate limiter binding: ${required}`);
