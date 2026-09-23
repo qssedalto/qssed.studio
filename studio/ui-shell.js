@@ -364,7 +364,7 @@ export function buildOsCopy(zh) {
   if (zh) {
     return {
       platform: "个人工作空间",
-      kicker: "个人智能工作台",
+      kicker: "个人工作空间",
       aiLabel: "工作流",
       aiTitle: "实验与工具入口",
       aiHref: `${prefix}/workspace/experiments`,
@@ -414,7 +414,7 @@ export function buildOsCopy(zh) {
 
   return {
     platform: "Personal Workspace",
-    kicker: "Personal Intelligence Workspace",
+    kicker: "Personal Workspace",
     aiLabel: "Workflow",
     aiTitle: "Experiments & tools",
     aiHref: `${prefix}/workspace/experiments`,
