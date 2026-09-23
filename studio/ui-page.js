@@ -263,7 +263,7 @@ export function baseHead(title) {
         box-shadow:0 18px 52px rgba(0,0,0,.09)!important;
       }
       body.os-shell .os-brand small{display:none!important}
-      body.os-shell .os-brand-mark{border-radius:11px!important;box-shadow:none!important;background:var(--primary)!important}
+      body.os-shell .os-brand-mark{border-radius:0!important;box-shadow:none!important;background:transparent!important;overflow:visible!important} body.os-shell .os-brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
       body.os-shell .os-user{background:var(--fill)!important;border:0!important;box-shadow:none!important}
       body.os-shell .os-nav-group{border:0!important;box-shadow:none!important;background:transparent!important}
       body.os-shell .os-nav-group.is-active{background:transparent!important}
