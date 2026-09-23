@@ -164,7 +164,7 @@ jobs:
           headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-gpt-guest.html --dump-header - 'https://gpt.qsseda.com/zh-cn' || true)"
           guest_status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
           guest_location="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
-          if [ "$guest_status" != "302" ] || ! printf '%s' "$guest_location" | grep -q '^https://qsseda\.studio/gpt/handoff?next=%2Fzh-cn'; then
+          if [ "$guest_status" != "302" ] || ! printf '%s' "$guest_location" | grep -q '^https://qsseda\.com/gpt/handoff?next=%2Fzh-cn'; then
             echo "GPT authentication regression: unauthenticated UI did not redirect to the secure main-site handoff."
             echo "HTTP status: ${guest_status:-unknown}; location: ${guest_location:-none}"
             exit 1
@@ -252,7 +252,7 @@ jobs:
             headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-work-body.txt --dump-header - 'https://work.qsseda.com/zh-cn/tex' || true)"
             status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
             location="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
-            if [ "$status" = "302" ] && printf '%s' "$location" | grep -q '^https://qsseda\.studio/work/handoff?next=%2Fzh-cn%2Ftex'; then
+            if [ "$status" = "302" ] && printf '%s' "$location" | grep -q '^https://qsseda\.com/work/handoff?next=%2Fzh-cn%2Ftex'; then
               ok=1
               break
             fi
