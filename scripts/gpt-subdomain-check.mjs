@@ -46,7 +46,10 @@ assert(session.includes("isolatedAppHost && !accountId"), "Isolated GPT session 
 assert(authHandoff.includes('const GPT_HOST = "gpt.qsseda.com"'), "Auth handoff must recognize the GPT host");
 assert(authHandoff.includes('gptTarget ? "QssedA GPT"'), "Auth handoff must render the GPT product handoff");
 assert(authHandoff.includes('return candidateLocale === "zh" ? "/zh-cn" : "/en"'), "GPT handoff must constrain return paths to GPT locale roots");
-assert(gptWrangler.routes?.some(route => route.pattern === "gpt.qsseda.com/*" && route.zone_name === "qsseda.com"), "gpt.qsseda.com exact Worker route must outrank the main-site wildcard route");
-assert(gptWrangler.routes?.some(route => route.pattern === "gpt.qsseda.com" && route.custom_domain === true), "gpt.qsseda.com custom domain route is missing");
+for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online","qsseda.online"],["gpt.qsseda.studio","qsseda.studio"]]) {
+  assert(gptWrangler.routes?.some(route => route.pattern === `${host}/*` && route.zone_name === zone), `${host} exact Worker route must outrank the main-site wildcard route`);
+  assert(gptWrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
+}
+assert(gpt.includes('host !== "gpt.qsseda.online" && host !== "gpt.qsseda.studio"'), "GPT aliases must canonicalize to gpt.qsseda.com");
 
 console.log("GPT authentication handoff looks valid.");
