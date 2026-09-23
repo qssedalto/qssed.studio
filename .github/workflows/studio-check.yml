@@ -135,15 +135,7 @@ jobs:
         run: npx --yes wrangler@4 deploy -c wrangler.work.jsonc --dry-run --outdir .wrangler-work-check
 
       - name: Bundle GPT Worker
-        shell: bash
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-          const source = JSON.parse(fs.readFileSync('wrangler.gpt.jsonc', 'utf8'));
-          delete source.migrations;
-          fs.writeFileSync('.wrangler.gpt.dry-run.json', JSON.stringify(source, null, 2));
-          NODE
-          npx --yes wrangler@4 deploy -c .wrangler.gpt.dry-run.json --dry-run --outdir .wrangler-gpt-check
+        run: npx --yes wrangler@4 deploy -c wrangler.gpt.jsonc --dry-run --outdir .wrangler-gpt-check
 
       - name: Validate Studio Wrangler JSONC shape
         shell: bash
