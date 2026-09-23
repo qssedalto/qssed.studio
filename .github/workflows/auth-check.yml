@@ -21,6 +21,8 @@ on:
       - main
     paths:
       - "auth-entry.js"
+      - "auth-sso.js"
+      - "studio/domain-family.js"
       - "auth-worker.js"
       - "auth-login-identifier.js"
       - "auth-oauth.js"
