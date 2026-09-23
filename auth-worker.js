@@ -1,5 +1,6 @@
 import { handleOAuthRequest } from "./auth-oauth.js";
 import { mainOriginForRequest } from "./studio/domain-family.js";
+import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
@@ -22,6 +23,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const pathname = normalizePath(url.pathname);
+
+    if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
 
     if (OAUTH_PATHS.has(pathname)) return handleOAuthRequest(request);
 
@@ -226,7 +229,7 @@ function htmlEscape(value) {
 }
 
 function handoffPage(mainSite, accessToken, refreshToken, next) {
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>QssedA Auth</title><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#0b0b0d;color:#f5f5f7;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid #3a3a3c;border-top-color:#0a84ff;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:#a1a1a6}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 QssedA</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(mainSite)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>QssedA Auth</title>${FAVICON_LINKS}<style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#0b0b0d;color:#f5f5f7;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid #3a3a3c;border-top-color:#0a84ff;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:#a1a1a6}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 QssedA</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(mainSite)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
 }
 
 async function fetchUser(accessToken) {
@@ -481,6 +484,7 @@ function authPage(pathname, request) {
   <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
   <title>QssedA Auth</title>
+  ${FAVICON_LINKS}
   <style>
     :root{color-scheme:dark light;--bg:#07080a;--panel:rgba(27,28,32,.78);--panel-strong:#1d1f24;--surface:rgba(118,118,128,.16);--surface-hover:rgba(118,118,128,.23);--text:#f5f5f7;--muted:#a1a1a6;--quiet:#73737a;--line:rgba(255,255,255,.10);--line-strong:rgba(255,255,255,.17);--accent:#0a84ff;--accent-hover:#3198ff;--danger:#ff453a;--warning:#ffd60a;--success:#30d158;--shadow:0 28px 80px rgba(0,0,0,.46);--radius:22px;--control:14px}
     @media(prefers-color-scheme:light){:root{--bg:#f3f4f7;--panel:rgba(255,255,255,.84);--panel-strong:#fff;--surface:rgba(116,116,128,.10);--surface-hover:rgba(116,116,128,.16);--text:#111114;--muted:#62626a;--quiet:#85858d;--line:rgba(20,20,30,.09);--line-strong:rgba(20,20,30,.15);--accent:#0071e3;--accent-hover:#0077ed;--danger:#d70015;--warning:#a05a00;--success:#248a3d;--shadow:0 28px 70px rgba(38,44,60,.14)}}
