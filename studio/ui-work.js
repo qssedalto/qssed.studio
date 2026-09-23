@@ -299,7 +299,7 @@ function workIcon(kind) {
 
 export function workHubContent(zh) {
   const prefix = zh ? "/zh-cn" : "/en";
-  const workTexUrl = zh ? "https://work.qsseda.studio/zh-cn/tex" : "https://work.qsseda.studio/en/tex";
+  const workTexUrl = zh ? "https://work.qsseda.com/zh-cn/tex" : "https://work.qsseda.com/en/tex";
   const copy = zh ? {
     statusLabel: "本机连接",
     idle: "尚未连接",
@@ -765,8 +765,8 @@ export function workLocalBridgeContent(zh) {
 export function decorateWorkNavigation(markup, zh, pathname) {
   let output = String(markup || "");
   const prefix = zh ? "/zh-cn" : "/en";
-  const mainOrigin = "https://qsseda.studio";
-  const workTexUrl = zh ? "https://work.qsseda.studio/zh-cn/tex" : "https://work.qsseda.studio/en/tex";
+  const mainOrigin = "https://qsseda.com";
+  const workTexUrl = zh ? "https://work.qsseda.com/zh-cn/tex" : "https://work.qsseda.com/en/tex";
   const isWork = pathname === "/work" || pathname === "/work/local";
   const rootCurrent = pathname === "/work" ? ' aria-current="page"' : "";
   const localCurrent = pathname === "/work/local" ? ' aria-current="page"' : "";
@@ -801,7 +801,7 @@ export function decorateWorkNavigation(markup, zh, pathname) {
 
   output = output.replace(`<h1>${shellTitle}</h1>`, `<h1>${title}</h1>`);
   output = output.replace(`<p>${shellDescription}</p>`, `<p>${description}</p>`);
-  output = output.replace(`${shellTitle} · QssedA Studio`, `${title} · QssedA Studio`);
+  output = output.replace(`${shellTitle} · QssedA`, `${title} · QssedA`);
   output = output.replace('const currentPath = "/workspace";', `const currentPath = ${JSON.stringify(pathname)};`);
 
   if (pathname === "/work/local") {
