@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $runKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-$runName = "QssedA Local Bridge"
+$runName = "AERTEX Bridge"
 $pidPath = Join-Path $InstallRoot "bridge.pid"
 $serverPath = Join-Path $InstallRoot "server.mjs"
 
@@ -30,5 +30,5 @@ try {
   Remove-Item -LiteralPath $pidPath -Force -ErrorAction SilentlyContinue
 } catch {}
 
-Write-Host "QssedA Local Bridge autostart has been removed for this Windows account." -ForegroundColor Green
+Write-Host "AERTEX Bridge autostart has been removed for this Windows account." -ForegroundColor Green
 Write-Host "Installed files remain at $InstallRoot so they can be inspected or removed manually."
