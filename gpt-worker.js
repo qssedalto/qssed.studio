@@ -9,6 +9,9 @@ const GPT_ORIGIN = "https://gpt.qsseda.com";
 
 export default {
   async fetch(request, env) {
+    const alias = canonicalGptAlias(request);
+    if (alias) return alias;
+
     const deviceGate = huaweiHarmonyGate(request);
     if (deviceGate) return deviceGate;
 
@@ -117,3 +120,29 @@ function redirect(location) {
   });
 }
 
+
+function canonicalGptAlias(request) {
+  try {
+    const url = new URL(request.url);
+    const host = url.hostname.toLowerCase();
+    if (host !== "gpt.qsseda.online" && host !== "gpt.qsseda.studio") return null;
+    url.protocol = "https:";
+    url.hostname = "gpt.qsseda.com";
+    url.port = "";
+    return permanentRedirect(url.toString());
+  } catch {
+    return null;
+  }
+}
+
+function permanentRedirect(location) {
+  return new Response(null, {
+    status: 308,
+    headers: {
+      location,
+      "cache-control": "no-store",
+      "referrer-policy": "no-referrer",
+      "x-content-type-options": "nosniff"
+    }
+  });
+}

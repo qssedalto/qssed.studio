@@ -70,8 +70,12 @@ assert(workWrangler.name === "qsseda-work", "Work Worker must use a dedicated sc
 assert(workWrangler.main === "studio/worker-audit.js", "Work Worker must enter through the audited main-site facade");
 assert(workAuditWrapper.includes('import worker from "../worker.js"'), "Work audit wrapper must reuse the hardened main-site facade");
 assert(workAuditWrapper.includes("recordAccessAudit"), "Work audit wrapper must preserve private access auditing");
-assert(workWrangler.routes?.some(route => route.pattern === "work.qsseda.com/*" && route.zone_name === "qsseda.com"), "work.qsseda.com exact Worker route must outrank the main-site wildcard route");
-assert(workWrangler.routes?.some(route => route.pattern === "work.qsseda.com" && route.custom_domain === true), "work.qsseda.com custom domain route is missing");
+for (const [host, zone] of [["work.qsseda.com","qsseda.com"],["work.qsseda.online","qsseda.online"],["work.qsseda.studio","qsseda.studio"]]) {
+  assert(workWrangler.routes?.some(route => route.pattern === `${host}/*` && route.zone_name === zone), `${host} exact Worker route must outrank the main-site wildcard route`);
+  assert(workWrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
+}
+assert(workAuditWrapper.includes('host.endsWith(".qsseda.online")'), "Work aliases must canonicalize .online hosts to .com");
+assert(workAuditWrapper.includes('host.endsWith(".qsseda.studio")'), "Work aliases must canonicalize .studio hosts to .com");
 assert(workWrangler.r2_buckets?.some(bucket => bucket.binding === "STORAGE" && bucket.bucket_name === "qsseda-studio-storage"), "Work Worker must share the protected main-site storage binding");
 
 assert(bridge.includes('"https://work.qsseda.com"'), "Legacy Bridge must allow the Work origin");

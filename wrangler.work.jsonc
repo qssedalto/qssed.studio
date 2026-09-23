@@ -31,7 +31,11 @@
   ],
   "routes": [
     { "pattern": "work.qsseda.com/*", "zone_name": "qsseda.com" },
-    { "pattern": "work.qsseda.com", "custom_domain": true }
+    { "pattern": "work.qsseda.com", "custom_domain": true },
+    { "pattern": "work.qsseda.online/*", "zone_name": "qsseda.online" },
+    { "pattern": "work.qsseda.online", "custom_domain": true },
+    { "pattern": "work.qsseda.studio/*", "zone_name": "qsseda.studio" },
+    { "pattern": "work.qsseda.studio", "custom_domain": true }
   ],
   "observability": {
     "logs": {
