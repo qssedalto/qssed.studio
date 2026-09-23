@@ -94,6 +94,8 @@ jobs:
           node scripts/gpt-subdomain-check.mjs
           node --check scripts/codex-bridge-check.mjs
           node scripts/codex-bridge-check.mjs
+          node --check scripts/brand-check.mjs
+          node scripts/brand-check.mjs
           node --check auth-entry.js
           node --check auth-sso.js
           node --check auth-worker.js
