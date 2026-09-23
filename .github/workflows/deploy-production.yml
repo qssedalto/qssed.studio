@@ -170,6 +170,38 @@ jobs:
             exit 1
           fi
 
+      - name: Verify three-domain aliases
+        shell: bash
+        run: |
+          set -euo pipefail
+          verify_alias() {
+            source_url="$1"
+            expected_location="$2"
+            ok=0
+            for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+              headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-alias-body.txt --dump-header - "$source_url" || true)"
+              status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
+              location="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
+              if [ "$status" = "308" ] && [ "$location" = "$expected_location" ]; then
+                ok=1
+                break
+              fi
+              echo "Alias not ready: $source_url (HTTP ${status:-unknown}, location ${location:-none}); retrying..."
+              sleep 4
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "Alias regression: $source_url did not canonicalize to $expected_location"
+              cat /tmp/qsseda-alias-body.txt || true
+              exit 1
+            fi
+          }
+
+          verify_alias "https://gpt.qsseda.online/health" "https://gpt.qsseda.com/health"
+          verify_alias "https://gpt.qsseda.studio/health" "https://gpt.qsseda.com/health"
+          verify_alias "https://auth.qsseda.online/health" "https://auth.qsseda.com/health"
+          verify_alias "https://auth.qsseda.studio/health" "https://auth.qsseda.com/health"
+          verify_alias "https://work.qsseda.online/zh-cn/tex" "https://work.qsseda.com/zh-cn/tex"
+          verify_alias "https://work.qsseda.studio/zh-cn/tex" "https://work.qsseda.com/zh-cn/tex"
       - name: Verify edge protection
         shell: bash
         run: |
