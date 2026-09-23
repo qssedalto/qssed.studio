@@ -60,12 +60,12 @@ const server = http.createServer(async (request, response) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`QssedA Local Bridge ${VERSION} listening on http://${HOST}:${PORT}`);
+  console.log(`AERTEX Bridge ${VERSION} listening on http://${HOST}:${PORT}`);
   console.log("Allowed web origins:", [...ALLOWED_ORIGINS].join(", "));
 });
 
 server.on("error", error => {
-  console.error("QssedA Local Bridge failed:", error?.message || error);
+  console.error("AERTEX Bridge failed:", error?.message || error);
   process.exitCode = 1;
 });
 
