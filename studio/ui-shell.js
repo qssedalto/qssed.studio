@@ -62,7 +62,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
       <a class="os-brand" href="${links.dashboard}">
         <span class="os-brand-mark">Q</span>
         <span>
-          <strong>QssedA Studio</strong>
+          <strong>QssedA</strong>
           <small>${copy.platform}</small>
         </span>
       </a>
