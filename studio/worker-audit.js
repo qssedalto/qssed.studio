@@ -13,6 +13,9 @@ const ACCESS_AUDIT_PAGES = new Set([
 
 export default {
   async fetch(request, env, ctx) {
+    const alias = canonicalQssedaAlias(request);
+    if (alias) return alias;
+
     const deviceGate = huaweiHarmonyGate(request);
     if (deviceGate) return deviceGate;
 
@@ -61,5 +64,34 @@ function auditSource(request) {
     return host || "studio";
   } catch {
     return "studio";
+  }
+}
+function canonicalQssedaAlias(request) {
+  try {
+    const url = new URL(request.url);
+    const host = url.hostname.toLowerCase();
+    let canonicalHost = "";
+    if (host === "qsseda.online" || host === "qsseda.studio") {
+      canonicalHost = "qsseda.com";
+    } else if (host.endsWith(".qsseda.online")) {
+      canonicalHost = host.slice(0, -".qsseda.online".length) + ".qsseda.com";
+    } else if (host.endsWith(".qsseda.studio")) {
+      canonicalHost = host.slice(0, -".qsseda.studio".length) + ".qsseda.com";
+    }
+    if (!canonicalHost || canonicalHost === host) return null;
+    url.protocol = "https:";
+    url.hostname = canonicalHost;
+    url.port = "";
+    return new Response(null, {
+      status: 308,
+      headers: {
+        location: url.toString(),
+        "cache-control": "no-store",
+        "referrer-policy": "no-referrer",
+        "x-content-type-options": "nosniff"
+      }
+    });
+  } catch {
+    return null;
   }
 }
