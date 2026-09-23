@@ -58,24 +58,24 @@ assert(!proxy.includes("access_token"), "Worker proxy must not handle ChatGPT ac
 assert(!proxy.includes("refresh_token"), "Worker proxy must not handle ChatGPT refresh tokens");
 
 for (const markup of [zh, en]) {
-  assert(markup.includes('raw("/status")'), "Intelligence UI must probe backend status");
-  assert(markup.includes("Intelligence 离线") || markup.includes("Intelligence offline"), "Intelligence UI must expose offline state");
-  assert(markup.includes("setInterval(checkStatus,5000)"), "Intelligence UI must refresh online state automatically");
-  assert(markup.includes('fetch("/api/gpt/turn"'), "Intelligence UI must stream through the authenticated Worker");
-  assert(markup.includes("/login/device"), "Intelligence UI is missing ChatGPT device login");
-  assert(markup.includes("/models"), "Intelligence UI is missing model discovery");
+  assert(markup.includes('raw("/status")'), "AERTEX AI UI must probe backend status");
+  assert(markup.includes("AI 离线") || markup.includes("AI offline"), "AERTEX AI UI must expose offline state");
+  assert(markup.includes("setInterval(checkStatus,5000)"), "AERTEX AI UI must refresh online state automatically");
+  assert(markup.includes('fetch("/api/gpt/turn"'), "AERTEX AI UI must stream through the authenticated Worker");
+  assert(markup.includes("/login/device"), "AERTEX AI UI is missing ChatGPT device login");
+  assert(markup.includes("/models"), "AERTEX AI UI is missing model discovery");
   assert(!markup.includes("127.0.0.1:32146"), "Cross-device UI must not call loopback directly");
   assert(!markup.includes("targetAddressSpace"), "Cross-device UI must not use browser private-network access");
-  assert(!markup.includes("access_token"), "Intelligence UI must never handle ChatGPT access tokens");
+  assert(!markup.includes("access_token"), "AERTEX AI UI must never handle ChatGPT access tokens");
 }
 
 const scripts = [...zh.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
-assert(scripts.length === 1, "Intelligence UI should contain one application script");
+assert(scripts.length === 1, "AERTEX AI UI should contain one application script");
 for (const script of scripts) new Function(script);
 
-assert(worker.includes("handleRemoteCodexApi"), "Intelligence Worker must route through the remote local bridge proxy");
+assert(worker.includes("handleRemoteCodexApi"), "AERTEX AI Worker must route through the remote local bridge proxy");
 assert(worker.includes("verifyStudioPageSession(request)"), "GPT API must remain behind AERTEX authentication");
-assert(!worker.includes("CodexCloudContainer"), "Intelligence Worker must not depend on Cloudflare Containers");
+assert(!worker.includes("CodexCloudContainer"), "AERTEX AI Worker must not depend on Cloudflare Containers");
 assert(worker.includes("connect-src 'self'"), "GPT page networking must remain same-origin");
 
 assert(!wrangler.containers, "GPT Wrangler config must not require Cloudflare Containers");
