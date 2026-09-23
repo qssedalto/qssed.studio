@@ -8,7 +8,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
     online: "在线",
     typing: "正在编辑",
     enabled: "CRDT 实时同步已启用",
-    enabledDetail: "当前 TeX 源码会通过 Yjs CRDT 与加密的同源 WebSocket 房间实时合并；成员权限仍由 QssedA 账号与文档成员列表控制。",
+    enabledDetail: "当前 TeX 源码会通过 Yjs CRDT 与加密的同源 WebSocket 房间实时合并；成员权限仍由 AERTEX 账号与文档成员列表控制。",
     cursorPending: "远程位置已同步，彩色光标绘制将在编辑器升级为 CodeMirror 后启用。",
     noConnection: "实时通道暂时不可用，自动保存仍然继续工作。"
   } : {
@@ -20,7 +20,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
     online: "online",
     typing: "editing",
     enabled: "CRDT live sync enabled",
-    enabledDetail: "TeX source now merges in real time through Yjs CRDT and a same-origin authenticated WebSocket room. Access remains controlled by QssedA document membership.",
+    enabledDetail: "TeX source now merges in real time through Yjs CRDT and a same-origin authenticated WebSocket room. Access remains controlled by AERTEX document membership.",
     cursorPending: "Remote positions are synchronized; visual cursor rendering will enable after the editor moves to CodeMirror.",
     noConnection: "The realtime channel is unavailable. Autosave continues to work."
   };
