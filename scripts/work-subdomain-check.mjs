@@ -45,7 +45,7 @@ assert(sessionGate.includes("rootDomainForHost(hostname)"), "The account identit
 assert(sessionGate.includes('if (isolatedAppHost && !accountId) return false'), "Work and other isolated app hosts must fail closed when the domain-wide account marker is missing");
 assert(sessionGate.includes('if (accountId && accountId !== userId) return false'), "Work must reject a host session belonging to a different account");
 assert(sessionGate.includes('accountId !== verified.user.id'), "Work bootstrap must not recreate a stale local account session");
-assert(sessionGate.includes('globalLogoutCookies()'), "Logout must invalidate the domain-wide account identity marker");
+assert(sessionGate.includes('globalLogoutCookies(request)'), "Logout must invalidate the active domain-family account identity marker");
 assert(sessionGate.includes('Domain=${domain}'), "The identity marker must be sent across the active domain family");
 
 assert(authEntry.includes('pathname === "/continue" && isLoginRedirect(response, url.origin)'), "Auth entry must preserve app return targets on every Auth domain");
