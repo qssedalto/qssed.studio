@@ -5,7 +5,7 @@ import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp } from "./studio/gpt-ui.js";
 import { handleRemoteCodexApi } from "./studio/gpt-bridge.js";
 
-const GPT_ORIGIN = "https://gpt.qsseda.studio";
+const GPT_ORIGIN = "https://gpt.qsseda.com";
 
 export default {
   async fetch(request, env) {
