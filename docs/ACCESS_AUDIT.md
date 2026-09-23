@@ -1,6 +1,6 @@
-# QssedA Access Audit
+# AERTEX Access Audit
 
-QssedA Access Audit records edge access events for the main QssedA site, the Work custom domain, and the Auth custom domain.
+AERTEX Access Audit records edge access events for the main AERTEX site, the Work custom domain, and the Auth custom domain.
 
 ## Storage
 
@@ -67,7 +67,7 @@ Supported actions:
 
 ## Retention
 
-The default retention period is 30 days. The main QssedA Worker registers a daily cron at `03:17 UTC` and deletes older audit objects. The retention constant is `ACCESS_AUDIT_RETENTION_DAYS` in `studio/access-audit.js`.
+The default retention period is 30 days. The main AERTEX Worker registers a daily cron at `03:17 UTC` and deletes older audit objects. The retention constant is `ACCESS_AUDIT_RETENTION_DAYS` in `studio/access-audit.js`.
 
 Because raw IP addresses are personal data in many jurisdictions, retention should remain proportionate to the security/operations purpose and the site's privacy notice should accurately describe this logging.
 
