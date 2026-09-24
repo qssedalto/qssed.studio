@@ -26,8 +26,7 @@ export default {
         service: "qsseda-gpt",
         status: "ok",
         origin: gptOriginForRequest(request),
-        placement: request.headers.get("cf-placement") || null,
-        colo: request.cf?.colo || null
+        ingress_colo: request.cf?.colo || null
       });
     }
 
