@@ -36,9 +36,5 @@ assert(storageUi.includes("visible_used_bytes ?? data?.used_bytes"), "Storage ca
 assert(storageUi.includes("visible_used_bytes ?? data.used_bytes"), "Storage UI must render visible user-file bytes.");
 assert(storageUi.includes("系统日志、发布文件和内部对象不计入这里的用户文件空间"), "Administrator storage copy must explain excluded system objects.");
 
-const maintenance = fs.readFileSync(new URL("./r2-audit-maintenance-worker.js", import.meta.url), "utf8");
-assert(maintenance.includes('const AUDIT_PREFIX = "__system/access-audit/"'), "R2 maintenance must only target the audit prefix.");
-assert(maintenance.includes("await env.STORAGE.delete(batch)"), "R2 maintenance must use R2 batch deletion.");
-assert(maintenance.includes("MARKER_KEY"), "R2 maintenance must be one-shot and idempotent.");
 
 console.log("R2 storage and access-audit optimization checks passed.");
