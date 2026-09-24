@@ -22,6 +22,8 @@ on:
       - scripts/work-local-bridge-check.mjs
       - scripts/work-subdomain-check.mjs
       - scripts/gpt-subdomain-check.mjs
+      - scripts/brand-check.mjs
+      - scripts/codex-bridge-check.mjs
       - scripts/codex-bridge-check.mjs
       - auth-entry.js
       - auth-sso.js
