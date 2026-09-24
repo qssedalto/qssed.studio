@@ -2,7 +2,7 @@ import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
 import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
-import { renderGptApp, renderSharedConversation } from "./studio/gpt-ui.js";
+import { renderGptApp, renderSharedConversation, renderIntelligenceNotFound } from "./studio/gpt-ui.js";
 import { handleAiApi, handleAiAdminApi } from "./studio/ai-gateway.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
 import { renderAiAdmin } from "./studio/ai-admin-ui.js";
@@ -11,6 +11,7 @@ import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
+import { intelligenceThemeAttr, intelligenceThemeBootScript, intelligenceThemeFromRequest } from "./studio/intelligence-theme.js";
 
 
 export default {
@@ -20,6 +21,7 @@ export default {
 
     const url = new URL(request.url);
     const pathname = normalizePath(url.pathname);
+    const intelligenceTheme = intelligenceThemeFromRequest(request);
 
     if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
 
@@ -40,8 +42,8 @@ export default {
     if (sharedMatch) {
       const locale = preferredLocale(request) === "en" ? "en" : "zh-cn";
       const payload = await loadSharedConversation(sharedMatch[1]);
-      if (!payload?.conversation) return html("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>404 · AERTEX Intelligence</title></head><body><main style=\"font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:40px\"><h1>404</h1><p>"+(locale==="en"?"This shared conversation is unavailable.":"这个共享对话不可用")+"</p></main></body></html>",404);
-      return html(renderSharedConversation(locale, payload));
+      if (!payload?.conversation) return html(renderIntelligenceNotFound(locale, { kind: "shared", theme: intelligenceTheme }), 404);
+      return html(renderSharedConversation(locale, payload, intelligenceTheme));
     }
 
     if (pathname === "/auth/handoff") {
@@ -86,11 +88,11 @@ export default {
       const probe = await handleAiAdminApi(internalRequest(request, "/api/ai/admin/state?fast=1"), env, gate);
       if (probe.status === 403) {
         const identity = await loadDeniedIdentity(gate);
-        const denied = withStudioSessionCookies(html(renderAdminDenied(locale, identity), 403), gate.cookies || []);
+        const denied = withStudioSessionCookies(html(renderAdminDenied(locale, identity, intelligenceTheme), 403), gate.cookies || []);
         return request.method === "HEAD" ? new Response(null,{status:denied.status,headers:denied.headers}) : denied;
       }
       const adminState = probe.ok ? await probe.json().catch(()=>({providers:[],users:[]})) : {providers:[],users:[]};
-      const response = withStudioSessionCookies(html(renderAiAdmin(locale, { state: adminState })), gate.cookies || []);
+      const response = withStudioSessionCookies(html(renderAiAdmin(locale, { state: adminState, theme: intelligenceTheme })), gate.cookies || []);
       return request.method === "HEAD" ? new Response(null,{status:response.status,headers:response.headers}) : response;
     }
 
@@ -104,17 +106,17 @@ export default {
       const conversationId = conversationRoute?.[2] || "";
       const bootstrap = await loadGptBootstrap(request, env, gate, conversationId);
       if (conversationId && !bootstrap.current) {
-        const missing = withStudioSessionCookies(html("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>404 · AERTEX Intelligence</title></head><body><main style=\"font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:40px\"><h1>404</h1><p>"+(locale==="en"?"Conversation not found.":"找不到这个对话")+"</p><a href=\"/"+locale+"\">"+(locale==="en"?"Back to Intelligence":"返回 Intelligence")+"</a></main></body></html>",404), gate.cookies || []);
+        const missing = withStudioSessionCookies(html(renderIntelligenceNotFound(locale, { kind: "conversation", theme: intelligenceTheme }), 404), gate.cookies || []);
         return request.method === "HEAD" ? new Response(null,{status:missing.status,headers:missing.headers}) : missing;
       }
-      const response = withStudioSessionCookies(html(renderShell(locale, bootstrap)), gate.cookies || []);
+      const response = withStudioSessionCookies(html(renderShell(locale, { ...bootstrap, theme: intelligenceTheme })), gate.cookies || []);
       return request.method === "HEAD"
         ? new Response(null, { status: response.status, headers: response.headers })
         : response;
     }
 
     const notFoundLocale = preferredLocale(request);
-    return html(`<!doctype html><html lang="${notFoundLocale === "en" ? "en" : "zh-CN"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>404 · AERTEX Intelligence</title><style>html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#101010;color:#f4f4f4}main{min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center}h1{font-size:64px;margin:0 0 8px}p{color:#999}a{color:inherit}</style></head><body><main><div><h1>404</h1><p>${notFoundLocale === "en" ? "Intelligence page not found." : "找不到这个 Intelligence 页面。"}</p><a href="/${notFoundLocale === "en" ? "en" : "zh-cn"}">${notFoundLocale === "en" ? "Back to Intelligence" : "返回 Intelligence"}</a></div></main></body></html>`, 404);
+    return html(renderIntelligenceNotFound(notFoundLocale, { kind: "page", theme: intelligenceTheme }), 404);
   }
 };
 
@@ -187,8 +189,10 @@ async function loadDeniedIdentity(gate) {
   };
 }
 
-function renderAdminDenied(locale, identity) {
+function renderAdminDenied(locale, identity, theme = "") {
   const zh = locale !== "en";
+  const themeAttr = intelligenceThemeAttr(theme);
+  const themeBoot = intelligenceThemeBootScript();
   const copy = zh ? {
     title: "此账号无权访问管理后台",
     detail: "此页面仅供 AERTEX Intelligence 管理员使用。我们已经验证了你的登录身份，但当前账号没有管理员权限，因此无法进入 Intelligence 管理后台。",
@@ -220,20 +224,13 @@ function renderAdminDenied(locale, identity) {
   const languageTitle = zh ? "Switch to English" : "切换到中文";
 
   return `<!doctype html>
-<html lang="${zh ? "zh-CN" : "en"}">
+<html lang="${zh ? "zh-CN" : "en"}${themeAttr}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>${copy.title}</title>
-<script>
-(function(){
-  try{
-    const saved=localStorage.getItem("qssed-gpt-theme");
-    if(saved==="light"||saved==="dark") document.documentElement.dataset.theme=saved;
-  }catch{}
-})();
-</script>
+${themeBoot}
 <style>
 :root{
   font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -416,7 +413,12 @@ ${accountMenuStyles()}
   button.addEventListener("click",()=>{
     const next=currentTheme()==="dark"?"light":"dark";
     document.documentElement.dataset.theme=next;
-    try{localStorage.setItem("qssed-gpt-theme",next)}catch{}
+    try{localStorage.setItem("qssed-theme",next)}catch{}
+    try{
+      const host=location.hostname.toLowerCase();
+      const domain=host==="qsseda.com"||host.endsWith(".qsseda.com")?"; Domain=.qsseda.com":"";
+      document.cookie="qssed_theme="+next+"; Path=/; Max-Age=31536000; SameSite=Lax"+domain;
+    }catch{}
     updateIcon();
   });
   updateIcon();
