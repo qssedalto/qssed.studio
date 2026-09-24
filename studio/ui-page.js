@@ -9,10 +9,25 @@ export function baseHead(title) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <script>
       (function () {
+        function readCookieTheme() {
+          const match = document.cookie.match(/(?:^|;\\s*)qssed_theme=(light|dark)(?:;|$)/);
+          return match ? match[1] : "";
+        }
+        function persistTheme(theme) {
+          try { localStorage.setItem("qssed-theme", theme); } catch {}
+          try {
+            const host = location.hostname.toLowerCase();
+            const domain = host === "qsseda.com" || host.endsWith(".qsseda.com") ? "; Domain=.qsseda.com" : "";
+            document.cookie = "qssed_theme=" + theme + "; Path=/; Max-Age=31536000; SameSite=Lax" + domain;
+          } catch {}
+        }
         try {
+          const cookieTheme = readCookieTheme();
           const savedTheme = localStorage.getItem("qssed-theme");
           const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
-          document.documentElement.dataset.theme = savedTheme || (prefersLight ? "light" : "dark");
+          const theme = cookieTheme || savedTheme || (prefersLight ? "light" : "dark");
+          document.documentElement.dataset.theme = theme;
+          persistTheme(theme);
         } catch {
           document.documentElement.dataset.theme = "dark";
         }
@@ -425,6 +440,11 @@ export function themeScript() {
           document.documentElement.classList.add("theme-switching");
           document.documentElement.dataset.theme = theme;
           try { localStorage.setItem("qssed-theme", theme); } catch {}
+          try {
+            const host = location.hostname.toLowerCase();
+            const domain = host === "qsseda.com" || host.endsWith(".qsseda.com") ? "; Domain=.qsseda.com" : "";
+            document.cookie = "qssed_theme=" + theme + "; Path=/; Max-Age=31536000; SameSite=Lax" + domain;
+          } catch {}
           window.setTimeout(() => document.documentElement.classList.remove("theme-switching"), 220);
         }
 

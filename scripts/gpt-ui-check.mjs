@@ -1,5 +1,5 @@
 import vm from "node:vm";
-import { renderGptApp } from "../studio/gpt-ui.js";
+import { renderGptApp, renderIntelligenceNotFound } from "../studio/gpt-ui.js";
 
 for (const locale of ["zh-cn", "en"]) {
   const html = renderGptApp(locale);
@@ -20,9 +20,16 @@ for (const locale of ["zh-cn", "en"]) {
     'share.dataset.action="share"',
     'del.dataset.action="delete"',
     'history.replaceState({conversationId:state.conversationId}',
-    'boot.isAdmin===true'
+    'boot.isAdmin===true',
+    'qssed_theme',
+    'data-theme="dark"',
   ]) {
     if (!html.includes(required)) throw new Error(`GPT UI ${locale} missing multi-provider invariant: ${required}`);
+  }
+  const notFound = renderIntelligenceNotFound(locale, { kind: "conversation", theme: "dark" });
+  if (notFound.includes("<h1>404</h1>")) throw new Error("Intelligence not-found UI must not render a raw 404 heading");
+  for (const required of ["AERTEX", "Intelligence", "nf-art", 'data-theme="dark"', "qssed_theme"]) {
+    if (!notFound.includes(required)) throw new Error(`Intelligence not-found ${locale} missing: ${required}`);
   }
 }
 

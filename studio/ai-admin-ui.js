@@ -1,6 +1,9 @@
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
+import { intelligenceThemeAttr, intelligenceThemeBootScript } from "./intelligence-theme.js";
 export function renderAiAdmin(locale, bootstrap = {}) {
   const zh = locale === "zh-cn";
+  const themeAttr = intelligenceThemeAttr(bootstrap?.theme);
+  const themeBoot = intelligenceThemeBootScript();
   const bootstrapStateJson = JSON.stringify(bootstrap?.state || { providers: [], users: [] }).replace(/</g, "\\u003c");
   const hasBootstrapState = Boolean(bootstrap?.state);
   const t = zh ? {
@@ -30,15 +33,18 @@ export function renderAiAdmin(locale, bootstrap = {}) {
   };
 
   return `<!doctype html>
-<html lang="${zh ? "zh-CN" : "en"}">
+<html lang="${zh ? "zh-CN" : "en"}"${themeAttr}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>${t.title}</title>
+${themeBoot}
 <style>
-:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f6f6f4;--panel:#fff;--text:#171717;--muted:#747474;--line:#dededb;--soft:#f0f0ed;--good:#18864b;--bad:#b42318;--warn:#9a6700}
-@media(prefers-color-scheme:dark){:root{--bg:#101010;--panel:#181818;--text:#f4f4f4;--muted:#999;--line:#333;--soft:#202020;--good:#52c986;--bad:#ff766d;--warn:#ffd60a}}
+:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f6f6f4;--panel:#fff;--text:#171717;--muted:#747474;--line:#dededb;--soft:#f0f0ed;--good:#18864b;--bad:#b42318;--warn:#9a6700}
+@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--panel:#181818;--text:#f4f4f4;--muted:#999;--line:#333;--soft:#202020;--good:#52c986;--bad:#ff766d;--warn:#ffd60a}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--panel:#181818;--text:#f4f4f4;--muted:#999;--line:#333;--soft:#202020;--good:#52c986;--bad:#ff766d;--warn:#ffd60a}
+:root[data-theme="light"]{color-scheme:light;--bg:#f6f6f4;--panel:#fff;--text:#171717;--muted:#747474;--line:#dededb;--soft:#f0f0ed;--good:#18864b;--bad:#b42318;--warn:#9a6700}
 *{box-sizing:border-box}.hidden{display:none!important}html,body{max-width:100%;overflow-x:hidden}body{margin:0;background:var(--bg);color:var(--text)}main{width:100%;max-width:1180px;min-width:0;margin:auto;padding:34px 18px 80px}
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px}h1{font-size:32px;letter-spacing:-.045em;margin:0 0 6px}h2{font-size:18px;margin:0}.intro,.hint{color:var(--muted);font-size:12px;line-height:1.6}.intro{font-size:13px;margin:0}
 .card{width:100%;min-width:0;max-width:100%;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;min-width:0}.grid>div{min-width:0}

@@ -26,7 +26,9 @@ for (const locale of ["zh-cn","en"]) {
     'budget!=null',
     'error?.code==="RATE_LIMITED"',
     'Retry-After',
-    '.hidden{display:none!important}'
+    '.hidden{display:none!important}',
+    'qssed_theme',
+    ':root[data-theme="dark"]'
   ]) {
     if (!html.includes(required)) throw new Error(`AI admin ${locale} missing multi-provider invariant: ${required}`);
   }

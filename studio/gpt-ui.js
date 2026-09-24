@@ -1,8 +1,11 @@
 import { FAVICON_LINKS } from "./favicon.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
+import { intelligenceThemeAttr, intelligenceThemeBootScript } from "./intelligence-theme.js";
 
 export function renderGptApp(locale, bootstrap = {}) {
   const zh = locale === "zh-cn";
+  const themeAttr = intelligenceThemeAttr(bootstrap?.theme);
+  const themeBoot = intelligenceThemeBootScript();
   const bootstrapJson = JSON.stringify({
     config: bootstrap?.config || null,
     conversations: Array.isArray(bootstrap?.conversations) ? bootstrap.conversations : [],
@@ -38,16 +41,19 @@ export function renderGptApp(locale, bootstrap = {}) {
   };
 
   return `<!doctype html>
-<html lang="${zh ? "zh-CN" : "en"}">
+<html lang="${zh ? "zh-CN" : "en"}"${themeAttr}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>AERTEX Intelligence</title>
 ${FAVICON_LINKS}
+${themeBoot}
 <style>
-:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09);--accent:#111;--accentText:#fff;--danger:#b42318;--success:#18864b}
-@media(prefers-color-scheme:dark){:root{--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09);--accent:#f4f4f4;--accentText:#111;--danger:#ff766d;--success:#52c986}}
+:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09);--accent:#111;--accentText:#fff;--danger:#b42318;--success:#18864b}
+@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09);--accent:#f4f4f4;--accentText:#111;--danger:#ff766d;--success:#52c986}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09);--accent:#f4f4f4;--accentText:#111;--danger:#ff766d;--success:#52c986}
+:root[data-theme="light"]{color-scheme:light;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09);--accent:#111;--accentText:#fff;--danger:#b42318;--success:#18864b}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}button,select,textarea{font:inherit}
 .app{min-height:100vh;display:grid;grid-template-columns:270px minmax(0,1fr)}
 .sidebar{border-right:1px solid var(--line);padding:18px;background:var(--panel2);display:flex;flex-direction:column;gap:14px}
@@ -290,8 +296,10 @@ ${accountMenuClientScript({ locale: zh ? "zh-cn" : "en" })}
 }
 
 
-export function renderSharedConversation(locale, payload) {
+export function renderSharedConversation(locale, payload, theme = "") {
   const zh = locale === "zh-cn";
+  const themeAttr = intelligenceThemeAttr(theme);
+  const themeBoot = intelligenceThemeBootScript();
   const conversation = payload?.conversation || {};
   const messages = Array.isArray(payload?.messages) ? payload.messages : [];
   const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -300,5 +308,31 @@ export function renderSharedConversation(locale, payload) {
     const role = item?.role === "user" ? (zh ? "用户" : "User") : "AERTEX";
     return '<article class="msg '+(item?.role === "user" ? "user" : "assistant")+'"><div class="role">'+role+'</div><div class="bubble">'+esc(item?.content || "")+'</div></article>';
   }).join("");
-  return '<!doctype html><html lang="'+(zh ? "zh-CN" : "en")+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>'+title+' · AERTEX Intelligence</title>'+FAVICON_LINKS+'<style>:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}@media(prefers-color-scheme:dark){:root{--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(860px,calc(100% - 32px));margin:0 auto;padding:38px 0 80px}header{padding-bottom:24px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:30px;letter-spacing:-.04em}.meta{margin-top:8px;color:var(--muted);font-size:13px}.msg{padding:24px 0;border-bottom:1px solid var(--line)}.role{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px}.bubble{white-space:pre-wrap;line-height:1.72}.user .bubble{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:16px}.footer{margin-top:28px;color:var(--muted);font-size:12px}</style></head><body><main><header><h1>'+title+'</h1><div class="meta">'+(zh ? "AERTEX Intelligence 共享对话 · 只读" : "AERTEX Intelligence shared conversation · Read only")+'</div></header>'+body+'<div class="footer">'+(zh ? "此链接由对话所有者主动分享" : "This link was explicitly shared by the conversation owner")+'</div></main></body></html>';
+  return '<!doctype html><html lang="'+(zh ? "zh-CN" : "en")+'"'+themeAttr+'> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>'+title+' · AERTEX Intelligence</title>'+FAVICON_LINKS+themeBoot+'<style>:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}}:root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}:root[data-theme="light"]{color-scheme:light;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(860px,calc(100% - 32px));margin:0 auto;padding:38px 0 80px}header{padding-bottom:24px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:30px;letter-spacing:-.04em}.meta{margin-top:8px;color:var(--muted);font-size:13px}.msg{padding:24px 0;border-bottom:1px solid var(--line)}.role{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px}.bubble{white-space:pre-wrap;line-height:1.72}.user .bubble{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:16px}.footer{margin-top:28px;color:var(--muted);font-size:12px}</style></head><body><main><header><h1>'+title+'</h1><div class="meta">'+(zh ? "AERTEX Intelligence 共享对话 · 只读" : "AERTEX Intelligence shared conversation · Read only")+'</div></header>'+body+'<div class="footer">'+(zh ? "此链接由对话所有者主动分享" : "This link was explicitly shared by the conversation owner")+'</div></main></body></html>';
+}
+
+
+export function renderIntelligenceNotFound(locale, options = {}) {
+  const zh = locale === "zh-cn";
+  const themeAttr = intelligenceThemeAttr(options.theme || "");
+  const themeBoot = intelligenceThemeBootScript();
+  const kind = options.kind || "page";
+  const copy = zh ? {
+    conversation: { title: "找不到这个对话", detail: "这个对话可能已被删除，或者当前账号没有访问权限", action: "返回 Intelligence" },
+    shared: { title: "共享对话不可用", detail: "分享链接可能已失效，或者对话所有者已停止分享", action: "返回 Intelligence" },
+    page: { title: "找不到这个页面", detail: "你访问的 Intelligence 页面不存在或已经移动", action: "返回 Intelligence" }
+  } : {
+    conversation: { title: "Conversation not found", detail: "This chat may have been deleted, or this account does not have access to it", action: "Back to Intelligence" },
+    shared: { title: "Shared conversation unavailable", detail: "This share link may have expired, or the owner stopped sharing the conversation", action: "Back to Intelligence" },
+    page: { title: "Page not found", detail: "This Intelligence page does not exist or has moved", action: "Back to Intelligence" }
+  };
+  const text = copy[kind] || copy.page;
+  const href = "/" + (zh ? "zh-cn" : "en");
+  return `<!doctype html><html lang="${zh ? "zh-CN" : "en"}"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><meta name="robots" content="noindex,nofollow,noarchive"><title>${text.title} · AERTEX Intelligence</title>${FAVICON_LINKS}${themeBoot}<style>
+:root{color-scheme:light;--bg:#f5f5f7;--fg:#1d1d1f;--muted:#6e6e73;--quiet:#8e8e93;--line:#424245;--icon-fill:#fff;--icon-soft:#e8e8ed;--shadow:rgba(0,0,0,.16);--chip:#fff;--chip-line:rgba(60,60,67,.14);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",system-ui,sans-serif}
+@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--fg:#f5f5f7;--muted:#a1a1a6;--quiet:#747477;--line:#d2d2d7;--icon-fill:#1c1c1e;--icon-soft:#2c2c2e;--shadow:rgba(0,0,0,.45);--chip:#181818;--chip-line:rgba(255,255,255,.1)}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--fg:#f5f5f7;--muted:#a1a1a6;--quiet:#747477;--line:#d2d2d7;--icon-fill:#1c1c1e;--icon-soft:#2c2c2e;--shadow:rgba(0,0,0,.45);--chip:#181818;--chip-line:rgba(255,255,255,.1)}
+:root[data-theme="light"]{color-scheme:light;--bg:#f5f5f7;--fg:#1d1d1f;--muted:#6e6e73;--quiet:#8e8e93;--line:#424245;--icon-fill:#fff;--icon-soft:#e8e8ed;--shadow:rgba(0,0,0,.16);--chip:#fff;--chip-line:rgba(60,60,67,.14)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg)}body{min-height:100svh}.nf-page{min-height:100svh;display:flex;flex-direction:column;align-items:center;padding:max(28px,5svh) 24px max(26px,env(safe-area-inset-bottom));text-align:center}.nf-brand{display:flex;align-items:center;justify-content:center;gap:12px;min-height:36px;color:var(--fg);font-size:18px;font-weight:700}.nf-brand .aertex-wordmark-token{width:118px;height:auto}.nf-intel{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--chip-line);border-radius:999px;background:var(--chip);font-size:12px;font-weight:650;color:var(--muted)}.nf-intel svg{width:14px;height:14px;fill:currentColor}.nf-main{width:min(100%,760px);display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:22px 0 52px}.nf-art{width:clamp(166px,30vw,230px);height:auto;display:block;margin:0 0 clamp(30px,4vw,46px);overflow:visible}.nf-title{margin:0;color:var(--fg);font-size:clamp(36px,6vw,60px);font-weight:560;line-height:1.08;letter-spacing:-.045em;text-wrap:balance}.nf-detail{max-width:560px;margin:16px 0 0;color:var(--muted);font-size:clamp(15px,2vw,18px);line-height:1.65}.nf-link{display:inline-flex;align-items:center;gap:7px;margin-top:32px;padding:11px 16px;border:1px solid var(--chip-line);border-radius:13px;background:var(--chip);color:var(--fg);font-size:15px;font-weight:650;text-decoration:none;transition:transform .12s ease,background .12s ease}.nf-link:hover{background:var(--icon-soft)}.nf-link:active{transform:scale(.98)}.nf-arrow{font-size:18px;line-height:1}.nf-footer{color:var(--quiet);font-size:12px;padding-bottom:4px}@media(max-width:520px){.nf-page{padding-left:18px;padding-right:18px}.nf-brand{gap:9px}.nf-brand .aertex-wordmark-token{width:105px}.nf-main{justify-content:flex-start;padding-top:11svh}.nf-art{width:min(52vw,198px)}}
+</style></head><body><main class="nf-page"><header class="nf-brand"><span>AERTEX</span><span class="nf-intel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.4l1.55 4.55L18.1 8.5l-4.55 1.55L12 14.6l-1.55-4.55L5.9 8.5l4.55-1.55L12 2.4Zm6.1 10.4.95 2.8 2.8.95-2.8.95-.95 2.8-.95-2.8-2.8-.95 2.8-.95.95-2.8ZM5.4 14.3l.75 2.2 2.2.75-2.2.75-.75 2.2-.75-2.2-2.2-.75 2.2-.75.75-2.2Z"/></svg>Intelligence</span></header><section class="nf-main"><svg class="nf-art" viewBox="0 0 260 170" role="img" aria-label="${text.title}"><defs><filter id="nf-shadow" x="-25%" y="-25%" width="160%" height="170%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="var(--shadow)"/></filter></defs><g filter="url(#nf-shadow)"><rect x="39" y="34" width="154" height="104" rx="28" fill="var(--icon-fill)"/><path d="M39 65h154" fill="none" stroke="var(--icon-soft)" stroke-width="4"/><circle cx="61" cy="50" r="4" fill="var(--line)" opacity=".72"/><circle cx="76" cy="50" r="4" fill="var(--line)" opacity=".42"/><path d="M72 93h54M72 111h36" fill="none" stroke="var(--line)" stroke-width="7" stroke-linecap="round" opacity=".68"/><circle cx="173" cy="91" r="40" fill="var(--icon-fill)" stroke="var(--line)" stroke-width="5"/><path d="M202 120l25 28" fill="none" stroke="var(--line)" stroke-width="11" stroke-linecap="round"/><path d="M161 77l24 28M185 77l-24 28" fill="none" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/></g></svg><h1 class="nf-title">${text.title}</h1><p class="nf-detail">${text.detail}</p><a class="nf-link" href="${href}"><span>${text.action}</span><span class="nf-arrow" aria-hidden="true">→</span></a></section><footer class="nf-footer">AERTEX Intelligence</footer></main></body></html>`;
 }
