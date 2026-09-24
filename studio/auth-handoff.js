@@ -69,6 +69,8 @@ export function normalizeHandoffNext(value, locale, workTarget = false, gptTarge
   }
   if (gptTarget) {
     const candidateLocale = candidate === "/en" || candidate.startsWith("/en/") ? "en" : candidate === "/zh-cn" || candidate.startsWith("/zh-cn/") ? "zh" : locale;
+    const adminTarget = candidate === "/admin" || candidate === "/en/admin" || candidate === "/zh-cn/admin";
+    if (adminTarget) return candidateLocale === "zh" ? "/zh-cn/admin" : "/en/admin";
     return candidateLocale === "zh" ? "/zh-cn" : "/en";
   }
   const fallback = locale === "zh" ? "/zh-cn/dashboard" : "/en/dashboard";
