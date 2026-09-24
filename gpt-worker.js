@@ -1,13 +1,15 @@
 import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
-import { verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
+import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp } from "./studio/gpt-ui.js";
 import { handleAiApi, handleAiAdminApi } from "./studio/ai-gateway.js";
+import { handleAccountSecurity } from "./studio/account-security-api.js";
 import { renderAiAdmin } from "./studio/ai-admin-ui.js";
 import { gptOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
+import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./studio/account-menu.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
 
 
@@ -38,6 +40,15 @@ export default {
       if (request.method !== "POST") return text("Method not allowed", 405);
       const locale = preferredLocale(request) === "en" ? "en" : "zh";
       return handleAuthHandoff(request, env, locale);
+    }
+
+    if (pathname === "/api/auth/logout") {
+      if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
+      return handleStudioSessionLogout(request);
+    }
+
+    if (pathname === "/api/account/security/summary") {
+      return handleAccountSecurity(request, "summary");
     }
 
     if (pathname.startsWith("/api/ai/")) {
@@ -303,6 +314,7 @@ button,a{font:inherit}
   .topbar{padding:0 10px}
   .gate{margin:54px auto}
 }
+${accountMenuStyles()}
 </style>
 </head>
 <body>
@@ -318,6 +330,7 @@ button,a{font:inherit}
       <div class="controls">
         <a class="control" href="${languageHref}" aria-label="${languageTitle}" title="${languageTitle}">${languageLabel}</a>
         <button class="control" id="themeToggle" type="button" aria-label="${zh ? "切换深浅色" : "Toggle color mode"}" title="${zh ? "切换深浅色" : "Toggle color mode"}">◐</button>
+        ${accountMenuMarkup(zh ? "zh-cn" : "en")}
       </div>
     </header>
     <section class="content">
@@ -350,6 +363,7 @@ button,a{font:inherit}
   updateIcon();
 })();
 </script>
+${accountMenuClientScript({ locale: zh ? "zh-cn" : "en" })}
 </body>
 </html>`;
 }
@@ -373,7 +387,7 @@ function securityHeaders(contentType) {
     "x-frame-options": "DENY",
     "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
     "strict-transport-security": "max-age=31536000; includeSubDomains",
-    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
   });
 }
 
