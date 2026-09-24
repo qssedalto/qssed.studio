@@ -4,6 +4,7 @@ import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp } from "./studio/gpt-ui.js";
 import { handleAiApi, handleAiAdminApi } from "./studio/ai-gateway.js";
+import { renderAiAdmin } from "./studio/ai-admin-ui.js";
 import { gptOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
@@ -55,6 +56,16 @@ export default {
     if (pathname === "/") {
       const locale = preferredLocale(request);
       return redirect(`${gptOriginForRequest(request)}/${locale}`);
+    }
+
+    if (pathname === "/admin" || pathname === "/zh-cn/admin" || pathname === "/en/admin") {
+      const locale = pathname.startsWith("/en") ? "en" : "zh-cn";
+      const gate = await verifyStudioPageSession(request);
+      if (!gate.ok) return withStudioSessionCookies(gptSessionRedirect(request, locale === "en" ? "/en" : "/zh-cn"), gate.cookies || []);
+      const probe = await handleAiAdminApi(new Request(new URL("/api/ai/admin/state", request.url), { headers: request.headers }), env, gate);
+      if (probe.status === 403) return text("Administrator access required.", 403);
+      const response = withStudioSessionCookies(html(renderAiAdmin(locale)), gate.cookies || []);
+      return request.method === "HEAD" ? new Response(null,{status:response.status,headers:response.headers}) : response;
     }
 
     if (pathname === "/zh-cn" || pathname === "/en") {
