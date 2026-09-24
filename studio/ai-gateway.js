@@ -39,6 +39,124 @@ export async function handleAiAdminApi(request, env, session) {
     return json({ ok: true, models: check.models || [] });
   }
 
+  const providerModelsMatch = path.match(/^\/api\/ai\/admin\/provider\/([0-9a-f-]{36})\/models$/i);
+  if (providerModelsMatch && request.method === "GET") {
+    if (!env.AI_CREDENTIAL_KEY) return json({ error: "AI credential encryption is not configured." }, 503);
+    const providerId = providerModelsMatch[1];
+    if (!uuid(providerId)) return json({ error: "Invalid provider." }, 400);
+    const current = await restData(session, "/ai_providers?id=eq." + providerId + "&select=id,encrypted_api_key,api_key_iv&limit=1");
+    const row = current.ok && Array.isArray(current.data) ? current.data[0] : null;
+    if (!row) return json({ error: "Provider not found." }, 404);
+    try {
+      const key = await decrypt(row.encrypted_api_key, row.api_key_iv, env.AI_CREDENTIAL_KEY);
+      const check = await validateProjectKey(key);
+      if (!check.ok) return json({ error: check.error || "Stored Project API Key is no longer valid." }, 400);
+      return json({ ok: true, models: check.models || [] });
+    } catch {
+      return json({ error: "Stored Project API Key cannot be decrypted." }, 503);
+    }
+  }
+
+  const providerMatch = path.match(/^\/api\/ai\/admin\/provider\/([0-9a-f-]{36})$/i);
+  if (providerMatch && request.method === "PATCH") {
+    if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+    if (!env.AI_CREDENTIAL_KEY) return json({ error: "AI credential encryption is not configured." }, 503);
+    const providerId = providerMatch[1];
+    if (!uuid(providerId)) return json({ error: "Invalid provider." }, 400);
+
+    const current = await restData(session,
+      "/ai_providers?id=eq." + providerId +
+      "&select=id,encrypted_api_key,api_key_iv,encrypted_admin_key,admin_key_iv,admin_key_hint&limit=1");
+    const existing = current.ok && Array.isArray(current.data) ? current.data[0] : null;
+    if (!existing) return json({ error: "Provider not found." }, 404);
+
+    const b = await body(request);
+    const name = String(b.name || "").trim().slice(0, 80);
+    const allowedModels = models(b.allowed_models);
+    const defaultModel = cleanModel(b.default_model);
+    if (!name) return json({ error: "Provider name is required." }, 400);
+    if (!allowedModels.length) return json({ error: "Select at least one allowed model." }, 400);
+    if (!defaultModel || !allowedModels.includes(defaultModel)) {
+      return json({ error: "Default model must be included in the allowed model list." }, 400);
+    }
+
+    const replacementKey = clean(b.api_key, 800);
+    let projectKey;
+    try {
+      projectKey = replacementKey || await decrypt(existing.encrypted_api_key, existing.api_key_iv, env.AI_CREDENTIAL_KEY);
+    } catch {
+      return json({ error: "Stored Project API Key cannot be decrypted." }, 503);
+    }
+    const keyCheck = await validateProjectKey(projectKey);
+    if (!keyCheck.ok) return json({ error: keyCheck.error || "OpenAI API key validation failed." }, 400);
+    const accessibleModels = new Set(keyCheck.models || []);
+    if (!allowedModels.every(model => accessibleModels.has(model))) {
+      return json({ error: "One or more selected models are not available to this Project API Key." }, 400);
+    }
+
+    const patch = {
+      name,
+      default_model: defaultModel,
+      allowed_models: allowedModels.slice(0, 30),
+      monthly_budget_usd: numOrNull(b.monthly_budget_usd),
+      input_price_per_million: numOrZero(b.input_price_per_million),
+      output_price_per_million: numOrZero(b.output_price_per_million),
+      is_active: b.is_active !== false,
+      updated_at: new Date().toISOString()
+    };
+
+    if (replacementKey) {
+      const encrypted = await encrypt(replacementKey, env.AI_CREDENTIAL_KEY);
+      patch.encrypted_api_key = encrypted.cipher;
+      patch.api_key_iv = encrypted.iv;
+      patch.key_hint = replacementKey.slice(-4);
+    }
+
+    const replacementAdminKey = clean(b.admin_key, 800);
+    if (b.clear_admin_key === true) {
+      patch.encrypted_admin_key = null;
+      patch.admin_key_iv = null;
+      patch.admin_key_hint = null;
+    } else if (replacementAdminKey) {
+      const adminCheck = await readOpenAiMonthCosts(replacementAdminKey);
+      if (!adminCheck.available) {
+        return json({ error: adminCheck.error || "OpenAI Admin Key could not read organization costs." }, 400);
+      }
+      const encryptedAdmin = await encrypt(replacementAdminKey, env.AI_CREDENTIAL_KEY);
+      patch.encrypted_admin_key = encryptedAdmin.cipher;
+      patch.admin_key_iv = encryptedAdmin.iv;
+      patch.admin_key_hint = replacementAdminKey.slice(-4);
+    }
+
+    const saved = await restData(session, "/ai_providers?id=eq." + providerId, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(patch)
+    });
+    if (!saved.ok) return json({ error: saved.data?.message || "Unable to update provider." }, saved.status || 502);
+    return json({ provider: saved.data?.[0] ? sanitizeProvider(saved.data[0]) : null });
+  }
+
+  if (providerMatch && request.method === "DELETE") {
+    if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+    const providerId = providerMatch[1];
+    if (!uuid(providerId)) return json({ error: "Invalid provider." }, 400);
+
+    const bindings = await restData(session, "/ai_user_access?provider_id=eq." + providerId + "&select=user_id&limit=1");
+    if (!bindings.ok) return json({ error: "Unable to check provider usage." }, 502);
+    if (Array.isArray(bindings.data) && bindings.data.length) {
+      return json({ error: "This provider is still assigned to one or more users. Remove those assignments before deleting it." }, 409);
+    }
+
+    const removed = await restData(session, "/ai_providers?id=eq." + providerId, {
+      method: "DELETE",
+      headers: { Prefer: "return=representation" }
+    });
+    if (!removed.ok) return json({ error: removed.data?.message || "Unable to delete provider." }, removed.status || 502);
+    if (!Array.isArray(removed.data) || !removed.data.length) return json({ error: "Provider not found." }, 404);
+    return json({ deleted: true, id: providerId });
+  }
+
   if (path === "/api/ai/admin/state" && request.method === "GET") {
     const state = await rpc(session, "get_ai_admin_state", {});
     if (!state.ok) return json({ error: "Unable to load AI administration." }, 502);
