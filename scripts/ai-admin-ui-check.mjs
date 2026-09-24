@@ -14,6 +14,8 @@ for (const locale of ["zh-cn","en"]) {
     'value="bailian"',
     'userProviderAccessSelections',
     'provider_access:providerAccess',
+    'daily_limit_tokens:row.querySelector(".dailyTokens").value',
+    'monthly_limit_tokens:row.querySelector(".monthlyTokens").value',
     'error?.code==="RATE_LIMITED"',
     'Retry-After',
     '.hidden{display:none!important}'
