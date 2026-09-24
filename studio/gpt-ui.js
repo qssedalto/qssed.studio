@@ -1,4 +1,5 @@
 import { FAVICON_LINKS } from "./favicon.js";
+import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
 
 export function renderGptApp(locale) {
   const zh = locale === "zh-cn";
@@ -56,7 +57,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
 .primary{border:0;background:var(--accent);color:var(--accentText);border-radius:11px;padding:8px 14px;cursor:pointer;font-weight:650;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.primary:disabled{opacity:.45;cursor:not-allowed}
 .gate{width:min(650px,calc(100% - 36px));margin:80px auto;padding:28px;border:1px solid var(--line);background:var(--panel);border-radius:22px}.gate h2{margin:0 0 8px;font-size:23px}.gate p{color:var(--muted);line-height:1.65}.gateActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.adminButton{border:1px solid var(--line);background:var(--accent);color:var(--accentText);border-radius:12px;padding:10px 13px;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:.42em}.adminButton .aertex-wordmark-token{width:5.18687em;height:1em}.code{font:700 28px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;margin:18px 0 8px}.hidden{display:none!important}.error{color:var(--danger)}
 @media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{display:none}.composerWrap{left:0}.topbar{padding:0 10px}.model{min-width:0;flex:1}.account{display:none}.messages{padding-top:28px}}
-</style>
+${"<style>"+accountMenuStyles()+"</style>"}
 </head>
 <body>
 <div class="app">
@@ -71,6 +72,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   <select class="model" id="modelSelect" disabled><option>${t.loadingModels}</option></select>
   <select id="effortSelect" aria-label="${t.reasoning}" disabled><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="xhigh">Extra High</option></select>
   <div class="account" id="accountLabel">${t.checking}</div>
+  ${accountMenuMarkup(zh ? "zh-cn" : "en")}
 </header>
 <section class="content" id="content">
   <div class="gate" id="gate">
@@ -203,5 +205,6 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   $("retry").addEventListener("click",checkStatus);$("newChat").addEventListener("click",()=>{state.conversationId="";$("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden")});$("sendButton").addEventListener("click",send);$("composer").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void send()}});$("composer").addEventListener("input",e=>{e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,180)+"px"});void checkStatus();
 })();
 </script>
+${accountMenuClientScript({ locale: zh ? "zh-cn" : "en" })}
 </body></html>`;
 }
