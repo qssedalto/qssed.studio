@@ -11,7 +11,7 @@ export function renderAiAdmin(locale) {
     monthly:"月额度 $", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
     official:"OpenAI 官方本月费用", local:"AERTEX 本地估算", remaining:"预算剩余", requests:"本月请求",
     billingOn:"官方账单已连接", billingOff:"未配置 Admin Key", saved:"已保存", projectValidated:"Project Key 验证通过",
-    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户可用模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 Project API Key。", noModelsForKey:"这个 Project API Key 没有返回可用于对话的模型。", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销。", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key", regionUnsupported:"当前网络或服务区域暂不支持 OpenAI API 检查。这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能。"
+    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户可用模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 Project API Key。", noModelsForKey:"这个 Project API Key 没有返回可用于对话的模型。", accessSaving:"保存中…", accessSaved:"已保存 ✓", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销。", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key", regionUnsupported:"当前网络或服务区域暂不支持 OpenAI API 检查。这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能。"
   } : {
     title:"Intelligence Admin", intro:"Manage OpenAI credentials, official costs, user access, and quotas.",
     add:"Add OpenAI Provider", name:"Name", key:"Project API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
@@ -23,7 +23,7 @@ export function renderAiAdmin(locale) {
     monthly:"Monthly quota $", rpm:"RPM", apply:"Save access", empty:"No provider configured",
     official:"OpenAI official month cost", local:"AERTEX local estimate", remaining:"Budget remaining", requests:"Requests this month",
     billingOn:"Official billing connected", billingOff:"No Admin Key", saved:"Saved", projectValidated:"Project Key validated",
-    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the Project API Key first.", noModelsForKey:"This Project API Key returned no chat-capable models.", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key", regionUnsupported:"OpenAI API checks are unavailable from the current network or service region. This does not mean the key is invalid. Use OpenAI-connected features only from an officially supported country or territory."
+    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the Project API Key first.", noModelsForKey:"This Project API Key returned no chat-capable models.", accessSaving:"Saving…", accessSaved:"Saved ✓", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key", regionUnsupported:"OpenAI API checks are unavailable from the current network or service region. This does not mean the key is invalid. Use OpenAI-connected features only from an officially supported country or territory."
   };
 
   return `<!doctype html>
@@ -45,7 +45,7 @@ input:focus,select:focus{border-color:var(--text)}button{border:0;border-radius:
 dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.22)}dialog::backdrop{background:rgba(0,0,0,.36);backdrop-filter:blur(2px)}.dialogHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}.dialogHead strong{font-size:17px}.dialogBody{padding:8px 18px 14px;overflow:auto;max-height:50vh}.dialogFoot{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px 16px;border-top:1px solid var(--line)}.dialogFoot .secondaryBtn{background:var(--soft);color:var(--text)}.choice{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid var(--line);font-size:14px}.choice:last-child{border-bottom:0}.choice input{width:19px;height:19px;margin:0;accent-color:var(--text)}
 .sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.providerCard{border-top:1px solid var(--line);padding:16px 0}.providerTop{display:flex;align-items:start;justify-content:space-between;gap:14px}.providerName{font-weight:730}.providerActions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}.smallButton{padding:7px 10px;border:1px solid var(--line);background:var(--soft);color:var(--text);border-radius:9px;font-size:12px}.dangerButton{color:var(--bad)}.bad{color:var(--bad)}.ok{color:var(--good)}
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.metric{background:var(--soft);border-radius:12px;padding:11px}.metric span{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}.metric strong{font-size:17px}
-.user{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.8fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,.58fr) minmax(0,.58fr) minmax(0,.45fr) auto;gap:8px;align-items:end;border-top:1px solid var(--line);padding:12px 0;min-width:0}.user>*{min-width:0}.userName{align-self:center;min-width:0}.userName strong,.userName .hint{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.8fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,.58fr) minmax(0,.58fr) minmax(0,.45fr) auto;gap:8px;align-items:end;border-top:1px solid var(--line);padding:12px 0;min-width:0}.user>*{min-width:0}.accessCell{display:flex;flex-direction:column;align-items:stretch;gap:5px}.accessFeedback{min-height:16px;font-size:11px;color:var(--muted);line-height:1.35}.accessFeedback.ok{color:var(--good)}.accessFeedback.bad{color:var(--bad)}.access.isSaved{background:var(--good);color:#fff}.userName{align-self:center;min-width:0}.userName strong,.userName .hint{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .status{min-height:20px;margin:5px 0 12px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:var(--soft);font-size:11px}
 @media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}.user{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}
 @media(max-width:560px){header{display:block}.metrics,.user{grid-template-columns:1fr}}
@@ -456,7 +456,7 @@ function render(){
       +'<div><label>${t.daily}</label><input class="daily" type="number" min="0" step=".01" value="'+esc(user.daily_limit_usd??"")+'"></div>'
       +'<div><label>${t.monthly}</label><input class="monthly" type="number" min="0" step=".01" value="'+esc(user.monthly_limit_usd??"")+'"></div>'
       +'<div><label>${t.rpm}</label><input class="rpm" type="number" min="1" max="300" value="'+esc(user.requests_per_minute||20)+'"></div>'
-      +'<button class="primary access">${t.apply}</button></div>';
+      +'<div class="accessCell"><button class="primary access" type="button">${t.apply}</button><div class="accessFeedback" aria-live="polite"></div></div></div>';
   }).join("");
 
   document.querySelectorAll(".editProvider").forEach(button=>button.onclick=()=>openEditProvider(button.dataset.provider));
@@ -514,20 +514,42 @@ $("saveProvider").onclick=async()=>{
 };
 
 async function saveAccess(event){
-  const row=event.currentTarget.closest(".user");
+  const button=event.currentTarget;
+  const row=button.closest(".user");
+  const feedback=row.querySelector(".accessFeedback");
   const user=(state.users||[]).find(item=>item.user_id===row.dataset.user);
+  if(!user)return;
+
   const providerId=row.querySelector(".providerSelect").value;
+  const reset=()=>{
+    button.disabled=false;
+    button.classList.remove("isSaved");
+    button.textContent="${t.apply}";
+  };
+  const fail=message=>{
+    feedback.textContent=message;
+    feedback.className="accessFeedback bad";
+    reset();
+  };
+
   if(row.querySelector(".enabled").value==="1"&&!providerId){
-    $("msg").textContent="${t.noProvider}";
-    $("msg").className="status bad";
+    fail("${t.noProvider}");
     return;
   }
+
   const allowedModels=userModelSelections.get(user.user_id)||[];
   if(row.querySelector(".enabled").value==="1"&&!allowedModels.length){
-    $("msg").textContent="${t.selectAtLeastOne}";
-    $("msg").className="status bad";
+    fail("${t.selectAtLeastOne}");
     return;
   }
+
+  button.disabled=true;
+  button.classList.remove("isSaved");
+  button.textContent="${t.accessSaving}";
+  feedback.textContent="${t.accessSaving}";
+  feedback.className="accessFeedback";
+  $("msg").textContent="";
+
   try{
     await api("/access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       user_id:user.user_id,
@@ -538,11 +560,28 @@ async function saveAccess(event){
       monthly_limit_usd:row.querySelector(".monthly").value,
       requests_per_minute:row.querySelector(".rpm").value
     })});
+
+    button.textContent="${t.accessSaved}";
+    button.classList.add("isSaved");
+    feedback.textContent="${t.accessSaved}";
+    feedback.className="accessFeedback ok";
     $("msg").textContent="${t.saved}";
     $("msg").className="status ok";
-    await load();
+
+    window.setTimeout(()=>{
+      if(document.body.contains(button))reset();
+    },1800);
+
+    window.setTimeout(()=>{
+      if(document.body.contains(feedback)){
+        feedback.textContent="";
+        feedback.className="accessFeedback";
+      }
+    },3500);
   }catch(error){
-    $("msg").textContent=friendlyError(error);
+    const message=friendlyError(error);
+    fail(message);
+    $("msg").textContent=message;
     $("msg").className="status bad";
   }
 }
