@@ -3,6 +3,7 @@ import { mainOriginForRequest, rootDomainForRequest } from "./studio/domain-fami
 import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
+import { intelligenceThemeAttr, intelligenceThemeBootScript, intelligenceThemeFromRequest } from "./studio/intelligence-theme.js";
 
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
@@ -232,7 +233,7 @@ async function handleContinue(request, env) {
   headers.set("content-security-policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${mainSite}; base-uri 'none'; frame-ancestors 'none'`);
   if (rotated) for (const value of sessionCookies(rotated)) headers.append("set-cookie", value);
 
-  return new Response(injectBrandLogoRuntime(handoffPage(mainSite, accessToken, refreshToken, next)), { status: 200, headers });
+  return new Response(injectBrandLogoRuntime(handoffPage(mainSite, accessToken, refreshToken, next, intelligenceThemeFromRequest(request))), { status: 200, headers });
 }
 
 function safeNextPath(value) {
@@ -259,8 +260,10 @@ function htmlEscape(value) {
   return String(value || "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "\'": "&#39;" }[character]));
 }
 
-function handoffPage(mainSite, accessToken, refreshToken, next) {
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>AERTEX ID</title>${FAVICON_LINKS}<style>html,body{height:100%;margin:0}body{display:grid;place-items:center;background:#0b0b0d;color:#f5f5f7;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid #3a3a3c;border-top-color:#0a84ff;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:#a1a1a6}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 AERTEX</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(mainSite)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+function handoffPage(mainSite, accessToken, refreshToken, next, theme = "") {
+  const themeAttr = intelligenceThemeAttr(theme);
+  const themeBoot = intelligenceThemeBootScript();
+  return `<!doctype html><html lang="zh-CN"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><title>AERTEX ID</title>${FAVICON_LINKS}${themeBoot}<style>:root{color-scheme:dark;--bg:#0b0b0d;--text:#f5f5f7;--muted:#a1a1a6;--ring:#3a3a3c;--accent:#0a84ff}@media(prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}}:root[data-theme="light"]{color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}html,body{height:100%;margin:0;background:var(--bg);color:var(--text)}body{display:grid;place-items:center;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid var(--ring);border-top-color:var(--accent);border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:var(--muted)}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 AERTEX</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(mainSite)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
 }
 
 async function fetchUser(accessToken) {
@@ -436,6 +439,9 @@ function html(content, status = 200) {
 
 function authPage(pathname, request) {
   const page = pathname === "/" ? "home" : pathname.slice(1);
+  const theme = intelligenceThemeFromRequest(request);
+  const themeAttr = intelligenceThemeAttr(theme);
+  const themeBoot = intelligenceThemeBootScript();
   const authHost = new URL(request.url).hostname;
   const mainOrigin = mainOriginForRequest(request);
   const language = preferredLanguage(request);
@@ -513,7 +519,7 @@ function authPage(pathname, request) {
   };
 
   return `<!doctype html>
-<html lang="${zh ? "zh-CN" : "en"}">
+<html lang="${zh ? "zh-CN" : "en"}${themeAttr}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -521,9 +527,11 @@ function authPage(pathname, request) {
   <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
   <title>AERTEX ID</title>
   ${FAVICON_LINKS}
+  ${themeBoot}
   <style>
-    :root{color-scheme:dark light;--bg:#07080a;--panel:rgba(27,28,32,.78);--panel-strong:#1d1f24;--surface:rgba(118,118,128,.16);--surface-hover:rgba(118,118,128,.23);--text:#f5f5f7;--muted:#a1a1a6;--quiet:#73737a;--line:rgba(255,255,255,.10);--line-strong:rgba(255,255,255,.17);--accent:#0a84ff;--accent-hover:#3198ff;--danger:#ff453a;--warning:#ffd60a;--success:#30d158;--shadow:0 28px 80px rgba(0,0,0,.46);--radius:22px;--control:14px}
-    @media(prefers-color-scheme:light){:root{--bg:#f3f4f7;--panel:rgba(255,255,255,.84);--panel-strong:#fff;--surface:rgba(116,116,128,.10);--surface-hover:rgba(116,116,128,.16);--text:#111114;--muted:#62626a;--quiet:#85858d;--line:rgba(20,20,30,.09);--line-strong:rgba(20,20,30,.15);--accent:#0071e3;--accent-hover:#0077ed;--danger:#d70015;--warning:#a05a00;--success:#248a3d;--shadow:0 28px 70px rgba(38,44,60,.14)}}
+    :root{color-scheme:dark;--bg:#07080a;--panel:rgba(27,28,32,.78);--panel-strong:#1d1f24;--surface:rgba(118,118,128,.16);--surface-hover:rgba(118,118,128,.23);--text:#f5f5f7;--muted:#a1a1a6;--quiet:#73737a;--line:rgba(255,255,255,.10);--line-strong:rgba(255,255,255,.17);--accent:#0a84ff;--accent-hover:#3198ff;--danger:#ff453a;--warning:#ffd60a;--success:#30d158;--shadow:0 28px 80px rgba(0,0,0,.46);--radius:22px;--control:14px}
+    @media(prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#f3f4f7;--panel:rgba(255,255,255,.84);--panel-strong:#fff;--surface:rgba(116,116,128,.10);--surface-hover:rgba(116,116,128,.16);--text:#111114;--muted:#62626a;--quiet:#85858d;--line:rgba(20,20,30,.09);--line-strong:rgba(20,20,30,.15);--accent:#0071e3;--accent-hover:#0077ed;--danger:#d70015;--warning:#a05a00;--success:#248a3d;--shadow:0 28px 70px rgba(38,44,60,.14)}}
+    :root[data-theme="light"]{color-scheme:light;--bg:#f3f4f7;--panel:rgba(255,255,255,.84);--panel-strong:#fff;--surface:rgba(116,116,128,.10);--surface-hover:rgba(116,116,128,.16);--text:#111114;--muted:#62626a;--quiet:#85858d;--line:rgba(20,20,30,.09);--line-strong:rgba(20,20,30,.15);--accent:#0071e3;--accent-hover:#0077ed;--danger:#d70015;--warning:#a05a00;--success:#248a3d;--shadow:0 28px 70px rgba(38,44,60,.14)}
     *{box-sizing:border-box}html,body{min-height:100%;margin:0}body{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:max(22px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;background:radial-gradient(circle at 18% 12%,rgba(10,132,255,.16),transparent 34%),radial-gradient(circle at 82% 78%,rgba(94,92,230,.12),transparent 31%),var(--bg);color:var(--text)}
     .shell{width:min(100%,460px)}.brand{display:flex;align-items:center;gap:12px;margin:0 0 18px 4px}.mark{width:42px;height:42px;display:block;object-fit:contain}.brand-copy strong{display:block;font-size:15px}.brand-copy span{display:block;margin-top:2px;color:var(--muted);font-size:12px}
     .card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);backdrop-filter:blur(30px) saturate(150%);-webkit-backdrop-filter:blur(30px) saturate(150%);box-shadow:var(--shadow);padding:30px}.card:before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);opacity:.65}h1{margin:0;font-size:31px;line-height:1.08;letter-spacing:-.04em;font-weight:760}.lead{margin:10px 0 24px;color:var(--muted);font-size:14px;line-height:1.55}.hidden{display:none!important}
