@@ -17,7 +17,7 @@ for (const required of [
   'pathname === "/api/account/security/summary"',
   'handleAccountSecurity(request, "summary")',
   "injectAccountMenuRuntime(markup)",
-  "renderAdminDenied(locale, identity)"
+  "renderAdminDenied(locale, identity"
 ]) {
   assert(gptWorker.includes(required), "Intelligence account escape hatch is missing: " + required);
 }
