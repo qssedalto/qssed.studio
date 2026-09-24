@@ -3,6 +3,8 @@ import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 const OPENAI_BASE = "https://api.openai.com";
+const ZHIPU_BASE = "https://open.bigmodel.cn/api";
+const ZHIPU_MODELS = ["glm-5.3-flash", "glm-5.3", "glm-5.2"];
 const KNOWN_PRICES = {
   "gpt-5.6": { input: 4, output: 20 },
   "gpt-5.6-sol": { input: 4, output: 20 },
@@ -12,7 +14,7 @@ const KNOWN_PRICES = {
 
 export async function handleAiApi(request, env, session) {
   const path = new URL(request.url).pathname;
-  if (path === "/api/ai/config" && request.method === "GET") return userConfig(session);
+  if (path === "/api/ai/config" && request.method === "GET") return userConfig(request, session);
   if (path === "/api/ai/conversations" && request.method === "GET") {
     return rest(session, "/ai_conversations?select=id,title,model,created_at,updated_at&order=updated_at.desc&limit=50");
   }
@@ -33,10 +35,16 @@ export async function handleAiAdminApi(request, env, session) {
     if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
     const b = await body(request);
     const key = clean(b.api_key, 800);
-    if (!key) return json({ error: "Project API Key is required." }, 400);
-    const check = await validateProjectKey(key);
-    if (!check.ok) return json({ error: check.error || "OpenAI API key validation failed.", code: check.code || null }, check.code === "REGION_UNSUPPORTED" ? 403 : 400);
-    return json({ ok: true, models: check.models || [] });
+    const provider = cleanProvider(b.provider);
+    if (!key) return json({ error: "API Key is required." }, 400);
+    const check = await validateProviderKey(provider, key);
+    if (!check.ok) {
+      return json(
+        { error: check.error || "Provider API key validation failed.", code: check.code || null },
+        check.code === "REGION_UNSUPPORTED" ? 403 : 400
+      );
+    }
+    return json({ ok: true, provider, models: check.models || [] });
   }
 
   const providerModelsMatch = path.match(/^\/api\/ai\/admin\/provider\/([0-9a-f-]{36})\/models$/i);
@@ -44,14 +52,14 @@ export async function handleAiAdminApi(request, env, session) {
     if (!env.AI_CREDENTIAL_KEY) return json({ error: "AI credential encryption is not configured." }, 503);
     const providerId = providerModelsMatch[1];
     if (!uuid(providerId)) return json({ error: "Invalid provider." }, 400);
-    const current = await restData(session, "/ai_providers?id=eq." + providerId + "&select=id,encrypted_api_key,api_key_iv&limit=1");
+    const current = await restData(session, "/ai_providers?id=eq." + providerId + "&select=id,provider,encrypted_api_key,api_key_iv&limit=1");
     const row = current.ok && Array.isArray(current.data) ? current.data[0] : null;
     if (!row) return json({ error: "Provider not found." }, 404);
     try {
       const key = await decrypt(row.encrypted_api_key, row.api_key_iv, env.AI_CREDENTIAL_KEY);
-      const check = await validateProjectKey(key);
-      if (!check.ok) return json({ error: check.error || "Stored Project API Key is no longer valid.", code: check.code || null }, check.code === "REGION_UNSUPPORTED" ? 403 : 400);
-      return json({ ok: true, models: check.models || [] });
+      const check = await validateProviderKey(cleanProvider(row.provider), key);
+      if (!check.ok) return json({ error: check.error || "Stored API Key is no longer valid.", code: check.code || null }, check.code === "REGION_UNSUPPORTED" ? 403 : 400);
+      return json({ ok: true, provider: cleanProvider(row.provider), models: check.models || [] });
     } catch {
       return json({ error: "Stored Project API Key cannot be decrypted." }, 503);
     }
@@ -66,7 +74,7 @@ export async function handleAiAdminApi(request, env, session) {
 
     const current = await restData(session,
       "/ai_providers?id=eq." + providerId +
-      "&select=id,encrypted_api_key,api_key_iv,encrypted_admin_key,admin_key_iv,admin_key_hint,allowed_models,default_model&limit=1");
+      "&select=id,provider,encrypted_api_key,api_key_iv,encrypted_admin_key,admin_key_iv,admin_key_hint,allowed_models,default_model&limit=1");
     const existing = current.ok && Array.isArray(current.data) ? current.data[0] : null;
     if (!existing) return json({ error: "Provider not found." }, 404);
 
@@ -93,10 +101,10 @@ export async function handleAiAdminApi(request, env, session) {
       } catch {
         return json({ error: "Stored Project API Key cannot be decrypted." }, 503);
       }
-      const keyCheck = await validateProjectKey(projectKey);
+      const keyCheck = await validateProviderKey(cleanProvider(existing.provider), projectKey);
       if (!keyCheck.ok) {
         return json(
-          { error: keyCheck.error || "OpenAI API key validation failed.", code: keyCheck.code || null },
+          { error: keyCheck.error || "Provider API key validation failed.", code: keyCheck.code || null },
           keyCheck.code === "REGION_UNSUPPORTED" ? 403 : 400
         );
       }
@@ -125,7 +133,11 @@ export async function handleAiAdminApi(request, env, session) {
     }
 
     const replacementAdminKey = clean(b.admin_key, 800);
-    if (b.clear_admin_key === true) {
+    if (cleanProvider(existing.provider) !== "openai") {
+      patch.encrypted_admin_key = null;
+      patch.admin_key_iv = null;
+      patch.admin_key_hint = null;
+    } else if (b.clear_admin_key === true) {
       patch.encrypted_admin_key = null;
       patch.admin_key_iv = null;
       patch.admin_key_hint = null;
@@ -154,7 +166,7 @@ export async function handleAiAdminApi(request, env, session) {
     const providerId = providerMatch[1];
     if (!uuid(providerId)) return json({ error: "Invalid provider." }, 400);
 
-    const bindings = await restData(session, "/ai_user_access?provider_id=eq." + providerId + "&select=user_id&limit=1");
+    const bindings = await restData(session, "/ai_user_provider_access?provider_id=eq." + providerId + "&select=user_id&limit=1");
     if (!bindings.ok) return json({ error: "Unable to check provider usage." }, 502);
     if (Array.isArray(bindings.data) && bindings.data.length) {
       return json({ error: "This provider is still assigned to one or more users. Remove those assignments before deleting it." }, 409);
@@ -182,10 +194,10 @@ export async function handleAiAdminApi(request, env, session) {
       const byId = new Map((secretRows.ok && Array.isArray(secretRows.data) ? secretRows.data : []).map(row => [row.id, row]));
       await Promise.all(result.providers.map(async provider => {
         const row = byId.get(provider.id);
-        provider.admin_key_configured = Boolean(row?.encrypted_admin_key && row?.admin_key_iv);
-        provider.admin_key_hint = row?.admin_key_hint || null;
+        provider.admin_key_configured = provider.provider === "openai" && Boolean(row?.encrypted_admin_key && row?.admin_key_iv);
+        provider.admin_key_hint = provider.provider === "openai" ? (row?.admin_key_hint || null) : null;
         provider.billing = { available: false, official_month_usd: null, error: null };
-        if (!provider.admin_key_configured) return;
+        if (provider.provider !== "openai" || !provider.admin_key_configured) return;
         try {
           const adminKey = await decrypt(row.encrypted_admin_key, row.admin_key_iv, env.AI_CREDENTIAL_KEY);
           provider.billing = await readOpenAiMonthCosts(adminKey);
@@ -203,20 +215,22 @@ export async function handleAiAdminApi(request, env, session) {
 
     const b = await body(request);
     const key = clean(b.api_key, 800);
-    const adminKey = clean(b.admin_key, 800);
+    const provider = cleanProvider(b.provider);
+    const adminKey = provider === "openai" ? clean(b.admin_key, 800) : "";
     const name = String(b.name || "").trim().slice(0, 80);
-    const defaultModel = cleanModel(b.default_model) || "gpt-5.6";
+    const providerDefault = provider === "zhipu" ? ZHIPU_MODELS[0] : "gpt-5.6";
+    const defaultModel = cleanModel(b.default_model) || providerDefault;
     const allowedModels = models(b.allowed_models);
     if (!allowedModels.includes(defaultModel)) allowedModels.unshift(defaultModel);
 
     if (!key || !name) return json({ error: "Provider name and API key are required." }, 400);
 
-    const keyCheck = await validateProjectKey(key);
-    if (!keyCheck.ok) return json({ error: keyCheck.error || "OpenAI API key validation failed.", code: keyCheck.code || null }, keyCheck.code === "REGION_UNSUPPORTED" ? 403 : 400);
+    const keyCheck = await validateProviderKey(provider, key);
+    if (!keyCheck.ok) return json({ error: keyCheck.error || "Provider API key validation failed.", code: keyCheck.code || null }, keyCheck.code === "REGION_UNSUPPORTED" ? 403 : 400);
     const accessibleModels = new Set(keyCheck.models || []);
     if (!allowedModels.length) return json({ error: "Select at least one allowed model." }, 400);
     if (!allowedModels.every(model => accessibleModels.has(model))) {
-      return json({ error: "One or more selected models are not available to this Project API Key." }, 400);
+      return json({ error: "One or more selected models are not available to this API Key." }, 400);
     }
     if (!allowedModels.includes(defaultModel)) {
       return json({ error: "Default model must be included in the allowed model list." }, 400);
@@ -224,7 +238,7 @@ export async function handleAiAdminApi(request, env, session) {
 
     let adminEncrypted = null;
     let adminCheck = null;
-    if (adminKey) {
+    if (provider === "openai" && adminKey) {
       adminCheck = await readOpenAiMonthCosts(adminKey);
       if (!adminCheck.available) {
         return json({ error: adminCheck.error || "OpenAI Admin Key could not read organization costs." }, 400);
@@ -235,8 +249,8 @@ export async function handleAiAdminApi(request, env, session) {
     const encrypted = await encrypt(key, env.AI_CREDENTIAL_KEY);
     const row = {
       name,
-      provider: "openai",
-      base_url: OPENAI_BASE,
+      provider,
+      base_url: provider === "zhipu" ? ZHIPU_BASE : OPENAI_BASE,
       encrypted_api_key: encrypted.cipher,
       api_key_iv: encrypted.iv,
       key_hint: key.slice(-4),
@@ -271,40 +285,142 @@ export async function handleAiAdminApi(request, env, session) {
   if (path === "/api/ai/admin/access" && request.method === "POST") {
     if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
     const b = await body(request);
-    if (!uuid(b.user_id) || (b.provider_id && !uuid(b.provider_id))) {
-      return json({ error: "Invalid user or provider." }, 400);
+    if (!uuid(b.user_id)) return json({ error: "Invalid user." }, 400);
+
+    const requested = Array.isArray(b.provider_access) ? b.provider_access : [];
+    const normalized = [];
+    const seen = new Set();
+    for (const item of requested) {
+      const providerId = String(item?.provider_id || "");
+      if (!uuid(providerId) || seen.has(providerId)) continue;
+      seen.add(providerId);
+      normalized.push({
+        provider_id: providerId,
+        allowed_models: models(item?.allowed_models)
+      });
     }
-    const row = {
+    if (Boolean(b.enabled) && !normalized.length) {
+      return json({ error: "Select at least one provider." }, 400);
+    }
+
+    if (normalized.length) {
+      const ids = normalized.map(item => item.provider_id);
+      const providerRows = await restData(
+        session,
+        "/ai_providers?id=in.(" + ids.join(",") + ")&select=id,allowed_models,is_active"
+      );
+      if (!providerRows.ok) return json({ error: "Unable to validate provider access." }, 502);
+      const byId = new Map((Array.isArray(providerRows.data) ? providerRows.data : []).map(row => [row.id, row]));
+      for (const item of normalized) {
+        const provider = byId.get(item.provider_id);
+        if (!provider || provider.is_active === false) return json({ error: "One or more providers are unavailable." }, 400);
+        const providerModels = models(provider.allowed_models);
+        if (!item.allowed_models.length) item.allowed_models = [...providerModels];
+        if (!item.allowed_models.length || !item.allowed_models.every(model => providerModels.includes(model))) {
+          return json({ error: "One or more selected models are not allowed by their provider." }, 400);
+        }
+      }
+    }
+
+    const accessRow = {
       user_id: b.user_id,
-      provider_id: b.provider_id || null,
+      provider_id: normalized[0]?.provider_id || null,
       enabled: Boolean(b.enabled),
-      allowed_models: models(b.allowed_models),
+      allowed_models: normalized[0]?.allowed_models || [],
       daily_limit_usd: numOrNull(b.daily_limit_usd),
       monthly_limit_usd: numOrNull(b.monthly_limit_usd),
       requests_per_minute: Math.max(1, Math.min(300, Number(b.requests_per_minute) || 20)),
       updated_by: session.user.id,
       updated_at: new Date().toISOString()
     };
-    return rest(session, "/ai_user_access?on_conflict=user_id", {
+
+    const saved = await restData(session, "/ai_user_access?on_conflict=user_id", {
       method: "POST",
       headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-      body: JSON.stringify(row)
+      body: JSON.stringify(accessRow)
     });
+    if (!saved.ok) return json({ error: saved.data?.message || "Unable to save AI access." }, saved.status || 502);
+
+    const cleared = await restData(session, "/ai_user_provider_access?user_id=eq." + b.user_id, {
+      method: "DELETE",
+      headers: { Prefer: "return=minimal" }
+    });
+    if (!cleared.ok) return json({ error: "Unable to replace provider assignments." }, 502);
+
+    if (normalized.length) {
+      const rows = normalized.map(item => ({
+        user_id: b.user_id,
+        provider_id: item.provider_id,
+        enabled: true,
+        allowed_models: item.allowed_models,
+        updated_by: session.user.id,
+        updated_at: new Date().toISOString()
+      }));
+      const linked = await restData(session, "/ai_user_provider_access", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify(rows)
+      });
+      if (!linked.ok) return json({ error: linked.data?.message || "Unable to save provider assignments." }, linked.status || 502);
+    }
+
+    return json({ ok: true, access: saved.data?.[0] || null, provider_access: normalized });
   }
 
   return json({ error: "AI administrator route not found." }, 404);
 }
 
-async function userConfig(session) {
+async function userConfig(request, session) {
   const r = await rpc(session, "get_ai_runtime_config", {});
   if (!r.ok) return json({ enabled: false, error: "AI access is not enabled." }, 403);
+
   const a = r.data.access;
-  const p = r.data.provider;
+  const country = String(request.cf?.country || request.headers.get("CF-IPCountry") || "").toUpperCase() || null;
+  const providers = Array.isArray(r.data.providers) ? r.data.providers : [];
+  const publicProviders = [];
+  const modelOptions = [];
+
+  for (const p of providers) {
+    const availability = providerAvailability(p.provider, country);
+    const allowed = models(p.allowed_models);
+    publicProviders.push({
+      id: p.id,
+      name: p.name,
+      provider: p.provider,
+      default_model: p.default_model,
+      available: availability.available,
+      unavailable_code: availability.code || null
+    });
+    for (const model of allowed) {
+      modelOptions.push({
+        provider_id: p.id,
+        provider_name: p.name,
+        provider: p.provider,
+        model,
+        available: availability.available,
+        unavailable_code: availability.code || null
+      });
+    }
+  }
+
+  const firstAvailable = modelOptions.find(item => item.available) || modelOptions[0] || null;
+  let preferred = firstAvailable;
+  if (firstAvailable) {
+    const preferredProvider = providers.find(p => p.id === firstAvailable.provider_id);
+    preferred = modelOptions.find(item =>
+      item.available &&
+      item.provider_id === preferredProvider?.id &&
+      item.model === preferredProvider?.default_model
+    ) || firstAvailable;
+  }
+
   return json({
     enabled: true,
-    provider: { id: p.id, name: p.name },
-    models: (a.allowed_models?.length ? a.allowed_models : p.allowed_models) || [],
-    default_model: p.default_model,
+    country,
+    providers: publicProviders,
+    models: modelOptions,
+    default_provider_id: preferred?.provider_id || null,
+    default_model: preferred?.model || null,
     usage: r.data.usage,
     limits: {
       daily: a.daily_limit_usd,
@@ -326,7 +442,7 @@ async function chat(request, env, session) {
   if (!cfg.ok) return json({ error: "AI access is not enabled for this account." }, 403);
 
   const a = cfg.data.access;
-  const p = cfg.data.provider;
+  const providers = Array.isArray(cfg.data.providers) ? cfg.data.providers : [];
   const u = cfg.data.usage;
   if (a.daily_limit_usd != null && Number(u.today_usd) >= Number(a.daily_limit_usd)) {
     return json({ error: "Daily AI quota reached." }, 429);
@@ -338,9 +454,35 @@ async function chat(request, env, session) {
     return json({ error: "AI request rate limit reached." }, 429);
   }
 
-  const allowed = (a.allowed_models?.length ? a.allowed_models : p.allowed_models) || [];
-  const model = cleanModel(b.model) || p.default_model;
-  if (!allowed.includes(model)) return json({ error: "This model is not enabled for your account." }, 403);
+  const requestedProviderId = uuid(b.provider_id) ? b.provider_id : "";
+  const requestedModel = cleanModel(b.model);
+  let p = requestedProviderId ? providers.find(item => item.id === requestedProviderId) : null;
+  if (!p && requestedModel) {
+    p = providers.find(item => models(item.allowed_models).includes(requestedModel));
+  }
+  if (!p) p = providers[0] || null;
+  if (!p) return json({ error: "No active AI provider is available for this account." }, 403);
+
+  const country = String(request.cf?.country || request.headers.get("CF-IPCountry") || "").toUpperCase();
+  const availability = providerAvailability(p.provider, country);
+  if (!availability.available) {
+    return json(
+      {
+        error: p.provider === "openai"
+          ? "OpenAI is unavailable from the current network region."
+          : "This provider is unavailable from the current network region.",
+        code: availability.code || "REGION_UNSUPPORTED",
+        provider_id: p.id
+      },
+      403
+    );
+  }
+
+  const allowed = models(p.allowed_models);
+  const model = requestedModel || cleanModel(p.default_model) || allowed[0];
+  if (!model || !allowed.includes(model)) {
+    return json({ error: "This model is not enabled for your account." }, 403);
+  }
 
   let conversationId = uuid(b.conversation_id) ? b.conversation_id : null;
   if (!conversationId) {
@@ -387,7 +529,8 @@ async function chat(request, env, session) {
     { role: "user", content: message }
   ];
 
-  const upstream = await fetch(OPENAI_BASE + "/v1/responses", {
+  const upstreamUrl = String(p.base_url || providerBase(p.provider)).replace(/\/$/, "") + "/v1/responses";
+  const upstream = await fetch(upstreamUrl, {
     method: "POST",
     headers: {
       Authorization: "Bearer " + apiKey,
@@ -399,14 +542,19 @@ async function chat(request, env, session) {
 
   if (!upstream.ok) {
     const detail = safeUpstreamError(await upstream.text());
-    if (isUnsupportedRegionMessage(detail)) {
+    if (p.provider === "openai" && isUnsupportedRegionMessage(detail)) {
       return json(
-        { error: "OpenAI API is unavailable from the current service region.", code: "REGION_UNSUPPORTED" },
+        { error: "OpenAI is unavailable from the current network region.", code: "REGION_UNSUPPORTED", provider_id: p.id },
         403
       );
     }
     return json(
-      { error: "OpenAI request failed.", detail },
+      {
+        error: (p.provider === "zhipu" ? "Zhipu GLM request failed." : "OpenAI request failed."),
+        detail,
+        code: "PROVIDER_REQUEST_FAILED",
+        provider_id: p.id
+      },
       upstream.status === 429 ? 429 : 502
     );
   }
@@ -425,7 +573,7 @@ async function chat(request, env, session) {
       const emit = (event, data) => controller.enqueue(
         encoder.encode("event: " + event + "\ndata: " + JSON.stringify(data) + "\n\n")
       );
-      emit("meta", { conversation_id: conversationId, model });
+      emit("meta", { conversation_id: conversationId, model, provider_id: p.id, provider: p.provider });
       try {
         while (true) {
           const chunk = await reader.read();
@@ -447,11 +595,13 @@ async function chat(request, env, session) {
                 emit("delta", { delta: event.delta });
               }
               if (event.type === "response.completed") {
-                responseId = event.response?.id || "";
-                inputTokens = Number(event.response?.usage?.input_tokens) || 0;
-                outputTokens = Number(event.response?.usage?.output_tokens) || 0;
+                responseId = event.response?.id || event.id || "";
+                inputTokens = Number(event.response?.usage?.input_tokens ?? event.usage?.input_tokens) || 0;
+                outputTokens = Number(event.response?.usage?.output_tokens ?? event.usage?.output_tokens) || 0;
               }
-              if (event.type === "error") throw new Error(event.error?.message || "OpenAI stream error");
+              if (event.type === "error") {
+                throw new Error(event.error?.message || "Provider stream error");
+              }
             }
           }
         }
@@ -486,10 +636,12 @@ async function chat(request, env, session) {
         });
         await restData(session, "/ai_conversations?id=eq." + conversationId, {
           method: "PATCH",
-          body: JSON.stringify({ updated_at: new Date().toISOString() })
+          body: JSON.stringify({ provider_id: p.id, model, updated_at: new Date().toISOString() })
         });
         emit("done", {
           conversation_id: conversationId,
+          provider_id: p.id,
+          model,
           input_tokens: inputTokens,
           output_tokens: outputTokens,
           estimated_cost_usd: cost
@@ -509,6 +661,52 @@ async function chat(request, env, session) {
       "x-content-type-options": "nosniff"
     }
   });
+}
+
+async function validateProviderKey(provider, key) {
+  return provider === "zhipu" ? validateZhipuKey(key) : validateProjectKey(key);
+}
+
+async function validateZhipuKey(key) {
+  let response;
+  try {
+    response = await fetch(ZHIPU_BASE + "/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + key,
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify({
+        model: ZHIPU_MODELS[0],
+        input: "OK",
+        max_output_tokens: 1,
+        stream: false
+      })
+    });
+  } catch {
+    return { ok: false, error: "Unable to reach Zhipu GLM.", code: "PROVIDER_UNREACHABLE" };
+  }
+  if (!response.ok) {
+    const detail = safeUpstreamError(await response.text());
+    return { ok: false, error: "Zhipu GLM API key rejected: " + detail, code: "KEY_REJECTED" };
+  }
+  return { ok: true, models: [...ZHIPU_MODELS] };
+}
+
+function cleanProvider(value) {
+  return String(value || "").toLowerCase() === "zhipu" ? "zhipu" : "openai";
+}
+
+function providerBase(provider) {
+  return cleanProvider(provider) === "zhipu" ? ZHIPU_BASE : OPENAI_BASE;
+}
+
+function providerAvailability(provider, country) {
+  if (cleanProvider(provider) === "openai" && String(country || "").toUpperCase() === "CN") {
+    return { available: false, code: "REGION_UNSUPPORTED" };
+  }
+  return { available: true, code: null };
 }
 
 async function validateProjectKey(key) {
@@ -712,6 +910,7 @@ function sanitizeProvider(row) {
     id: row.id,
     name: row.name,
     provider: row.provider,
+    base_url: row.base_url,
     key_hint: row.key_hint,
     admin_key_hint: row.admin_key_hint,
     default_model: row.default_model,
