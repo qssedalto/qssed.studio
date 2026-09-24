@@ -61,13 +61,17 @@ assert(gpt.includes("renderAdminDenied(locale, identity)"), "GPT Worker must ren
 assert(gpt.includes("loadDeniedIdentity(gate)"), "GPT Worker must prefill denied-admin support mail with authenticated account context.");
 assert(!gpt.includes("utm_source=chatgpt.com"), "GPT admin links must not include tracking parameters.");
 for (const required of [
-  'const ZHIPU_BASE = "https://open.bigmodel.cn/api"',
+  'const ZHIPU_BASE = "https://open.bigmodel.cn/api/paas/v4"',
   'providerAvailability(p.provider, country)',
   'request.cf?.country',
   'ai_user_provider_access',
   'validateZhipuKey',
+  'const ZHIPU_MODELS = ["glm-4.7-flash"]',
   'provider_id: p.id'
 ]) {
   assert(aiGateway.includes(required), `AI gateway is missing multi-provider invariant: ${required}`);
 }
 console.log("GPT authentication handoff looks valid.");
+
+assert(!aiGateway.includes("glm-5.3"), "Paid GLM-5.3 models must not be exposed by the free Zhipu provider.");
+assert(!aiGateway.includes("glm-5.2"), "Paid GLM-5.2 must not be exposed by the free Zhipu provider.");
