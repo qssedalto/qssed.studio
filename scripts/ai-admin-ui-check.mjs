@@ -8,5 +8,13 @@ for (const locale of ["zh-cn","en"]) {
   scripts.forEach((source,index) => {
     new vm.Script(source,{filename:`ai-admin-ui-${locale}-inline-${index}.js`});
   });
+  for (const required of [
+    'id="providerType"',
+    'value="zhipu"',
+    'userProviderAccessSelections',
+    'provider_access:providerAccess'
+  ]) {
+    if (!html.includes(required)) throw new Error(`AI admin ${locale} missing multi-provider invariant: ${required}`);
+  }
 }
 console.log("AI admin rendered inline scripts are syntactically valid.");
