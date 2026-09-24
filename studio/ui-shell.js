@@ -60,7 +60,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
   <div class="os-layout">
     <aside id="os-sidebar" class="os-sidebar">
       <a class="os-brand" href="${links.dashboard}">
-        <span class="os-brand-mark" aria-hidden="true"><img src="/favicon.svg" alt=""></span>
+        <span class="os-brand-mark" aria-hidden="true"><img src="/favicon.svg?v=aertex-20260924-2" alt=""></span>
         <span>
           <strong>AERTEX</strong>
           <small>${copy.platform}</small>
