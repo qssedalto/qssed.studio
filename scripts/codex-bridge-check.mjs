@@ -58,22 +58,18 @@ assert(!proxy.includes("access_token"), "Worker proxy must not handle ChatGPT ac
 assert(!proxy.includes("refresh_token"), "Worker proxy must not handle ChatGPT refresh tokens");
 
 for (const markup of [zh, en]) {
-  assert(markup.includes('raw("/status")'), "AERTEX Intelligence UI must probe backend status");
-  assert(markup.includes("Intelligence 离线") || markup.includes("Intelligence offline"), "AERTEX Intelligence UI must expose offline state");
-  assert(markup.includes("setInterval(checkStatus,5000)"), "AERTEX Intelligence UI must refresh online state automatically");
-  assert(markup.includes('fetch("/api/gpt/turn"'), "AERTEX Intelligence UI must stream through the authenticated Worker");
-  assert(markup.includes("/login/device"), "AERTEX Intelligence UI is missing ChatGPT device login");
-  assert(markup.includes("/models"), "AERTEX Intelligence UI is missing model discovery");
+  assert(markup.includes('req("/config")'), "AERTEX Intelligence UI must probe cloud AI access");
+  assert(markup.includes('fetch("/api/ai/chat"'), "AERTEX Intelligence UI must stream through the authenticated AI gateway");
+  assert(markup.includes("text/event-stream"), "AERTEX Intelligence UI must request SSE streaming");
   assert(!markup.includes("127.0.0.1:32146"), "Cross-device UI must not call loopback directly");
-  assert(!markup.includes("targetAddressSpace"), "Cross-device UI must not use browser private-network access");
-  assert(!markup.includes("access_token"), "AERTEX Intelligence UI must never handle ChatGPT access tokens");
+  assert(!markup.includes("access_token"), "AERTEX Intelligence UI must never handle provider access tokens");
 }
 
 const scripts = [...zh.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 assert(scripts.length === 1, "AERTEX Intelligence UI should contain one application script");
 for (const script of scripts) new Function(script);
 
-assert(worker.includes("handleRemoteCodexApi"), "AERTEX Intelligence Worker must route through the remote local bridge proxy");
+assert(worker.includes("handleAiApi"), "AERTEX Intelligence Worker must route through the cloud AI gateway");
 assert(worker.includes("verifyStudioPageSession(request)"), "GPT API must remain behind AERTEX authentication");
 assert(!worker.includes("CodexCloudContainer"), "AERTEX Intelligence Worker must not depend on Cloudflare Containers");
 assert(worker.includes("connect-src 'self'"), "GPT page networking must remain same-origin");
@@ -102,7 +98,7 @@ assert(launcher.includes("TUNNEL_TOKEN"), "Launcher must pass the remotely-manag
 assert(launcher.includes("Start-Process -FilePath $cloudflaredPath"), "Launcher must start cloudflared");
 assert(launcher.includes("WindowStyle Hidden"), "Bridge and Tunnel should run hidden after Windows login");
 
-console.log("Remote local Codex provider checks passed.");
+console.log("Codex bridge isolation and cloud Intelligence UI checks passed.");
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
