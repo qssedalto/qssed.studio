@@ -37,7 +37,7 @@ function startPage(origin) {
 </head>
 <body>
   <main class="shell">
-    <div class="brand"><img class="mark" src="/favicon.svg" alt="" aria-hidden="true"><div><strong>AERTEX</strong><span>登录流程测试</span></div></div>
+    <div class="brand"><img class="mark" src="/favicon.svg?v=aertex-20260924-2" alt="" aria-hidden="true"><div><strong>AERTEX</strong><span>登录流程测试</span></div></div>
     <section class="card">
       <div class="hero-icon" aria-hidden="true">✓</div>
       <h1>测试应用登录</h1>
@@ -129,7 +129,7 @@ function callbackPage(origin) {
 </head>
 <body>
   <main class="shell">
-    <div class="brand"><img class="mark" src="/favicon.svg" alt="" aria-hidden="true"><div><strong>AERTEX</strong><span>登录流程测试</span></div></div>
+    <div class="brand"><img class="mark" src="/favicon.svg?v=aertex-20260924-2" alt="" aria-hidden="true"><div><strong>AERTEX</strong><span>登录流程测试</span></div></div>
     <section class="card">
       <div id="statusIcon" class="result-icon pending" aria-hidden="true">…</div>
       <h1 id="title">正在检查</h1>
