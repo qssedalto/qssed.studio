@@ -1,19 +1,224 @@
 export function renderAiAdmin(locale) {
-  const zh=locale==="zh-cn";
-  const t=zh?{title:"Intelligence 管理",provider:"API Provider",add:"添加 OpenAI API",name:"名称",key:"API Key",models:"允许模型（逗号分隔）",def:"默认模型",budget:"月预算（USD）",input:"输入 $/百万 Token",output:"输出 $/百万 Token",save:"保存 Provider",users:"用户授权",load:"正在加载…",enabled:"允许使用",daily:"日额度",monthly:"月额度",rpm:"RPM",apply:"保存授权",empty:"尚未配置 Provider"}:{title:"Intelligence Admin",provider:"API Provider",add:"Add OpenAI API",name:"Name",key:"API Key",models:"Allowed models (comma-separated)",def:"Default model",budget:"Monthly budget (USD)",input:"Input $ / 1M tokens",output:"Output $ / 1M tokens",save:"Save Provider",users:"User access",load:"Loading…",enabled:"AI access",daily:"Daily quota",monthly:"Monthly quota",rpm:"RPM",apply:"Save access",empty:"No provider configured"};
-  return `<!doctype html><html lang="${zh?"zh-CN":"en"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>${t.title}</title><style>
-  :root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}*{box-sizing:border-box}body{margin:0;background:#f6f6f4;color:#171717}@media(prefers-color-scheme:dark){body{background:#101010;color:#f4f4f4}.card,input,select{background:#181818!important;color:#f4f4f4!important;border-color:#333!important}}main{max-width:1100px;margin:auto;padding:32px 18px 80px}h1{font-size:30px;letter-spacing:-.04em}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:#fff;border:1px solid #ddd;border-radius:18px;padding:18px;margin:14px 0}label{display:block;font-size:12px;opacity:.65;margin:10px 0 5px}input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;background:#fff}button{border:0;border-radius:10px;padding:10px 14px;font-weight:650;cursor:pointer}.primary{background:#111;color:#fff}.provider{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #ddd;padding:12px 0}.user{display:grid;grid-template-columns:1.4fr .8fr .7fr .7fr .5fr auto;gap:8px;align-items:end;border-top:1px solid #ddd;padding:12px 0}.hint{font-size:12px;opacity:.65}.ok{color:#18864b}.err{color:#b42318}@media(max-width:760px){.grid,.user{grid-template-columns:1fr}}</style></head><body><main><h1>${t.title}</h1><div id="msg" class="hint"></div><section class="card"><h2>${t.add}</h2><div class="grid"><div><label>${t.name}</label><input id="name" value="OpenAI Primary"></div><div><label>${t.key}</label><input id="key" type="password" autocomplete="off"></div><div><label>${t.models}</label><input id="models" value="gpt-5.6"></div><div><label>${t.def}</label><input id="def" value="gpt-5.6"></div><div><label>${t.budget}</label><input id="budget" type="number" min="0" step=".01"></div><div><label>${t.input}</label><input id="input" type="number" min="0" step=".001"></div><div><label>${t.output}</label><input id="output" type="number" min="0" step=".001"></div></div><p><button class="primary" id="saveProvider">${t.save}</button></p></section><section class="card"><h2>${t.provider}</h2><div id="providers">${t.load}</div></section><section class="card"><h2>${t.users}</h2><div id="users">${t.load}</div></section></main><script>
-  const $=x=>document.getElementById(x);let state={providers:[],users:[]};const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  async function api(path,opt={}){const r=await fetch("/api/ai/admin"+path,{...opt,credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json",...(opt.headers||{})}});const d=await r.json().catch(()=>({}));if(r.status===401){location.reload();throw 0}if(!r.ok)throw new Error(d.error||"HTTP "+r.status);return d}
-  async function load(){try{state=await api("/state");render()}catch(e){$("msg").textContent=e.message;$("msg").className="err"}}
-  function render(){
-    $("providers").innerHTML=state.providers?.length
-      ? state.providers.map(p=>'<div class="provider"><div><strong>'+esc(p.name)+'</strong><div class="hint">'+esc(p.default_model)+' · ****'+esc(p.key_hint||"")+' · $'+Number(p.month_usage_usd||0).toFixed(4)+' / month</div></div><span>'+(p.is_active?"●":"○")+'</span></div>').join("")
-      : "${t.empty}";
-    $("users").innerHTML=(state.users||[]).map(u=>'<div class="user" data-user="'+u.user_id+'"><div><strong>'+esc(u.display_name||u.username||u.email)+'</strong><div class="hint">'+esc(u.email||"")+' · $'+Number(u.month_usage_usd||0).toFixed(4)+'</div></div><div><label>${t.enabled}</label><select class="enabled"><option value="0">Off</option><option value="1" '+(u.enabled?"selected":"")+'>On</option></select></div><div><label>${t.daily}</label><input class="daily" type="number" min="0" step=".01" value="'+(u.daily_limit_usd??"")+'"></div><div><label>${t.monthly}</label><input class="monthly" type="number" min="0" step=".01" value="'+(u.monthly_limit_usd??"")+'"></div><div><label>${t.rpm}</label><input class="rpm" type="number" min="1" max="300" value="'+(u.requests_per_minute||20)+'"></div><button class="primary access">${t.apply}</button></div>').join("");
-    document.querySelectorAll(".access").forEach(b=>b.onclick=saveAccess);
+  const zh = locale === "zh-cn";
+  const t = zh ? {
+    title:"Intelligence 管理", intro:"集中管理 OpenAI 凭据、官方费用、用户权限与配额。",
+    add:"添加 OpenAI Provider", name:"名称", key:"Project API Key", adminKey:"OpenAI Admin Key（可选，仅账单）",
+    adminHint:"Admin Key 只用于读取 OpenAI Organization Costs，不参与用户聊天。",
+    models:"允许模型（逗号分隔）", def:"默认模型", budget:"AERTEX 月预算（USD）",
+    input:"自定义模型输入 $/百万 Token", output:"自定义模型输出 $/百万 Token",
+    save:"验证并保存 Provider", saving:"正在验证…", providers:"API Providers", users:"用户授权",
+    load:"正在加载…", enabled:"允许使用", provider:"Provider", allowed:"用户可用模型", daily:"日额度 $",
+    monthly:"月额度 $", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
+    official:"OpenAI 官方本月费用", local:"AERTEX 本地估算", remaining:"预算剩余", requests:"本月请求",
+    billingOn:"官方账单已连接", billingOff:"未配置 Admin Key", saved:"已保存", projectValidated:"Project Key 验证通过",
+    noProvider:"请先添加 API Provider。"
+  } : {
+    title:"Intelligence Admin", intro:"Manage OpenAI credentials, official costs, user access, and quotas.",
+    add:"Add OpenAI Provider", name:"Name", key:"Project API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
+    adminHint:"The Admin Key is used only for OpenAI Organization Costs and is never used for user inference.",
+    models:"Allowed models (comma-separated)", def:"Default model", budget:"AERTEX monthly budget (USD)",
+    input:"Custom model input $ / 1M tokens", output:"Custom model output $ / 1M tokens",
+    save:"Validate & save provider", saving:"Validating…", providers:"API Providers", users:"User access",
+    load:"Loading…", enabled:"AI access", provider:"Provider", allowed:"User models", daily:"Daily quota $",
+    monthly:"Monthly quota $", rpm:"RPM", apply:"Save access", empty:"No provider configured",
+    official:"OpenAI official month cost", local:"AERTEX local estimate", remaining:"Budget remaining", requests:"Requests this month",
+    billingOn:"Official billing connected", billingOff:"No Admin Key", saved:"Saved", projectValidated:"Project Key validated",
+    noProvider:"Add an API provider first."
+  };
+
+  return `<!doctype html>
+<html lang="${zh ? "zh-CN" : "en"}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>${t.title}</title>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f6f6f4;--panel:#fff;--text:#171717;--muted:#747474;--line:#dededb;--soft:#f0f0ed;--good:#18864b;--bad:#b42318}
+@media(prefers-color-scheme:dark){:root{--bg:#101010;--panel:#181818;--text:#f4f4f4;--muted:#999;--line:#333;--soft:#202020;--good:#52c986;--bad:#ff766d}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{max-width:1180px;margin:auto;padding:34px 18px 80px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px}h1{font-size:32px;letter-spacing:-.045em;margin:0 0 6px}h2{font-size:18px;margin:0}.intro,.hint{color:var(--muted);font-size:12px;line-height:1.6}.intro{font-size:13px;margin:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{display:block;font-size:12px;color:var(--muted);margin:9px 0 5px}input,select{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);outline:none}
+input:focus,select:focus{border-color:var(--text)}button{border:0;border-radius:10px;padding:10px 14px;font-weight:650;cursor:pointer}.primary{background:var(--text);color:var(--bg)}button:disabled{opacity:.5;cursor:not-allowed}
+.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.providerCard{border-top:1px solid var(--line);padding:16px 0}.providerTop{display:flex;align-items:start;justify-content:space-between;gap:14px}.providerName{font-weight:730}.bad{color:var(--bad)}.ok{color:var(--good)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.metric{background:var(--soft);border-radius:12px;padding:11px}.metric span{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}.metric strong{font-size:17px}
+.user{display:grid;grid-template-columns:1.25fr .8fr .9fr 1.1fr .58fr .58fr .45fr auto;gap:8px;align-items:end;border-top:1px solid var(--line);padding:12px 0}.userName{align-self:center;min-width:0}.userName strong,.userName .hint{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status{min-height:20px;margin:5px 0 12px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:var(--soft);font-size:11px}
+@media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}.user{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}
+@media(max-width:560px){header{display:block}.metrics,.user{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<header><div><h1>${t.title}</h1><p class="intro">${t.intro}</p></div><span class="pill">AERTEX Intelligence</span></header>
+<div id="msg" class="status hint"></div>
+
+<section class="card">
+  <div class="sectionHead"><h2>${t.add}</h2></div>
+  <div class="grid">
+    <div><label>${t.name}</label><input id="name" value="OpenAI Primary"></div>
+    <div><label>${t.key}</label><input id="key" type="password" autocomplete="off" spellcheck="false"></div>
+    <div><label>${t.adminKey}</label><input id="adminKey" type="password" autocomplete="off" spellcheck="false"><div class="hint">${t.adminHint}</div></div>
+    <div><label>${t.models}</label><input id="models" value="gpt-5.6,gpt-5.6-terra,gpt-5.6-luna"></div>
+    <div><label>${t.def}</label><input id="def" value="gpt-5.6"></div>
+    <div><label>${t.budget}</label><input id="budget" type="number" min="0" step=".01"></div>
+    <div><label>${t.input}</label><input id="input" type="number" min="0" step=".001" value="4"></div>
+    <div><label>${t.output}</label><input id="output" type="number" min="0" step=".001" value="20"></div>
+  </div>
+  <p><button class="primary" id="saveProvider">${t.save}</button></p>
+</section>
+
+<section class="card">
+  <div class="sectionHead"><h2>${t.providers}</h2><span class="hint" id="refreshed"></span></div>
+  <div id="providers">${t.load}</div>
+</section>
+
+<section class="card">
+  <div class="sectionHead"><h2>${t.users}</h2></div>
+  <div id="users">${t.load}</div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let state={providers:[],users:[]};
+const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+const money=value=>value==null?"—":"$"+Number(value||0).toFixed(4);
+
+async function api(path,options={}){
+  const response=await fetch("/api/ai/admin"+path,{...options,credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json",...(options.headers||{})}});
+  const data=await response.json().catch(()=>({}));
+  if(response.status===401){location.reload();throw new Error("Authentication required");}
+  if(!response.ok)throw new Error(data.error||("HTTP "+response.status));
+  return data;
+}
+
+async function load(){
+  try{
+    state=await api("/state");
+    render();
+    $("refreshed").textContent=new Date().toLocaleTimeString();
+  }catch(error){
+    $("msg").textContent=error.message;
+    $("msg").className="status bad";
   }
-  $("saveProvider").onclick=async()=>{try{await api("/provider",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:$("name").value,api_key:$("key").value,allowed_models:$("models").value,default_model:$("def").value,monthly_budget_usd:$("budget").value,input_price_per_million:$("input").value,output_price_per_million:$("output").value})});$("key").value="";$("msg").textContent="Saved";$("msg").className="ok";await load()}catch(e){$("msg").textContent=e.message;$("msg").className="err"}};
-  async function saveAccess(e){const row=e.currentTarget.closest(".user"),u=state.users.find(x=>x.user_id===row.dataset.user),p=state.providers?.[0];try{await api("/access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.user_id,provider_id:u.provider_id||p?.id||null,enabled:row.querySelector(".enabled").value==="1",allowed_models:p?.allowed_models||[],daily_limit_usd:row.querySelector(".daily").value,monthly_limit_usd:row.querySelector(".monthly").value,requests_per_minute:row.querySelector(".rpm").value})});$("msg").textContent="Saved";$("msg").className="ok";await load()}catch(err){$("msg").textContent=err.message;$("msg").className="err"}}
-  load();</script></body></html>`;
+}
+
+function providerOptions(selected){
+  let html='<option value="">—</option>';
+  for(const provider of state.providers||[]){
+    html+='<option value="'+esc(provider.id)+'" '+(provider.id===selected?"selected":"")+'>'+esc(provider.name)+'</option>';
+  }
+  return html;
+}
+
+function render(){
+  $("providers").innerHTML=(state.providers||[]).length
+    ? state.providers.map(provider=>{
+        const official=provider.billing?.available?Number(provider.billing.official_month_usd||0):null;
+        const local=Number(provider.month_usage_usd||0);
+        const spent=official==null?local:official;
+        const budget=provider.monthly_budget_usd==null?null:Number(provider.monthly_budget_usd);
+        const remaining=budget==null?null:Math.max(0,budget-spent);
+        const billingLabel=provider.admin_key_configured
+          ? (provider.billing?.available?"${t.billingOn}":"${t.billingOn} · "+esc(provider.billing?.error||""))
+          : "${t.billingOff}";
+        return '<div class="providerCard">'
+          +'<div class="providerTop"><div><div class="providerName">'+esc(provider.name)+'</div>'
+          +'<div class="hint">OpenAI · '+esc(provider.default_model)+' · API ****'+esc(provider.key_hint||"")+' · '+billingLabel+'</div></div>'
+          +'<span class="pill">'+(provider.is_active?"● Active":"○ Disabled")+'</span></div>'
+          +'<div class="metrics">'
+          +'<div class="metric"><span>${t.official}</span><strong>'+money(official)+'</strong></div>'
+          +'<div class="metric"><span>${t.local}</span><strong>'+money(local)+'</strong></div>'
+          +'<div class="metric"><span>${t.remaining}</span><strong>'+money(remaining)+'</strong></div>'
+          +'<div class="metric"><span>${t.requests}</span><strong>'+Number(provider.month_requests||0).toLocaleString()+'</strong></div>'
+          +'</div></div>';
+      }).join("")
+    : "${t.empty}";
+
+  $("users").innerHTML=(state.users||[]).map(user=>{
+    const selectedProvider=(state.providers||[]).find(p=>p.id===user.provider_id);
+    const defaultModels=(user.allowed_models||[]).length?user.allowed_models:(selectedProvider?.allowed_models||[]);
+    return '<div class="user" data-user="'+esc(user.user_id)+'">'
+      +'<div class="userName"><strong>'+esc(user.display_name||user.username||user.email)+'</strong><span class="hint">'+esc(user.email||"")+' · '+money(user.month_usage_usd||0)+'</span></div>'
+      +'<div><label>${t.enabled}</label><select class="enabled"><option value="0">Off</option><option value="1" '+(user.enabled?"selected":"")+'>On</option></select></div>'
+      +'<div><label>${t.provider}</label><select class="providerSelect">'+providerOptions(user.provider_id)+'</select></div>'
+      +'<div><label>${t.allowed}</label><input class="allowedModels" value="'+esc(defaultModels.join(","))+'"></div>'
+      +'<div><label>${t.daily}</label><input class="daily" type="number" min="0" step=".01" value="'+esc(user.daily_limit_usd??"")+'"></div>'
+      +'<div><label>${t.monthly}</label><input class="monthly" type="number" min="0" step=".01" value="'+esc(user.monthly_limit_usd??"")+'"></div>'
+      +'<div><label>${t.rpm}</label><input class="rpm" type="number" min="1" max="300" value="'+esc(user.requests_per_minute||20)+'"></div>'
+      +'<button class="primary access">${t.apply}</button></div>';
+  }).join("");
+
+  document.querySelectorAll(".access").forEach(button=>button.onclick=saveAccess);
+  document.querySelectorAll(".providerSelect").forEach(select=>select.onchange=event=>{
+    const row=event.currentTarget.closest(".user");
+    const provider=(state.providers||[]).find(item=>item.id===event.currentTarget.value);
+    if(provider)row.querySelector(".allowedModels").value=(provider.allowed_models||[]).join(",");
+  });
+}
+
+$("saveProvider").onclick=async()=>{
+  const button=$("saveProvider");
+  button.disabled=true;
+  button.textContent="${t.saving}";
+  $("msg").textContent="";
+  try{
+    const result=await api("/provider",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      name:$("name").value,
+      api_key:$("key").value,
+      admin_key:$("adminKey").value,
+      allowed_models:$("models").value,
+      default_model:$("def").value,
+      monthly_budget_usd:$("budget").value,
+      input_price_per_million:$("input").value,
+      output_price_per_million:$("output").value
+    })});
+    $("key").value="";
+    $("adminKey").value="";
+    $("msg").textContent="${t.saved} · ${t.projectValidated}"+(result.validation?.billing_key?" · ${t.billingOn}":"");
+    $("msg").className="status ok";
+    await load();
+  }catch(error){
+    $("msg").textContent=error.message;
+    $("msg").className="status bad";
+  }finally{
+    button.disabled=false;
+    button.textContent="${t.save}";
+  }
+};
+
+async function saveAccess(event){
+  const row=event.currentTarget.closest(".user");
+  const user=(state.users||[]).find(item=>item.user_id===row.dataset.user);
+  const providerId=row.querySelector(".providerSelect").value;
+  if(row.querySelector(".enabled").value==="1"&&!providerId){
+    $("msg").textContent="${t.noProvider}";
+    $("msg").className="status bad";
+    return;
+  }
+  try{
+    await api("/access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      user_id:user.user_id,
+      provider_id:providerId||null,
+      enabled:row.querySelector(".enabled").value==="1",
+      allowed_models:row.querySelector(".allowedModels").value,
+      daily_limit_usd:row.querySelector(".daily").value,
+      monthly_limit_usd:row.querySelector(".monthly").value,
+      requests_per_minute:row.querySelector(".rpm").value
+    })});
+    $("msg").textContent="${t.saved}";
+    $("msg").className="status ok";
+    await load();
+  }catch(error){
+    $("msg").textContent=error.message;
+    $("msg").className="status bad";
+  }
+}
+
+load();
+setInterval(load,60000);
+</script>
+</body>
+</html>`;
 }
