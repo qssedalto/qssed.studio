@@ -1,20 +1,20 @@
 export function renderAiAdmin(locale) {
   const zh = locale === "zh-cn";
   const t = zh ? {
-    title:"Intelligence 管理", intro:"集中管理 OpenAI 凭据、官方费用、用户权限与配额。",
-    add:"添加 OpenAI Provider", name:"名称", key:"Project API Key", adminKey:"OpenAI Admin Key（可选，仅账单）",
+    title:"Intelligence 管理", intro:"集中管理 AI Provider、凭据、用户权限与配额。",
+    add:"添加 AI Provider", name:"名称", type:"Provider 类型", typeOpenAI:"OpenAI", typeZhipu:"智谱 GLM", key:"API Key", adminKey:"OpenAI Admin Key（可选，仅账单）",
     adminHint:"Admin Key 只用于读取 OpenAI Organization Costs，不参与用户聊天。",
     models:"允许模型", def:"默认模型", budget:"AERTEX 月预算（USD）",
     input:"自定义模型输入 $/百万 Token", output:"自定义模型输出 $/百万 Token",
     save:"验证并保存 Provider", saving:"正在验证…", providers:"API Providers", users:"用户授权",
-    load:"正在加载…", enabled:"允许使用", provider:"Provider", allowed:"用户可用模型", daily:"日额度 $",
+    load:"正在加载…", enabled:"允许使用", provider:"Providers", allowed:"用户可用模型", daily:"日额度 $",
     monthly:"月额度 $", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
     official:"OpenAI 官方本月费用", local:"AERTEX 本地估算", remaining:"预算剩余", requests:"本月请求",
     billingOn:"官方账单已连接", billingOff:"未配置 Admin Key", saved:"已保存", projectValidated:"Project Key 验证通过",
-    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户可用模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 Project API Key。", noModelsForKey:"这个 Project API Key 没有返回可用于对话的模型。", accessSaving:"保存中…", accessSaved:"已保存 ✓", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销。", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key", regionUnsupported:"当前网络或服务区域暂不支持 OpenAI API 检查。这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能。"
+    noProvider:"请至少为用户选择一个 Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户 Provider 与模型", selectedModels:"已选择", modelsUnit:"个模型", providersUnit:"个 Provider", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 Project API Key。", noModelsForKey:"这个 Project API Key 没有返回可用于对话的模型。", accessSaving:"保存中…", accessSaved:"已保存 ✓", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销。", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key", regionUnsupported:"当前网络或服务区域暂不支持 OpenAI API 检查。这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能。"
   } : {
-    title:"Intelligence Admin", intro:"Manage OpenAI credentials, official costs, user access, and quotas.",
-    add:"Add OpenAI Provider", name:"Name", key:"Project API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
+    title:"Intelligence Admin", intro:"Manage AI providers, credentials, user access, and quotas.",
+    add:"Add AI Provider", name:"Name", type:"Provider type", typeOpenAI:"OpenAI", typeZhipu:"Zhipu GLM", key:"API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
     adminHint:"The Admin Key is used only for OpenAI Organization Costs and is never used for user inference.",
     models:"Allowed models", def:"Default model", budget:"AERTEX monthly budget (USD)",
     input:"Custom model input $ / 1M tokens", output:"Custom model output $ / 1M tokens",
@@ -23,7 +23,7 @@ export function renderAiAdmin(locale) {
     monthly:"Monthly quota $", rpm:"RPM", apply:"Save access", empty:"No provider configured",
     official:"OpenAI official month cost", local:"AERTEX local estimate", remaining:"Budget remaining", requests:"Requests this month",
     billingOn:"Official billing connected", billingOff:"No Admin Key", saved:"Saved", projectValidated:"Project Key validated",
-    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the Project API Key first.", noModelsForKey:"This Project API Key returned no chat-capable models.", accessSaving:"Saving…", accessSaved:"Saved ✓", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key", regionUnsupported:"OpenAI API checks are unavailable from the current network or service region. This does not mean the key is invalid. Use OpenAI-connected features only from an officially supported country or territory."
+    noProvider:"Select at least one provider for this user.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user providers and models", selectedModels:"Selected", modelsUnit:"models", providersUnit:"providers", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the Project API Key first.", noModelsForKey:"This Project API Key returned no chat-capable models.", accessSaving:"Saving…", accessSaved:"Saved ✓", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key", regionUnsupported:"OpenAI API checks are unavailable from the current network or service region. This does not mean the key is invalid. Use OpenAI-connected features only from an officially supported country or territory."
   };
 
   return `<!doctype html>
@@ -59,9 +59,10 @@ dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;
 <section class="card">
   <div class="sectionHead"><h2>${t.add}</h2></div>
   <div class="grid">
+    <div><label>${t.type}</label><select id="providerType"><option value="openai">${t.typeOpenAI}</option><option value="zhipu">${t.typeZhipu}</option></select></div>
     <div><label>${t.name}</label><input id="name" value="OpenAI Primary"></div>
     <div><label>${t.key}</label><div class="keyRow"><input id="key" type="password" autocomplete="off" spellcheck="false"><button type="button" class="checkKeyButton" id="checkKey">${t.checkKey}</button></div><div class="keyStatus" id="keyStatus">${t.keyNotChecked}</div></div>
-    <div><label>${t.adminKey}</label><input id="adminKey" type="password" autocomplete="off" spellcheck="false"><div class="hint">${t.adminHint}</div></div>
+    <div id="adminKeyField"><label>${t.adminKey}</label><input id="adminKey" type="password" autocomplete="off" spellcheck="false"><div class="hint">${t.adminHint}</div></div>
     <div><label>${t.models}</label><button type="button" class="pickerButton" id="modelsPicker" disabled><span class="pickerValue" id="modelsPickerValue"></span><span class="pickerChevron">›</span></button></div>
     <div><label>${t.def}</label><button type="button" class="pickerButton" id="defaultPicker" disabled><span class="pickerValue" id="defaultPickerValue"></span><span class="pickerChevron">›</span></button></div>
     <div><label>${t.budget}</label><input id="budget" type="number" min="0" step=".01"></div>
@@ -103,12 +104,13 @@ dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;
 <dialog id="editProviderDialog">
   <div class="dialogHead"><strong>${t.editProvider}</strong></div>
   <div class="dialogBody">
+    <label>${t.type}</label><div class="pill" id="editProviderType"></div>
     <label>${t.name}</label><input id="editName">
     <label>${t.replaceKey}</label>
     <div class="keyRow"><input id="editKey" type="password" autocomplete="off" spellcheck="false"><button type="button" class="checkKeyButton" id="editCheckKey">${t.checkReplacement}</button></div>
     <div class="keyStatus" id="editKeyStatus"></div>
-    <label>${t.replaceAdminKey}</label><input id="editAdminKey" type="password" autocomplete="off" spellcheck="false">
-    <label class="choice"><input id="editClearAdminKey" type="checkbox"><span>${t.clearAdminKey}</span></label>
+    <div id="editAdminKeyField"><label>${t.replaceAdminKey}</label><input id="editAdminKey" type="password" autocomplete="off" spellcheck="false">
+    <label class="choice"><input id="editClearAdminKey" type="checkbox"><span>${t.clearAdminKey}</span></label></div>
     <label>${t.models}</label><button type="button" class="pickerButton" id="editModelsPicker"><span class="pickerValue" id="editModelsValue"></span><span class="pickerChevron">›</span></button>
     <label>${t.def}</label><button type="button" class="pickerButton" id="editDefaultPicker"><span class="pickerValue" id="editDefaultValue"></span><span class="pickerChevron">›</span></button>
     <label>${t.budget}</label><input id="editBudget" type="number" min="0" step=".01">
@@ -138,7 +140,7 @@ let availableProjectModels=[];
 let selectedProviderModels=[];
 let selectedDefaultModel="";
 let projectKeyValidated=false;
-const userModelSelections=new Map();
+const userProviderAccessSelections=new Map();
 let activeUserModelPicker=null;
 let editingProvider=null;
 let editAvailableModels=[];
@@ -175,6 +177,16 @@ function renderDefaultDialog(){
   $("defaultDialogBody").innerHTML=selectedProviderModels.map(model=>'<label class="choice"><input type="radio" name="defaultModelChoice" value="'+esc(model)+'" '+(selectedDefaultModel===model?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
 }
 
+function syncProviderType(){
+  const kind=$("providerType").value;
+  $("adminKeyField").classList.toggle("hidden",kind!=="openai");
+  if(kind!=="openai")$("adminKey").value="";
+  if(kind==="zhipu"&&$("name").value==="OpenAI Primary")$("name").value="Zhipu GLM";
+  if(kind==="openai"&&$("name").value==="Zhipu GLM")$("name").value="OpenAI Primary";
+  $("input").value=kind==="zhipu"?"0":"4";
+  $("output").value=kind==="zhipu"?"0":"20";
+}
+$("providerType").addEventListener("change",()=>{invalidateProjectKey();syncProviderType();});
 $("key").addEventListener("input",invalidateProjectKey);
 $("checkKey").onclick=async()=>{
   const key=$("key").value.trim();
@@ -190,13 +202,16 @@ $("checkKey").onclick=async()=>{
   $("keyStatus").textContent="${t.checkingKey}";
   $("keyStatus").className="keyStatus";
   try{
-    const result=await api("/validate-project-key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({api_key:key})});
+    const result=await api("/validate-project-key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({api_key:key,provider:$("providerType").value})});
     availableProjectModels=Array.isArray(result.models)?result.models:[];
     if(!availableProjectModels.length)throw new Error("${t.noModelsForKey}");
     projectKeyValidated=true;
-    const preferred=["gpt-5.6","gpt-5.6-sol","gpt-5.6-terra","gpt-5.6-luna"].filter(model=>availableProjectModels.includes(model));
+    const preferred=($("providerType").value==="zhipu"
+      ? ["glm-5.3-flash","glm-5.3","glm-5.2"]
+      : ["gpt-5.6","gpt-5.6-sol","gpt-5.6-terra","gpt-5.6-luna"])
+      .filter(model=>availableProjectModels.includes(model));
     selectedProviderModels=preferred.length?preferred.slice(0,4):[availableProjectModels[0]];
-    selectedDefaultModel=availableProjectModels.includes("gpt-5.6")?"gpt-5.6":selectedProviderModels[0];
+    selectedDefaultModel=selectedProviderModels[0];
     $("keyStatus").textContent="${t.keyOk} · "+availableProjectModels.length+" ${t.modelsUnit}";
     $("keyStatus").className="keyStatus ok";
     updateProviderPickers();
@@ -257,40 +272,77 @@ async function load(){
   }
 }
 
-function userModelsSummary(models){
-  const values=Array.isArray(models)?models:[];
-  return "${t.selectedModels} "+values.length+" ${t.modelsUnit}";
+function userProvidersSummary(access){
+  const values=Array.isArray(access)?access:[];
+  return "${t.selectedModels} "+values.length+" ${t.providersUnit}";
 }
-
+function userModelsSummary(access){
+  const values=Array.isArray(access)?access:[];
+  const count=values.reduce((sum,item)=>sum+(Array.isArray(item.allowed_models)?item.allowed_models.length:0),0);
+  return "${t.selectedModels} "+count+" ${t.modelsUnit}";
+}
+function normalizedUserAccess(user){
+  const raw=Array.isArray(user.provider_access)?user.provider_access.filter(item=>item&&item.enabled!==false):[];
+  return raw.map(item=>{
+    const provider=(state.providers||[]).find(p=>p.id===item.provider_id);
+    if(!provider)return null;
+    const available=Array.isArray(provider.allowed_models)?provider.allowed_models:[];
+    const selected=(Array.isArray(item.allowed_models)&&item.allowed_models.length?item.allowed_models:available)
+      .filter(model=>available.includes(model));
+    return {provider_id:provider.id,allowed_models:selected.length?selected:[...available]};
+  }).filter(Boolean);
+}
 function openUserModelsDialog(userId){
   const row=document.querySelector('.user[data-user="'+CSS.escape(userId)+'"]');
   if(!row)return;
-  const providerId=row.querySelector(".providerSelect").value;
-  const provider=(state.providers||[]).find(item=>item.id===providerId);
-  const available=provider?.allowed_models||[];
-  if(!available.length){
-    $("msg").textContent="${t.noAllowedModels}";
+  const current=userProviderAccessSelections.get(userId)||[];
+  const selectedByProvider=new Map(current.map(item=>[item.provider_id,item.allowed_models||[]]));
+  const providers=(state.providers||[]).filter(provider=>provider.is_active!==false);
+  if(!providers.length){
+    $("msg").textContent="${t.noProvider}";
     $("msg").className="status bad";
     return;
   }
-  const selected=userModelSelections.get(userId)||[];
-  activeUserModelPicker={userId,available:[...available]};
-  $("userModelsDialogBody").innerHTML=available.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(selected.includes(model)?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
+  activeUserModelPicker={userId};
+  $("userModelsDialogBody").innerHTML=providers.map(provider=>{
+    const checked=selectedByProvider.has(provider.id);
+    const selected=selectedByProvider.get(provider.id)||[];
+    const models=provider.allowed_models||[];
+    return '<div class="providerCard userProviderGroup" data-provider="'+esc(provider.id)+'">'
+      +'<label class="choice"><input class="userProviderToggle" type="checkbox" value="'+esc(provider.id)+'" '+(checked?"checked":"")+'><span><strong>'+esc(provider.name)+'</strong> · '+(provider.provider==="zhipu"?"${t.typeZhipu}":"${t.typeOpenAI}")+'</span></label>'
+      +'<div class="dialogBody providerModelChoices">'
+      +models.map(model=>'<label class="choice"><input class="userProviderModel" data-provider="'+esc(provider.id)+'" type="checkbox" value="'+esc(model)+'" '+(selected.includes(model)?"checked":"")+' '+(checked?"":"disabled")+'><span>'+esc(model)+'</span></label>').join("")
+      +'</div></div>';
+  }).join("");
+  $("userModelsDialogBody").querySelectorAll(".userProviderToggle").forEach(toggle=>toggle.onchange=event=>{
+    const group=event.currentTarget.closest(".userProviderGroup");
+    const modelInputs=[...group.querySelectorAll(".userProviderModel")];
+    modelInputs.forEach(input=>input.disabled=!event.currentTarget.checked);
+    if(event.currentTarget.checked&&!modelInputs.some(input=>input.checked)&&modelInputs[0])modelInputs[0].checked=true;
+  });
   $("userModelsDialog").showModal();
 }
-
 $("userModelsCancel").onclick=()=>{activeUserModelPicker=null;$("userModelsDialog").close();};
 $("userModelsDone").onclick=()=>{
   if(!activeUserModelPicker)return;
-  const values=[...$("userModelsDialogBody").querySelectorAll('input[type="checkbox"]:checked')].map(input=>input.value);
-  if(!values.length){
-    $("msg").textContent="${t.selectAtLeastOne}";
-    $("msg").className="status bad";
-    return;
+  const access=[];
+  for(const toggle of $("userModelsDialogBody").querySelectorAll(".userProviderToggle:checked")){
+    const providerId=toggle.value;
+    const group=toggle.closest(".userProviderGroup");
+    const values=[...group.querySelectorAll(".userProviderModel:checked")].map(input=>input.value);
+    if(!values.length){
+      $("msg").textContent="${t.selectAtLeastOne}";
+      $("msg").className="status bad";
+      return;
+    }
+    access.push({provider_id:providerId,allowed_models:values});
   }
-  userModelSelections.set(activeUserModelPicker.userId,values);
+  userProviderAccessSelections.set(activeUserModelPicker.userId,access);
   const row=document.querySelector('.user[data-user="'+CSS.escape(activeUserModelPicker.userId)+'"]');
-  if(row)row.querySelector(".userModelsValue").textContent=userModelsSummary(values);
+  if(row){
+    row.querySelector(".userProvidersValue").textContent=userProvidersSummary(access);
+    row.querySelector(".userModelsValue").textContent=userModelsSummary(access);
+  }
   activeUserModelPicker=null;
   $("userModelsDialog").close();
 };
@@ -305,6 +357,8 @@ async function openEditProvider(providerId){
   const provider=(state.providers||[]).find(item=>item.id===providerId);
   if(!provider)return;
   editingProvider=provider;
+  $("editProviderType").textContent=provider.provider==="zhipu"?"${t.typeZhipu}":"${t.typeOpenAI}";
+  $("editAdminKeyField").classList.toggle("hidden",provider.provider!=="openai");
   $("editName").value=provider.name||"";
   $("editKey").value="";
   $("editAdminKey").value="";
@@ -333,7 +387,7 @@ $("editCheckKey").onclick=async()=>{
   if(!key){editReplacementKeyChecked=true;$("editKeyStatus").textContent="${t.currentKey} · ****"+(editingProvider?.key_hint||"");$("editKeyStatus").className="keyStatus ok";return;}
   const button=$("editCheckKey"); button.disabled=true; button.textContent="${t.checkingKey}";
   try{
-    const result=await api("/validate-project-key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({api_key:key})});
+    const result=await api("/validate-project-key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({api_key:key,provider:editingProvider?.provider||"openai"})});
     editAvailableModels=Array.isArray(result.models)?result.models:[];
     if(!editAvailableModels.length)throw new Error("${t.noModelsForKey}");
     editSelectedModels=editSelectedModels.filter(model=>editAvailableModels.includes(model));
@@ -410,14 +464,6 @@ async function deleteProvider(providerId){
   }catch(error){$("msg").textContent=friendlyError(error);$("msg").className="status bad";}
 }
 
-function providerOptions(selected){
-  let html='<option value="">—</option>';
-  for(const provider of state.providers||[]){
-    html+='<option value="'+esc(provider.id)+'" '+(provider.id===selected?"selected":"")+'>'+esc(provider.name)+'</option>';
-  }
-  return html;
-}
-
 function render(){
   $("providers").innerHTML=(state.providers||[]).length
     ? state.providers.map(provider=>{
@@ -426,12 +472,15 @@ function render(){
         const spent=official==null?local:official;
         const budget=provider.monthly_budget_usd==null?null:Number(provider.monthly_budget_usd);
         const remaining=budget==null?null:Math.max(0,budget-spent);
-        const billingLabel=provider.admin_key_configured
-          ? (provider.billing?.available?"${t.billingOn}":"${t.billingOn} · "+esc(provider.billing?.error||""))
-          : "${t.billingOff}";
+        const providerLabel=provider.provider==="zhipu"?"${t.typeZhipu}":"${t.typeOpenAI}";
+        const billingLabel=provider.provider==="openai"
+          ? (provider.admin_key_configured
+              ? (provider.billing?.available?"${t.billingOn}":"${t.billingOn} · "+esc(provider.billing?.error||""))
+              : "${t.billingOff}")
+          : "Responses API";
         return '<div class="providerCard">'
           +'<div class="providerTop"><div><div class="providerName">'+esc(provider.name)+'</div>'
-          +'<div class="hint">OpenAI · '+esc(provider.default_model)+' · API ****'+esc(provider.key_hint||"")+' · '+billingLabel+'</div></div>'
+          +'<div class="hint">'+providerLabel+' · '+esc(provider.default_model)+' · API ****'+esc(provider.key_hint||"")+' · '+billingLabel+'</div></div>'
           +'<div class="providerActions"><span class="pill">'+(provider.is_active?"● Active":"○ Disabled")+'</span><button type="button" class="smallButton editProvider" data-provider="'+esc(provider.id)+'">${t.edit}</button><button type="button" class="smallButton dangerButton deleteProvider" data-provider="'+esc(provider.id)+'">${t.delete}</button></div></div>'
           +'<div class="metrics">'
           +'<div class="metric"><span>${t.official}</span><strong>'+money(official)+'</strong></div>'
@@ -443,16 +492,13 @@ function render(){
     : "${t.empty}";
 
   $("users").innerHTML=(state.users||[]).map(user=>{
-    const selectedProvider=(state.providers||[]).find(p=>p.id===user.provider_id);
-    const providerModels=selectedProvider?.allowed_models||[];
-    const defaultModels=(user.allowed_models||[]).length?user.allowed_models:providerModels;
-    const safeModels=defaultModels.filter(model=>providerModels.includes(model));
-    userModelSelections.set(user.user_id,safeModels.length?safeModels:[...providerModels]);
+    const access=normalizedUserAccess(user);
+    userProviderAccessSelections.set(user.user_id,access);
     return '<div class="user" data-user="'+esc(user.user_id)+'">'
       +'<div class="userName"><strong>'+esc(user.display_name||user.username||user.email)+'</strong><span class="hint">'+esc(user.email||"")+' · '+money(user.month_usage_usd||0)+'</span></div>'
       +'<div><label>${t.enabled}</label><select class="enabled"><option value="0">Off</option><option value="1" '+(user.enabled?"selected":"")+'>On</option></select></div>'
-      +'<div><label>${t.provider}</label><select class="providerSelect">'+providerOptions(user.provider_id)+'</select></div>'
-      +'<div><label>${t.allowed}</label><button type="button" class="pickerButton userModelsPicker"><span class="pickerValue userModelsValue">'+esc(userModelsSummary(userModelSelections.get(user.user_id)))+'</span><span class="pickerChevron">›</span></button></div>'
+      +'<div><label>${t.provider}</label><button type="button" class="pickerButton userProvidersPicker"><span class="pickerValue userProvidersValue">'+esc(userProvidersSummary(access))+'</span><span class="pickerChevron">›</span></button></div>'
+      +'<div><label>${t.allowed}</label><button type="button" class="pickerButton userModelsPicker"><span class="pickerValue userModelsValue">'+esc(userModelsSummary(access))+'</span><span class="pickerChevron">›</span></button></div>'
       +'<div><label>${t.daily}</label><input class="daily" type="number" min="0" step=".01" value="'+esc(user.daily_limit_usd??"")+'"></div>'
       +'<div><label>${t.monthly}</label><input class="monthly" type="number" min="0" step=".01" value="'+esc(user.monthly_limit_usd??"")+'"></div>'
       +'<div><label>${t.rpm}</label><input class="rpm" type="number" min="1" max="300" value="'+esc(user.requests_per_minute||20)+'"></div>'
@@ -462,18 +508,12 @@ function render(){
   document.querySelectorAll(".editProvider").forEach(button=>button.onclick=()=>openEditProvider(button.dataset.provider));
   document.querySelectorAll(".deleteProvider").forEach(button=>button.onclick=()=>deleteProvider(button.dataset.provider));
   document.querySelectorAll(".access").forEach(button=>button.onclick=saveAccess);
-  document.querySelectorAll(".userModelsPicker").forEach(button=>button.onclick=event=>{
+  document.querySelectorAll(".userModelsPicker,.userProvidersPicker").forEach(button=>button.onclick=event=>{
     const row=event.currentTarget.closest(".user");
     openUserModelsDialog(row.dataset.user);
   });
-  document.querySelectorAll(".providerSelect").forEach(select=>select.onchange=event=>{
-    const row=event.currentTarget.closest(".user");
-    const provider=(state.providers||[]).find(item=>item.id===event.currentTarget.value);
-    const values=provider?.allowed_models?[...provider.allowed_models]:[];
-    userModelSelections.set(row.dataset.user,values);
-    row.querySelector(".userModelsValue").textContent=userModelsSummary(values);
-  });
 }
+
 
 $("saveProvider").onclick=async()=>{
   const button=$("saveProvider");
@@ -490,6 +530,7 @@ $("saveProvider").onclick=async()=>{
   try{
     const result=await api("/provider",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       name:$("name").value,
+      provider:$("providerType").value,
       api_key:$("key").value,
       admin_key:$("adminKey").value,
       allowed_models:selectedProviderModels,
@@ -520,7 +561,7 @@ async function saveAccess(event){
   const user=(state.users||[]).find(item=>item.user_id===row.dataset.user);
   if(!user)return;
 
-  const providerId=row.querySelector(".providerSelect").value;
+  const providerAccess=userProviderAccessSelections.get(user.user_id)||[];
   const reset=()=>{
     button.disabled=false;
     button.classList.remove("isSaved");
@@ -532,13 +573,11 @@ async function saveAccess(event){
     reset();
   };
 
-  if(row.querySelector(".enabled").value==="1"&&!providerId){
+  if(row.querySelector(".enabled").value==="1"&&!providerAccess.length){
     fail("${t.noProvider}");
     return;
   }
-
-  const allowedModels=userModelSelections.get(user.user_id)||[];
-  if(row.querySelector(".enabled").value==="1"&&!allowedModels.length){
+  if(row.querySelector(".enabled").value==="1"&&providerAccess.some(item=>!item.allowed_models?.length)){
     fail("${t.selectAtLeastOne}");
     return;
   }
@@ -553,9 +592,8 @@ async function saveAccess(event){
   try{
     await api("/access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       user_id:user.user_id,
-      provider_id:providerId||null,
       enabled:row.querySelector(".enabled").value==="1",
-      allowed_models:allowedModels,
+      provider_access:providerAccess,
       daily_limit_usd:row.querySelector(".daily").value,
       monthly_limit_usd:row.querySelector(".monthly").value,
       requests_per_minute:row.querySelector(".rpm").value
@@ -571,7 +609,6 @@ async function saveAccess(event){
     window.setTimeout(()=>{
       if(document.body.contains(button))reset();
     },1800);
-
     window.setTimeout(()=>{
       if(document.body.contains(feedback)){
         feedback.textContent="";
@@ -586,6 +623,8 @@ async function saveAccess(event){
   }
 }
 
+
+syncProviderType();
 updateProviderPickers();
 load();
 setInterval(load,60000);
