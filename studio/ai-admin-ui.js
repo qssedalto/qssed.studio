@@ -535,7 +535,7 @@ function render(){
               ? (provider.billing?.available?"${t.billingOn}":"${t.billingOn} · "+esc(provider.billing?.error||""))
               : "${t.billingOff}")
           : "${t.compatibleApi}";
-        const metricItems = [];
+        const metricItems = []; // Render only metrics that apply to this provider.
         if(provider.provider==="openai"){
           metricItems.push('<div class="metric"><span>${t.official}</span><strong>'+money(official)+'</strong></div>');
         }
