@@ -271,7 +271,7 @@ function diagnosticSuffix(error){
   const parts=[];
   if(d.upstream_status)parts.push("${t.upstreamStatus}: HTTP "+d.upstream_status);
   if(d.provider_code)parts.push("${t.providerCode}: "+d.provider_code);
-  if(Number.isFinite(Number(d.retry_after_seconds)))parts.push("${t.retryAfter} "+d.retry_after_seconds+" ${t.seconds}");
+  if(d.retry_after_seconds!=null&&Number.isFinite(Number(d.retry_after_seconds)))parts.push("${t.retryAfter} "+d.retry_after_seconds+" ${t.seconds}");
   else if(error?.code==="RATE_LIMITED")parts.push("${t.noRetryHeader}");
   if(d.request_id)parts.push("${t.requestId}: "+d.request_id);
   if(d.checked_at){
@@ -291,7 +291,8 @@ function friendlyError(error){
 }
 function startRetryCooldown(button,normalLabel,error){
   if(error?.code!=="RATE_LIMITED"){button.disabled=false;button.textContent=normalLabel;return;}
-  const upstream=Number(error?.diagnostic?.retry_after_seconds);
+  const rawRetry=error?.diagnostic?.retry_after_seconds;
+  const upstream=rawRetry==null?NaN:Number(rawRetry);
   let seconds=Number.isFinite(upstream)&&upstream>0?Math.min(120,Math.ceil(upstream)):15;
   button.disabled=true;
   const tick=()=>{
