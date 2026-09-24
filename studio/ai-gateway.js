@@ -3,8 +3,8 @@ import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 const OPENAI_BASE = "https://api.openai.com";
-const ZHIPU_BASE = "https://open.bigmodel.cn/api";
-const ZHIPU_MODELS = ["glm-5.3-flash", "glm-5.3", "glm-5.2"];
+const ZHIPU_BASE = "https://open.bigmodel.cn/api/paas/v4";
+const ZHIPU_MODELS = ["glm-4.7-flash"];
 const KNOWN_PRICES = {
   "gpt-5.6": { input: 4, output: 20 },
   "gpt-5.6-sol": { input: 4, output: 20 },
@@ -529,7 +529,12 @@ async function chat(request, env, session) {
     { role: "user", content: message }
   ];
 
-  const upstreamUrl = String(p.base_url || providerBase(p.provider)).replace(/\/$/, "") + "/v1/responses";
+  const isZhipu = cleanProvider(p.provider) === "zhipu";
+  const providerRoot = String(p.base_url || providerBase(p.provider)).replace(/\/$/, "");
+  const upstreamUrl = providerRoot + (isZhipu ? "/chat/completions" : "/v1/responses");
+  const upstreamBody = isZhipu
+    ? { model, messages: input, stream: true, stream_options: { include_usage: true } }
+    : { model, input, stream: true };
   const upstream = await fetch(upstreamUrl, {
     method: "POST",
     headers: {
@@ -537,7 +542,7 @@ async function chat(request, env, session) {
       "Content-Type": "application/json",
       Accept: "text/event-stream"
     },
-    body: JSON.stringify({ model, input, stream: true })
+    body: JSON.stringify(upstreamBody)
   });
 
   if (!upstream.ok) {
@@ -590,17 +595,39 @@ async function chat(request, env, session) {
               let event;
               try { event = JSON.parse(raw); } catch { continue; }
 
-              if (event.type === "response.output_text.delta" && event.delta) {
-                full += event.delta;
-                emit("delta", { delta: event.delta });
-              }
-              if (event.type === "response.completed") {
-                responseId = event.response?.id || event.id || "";
-                inputTokens = Number(event.response?.usage?.input_tokens ?? event.usage?.input_tokens) || 0;
-                outputTokens = Number(event.response?.usage?.output_tokens ?? event.usage?.output_tokens) || 0;
-              }
-              if (event.type === "error") {
-                throw new Error(event.error?.message || "Provider stream error");
+              if (isZhipu) {
+                responseId = event.id || responseId;
+                const content = event.choices?.[0]?.delta?.content;
+                if (typeof content === "string" && content) {
+                  full += content;
+                  emit("delta", { delta: content });
+                } else if (Array.isArray(content)) {
+                  const textDelta = content.map(part => part?.text || part?.content || "").join("");
+                  if (textDelta) {
+                    full += textDelta;
+                    emit("delta", { delta: textDelta });
+                  }
+                }
+                if (event.usage) {
+                  inputTokens = Number(event.usage.prompt_tokens ?? event.usage.input_tokens) || inputTokens;
+                  outputTokens = Number(event.usage.completion_tokens ?? event.usage.output_tokens) || outputTokens;
+                }
+                if (event.error) {
+                  throw new Error(event.error?.message || "Zhipu GLM stream error");
+                }
+              } else {
+                if (event.type === "response.output_text.delta" && event.delta) {
+                  full += event.delta;
+                  emit("delta", { delta: event.delta });
+                }
+                if (event.type === "response.completed") {
+                  responseId = event.response?.id || event.id || "";
+                  inputTokens = Number(event.response?.usage?.input_tokens ?? event.usage?.input_tokens) || 0;
+                  outputTokens = Number(event.response?.usage?.output_tokens ?? event.usage?.output_tokens) || 0;
+                }
+                if (event.type === "error") {
+                  throw new Error(event.error?.message || "Provider stream error");
+                }
               }
             }
           }
@@ -670,7 +697,7 @@ async function validateProviderKey(provider, key) {
 async function validateZhipuKey(key) {
   let response;
   try {
-    response = await fetch(ZHIPU_BASE + "/v1/responses", {
+    response = await fetch(ZHIPU_BASE + "/chat/completions", {
       method: "POST",
       headers: {
         Authorization: "Bearer " + key,
@@ -679,8 +706,8 @@ async function validateZhipuKey(key) {
       },
       body: JSON.stringify({
         model: ZHIPU_MODELS[0],
-        input: "OK",
-        max_output_tokens: 1,
+        messages: [{ role: "user", content: "OK" }],
+        max_tokens: 1,
         stream: false
       })
     });
