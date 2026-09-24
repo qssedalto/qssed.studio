@@ -1,6 +1,8 @@
 # AERTEX Access Audit
 
-AERTEX Access Audit records edge access events for the main AERTEX site, the Work custom domain, and the Auth custom domain.
+AERTEX Access Audit records security-relevant edge events for the main AERTEX site, the Work custom domain, and the Auth custom domain.
+
+It intentionally does **not** archive every request. Routine successful GET/HEAD traffic and low-value anonymous 404 noise are left to Cloudflare observability instead of creating one R2 object per request.
 
 ## Storage
 
@@ -67,7 +69,15 @@ Supported actions:
 
 ## Retention
 
-The default retention period is 30 days. The main AERTEX Worker registers a daily cron at `03:17 UTC` and deletes older audit objects. The retention constant is `ACCESS_AUDIT_RETENTION_DAYS` in `studio/access-audit.js`.
+The default application retention period is 14 days. The main AERTEX Worker registers a daily cron at `03:17 UTC` as a fallback cleanup path, and the production R2 bucket also carries a prefix-scoped lifecycle rule for `__system/access-audit/`. The retention constant is `ACCESS_AUDIT_RETENTION_DAYS` in `studio/access-audit.js`.
+
+The application keeps:
+- non-GET/HEAD requests;
+- authentication/administrator/storage-sensitive routes;
+- HTTP 401, 403, and 429 responses;
+- HTTP 5xx responses.
+
+Routine GET/HEAD success responses and ordinary 404 scanner noise are not persisted as individual R2 JSON objects.
 
 Because raw IP addresses are personal data in many jurisdictions, retention should remain proportionate to the security/operations purpose and the site's privacy notice should accurately describe this logging.
 

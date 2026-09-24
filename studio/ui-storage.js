@@ -5,7 +5,7 @@ export function storageSettingsContent(zh) {
     connected: "已连接",
     checking: "检查中",
     files: "文件",
-    used: "已用空间",
+    used: "用户文件空间",
     refreshed: "最近更新",
     select: "选择文件",
     refresh: "刷新",
@@ -41,7 +41,7 @@ export function storageSettingsContent(zh) {
     connected: "Connected",
     checking: "Checking",
     files: "Files",
-    used: "Used",
+    used: "User file storage",
     refreshed: "Updated",
     select: "Choose Files",
     refresh: "Refresh",
@@ -179,7 +179,7 @@ export function storageClientScript(zh, loginUrl) {
     tooLarge: "“{name}”超过 50 MB，未上传。",
     refreshedNow: "刚刚",
     userDescription: "文件仅对当前账号可见，并通过已登录的 Worker API 安全存取；浏览器不会直接访问 R2。",
-    adminDescription: "管理员视图会汇总所有账号的 R2 文件，并显示文件所属账号；跨账号下载或删除仍由 Worker 在服务端验证管理员权限。"
+    adminDescription: "管理员视图汇总所有账号的私人文件；系统日志、发布文件和内部对象不计入这里的用户文件空间。跨账号下载或删除仍由 Worker 在服务端验证管理员权限。"
   } : {
     connected: "Connected",
     checking: "Checking",
@@ -207,7 +207,7 @@ export function storageClientScript(zh, loginUrl) {
     tooLarge: "“{name}” exceeds 50 MB and was not uploaded.",
     refreshedNow: "Just now",
     userDescription: "Files are private to the current account and accessed securely through the signed-in Worker API; the browser never connects to R2 directly.",
-    adminDescription: "The administrator view aggregates R2 files across accounts and shows each owner; cross-account downloads and deletes are still authorized by the Worker on the server."
+    adminDescription: "The administrator view aggregates private user files across accounts. System logs, release artifacts, and internal objects are excluded from user-file storage. Cross-account downloads and deletes remain server-authorized."
   };
 
   return `
@@ -334,7 +334,7 @@ export function storageClientScript(zh, loginUrl) {
           return JSON.stringify([
             Boolean(data?.is_admin),
             Number(data?.file_count) || 0,
-            Number(data?.used_bytes) || 0,
+            Number(data?.visible_used_bytes ?? data?.used_bytes) || 0,
             Boolean(data?.partial),
             normalizedFiles
           ]);
@@ -514,7 +514,7 @@ export function storageClientScript(zh, loginUrl) {
 
         function renderMetrics(data, refreshedAtValue) {
           fileCount.textContent = String(Number(data.file_count) || 0) + (data.partial ? "+" : "");
-          usedBytes.textContent = formatBytes(data.used_bytes);
+          usedBytes.textContent = formatBytes(data.visible_used_bytes ?? data.used_bytes);
           refreshedAt.textContent = formatRefreshTime(refreshedAtValue);
           partial = Boolean(data.partial);
           partialNotice.hidden = !partial;

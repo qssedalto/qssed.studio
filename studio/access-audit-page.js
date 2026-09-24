@@ -35,7 +35,7 @@ function renderPage(zh) {
   const text = zh ? {
     title: "访问审计",
     subtitle: "AERTEX Access Audit",
-    description: "仅管理员可见。记录主站、Work 与 Auth 的边缘访问事件。",
+    description: "仅管理员可见。保留主站、Work 与 Auth 中与账号、安全和异常相关的访问事件；普通成功浏览和匿名 404 不再逐条写入 R2。",
     today: "今天",
     requests: "请求",
     unique: "独立 IP",
@@ -60,12 +60,12 @@ function renderPage(zh) {
     loading: "正在读取私有审计日志…",
     close: "关闭",
     raw: "完整记录",
-    retention: "原始 IP 日志默认保留 30 天。Cookie、Authorization、请求正文和表单内容不会写入审计日志。",
+    retention: "安全审计默认保留 14 天。普通成功 GET/HEAD 与低价值匿名 404 不写入 R2；Cookie、Authorization、请求正文和表单内容不会写入审计日志。",
     failed: "读取失败"
   } : {
     title: "Access Audit",
     subtitle: "AERTEX Access Audit",
-    description: "Administrator only. Edge access events for Main, Work, and Auth.",
+    description: "Administrator only. Security, account, and exception events for Main, Work, and Auth. Routine successful browsing and anonymous 404 noise are no longer stored one object at a time.",
     today: "Today",
     requests: "Requests",
     unique: "Unique IPs",
@@ -90,7 +90,7 @@ function renderPage(zh) {
     loading: "Reading private audit logs…",
     close: "Close",
     raw: "Full record",
-    retention: "Raw IP logs are retained for 30 days by default. Cookies, Authorization headers, request bodies, and form contents are never stored.",
+    retention: "Security audit events are retained for 14 days by default. Routine successful GET/HEAD traffic and low-value anonymous 404 noise are not written to R2. Cookies, Authorization headers, request bodies, and form contents are never stored.",
     failed: "Failed to load"
   };
 

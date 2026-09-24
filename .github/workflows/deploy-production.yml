@@ -24,6 +24,8 @@ on:
       - scripts/gpt-subdomain-check.mjs
       - scripts/gpt-ui-check.mjs
       - scripts/account-menu-check.mjs
+      - scripts/r2-storage-audit-check.mjs
+      - scripts/r2-audit-maintenance-worker.js
       - scripts/brand-check.mjs
       - scripts/codex-bridge-check.mjs
       - auth-entry.js
@@ -98,6 +100,9 @@ jobs:
           node --check scripts/gpt-ui-check.mjs
           node scripts/gpt-ui-check.mjs
           node --check scripts/account-menu-check.mjs
+          node --check scripts/r2-storage-audit-check.mjs
+          node scripts/r2-storage-audit-check.mjs
+          node --check scripts/r2-audit-maintenance-worker.js
           node scripts/account-menu-check.mjs
           node --check scripts/codex-bridge-check.mjs
           node scripts/codex-bridge-check.mjs
@@ -124,6 +129,71 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.jsonc
+
+      - name: Compact historical R2 access-audit noise
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          nonce="$(openssl rand -hex 32)"
+          cat > .wrangler-r2-maintenance.jsonc <<JSON
+          {
+            "name": "qsseda-r2-maintenance",
+            "main": "scripts/r2-audit-maintenance-worker.js",
+            "compatibility_date": "2026-09-24",
+            "workers_dev": false,
+            "routes": [
+              { "pattern": "qsseda.com/__r2_maintenance/*", "zone_name": "qsseda.com" }
+            ],
+            "r2_buckets": [
+              { "binding": "STORAGE", "bucket_name": "qsseda-studio-storage" }
+            ],
+            "vars": {
+              "MAINTENANCE_TOKEN": "$nonce"
+            }
+          }
+          JSON
+
+          cleanup_worker() {
+            set +e
+            printf 'y\n' | npx --yes wrangler@4.136.3 delete --name qsseda-r2-maintenance -c .wrangler-r2-maintenance.jsonc >/tmp/r2-maintenance-delete.log 2>&1
+            rm -f .wrangler-r2-maintenance.jsonc
+            unset nonce
+          }
+          trap cleanup_worker EXIT
+
+          npx --yes wrangler@4.136.3 deploy -c .wrangler-r2-maintenance.jsonc
+
+          ok=0
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            status="$(curl --silent --show-error --max-time 120 --output /tmp/r2-maintenance.json --write-out '%{http_code}' \
+              -X POST -H "Authorization: Bearer $nonce" \
+              'https://qsseda.com/__r2_maintenance/run' || true)"
+            if [ "$status" = "200" ] && grep -q '"ok":true' /tmp/r2-maintenance.json; then
+              ok=1
+              break
+            fi
+            echo "R2 maintenance route not ready on attempt $attempt (HTTP ${status:-unknown}); retrying..."
+            sleep 4
+          done
+
+          if [ "$ok" -ne 1 ]; then
+            echo "R2 maintenance failed."
+            cat /tmp/r2-maintenance.json || true
+            exit 1
+          fi
+
+          echo "R2 maintenance result:"
+          cat /tmp/r2-maintenance.json
+          echo
+
+          if ! npx --yes wrangler@4.136.3 r2 bucket lifecycle list qsseda-studio-storage | grep -q 'aertex-access-audit-14d'; then
+            npx --yes wrangler@4.136.3 r2 bucket lifecycle add qsseda-studio-storage aertex-access-audit-14d '__system/access-audit/' --expire-days 14
+          else
+            echo "R2 access-audit lifecycle rule already exists."
+          fi
 
       - name: Deploy AERTEX Work
         env:

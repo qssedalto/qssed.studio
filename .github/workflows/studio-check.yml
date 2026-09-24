@@ -22,6 +22,8 @@ on:
       - "scripts/gpt-subdomain-check.mjs"
       - "scripts/codex-bridge-check.mjs"
       - "scripts/brand-check.mjs"
+      - "scripts/r2-storage-audit-check.mjs"
+      - "scripts/r2-audit-maintenance-worker.js"
       - "wrangler.jsonc"
       - "wrangler.work.jsonc"
       - "gpt-worker.js"
@@ -50,6 +52,8 @@ on:
       - "scripts/gpt-subdomain-check.mjs"
       - "scripts/codex-bridge-check.mjs"
       - "scripts/brand-check.mjs"
+      - "scripts/r2-storage-audit-check.mjs"
+      - "scripts/r2-audit-maintenance-worker.js"
       - "wrangler.jsonc"
       - "wrangler.work.jsonc"
       - "gpt-worker.js"
@@ -94,6 +98,8 @@ jobs:
           node --check scripts/gpt-subdomain-check.mjs
           node --check scripts/codex-bridge-check.mjs
           node --check scripts/brand-check.mjs
+          node --check scripts/r2-storage-audit-check.mjs
+          node --check scripts/r2-audit-maintenance-worker.js
           node --check gpt-worker.js
 
       - name: Verify browser security markup
@@ -140,6 +146,9 @@ jobs:
 
       - name: Verify AERTEX product naming
         run: node scripts/brand-check.mjs
+
+      - name: Verify R2 storage and access-audit optimization
+        run: node scripts/r2-storage-audit-check.mjs
 
       - name: Bundle Studio Worker
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check
