@@ -35,7 +35,7 @@ export async function handleAiAdminApi(request, env, session) {
     const key = clean(b.api_key, 800);
     if (!key) return json({ error: "Project API Key is required." }, 400);
     const check = await validateProjectKey(key);
-    if (!check.ok) return json({ error: check.error || "OpenAI API key validation failed." }, 400);
+    if (!check.ok) return json({ error: check.error || "OpenAI API key validation failed.", code: check.code || null }, check.code === "REGION_UNSUPPORTED" ? 403 : 400);
     return json({ ok: true, models: check.models || [] });
   }
 
@@ -50,7 +50,7 @@ export async function handleAiAdminApi(request, env, session) {
     try {
       const key = await decrypt(row.encrypted_api_key, row.api_key_iv, env.AI_CREDENTIAL_KEY);
       const check = await validateProjectKey(key);
-      if (!check.ok) return json({ error: check.error || "Stored Project API Key is no longer valid." }, 400);
+      if (!check.ok) return json({ error: check.error || "Stored Project API Key is no longer valid.", code: check.code || null }, check.code === "REGION_UNSUPPORTED" ? 403 : 400);
       return json({ ok: true, models: check.models || [] });
     } catch {
       return json({ error: "Stored Project API Key cannot be decrypted." }, 503);
@@ -66,7 +66,7 @@ export async function handleAiAdminApi(request, env, session) {
 
     const current = await restData(session,
       "/ai_providers?id=eq." + providerId +
-      "&select=id,encrypted_api_key,api_key_iv,encrypted_admin_key,admin_key_iv,admin_key_hint&limit=1");
+      "&select=id,encrypted_api_key,api_key_iv,encrypted_admin_key,admin_key_iv,admin_key_hint,allowed_models,default_model&limit=1");
     const existing = current.ok && Array.isArray(current.data) ? current.data[0] : null;
     if (!existing) return json({ error: "Provider not found." }, 404);
 
@@ -81,17 +81,29 @@ export async function handleAiAdminApi(request, env, session) {
     }
 
     const replacementKey = clean(b.api_key, 800);
-    let projectKey;
-    try {
-      projectKey = replacementKey || await decrypt(existing.encrypted_api_key, existing.api_key_iv, env.AI_CREDENTIAL_KEY);
-    } catch {
-      return json({ error: "Stored Project API Key cannot be decrypted." }, 503);
-    }
-    const keyCheck = await validateProjectKey(projectKey);
-    if (!keyCheck.ok) return json({ error: keyCheck.error || "OpenAI API key validation failed." }, 400);
-    const accessibleModels = new Set(keyCheck.models || []);
-    if (!allowedModels.every(model => accessibleModels.has(model))) {
-      return json({ error: "One or more selected models are not available to this Project API Key." }, 400);
+    const existingAllowedModels = models(existing.allowed_models);
+    const needsOnlineModelValidation =
+      Boolean(replacementKey) ||
+      allowedModels.some(model => !existingAllowedModels.includes(model));
+
+    if (needsOnlineModelValidation) {
+      let projectKey;
+      try {
+        projectKey = replacementKey || await decrypt(existing.encrypted_api_key, existing.api_key_iv, env.AI_CREDENTIAL_KEY);
+      } catch {
+        return json({ error: "Stored Project API Key cannot be decrypted." }, 503);
+      }
+      const keyCheck = await validateProjectKey(projectKey);
+      if (!keyCheck.ok) {
+        return json(
+          { error: keyCheck.error || "OpenAI API key validation failed.", code: keyCheck.code || null },
+          keyCheck.code === "REGION_UNSUPPORTED" ? 403 : 400
+        );
+      }
+      const accessibleModels = new Set(keyCheck.models || []);
+      if (!allowedModels.every(model => accessibleModels.has(model))) {
+        return json({ error: "One or more selected models are not available to this Project API Key." }, 400);
+      }
     }
 
     const patch = {
@@ -200,7 +212,7 @@ export async function handleAiAdminApi(request, env, session) {
     if (!key || !name) return json({ error: "Provider name and API key are required." }, 400);
 
     const keyCheck = await validateProjectKey(key);
-    if (!keyCheck.ok) return json({ error: keyCheck.error || "OpenAI API key validation failed." }, 400);
+    if (!keyCheck.ok) return json({ error: keyCheck.error || "OpenAI API key validation failed.", code: keyCheck.code || null }, keyCheck.code === "REGION_UNSUPPORTED" ? 403 : 400);
     const accessibleModels = new Set(keyCheck.models || []);
     if (!allowedModels.length) return json({ error: "Select at least one allowed model." }, 400);
     if (!allowedModels.every(model => accessibleModels.has(model))) {
@@ -386,9 +398,15 @@ async function chat(request, env, session) {
   });
 
   if (!upstream.ok) {
-    const detail = await upstream.text();
+    const detail = safeUpstreamError(await upstream.text());
+    if (isUnsupportedRegionMessage(detail)) {
+      return json(
+        { error: "OpenAI API is unavailable from the current service region.", code: "REGION_UNSUPPORTED" },
+        403
+      );
+    }
     return json(
-      { error: "OpenAI request failed.", detail: safeUpstreamError(detail) },
+      { error: "OpenAI request failed.", detail },
       upstream.status === 429 ? 429 : 502
     );
   }
@@ -500,17 +518,25 @@ async function validateProjectKey(key) {
       headers: { Authorization: "Bearer " + key, Accept: "application/json" }
     });
   } catch {
-    return { ok: false, error: "Unable to reach OpenAI." };
+    return { ok: false, error: "Unable to reach OpenAI.", code: "OPENAI_UNREACHABLE" };
   }
   if (!response.ok) {
     const payload = await response.text();
-    return { ok: false, error: "OpenAI API key rejected: " + safeUpstreamError(payload) };
+    const detail = safeUpstreamError(payload);
+    if (isUnsupportedRegionMessage(detail)) {
+      return {
+        ok: false,
+        code: "REGION_UNSUPPORTED",
+        error: "OpenAI API is unavailable from the current service region."
+      };
+    }
+    return { ok: false, error: "OpenAI API key rejected: " + detail, code: "KEY_REJECTED" };
   }
   let payload;
   try {
     payload = await response.json();
   } catch {
-    return { ok: false, error: "OpenAI returned an invalid model list." };
+    return { ok: false, error: "OpenAI returned an invalid model list.", code: "INVALID_MODEL_LIST" };
   }
   const models = [...new Set((payload?.data || [])
     .map(item => cleanModel(item?.id))
@@ -519,6 +545,10 @@ async function validateProjectKey(key) {
     .sort(compareModelIds)
     .slice(0, 120);
   return { ok: true, models };
+}
+
+function isUnsupportedRegionMessage(value) {
+  return /country,? region,? or territory not supported|unsupported countr|unsupported region|unsupported territor/i.test(String(value || ""));
 }
 
 function isChatModel(id) {
