@@ -132,6 +132,29 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.gpt.jsonc
 
+      - name: Verify Intelligence placement config
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --silent --show-error --fail \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/services/qsseda-gpt" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            > /tmp/qsseda-gpt-service.json
+          node - <<'NODE'
+          const fs = require("fs");
+          const payload = JSON.parse(fs.readFileSync("/tmp/qsseda-gpt-service.json","utf8"));
+          const placement = payload?.result?.placement;
+          if (placement?.region !== "aws:us-east-1") {
+            console.error("GPT placement regression:", JSON.stringify(placement));
+            process.exit(1);
+          }
+          console.log("GPT placement verified:", JSON.stringify(placement));
+          NODE
+
       - name: Ensure Intelligence credential encryption secret
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -195,10 +218,6 @@ jobs:
 
           echo "GPT health:"
           cat /tmp/qsseda-gpt-health.json
-          if grep -q '"placement":null' /tmp/qsseda-gpt-health.json || ! grep -q '"placement":"' /tmp/qsseda-gpt-health.json; then
-            echo "GPT placement regression: cf-placement is missing after deployment."
-            exit 1
-          fi
 
           headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-gpt-guest.html --dump-header - 'https://gpt.qsseda.com/zh-cn' || true)"
           guest_status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
