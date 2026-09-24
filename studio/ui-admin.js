@@ -397,7 +397,7 @@ export function adminClientScript(ipInfo) {
       }
 
       function adminEmpty(message, actionLabel, action) {
-        return '<article class="admin-empty-state"><div class="admin-empty-orb"><img src="/favicon.svg?v=aertex-20260924-2" alt="" aria-hidden="true" style="width:32px;height:32px;display:block"></div><strong>' + adminEscape(message) + '</strong>' + (actionLabel ? '<button class="admin-ghost" data-empty-action="' + adminEscape(action || "") + '">' + adminEscape(actionLabel) + '</button>' : "") + '</article>';
+        return '<article class="admin-empty-state"><div class="admin-empty-orb"><img src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true" style="width:32px;height:32px;display:block"></div><strong>' + adminEscape(message) + '</strong>' + (actionLabel ? '<button class="admin-ghost" data-empty-action="' + adminEscape(action || "") + '">' + adminEscape(actionLabel) + '</button>' : "") + '</article>';
       }
 
       function adminToast(message, type) {
