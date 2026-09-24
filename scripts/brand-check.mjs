@@ -39,7 +39,7 @@ assert(work.includes("<title>AERTEX Work</title>"), "Work product must be AERTEX
 assert(workUi.includes("AERTEX Work"), "Work UI must use AERTEX Work");
 
 assert(gpt.includes('title:"AERTEX Intelligence"'), "GPT product must be AERTEX Intelligence");
-assert(gpt.includes('subtitle:"Local Intelligence"'), "GPT subtitle must be Local Intelligence");
+assert(gpt.includes('subtitle:"Cloud Intelligence"'), "GPT subtitle must be Cloud Intelligence");
 assert(gptHandoff.includes("<title>AERTEX Intelligence</title>"), "GPT handoff must use AERTEX Intelligence");
 assert(authHandoff.includes('gptTarget ? "AERTEX Intelligence"'), "Auth handoff must use AERTEX Intelligence");
 assert(!gpt.includes("AERTEX AI"), "AERTEX AI must not replace the approved Intelligence product name");
