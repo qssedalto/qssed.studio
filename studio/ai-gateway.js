@@ -29,6 +29,16 @@ export async function handleAiAdminApi(request, env, session) {
     return json({ admin: true });
   }
 
+  if (path === "/api/ai/admin/validate-project-key" && request.method === "POST") {
+    if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+    const b = await body(request);
+    const key = clean(b.api_key, 800);
+    if (!key) return json({ error: "Project API Key is required." }, 400);
+    const check = await validateProjectKey(key);
+    if (!check.ok) return json({ error: check.error || "OpenAI API key validation failed." }, 400);
+    return json({ ok: true, models: check.models || [] });
+  }
+
   if (path === "/api/ai/admin/state" && request.method === "GET") {
     const state = await rpc(session, "get_ai_admin_state", {});
     if (!state.ok) return json({ error: "Unable to load AI administration." }, 502);
@@ -73,6 +83,14 @@ export async function handleAiAdminApi(request, env, session) {
 
     const keyCheck = await validateProjectKey(key);
     if (!keyCheck.ok) return json({ error: keyCheck.error || "OpenAI API key validation failed." }, 400);
+    const accessibleModels = new Set(keyCheck.models || []);
+    if (!allowedModels.length) return json({ error: "Select at least one allowed model." }, 400);
+    if (!allowedModels.every(model => accessibleModels.has(model))) {
+      return json({ error: "One or more selected models are not available to this Project API Key." }, 400);
+    }
+    if (!allowedModels.includes(defaultModel)) {
+      return json({ error: "Default model must be included in the allowed model list." }, 400);
+    }
 
     let adminEncrypted = null;
     let adminCheck = null;
@@ -366,9 +384,41 @@ async function validateProjectKey(key) {
   } catch {
     return { ok: false, error: "Unable to reach OpenAI." };
   }
-  if (response.ok) return { ok: true };
-  const payload = await response.text();
-  return { ok: false, error: "OpenAI API key rejected: " + safeUpstreamError(payload) };
+  if (!response.ok) {
+    const payload = await response.text();
+    return { ok: false, error: "OpenAI API key rejected: " + safeUpstreamError(payload) };
+  }
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    return { ok: false, error: "OpenAI returned an invalid model list." };
+  }
+  const models = [...new Set((payload?.data || [])
+    .map(item => cleanModel(item?.id))
+    .filter(Boolean)
+    .filter(isChatModel))]
+    .sort(compareModelIds)
+    .slice(0, 120);
+  return { ok: true, models };
+}
+
+function isChatModel(id) {
+  const value = String(id || "").toLowerCase();
+  if (!/^(gpt-|o[134](?:-|$)|chatgpt-)/.test(value)) return false;
+  return !/(realtime|audio|transcrib|tts|image|embedding|moderation|whisper|dall-e)/.test(value);
+}
+
+function compareModelIds(a, b) {
+  const priority = ["gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"];
+  const ai = priority.indexOf(a);
+  const bi = priority.indexOf(b);
+  if (ai >= 0 || bi >= 0) {
+    if (ai < 0) return 1;
+    if (bi < 0) return -1;
+    return ai - bi;
+  }
+  return a.localeCompare(b);
 }
 
 async function readOpenAiMonthCosts(adminKey) {
