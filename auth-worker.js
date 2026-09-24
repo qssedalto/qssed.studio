@@ -1,6 +1,7 @@
 import { handleOAuthRequest } from "./auth-oauth.js";
 import { mainOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
+import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
@@ -201,7 +202,7 @@ async function handleContinue(request, env) {
   headers.set("content-security-policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${mainSite}; base-uri 'none'; frame-ancestors 'none'`);
   if (rotated) for (const value of sessionCookies(rotated)) headers.append("set-cookie", value);
 
-  return new Response(handoffPage(mainSite, accessToken, refreshToken, next), { status: 200, headers });
+  return new Response(injectBrandLogoRuntime(handoffPage(mainSite, accessToken, refreshToken, next)), { status: 200, headers });
 }
 
 function safeNextPath(value) {
@@ -392,7 +393,7 @@ function json(data, status = 200, cookies = []) {
 }
 
 function html(content, status = 200) {
-  return new Response(content, {
+  return new Response(injectBrandLogoRuntime(content), {
     status,
     headers: baseHeaders("text/html;charset=UTF-8")
   });
