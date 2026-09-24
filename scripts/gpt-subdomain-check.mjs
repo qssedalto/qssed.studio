@@ -56,4 +56,6 @@ for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online"
 assert(!gpt.includes("canonicalGptAlias"), "GPT .online/.studio hosts must stay on their own domains");
 
 assert(gpt.includes("handleAiApi(request, env, gate)"), "GPT Worker must proxy authenticated AI API calls.");
+assert(gpt.includes("renderAdminDenied(locale)"), "GPT Worker must render a dedicated non-admin denial page.");
+assert(!gpt.includes("utm_source=chatgpt.com"), "GPT admin links must not include tracking parameters.");
 console.log("GPT authentication handoff looks valid.");
