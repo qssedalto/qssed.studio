@@ -1,7 +1,8 @@
 import { handleOAuthRequest } from "./auth-oauth.js";
-import { mainOriginForRequest } from "./studio/domain-family.js";
+import { mainOriginForRequest, rootDomainForRequest } from "./studio/domain-family.js";
 import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
+import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./studio/account-menu.js";
 
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
@@ -11,6 +12,8 @@ const REFRESH_COOKIE = "__Host-qsseda-refresh";
 const ACCESS_MAX_AGE = 60 * 60;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 const ACTIVE_STATUS = "active";
+const ACCOUNT_COOKIE = "__Secure-qsseda-account-id";
+const ACCOUNT_SIGNED_OUT = "signed-out";
 const OAUTH_PATHS = new Set([
   "/authorize",
   "/api/oauth/authorize",
@@ -44,6 +47,11 @@ export default {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
       if (!sameOrigin(request, url)) return json({ error: "Invalid origin" }, 403);
       return handleLogout(request);
+    }
+
+    if (pathname === "/logout") {
+      if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
+      return handleBrowserLogout(request);
     }
 
     if (pathname === "/continue") {
@@ -147,7 +155,7 @@ async function handleSession(request) {
   return json(sessionPayload(user), 200, sessionCookies(refreshed));
 }
 
-async function handleLogout(request) {
+async function revokeCurrentSession(request) {
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   const accessToken = cookies[ACCESS_COOKIE] || "";
 
@@ -161,11 +169,33 @@ async function handleLogout(request) {
         }
       });
     } catch {
-      // Local cookies are still cleared even if upstream revocation is unavailable.
+      // Browser and domain-family cookies are still cleared if upstream revocation is unavailable.
     }
   }
+}
 
-  return json({ success: true }, 200, clearSessionCookies());
+function globalAuthLogoutCookies(request) {
+  const root = rootDomainForRequest(request) || "qsseda.com";
+  return [
+    ...clearSessionCookies(),
+    `${ACCOUNT_COOKIE}=${ACCOUNT_SIGNED_OUT}; Path=/; Domain=${root}; Max-Age=${REFRESH_MAX_AGE}; Secure; SameSite=Lax`
+  ];
+}
+
+async function handleLogout(request) {
+  await revokeCurrentSession(request);
+  return json({ success: true }, 200, globalAuthLogoutCookies(request));
+}
+
+async function handleBrowserLogout(request) {
+  await revokeCurrentSession(request);
+  const url = new URL(request.url);
+  const next = safeNextPath(url.searchParams.get("next"));
+  const target = new URL("/login", url.origin);
+  if (next) target.searchParams.set("next", next);
+  const headers = new Headers({ location: target.toString(), "cache-control": "no-store", "referrer-policy": "no-referrer" });
+  for (const value of globalAuthLogoutCookies(request)) headers.append("set-cookie", value);
+  return new Response(null, { status: 302, headers });
 }
 
 async function handleContinue(request, env) {
@@ -497,8 +527,14 @@ function authPage(pathname, request) {
     .account{display:flex;align-items:center;gap:14px;padding:16px;border-radius:17px;background:var(--surface);border:1px solid var(--line)}.avatar{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#5e5ce6,#0a84ff);color:#fff;font-weight:800;font-size:17px}.avatar img{width:100%;height:100%;object-fit:cover}.identity{min-width:0;flex:1}.identity strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.identity span{display:block;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px}.badge{display:inline-flex;align-items:center;gap:6px;margin-top:9px;color:var(--muted);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(48,209,88,.12)}.dot.warning{background:var(--warning);box-shadow:none}.dot.danger{background:var(--danger);box-shadow:none}.details{margin-top:18px;border:1px solid var(--line);border-radius:17px;overflow:hidden;background:var(--surface)}.detail{display:flex;justify-content:space-between;gap:18px;padding:13px 15px;border-bottom:1px solid var(--line);font-size:13px}.detail:last-child{border-bottom:0}.detail span{color:var(--muted)}.detail strong{min-width:0;text-align:right;overflow-wrap:anywhere}.security-note{margin:14px 2px 0;color:var(--quiet);font-size:12px;line-height:1.55}.divider{height:1px;background:var(--line);margin:22px 0}.app-box{padding:16px;border:1px solid var(--line);border-radius:17px;background:var(--surface)}.app-name{font-weight:700;font-size:15px}.app-id{margin-top:5px;color:var(--quiet);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.permissions{margin:16px 0 0;padding:0;list-style:none}.permissions li{display:flex;gap:10px;padding:9px 0;color:var(--muted);font-size:13px;border-bottom:1px solid var(--line)}.permissions li:last-child{border-bottom:0}.tick{color:var(--accent);font-weight:900}.foot{margin:16px 2px 0;text-align:center;color:var(--quiet);font-size:11px;line-height:1.5}
     @media(max-width:520px){.card{padding:24px 20px;border-radius:20px}h1{font-size:28px}.brand{margin-left:2px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
   </style>
+  <style>
+    ${accountMenuStyles()}
+    .auth-account-zone{position:fixed;top:14px;right:14px;z-index:130}
+    @media(max-width:560px){.auth-account-zone{top:12px;right:12px}}
+  </style>
 </head>
 <body data-page="${page}">
+  <div class="auth-account-zone">${accountMenuMarkup(zh ? "zh-cn" : "en")}</div>
   <main class="shell">
     <div class="brand"><img class="mark" src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true"><div class="brand-copy"><strong>AERTEX ID</strong><span>AERTEX Account</span></div></div>
     <section class="card">
@@ -549,6 +585,7 @@ function authPage(pathname, request) {
   checkSession();
 })();
 </script>
+${accountMenuClientScript({ summaryUrl: "/api/session", logoutUrl: "/api/logout", authMode: true, locale: zh ? "zh-cn" : "en" })}
 </body>
 </html>`;
 }
