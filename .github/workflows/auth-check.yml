@@ -84,6 +84,7 @@ jobs:
           }
           if (!entry.includes('handleAuthSsoRequest(request)')) throw new Error('Auth entry must route SSO requests');
           if (!auth.includes('location.replace("/sso/start"')) throw new Error('Successful Auth login must start three-domain session synchronization');
+          if (!sso.includes('"referrer-policy": "origin"')) throw new Error('SSO relay pages must preserve an origin-only referrer for cross-domain validation');
           console.log('Three-domain SSO contract looks valid.');
           NODE
 
