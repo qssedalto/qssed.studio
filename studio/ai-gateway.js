@@ -123,7 +123,8 @@ export async function handleAiApi(request, env, session) {
 }
 
 export async function handleAiAdminApi(request, env, session) {
-  const path = new URL(request.url).pathname;
+  const requestUrl = new URL(request.url);
+  const path = requestUrl.pathname;
   const admin = await rpc(session, "is_admin", {});
   if (!admin.ok || admin.data !== true) return json({ error: "Administrator access required." }, 403);
 
@@ -310,6 +311,7 @@ export async function handleAiAdminApi(request, env, session) {
     if (!state.ok) return json({ error: "Unable to load AI administration." }, 502);
 
     const result = state.data || { providers: [], users: [] };
+    const fast = requestUrl.searchParams.get("fast") === "1";
     if (env.AI_CREDENTIAL_KEY && Array.isArray(result.providers) && result.providers.length) {
       const secretRows = await restData(
         session,
@@ -321,7 +323,7 @@ export async function handleAiAdminApi(request, env, session) {
         provider.admin_key_configured = provider.provider === "openai" && Boolean(row?.encrypted_admin_key && row?.admin_key_iv);
         provider.admin_key_hint = provider.provider === "openai" ? (row?.admin_key_hint || null) : null;
         provider.billing = { available: false, official_month_usd: null, error: null };
-        if (provider.provider !== "openai" || !provider.admin_key_configured) return;
+        if (provider.provider !== "openai" || !provider.admin_key_configured || fast) return;
         try {
           const adminKey = await decrypt(row.encrypted_admin_key, row.admin_key_iv, env.AI_CREDENTIAL_KEY);
           provider.billing = await readOpenAiMonthCosts(adminKey);
