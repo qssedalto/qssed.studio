@@ -8,6 +8,7 @@ import { renderAiAdmin } from "./studio/ai-admin-ui.js";
 import { gptOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
+import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
 
 
 export default {
@@ -64,7 +65,8 @@ export default {
       if (!gate.ok) return withStudioSessionCookies(gptSessionRedirect(request, pathname), gate.cookies || []);
       const probe = await handleAiAdminApi(new Request(new URL("/api/ai/admin/state", request.url), { headers: request.headers }), env, gate);
       if (probe.status === 403) {
-        const denied = withStudioSessionCookies(html(renderAdminDenied(locale), 403), gate.cookies || []);
+        const identity = await loadDeniedIdentity(gate);
+        const denied = withStudioSessionCookies(html(renderAdminDenied(locale, identity), 403), gate.cookies || []);
         return request.method === "HEAD" ? new Response(null,{status:denied.status,headers:denied.headers}) : denied;
       }
       const response = withStudioSessionCookies(html(renderAiAdmin(locale)), gate.cookies || []);
@@ -91,7 +93,30 @@ function renderShell(locale) {
   return renderGptApp(locale);
 }
 
-function renderAdminDenied(locale) {
+async function loadDeniedIdentity(gate) {
+  const email = String(gate?.user?.email || "").trim();
+  let username = String(gate?.user?.user_metadata?.username || "").trim();
+  if (gate?.user?.id && gate?.accessToken) {
+    try {
+      const response = await fetch(
+        SUPABASE_URL + "/rest/v1/profiles?select=username&id=eq." + encodeURIComponent(gate.user.id) + "&limit=1",
+        { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + gate.accessToken, Accept: "application/json" } }
+      );
+      if (response.ok) {
+        const rows = await response.json();
+        const profileUsername = Array.isArray(rows) ? String(rows[0]?.username || "").trim() : "";
+        if (profileUsername) username = profileUsername;
+      }
+    } catch {}
+  }
+  return {
+    email: email || "Unknown",
+    username: username || "Unknown",
+    accessedAt: new Date().toISOString()
+  };
+}
+
+function renderAdminDenied(locale, identity) {
   const zh = locale !== "en";
   const copy = zh ? {
     title: "此账号无权访问管理后台",
@@ -100,7 +125,7 @@ function renderAdminDenied(locale) {
     contact: "联系站点管理员",
     secondaryAfter: "，我们会协助检查你的账号角色与管理员授权状态。",
     mailSubject: "AERTEX Intelligence 管理员权限检查",
-    mailBody: "你好，\n\n我在访问 AERTEX Intelligence 管理后台时收到“此账号无权访问管理后台”的提示。请协助检查我的账号角色与管理员权限配置。\n\n账号邮箱 / 用户名：\n问题描述：\n访问时间：\n\n谢谢。",
+    mailBody: "你好，\n\n我在访问 AERTEX Intelligence 管理后台时收到“此账号无权访问管理后台”的提示。请协助检查我的账号角色与管理员权限配置。\n\n账号邮箱：" + identity.email + "\n用户名：" + identity.username + "\n访问时间：" + identity.accessedAt + " (UTC)\n问题描述：\n\n谢谢。",
     back: "返回 Intelligence",
     verify: "管理员权限验证",
     section: "Intelligence 管理后台"
@@ -111,7 +136,7 @@ function renderAdminDenied(locale) {
     contact: "contact the site administrator",
     secondaryAfter: " and we will help review your account role and administrator access.",
     mailSubject: "AERTEX Intelligence administrator access review",
-    mailBody: "Hello,\n\nI received the “This account cannot access the admin console” message while opening the AERTEX Intelligence admin console. Please help review my account role and administrator permissions.\n\nAccount email / username:\nIssue details:\nTime of access:\n\nThank you.",
+    mailBody: "Hello,\n\nI received the “This account cannot access the admin console” message while opening the AERTEX Intelligence admin console. Please help review my account role and administrator permissions.\n\nAccount email: " + identity.email + "\nUsername: " + identity.username + "\nTime of access: " + identity.accessedAt + " (UTC)\nIssue details:\n\nThank you.",
     back: "Back to Intelligence",
     verify: "Administrator verification",
     section: "Intelligence Admin"
