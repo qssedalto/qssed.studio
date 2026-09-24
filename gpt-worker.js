@@ -8,6 +8,8 @@ import { renderAiAdmin } from "./studio/ai-admin-ui.js";
 import { gptOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
+import { TEXT } from "./studio/config.js";
+import { topControls, themeScript } from "./studio/ui-page.js";
 
 
 export default {
@@ -93,21 +95,143 @@ function renderShell(locale) {
 
 function renderAdminDenied(locale) {
   const zh = locale !== "en";
-  const title = zh ? "你不是管理员，无法使用这个连接" : "Administrator access required";
-  const detail = zh
-    ? "此页面仅允许 AERTEX 管理员访问。你的身份已经完成验证，但当前账号没有管理员权限。"
-    : "This page is restricted to AERTEX administrators. Your identity was verified, but this account does not have administrator privileges.";
-  const back = zh ? "返回 Intelligence" : "Back to Intelligence";
+  const copy = zh ? {
+    title: "此账号无权访问管理后台",
+    eyebrow: "AERTEX Intelligence",
+    detail: "此页面仅供 AERTEX Intelligence 管理员使用。我们已经验证了你的登录身份，但当前账号没有管理员权限，因此无法进入 Intelligence 管理后台。",
+    secondary: "你仍然可以返回 Intelligence 使用当前账号已获授权的功能。如果你认为这是权限配置错误，请联系站点管理员检查你的账号角色。",
+    back: "返回 Intelligence"
+  } : {
+    title: "This account cannot access the admin console",
+    eyebrow: "AERTEX Intelligence",
+    detail: "This page is reserved for AERTEX Intelligence administrators. Your signed-in identity has been verified, but this account does not have administrator privileges, so access to the Intelligence admin console is blocked.",
+    secondary: "You can still return to Intelligence and use features already granted to this account. If you believe this is a permissions mistake, contact the site administrator to review your account role.",
+    back: "Back to Intelligence"
+  };
+  const links = { zhCurrent: "/zh-cn/admin", enCurrent: "/en/admin" };
+  const controls = topControls(links, zh ? TEXT.zh : TEXT.en);
   const backHref = zh ? "/zh-cn" : "/en";
-  return `<!doctype html><html lang="${zh ? "zh-CN" : "en"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>${title}</title><style>
-  :root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark;--bg:#f7f7f5;--panel:#fff;--text:#171717;--muted:#777;--line:rgba(0,0,0,.1)}
-  @media(prefers-color-scheme:dark){:root{--bg:#101010;--panel:#181818;--text:#f4f4f4;--muted:#999;--line:rgba(255,255,255,.12)}}
-  *{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);display:grid;place-items:center;padding:24px}
-  .card{width:min(620px,100%);background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:30px}
-  h1{font-size:28px;line-height:1.25;letter-spacing:-.035em;margin:0 0 12px}p{color:var(--muted);line-height:1.7;margin:0 0 22px}
-  a{display:inline-flex;align-items:center;text-decoration:none;background:var(--text);color:var(--bg);padding:10px 14px;border-radius:11px;font-weight:700}
-  </style></head><body><main class="card"><h1>${title}</h1><p>${detail}</p><a href="${backHref}">${back}</a></main></body></html>`;
+
+  return `<!doctype html>
+<html lang="${zh ? "zh-CN" : "en"}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>${copy.title}</title>
+<script>
+(function(){
+  try{
+    const savedTheme=localStorage.getItem("qssed-theme");
+    const prefersLight=window.matchMedia("(prefers-color-scheme: light)").matches;
+    document.documentElement.dataset.theme=savedTheme||(prefersLight?"light":"dark");
+  }catch{
+    document.documentElement.dataset.theme="dark";
+  }
+})();
+</script>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#000;
+  --surface:#1c1c1e;
+  --surface-strong:#2c2c2e;
+  --text:#f5f5f7;
+  --muted:#a1a1a6;
+  --border:rgba(255,255,255,.10);
+  --primary:#0a84ff;
+  --primary-ink:#fff;
+  --glass-heavy:rgba(22,22,24,.88);
+  --shadow:0 28px 70px rgba(0,0,0,.34);
 }
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#f5f5f7;
+  --surface:#fff;
+  --surface-strong:#f2f2f7;
+  --text:#1d1d1f;
+  --muted:#6e6e73;
+  --border:rgba(60,60,67,.13);
+  --primary:#007aff;
+  --primary-ink:#fff;
+  --glass-heavy:rgba(247,247,249,.90);
+  --shadow:0 28px 70px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{
+  margin:0;
+  min-height:100vh;
+  padding:88px 20px 28px;
+  background:
+    radial-gradient(900px 520px at 14% -10%,color-mix(in srgb,var(--primary) 8%,transparent),transparent 68%),
+    var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI",system-ui,sans-serif;
+}
+.shell{width:min(760px,100%);margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;margin:0 0 34px;font-size:21px;font-weight:730;letter-spacing:-.025em;color:var(--text)}
+.brand .aertex-wordmark-token{width:5.18687em;height:1em}
+.card{
+  border:1px solid var(--border);
+  border-radius:28px;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  box-shadow:var(--shadow);
+  padding:clamp(26px,5vw,44px);
+  -webkit-backdrop-filter:blur(28px) saturate(170%);
+  backdrop-filter:blur(28px) saturate(170%);
+}
+.kicker{font-size:13px;font-weight:680;color:var(--primary);margin:0 0 12px}
+h1{margin:0;font-size:clamp(32px,6vw,52px);line-height:1.05;letter-spacing:-.045em;font-weight:730;text-wrap:balance}
+.lead{margin:20px 0 0;color:var(--muted);font-size:16px;line-height:1.72}
+.secondaryCopy{margin:12px 0 0;color:var(--muted);font-size:14px;line-height:1.7}
+.back{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:48px;
+  margin-top:26px;
+  padding:0 16px;
+  border-radius:13px;
+  background:var(--primary);
+  color:var(--primary-ink);
+  text-decoration:none;
+  font-weight:650;
+}
+.theme-toggle,.language-toggle{
+  width:44px;height:44px;min-width:44px;min-height:44px;margin:0;padding:0;
+  border:1px solid var(--border);border-radius:50%;background:var(--glass-heavy);color:var(--text);
+  -webkit-backdrop-filter:blur(20px) saturate(170%);backdrop-filter:blur(20px) saturate(170%);
+  box-shadow:0 8px 24px rgba(0,0,0,.10),inset 0 1px 0 color-mix(in srgb,#fff 20%,transparent);
+  text-decoration:none;font-size:11px;font-weight:680;line-height:1;
+}
+.language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}
+.theme-toggle .theme-sun,:root[data-theme="light"] .theme-toggle .theme-moon{display:none}
+:root[data-theme="light"] .theme-toggle .theme-sun{display:inline}
+.top-controls-zone{position:fixed;top:0;right:0;width:132px;height:72px;z-index:80;pointer-events:none}
+.top-controls{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:8px;pointer-events:auto}
+.top-controls .language-toggle,.top-controls .theme-toggle{position:static!important}
+:root.theme-switching body,:root.theme-switching .card{transition:background .20s ease,color .20s ease,border-color .20s ease}
+@media(max-width:560px){body{padding:82px 16px 20px}.card{border-radius:24px}.brand{margin-bottom:24px}.top-controls{top:12px;right:12px}}
+</style>
+</head>
+<body>
+${controls}
+<main class="shell">
+  <div class="brand">${copy.eyebrow}</div>
+  <section class="card">
+    <div class="kicker">${zh ? "管理员权限验证" : "Administrator verification"}</div>
+    <h1>${copy.title}</h1>
+    <p class="lead">${copy.detail}</p>
+    <p class="secondaryCopy">${copy.secondary}</p>
+    <a class="back" href="${backHref}">${copy.back}</a>
+  </section>
+</main>
+${themeScript()}
+</body>
+</html>`;
+}
+
 function preferredLocale(request) {
   const language = (request.headers.get("Accept-Language") || "").toLowerCase();
   return language.includes("zh") ? "zh-cn" : "en";
