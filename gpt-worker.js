@@ -61,7 +61,7 @@ export default {
     if (pathname === "/admin" || pathname === "/zh-cn/admin" || pathname === "/en/admin") {
       const locale = pathname.startsWith("/en") ? "en" : "zh-cn";
       const gate = await verifyStudioPageSession(request);
-      if (!gate.ok) return withStudioSessionCookies(gptSessionRedirect(request, locale === "en" ? "/en" : "/zh-cn"), gate.cookies || []);
+      if (!gate.ok) return withStudioSessionCookies(gptSessionRedirect(request, pathname), gate.cookies || []);
       const probe = await handleAiAdminApi(new Request(new URL("/api/ai/admin/state", request.url), { headers: request.headers }), env, gate);
       if (probe.status === 403) return text("Administrator access required.", 403);
       const response = withStudioSessionCookies(html(renderAiAdmin(locale)), gate.cookies || []);
