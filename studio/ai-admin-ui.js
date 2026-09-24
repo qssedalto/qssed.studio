@@ -11,7 +11,7 @@ export function renderAiAdmin(locale) {
     monthly:"月额度 $", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
     official:"OpenAI 官方本月费用", local:"AERTEX 本地估算", remaining:"预算剩余", requests:"本月请求",
     billingOn:"官方账单已连接", billingOff:"未配置 Admin Key", saved:"已保存", projectValidated:"Project Key 验证通过",
-    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。"
+    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户可用模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。"
   } : {
     title:"Intelligence Admin", intro:"Manage OpenAI credentials, official costs, user access, and quotas.",
     add:"Add OpenAI Provider", name:"Name", key:"Project API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
@@ -23,7 +23,7 @@ export function renderAiAdmin(locale) {
     monthly:"Monthly quota $", rpm:"RPM", apply:"Save access", empty:"No provider configured",
     official:"OpenAI official month cost", local:"AERTEX local estimate", remaining:"Budget remaining", requests:"Requests this month",
     billingOn:"Official billing connected", billingOff:"No Admin Key", saved:"Saved", projectValidated:"Project Key validated",
-    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first."
+    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first."
   };
 
   return `<!doctype html>
@@ -94,12 +94,20 @@ dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;
   <div class="dialogFoot"><button type="button" class="secondaryBtn" id="defaultCancel">${t.cancel}</button><button type="button" class="primary" id="defaultDone">${t.done}</button></div>
 </dialog>
 
+<dialog id="userModelsDialog">
+  <div class="dialogHead"><strong>${t.chooseUserModels}</strong></div>
+  <div class="dialogBody" id="userModelsDialogBody"></div>
+  <div class="dialogFoot"><button type="button" class="secondaryBtn" id="userModelsCancel">${t.cancel}</button><button type="button" class="primary" id="userModelsDone">${t.done}</button></div>
+</dialog>
+
 <script>
 const $=id=>document.getElementById(id);
 let state={providers:[],users:[]};
 const MODEL_CATALOG=["gpt-5.6","gpt-5.6-terra","gpt-5.6-luna"];
 let selectedProviderModels=[...MODEL_CATALOG];
 let selectedDefaultModel=MODEL_CATALOG[0];
+const userModelSelections=new Map();
+let activeUserModelPicker=null;
 const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 const money=value=>value==null?"—":"$"+Number(value||0).toFixed(4);
 
@@ -157,6 +165,44 @@ async function load(){
   }
 }
 
+function userModelsSummary(models){
+  const values=Array.isArray(models)?models:[];
+  return "${t.selectedModels} "+values.length+" ${t.modelsUnit}"+(values.length?" · "+values.join(", "):"");
+}
+
+function openUserModelsDialog(userId){
+  const row=document.querySelector('.user[data-user="'+CSS.escape(userId)+'"]');
+  if(!row)return;
+  const providerId=row.querySelector(".providerSelect").value;
+  const provider=(state.providers||[]).find(item=>item.id===providerId);
+  const available=provider?.allowed_models||[];
+  if(!available.length){
+    $("msg").textContent="${t.noAllowedModels}";
+    $("msg").className="status bad";
+    return;
+  }
+  const selected=userModelSelections.get(userId)||[];
+  activeUserModelPicker={userId,available:[...available]};
+  $("userModelsDialogBody").innerHTML=available.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(selected.includes(model)?"checked":"")+"><span>'+esc(model)+'</span></label>').join("");
+  $("userModelsDialog").showModal();
+}
+
+$("userModelsCancel").onclick=()=>{activeUserModelPicker=null;$("userModelsDialog").close();};
+$("userModelsDone").onclick=()=>{
+  if(!activeUserModelPicker)return;
+  const values=[...$("userModelsDialogBody").querySelectorAll('input[type="checkbox"]:checked')].map(input=>input.value);
+  if(!values.length){
+    $("msg").textContent="${t.selectAtLeastOne}";
+    $("msg").className="status bad";
+    return;
+  }
+  userModelSelections.set(activeUserModelPicker.userId,values);
+  const row=document.querySelector('.user[data-user="'+CSS.escape(activeUserModelPicker.userId)+'"]');
+  if(row)row.querySelector(".userModelsValue").textContent=userModelsSummary(values);
+  activeUserModelPicker=null;
+  $("userModelsDialog").close();
+};
+
 function providerOptions(selected){
   let html='<option value="">—</option>';
   for(const provider of state.providers||[]){
@@ -191,12 +237,15 @@ function render(){
 
   $("users").innerHTML=(state.users||[]).map(user=>{
     const selectedProvider=(state.providers||[]).find(p=>p.id===user.provider_id);
-    const defaultModels=(user.allowed_models||[]).length?user.allowed_models:(selectedProvider?.allowed_models||[]);
+    const providerModels=selectedProvider?.allowed_models||[];
+    const defaultModels=(user.allowed_models||[]).length?user.allowed_models:providerModels;
+    const safeModels=defaultModels.filter(model=>providerModels.includes(model));
+    userModelSelections.set(user.user_id,safeModels.length?safeModels:[...providerModels]);
     return '<div class="user" data-user="'+esc(user.user_id)+'">'
       +'<div class="userName"><strong>'+esc(user.display_name||user.username||user.email)+'</strong><span class="hint">'+esc(user.email||"")+' · '+money(user.month_usage_usd||0)+'</span></div>'
       +'<div><label>${t.enabled}</label><select class="enabled"><option value="0">Off</option><option value="1" '+(user.enabled?"selected":"")+'>On</option></select></div>'
       +'<div><label>${t.provider}</label><select class="providerSelect">'+providerOptions(user.provider_id)+'</select></div>'
-      +'<div><label>${t.allowed}</label><input class="allowedModels" value="'+esc(defaultModels.join(","))+'"></div>'
+      +'<div><label>${t.allowed}</label><button type="button" class="pickerButton userModelsPicker"><span class="pickerValue userModelsValue">'+esc(userModelsSummary(userModelSelections.get(user.user_id)))+'</span><span class="pickerChevron">›</span></button></div>'
       +'<div><label>${t.daily}</label><input class="daily" type="number" min="0" step=".01" value="'+esc(user.daily_limit_usd??"")+'"></div>'
       +'<div><label>${t.monthly}</label><input class="monthly" type="number" min="0" step=".01" value="'+esc(user.monthly_limit_usd??"")+'"></div>'
       +'<div><label>${t.rpm}</label><input class="rpm" type="number" min="1" max="300" value="'+esc(user.requests_per_minute||20)+'"></div>'
@@ -204,10 +253,16 @@ function render(){
   }).join("");
 
   document.querySelectorAll(".access").forEach(button=>button.onclick=saveAccess);
+  document.querySelectorAll(".userModelsPicker").forEach(button=>button.onclick=event=>{
+    const row=event.currentTarget.closest(".user");
+    openUserModelsDialog(row.dataset.user);
+  });
   document.querySelectorAll(".providerSelect").forEach(select=>select.onchange=event=>{
     const row=event.currentTarget.closest(".user");
     const provider=(state.providers||[]).find(item=>item.id===event.currentTarget.value);
-    if(provider)row.querySelector(".allowedModels").value=(provider.allowed_models||[]).join(",");
+    const values=provider?.allowed_models?[...provider.allowed_models]:[];
+    userModelSelections.set(row.dataset.user,values);
+    row.querySelector(".userModelsValue").textContent=userModelsSummary(values);
   });
 }
 
@@ -250,12 +305,18 @@ async function saveAccess(event){
     $("msg").className="status bad";
     return;
   }
+  const allowedModels=userModelSelections.get(user.user_id)||[];
+  if(row.querySelector(".enabled").value==="1"&&!allowedModels.length){
+    $("msg").textContent="${t.selectAtLeastOne}";
+    $("msg").className="status bad";
+    return;
+  }
   try{
     await api("/access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       user_id:user.user_id,
       provider_id:providerId||null,
       enabled:row.querySelector(".enabled").value==="1",
-      allowed_models:row.querySelector(".allowedModels").value,
+      allowed_models:allowedModels,
       daily_limit_usd:row.querySelector(".daily").value,
       monthly_limit_usd:row.querySelector(".monthly").value,
       requests_per_minute:row.querySelector(".rpm").value
