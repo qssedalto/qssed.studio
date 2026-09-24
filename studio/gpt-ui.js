@@ -114,7 +114,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
       const providers=Array.isArray(cfg.providers)?cfg.providers:[];
       for(const provider of providers){
         const group=document.createElement("optgroup");
-        group.label=(provider.provider==="zhipu"?"智谱 GLM · ":"OpenAI · ")+(provider.name||"");
+        group.label=(provider.provider==="zhipu"?"智谱 GLM · ":provider.provider==="bailian"?"阿里云百炼 · ":"OpenAI · ")+(provider.name||"");
         for(const item of models.filter(model=>model.provider_id===provider.id)){
           const option=document.createElement("option");
           option.value=item.model;

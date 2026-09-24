@@ -11,6 +11,7 @@ for (const locale of ["zh-cn","en"]) {
   for (const required of [
     'id="providerType"',
     'value="zhipu"',
+    'value="bailian"',
     'userProviderAccessSelections',
     'provider_access:providerAccess',
     'error?.code==="RATE_LIMITED"',

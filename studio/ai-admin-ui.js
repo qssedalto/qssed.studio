@@ -3,7 +3,7 @@ export function renderAiAdmin(locale) {
   const zh = locale === "zh-cn";
   const t = zh ? {
     title:"Intelligence 管理", intro:"集中管理 AI Provider、凭据、用户权限与配额。",
-    add:"添加 AI Provider", name:"名称", type:"Provider 类型", typeOpenAI:"OpenAI", typeZhipu:"智谱 GLM", key:"API Key", adminKey:"OpenAI Admin Key（可选，仅账单）",
+    add:"添加 AI Provider", name:"名称", type:"Provider 类型", typeOpenAI:"OpenAI", typeZhipu:"智谱 GLM", typeBailian:"阿里云百炼", key:"API Key", adminKey:"OpenAI Admin Key（可选，仅账单）",
     adminHint:"Admin Key 只用于读取 OpenAI Organization Costs，不参与用户聊天。",
     models:"允许模型", def:"默认模型", budget:"AERTEX 月预算（USD）",
     input:"自定义模型输入 $/百万 Token", output:"自定义模型输出 $/百万 Token",
@@ -12,10 +12,10 @@ export function renderAiAdmin(locale) {
     monthly:"月额度 $", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
     official:"OpenAI 官方本月费用", local:"AERTEX 本地估算", remaining:"预算剩余", requests:"本月请求",
     billingOn:"官方账单已连接", billingOff:"未配置 Admin Key", saved:"已保存", projectValidated:"Project Key 验证通过",
-    noProvider:"请至少为用户选择一个 Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户 Provider 与模型", selectedModels:"已选择", modelsUnit:"个模型", providersUnit:"个 Provider", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 API Key。", noModelsForKey:"这个 API Key 没有返回可用于对话的模型。", accessSaving:"保存中…", accessSaved:"已保存 ✓", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销。", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key", regionUnsupported:"当前网络或服务区域暂不支持 OpenAI API 检查。这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能。", rateLimited:"已确认智谱上游限流：AERTEX 收到智谱真实 HTTP 429。这个结果不能判定 Key 无效。", authInvalid:"智谱明确拒绝了 API Key 身份验证。", quotaExhausted:"智谱报告当前账户额度不足。", permissionDenied:"智谱拒绝当前账户或模型的访问权限。", providerOverloaded:"智谱服务当前过载，请稍后重试。", retryAfter:"建议等待", seconds:"秒后重试", requestId:"请求 ID", providerCode:"智谱错误码", checkedAt:"检查时间", noRetryHeader:"智谱未返回 Retry-After；AERTEX 不会自动连续重试。", retryCountdown:"后重试", upstreamStatus:"上游状态"
+    noProvider:"请至少为用户选择一个 Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户 Provider 与模型", selectedModels:"已选择", modelsUnit:"个模型", providersUnit:"个 Provider", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 API Key。", noModelsForKey:"这个 API Key 没有返回可用于对话的模型。", accessSaving:"保存中…", accessSaved:"已保存 ✓", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销。", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key", regionUnsupported:"当前网络或服务区域暂不支持 OpenAI API 检查。这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能。", rateLimited:"已确认上游 Provider 限流：AERTEX 收到真实 HTTP 429。这个结果不能判定 Key 无效。", authInvalid:"上游 Provider 明确拒绝了 API Key 身份验证。", quotaExhausted:"上游 Provider 报告当前账户额度不足。", permissionDenied:"上游 Provider 拒绝当前账户或模型的访问权限。", providerOverloaded:"上游 Provider 当前过载，请稍后重试。", retryAfter:"建议等待", seconds:"秒后重试", requestId:"请求 ID", providerCode:"Provider 错误码", checkedAt:"检查时间", noRetryHeader:"上游未返回 Retry-After；AERTEX 不会自动连续重试。", retryCountdown:"后重试", upstreamStatus:"上游状态"
   } : {
     title:"Intelligence Admin", intro:"Manage AI providers, credentials, user access, and quotas.",
-    add:"Add AI Provider", name:"Name", type:"Provider type", typeOpenAI:"OpenAI", typeZhipu:"Zhipu GLM", key:"API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
+    add:"Add AI Provider", name:"Name", type:"Provider type", typeOpenAI:"OpenAI", typeZhipu:"Zhipu GLM", typeBailian:"Alibaba Cloud Bailian", key:"API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
     adminHint:"The Admin Key is used only for OpenAI Organization Costs and is never used for user inference.",
     models:"Allowed models", def:"Default model", budget:"AERTEX monthly budget (USD)",
     input:"Custom model input $ / 1M tokens", output:"Custom model output $ / 1M tokens",
@@ -24,7 +24,7 @@ export function renderAiAdmin(locale) {
     monthly:"Monthly quota $", rpm:"RPM", apply:"Save access", empty:"No provider configured",
     official:"OpenAI official month cost", local:"AERTEX local estimate", remaining:"Budget remaining", requests:"Requests this month",
     billingOn:"Official billing connected", billingOff:"No Admin Key", saved:"Saved", projectValidated:"Project Key validated",
-    noProvider:"Select at least one provider for this user.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user providers and models", selectedModels:"Selected", modelsUnit:"models", providersUnit:"providers", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the API Key first.", noModelsForKey:"This API Key returned no chat-capable models.", accessSaving:"Saving…", accessSaved:"Saved ✓", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key", regionUnsupported:"OpenAI API checks are unavailable from the current network or service region. This does not mean the key is invalid. Use OpenAI-connected features only from an officially supported country or territory.", rateLimited:"Confirmed upstream Zhipu rate limit: AERTEX received a real HTTP 429 from Zhipu. This does not mean the API key is invalid.", authInvalid:"Zhipu explicitly rejected API-key authentication.", quotaExhausted:"Zhipu reports insufficient account quota.", permissionDenied:"Zhipu denied access for this account or model.", providerOverloaded:"Zhipu is temporarily overloaded. Try again later.", retryAfter:"Retry after", seconds:"seconds", requestId:"Request ID", providerCode:"Zhipu error code", checkedAt:"Checked at", noRetryHeader:"Zhipu did not return Retry-After; AERTEX will not auto-retry repeatedly.", retryCountdown:"retry", upstreamStatus:"Upstream status"
+    noProvider:"Select at least one provider for this user.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user providers and models", selectedModels:"Selected", modelsUnit:"models", providersUnit:"providers", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the API Key first.", noModelsForKey:"This API Key returned no chat-capable models.", accessSaving:"Saving…", accessSaved:"Saved ✓", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key", regionUnsupported:"OpenAI API checks are unavailable from the current network or service region. This does not mean the key is invalid. Use OpenAI-connected features only from an officially supported country or territory.", rateLimited:"Confirmed upstream provider rate limit: AERTEX received a real HTTP 429. This does not mean the API key is invalid.", authInvalid:"The upstream provider explicitly rejected API-key authentication.", quotaExhausted:"The upstream provider reports insufficient account quota.", permissionDenied:"The upstream provider denied access for this account or model.", providerOverloaded:"The upstream provider is temporarily overloaded. Try again later.", retryAfter:"Retry after", seconds:"seconds", requestId:"Request ID", providerCode:"Provider error code", checkedAt:"Checked at", noRetryHeader:"The upstream provider did not return Retry-After; AERTEX will not auto-retry repeatedly.", retryCountdown:"retry", upstreamStatus:"Upstream status"
   };
 
   return `<!doctype html>
@@ -59,7 +59,7 @@ dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;
 <section class="card">
   <div class="sectionHead"><h2>${t.add}</h2></div>
   <div class="grid">
-    <div><label>${t.type}</label><select id="providerType"><option value="openai">${t.typeOpenAI}</option><option value="zhipu">${t.typeZhipu}</option></select></div>
+    <div><label>${t.type}</label><select id="providerType"><option value="openai">${t.typeOpenAI}</option><option value="zhipu">${t.typeZhipu}</option><option value="bailian">${t.typeBailian}</option></select></div>
     <div><label>${t.name}</label><input id="name" value="OpenAI Primary"></div>
     <div><label>${t.key}</label><div class="keyRow"><input id="key" type="password" autocomplete="off" spellcheck="false"><button type="button" class="checkKeyButton" id="checkKey">${t.checkKey}</button></div><div class="keyStatus" id="keyStatus">${t.keyNotChecked}</div></div>
     <div id="adminKeyField"><label>${t.adminKey}</label><input id="adminKey" type="password" autocomplete="off" spellcheck="false"><div class="hint">${t.adminHint}</div></div>
@@ -181,10 +181,11 @@ function syncProviderType(){
   const kind=$("providerType").value;
   $("adminKeyField").classList.toggle("hidden",kind!=="openai");
   if(kind!=="openai")$("adminKey").value="";
-  if(kind==="zhipu"&&$("name").value==="OpenAI Primary")$("name").value="Zhipu GLM";
-  if(kind==="openai"&&$("name").value==="Zhipu GLM")$("name").value="OpenAI Primary";
-  $("input").value=kind==="zhipu"?"0":"4";
-  $("output").value=kind==="zhipu"?"0":"20";
+  if(kind==="zhipu"&&($("name").value==="OpenAI Primary"||$("name").value==="Alibaba Cloud Bailian"))$("name").value="Zhipu GLM";
+  if(kind==="bailian"&&($("name").value==="OpenAI Primary"||$("name").value==="Zhipu GLM"))$("name").value="Alibaba Cloud Bailian";
+  if(kind==="openai"&&($("name").value==="Zhipu GLM"||$("name").value==="Alibaba Cloud Bailian"))$("name").value="OpenAI Primary";
+  $("input").value=kind==="openai"?"4":"0";
+  $("output").value=kind==="openai"?"20":"0";
 }
 $("providerType").addEventListener("change",()=>{invalidateProjectKey();syncProviderType();});
 $("key").addEventListener("input",invalidateProjectKey);
@@ -208,7 +209,9 @@ $("checkKey").onclick=async()=>{
     projectKeyValidated=true;
     const preferred=($("providerType").value==="zhipu"
       ? ["glm-4.7-flash"]
-      : ["gpt-5.6","gpt-5.6-sol","gpt-5.6-terra","gpt-5.6-luna"])
+      : $("providerType").value==="bailian"
+        ? ["qwen3.7-plus","glm-5","qwen-max","qwen-plus-2025-07-28"]
+        : ["gpt-5.6","gpt-5.6-sol","gpt-5.6-terra","gpt-5.6-luna"])
       .filter(model=>availableProjectModels.includes(model));
     selectedProviderModels=preferred.length?preferred.slice(0,4):[availableProjectModels[0]];
     selectedDefaultModel=selectedProviderModels[0];
@@ -350,8 +353,9 @@ function openUserModelsDialog(userId){
     const checked=selectedByProvider.has(provider.id);
     const selected=selectedByProvider.get(provider.id)||[];
     const models=provider.allowed_models||[];
+    const providerTypeLabel=provider.provider==="zhipu"?"${t.typeZhipu}":provider.provider==="bailian"?"${t.typeBailian}":"${t.typeOpenAI}";
     return '<div class="providerCard userProviderGroup" data-provider="'+esc(provider.id)+'">'
-      +'<label class="choice"><input class="userProviderToggle" type="checkbox" value="'+esc(provider.id)+'" '+(checked?"checked":"")+'><span><strong>'+esc(provider.name)+'</strong> · '+(provider.provider==="zhipu"?"${t.typeZhipu}":"${t.typeOpenAI}")+'</span></label>'
+      +'<label class="choice"><input class="userProviderToggle" type="checkbox" value="'+esc(provider.id)+'" '+(checked?"checked":"")+'><span><strong>'+esc(provider.name)+'</strong> · '+providerTypeLabel+'</span></label>'
       +'<div class="dialogBody providerModelChoices">'
       +models.map(model=>'<label class="choice"><input class="userProviderModel" data-provider="'+esc(provider.id)+'" type="checkbox" value="'+esc(model)+'" '+(selected.includes(model)?"checked":"")+' '+(checked?"":"disabled")+'><span>'+esc(model)+'</span></label>').join("")
       +'</div></div>';
@@ -399,7 +403,7 @@ async function openEditProvider(providerId){
   const provider=(state.providers||[]).find(item=>item.id===providerId);
   if(!provider)return;
   editingProvider=provider;
-  $("editProviderType").textContent=provider.provider==="zhipu"?"${t.typeZhipu}":"${t.typeOpenAI}";
+  $("editProviderType").textContent=provider.provider==="zhipu"?"${t.typeZhipu}":provider.provider==="bailian"?"${t.typeBailian}":"${t.typeOpenAI}";
   $("editAdminKeyField").classList.toggle("hidden",provider.provider!=="openai");
   $("editName").value=provider.name||"";
   $("editKey").value="";
@@ -523,12 +527,12 @@ function render(){
         const spent=official==null?local:official;
         const budget=provider.monthly_budget_usd==null?null:Number(provider.monthly_budget_usd);
         const remaining=budget==null?null:Math.max(0,budget-spent);
-        const providerLabel=provider.provider==="zhipu"?"${t.typeZhipu}":"${t.typeOpenAI}";
+        const providerLabel=provider.provider==="zhipu"?"${t.typeZhipu}":provider.provider==="bailian"?"${t.typeBailian}":"${t.typeOpenAI}";
         const billingLabel=provider.provider==="openai"
           ? (provider.admin_key_configured
               ? (provider.billing?.available?"${t.billingOn}":"${t.billingOn} · "+esc(provider.billing?.error||""))
               : "${t.billingOff}")
-          : "Responses API";
+          : "OpenAI-compatible API";
         return '<div class="providerCard">'
           +'<div class="providerTop"><div><div class="providerName">'+esc(provider.name)+'</div>'
           +'<div class="hint">'+providerLabel+' · '+esc(provider.default_model)+' · API ****'+esc(provider.key_hint||"")+' · '+billingLabel+'</div></div>'

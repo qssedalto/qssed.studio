@@ -5,6 +5,9 @@ const dec = new TextDecoder();
 const OPENAI_BASE = "https://api.openai.com";
 const ZHIPU_BASE = "https://open.bigmodel.cn/api/paas/v4";
 const ZHIPU_MODELS = ["glm-4.7-flash"];
+const BAILIAN_BASE = "https://ws-v0ogv72bnj1vwnsv.cn-beijing.maas.aliyuncs.com/compatible-mode/v1";
+const BAILIAN_MODELS_ENDPOINT = "https://ws-v0ogv72bnj1vwnsv.cn-beijing.maas.aliyuncs.com/api/v1/models";
+const BAILIAN_PREFERRED_MODELS = ["qwen3.7-plus", "glm-5", "qwen-max", "qwen-plus-2025-07-28"];
 const KNOWN_PRICES = {
   "gpt-5.6": { input: 4, output: 20 },
   "gpt-5.6-sol": { input: 4, output: 20 },
@@ -242,7 +245,11 @@ export async function handleAiAdminApi(request, env, session) {
     const provider = cleanProvider(b.provider);
     const adminKey = provider === "openai" ? clean(b.admin_key, 800) : "";
     const name = String(b.name || "").trim().slice(0, 80);
-    const providerDefault = provider === "zhipu" ? ZHIPU_MODELS[0] : "gpt-5.6";
+    const providerDefault = provider === "zhipu"
+      ? ZHIPU_MODELS[0]
+      : provider === "bailian"
+        ? BAILIAN_PREFERRED_MODELS[0]
+        : "gpt-5.6";
     const defaultModel = cleanModel(b.default_model) || providerDefault;
     const allowedModels = models(b.allowed_models);
     if (!allowedModels.includes(defaultModel)) allowedModels.unshift(defaultModel);
@@ -284,7 +291,7 @@ export async function handleAiAdminApi(request, env, session) {
     const row = {
       name,
       provider,
-      base_url: provider === "zhipu" ? ZHIPU_BASE : OPENAI_BASE,
+      base_url: providerBase(provider),
       encrypted_api_key: encrypted.cipher,
       api_key_iv: encrypted.iv,
       key_hint: key.slice(-4),
@@ -563,10 +570,11 @@ async function chat(request, env, session) {
     { role: "user", content: message }
   ];
 
-  const isZhipu = cleanProvider(p.provider) === "zhipu";
-  const providerRoot = String(p.base_url || providerBase(p.provider)).replace(/\/$/, "");
-  const upstreamUrl = providerRoot + (isZhipu ? "/chat/completions" : "/v1/responses");
-  const upstreamBody = isZhipu
+  const normalizedProvider = cleanProvider(p.provider);
+  const usesChatCompletions = isChatCompletionsProvider(normalizedProvider);
+  const providerRoot = String(p.base_url || providerBase(normalizedProvider)).replace(/\/$/, "");
+  const upstreamUrl = providerRoot + (usesChatCompletions ? "/chat/completions" : "/v1/responses");
+  const upstreamBody = usesChatCompletions
     ? { model, messages: input, stream: true, stream_options: { include_usage: true } }
     : { model, input, stream: true };
   const upstream = await fetch(upstreamUrl, {
@@ -589,10 +597,10 @@ async function chat(request, env, session) {
         403
       );
     }
-    if (p.provider === "zhipu" && upstream.status === 429) {
+    if (usesChatCompletions && upstream.status === 429) {
       return json(
         {
-          error: "Zhipu GLM returned HTTP 429 rate limit.",
+          error: providerDisplayName(normalizedProvider) + " returned HTTP 429 rate limit.",
           code: "RATE_LIMITED",
           provider_id: p.id,
           diagnostic
@@ -602,7 +610,7 @@ async function chat(request, env, session) {
     }
     return json(
       {
-        error: (p.provider === "zhipu" ? "Zhipu GLM request failed." : "OpenAI request failed."),
+        error: providerDisplayName(normalizedProvider) + " request failed.",
         detail,
         code: "PROVIDER_REQUEST_FAILED",
         provider_id: p.id,
@@ -643,7 +651,7 @@ async function chat(request, env, session) {
               let event;
               try { event = JSON.parse(raw); } catch { continue; }
 
-              if (isZhipu) {
+              if (usesChatCompletions) {
                 responseId = event.id || responseId;
                 const content = event.choices?.[0]?.delta?.content;
                 if (typeof content === "string" && content) {
@@ -661,7 +669,7 @@ async function chat(request, env, session) {
                   outputTokens = Number(event.usage.completion_tokens ?? event.usage.output_tokens) || outputTokens;
                 }
                 if (event.error) {
-                  throw new Error(event.error?.message || "Zhipu GLM stream error");
+                  throw new Error(event.error?.message || providerDisplayName(normalizedProvider) + " stream error");
                 }
               } else {
                 if (event.type === "response.output_text.delta" && event.delta) {
@@ -739,7 +747,10 @@ async function chat(request, env, session) {
 }
 
 async function validateProviderKey(provider, key) {
-  return provider === "zhipu" ? validateZhipuKey(key) : validateProjectKey(key);
+  const normalized = cleanProvider(provider);
+  if (normalized === "zhipu") return validateZhipuKey(key);
+  if (normalized === "bailian") return validateBailianKey(key);
+  return validateProjectKey(key);
 }
 
 async function validateZhipuKey(key) {
@@ -817,12 +828,108 @@ async function validateZhipuKey(key) {
   return { ok: true, models: [...ZHIPU_MODELS] };
 }
 
+async function validateBailianKey(key) {
+  const collected = [];
+  let total = Infinity;
+
+  for (let page = 1; page <= 3 && collected.length < 120 && collected.length < total; page += 1) {
+    const url = new URL(BAILIAN_MODELS_ENDPOINT);
+    url.searchParams.set("capabilities", "TG");
+    url.searchParams.set("supports", "inference");
+    url.searchParams.set("page_no", String(page));
+    url.searchParams.set("page_size", "100");
+
+    let response;
+    try {
+      response = await fetch(url.toString(), {
+        headers: {
+          Authorization: "Bearer " + key,
+          Accept: "application/json"
+        }
+      });
+    } catch {
+      return { ok: false, error: "Unable to reach Alibaba Cloud Bailian.", code: "PROVIDER_UNREACHABLE" };
+    }
+
+    const raw = await response.text();
+    if (!response.ok) {
+      const diagnostic = upstreamDiagnostic(response, raw);
+      if (response.status === 429) {
+        return { ok: false, code: "RATE_LIMITED", error: "Alibaba Cloud Bailian returned HTTP 429 rate limit.", diagnostic };
+      }
+      if (response.status === 401) {
+        return { ok: false, code: "PROVIDER_AUTH_INVALID", error: "Alibaba Cloud Bailian rejected the API Key authentication.", diagnostic };
+      }
+      if (response.status === 402) {
+        return { ok: false, code: "PROVIDER_QUOTA_EXHAUSTED", error: "Alibaba Cloud Bailian reports insufficient account quota.", diagnostic };
+      }
+      if (response.status === 403) {
+        return { ok: false, code: "PROVIDER_PERMISSION_DENIED", error: "Alibaba Cloud Bailian denied access for this workspace or API Key.", diagnostic };
+      }
+      if (response.status === 503) {
+        return { ok: false, code: "PROVIDER_OVERLOADED", error: "Alibaba Cloud Bailian is temporarily overloaded.", diagnostic };
+      }
+      return {
+        ok: false,
+        code: "PROVIDER_REJECTED",
+        error: "Alibaba Cloud Bailian model-list request failed: " + diagnostic.message,
+        diagnostic
+      };
+    }
+
+    let payload;
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      return { ok: false, code: "INVALID_MODEL_LIST", error: "Alibaba Cloud Bailian returned an invalid model list." };
+    }
+    if (payload?.success === false) {
+      return {
+        ok: false,
+        code: "PROVIDER_REJECTED",
+        error: "Alibaba Cloud Bailian model-list request failed: " + String(payload?.message || payload?.code || "request failed").slice(0, 200)
+      };
+    }
+
+    total = Number(payload?.output?.total);
+    if (!Number.isFinite(total) || total < 0) total = 0;
+    const pageModels = Array.isArray(payload?.output?.models) ? payload.output.models : [];
+    for (const item of pageModels) {
+      const model = cleanModel(item?.model);
+      if (model) collected.push(model);
+    }
+    if (!pageModels.length) break;
+  }
+
+  const found = [...new Set(collected)].sort(compareBailianModelIds).slice(0, 120);
+  if (!found.length) {
+    return { ok: false, code: "INVALID_MODEL_LIST", error: "Alibaba Cloud Bailian returned no text-generation models for this API Key." };
+  }
+  return { ok: true, models: found };
+}
+
 function cleanProvider(value) {
-  return String(value || "").toLowerCase() === "zhipu" ? "zhipu" : "openai";
+  const normalized = String(value || "").toLowerCase();
+  return normalized === "zhipu" || normalized === "bailian" ? normalized : "openai";
 }
 
 function providerBase(provider) {
-  return cleanProvider(provider) === "zhipu" ? ZHIPU_BASE : OPENAI_BASE;
+  const normalized = cleanProvider(provider);
+  if (normalized === "zhipu") return ZHIPU_BASE;
+  if (normalized === "bailian") return BAILIAN_BASE;
+  return OPENAI_BASE;
+}
+
+function isChatCompletionsProvider(provider) {
+  const normalized = cleanProvider(provider);
+  return normalized === "zhipu" || normalized === "bailian";
+}
+
+function providerDisplayName(provider) {
+  const normalized = cleanProvider(provider);
+  if (normalized === "zhipu") return "Zhipu GLM";
+  if (normalized === "bailian") return "Alibaba Cloud Bailian";
+  return "OpenAI";
 }
 
 function providerAvailability(provider, country) {
@@ -882,6 +989,17 @@ function compareModelIds(a, b) {
   const priority = ["gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"];
   const ai = priority.indexOf(a);
   const bi = priority.indexOf(b);
+  if (ai >= 0 || bi >= 0) {
+    if (ai < 0) return 1;
+    if (bi < 0) return -1;
+    return ai - bi;
+  }
+  return a.localeCompare(b);
+}
+
+function compareBailianModelIds(a, b) {
+  const ai = BAILIAN_PREFERRED_MODELS.indexOf(a);
+  const bi = BAILIAN_PREFERRED_MODELS.indexOf(b);
   if (ai >= 0 || bi >= 0) {
     if (ai < 0) return 1;
     if (bi < 0) return -1;
