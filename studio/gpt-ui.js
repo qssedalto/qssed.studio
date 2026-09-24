@@ -4,7 +4,7 @@ export function renderGptApp(locale) {
   const zh = locale === "zh-cn";
   const t = zh ? {
     title:"AERTEX Intelligence", subtitle:"Local Intelligence", online:"Intelligence 在线", offline:"Intelligence 离线",
-    offlineTitle:"Intelligence 当前离线", offlineText:"运行 Codex 的电脑当前没有连接。电脑开机并启动 AERTEX Bridge 后，这里会自动恢复在线。",
+    offlineTitle:"AERTEX Intelligence 当前离线", offlineText:"运行 Codex 的电脑当前没有连接。电脑开机并启动 AERTEX Bridge 后，这里会自动恢复在线。",
     checking:"正在检测 Intelligence…", retry:"重新检测", signedOut:"Intelligence 在线 · 尚未连接 ChatGPT / Codex",
     connectHint:"电脑已经在线。现在可以把 ChatGPT 账号连接到这台电脑上的 Codex。",
     connect:"连接 ChatGPT / Codex", connecting:"正在连接…", openLogin:"打开 OpenAI 登录页",
@@ -16,7 +16,7 @@ export function renderGptApp(locale) {
     bridgeAuth:"本机 Bridge 的安全凭据配置不一致。"
   } : {
     title:"AERTEX Intelligence", subtitle:"Local Intelligence", online:"Intelligence online", offline:"Intelligence offline",
-    offlineTitle:"Intelligence is currently offline", offlineText:"The computer running Codex is not connected. This page will automatically come back online when that computer starts AERTEX Bridge.",
+    offlineTitle:"AERTEX Intelligence is currently offline", offlineText:"The computer running Codex is not connected. This page will automatically come back online when that computer starts AERTEX Bridge.",
     checking:"Checking Intelligence…", retry:"Check again", signedOut:"Intelligence online · ChatGPT / Codex is not connected",
     connectHint:"The computer is online. You can now connect a ChatGPT account to Codex on that machine.",
     connect:"Connect ChatGPT / Codex", connecting:"Connecting…", openLogin:"Open OpenAI sign-in",
