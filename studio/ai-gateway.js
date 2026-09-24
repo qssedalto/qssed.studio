@@ -37,7 +37,7 @@ export async function handleAiAdminApi(request, env, session) {
   if (path === "/api/ai/admin/validate-project-key" && request.method === "POST") {
     if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
     const b = await body(request);
-    const key = clean(b.api_key, 800);
+    const key = cleanApiKey(b.api_key);
     const provider = cleanProvider(b.provider);
     if (!key) return json({ error: "API Key is required." }, 400);
     const check = await validateProviderKey(provider, key);
@@ -110,7 +110,7 @@ export async function handleAiAdminApi(request, env, session) {
       return json({ error: "Default model must be included in the allowed model list." }, 400);
     }
 
-    const replacementKey = clean(b.api_key, 800);
+    const replacementKey = cleanApiKey(b.api_key);
     const existingAllowedModels = models(existing.allowed_models);
     const needsOnlineModelValidation =
       Boolean(replacementKey) ||
@@ -159,7 +159,7 @@ export async function handleAiAdminApi(request, env, session) {
       patch.key_hint = replacementKey.slice(-4);
     }
 
-    const replacementAdminKey = clean(b.admin_key, 800);
+    const replacementAdminKey = cleanApiKey(b.admin_key);
     if (cleanProvider(existing.provider) !== "openai") {
       patch.encrypted_admin_key = null;
       patch.admin_key_iv = null;
@@ -243,7 +243,7 @@ export async function handleAiAdminApi(request, env, session) {
     const b = await body(request);
     const key = clean(b.api_key, 800);
     const provider = cleanProvider(b.provider);
-    const adminKey = provider === "openai" ? clean(b.admin_key, 800) : "";
+    const adminKey = provider === "openai" ? cleanApiKey(b.admin_key) : "";
     const name = String(b.name || "").trim().slice(0, 80);
     const providerDefault = provider === "zhipu"
       ? ZHIPU_MODELS[0]
@@ -1130,6 +1130,13 @@ function cleanModel(value) {
 function clean(value, maximum) {
   const s = String(value || "").trim();
   return s && s.length <= maximum && !/[\u0000-\u001f\u007f]/.test(s) ? s : "";
+}
+
+function cleanApiKey(value) {
+  const s = String(value || "")
+    .replace(/[\s\u200B\u200C\u200D\u2060\uFEFF]+/g, "")
+    .trim();
+  return s && s.length <= 800 ? s : "";
 }
 
 function numOrNull(value) {
