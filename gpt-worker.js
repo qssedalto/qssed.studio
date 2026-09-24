@@ -3,7 +3,7 @@ import { verifyStudioPageSession, withStudioSessionCookies } from "./studio/sess
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp } from "./studio/gpt-ui.js";
-import { handleRemoteCodexApi } from "./studio/gpt-bridge.js";
+import { handleAiApi, handleAiAdminApi } from "./studio/ai-gateway.js";
 import { gptOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
@@ -37,12 +37,14 @@ export default {
       return handleAuthHandoff(request, env, locale);
     }
 
-    if (pathname.startsWith("/api/gpt/")) {
+    if (pathname.startsWith("/api/ai/")) {
       const gate = await verifyStudioPageSession(request);
       if (!gate.ok) {
         return withStudioSessionCookies(json({ error: "Authentication required." }, 401), gate.cookies || []);
       }
-      const response = await handleRemoteCodexApi(request, env);
+      const response = pathname.startsWith("/api/ai/admin/")
+        ? await handleAiAdminApi(request, env, gate)
+        : await handleAiApi(request, env, gate);
       return withStudioSessionCookies(response, gate.cookies || []);
     }
 
