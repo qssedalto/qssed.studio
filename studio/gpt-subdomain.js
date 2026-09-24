@@ -78,9 +78,11 @@ function safeGptPath(value) {
   return path;
 }
 
-function canonicalGptPath(_path, locale) {
+function canonicalGptPath(path, locale) {
   const normalizedLocale = locale === "en" ? "en" : "zh-cn";
-  return `/${normalizedLocale}`;
+  const candidate = safeGptPath(path);
+  const admin = candidate === "/admin" || candidate === "/en/admin" || candidate === "/zh-cn/admin";
+  return admin ? `/${normalizedLocale}/admin` : `/${normalizedLocale}`;
 }
 
 function requestCookie(request, name) {
