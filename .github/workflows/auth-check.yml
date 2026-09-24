@@ -6,6 +6,7 @@ on:
       - "auth-entry.js"
       - "auth-sso.js"
       - "studio/domain-family.js"
+      - "studio/account-menu.js"
       - "auth-worker.js"
       - "auth-login-identifier.js"
       - "auth-oauth.js"
@@ -24,6 +25,7 @@ on:
       - "auth-entry.js"
       - "auth-sso.js"
       - "studio/domain-family.js"
+      - "studio/account-menu.js"
       - "auth-worker.js"
       - "auth-login-identifier.js"
       - "auth-oauth.js"
@@ -55,6 +57,7 @@ jobs:
           node --check auth-entry.js
           node --check auth-sso.js
           node --check auth-worker.js
+          node --check studio/account-menu.js
           node --check auth-login-identifier.js
           node --check auth-oauth.js
           node --check auth-pkce-test.js
