@@ -79,7 +79,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
     <div class="gateActions">
       <button class="primary hidden" id="startLogin">${t.connect}</button>
       <button class="quietButton" id="retry">${t.retry}</button>
-      <a class="adminButton hidden" id="adminConsole" href="https://gpt.qsseda.com/admin?utm_source=chatgpt.com">${t.adminConsole}</a>
+      <a class="adminButton hidden" id="adminConsole" href="https://gpt.qsseda.com/admin">${t.adminConsole}</a>
     </div>
     <div id="devicePanel" class="hidden">
       <div class="code" id="deviceCode"></div><div class="status">${t.codeLabel}</div>
