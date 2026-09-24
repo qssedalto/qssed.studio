@@ -3,38 +3,38 @@ export function birthdayPage(locale = "zh") {
   const lang = zh ? "zh-CN" : "en";
   const title = zh ? "生日快乐 · AERTEX" : "Happy Birthday · AERTEX";
   const headline = zh ? "生日快乐" : "Happy Birthday";
-  const eyebrow = zh ? "AERTEX · BIRTHDAY EDITION" : "AERTEX · BIRTHDAY EDITION";
+  const eyebrow = zh ? "AERTEX · BIRTHDAY" : "AERTEX · BIRTHDAY";
   const subline = zh
-    ? "愿新的一岁，依然有好奇、有热爱，也有把生活过成自己喜欢样子的勇气。"
-    : "May the year ahead stay curious, wholehearted, and unmistakably yours.";
-  const action = zh ? "点亮今天" : "Light up today";
-  const explore = zh ? "继续往下看" : "Keep exploring";
-  const sectionTitle = zh ? "新的一岁，不必急着定义。" : "A new year does not need a definition.";
+    ? "今天只说一件事：生日快乐。希望接下来这一年，想做的事能慢慢做成，想见的人都有机会见到。"
+     : "Happy birthday. I hope the year ahead gives you more time for the people and things you actually care about.";
+  const action = zh ? "庆祝一下" : "Celebrate";
+  const explore = zh ? "看看后面" : "Keep going";
+  const sectionTitle = zh ? "又长大一岁。" : "One year older.";
   const sectionCopy = zh
-    ? "可以慢一点，可以大胆一点。去喜欢真正喜欢的东西，去见想见的人，也给未知留一点位置。"
-    : "Take it slower when you want to. Be bolder when it matters. Keep room for people, ideas, and moments you have not met yet.";
+    ? "没什么大道理。照顾好自己，继续做喜欢的事，也别把所有事情都想得太重。"
+     : "No big speech. Take care of yourself, keep doing what you like, and do not take every little thing too seriously.";
   const cards = zh
     ? [
-        ["01", "保持好奇", "对世界多问一个为什么，也对自己多留一个可能。"],
-        ["02", "自由生长", "不必沿着别人画好的轨迹，自己的节奏本身就有意义。"],
-        ["03", "认真热爱", "把时间留给真正让你眼睛发亮的事。"]
+        ["01", "多一点开心", "能吃好吃的，能睡个好觉，也能常碰上顺心的事。"],
+        ["02", "多一点运气", "重要的时候刚好有答案，想争取的事情也能多一点好结果。"],
+        ["03", "多一点时间", "留给朋友，留给兴趣，也留给什么都不做的时候。"]
       ]
     : [
-        ["01", "Stay curious", "Ask one more question of the world, and leave one more possibility for yourself."],
-        ["02", "Grow freely", "You do not have to follow a path someone else drew for you."],
-        ["03", "Care deeply", "Keep time for the things that genuinely light you up."]
+        ["01", "More good days", "Good food, good sleep, and more ordinary days that simply go your way."],
+        ["02", "More luck", "The right answer at the right time, and a few more things working out in your favor."],
+        ["03", "More time", "For friends, for hobbies, and for doing absolutely nothing when you need it."]
       ];
-  const momentTitle = zh ? "今天，被郑重标记。" : "Today deserves a marker.";
+  const momentTitle = zh ? "今天就是你的日子。" : "Today is yours.";
   const momentCopy = zh
-    ? "不是因为数字改变了什么，而是因为你又完整走过了一圈太阳。"
-    : "Not because a number changed everything, but because you completed another full trip around the sun.";
-  const wishTitle = zh ? "留一个愿望给未来。" : "Leave one wish for the future.";
+    ? "这一页没有什么特别任务。记住今天，收下祝福，然后去好好过生日。"
+     : "Nothing complicated here. Remember the date, take the good wishes, and go enjoy your birthday.";
+  const wishTitle = zh ? "许个愿吧。" : "Make a wish.";
   const wishCopy = zh
-    ? "不用说出来。按下按钮，让这一刻替你保密。"
-    : "You do not have to say it out loud. Press the button and let this moment keep it for you.";
+    ? "想什么都行，别告诉我。"
+     : "Anything you want. No need to tell me.";
   const wishButton = zh ? "吹灭蜡烛" : "Blow out the candles";
-  const wishDone = zh ? "愿望已藏好 ✦" : "Wish safely kept ✦";
-  const closing = zh ? "愿每一次出发，都比上一次更接近你想成为的自己。" : "May every new beginning bring you closer to the person you want to become.";
+  const wishDone = zh ? "好，替你保密 ✦" : "Got it. Secret kept ✦";
+  const closing = zh ? "生日快乐。希望明年再看到这句话的时候，你会觉得这一年过得还不错。" : "Happy birthday. I hope when you see this again next year, you can say this year turned out pretty well.";
   const otherHref = zh ? "/en/birthday" : "/zh-cn/birthday";
   const otherLabel = zh ? "EN" : "中文";
 
@@ -570,7 +570,7 @@ export function birthdayPage(locale = "zh") {
 
     <section class="section story" id="story">
       <div class="story-copy reveal">
-        <p class="kicker">AERTEX · ONE MORE YEAR</p>
+        <p class="kicker">ONE MORE YEAR</p>
         <h2>${sectionTitle}</h2>
         <p class="story-text">${sectionCopy}</p>
       </div>
@@ -594,12 +594,12 @@ export function birthdayPage(locale = "zh") {
         <div class="moment-date">
           <div>
             <strong id="full-date"></strong>
-            <span id="moment-label">ONE MORE TRIP AROUND THE SUN</span>
+            <span id="moment-label">TODAY</span>
           </div>
         </div>
       </div>
       <div class="moment-copy reveal">
-        <p class="kicker">THE DAY</p>
+        <p class="kicker">TODAY</p>
         <h2>${momentTitle}</h2>
         <p>${momentCopy}</p>
       </div>
@@ -627,7 +627,7 @@ export function birthdayPage(locale = "zh") {
 
     <section class="section closing reveal">
       <div class="closing-mark" aria-hidden="true">A</div>
-      <p class="kicker">AERTEX · FOR YOUR DAY</p>
+      <p class="kicker">AERTEX · HAPPY BIRTHDAY</p>
       <h2 id="closing-title">${headline}</h2>
       <p>${closing}</p>
       <div class="signature">AERTEX · <span id="year"></span></div>
@@ -736,7 +736,7 @@ export function birthdayPage(locale = "zh") {
 
       document.getElementById("celebrate").addEventListener("click",function(){
         burst(innerHeight*.62);
-        this.textContent = ${JSON.stringify(zh ? "今天已点亮 ✦" : "Today is lit ✦")};
+        this.textContent = ${JSON.stringify(zh ? "好，庆祝过了 ✦" : "Celebrated ✦")};
       });
 
       document.getElementById("wish-button").addEventListener("click",function(){
