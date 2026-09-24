@@ -2,7 +2,7 @@ import { handleOAuthRequest } from "./auth-oauth.js";
 import { mainOriginForRequest, rootDomainForRequest } from "./studio/domain-family.js";
 import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
-import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./studio/account-menu.js";
+import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
 
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
@@ -423,7 +423,12 @@ function json(data, status = 200, cookies = []) {
 }
 
 function html(content, status = 200) {
-  return new Response(injectBrandLogoRuntime(content), {
+  const withAccountMenu = injectAccountMenuRuntime(content, {
+    summaryUrl: "/api/session",
+    logoutUrl: "/api/logout",
+    authMode: true
+  });
+  return new Response(injectBrandLogoRuntime(withAccountMenu), {
     status,
     headers: baseHeaders("text/html;charset=UTF-8")
   });
