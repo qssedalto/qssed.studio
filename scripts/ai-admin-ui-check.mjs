@@ -28,5 +28,12 @@ for (const locale of ["zh-cn","en"]) {
   if (html.includes("OpenAI-compatible API")) throw new Error(`AI admin ${locale} must not label non-OpenAI providers as OpenAI`);
   const compatibleLabel = locale === "zh-cn" ? "兼容 API" : "Compatible API";
   if (!html.includes(compatibleLabel)) throw new Error(`AI admin ${locale} missing provider-compatible label`);
+  const providerPlaceholder = locale === "zh-cn" ? "请选择 Provider" : "Choose a Provider";
+  if (!html.includes('<option value="" disabled selected>'+providerPlaceholder+'</option>')) {
+    throw new Error(`AI admin ${locale} missing provider placeholder option`);
+  }
+  if (locale === "zh-cn" && html.includes("请先检查 API Key。")) {
+    throw new Error("AI admin zh-cn still contains the old punctuated API-key prompt");
+  }
 }
 console.log("AI admin rendered inline scripts are syntactically valid.");
