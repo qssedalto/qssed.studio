@@ -207,7 +207,7 @@ $("checkKey").onclick=async()=>{
     if(!availableProjectModels.length)throw new Error("${t.noModelsForKey}");
     projectKeyValidated=true;
     const preferred=($("providerType").value==="zhipu"
-      ? ["glm-5.3-flash","glm-5.3","glm-5.2"]
+      ? ["glm-4.7-flash"]
       : ["gpt-5.6","gpt-5.6-sol","gpt-5.6-terra","gpt-5.6-luna"])
       .filter(model=>availableProjectModels.includes(model));
     selectedProviderModels=preferred.length?preferred.slice(0,4):[availableProjectModels[0]];
