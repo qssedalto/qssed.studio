@@ -2,7 +2,7 @@ import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
 import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
-import { renderGptApp } from "./studio/gpt-ui.js";
+import { renderGptApp, renderSharedConversation } from "./studio/gpt-ui.js";
 import { handleAiApi, handleAiAdminApi } from "./studio/ai-gateway.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
 import { renderAiAdmin } from "./studio/ai-admin-ui.js";
@@ -34,6 +34,14 @@ export default {
 
     if (pathname === "/robots.txt") {
       return text("User-agent: *\nDisallow: /\n", 200, "text/plain;charset=UTF-8");
+    }
+
+    const sharedMatch = pathname.match(/^\/share\/([0-9a-f-]{36})$/i);
+    if (sharedMatch) {
+      const locale = preferredLocale(request) === "en" ? "en" : "zh-cn";
+      const payload = await loadSharedConversation(sharedMatch[1]);
+      if (!payload?.conversation) return html("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>404 · AERTEX Intelligence</title></head><body><main style=\"font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:40px\"><h1>404</h1><p>"+(locale==="en"?"This shared conversation is unavailable.":"这个共享对话不可用")+"</p></main></body></html>",404);
+      return html(renderSharedConversation(locale, payload));
     }
 
     if (pathname === "/auth/handoff") {
@@ -75,23 +83,31 @@ export default {
       const locale = pathname.startsWith("/en") ? "en" : "zh-cn";
       const gate = await verifyStudioPageSession(request);
       if (!gate.ok) return withStudioSessionCookies(gptSessionRedirect(request, pathname), gate.cookies || []);
-      const probe = await handleAiAdminApi(new Request(new URL("/api/ai/admin/state", request.url), { headers: request.headers }), env, gate);
+      const probe = await handleAiAdminApi(internalRequest(request, "/api/ai/admin/state?fast=1"), env, gate);
       if (probe.status === 403) {
         const identity = await loadDeniedIdentity(gate);
         const denied = withStudioSessionCookies(html(renderAdminDenied(locale, identity), 403), gate.cookies || []);
         return request.method === "HEAD" ? new Response(null,{status:denied.status,headers:denied.headers}) : denied;
       }
-      const response = withStudioSessionCookies(html(renderAiAdmin(locale)), gate.cookies || []);
+      const adminState = probe.ok ? await probe.json().catch(()=>({providers:[],users:[]})) : {providers:[],users:[]};
+      const response = withStudioSessionCookies(html(renderAiAdmin(locale, { state: adminState })), gate.cookies || []);
       return request.method === "HEAD" ? new Response(null,{status:response.status,headers:response.headers}) : response;
     }
 
-    if (pathname === "/zh-cn" || pathname === "/en") {
-      const locale = pathname === "/en" ? "en" : "zh-cn";
+    const conversationRoute = pathname.match(/^\/(zh-cn|en)\/c\/([0-9a-f-]{36})$/i);
+    if (pathname === "/zh-cn" || pathname === "/en" || conversationRoute) {
+      const locale = pathname.startsWith("/en") ? "en" : "zh-cn";
       const gate = await verifyStudioPageSession(request);
       if (!gate.ok) {
         return withStudioSessionCookies(gptSessionRedirect(request, pathname), gate.cookies || []);
       }
-      const response = withStudioSessionCookies(html(renderShell(locale)), gate.cookies || []);
+      const conversationId = conversationRoute?.[2] || "";
+      const bootstrap = await loadGptBootstrap(request, env, gate, conversationId);
+      if (conversationId && !bootstrap.current) {
+        const missing = withStudioSessionCookies(html("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>404 · AERTEX Intelligence</title></head><body><main style=\"font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;padding:40px\"><h1>404</h1><p>"+(locale==="en"?"Conversation not found.":"找不到这个对话")+"</p><a href=\"/"+locale+"\">"+(locale==="en"?"Back to Intelligence":"返回 Intelligence")+"</a></main></body></html>",404), gate.cookies || []);
+        return request.method === "HEAD" ? new Response(null,{status:missing.status,headers:missing.headers}) : missing;
+      }
+      const response = withStudioSessionCookies(html(renderShell(locale, bootstrap)), gate.cookies || []);
       return request.method === "HEAD"
         ? new Response(null, { status: response.status, headers: response.headers })
         : response;
@@ -102,8 +118,50 @@ export default {
   }
 };
 
-function renderShell(locale) {
-  return renderGptApp(locale);
+function renderShell(locale, bootstrap = {}) {
+  return renderGptApp(locale, bootstrap);
+}
+
+async function loadGptBootstrap(request, env, gate, conversationId = "") {
+  const tasks = [
+    handleAiApi(internalRequest(request, "/api/ai/config"), env, gate),
+    handleAiApi(internalRequest(request, "/api/ai/conversations"), env, gate),
+    handleAiAdminApi(internalRequest(request, "/api/ai/admin/me"), env, gate)
+  ];
+  if (conversationId) tasks.push(handleAiApi(internalRequest(request, "/api/ai/conversations/" + conversationId), env, gate));
+  const responses = await Promise.all(tasks);
+  const [configResponse, conversationsResponse, adminResponse, conversationResponse] = responses;
+  return {
+    config: configResponse?.ok ? await configResponse.json().catch(() => null) : null,
+    conversations: conversationsResponse?.ok ? await conversationsResponse.json().catch(() => []) : [],
+    isAdmin: adminResponse?.ok === true,
+    current: conversationId && conversationResponse?.ok ? await conversationResponse.json().catch(() => null) : null
+  };
+}
+
+function internalRequest(request, path) {
+  const url = new URL(path, request.url);
+  const headers = new Headers(request.headers);
+  if (request.cf?.country) headers.set("CF-IPCountry", request.cf.country);
+  return new Request(url.toString(), { method: "GET", headers });
+}
+
+async function loadSharedConversation(token) {
+  try {
+    const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/get_shared_ai_conversation", {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        "content-type": "application/json;charset=UTF-8",
+        Accept: "application/json"
+      },
+      body: JSON.stringify({ p_share_token: token })
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
 }
 
 async function loadDeniedIdentity(gate) {
