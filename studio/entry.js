@@ -30,6 +30,7 @@ import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-iden
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
 import { osPage } from "./ui-shell.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
+import { birthdayPage } from "./ui-birthday.js";
 import { authOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 
 function safeLocalNext(value) {
@@ -139,6 +140,7 @@ export default {
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }
 
+    if (pathname === "/birthday") return localizedPage(birthdayPage(locale), locale);
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
     if (pathname === "/login") {
       const authUrl = new URL("/login", authOriginForRequest(request));
