@@ -27,7 +27,13 @@ async function accountSummary(session) {
   const result = await fetchJson(url.toString(), { headers: userHeaders(session.accessToken) });
   if (!result.ok) return failure(session, "account.summary.failed", result.status);
   const profile = Array.isArray(result.data) && result.data.length ? result.data[0] : null;
-  return withStudioSessionCookies(json({ profile }), session.cookies);
+  return withStudioSessionCookies(json({
+    profile,
+    user: {
+      id: session.user.id,
+      email: String(session.user.email || "")
+    }
+  }), session.cookies);
 }
 
 async function accountAudit(session) {
