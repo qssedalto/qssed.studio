@@ -14,7 +14,13 @@ for (const locale of ["zh-cn", "en"]) {
     'option.dataset.providerId=item.provider_id',
     'provider_id:selected.dataset.providerId||null',
     'provider.provider==="bailian"',
-    'REGION_UNSUPPORTED'
+    'REGION_UNSUPPORTED',
+    'id="conversationList"',
+    'data-action="rename"',
+    'data-action="share"',
+    'data-action="delete"',
+    'history.replaceState({conversationId:state.conversationId}',
+    'boot.isAdmin===true'
   ]) {
     if (!html.includes(required)) throw new Error(`GPT UI ${locale} missing multi-provider invariant: ${required}`);
   }
