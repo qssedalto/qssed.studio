@@ -10,7 +10,7 @@ export function renderGptApp(locale) {
     connect:"连接 ChatGPT / Codex", connecting:"正在连接…", openLogin:"打开 OpenAI 登录页",
     codeLabel:"设备代码", codeHint:"在 OpenAI 页面输入设备代码完成授权。完成后这里会自动识别登录状态。",
     newChat:"新对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
-    noModels:"没有读取到可用模型", reasoning:"推理", thinking:"Codex 正在思考…",
+    noModels:"没有读取到可用模型", regionBlocked:"当前网络区域不可用", noAvailableRegion:"当前网络区域没有可用的已授权模型", reasoning:"推理", thinking:"Intelligence 正在思考…",
     empty:"开始一个新的对话", emptyHint:"消息由 AERTEX 服务端安全转发到管理员配置的 AI Provider，并以流式方式返回。",
     error:"发生错误", privateNote:"API 凭据只保存在服务端。你的浏览器不会接触管理员配置的 API Key。",
     bridgeAuth:"本机 Bridge 的安全凭据配置不一致。",
@@ -23,7 +23,7 @@ export function renderGptApp(locale) {
     connect:"Connect ChatGPT / Codex", connecting:"Connecting…", openLogin:"Open OpenAI sign-in",
     codeLabel:"Device code", codeHint:"Enter the device code on the OpenAI page. This page will detect completion automatically.",
     newChat:"New chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
-    noModels:"No available models were returned", reasoning:"Reasoning", thinking:"Codex is thinking…",
+    noModels:"No available models were returned", regionBlocked:"Unavailable on current network", noAvailableRegion:"No authorized model is available on the current network", reasoning:"Reasoning", thinking:"Intelligence is thinking…",
     empty:"Start a new conversation", emptyHint:"Messages are securely proxied by AERTEX to the administrator-configured AI provider and streamed back here.",
     error:"Error", privateNote:"API credentials remain server-side. Your browser never receives the administrator API key.",
     bridgeAuth:"The local Bridge security credentials do not match.",
@@ -101,7 +101,59 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   function gate(title,message){$("gate").classList.remove("hidden");$("messages").classList.add("hidden");$("composerWrap").classList.add("hidden");$("gateTitle").textContent=title;$("gateText").textContent=message;$("startLogin").classList.add("hidden");$("devicePanel").classList.add("hidden")}
   async function updateAdminButton(){try{const r=await fetch("/api/ai/admin/me",{credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json"}});$("adminConsole").classList.toggle("hidden",!r.ok)}catch{$("adminConsole").classList.add("hidden")}}
   function showChat(){$("gate").classList.add("hidden");$("messages").classList.remove("hidden");$("composerWrap").classList.remove("hidden")}
-  async function checkStatus(){await updateAdminButton();try{const cfg=await req("/config");state.config=cfg;setStatus(true,text.online);$("accountLabel").textContent=cfg.provider?.name||text.online;const select=$("modelSelect");select.textContent="";for(const model of cfg.models||[]){const o=document.createElement("option");o.value=model;o.textContent=model;if(model===cfg.default_model)o.selected=true;select.appendChild(o)}select.disabled=false;$("effortSelect").classList.add("hidden");showChat();return true}catch(e){setStatus(false,text.offline);gate(text.signedOut,e.message||text.connectHint);return false}}
+  async function checkStatus(){
+    await updateAdminButton();
+    try{
+      const cfg=await req("/config");
+      state.config=cfg;
+      const select=$("modelSelect");
+      select.textContent="";
+      const models=Array.isArray(cfg.models)?cfg.models:[];
+      const providers=Array.isArray(cfg.providers)?cfg.providers:[];
+      for(const provider of providers){
+        const group=document.createElement("optgroup");
+        group.label=(provider.provider==="zhipu"?"智谱 GLM · ":"OpenAI · ")+(provider.name||"");
+        for(const item of models.filter(model=>model.provider_id===provider.id)){
+          const option=document.createElement("option");
+          option.value=item.model;
+          option.dataset.providerId=item.provider_id;
+          option.disabled=item.available===false;
+          option.textContent=item.model+(item.available===false?" · "+text.regionBlocked:"");
+          if(item.provider_id===cfg.default_provider_id&&item.model===cfg.default_model&&item.available!==false)option.selected=true;
+          group.appendChild(option);
+        }
+        if(group.children.length)select.appendChild(group);
+      }
+      const available=models.filter(item=>item.available!==false);
+      if(!select.options.length){
+        const option=document.createElement("option");
+        option.textContent=text.noModels;
+        option.disabled=true;
+        select.appendChild(option);
+      }
+      if(available.length&&!select.selectedOptions.length){
+        const first=[...select.options].find(option=>!option.disabled);
+        if(first)first.selected=true;
+      }
+      select.disabled=false;
+      $("sendButton").disabled=!available.length;
+      $("effortSelect").classList.add("hidden");
+      if(available.length){
+        setStatus(true,text.online);
+        const activeProviders=providers.filter(provider=>provider.available!==false).map(provider=>provider.name).filter(Boolean);
+        $("accountLabel").textContent=activeProviders.join(" · ")||text.online;
+      }else{
+        setStatus(false,text.noAvailableRegion);
+        $("accountLabel").textContent=text.noAvailableRegion;
+      }
+      showChat();
+      return true;
+    }catch(e){
+      setStatus(false,text.offline);
+      gate(text.signedOut,e.message||text.connectHint);
+      return false;
+    }
+  }
   function append(role,content){$("emptyState").classList.add("hidden");const root=document.createElement("div");root.className="msg "+role;const bubble=document.createElement("div");bubble.className="bubble";bubble.textContent=content;root.appendChild(bubble);$("messages").appendChild(root);$("content").scrollTop=$("content").scrollHeight;return bubble}
   async function send(){
     const message=$("composer").value.trim(); if(!message||state.busy)return;
@@ -110,9 +162,21 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
     const assistant=append("assistant",""), status=document.createElement("div");
     status.className="status"; status.textContent=text.thinking; assistant.parentElement.appendChild(status);
     try {
-      const r=await fetch("/api/ai/chat",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"text/event-stream"},body:JSON.stringify({conversation_id:state.conversationId||null,message,model:$("modelSelect").value})});
+      const selected=$("modelSelect").selectedOptions[0];
+      if(!selected||selected.disabled)throw new Error(text.noAvailableRegion);
+      const r=await fetch("/api/ai/chat",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"text/event-stream"},body:JSON.stringify({conversation_id:state.conversationId||null,message,model:selected.value,provider_id:selected.dataset.providerId||null})});
       if(r.status===401){location.reload();return}
-      if(!r.ok||!r.body){const d=await r.json().catch(()=>null);throw new Error(d?.error||("HTTP "+r.status))}
+      if(!r.ok||!r.body){
+        const d=await r.json().catch(()=>null);
+        if(d?.code==="REGION_UNSUPPORTED"&&d?.provider_id){
+          [...$("modelSelect").options].forEach(option=>{
+            if(option.dataset.providerId===d.provider_id){option.disabled=true;option.textContent=option.value+" · "+text.regionBlocked;}
+          });
+          const available=[...$("modelSelect").options].some(option=>!option.disabled);
+          $("sendButton").disabled=!available;
+        }
+        throw new Error(d?.error||("HTTP "+r.status));
+      }
       const reader=r.body.getReader(), decoder=new TextDecoder(); let buffer="",streamed="";
       while(true){
         const x=await reader.read(); if(x.done)break; buffer+=decoder.decode(x.value,{stream:true});
