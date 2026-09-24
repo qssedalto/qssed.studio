@@ -12,7 +12,10 @@ for (const locale of ["zh-cn","en"]) {
     'id="providerType"',
     'value="zhipu"',
     'userProviderAccessSelections',
-    'provider_access:providerAccess'
+    'provider_access:providerAccess',
+    'error?.code==="RATE_LIMITED"',
+    'upstreamStatus',
+    '.hidden{display:none!important}'
   ]) {
     if (!html.includes(required)) throw new Error(`AI admin ${locale} missing multi-provider invariant: ${required}`);
   }
