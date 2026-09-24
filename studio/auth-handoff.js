@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { html, json } from "./routing.js";
 import { baseHead, supabaseScript } from "./ui-page.js";
+import { injectBrandLogoRuntime } from "./brand-logo.js";
 import { studioSessionCookies, withStudioSessionCookies } from "./session-gate.js";
 import { isServiceHost, rootDomainForHost, serviceOrigin } from "./domain-family.js";
 
@@ -84,5 +85,5 @@ export function scriptLiteral(value) {
 export function authHandoffHtml(accessToken, refreshToken, next, workTarget = false, gptTarget = false) {
   const product = workTarget ? "AERTEX Work" : gptTarget ? "AERTEX Intelligence" : "AERTEX";
   const page = `<!DOCTYPE html><html><head>${baseHead(product)}</head><body><main style="min-height:100vh;display:grid;place-items:center;padding:24px"><section style="text-align:center"><h1 style="font-size:24px;margin:0 0 8px">${product}</h1><p id="handoff-status" style="color:var(--muted,#8e8e93)">正在同步登录状态…</p></section></main>${supabaseScript()}<script>(async()=>{const status=document.getElementById("handoff-status");const result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}});if(result.error){status.textContent="登录状态同步失败，请返回认证中心重试。";return}location.replace(${scriptLiteral(next)})})().catch(()=>{document.getElementById("handoff-status").textContent="登录状态同步失败，请返回认证中心重试。"})</script></body></html>`;
-  return new Response(page, { status: 200, headers: { "content-type": "text/html;charset=UTF-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" } });
+  return new Response(injectBrandLogoRuntime(page), { status: 200, headers: { "content-type": "text/html;charset=UTF-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" } });
 }
