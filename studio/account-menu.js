@@ -200,6 +200,27 @@ export function accountMenuClientScript(options = {}) {
 </script>`;
 }
 
+export function injectAccountMenuRuntime(markup, options = {}) {
+  const source = String(markup || "");
+  if (!source || source.includes('id="aertex-account-root"')) return source;
+  const inferredLocale = /<html[^>]*lang=["']en(?:["'-]|\b)/i.test(source) ? "en" : "zh-cn";
+  const locale = options.locale === "en" ? "en" : options.locale === "zh-cn" ? "zh-cn" : inferredLocale;
+  const styles = `<style id="aertex-account-runtime-style">${accountMenuStyles()}.aertex-account-global-zone{position:fixed;top:14px;right:14px;z-index:2147483000}@media(max-width:560px){.aertex-account-global-zone{top:12px;right:12px}}</style>`;
+  const block = `<div class="aertex-account-global-zone">${accountMenuMarkup(locale)}</div>${accountMenuClientScript({
+    summaryUrl: options.summaryUrl || "/api/account/security/summary",
+    logoutUrl: options.logoutUrl || "/api/auth/logout",
+    authMode: options.authMode === true,
+    locale
+  })}`;
+  let output = source.includes("</head>") ? source.replace("</head>", styles + "</head>") : styles + source;
+  if (/<body\b[^>]*>/i.test(output)) {
+    output = output.replace(/<body\b([^>]*)>/i, match => match + block);
+  } else {
+    output += block;
+  }
+  return output;
+}
+
 function scriptLiteral(value) {
   return JSON.stringify(value).replace(/</g,"\\u003c").replace(/\u2028/g,"\\u2028").replace(/\u2029/g,"\\u2029");
 }
