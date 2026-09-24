@@ -11,7 +11,7 @@ export function renderGptApp(locale) {
     connect:"连接 ChatGPT / Codex", connecting:"正在连接…", openLogin:"打开 OpenAI 登录页",
     codeLabel:"设备代码", codeHint:"在 OpenAI 页面输入设备代码完成授权。完成后这里会自动识别登录状态。",
     newChat:"新对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
-    noModels:"没有读取到可用模型", regionBlocked:"当前网络区域不可用", noAvailableRegion:"当前网络区域没有可用的已授权模型", reasoning:"推理", thinking:"Intelligence 正在思考…",
+    noModels:"没有读取到可用模型", regionBlocked:"当前网络区域不可用", noAvailableRegion:"当前网络区域没有可用的已授权模型", rateLimited:"智谱当前返回速率限制，请稍后重试。", reasoning:"推理", thinking:"Intelligence 正在思考…",
     empty:"开始一个新的对话", emptyHint:"消息由 AERTEX 服务端安全转发到管理员配置的 AI Provider，并以流式方式返回。",
     error:"发生错误", privateNote:"API 凭据只保存在服务端。你的浏览器不会接触管理员配置的 API Key。",
     bridgeAuth:"本机 Bridge 的安全凭据配置不一致。",
@@ -24,7 +24,7 @@ export function renderGptApp(locale) {
     connect:"Connect ChatGPT / Codex", connecting:"Connecting…", openLogin:"Open OpenAI sign-in",
     codeLabel:"Device code", codeHint:"Enter the device code on the OpenAI page. This page will detect completion automatically.",
     newChat:"New chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
-    noModels:"No available models were returned", regionBlocked:"Unavailable on current network", noAvailableRegion:"No authorized model is available on the current network", reasoning:"Reasoning", thinking:"Intelligence is thinking…",
+    noModels:"No available models were returned", regionBlocked:"Unavailable on current network", noAvailableRegion:"No authorized model is available on the current network", rateLimited:"Zhipu is rate-limiting requests right now. Try again shortly.", reasoning:"Reasoning", thinking:"Intelligence is thinking…",
     empty:"Start a new conversation", emptyHint:"Messages are securely proxied by AERTEX to the administrator-configured AI provider and streamed back here.",
     error:"Error", privateNote:"API credentials remain server-side. Your browser never receives the administrator API key.",
     bridgeAuth:"The local Bridge security credentials do not match.",
@@ -177,6 +177,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
           const available=[...$("modelSelect").options].some(option=>!option.disabled);
           $("sendButton").disabled=!available;
         }
+        if(d?.code==="RATE_LIMITED")throw new Error(text.rateLimited);
         throw new Error(d?.error||("HTTP "+r.status));
       }
       const reader=r.body.getReader(), decoder=new TextDecoder(); let buffer="",streamed="";
