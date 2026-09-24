@@ -8,8 +8,8 @@ export function renderAiAdmin(locale) {
     models:"允许模型", def:"默认模型", budget:"AERTEX 月预算（USD）",
     input:"自定义模型输入 $/百万 Token", output:"自定义模型输出 $/百万 Token",
     save:"验证并保存 Provider", saving:"正在验证…", providers:"API Providers", users:"用户授权",
-    load:"正在加载…", enabled:"允许使用", provider:"Providers", allowed:"用户可用模型", daily:"日额度 $",
-    monthly:"月额度 $", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
+    load:"正在加载…", enabled:"允许使用", provider:"Providers", allowed:"用户可用模型", daily:"日费用上限 $",
+    monthly:"月费用上限 $", dailyTokens:"日 Token 上限", monthlyTokens:"月 Token 上限", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
     official:"OpenAI 官方本月费用", local:"AERTEX 本地估算", remaining:"预算剩余", requests:"本月请求",
     billingOn:"官方账单已连接", billingOff:"未配置 Admin Key", saved:"已保存", projectValidated:"Project Key 验证通过",
     noProvider:"请至少为用户选择一个 Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户 Provider 与模型", selectedModels:"已选择", modelsUnit:"个模型", providersUnit:"个 Provider", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 API Key。", noModelsForKey:"这个 API Key 没有返回可用于对话的模型。", accessSaving:"保存中…", accessSaved:"已保存 ✓", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销。", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key", regionUnsupported:"当前网络或服务区域暂不支持 OpenAI API 检查。这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能。", rateLimited:"已确认上游 Provider 限流：AERTEX 收到真实 HTTP 429。这个结果不能判定 Key 无效。", authInvalid:"上游 Provider 明确拒绝了 API Key 身份验证。", quotaExhausted:"上游 Provider 报告当前账户额度不足。", permissionDenied:"上游 Provider 拒绝当前账户或模型的访问权限。", providerOverloaded:"上游 Provider 当前过载，请稍后重试。", retryAfter:"建议等待", seconds:"秒后重试", requestId:"请求 ID", providerCode:"Provider 错误码", checkedAt:"检查时间", noRetryHeader:"上游未返回 Retry-After；AERTEX 不会自动连续重试。", retryCountdown:"后重试", upstreamStatus:"上游状态"
@@ -20,8 +20,8 @@ export function renderAiAdmin(locale) {
     models:"Allowed models", def:"Default model", budget:"AERTEX monthly budget (USD)",
     input:"Custom model input $ / 1M tokens", output:"Custom model output $ / 1M tokens",
     save:"Validate & save provider", saving:"Validating…", providers:"API Providers", users:"User access",
-    load:"Loading…", enabled:"AI access", provider:"Provider", allowed:"User models", daily:"Daily quota $",
-    monthly:"Monthly quota $", rpm:"RPM", apply:"Save access", empty:"No provider configured",
+    load:"Loading…", enabled:"AI access", provider:"Provider", allowed:"User models", daily:"Daily cost limit $",
+    monthly:"Monthly cost limit $", dailyTokens:"Daily token limit", monthlyTokens:"Monthly token limit", rpm:"RPM", apply:"Save access", empty:"No provider configured",
     official:"OpenAI official month cost", local:"AERTEX local estimate", remaining:"Budget remaining", requests:"Requests this month",
     billingOn:"Official billing connected", billingOff:"No Admin Key", saved:"Saved", projectValidated:"Project Key validated",
     noProvider:"Select at least one provider for this user.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user providers and models", selectedModels:"Selected", modelsUnit:"models", providersUnit:"providers", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the API Key first.", noModelsForKey:"This API Key returned no chat-capable models.", accessSaving:"Saving…", accessSaved:"Saved ✓", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key", regionUnsupported:"OpenAI API checks are unavailable from the current network or service region. This does not mean the key is invalid. Use OpenAI-connected features only from an officially supported country or territory.", rateLimited:"Confirmed upstream provider rate limit: AERTEX received a real HTTP 429. This does not mean the API key is invalid.", authInvalid:"The upstream provider explicitly rejected API-key authentication.", quotaExhausted:"The upstream provider reports insufficient account quota.", permissionDenied:"The upstream provider denied access for this account or model.", providerOverloaded:"The upstream provider is temporarily overloaded. Try again later.", retryAfter:"Retry after", seconds:"seconds", requestId:"Request ID", providerCode:"Provider error code", checkedAt:"Checked at", noRetryHeader:"The upstream provider did not return Retry-After; AERTEX will not auto-retry repeatedly.", retryCountdown:"retry", upstreamStatus:"Upstream status"
@@ -46,7 +46,7 @@ input:focus,select:focus{border-color:var(--text)}button{border:0;border-radius:
 dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.22)}dialog::backdrop{background:rgba(0,0,0,.36);backdrop-filter:blur(2px)}.dialogHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}.dialogHead strong{font-size:17px}.dialogBody{padding:8px 18px 14px;overflow:auto;max-height:50vh}.dialogFoot{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px 16px;border-top:1px solid var(--line)}.dialogFoot .secondaryBtn{background:var(--soft);color:var(--text)}.choice{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid var(--line);font-size:14px}.choice:last-child{border-bottom:0}.choice input{width:19px;height:19px;margin:0;accent-color:var(--text)}
 .sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.providerCard{border-top:1px solid var(--line);padding:16px 0}.providerTop{display:flex;align-items:start;justify-content:space-between;gap:14px}.providerName{font-weight:730}.providerActions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}.smallButton{padding:7px 10px;border:1px solid var(--line);background:var(--soft);color:var(--text);border-radius:9px;font-size:12px}.dangerButton{color:var(--bad)}.bad{color:var(--bad)}.ok{color:var(--good)}
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.metric{background:var(--soft);border-radius:12px;padding:11px}.metric span{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}.metric strong{font-size:17px}
-.user{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.8fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,.58fr) minmax(0,.58fr) minmax(0,.45fr) auto;gap:8px;align-items:end;border-top:1px solid var(--line);padding:12px 0;min-width:0}.user>*{min-width:0}.accessCell{display:flex;flex-direction:column;align-items:stretch;gap:5px}.accessFeedback{min-height:16px;font-size:11px;color:var(--muted);line-height:1.35}.accessFeedback.ok{color:var(--good)}.accessFeedback.bad{color:var(--bad)}.access.isSaved{background:var(--good);color:#fff}.userName{align-self:center;min-width:0}.userName strong,.userName .hint{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user{display:grid;grid-template-columns:minmax(170px,1.35fr) repeat(4,minmax(110px,1fr));gap:8px;align-items:end;border-top:1px solid var(--line);padding:12px 0;min-width:0}.user>*{min-width:0}.accessCell{display:flex;flex-direction:column;align-items:stretch;gap:5px}.accessFeedback{min-height:16px;font-size:11px;color:var(--muted);line-height:1.35}.accessFeedback.ok{color:var(--good)}.accessFeedback.bad{color:var(--bad)}.access.isSaved{background:var(--good);color:#fff}.userName{align-self:center;min-width:0}.userName strong,.userName .hint{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .status{min-height:20px;margin:5px 0 12px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:var(--soft);font-size:11px}
 @media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}.user{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}
 @media(max-width:560px){header{display:block}.metrics,.user{grid-template-columns:1fr}}
@@ -149,6 +149,7 @@ let editDefaultModel="";
 let editReplacementKeyChecked=true;
 const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 const money=value=>value==null?"—":"$"+Number(value||0).toFixed(4);
+const tokenCount=value=>Number(value||0).toLocaleString();
 const normalizeApiKey=value=>String(value||"").replace(/[\\s\\u200B\\u200C\\u200D\\u2060\\uFEFF]+/g,"").trim();
 
 function updateProviderPickers(){
@@ -551,12 +552,14 @@ function render(){
     const access=normalizedUserAccess(user);
     userProviderAccessSelections.set(user.user_id,access);
     return '<div class="user" data-user="'+esc(user.user_id)+'">'
-      +'<div class="userName"><strong>'+esc(user.display_name||user.username||user.email)+'</strong><span class="hint">'+esc(user.email||"")+' · '+money(user.month_usage_usd||0)+'</span></div>'
+      +'<div class="userName"><strong>'+esc(user.display_name||user.username||user.email)+'</strong><span class="hint">'+esc(user.email||"")+' · '+money(user.month_usage_usd||0)+' · '+tokenCount(user.month_usage_tokens||0)+' tokens</span></div>'
       +'<div><label>${t.enabled}</label><select class="enabled"><option value="0">Off</option><option value="1" '+(user.enabled?"selected":"")+'>On</option></select></div>'
       +'<div><label>${t.provider}</label><button type="button" class="pickerButton userProvidersPicker"><span class="pickerValue userProvidersValue">'+esc(userProvidersSummary(access))+'</span><span class="pickerChevron">›</span></button></div>'
       +'<div><label>${t.allowed}</label><button type="button" class="pickerButton userModelsPicker"><span class="pickerValue userModelsValue">'+esc(userModelsSummary(access))+'</span><span class="pickerChevron">›</span></button></div>'
       +'<div><label>${t.daily}</label><input class="daily" type="number" min="0" step=".01" value="'+esc(user.daily_limit_usd??"")+'"></div>'
       +'<div><label>${t.monthly}</label><input class="monthly" type="number" min="0" step=".01" value="'+esc(user.monthly_limit_usd??"")+'"></div>'
+      +'<div><label>${t.dailyTokens}</label><input class="dailyTokens" type="number" min="0" step="1000" value="'+esc(user.daily_limit_tokens??"")+'"></div>'
+      +'<div><label>${t.monthlyTokens}</label><input class="monthlyTokens" type="number" min="0" step="1000" value="'+esc(user.monthly_limit_tokens??"")+'"></div>'
       +'<div><label>${t.rpm}</label><input class="rpm" type="number" min="1" max="300" value="'+esc(user.requests_per_minute||20)+'"></div>'
       +'<div class="accessCell"><button class="primary access" type="button">${t.apply}</button><div class="accessFeedback" aria-live="polite"></div></div></div>';
   }).join("");
@@ -652,6 +655,8 @@ async function saveAccess(event){
       provider_access:providerAccess,
       daily_limit_usd:row.querySelector(".daily").value,
       monthly_limit_usd:row.querySelector(".monthly").value,
+      daily_limit_tokens:row.querySelector(".dailyTokens").value,
+      monthly_limit_tokens:row.querySelector(".monthlyTokens").value,
       requests_per_minute:row.querySelector(".rpm").value
     })});
 
