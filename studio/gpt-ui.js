@@ -288,3 +288,17 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
 ${accountMenuClientScript({ locale: zh ? "zh-cn" : "en" })}
 </body></html>`;
 }
+
+
+export function renderSharedConversation(locale, payload) {
+  const zh = locale === "zh-cn";
+  const conversation = payload?.conversation || {};
+  const messages = Array.isArray(payload?.messages) ? payload.messages : [];
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+  const title = esc(conversation.title || (zh ? "共享对话" : "Shared conversation"));
+  const body = messages.map(item => {
+    const role = item?.role === "user" ? (zh ? "用户" : "User") : "AERTEX";
+    return '<article class="msg '+(item?.role === "user" ? "user" : "assistant")+'"><div class="role">'+role+'</div><div class="bubble">'+esc(item?.content || "")+'</div></article>';
+  }).join("");
+  return '<!doctype html><html lang="'+(zh ? "zh-CN" : "en")+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>'+title+' · AERTEX Intelligence</title>${FAVICON_LINKS}<style>:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}@media(prefers-color-scheme:dark){:root{--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(860px,calc(100% - 32px));margin:0 auto;padding:38px 0 80px}header{padding-bottom:24px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:30px;letter-spacing:-.04em}.meta{margin-top:8px;color:var(--muted);font-size:13px}.msg{padding:24px 0;border-bottom:1px solid var(--line)}.role{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px}.bubble{white-space:pre-wrap;line-height:1.72}.user .bubble{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:16px}.footer{margin-top:28px;color:var(--muted);font-size:12px}</style></head><body><main><header><h1>'+title+'</h1><div class="meta">'+(zh ? "AERTEX Intelligence 共享对话 · 只读" : "AERTEX Intelligence shared conversation · Read only")+'</div></header>'+body+'<div class="footer">'+(zh ? "此链接由对话所有者主动分享" : "This link was explicitly shared by the conversation owner")+'</div></main></body></html>';
+}
