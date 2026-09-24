@@ -23,7 +23,6 @@ on:
       - "scripts/codex-bridge-check.mjs"
       - "scripts/brand-check.mjs"
       - "scripts/r2-storage-audit-check.mjs"
-      - "scripts/r2-audit-maintenance-worker.js"
       - "wrangler.jsonc"
       - "wrangler.work.jsonc"
       - "gpt-worker.js"
@@ -53,7 +52,6 @@ on:
       - "scripts/codex-bridge-check.mjs"
       - "scripts/brand-check.mjs"
       - "scripts/r2-storage-audit-check.mjs"
-      - "scripts/r2-audit-maintenance-worker.js"
       - "wrangler.jsonc"
       - "wrangler.work.jsonc"
       - "gpt-worker.js"
@@ -99,7 +97,6 @@ jobs:
           node --check scripts/codex-bridge-check.mjs
           node --check scripts/brand-check.mjs
           node --check scripts/r2-storage-audit-check.mjs
-          node --check scripts/r2-audit-maintenance-worker.js
           node --check gpt-worker.js
 
       - name: Verify browser security markup
