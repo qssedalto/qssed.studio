@@ -8,8 +8,6 @@ import { renderAiAdmin } from "./studio/ai-admin-ui.js";
 import { gptOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
-import { TEXT } from "./studio/config.js";
-import { topControls, themeScript } from "./studio/ui-page.js";
 
 
 export default {
@@ -97,20 +95,23 @@ function renderAdminDenied(locale) {
   const zh = locale !== "en";
   const copy = zh ? {
     title: "此账号无权访问管理后台",
-    eyebrow: "AERTEX Intelligence",
     detail: "此页面仅供 AERTEX Intelligence 管理员使用。我们已经验证了你的登录身份，但当前账号没有管理员权限，因此无法进入 Intelligence 管理后台。",
-    secondary: "你仍然可以返回 Intelligence 使用当前账号已获授权的功能。如果你认为这是权限配置错误，请联系站点管理员检查你的账号角色。",
-    back: "返回 Intelligence"
+    secondary: "你仍然可以返回 Intelligence，继续使用当前账号已经获得授权的功能。如果你认为这里的权限判断有误，请联系站点管理员检查你的账号角色与管理员授权状态。",
+    back: "返回 Intelligence",
+    verify: "管理员权限验证",
+    section: "Intelligence 管理后台"
   } : {
     title: "This account cannot access the admin console",
-    eyebrow: "AERTEX Intelligence",
     detail: "This page is reserved for AERTEX Intelligence administrators. Your signed-in identity has been verified, but this account does not have administrator privileges, so access to the Intelligence admin console is blocked.",
-    secondary: "You can still return to Intelligence and use features already granted to this account. If you believe this is a permissions mistake, contact the site administrator to review your account role.",
-    back: "Back to Intelligence"
+    secondary: "You can still return to Intelligence and continue using features already granted to this account. If you believe this authorization result is incorrect, contact the site administrator to review your account role and administrator access.",
+    back: "Back to Intelligence",
+    verify: "Administrator verification",
+    section: "Intelligence Admin"
   };
-  const links = { zhCurrent: "/zh-cn/admin", enCurrent: "/en/admin" };
-  const controls = topControls(links, zh ? TEXT.zh : TEXT.en);
   const backHref = zh ? "/zh-cn" : "/en";
+  const languageHref = zh ? "/en/admin" : "/zh-cn/admin";
+  const languageLabel = zh ? "ZH" : "EN";
+  const languageTitle = zh ? "Switch to English" : "切换到中文";
 
   return `<!doctype html>
 <html lang="${zh ? "zh-CN" : "en"}">
@@ -122,112 +123,194 @@ function renderAdminDenied(locale) {
 <script>
 (function(){
   try{
-    const savedTheme=localStorage.getItem("qssed-theme");
-    const prefersLight=window.matchMedia("(prefers-color-scheme: light)").matches;
-    document.documentElement.dataset.theme=savedTheme||(prefersLight?"light":"dark");
-  }catch{
-    document.documentElement.dataset.theme="dark";
-  }
+    const saved=localStorage.getItem("qssed-gpt-theme");
+    if(saved==="light"||saved==="dark") document.documentElement.dataset.theme=saved;
+  }catch{}
 })();
 </script>
 <style>
 :root{
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --bg:#f7f7f5;
+  --panel:#fff;
+  --panel2:#f0f0ee;
+  --text:#171717;
+  --muted:#777;
+  --line:rgba(0,0,0,.09);
+  --accent:#111;
+  --accentText:#fff;
+  --danger:#b42318;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme]){
+    --bg:#101010;
+    --panel:#181818;
+    --panel2:#202020;
+    --text:#f4f4f4;
+    --muted:#9b9b9b;
+    --line:rgba(255,255,255,.09);
+    --accent:#f4f4f4;
+    --accentText:#111;
+    --danger:#ff766d;
+  }
+}
+:root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#000;
-  --surface:#1c1c1e;
-  --surface-strong:#2c2c2e;
-  --text:#f5f5f7;
-  --muted:#a1a1a6;
-  --border:rgba(255,255,255,.10);
-  --primary:#0a84ff;
-  --primary-ink:#fff;
-  --glass-heavy:rgba(22,22,24,.88);
-  --shadow:0 28px 70px rgba(0,0,0,.34);
+  --bg:#101010;
+  --panel:#181818;
+  --panel2:#202020;
+  --text:#f4f4f4;
+  --muted:#9b9b9b;
+  --line:rgba(255,255,255,.09);
+  --accent:#f4f4f4;
+  --accentText:#111;
+  --danger:#ff766d;
 }
 :root[data-theme="light"]{
   color-scheme:light;
-  --bg:#f5f5f7;
-  --surface:#fff;
-  --surface-strong:#f2f2f7;
-  --text:#1d1d1f;
-  --muted:#6e6e73;
-  --border:rgba(60,60,67,.13);
-  --primary:#007aff;
-  --primary-ink:#fff;
-  --glass-heavy:rgba(247,247,249,.90);
-  --shadow:0 28px 70px rgba(0,0,0,.12);
+  --bg:#f7f7f5;
+  --panel:#fff;
+  --panel2:#f0f0ee;
+  --text:#171717;
+  --muted:#777;
+  --line:rgba(0,0,0,.09);
+  --accent:#111;
+  --accentText:#fff;
+  --danger:#b42318;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg)}
-body{
-  margin:0;
-  min-height:100vh;
-  padding:88px 20px 28px;
-  background:
-    radial-gradient(900px 520px at 14% -10%,color-mix(in srgb,var(--primary) 8%,transparent),transparent 68%),
-    var(--bg);
-  color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI",system-ui,sans-serif;
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+button,a{font:inherit}
+.app{min-height:100vh;display:grid;grid-template-columns:270px minmax(0,1fr)}
+.sidebar{
+  border-right:1px solid var(--line);
+  padding:18px;
+  background:var(--panel2);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
 }
-.shell{width:min(760px,100%);margin:0 auto}
-.brand{display:flex;align-items:center;gap:10px;margin:0 0 34px;font-size:21px;font-weight:730;letter-spacing:-.025em;color:var(--text)}
+.brand{font-weight:760;letter-spacing:-.03em;font-size:20px;padding:8px 6px}
 .brand .aertex-wordmark-token{width:5.18687em;height:1em}
-.card{
-  border:1px solid var(--border);
-  border-radius:28px;
-  background:color-mix(in srgb,var(--surface) 88%,transparent);
-  box-shadow:var(--shadow);
-  padding:clamp(26px,5vw,44px);
-  -webkit-backdrop-filter:blur(28px) saturate(170%);
-  backdrop-filter:blur(28px) saturate(170%);
+.brand small{display:block;color:var(--muted);font-size:12px;font-weight:500;letter-spacing:0;margin-top:4px}
+.sideMeta{margin-top:auto;color:var(--muted);font-size:11px;line-height:1.55;padding:6px}
+.main{min-width:0;height:100vh;display:flex;flex-direction:column}
+.topbar{
+  height:62px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 18px;
+  border-bottom:1px solid var(--line);
 }
-.kicker{font-size:13px;font-weight:680;color:var(--primary);margin:0 0 12px}
-h1{margin:0;font-size:clamp(32px,6vw,52px);line-height:1.05;letter-spacing:-.045em;font-weight:730;text-wrap:balance}
-.lead{margin:20px 0 0;color:var(--muted);font-size:16px;line-height:1.72}
-.secondaryCopy{margin:12px 0 0;color:var(--muted);font-size:14px;line-height:1.7}
-.back{
+.sectionTitle{font-size:14px;font-weight:650}
+.controls{margin-left:auto;display:flex;align-items:center;gap:8px}
+.control{
+  height:36px;
+  min-width:42px;
+  padding:0 11px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  min-height:48px;
-  margin-top:26px;
-  padding:0 16px;
-  border-radius:13px;
-  background:var(--primary);
-  color:var(--primary-ink);
+  border:1px solid var(--line);
+  background:var(--panel);
+  color:var(--text);
+  border-radius:10px;
   text-decoration:none;
+  cursor:pointer;
+  font-size:12px;
   font-weight:650;
 }
-.theme-toggle,.language-toggle{
-  width:44px;height:44px;min-width:44px;min-height:44px;margin:0;padding:0;
-  border:1px solid var(--border);border-radius:50%;background:var(--glass-heavy);color:var(--text);
-  -webkit-backdrop-filter:blur(20px) saturate(170%);backdrop-filter:blur(20px) saturate(170%);
-  box-shadow:0 8px 24px rgba(0,0,0,.10),inset 0 1px 0 color-mix(in srgb,#fff 20%,transparent);
-  text-decoration:none;font-size:11px;font-weight:680;line-height:1;
+.control:hover{background:var(--panel2)}
+.content{flex:1;min-height:0;overflow:auto}
+.gate{
+  width:min(650px,calc(100% - 36px));
+  margin:80px auto;
+  padding:28px;
+  border:1px solid var(--line);
+  background:var(--panel);
+  border-radius:22px;
 }
-.language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}
-.theme-toggle .theme-sun,:root[data-theme="light"] .theme-toggle .theme-moon{display:none}
-:root[data-theme="light"] .theme-toggle .theme-sun{display:inline}
-.top-controls-zone{position:fixed;top:0;right:0;width:132px;height:72px;z-index:80;pointer-events:none}
-.top-controls{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:8px;pointer-events:auto}
-.top-controls .language-toggle,.top-controls .theme-toggle{position:static!important}
-:root.theme-switching body,:root.theme-switching .card{transition:background .20s ease,color .20s ease,border-color .20s ease}
-@media(max-width:560px){body{padding:82px 16px 20px}.card{border-radius:24px}.brand{margin-bottom:24px}.top-controls{top:12px;right:12px}}
+.kicker{font-size:12px;color:var(--muted);font-weight:650;margin:0 0 10px}
+.gate h1{margin:0 0 10px;font-size:28px;line-height:1.18;letter-spacing:-.035em}
+.gate p{color:var(--muted);line-height:1.7;margin:0}
+.gate p+p{margin-top:10px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.primary{
+  border:0;
+  background:var(--accent);
+  color:var(--accentText);
+  border-radius:11px;
+  padding:9px 14px;
+  cursor:pointer;
+  font-weight:650;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:12px;
+  padding:8px 6px;
+}
+.statusDot{width:8px;height:8px;border-radius:50%;background:var(--danger)}
+@media(max-width:760px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .topbar{padding:0 10px}
+  .gate{margin:54px auto}
+}
 </style>
 </head>
 <body>
-${controls}
-<main class="shell">
-  <div class="brand">${copy.eyebrow}</div>
-  <section class="card">
-    <div class="kicker">${zh ? "管理员权限验证" : "Administrator verification"}</div>
-    <h1>${copy.title}</h1>
-    <p class="lead">${copy.detail}</p>
-    <p class="secondaryCopy">${copy.secondary}</p>
-    <a class="back" href="${backHref}">${copy.back}</a>
-  </section>
-</main>
-${themeScript()}
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">AERTEX Intelligence<small>Cloud Intelligence</small></div>
+    <div class="status"><span class="statusDot"></span><span>${copy.verify}</span></div>
+    <div class="sideMeta">${copy.secondary}</div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div class="sectionTitle">AERTEX Intelligence</div>
+      <div class="controls">
+        <a class="control" href="${languageHref}" aria-label="${languageTitle}" title="${languageTitle}">${languageLabel}</a>
+        <button class="control" id="themeToggle" type="button" aria-label="${zh ? "切换深浅色" : "Toggle color mode"}" title="${zh ? "切换深浅色" : "Toggle color mode"}">◐</button>
+      </div>
+    </header>
+    <section class="content">
+      <div class="gate">
+        <div class="kicker">${copy.verify}</div>
+        <h1>${copy.title}</h1>
+        <p>${copy.detail}</p>
+        <p>${copy.secondary}</p>
+        <div class="actions"><a class="primary" href="${backHref}">${copy.back}</a></div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+(function(){
+  const button=document.getElementById("themeToggle");
+  if(!button)return;
+  function currentTheme(){
+    const explicit=document.documentElement.dataset.theme;
+    if(explicit==="light"||explicit==="dark")return explicit;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+  }
+  function updateIcon(){button.textContent=currentTheme()==="dark"?"◑":"◐"}
+  button.addEventListener("click",()=>{
+    const next=currentTheme()==="dark"?"light":"dark";
+    document.documentElement.dataset.theme=next;
+    try{localStorage.setItem("qssed-gpt-theme",next)}catch{}
+    updateIcon();
+  });
+  updateIcon();
+})();
+</script>
 </body>
 </html>`;
 }
