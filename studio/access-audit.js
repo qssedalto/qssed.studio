@@ -3,14 +3,30 @@ import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate
 import { json } from "./routing.js";
 
 export const ACCESS_AUDIT_ROOT = "__system/access-audit/";
-export const ACCESS_AUDIT_RETENTION_DAYS = 30;
+export const ACCESS_AUDIT_RETENTION_DAYS = 14;
 
 const MAX_LIST_LIMIT = 200;
 const MAX_SCAN_OBJECTS = 1200;
 const SENSITIVE_QUERY_KEY = /(?:token|code|secret|password|passwd|pwd|session|auth|authorization|key|signature|sig|credential|cookie|jwt|state|email|phone)/i;
+const SECURITY_AUDIT_PATH = /^\/(?:admin(?:\/|$)|api\/admin(?:\/|$)|auth(?:\/|$)|login(?:\/|$)|logout(?:\/|$)|oauth(?:\/|$)|gpt\/handoff(?:\/|$)|api\/storage(?:\/|$)|api\/ai\/admin(?:\/|$))/i;
+
+export function shouldRecordAccessAudit(request, response, source = "studio") {
+  const method = String(request?.method || "GET").toUpperCase();
+  const status = Number(response?.status || 0);
+  const url = safeUrl(request?.url || "https://qsseda.com/");
+  const path = String(url.pathname || "/");
+
+  if (method !== "GET" && method !== "HEAD") return true;
+  if (status === 401 || status === 403 || status === 429 || status >= 500) return true;
+  if (SECURITY_AUDIT_PATH.test(path)) return true;
+  if (source === "auth" && /^\/(?:callback|verify|recover|reset)(?:\/|$)/i.test(path)) return true;
+  return false;
+}
+
 
 export async function recordAccessAudit(request, response, env, startedAt, source = "studio") {
   if (!hasAuditStorage(env)) return;
+  if (!shouldRecordAccessAudit(request, response, source)) return;
 
   const now = new Date();
   const url = safeUrl(request.url);
