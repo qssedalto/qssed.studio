@@ -106,6 +106,7 @@ jobs:
           node --check auth-pkce-test.js
           node --check auth-edge-protection.js
           node --check gpt-worker.js
+          grep -q '"region": "aws:us-east-1"' wrangler.gpt.jsonc
           node --check studio/ai-gateway.js
           node --check studio/ai-admin-ui.js
           node --check scripts/ai-admin-ui-check.mjs
@@ -189,6 +190,13 @@ jobs:
           if [ "$ok" -ne 1 ]; then
             echo "GPT custom domain regression: health endpoint did not become ready."
             cat /tmp/qsseda-gpt-health.json || true
+            exit 1
+          fi
+
+          echo "GPT health:"
+          cat /tmp/qsseda-gpt-health.json
+          if grep -q '"placement":null' /tmp/qsseda-gpt-health.json || ! grep -q '"placement":"' /tmp/qsseda-gpt-health.json; then
+            echo "GPT placement regression: cf-placement is missing after deployment."
             exit 1
           fi
 
