@@ -23,8 +23,8 @@ on:
       - scripts/work-subdomain-check.mjs
       - scripts/gpt-subdomain-check.mjs
       - scripts/gpt-ui-check.mjs
+      - scripts/account-menu-check.mjs
       - scripts/brand-check.mjs
-      - scripts/codex-bridge-check.mjs
       - scripts/codex-bridge-check.mjs
       - auth-entry.js
       - auth-sso.js
@@ -97,6 +97,8 @@ jobs:
           node scripts/gpt-subdomain-check.mjs
           node --check scripts/gpt-ui-check.mjs
           node scripts/gpt-ui-check.mjs
+          node --check scripts/account-menu-check.mjs
+          node scripts/account-menu-check.mjs
           node --check scripts/codex-bridge-check.mjs
           node scripts/codex-bridge-check.mjs
           node --check scripts/brand-check.mjs
