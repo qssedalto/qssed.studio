@@ -16,6 +16,8 @@ for (const required of [
   'verifyStudioPageSession(request)',
   'gptSessionRedirect(request, pathname)',
   'pathname === "/auth/handoff"',
+  'pathname.startsWith("/api/ai/")',
+  'renderAiAdmin(locale)',
   'handleAuthHandoff(request, env, locale)'
 ]) {
   assert(gpt.includes(required), `GPT worker is missing authenticated routing invariant: ${required}`);
