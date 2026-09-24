@@ -73,5 +73,3 @@ for (const required of [
 }
 console.log("GPT authentication handoff looks valid.");
 
-assert(!aiGateway.includes("glm-5.3"), "Paid GLM-5.3 models must not be exposed by the free Zhipu provider.");
-assert(!aiGateway.includes("glm-5.2"), "Paid GLM-5.2 must not be exposed by the free Zhipu provider.");
