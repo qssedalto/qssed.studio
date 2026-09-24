@@ -1,5 +1,6 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { injectBrandLogoRuntime } from "./brand-logo.js";
 
 export async function handleAccessAuditPage(request, zh) {
   const session = await verifyStudioApiSession(request);
@@ -213,7 +214,7 @@ function renderPage(zh) {
 }
 
 function pageResponse(markup) {
-  return new Response(markup, {
+  return new Response(injectBrandLogoRuntime(markup), {
     status: 200,
     headers: {
       "content-type": "text/html;charset=UTF-8",
