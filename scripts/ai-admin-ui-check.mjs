@@ -16,11 +16,15 @@ for (const locale of ["zh-cn","en"]) {
     'provider_access:providerAccess',
     'daily_limit_tokens:row.querySelector(".dailyTokens").value',
     'monthly_limit_tokens:row.querySelector(".monthlyTokens").value',
+    'statusDot active',
+    'budget!=null',
+    'compatibleApi',
     'error?.code==="RATE_LIMITED"',
     'Retry-After',
     '.hidden{display:none!important}'
   ]) {
     if (!html.includes(required)) throw new Error(`AI admin ${locale} missing multi-provider invariant: ${required}`);
   }
+  if (html.includes("OpenAI-compatible API")) throw new Error(`AI admin ${locale} must not label non-OpenAI providers as OpenAI`);
 }
 console.log("AI admin rendered inline scripts are syntactically valid.");
