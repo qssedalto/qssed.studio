@@ -241,7 +241,7 @@ export async function handleAiAdminApi(request, env, session) {
     if (!env.AI_CREDENTIAL_KEY) return json({ error: "AI credential encryption is not configured." }, 503);
 
     const b = await body(request);
-    const key = clean(b.api_key, 800);
+    const key = cleanApiKey(b.api_key);
     const provider = cleanProvider(b.provider);
     const adminKey = provider === "openai" ? cleanApiKey(b.admin_key) : "";
     const name = String(b.name || "").trim().slice(0, 80);
@@ -370,6 +370,8 @@ export async function handleAiAdminApi(request, env, session) {
       allowed_models: normalized[0]?.allowed_models || [],
       daily_limit_usd: numOrNull(b.daily_limit_usd),
       monthly_limit_usd: numOrNull(b.monthly_limit_usd),
+      daily_limit_tokens: wholeNumberOrNull(b.daily_limit_tokens),
+      monthly_limit_tokens: wholeNumberOrNull(b.monthly_limit_tokens),
       requests_per_minute: Math.max(1, Math.min(300, Number(b.requests_per_minute) || 20)),
       updated_by: session.user.id,
       updated_at: new Date().toISOString()
@@ -466,6 +468,10 @@ async function userConfig(request, session) {
     limits: {
       daily: a.daily_limit_usd,
       monthly: a.monthly_limit_usd,
+      daily_usd: a.daily_limit_usd,
+      monthly_usd: a.monthly_limit_usd,
+      daily_tokens: a.daily_limit_tokens,
+      monthly_tokens: a.monthly_limit_tokens,
       rpm: a.requests_per_minute
     }
   });
@@ -486,10 +492,16 @@ async function chat(request, env, session) {
   const providers = Array.isArray(cfg.data.providers) ? cfg.data.providers : [];
   const u = cfg.data.usage;
   if (a.daily_limit_usd != null && Number(u.today_usd) >= Number(a.daily_limit_usd)) {
-    return json({ error: "Daily AI quota reached." }, 429);
+    return json({ error: "Daily AI cost quota reached.", code: "DAILY_COST_QUOTA_REACHED" }, 429);
   }
   if (a.monthly_limit_usd != null && Number(u.month_usd) >= Number(a.monthly_limit_usd)) {
-    return json({ error: "Monthly AI quota reached." }, 429);
+    return json({ error: "Monthly AI cost quota reached.", code: "MONTHLY_COST_QUOTA_REACHED" }, 429);
+  }
+  if (a.daily_limit_tokens != null && Number(u.today_tokens) >= Number(a.daily_limit_tokens)) {
+    return json({ error: "Daily AI token quota reached.", code: "DAILY_TOKEN_QUOTA_REACHED" }, 429);
+  }
+  if (a.monthly_limit_tokens != null && Number(u.month_tokens) >= Number(a.monthly_limit_tokens)) {
+    return json({ error: "Monthly AI token quota reached.", code: "MONTHLY_TOKEN_QUOTA_REACHED" }, 429);
   }
   if (Number(u.minute_requests) >= Number(a.requests_per_minute || 20)) {
     return json({ error: "AI request rate limit reached." }, 429);
@@ -1147,6 +1159,12 @@ function numOrNull(value) {
 
 function numOrZero(value) {
   return numOrNull(value) || 0;
+}
+
+function wholeNumberOrNull(value) {
+  if (value === "" || value == null) return null;
+  const n = Number(value);
+  return Number.isSafeInteger(n) && n >= 0 ? n : null;
 }
 
 function uuid(value) {
