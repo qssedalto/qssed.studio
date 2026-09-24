@@ -3,28 +3,28 @@ import { FAVICON_LINKS } from "./favicon.js";
 export function renderGptApp(locale) {
   const zh = locale === "zh-cn";
   const t = zh ? {
-    title:"AERTEX Intelligence", subtitle:"Local Intelligence", online:"Intelligence 在线", offline:"Intelligence 离线",
-    offlineTitle:"AERTEX Intelligence 当前离线", offlineText:"运行 Codex 的电脑当前没有连接。电脑开机并启动 AERTEX Bridge 后，这里会自动恢复在线。",
-    checking:"正在检测 Intelligence…", retry:"重新检测", signedOut:"Intelligence 在线 · 尚未连接 ChatGPT / Codex",
-    connectHint:"电脑已经在线。现在可以把 ChatGPT 账号连接到这台电脑上的 Codex。",
+    title:"AERTEX Intelligence", subtitle:"Cloud Intelligence", online:"Intelligence 在线", offline:"Intelligence 不可用",
+    offlineTitle:"AERTEX Intelligence 暂不可用", offlineText:"当前账号尚未获得 AI 使用权限，或管理员尚未完成 API 配置。",
+    checking:"正在加载 Intelligence…", retry:"重新检测", signedOut:"当前账号尚未获得 Intelligence 权限",
+    connectHint:"请联系管理员为此账号分配 API Provider、模型和使用额度。",
     connect:"连接 ChatGPT / Codex", connecting:"正在连接…", openLogin:"打开 OpenAI 登录页",
     codeLabel:"设备代码", codeHint:"在 OpenAI 页面输入设备代码完成授权。完成后这里会自动识别登录状态。",
-    newChat:"新对话", send:"发送", placeholder:"给 Codex 发消息…", loadingModels:"正在读取模型…",
+    newChat:"新对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
     noModels:"没有读取到可用模型", reasoning:"推理", thinking:"Codex 正在思考…",
-    empty:"开始一个新的对话", emptyHint:"这次对话会通过你开机中的电脑运行 Codex，并使用已登录 ChatGPT 账号的 Codex 权益。",
-    error:"发生错误", privateNote:"Intelligence 后端运行在你的电脑上。电脑关机或休眠时，Intelligence 会显示离线。",
+    empty:"开始一个新的对话", emptyHint:"消息由 AERTEX 服务端安全转发到管理员配置的 AI Provider，并以流式方式返回。",
+    error:"发生错误", privateNote:"API 凭据只保存在服务端。你的浏览器不会接触管理员配置的 API Key。",
     bridgeAuth:"本机 Bridge 的安全凭据配置不一致。"
   } : {
-    title:"AERTEX Intelligence", subtitle:"Local Intelligence", online:"Intelligence online", offline:"Intelligence offline",
-    offlineTitle:"AERTEX Intelligence is currently offline", offlineText:"The computer running Codex is not connected. This page will automatically come back online when that computer starts AERTEX Bridge.",
-    checking:"Checking Intelligence…", retry:"Check again", signedOut:"Intelligence online · ChatGPT / Codex is not connected",
-    connectHint:"The computer is online. You can now connect a ChatGPT account to Codex on that machine.",
+    title:"AERTEX Intelligence", subtitle:"Cloud Intelligence", online:"Intelligence online", offline:"Intelligence unavailable",
+    offlineTitle:"AERTEX Intelligence is unavailable", offlineText:"AI access has not been enabled for this account, or the administrator has not completed API configuration.",
+    checking:"Loading Intelligence…", retry:"Check again", signedOut:"Intelligence access is not enabled for this account",
+    connectHint:"Ask an administrator to assign an API provider, models, and usage quota to this account.",
     connect:"Connect ChatGPT / Codex", connecting:"Connecting…", openLogin:"Open OpenAI sign-in",
     codeLabel:"Device code", codeHint:"Enter the device code on the OpenAI page. This page will detect completion automatically.",
-    newChat:"New chat", send:"Send", placeholder:"Message Codex…", loadingModels:"Loading models…",
+    newChat:"New chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
     noModels:"No available models were returned", reasoning:"Reasoning", thinking:"Codex is thinking…",
-    empty:"Start a new conversation", emptyHint:"This conversation runs Codex on your powered-on computer and uses the Codex allowance of the connected ChatGPT account.",
-    error:"Error", privateNote:"The AI backend runs on your computer. Intelligence goes offline when that computer is shut down or asleep.",
+    empty:"Start a new conversation", emptyHint:"Messages are securely proxied by AERTEX to the administrator-configured AI provider and streamed back here.",
+    error:"Error", privateNote:"API credentials remain server-side. Your browser never receives the administrator API key.",
     bridgeAuth:"The local Bridge security credentials do not match."
   };
 
@@ -92,98 +92,16 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
 <script>
 (() => {
   const text=${JSON.stringify(t)}, $=id=>document.getElementById(id);
-  const state={online:false,account:null,models:[],threadId:"",busy:false,loginTimer:null,statusTimer:null};
-
-  async function raw(path,options={}) {
-    const response=await fetch("/api/gpt"+path,{...options,cache:"no-store",credentials:"same-origin",headers:{Accept:"application/json",...(options.headers||{})}});
-    const type=response.headers.get("content-type")||"";
-    const data=type.includes("application/json")?await response.json():null;
-    if(response.status===401){location.reload();throw new Error("Authentication required");}
-    return {response,data};
-  }
-  async function api(path,options={}) {
-    const {response,data}=await raw(path,options);
-    if(!response.ok){const e=new Error(data?.error||("HTTP "+response.status));e.code=data?.code||"";throw e;}
-    return data;
-  }
-  function setStatus(online,label){
-    state.online=online;$("sideDot").className="dot "+(online?"online":"offline");$("sideStatus").textContent=label;$("accountLabel").textContent=label;
-  }
-  function showGate(title,message,login=false){
-    $("gate").classList.remove("hidden");$("messages").classList.add("hidden");$("composerWrap").classList.add("hidden");
-    $("gateTitle").textContent=title;$("gateText").textContent=message;$("startLogin").classList.toggle("hidden",!login);
-    $("modelSelect").disabled=true;$("effortSelect").disabled=true;
-  }
-  function showChat(){
-    $("gate").classList.add("hidden");$("messages").classList.remove("hidden");$("composerWrap").classList.remove("hidden");
-    $("modelSelect").disabled=false;$("effortSelect").disabled=false;
-  }
-  async function checkStatus(){
-    const {response,data}=await raw("/status").catch(()=>({response:{ok:false,status:503},data:{code:"gpt_offline"}}));
-    if(!response.ok){
-      if(data?.code==="bridge_auth_failed") showGate(text.error,text.bridgeAuth,false);
-      else showGate(text.offlineTitle,text.offlineText,false);
-      setStatus(false,text.offline);
-      return false;
-    }
-    setStatus(true,text.online);
-    await refreshAccount();
-    return true;
-  }
-  async function refreshAccount(){
-    if(!state.online)return false;
-    try{
-      const data=await api("/account");state.account=data?.account||null;
-      if(!state.account){showGate(text.signedOut,text.connectHint,true);setStatus(true,text.signedOut);return false;}
-      const plan=state.account.planType?" · "+state.account.planType:"";
-      setStatus(true,text.online+plan);$("accountLabel").textContent=(state.account.email||text.online)+plan;showChat();await loadModels();return true;
-    }catch(error){
-      if(error?.code==="gpt_offline"){showGate(text.offlineTitle,text.offlineText,false);setStatus(false,text.offline);}
-      else showGate(text.error,error?.message||text.error,false);
-      return false;
-    }
-  }
-  async function loadModels(){
-    const result=await api("/models"),select=$("modelSelect");state.models=Array.isArray(result?.data)?result.data:[];select.textContent="";
-    if(!state.models.length){const o=document.createElement("option");o.textContent=text.noModels;o.value="";select.appendChild(o);return;}
-    for(const model of state.models){const o=document.createElement("option");o.value=model.model||model.id;o.textContent=model.displayName||model.model||model.id;if(model.isDefault)o.selected=true;select.appendChild(o);}syncEfforts();
-  }
-  function syncEfforts(){
-    const model=state.models.find(item=>(item.model||item.id)===$("modelSelect").value),supported=Array.isArray(model?.supportedReasoningEfforts)?model.supportedReasoningEfforts.map(x=>x.reasoningEffort):[];
-    for(const option of $("effortSelect").options)option.disabled=Boolean(supported.length)&&!supported.includes(option.value);
-    if(supported.length&&!supported.includes($("effortSelect").value))$("effortSelect").value=model?.defaultReasoningEffort||supported[0];
-  }
-  async function startLogin(){
-    $("startLogin").disabled=true;$("startLogin").textContent=text.connecting;
-    try{
-      const result=await api("/login/device",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
-      if(!result?.verificationUrl||!result?.userCode)throw new Error("Device login was not returned by Codex");
-      $("deviceCode").textContent=result.userCode;$("deviceLink").href=result.verificationUrl;$("devicePanel").classList.remove("hidden");
-      clearInterval(state.loginTimer);state.loginTimer=setInterval(async()=>{if(await refreshAccount()){clearInterval(state.loginTimer);state.loginTimer=null;}},2000);
-    }catch(error){$("gateTitle").textContent=text.error;$("gateText").textContent=error?.message||text.error;}
-    finally{$("startLogin").disabled=false;$("startLogin").textContent=text.connect;}
-  }
-  function appendMessage(role,content){
-    $("emptyState").classList.add("hidden");const root=document.createElement("div");root.className="msg "+role;const bubble=document.createElement("div");bubble.className="bubble";bubble.textContent=content;root.appendChild(bubble);$("messages").appendChild(root);$("content").scrollTop=$("content").scrollHeight;return bubble;
-  }
-  async function ensureThread(){
-    if(state.threadId)return state.threadId;const result=await api("/thread",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:$("modelSelect").value})});state.threadId=result?.thread?.id||"";if(!state.threadId)throw new Error("Codex did not return a thread ID");return state.threadId;
-  }
-  async function send(){
-    const message=$("composer").value.trim();if(!message||state.busy||!state.online)return;state.busy=true;$("sendButton").disabled=true;$("composer").value="";appendMessage("user",message);const assistant=appendMessage("assistant","");const status=document.createElement("div");status.className="status";status.textContent=text.thinking;assistant.parentElement.appendChild(status);
-    try{
-      const threadId=await ensureThread(),response=await fetch("/api/gpt/turn",{method:"POST",cache:"no-store",credentials:"same-origin",headers:{"Content-Type":"application/json",Accept:"text/event-stream"},body:JSON.stringify({threadId,message,model:$("modelSelect").value,effort:$("effortSelect").value})});
-      if(response.status===401){location.reload();return;}if(!response.ok||!response.body){const d=await response.json().catch(()=>null);const e=new Error(d?.error||("HTTP "+response.status));e.code=d?.code||"";throw e;}
-      const reader=response.body.getReader(),decoder=new TextDecoder();let buffer="",streamed="";
-      while(true){const chunk=await reader.read();if(chunk.done)break;buffer+=decoder.decode(chunk.value,{stream:true});let boundary;while((boundary=buffer.indexOf("\\n\\n"))>=0){const block=buffer.slice(0,boundary);buffer=buffer.slice(boundary+2);let event="message",payload=null;for(const line of block.split("\\n")){if(line.startsWith("event:"))event=line.slice(6).trim();if(line.startsWith("data:")){try{payload=JSON.parse(line.slice(5).trim())}catch{}}}if(event==="delta"&&payload?.delta){streamed+=payload.delta;assistant.textContent=streamed;$("content").scrollTop=$("content").scrollHeight}else if(event==="message"&&payload?.text&&!streamed){assistant.textContent=payload.text}else if(event==="error"){throw new Error(payload?.error||text.error)}else if(event==="done"){status.textContent=payload?.status||""}}}
-      if(!assistant.textContent)assistant.textContent="—";if(status.textContent===text.thinking)status.textContent="";
-    }catch(error){assistant.textContent=error?.message||text.error;assistant.classList.add("error");status.textContent="";if(error?.code==="gpt_offline")void checkStatus();}
-    finally{state.busy=false;$("sendButton").disabled=false;$("composer").focus();}
-  }
-
-  $("retry").addEventListener("click",checkStatus);$("startLogin").addEventListener("click",startLogin);$("newChat").addEventListener("click",()=>{state.threadId="";$("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden")});
-  $("modelSelect").addEventListener("change",syncEfforts);$("sendButton").addEventListener("click",send);$("composer").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void send()}});$("composer").addEventListener("input",e=>{e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,180)+"px"});
-  void checkStatus();state.statusTimer=setInterval(checkStatus,5000);
+  const state={config:null,conversationId:"",busy:false};
+  async function req(path,opt={}){const r=await fetch("/api/ai"+path,{...opt,credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json",...(opt.headers||{})}});const type=r.headers.get("content-type")||"";const d=type.includes("application/json")?await r.json():null;if(r.status===401){location.reload();throw new Error("Authentication required");}if(!r.ok)throw new Error(d?.error||("HTTP "+r.status));return d}
+  function setStatus(ok,label){$("sideDot").className="dot "+(ok?"online":"offline");$("sideStatus").textContent=label;$("accountLabel").textContent=label}
+  function gate(title,message){$("gate").classList.remove("hidden");$("messages").classList.add("hidden");$("composerWrap").classList.add("hidden");$("gateTitle").textContent=title;$("gateText").textContent=message;$("startLogin").classList.add("hidden");$("devicePanel").classList.add("hidden")}
+  function showChat(){$("gate").classList.add("hidden");$("messages").classList.remove("hidden");$("composerWrap").classList.remove("hidden")}
+  async function checkStatus(){try{const cfg=await req("/config");state.config=cfg;setStatus(true,text.online);$("accountLabel").textContent=cfg.provider?.name||text.online;const select=$("modelSelect");select.textContent="";for(const model of cfg.models||[]){const o=document.createElement("option");o.value=model;o.textContent=model;if(model===cfg.default_model)o.selected=true;select.appendChild(o)}select.disabled=false;$("effortSelect").classList.add("hidden");showChat();return true}catch(e){setStatus(false,text.offline);gate(text.signedOut,e.message||text.connectHint);return false}}
+  function append(role,content){$("emptyState").classList.add("hidden");const root=document.createElement("div");root.className="msg "+role;const bubble=document.createElement("div");bubble.className="bubble";bubble.textContent=content;root.appendChild(bubble);$("messages").appendChild(root);$("content").scrollTop=$("content").scrollHeight;return bubble}
+  async function send(){const message=$("composer").value.trim();if(!message||state.busy)return;state.busy=true;$("sendButton").disabled=true;$("composer").value="";append("user",message);const assistant=append("assistant",""),status=document.createElement("div");status.className="status";status.textContent=text.thinking;assistant.parentElement.appendChild(status);
+    try{const r=await fetch("/api/ai/chat",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"text/event-stream"},body:JSON.stringify({conversation_id:state.conversationId||null,message,model:$("modelSelect").value})});if(r.status===401){location.reload();return}if(!r.ok||!r.body){const d=await r.json().catch(()=>null);throw new Error(d?.error||("HTTP "+r.status))}const reader=r.body.getReader(),decoder=new TextDecoder();let buffer="",streamed="";while(true){const x=await reader.read();if(x.done)break;buffer+=decoder.decode(x.value,{stream:true});let i;while((i=buffer.indexOf("\\n\\n"))>=0){const block=buffer.slice(0,i);buffer=buffer.slice(i+2);let event="message",payload=null;for(const line of block.split("\\n")){if(line.startsWith("event:"))event=line.slice(6).trim();if(line.startsWith("data:"))try{payload=JSON.parse(line.slice(5).trim())}catch{}}if(event==="meta"&&payload?.conversation_id)state.conversationId=payload.conversation_id;if(event==="delta"&&payload?.delta){streamed+=payload.delta;assistant.textContent=streamed;$("content").scrollTop=$("content").scrollHeight}if(event==="done")status.textContent="";if(event==="error")throw new Error(payload?.error||text.error)}}}if(!assistant.textContent)assistant.textContent="—"}catch(e){assistant.textContent=e.message||text.error;assistant.classList.add("error");status.textContent=""}finally{state.busy=false;$("sendButton").disabled=false;$("composer").focus()}}
+  $("retry").addEventListener("click",checkStatus);$("newChat").addEventListener("click",()=>{state.conversationId="";$("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden")});$("sendButton").addEventListener("click",send);$("composer").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void send()}});$("composer").addEventListener("input",e=>{e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,180)+"px"});void checkStatus();
 })();
 </script>
 </body></html>`;
