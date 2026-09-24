@@ -22,6 +22,9 @@ create table if not exists public.ai_user_provider_access (
 create index if not exists ai_user_provider_access_provider_idx
   on public.ai_user_provider_access(provider_id, user_id);
 
+create index if not exists ai_user_provider_access_updated_by_idx
+  on public.ai_user_provider_access(updated_by);
+
 alter table public.ai_user_provider_access enable row level security;
 
 grant select, insert, update, delete on public.ai_user_provider_access to authenticated;
@@ -33,11 +36,25 @@ for select to authenticated
 using ((select auth.uid()) = user_id or public.is_admin());
 
 drop policy if exists "ai user provider admin write" on public.ai_user_provider_access;
-create policy "ai user provider admin write"
+
+drop policy if exists "ai user provider admin insert" on public.ai_user_provider_access;
+create policy "ai user provider admin insert"
 on public.ai_user_provider_access
-for all to authenticated
+for insert to authenticated
+with check (public.is_admin());
+
+drop policy if exists "ai user provider admin update" on public.ai_user_provider_access;
+create policy "ai user provider admin update"
+on public.ai_user_provider_access
+for update to authenticated
 using (public.is_admin())
 with check (public.is_admin());
+
+drop policy if exists "ai user provider admin delete" on public.ai_user_provider_access;
+create policy "ai user provider admin delete"
+on public.ai_user_provider_access
+for delete to authenticated
+using (public.is_admin());
 
 insert into public.ai_user_provider_access (
   user_id, provider_id, enabled, allowed_models, updated_by, updated_at
