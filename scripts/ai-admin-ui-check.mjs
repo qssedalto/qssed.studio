@@ -14,7 +14,7 @@ for (const locale of ["zh-cn","en"]) {
     'userProviderAccessSelections',
     'provider_access:providerAccess',
     'error?.code==="RATE_LIMITED"',
-    'upstreamStatus',
+    'Retry-After',
     '.hidden{display:none!important}'
   ]) {
     if (!html.includes(required)) throw new Error(`AI admin ${locale} missing multi-provider invariant: ${required}`);
