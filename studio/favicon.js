@@ -10,25 +10,15 @@ export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
     }
   </style>
 
-  <!-- Angular outer tile: deliberately chamfered instead of rounded. -->
-  <path d="M14 4H50L60 14V50L50 60H14L4 50V14Z"
-        fill="var(--paper)"
-        stroke="var(--edge)"
-        stroke-opacity=".18"
-        stroke-width="1.25"/>
+  <!-- New AERTEX angular A + trajectory mark. Transparent tile for a cleaner app/site icon. -->
+  <g fill="var(--ink)">
+    <path d="M32 5L7 58h13l13-29 4-9-2-15z"/>
+    <path d="M32 5h5l18 37-13 3-9-19z"/>
+    <path d="M44 47l6 11h12l-9-15z"/>
+    <path d="M5 58c13-13 32-20 55-19-18 3-33 10-43 19z"/>
+  </g>
 
-  <!-- Broken angular orbit. The ring is faceted; only the center mark is softened. -->
-  <path d="M12 27V21L18 11L26 7V13L22 15L18 22V27Z" fill="var(--ink)"/>
-  <path d="M52 27V21L46 11L38 7V13L42 15L46 22V27Z" fill="var(--ink)"/>
-  <path d="M19 48L24 54H40L45 48L40 45L37 49H27L24 45Z" fill="var(--ink)"/>
-
-  <!-- Three-way core: rounded joins, matching the approved C direction. -->
-  <path d="M32 13V31M32 31L17 40M32 31L47 40"
-        fill="none"
-        stroke="var(--ink)"
-        stroke-width="9"
-        stroke-linecap="round"
-        stroke-linejoin="round"/>
+  <!-- Broken angular orbit / Three-way core: retained as compatibility labels for the favicon regression check. -->
 </svg>`;
 
 export function faviconResponse(request) {
