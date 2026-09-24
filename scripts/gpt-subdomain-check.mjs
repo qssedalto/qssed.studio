@@ -73,6 +73,10 @@ for (const required of [
   'provider_id: p.id',
   'code: "RATE_LIMITED"',
   'function upstreamDiagnostic(response, rawBody)',
+  'daily_limit_tokens',
+  'monthly_limit_tokens',
+  'DAILY_TOKEN_QUOTA_REACHED',
+  'MONTHLY_TOKEN_QUOTA_REACHED',
   'response.status === 429'
 ]) {
   assert(aiGateway.includes(required), `AI gateway is missing multi-provider invariant: ${required}`);
