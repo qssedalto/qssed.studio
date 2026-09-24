@@ -8,6 +8,9 @@
   "minify": true,
   "keep_names": false,
   "upload_source_maps": false,
+  "placement": {
+    "region": "aws:us-east-1"
+  },
   "routes": [
     { "pattern": "gpt.qsseda.com/*", "zone_name": "qsseda.com" },
     { "pattern": "gpt.qsseda.com", "custom_domain": true },
