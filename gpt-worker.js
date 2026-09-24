@@ -9,7 +9,7 @@ import { renderAiAdmin } from "./studio/ai-admin-ui.js";
 import { gptOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
-import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./studio/account-menu.js";
+import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
 
 
@@ -97,7 +97,8 @@ export default {
         : response;
     }
 
-    return text("Not found", 404);
+    const notFoundLocale = preferredLocale(request);
+    return html(`<!doctype html><html lang="${notFoundLocale === "en" ? "en" : "zh-CN"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>404 · AERTEX Intelligence</title><style>html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#101010;color:#f4f4f4}main{min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center}h1{font-size:64px;margin:0 0 8px}p{color:#999}a{color:inherit}</style></head><body><main><div><h1>404</h1><p>${notFoundLocale === "en" ? "Intelligence page not found." : "找不到这个 Intelligence 页面。"}</p><a href="/${notFoundLocale === "en" ? "en" : "zh-cn"}">${notFoundLocale === "en" ? "Back to Intelligence" : "返回 Intelligence"}</a></div></main></body></html>`, 404);
   }
 };
 
@@ -392,7 +393,10 @@ function securityHeaders(contentType) {
 }
 
 function html(markup, status = 200) {
-  return new Response(injectBrandLogoRuntime(markup), { status, headers: securityHeaders("text/html;charset=UTF-8") });
+  return new Response(
+    injectBrandLogoRuntime(injectAccountMenuRuntime(markup)),
+    { status, headers: securityHeaders("text/html;charset=UTF-8") }
+  );
 }
 
 function json(data, status = 200) {
