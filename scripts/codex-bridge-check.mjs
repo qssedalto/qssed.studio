@@ -65,9 +65,13 @@ for (const markup of [zh, en]) {
   assert(!markup.includes("access_token"), "AERTEX Intelligence UI must never handle provider access tokens");
 }
 
-const scripts = [...zh.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
-assert(scripts.length === 1, "AERTEX Intelligence UI should contain one application script");
-for (const script of scripts) new Function(script);
+for (const [locale, markup] of [["zh-cn", zh], ["en", en]]) {
+  const scripts = [...markup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+  assert(scripts.length >= 2, "AERTEX Intelligence UI should contain application and account-menu scripts: " + locale);
+  for (const script of scripts) new Function(script);
+  assert(scripts.some(script => script.includes('fetch("/api/ai/chat"')), "AERTEX Intelligence application script is missing: " + locale);
+  assert(scripts.some(script => script.includes('getElementById("aertex-account-root")')), "AERTEX Intelligence account-menu script is missing: " + locale);
+}
 
 assert(worker.includes("handleAiApi"), "AERTEX Intelligence Worker must route through the cloud AI gateway");
 assert(worker.includes("verifyStudioPageSession(request)"), "GPT API must remain behind AERTEX authentication");
