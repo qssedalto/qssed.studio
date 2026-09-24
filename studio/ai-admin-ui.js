@@ -132,11 +132,11 @@ function invalidateProjectKey(){
 }
 
 function renderModelsDialog(){
-  $("modelsDialogBody").innerHTML=availableProjectModels.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(selectedProviderModels.includes(model)?"checked":"")+"><span>'+esc(model)+'</span></label>').join("");
+  $("modelsDialogBody").innerHTML=availableProjectModels.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(selectedProviderModels.includes(model)?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
 }
 
 function renderDefaultDialog(){
-  $("defaultDialogBody").innerHTML=selectedProviderModels.map(model=>'<label class="choice"><input type="radio" name="defaultModelChoice" value="'+esc(model)+'" '+(selectedDefaultModel===model?"checked":"")+"><span>'+esc(model)+'</span></label>').join("");
+  $("defaultDialogBody").innerHTML=selectedProviderModels.map(model=>'<label class="choice"><input type="radio" name="defaultModelChoice" value="'+esc(model)+'" '+(selectedDefaultModel===model?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
 }
 
 $("key").addEventListener("input",invalidateProjectKey);
@@ -233,7 +233,7 @@ function openUserModelsDialog(userId){
   }
   const selected=userModelSelections.get(userId)||[];
   activeUserModelPicker={userId,available:[...available]};
-  $("userModelsDialogBody").innerHTML=available.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(selected.includes(model)?"checked":"")+"><span>'+esc(model)+'</span></label>').join("");
+  $("userModelsDialogBody").innerHTML=available.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(selected.includes(model)?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
   $("userModelsDialog").showModal();
 }
 
