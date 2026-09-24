@@ -500,7 +500,7 @@ function authPage(pathname, request) {
 </head>
 <body data-page="${page}">
   <main class="shell">
-    <div class="brand"><img class="mark" src="/favicon.svg" alt="" aria-hidden="true"><div class="brand-copy"><strong>AERTEX ID</strong><span>AERTEX Account</span></div></div>
+    <div class="brand"><img class="mark" src="/favicon.svg?v=aertex-20260924-2" alt="" aria-hidden="true"><div class="brand-copy"><strong>AERTEX ID</strong><span>AERTEX Account</span></div></div>
     <section class="card">
       <div id="loading" class="loading"><span class="spinner"></span><span>${copy.checking}</span></div>
       <div id="signedOut" class="hidden">
