@@ -183,22 +183,6 @@ export async function verifyStorageUser(request, env) {
   return { user, isAdmin, secret };
 }
 
-async function readBucketUsage(env) {
-  let cursor;
-  let bytes = 0;
-  let objects = 0;
-  do {
-    const page = await env.STORAGE.list({ cursor, limit: 1000 });
-    for (const object of page.objects) {
-      bytes += Number(object.size) || 0;
-      objects += 1;
-    }
-    cursor = page.cursor;
-    if (!page.truncated || !cursor) break;
-  } while (cursor);
-  return { bytes, objects };
-}
-
 export async function handleStorageFiles(request, env) {
   const auth = await verifyStorageUser(request, env);
   if (auth.error) return auth.error;
@@ -260,25 +244,19 @@ export async function handleStorageFiles(request, env) {
     }
   }
 
-  let bucketUsage;
-  try {
-    bucketUsage = await readBucketUsage(env);
-  } catch (error) {
-    workerLog("warn", "storage.bucket_usage.failed", { message: String(error?.message || error) });
-    bucketUsage = { bytes: files.reduce((total, file) => total + file.size, 0), objects: files.length };
-  }
+  const visibleUsedBytes = files.reduce((total, file) => total + file.size, 0);
 
   files.sort((a, b) => String(b.uploadedAt || "").localeCompare(String(a.uploadedAt || "")));
   return json({
     connected: true,
     scope: auth.isAdmin ? "all" : "own",
+    usage_scope: auth.isAdmin ? "all-user-files" : "own-user-files",
     is_admin: auth.isAdmin,
     account_is_admin: auth.isAdmin,
     files,
     file_count: files.length,
-    visible_used_bytes: files.reduce((total, file) => total + file.size, 0),
-    used_bytes: bucketUsage.bytes,
-    bucket_object_count: bucketUsage.objects,
+    visible_used_bytes: visibleUsedBytes,
+    used_bytes: visibleUsedBytes,
     partial
   });
 }
