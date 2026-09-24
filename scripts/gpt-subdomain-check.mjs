@@ -18,7 +18,7 @@ for (const required of [
   'gptSessionRedirect(request, pathname)',
   'pathname === "/auth/handoff"',
   'pathname.startsWith("/api/ai/")',
-  'renderAiAdmin(locale)',
+  'renderAiAdmin(locale, { state: adminState })',
   'handleAuthHandoff(request, env, locale)'
 ]) {
   assert(gpt.includes(required), `GPT worker is missing authenticated routing invariant: ${required}`);
@@ -55,6 +55,10 @@ for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online"
   assert(gptWrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
 }
 assert(!gpt.includes("canonicalGptAlias"), "GPT .online/.studio hosts must stay on their own domains");
+assert(gpt.includes('conversationRoute = pathname.match'), "GPT Worker must support per-conversation routes.");
+assert(gpt.includes('loadGptBootstrap(request, env, gate, conversationId)'), "GPT Worker must bootstrap Intelligence data before first paint.");
+assert(gpt.includes('pathname.match(/^\\/share\\/'), "GPT Worker must expose explicit read-only share routes.");
+assert(gpt.includes("get_shared_ai_conversation"), "GPT Worker must load explicitly shared conversations through the public RPC.");
 
 assert(gpt.includes("handleAiApi(request, env, gate)"), "GPT Worker must proxy authenticated AI API calls.");
 assert(gpt.includes("renderAdminDenied(locale, identity)"), "GPT Worker must render a dedicated non-admin denial page with verified identity context.");
@@ -77,7 +81,10 @@ for (const required of [
   'monthly_limit_tokens',
   'DAILY_TOKEN_QUOTA_REACHED',
   'MONTHLY_TOKEN_QUOTA_REACHED',
-  'response.status === 429'
+  'response.status === 429',
+  '/api/ai/conversations',
+  'share_token',
+  'Conversation not found.'
 ]) {
   assert(aiGateway.includes(required), `AI gateway is missing multi-provider invariant: ${required}`);
 }

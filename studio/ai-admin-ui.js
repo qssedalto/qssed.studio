@@ -1,6 +1,8 @@
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
-export function renderAiAdmin(locale) {
+export function renderAiAdmin(locale, bootstrap = {}) {
   const zh = locale === "zh-cn";
+  const bootstrapStateJson = JSON.stringify(bootstrap?.state || { providers: [], users: [] }).replace(/</g, "\\u003c");
+  const hasBootstrapState = Boolean(bootstrap?.state);
   const t = zh ? {
     title:"Intelligence 管理", intro:"集中管理 AI Provider、凭据、用户权限与配额",
     add:"添加 AI Provider", name:"名称", type:"Provider 类型", chooseProvider:"请选择 Provider", typeOpenAI:"OpenAI", typeZhipu:"智谱 GLM", typeBailian:"阿里云百炼", key:"API Key", adminKey:"OpenAI Admin Key（可选，仅账单）",
@@ -12,7 +14,7 @@ export function renderAiAdmin(locale) {
     monthly:"月费用上限 $", dailyTokens:"日 Token 上限", monthlyTokens:"月 Token 上限", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
     official:"官方本月费用", local:"AERTEX 本地估算", remaining:"预算剩余", requests:"本月请求", compatibleApi:"兼容 API",
     billingOn:"官方账单已连接", billingOff:"未配置 Admin Key", saved:"已保存", projectValidated:"Project Key 验证通过",
-    noProvider:"请至少为用户选择一个 Provider", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户 Provider 与模型", selectedModels:"已选择", modelsUnit:"个模型", providersUnit:"个 Provider", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型", noAllowedModels:"请先选择允许模型", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 API Key", noModelsForKey:"这个 API Key 没有返回可用于对话的模型", accessSaving:"保存中…", accessSaved:"已保存 ✓", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key", regionUnsupported:"当前网络或服务区域暂不支持 OpenAI API 检查这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能", rateLimited:"已确认上游 Provider 限流：AERTEX 收到真实 HTTP 429这个结果不能判定 Key 无效", authInvalid:"上游 Provider 明确拒绝了 API Key 身份验证", quotaExhausted:"上游 Provider 报告当前账户额度不足", permissionDenied:"上游 Provider 拒绝当前账户或模型的访问权限", providerOverloaded:"上游 Provider 当前过载，请稍后重试", retryAfter:"建议等待", seconds:"秒后重试", requestId:"请求 ID", providerCode:"Provider 错误码", checkedAt:"检查时间", noRetryHeader:"上游未返回 Retry-After；AERTEX 不会自动连续重试", retryCountdown:"后重试", upstreamStatus:"上游状态"
+    noProvider:"请至少为用户选择一个 Provider", chooseProviders:"选择 Provider", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户模型", selectedModels:"已选择", modelsUnit:"个模型", providersUnit:"个 Provider", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型", noAllowedModels:"请先选择允许模型", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 API Key", noModelsForKey:"这个 API Key 没有返回可用于对话的模型", accessSaving:"保存中…", accessSaved:"已保存 ✓", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key", regionUnsupported:"当前网络或服务区域暂不支持 OpenAI API 检查这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能", rateLimited:"已确认上游 Provider 限流：AERTEX 收到真实 HTTP 429这个结果不能判定 Key 无效", authInvalid:"上游 Provider 明确拒绝了 API Key 身份验证", quotaExhausted:"上游 Provider 报告当前账户额度不足", permissionDenied:"上游 Provider 拒绝当前账户或模型的访问权限", providerOverloaded:"上游 Provider 当前过载，请稍后重试", retryAfter:"建议等待", seconds:"秒后重试", requestId:"请求 ID", providerCode:"Provider 错误码", checkedAt:"检查时间", noRetryHeader:"上游未返回 Retry-After；AERTEX 不会自动连续重试", retryCountdown:"后重试", upstreamStatus:"上游状态"
   } : {
     title:"Intelligence Admin", intro:"Manage AI providers, credentials, user access, and quotas.",
     add:"Add AI Provider", name:"Name", type:"Provider type", chooseProvider:"Choose a Provider", typeOpenAI:"OpenAI", typeZhipu:"Zhipu GLM", typeBailian:"Alibaba Cloud Bailian", key:"API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
@@ -24,7 +26,7 @@ export function renderAiAdmin(locale) {
     monthly:"Monthly cost limit $", dailyTokens:"Daily token limit", monthlyTokens:"Monthly token limit", rpm:"RPM", apply:"Save access", empty:"No provider configured",
     official:"Official month cost", local:"AERTEX local estimate", remaining:"Budget remaining", requests:"Requests this month", compatibleApi:"Compatible API",
     billingOn:"Official billing connected", billingOff:"No Admin Key", saved:"Saved", projectValidated:"Project Key validated",
-    noProvider:"Select at least one provider for this user.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user providers and models", selectedModels:"Selected", modelsUnit:"models", providersUnit:"providers", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the API Key first.", noModelsForKey:"This API Key returned no chat-capable models.", accessSaving:"Saving…", accessSaved:"Saved ✓", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key", regionUnsupported:"OpenAI API checks are unavailable from the current network or service region. This does not mean the key is invalid. Use OpenAI-connected features only from an officially supported country or territory.", rateLimited:"Confirmed upstream provider rate limit: AERTEX received a real HTTP 429. This does not mean the API key is invalid.", authInvalid:"The upstream provider explicitly rejected API-key authentication.", quotaExhausted:"The upstream provider reports insufficient account quota.", permissionDenied:"The upstream provider denied access for this account or model.", providerOverloaded:"The upstream provider is temporarily overloaded. Try again later.", retryAfter:"Retry after", seconds:"seconds", requestId:"Request ID", providerCode:"Provider error code", checkedAt:"Checked at", noRetryHeader:"The upstream provider did not return Retry-After; AERTEX will not auto-retry repeatedly.", retryCountdown:"retry", upstreamStatus:"Upstream status"
+    noProvider:"Select at least one provider for this user.", chooseProviders:"Choose providers", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", providersUnit:"providers", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the API Key first.", noModelsForKey:"This API Key returned no chat-capable models.", accessSaving:"Saving…", accessSaved:"Saved ✓", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key", regionUnsupported:"OpenAI API checks are unavailable from the current network or service region. This does not mean the key is invalid. Use OpenAI-connected features only from an officially supported country or territory.", rateLimited:"Confirmed upstream provider rate limit: AERTEX received a real HTTP 429. This does not mean the API key is invalid.", authInvalid:"The upstream provider explicitly rejected API-key authentication.", quotaExhausted:"The upstream provider reports insufficient account quota.", permissionDenied:"The upstream provider denied access for this account or model.", providerOverloaded:"The upstream provider is temporarily overloaded. Try again later.", retryAfter:"Retry after", seconds:"seconds", requestId:"Request ID", providerCode:"Provider error code", checkedAt:"Checked at", noRetryHeader:"The upstream provider did not return Retry-After; AERTEX will not auto-retry repeatedly.", retryCountdown:"retry", upstreamStatus:"Upstream status"
   };
 
   return `<!doctype html>
@@ -95,6 +97,12 @@ dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;
   <div class="dialogFoot"><button type="button" class="secondaryBtn" id="defaultCancel">${t.cancel}</button><button type="button" class="primary" id="defaultDone">${t.done}</button></div>
 </dialog>
 
+<dialog id="userProvidersDialog">
+  <div class="dialogHead"><strong>${t.chooseProviders}</strong></div>
+  <div class="dialogBody" id="userProvidersDialogBody"></div>
+  <div class="dialogFoot"><button type="button" class="secondaryBtn" id="userProvidersCancel">${t.cancel}</button><button type="button" class="primary" id="userProvidersDone">${t.done}</button></div>
+</dialog>
+
 <dialog id="userModelsDialog">
   <div class="dialogHead"><strong>${t.chooseUserModels}</strong></div>
   <div class="dialogBody" id="userModelsDialogBody"></div>
@@ -135,12 +143,14 @@ dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;
 
 <script>
 const $=id=>document.getElementById(id);
-let state={providers:[],users:[]};
+let state=${bootstrapStateJson};
+const hasBootstrapState=${hasBootstrapState ? "true" : "false"};
 let availableProjectModels=[];
 let selectedProviderModels=[];
 let selectedDefaultModel="";
 let projectKeyValidated=false;
 const userProviderAccessSelections=new Map();
+let activeUserProviderPicker=null;
 let activeUserModelPicker=null;
 let editingProvider=null;
 let editAvailableModels=[];
@@ -348,44 +358,73 @@ function normalizedUserAccess(user){
     return {provider_id:provider.id,allowed_models:selected.length?selected:[...available]};
   }).filter(Boolean);
 }
+function openUserProvidersDialog(userId){
+  const row=document.querySelector('.user[data-user="'+CSS.escape(userId)+'"]');
+  if(!row)return;
+  const current=userProviderAccessSelections.get(userId)||[];
+  const selectedIds=new Set(current.map(item=>item.provider_id));
+  const providers=(state.providers||[]).filter(provider=>provider.is_active!==false);
+  activeUserProviderPicker={userId};
+  $("userProvidersDialogBody").innerHTML=providers.map(provider=>{
+    const providerTypeLabel=provider.provider==="zhipu"?"${t.typeZhipu}":provider.provider==="bailian"?"${t.typeBailian}":"${t.typeOpenAI}";
+    return '<label class="choice"><input class="userProviderOnly" type="checkbox" value="'+esc(provider.id)+'" '+(selectedIds.has(provider.id)?"checked":"")+'><span><strong>'+esc(provider.name)+'</strong> · '+providerTypeLabel+'</span></label>';
+  }).join("");
+  $("userProvidersDialog").showModal();
+}
+$("userProvidersCancel").onclick=()=>{activeUserProviderPicker=null;$("userProvidersDialog").close();};
+$("userProvidersDone").onclick=()=>{
+  if(!activeUserProviderPicker)return;
+  const userId=activeUserProviderPicker.userId;
+  const current=userProviderAccessSelections.get(userId)||[];
+  const currentById=new Map(current.map(item=>[item.provider_id,item]));
+  const selectedIds=[...$("userProvidersDialogBody").querySelectorAll(".userProviderOnly:checked")].map(input=>input.value);
+  const access=selectedIds.map(providerId=>{
+    const provider=(state.providers||[]).find(item=>item.id===providerId);
+    const existing=currentById.get(providerId);
+    const available=Array.isArray(provider?.allowed_models)?provider.allowed_models:[];
+    const selected=(existing?.allowed_models||[]).filter(model=>available.includes(model));
+    return {provider_id:providerId,allowed_models:selected.length?selected:[...available]};
+  });
+  userProviderAccessSelections.set(userId,access);
+  const row=document.querySelector('.user[data-user="'+CSS.escape(userId)+'"]');
+  if(row){
+    row.querySelector(".userProvidersValue").textContent=userProvidersSummary(access);
+    row.querySelector(".userModelsValue").textContent=userModelsSummary(access);
+  }
+  activeUserProviderPicker=null;
+  $("userProvidersDialog").close();
+};
+
 function openUserModelsDialog(userId){
   const row=document.querySelector('.user[data-user="'+CSS.escape(userId)+'"]');
   if(!row)return;
   const current=userProviderAccessSelections.get(userId)||[];
-  const selectedByProvider=new Map(current.map(item=>[item.provider_id,item.allowed_models||[]]));
-  const providers=(state.providers||[]).filter(provider=>provider.is_active!==false);
-  if(!providers.length){
+  if(!current.length){
     $("msg").textContent="${t.noProvider}";
     $("msg").className="status bad";
     return;
   }
   activeUserModelPicker={userId};
-  $("userModelsDialogBody").innerHTML=providers.map(provider=>{
-    const checked=selectedByProvider.has(provider.id);
-    const selected=selectedByProvider.get(provider.id)||[];
+  $("userModelsDialogBody").innerHTML=current.map(item=>{
+    const provider=(state.providers||[]).find(value=>value.id===item.provider_id);
+    if(!provider)return "";
+    const selected=item.allowed_models||[];
     const models=provider.allowed_models||[];
-    const providerTypeLabel=provider.provider==="zhipu"?"${t.typeZhipu}":provider.provider==="bailian"?"${t.typeBailian}":"${t.typeOpenAI}";
     return '<div class="providerCard userProviderGroup" data-provider="'+esc(provider.id)+'">'
-      +'<label class="choice"><input class="userProviderToggle" type="checkbox" value="'+esc(provider.id)+'" '+(checked?"checked":"")+'><span><strong>'+esc(provider.name)+'</strong> · '+providerTypeLabel+'</span></label>'
-      +'<div class="dialogBody providerModelChoices">'
-      +models.map(model=>'<label class="choice"><input class="userProviderModel" data-provider="'+esc(provider.id)+'" type="checkbox" value="'+esc(model)+'" '+(selected.includes(model)?"checked":"")+' '+(checked?"":"disabled")+'><span>'+esc(model)+'</span></label>').join("")
+      +'<div class="providerName">'+esc(provider.name)+'</div>'
+      +'<div class="providerModelChoices">'
+      +models.map(model=>'<label class="choice"><input class="userProviderModel" data-provider="'+esc(provider.id)+'" type="checkbox" value="'+esc(model)+'" '+(selected.includes(model)?"checked":"")+'><span>'+esc(model)+'</span></label>').join("")
       +'</div></div>';
   }).join("");
-  $("userModelsDialogBody").querySelectorAll(".userProviderToggle").forEach(toggle=>toggle.onchange=event=>{
-    const group=event.currentTarget.closest(".userProviderGroup");
-    const modelInputs=[...group.querySelectorAll(".userProviderModel")];
-    modelInputs.forEach(input=>input.disabled=!event.currentTarget.checked);
-    if(event.currentTarget.checked&&!modelInputs.some(input=>input.checked)&&modelInputs[0])modelInputs[0].checked=true;
-  });
   $("userModelsDialog").showModal();
 }
 $("userModelsCancel").onclick=()=>{activeUserModelPicker=null;$("userModelsDialog").close();};
 $("userModelsDone").onclick=()=>{
   if(!activeUserModelPicker)return;
+  const userId=activeUserModelPicker.userId;
   const access=[];
-  for(const toggle of $("userModelsDialogBody").querySelectorAll(".userProviderToggle:checked")){
-    const providerId=toggle.value;
-    const group=toggle.closest(".userProviderGroup");
+  for(const group of $("userModelsDialogBody").querySelectorAll(".userProviderGroup")){
+    const providerId=group.dataset.provider;
     const values=[...group.querySelectorAll(".userProviderModel:checked")].map(input=>input.value);
     if(!values.length){
       $("msg").textContent="${t.selectAtLeastOne}";
@@ -394,8 +433,8 @@ $("userModelsDone").onclick=()=>{
     }
     access.push({provider_id:providerId,allowed_models:values});
   }
-  userProviderAccessSelections.set(activeUserModelPicker.userId,access);
-  const row=document.querySelector('.user[data-user="'+CSS.escape(activeUserModelPicker.userId)+'"]');
+  userProviderAccessSelections.set(userId,access);
+  const row=document.querySelector('.user[data-user="'+CSS.escape(userId)+'"]');
   if(row){
     row.querySelector(".userProvidersValue").textContent=userProvidersSummary(access);
     row.querySelector(".userModelsValue").textContent=userModelsSummary(access);
@@ -580,7 +619,11 @@ function render(){
   document.querySelectorAll(".editProvider").forEach(button=>button.onclick=()=>openEditProvider(button.dataset.provider));
   document.querySelectorAll(".deleteProvider").forEach(button=>button.onclick=()=>deleteProvider(button.dataset.provider));
   document.querySelectorAll(".access").forEach(button=>button.onclick=saveAccess);
-  document.querySelectorAll(".userModelsPicker,.userProvidersPicker").forEach(button=>button.onclick=event=>{
+  document.querySelectorAll(".userProvidersPicker").forEach(button=>button.onclick=event=>{
+    const row=event.currentTarget.closest(".user");
+    openUserProvidersDialog(row.dataset.user);
+  });
+  document.querySelectorAll(".userModelsPicker").forEach(button=>button.onclick=event=>{
     const row=event.currentTarget.closest(".user");
     openUserModelsDialog(row.dataset.user);
   });
@@ -700,7 +743,13 @@ async function saveAccess(event){
 
 syncProviderType();
 updateProviderPickers();
-load();
+if(hasBootstrapState){
+  render();
+  $("refreshed").textContent=new Date().toLocaleTimeString();
+  window.setTimeout(()=>void load(),1200);
+}else{
+  void load();
+}
 setInterval(load,60000);
 </script>
 ${accountMenuClientScript({ locale: zh ? "zh-cn" : "en" })}

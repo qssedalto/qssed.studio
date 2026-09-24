@@ -82,7 +82,10 @@ function canonicalGptPath(path, locale) {
   const normalizedLocale = locale === "en" ? "en" : "zh-cn";
   const candidate = safeGptPath(path);
   const admin = candidate === "/admin" || candidate === "/en/admin" || candidate === "/zh-cn/admin";
-  return admin ? `/${normalizedLocale}/admin` : `/${normalizedLocale}`;
+  if (admin) return `/${normalizedLocale}/admin`;
+  const conversation = candidate.match(/^\/(?:zh-cn|en)\/c\/([0-9a-f-]{36})$/i);
+  if (conversation) return `/${normalizedLocale}/c/${conversation[1]}`;
+  return `/${normalizedLocale}`;
 }
 
 function requestCookie(request, name) {

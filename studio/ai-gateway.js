@@ -19,14 +19,112 @@ export async function handleAiApi(request, env, session) {
   const path = new URL(request.url).pathname;
   if (path === "/api/ai/config" && request.method === "GET") return userConfig(request, session);
   if (path === "/api/ai/conversations" && request.method === "GET") {
-    return rest(session, "/ai_conversations?select=id,title,model,created_at,updated_at&order=updated_at.desc&limit=50");
+    return rest(session, "/ai_conversations?user_id=eq." + encodeURIComponent(session.user.id) + "&select=id,title,model,provider_id,is_shared,share_token,created_at,updated_at&order=updated_at.desc&limit=100");
   }
+
+  const shareMatch = path.match(/^\/api\/ai\/conversations\/([0-9a-f-]{36})\/share$/i);
+  if (shareMatch) {
+    const conversationId = shareMatch[1];
+    if (request.method === "POST") {
+      if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+      const token = crypto.randomUUID();
+      const shared = await restData(
+        session,
+        "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id),
+        {
+          method: "PATCH",
+          headers: { Prefer: "return=representation" },
+          body: JSON.stringify({
+            is_shared: true,
+            share_token: token,
+            shared_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        }
+      );
+      if (!shared.ok) return json({ error: shared.data?.message || "Unable to share conversation." }, shared.status || 502);
+      if (!Array.isArray(shared.data) || !shared.data.length) return json({ error: "Conversation not found." }, 404);
+      return json({ ok: true, conversation: shared.data[0], share_token: token, share_path: "/share/" + token });
+    }
+    if (request.method === "DELETE") {
+      if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+      const unshared = await restData(
+        session,
+        "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id),
+        {
+          method: "PATCH",
+          headers: { Prefer: "return=representation" },
+          body: JSON.stringify({
+            is_shared: false,
+            share_token: null,
+            shared_at: null,
+            updated_at: new Date().toISOString()
+          })
+        }
+      );
+      if (!unshared.ok) return json({ error: unshared.data?.message || "Unable to stop sharing conversation." }, unshared.status || 502);
+      if (!Array.isArray(unshared.data) || !unshared.data.length) return json({ error: "Conversation not found." }, 404);
+      return json({ ok: true });
+    }
+  }
+
+  const conversationMatch = path.match(/^\/api\/ai\/conversations\/([0-9a-f-]{36})$/i);
+  if (conversationMatch) {
+    const conversationId = conversationMatch[1];
+    if (request.method === "GET") {
+      const conversation = await restData(
+        session,
+        "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) +
+        "&select=id,title,model,provider_id,is_shared,share_token,created_at,updated_at&limit=1"
+      );
+      const row = conversation.ok && Array.isArray(conversation.data) ? conversation.data[0] : null;
+      if (!row) return json({ error: "Conversation not found." }, 404);
+      const messages = await restData(
+        session,
+        "/ai_messages?conversation_id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) +
+        "&select=id,role,content,created_at&order=created_at.asc&limit=500"
+      );
+      if (!messages.ok) return json({ error: "Unable to load conversation messages." }, 502);
+      return json({ conversation: row, messages: Array.isArray(messages.data) ? messages.data : [] });
+    }
+    if (request.method === "PATCH") {
+      if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+      const b = await body(request);
+      const title = String(b.title || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
+      if (!title) return json({ error: "Conversation title is required." }, 400);
+      const updated = await restData(
+        session,
+        "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id),
+        {
+          method: "PATCH",
+          headers: { Prefer: "return=representation" },
+          body: JSON.stringify({ title, updated_at: new Date().toISOString() })
+        }
+      );
+      if (!updated.ok) return json({ error: updated.data?.message || "Unable to rename conversation." }, updated.status || 502);
+      if (!Array.isArray(updated.data) || !updated.data.length) return json({ error: "Conversation not found." }, 404);
+      return json({ ok: true, conversation: updated.data[0] });
+    }
+    if (request.method === "DELETE") {
+      if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+      const removed = await restData(
+        session,
+        "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id),
+        { method: "DELETE", headers: { Prefer: "return=representation" } }
+      );
+      if (!removed.ok) return json({ error: removed.data?.message || "Unable to delete conversation." }, removed.status || 502);
+      if (!Array.isArray(removed.data) || !removed.data.length) return json({ error: "Conversation not found." }, 404);
+      return json({ ok: true, deleted: conversationId });
+    }
+  }
+
   if (path === "/api/ai/chat" && request.method === "POST") return chat(request, env, session);
   return json({ error: "AI route not found." }, 404);
 }
 
 export async function handleAiAdminApi(request, env, session) {
-  const path = new URL(request.url).pathname;
+  const requestUrl = new URL(request.url);
+  const path = requestUrl.pathname;
   const admin = await rpc(session, "is_admin", {});
   if (!admin.ok || admin.data !== true) return json({ error: "Administrator access required." }, 403);
 
@@ -213,6 +311,7 @@ export async function handleAiAdminApi(request, env, session) {
     if (!state.ok) return json({ error: "Unable to load AI administration." }, 502);
 
     const result = state.data || { providers: [], users: [] };
+    const fast = requestUrl.searchParams.get("fast") === "1";
     if (env.AI_CREDENTIAL_KEY && Array.isArray(result.providers) && result.providers.length) {
       const secretRows = await restData(
         session,
@@ -224,7 +323,7 @@ export async function handleAiAdminApi(request, env, session) {
         provider.admin_key_configured = provider.provider === "openai" && Boolean(row?.encrypted_admin_key && row?.admin_key_iv);
         provider.admin_key_hint = provider.provider === "openai" ? (row?.admin_key_hint || null) : null;
         provider.billing = { available: false, official_month_usd: null, error: null };
-        if (provider.provider !== "openai" || !provider.admin_key_configured) return;
+        if (provider.provider !== "openai" || !provider.admin_key_configured || fast) return;
         try {
           const adminKey = await decrypt(row.encrypted_admin_key, row.admin_key_iv, env.AI_CREDENTIAL_KEY);
           provider.billing = await readOpenAiMonthCosts(adminKey);
@@ -538,6 +637,16 @@ async function chat(request, env, session) {
   }
 
   let conversationId = uuid(b.conversation_id) ? b.conversation_id : null;
+  if (conversationId) {
+    const existingConversation = await restData(
+      session,
+      "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) + "&select=id&limit=1"
+    );
+    if (!existingConversation.ok) return json({ error: "Unable to verify conversation." }, 502);
+    if (!Array.isArray(existingConversation.data) || !existingConversation.data.length) {
+      return json({ error: "Conversation not found." }, 404);
+    }
+  }
   if (!conversationId) {
     const created = await restData(session, "/ai_conversations", {
       method: "POST",
@@ -555,7 +664,7 @@ async function chat(request, env, session) {
 
   const history = await restData(
     session,
-    "/ai_messages?conversation_id=eq." + conversationId + "&select=role,content&order=created_at.asc&limit=40"
+    "/ai_messages?conversation_id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) + "&select=role,content&order=created_at.asc&limit=40"
   );
   if (!history.ok) return json({ error: "Unable to load conversation." }, 502);
 
