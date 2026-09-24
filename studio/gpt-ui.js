@@ -99,8 +99,39 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   function showChat(){$("gate").classList.add("hidden");$("messages").classList.remove("hidden");$("composerWrap").classList.remove("hidden")}
   async function checkStatus(){try{const cfg=await req("/config");state.config=cfg;setStatus(true,text.online);$("accountLabel").textContent=cfg.provider?.name||text.online;const select=$("modelSelect");select.textContent="";for(const model of cfg.models||[]){const o=document.createElement("option");o.value=model;o.textContent=model;if(model===cfg.default_model)o.selected=true;select.appendChild(o)}select.disabled=false;$("effortSelect").classList.add("hidden");showChat();return true}catch(e){setStatus(false,text.offline);gate(text.signedOut,e.message||text.connectHint);return false}}
   function append(role,content){$("emptyState").classList.add("hidden");const root=document.createElement("div");root.className="msg "+role;const bubble=document.createElement("div");bubble.className="bubble";bubble.textContent=content;root.appendChild(bubble);$("messages").appendChild(root);$("content").scrollTop=$("content").scrollHeight;return bubble}
-  async function send(){const message=$("composer").value.trim();if(!message||state.busy)return;state.busy=true;$("sendButton").disabled=true;$("composer").value="";append("user",message);const assistant=append("assistant",""),status=document.createElement("div");status.className="status";status.textContent=text.thinking;assistant.parentElement.appendChild(status);
-    try{const r=await fetch("/api/ai/chat",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"text/event-stream"},body:JSON.stringify({conversation_id:state.conversationId||null,message,model:$("modelSelect").value})});if(r.status===401){location.reload();return}if(!r.ok||!r.body){const d=await r.json().catch(()=>null);throw new Error(d?.error||("HTTP "+r.status))}const reader=r.body.getReader(),decoder=new TextDecoder();let buffer="",streamed="";while(true){const x=await reader.read();if(x.done)break;buffer+=decoder.decode(x.value,{stream:true});let i;while((i=buffer.indexOf("\\n\\n"))>=0){const block=buffer.slice(0,i);buffer=buffer.slice(i+2);let event="message",payload=null;for(const line of block.split("\\n")){if(line.startsWith("event:"))event=line.slice(6).trim();if(line.startsWith("data:"))try{payload=JSON.parse(line.slice(5).trim())}catch{}}if(event==="meta"&&payload?.conversation_id)state.conversationId=payload.conversation_id;if(event==="delta"&&payload?.delta){streamed+=payload.delta;assistant.textContent=streamed;$("content").scrollTop=$("content").scrollHeight}if(event==="done")status.textContent="";if(event==="error")throw new Error(payload?.error||text.error)}}}if(!assistant.textContent)assistant.textContent="—"}catch(e){assistant.textContent=e.message||text.error;assistant.classList.add("error");status.textContent=""}finally{state.busy=false;$("sendButton").disabled=false;$("composer").focus()}}
+  async function send(){
+    const message=$("composer").value.trim(); if(!message||state.busy)return;
+    state.busy=true; $("sendButton").disabled=true; $("composer").value="";
+    append("user",message);
+    const assistant=append("assistant",""), status=document.createElement("div");
+    status.className="status"; status.textContent=text.thinking; assistant.parentElement.appendChild(status);
+    try {
+      const r=await fetch("/api/ai/chat",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"text/event-stream"},body:JSON.stringify({conversation_id:state.conversationId||null,message,model:$("modelSelect").value})});
+      if(r.status===401){location.reload();return}
+      if(!r.ok||!r.body){const d=await r.json().catch(()=>null);throw new Error(d?.error||("HTTP "+r.status))}
+      const reader=r.body.getReader(), decoder=new TextDecoder(); let buffer="",streamed="";
+      while(true){
+        const x=await reader.read(); if(x.done)break; buffer+=decoder.decode(x.value,{stream:true});
+        let i;
+        while((i=buffer.indexOf("\\n\\n"))>=0){
+          const block=buffer.slice(0,i); buffer=buffer.slice(i+2); let event="message",payload=null;
+          for(const line of block.split("\\n")){
+            if(line.startsWith("event:"))event=line.slice(6).trim();
+            if(line.startsWith("data:")){try{payload=JSON.parse(line.slice(5).trim())}catch{}}
+          }
+          if(event==="meta"&&payload?.conversation_id)state.conversationId=payload.conversation_id;
+          if(event==="delta"&&payload?.delta){streamed+=payload.delta;assistant.textContent=streamed;$("content").scrollTop=$("content").scrollHeight}
+          if(event==="done")status.textContent="";
+          if(event==="error")throw new Error(payload?.error||text.error);
+        }
+      }
+      if(!assistant.textContent)assistant.textContent="—";
+    } catch(e) {
+      assistant.textContent=e.message||text.error; assistant.classList.add("error"); status.textContent="";
+    } finally {
+      state.busy=false; $("sendButton").disabled=false; $("composer").focus();
+    }
+  }
   $("retry").addEventListener("click",checkStatus);$("newChat").addEventListener("click",()=>{state.conversationId="";$("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden")});$("sendButton").addEventListener("click",send);$("composer").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void send()}});$("composer").addEventListener("input",e=>{e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,180)+"px"});void checkStatus();
 })();
 </script>
