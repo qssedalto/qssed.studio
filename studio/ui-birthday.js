@@ -36,7 +36,7 @@ export function birthdayPage(locale = "zh") {
   const wishDone = zh ? "好，替你保密 ✦" : "Got it. Secret kept ✦";
   const closing = zh ? "生日快乐。希望明年再看到这句话的时候，你会觉得这一年过得还不错。" : "Happy birthday. I hope when you see this again next year, you can say this year turned out pretty well.";
   const otherHref = zh ? "/en/birthday" : "/zh-cn/birthday";
-  const otherLabel = zh ? "EN" : "中文";
+  const otherLabel = zh ? "ZH" : "EN";
 
   return `<!doctype html>
 <html lang="${lang}">
