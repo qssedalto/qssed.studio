@@ -11,7 +11,7 @@ export function renderAiAdmin(locale) {
     monthly:"月额度 $", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
     official:"OpenAI 官方本月费用", local:"AERTEX 本地估算", remaining:"预算剩余", requests:"本月请求",
     billingOn:"官方账单已连接", billingOff:"未配置 Admin Key", saved:"已保存", projectValidated:"Project Key 验证通过",
-    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户可用模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。"
+    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户可用模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 Project API Key。", noModelsForKey:"这个 Project API Key 没有返回可用于对话的模型。"
   } : {
     title:"Intelligence Admin", intro:"Manage OpenAI credentials, official costs, user access, and quotas.",
     add:"Add OpenAI Provider", name:"Name", key:"Project API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
@@ -23,7 +23,7 @@ export function renderAiAdmin(locale) {
     monthly:"Monthly quota $", rpm:"RPM", apply:"Save access", empty:"No provider configured",
     official:"OpenAI official month cost", local:"AERTEX local estimate", remaining:"Budget remaining", requests:"Requests this month",
     billingOn:"Official billing connected", billingOff:"No Admin Key", saved:"Saved", projectValidated:"Project Key validated",
-    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first."
+    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the Project API Key first.", noModelsForKey:"This Project API Key returned no chat-capable models."
   };
 
   return `<!doctype html>
@@ -40,7 +40,7 @@ export function renderAiAdmin(locale) {
 header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:18px}h1{font-size:32px;letter-spacing:-.045em;margin:0 0 6px}h2{font-size:18px;margin:0}.intro,.hint{color:var(--muted);font-size:12px;line-height:1.6}.intro{font-size:13px;margin:0}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 label{display:block;font-size:12px;color:var(--muted);margin:9px 0 5px}input,select{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);outline:none}
-input:focus,select:focus{border-color:var(--text)}button{border:0;border-radius:10px;padding:10px 14px;font-weight:650;cursor:pointer}.primary{background:var(--text);color:var(--bg)}button:disabled{opacity:.5;cursor:not-allowed}
+input:focus,select:focus{border-color:var(--text)}button{border:0;border-radius:10px;padding:10px 14px;font-weight:650;cursor:pointer}.primary{background:var(--text);color:var(--bg)}button:disabled{opacity:.42;cursor:not-allowed}.keyRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.checkKeyButton{white-space:nowrap;background:var(--soft);color:var(--text);border:1px solid var(--line)}.keyStatus{margin-top:6px;min-height:18px;font-size:12px;color:var(--muted)}.keyStatus.ok{color:var(--good)}.keyStatus.bad{color:var(--bad)}
 .pickerButton{width:100%;min-height:42px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;font-weight:500}.pickerButton:hover{background:var(--soft)}.pickerValue{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pickerChevron{color:var(--muted);font-size:16px}
 dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.22)}dialog::backdrop{background:rgba(0,0,0,.36);backdrop-filter:blur(2px)}.dialogHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}.dialogHead strong{font-size:17px}.dialogBody{padding:8px 18px 14px;overflow:auto;max-height:50vh}.dialogFoot{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px 16px;border-top:1px solid var(--line)}.dialogFoot .secondaryBtn{background:var(--soft);color:var(--text)}.choice{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid var(--line);font-size:14px}.choice:last-child{border-bottom:0}.choice input{width:19px;height:19px;margin:0;accent-color:var(--text)}
 .sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.providerCard{border-top:1px solid var(--line);padding:16px 0}.providerTop{display:flex;align-items:start;justify-content:space-between;gap:14px}.providerName{font-weight:730}.bad{color:var(--bad)}.ok{color:var(--good)}
@@ -60,10 +60,10 @@ dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;
   <div class="sectionHead"><h2>${t.add}</h2></div>
   <div class="grid">
     <div><label>${t.name}</label><input id="name" value="OpenAI Primary"></div>
-    <div><label>${t.key}</label><input id="key" type="password" autocomplete="off" spellcheck="false"></div>
+    <div><label>${t.key}</label><div class="keyRow"><input id="key" type="password" autocomplete="off" spellcheck="false"><button type="button" class="checkKeyButton" id="checkKey">${t.checkKey}</button></div><div class="keyStatus" id="keyStatus">${t.keyNotChecked}</div></div>
     <div><label>${t.adminKey}</label><input id="adminKey" type="password" autocomplete="off" spellcheck="false"><div class="hint">${t.adminHint}</div></div>
-    <div><label>${t.models}</label><button type="button" class="pickerButton" id="modelsPicker"><span class="pickerValue" id="modelsPickerValue"></span><span class="pickerChevron">›</span></button></div>
-    <div><label>${t.def}</label><button type="button" class="pickerButton" id="defaultPicker"><span class="pickerValue" id="defaultPickerValue"></span><span class="pickerChevron">›</span></button></div>
+    <div><label>${t.models}</label><button type="button" class="pickerButton" id="modelsPicker" disabled><span class="pickerValue" id="modelsPickerValue"></span><span class="pickerChevron">›</span></button></div>
+    <div><label>${t.def}</label><button type="button" class="pickerButton" id="defaultPicker" disabled><span class="pickerValue" id="defaultPickerValue"></span><span class="pickerChevron">›</span></button></div>
     <div><label>${t.budget}</label><input id="budget" type="number" min="0" step=".01"></div>
     <div><label>${t.input}</label><input id="input" type="number" min="0" step=".001" value="4"></div>
     <div><label>${t.output}</label><input id="output" type="number" min="0" step=".001" value="20"></div>
@@ -103,28 +103,78 @@ dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;
 <script>
 const $=id=>document.getElementById(id);
 let state={providers:[],users:[]};
-const MODEL_CATALOG=["gpt-5.6","gpt-5.6-terra","gpt-5.6-luna"];
-let selectedProviderModels=[...MODEL_CATALOG];
-let selectedDefaultModel=MODEL_CATALOG[0];
+let availableProjectModels=[];
+let selectedProviderModels=[];
+let selectedDefaultModel="";
+let projectKeyValidated=false;
 const userModelSelections=new Map();
 let activeUserModelPicker=null;
 const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 const money=value=>value==null?"—":"$"+Number(value||0).toFixed(4);
 
 function updateProviderPickers(){
-  $("modelsPickerValue").textContent="${t.selectedModels} "+selectedProviderModels.length+" ${t.modelsUnit} · "+selectedProviderModels.join(", ");
-  $("defaultPickerValue").textContent=selectedDefaultModel||"—";
+  $("modelsPicker").disabled=!projectKeyValidated;
+  $("defaultPicker").disabled=!projectKeyValidated||!selectedProviderModels.length;
+  $("modelsPickerValue").textContent=selectedProviderModels.length
+    ? "${t.selectedModels} "+selectedProviderModels.length+" ${t.modelsUnit} · "+selectedProviderModels.join(", ")
+    : (projectKeyValidated?"${t.chooseModels}":"${t.checkKeyFirst}");
+  $("defaultPickerValue").textContent=selectedDefaultModel||(projectKeyValidated?"${t.chooseDefault}":"—");
+}
+
+function invalidateProjectKey(){
+  projectKeyValidated=false;
+  availableProjectModels=[];
+  selectedProviderModels=[];
+  selectedDefaultModel="";
+  $("keyStatus").textContent="${t.keyNotChecked}";
+  $("keyStatus").className="keyStatus";
+  updateProviderPickers();
 }
 
 function renderModelsDialog(){
-  $("modelsDialogBody").innerHTML=MODEL_CATALOG.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(selectedProviderModels.includes(model)?"checked":"")+"><span>'+esc(model)+'</span></label>').join("");
+  $("modelsDialogBody").innerHTML=availableProjectModels.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(selectedProviderModels.includes(model)?"checked":"")+"><span>'+esc(model)+'</span></label>').join("");
 }
 
 function renderDefaultDialog(){
   $("defaultDialogBody").innerHTML=selectedProviderModels.map(model=>'<label class="choice"><input type="radio" name="defaultModelChoice" value="'+esc(model)+'" '+(selectedDefaultModel===model?"checked":"")+"><span>'+esc(model)+'</span></label>').join("");
 }
 
-$("modelsPicker").onclick=()=>{renderModelsDialog();$("modelsDialog").showModal();};
+$("key").addEventListener("input",invalidateProjectKey);
+$("checkKey").onclick=async()=>{
+  const key=$("key").value.trim();
+  if(!key){
+    invalidateProjectKey();
+    $("keyStatus").textContent="${t.checkKeyFirst}";
+    $("keyStatus").className="keyStatus bad";
+    return;
+  }
+  const button=$("checkKey");
+  button.disabled=true;
+  button.textContent="${t.checkingKey}";
+  $("keyStatus").textContent="${t.checkingKey}";
+  $("keyStatus").className="keyStatus";
+  try{
+    const result=await api("/validate-project-key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({api_key:key})});
+    availableProjectModels=Array.isArray(result.models)?result.models:[];
+    if(!availableProjectModels.length)throw new Error("${t.noModelsForKey}");
+    projectKeyValidated=true;
+    const preferred=["gpt-5.6","gpt-5.6-sol","gpt-5.6-terra","gpt-5.6-luna"].filter(model=>availableProjectModels.includes(model));
+    selectedProviderModels=preferred.length?preferred.slice(0,4):[availableProjectModels[0]];
+    selectedDefaultModel=availableProjectModels.includes("gpt-5.6")?"gpt-5.6":selectedProviderModels[0];
+    $("keyStatus").textContent="${t.keyOk} · "+availableProjectModels.length+" ${t.modelsUnit}";
+    $("keyStatus").className="keyStatus ok";
+    updateProviderPickers();
+  }catch(error){
+    invalidateProjectKey();
+    $("keyStatus").textContent=error.message||"${t.checkKeyFirst}";
+    $("keyStatus").className="keyStatus bad";
+  }finally{
+    button.disabled=false;
+    button.textContent="${t.checkKey}";
+  }
+};
+
+$("modelsPicker").onclick=()=>{if(!projectKeyValidated)return;renderModelsDialog();$("modelsDialog").showModal();};
 $("modelsCancel").onclick=()=>$("modelsDialog").close();
 $("modelsDone").onclick=()=>{
   const values=[...$("modelsDialogBody").querySelectorAll('input[type="checkbox"]:checked')].map(input=>input.value);
@@ -135,7 +185,7 @@ $("modelsDone").onclick=()=>{
   $("modelsDialog").close();
 };
 $("defaultPicker").onclick=()=>{
-  if(!selectedProviderModels.length){$("msg").textContent="${t.noAllowedModels}";$("msg").className="status bad";return;}
+  if(!projectKeyValidated||!selectedProviderModels.length){$("msg").textContent="${t.noAllowedModels}";$("msg").className="status bad";return;}
   renderDefaultDialog();$("defaultDialog").showModal();
 };
 $("defaultCancel").onclick=()=>$("defaultDialog").close();
@@ -271,6 +321,13 @@ $("saveProvider").onclick=async()=>{
   button.disabled=true;
   button.textContent="${t.saving}";
   $("msg").textContent="";
+  if(!projectKeyValidated){
+    $("msg").textContent="${t.checkKeyFirst}";
+    $("msg").className="status bad";
+    button.disabled=false;
+    button.textContent="${t.save}";
+    return;
+  }
   try{
     const result=await api("/provider",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       name:$("name").value,
@@ -284,6 +341,7 @@ $("saveProvider").onclick=async()=>{
     })});
     $("key").value="";
     $("adminKey").value="";
+    invalidateProjectKey();
     $("msg").textContent="${t.saved} · ${t.projectValidated}"+(result.validation?.billing_key?" · ${t.billingOn}":"");
     $("msg").className="status ok";
     await load();
