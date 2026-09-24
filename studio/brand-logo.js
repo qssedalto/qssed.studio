@@ -8,8 +8,8 @@ const AERTEX_WORDMARK_SVG = atob(AERTEX_WORDMARK_DATA_URI.slice(AERTEX_WORDMARK_
 const STATIC_WORDMARK = `<span class="aertex-wordmark-token" data-aertex-wordmark="" role="img" aria-label="AERTEX">${AERTEX_WORDMARK_SVG}</span>`;
 
 const STYLE = `<style id="aertex-wordmark-style">
-.aertex-wordmark-token{display:inline-flex;align-items:center;vertical-align:-.12em;line-height:1;white-space:nowrap;max-width:100%;color:inherit}
-.aertex-wordmark-token>svg{display:block;height:.92em;width:auto;max-width:min(12em,100%);color:currentColor}
+.aertex-wordmark-token{display:inline-flex;align-items:center;vertical-align:-.12em;line-height:1;white-space:nowrap;width:4.37em;max-width:100%;color:inherit;flex:0 0 auto}
+.aertex-wordmark-token>svg{display:block;width:100%;height:auto;max-width:100%;color:currentColor}
 </style>`;
 
 const SCRIPT = `<script id="aertex-wordmark-runtime">
