@@ -18,7 +18,7 @@ for (const required of [
   'gptSessionRedirect(request, pathname)',
   'pathname === "/auth/handoff"',
   'pathname.startsWith("/api/ai/")',
-  'renderAiAdmin(locale, { state: adminState })',
+  'renderAiAdmin(locale, { state: adminState, theme: intelligenceTheme })',
   'handleAuthHandoff(request, env, locale)'
 ]) {
   assert(gpt.includes(required), `GPT worker is missing authenticated routing invariant: ${required}`);
@@ -59,9 +59,12 @@ assert(gpt.includes('conversationRoute = pathname.match'), "GPT Worker must supp
 assert(gpt.includes('loadGptBootstrap(request, env, gate, conversationId)'), "GPT Worker must bootstrap Intelligence data before first paint.");
 assert(gpt.includes('pathname.match(/^\\/share\\/'), "GPT Worker must expose explicit read-only share routes.");
 assert(gpt.includes("get_shared_ai_conversation"), "GPT Worker must load explicitly shared conversations through the public RPC.");
+assert(gpt.includes("renderIntelligenceNotFound"), "GPT Worker must reuse the branded Intelligence not-found renderer.");
+assert(!gpt.includes("<h1>404</h1>"), "Intelligence not-found pages must not expose a raw 404 heading.");
+assert(gpt.includes("intelligenceThemeFromRequest(request)"), "GPT Worker must resolve the shared color mode before rendering.");
 
 assert(gpt.includes("handleAiApi(request, env, gate)"), "GPT Worker must proxy authenticated AI API calls.");
-assert(gpt.includes("renderAdminDenied(locale, identity)"), "GPT Worker must render a dedicated non-admin denial page with verified identity context.");
+assert(gpt.includes("renderAdminDenied(locale, identity, intelligenceTheme)"), "GPT Worker must render a dedicated non-admin denial page with verified identity context.");
 assert(gpt.includes("loadDeniedIdentity(gate)"), "GPT Worker must prefill denied-admin support mail with authenticated account context.");
 assert(!gpt.includes("utm_source=chatgpt.com"), "GPT admin links must not include tracking parameters.");
 for (const required of [
