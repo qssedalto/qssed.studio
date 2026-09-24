@@ -26,7 +26,6 @@ on:
       - scripts/account-menu-check.mjs
       - scripts/r2-storage-audit-check.mjs
       - scripts/r2-audit-maintenance-worker.js
-      - scripts/r2-audit-maintenance-worker.js
       - scripts/brand-check.mjs
       - scripts/codex-bridge-check.mjs
       - auth-entry.js
