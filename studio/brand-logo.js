@@ -2,8 +2,8 @@ export const AERTEX_WORDMARK_DATA_URI = "data:image/svg+xml;base64,PHN2ZyB4bWxuc
 
 const STYLE = `<style id="aertex-wordmark-style">
 .aertex-wordmark-token{display:inline-flex;align-items:center;vertical-align:-.12em;line-height:1;white-space:nowrap;max-width:100%}
-.aertex-wordmark-token>img{display:block;height:.92em;width:auto;max-width:min(12em,100%);object-fit:contain;filter:none}
-.aertex-wordmark-token.aertex-wordmark-on-dark>img{filter:invert(1)}
+.aertex-wordmark-token>svg{display:block;height:.92em;width:auto;max-width:min(12em,100%);color:#000}
+.aertex-wordmark-token.aertex-wordmark-on-dark>svg{color:#fff}
 </style>`;
 
 const SCRIPT = `<script id="aertex-wordmark-runtime">
@@ -12,6 +12,7 @@ const SCRIPT = `<script id="aertex-wordmark-runtime">
   window.__aertexWordmarkRuntime=true;
   const token="AERTEX";
   const source=${JSON.stringify(AERTEX_WORDMARK_DATA_URI)};
+  const svgMarkup=atob(source.slice(source.indexOf(",")+1));
   const skipped="script,style,title,textarea,input,select,option,pre,code,kbd,samp,noscript,[data-aertex-wordmark]";
   function tone(el){
     try{
@@ -26,9 +27,9 @@ const SCRIPT = `<script id="aertex-wordmark-runtime">
     wrap.dataset.aertexWordmark="";
     wrap.setAttribute("role","img");
     wrap.setAttribute("aria-label","AERTEX");
-    const img=document.createElement("img");
-    img.src=source; img.alt=""; img.setAttribute("aria-hidden","true");
-    wrap.appendChild(img);
+    wrap.innerHTML=svgMarkup;
+    const svg=wrap.querySelector("svg");
+    if(svg){svg.setAttribute("aria-hidden","true");svg.removeAttribute("aria-label");svg.removeAttribute("role");}
     return wrap;
   }
   function eligible(node){
