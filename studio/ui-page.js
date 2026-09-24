@@ -393,7 +393,7 @@ export function themeToggle() {
 
 export function languageToggle(links, t) {
   const targetUrl = t === TEXT.zh ? links.enCurrent : links.zhCurrent;
-  const label = t === TEXT.zh ? "EN" : "中";
+  const label = t === TEXT.zh ? "ZH" : "EN";
   const title = t === TEXT.zh ? "Switch to English" : "切换到中文";
   return `<a class="language-toggle" href="${targetUrl}" aria-label="${title}" title="${title}">${label}</a>`;
 }
