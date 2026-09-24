@@ -131,9 +131,27 @@ export function injectBrandLogoRuntime(markup) {
   const branded = replaceVisibleAertexText(text);
   if (branded.includes('id="aertex-wordmark-runtime"')) return branded;
 
-  const runtime = brandLogoRuntime();
-  const lower = branded.toLowerCase();
-  const bodyEnd = lower.lastIndexOf("</body>");
-  if (bodyEnd >= 0) return branded.slice(0, bodyEnd) + runtime + branded.slice(bodyEnd);
-  return branded + runtime;
+  let output = branded;
+  let lower = output.toLowerCase();
+
+  if (!output.includes('id="aertex-wordmark-style"')) {
+    const headEnd = lower.lastIndexOf("</head>");
+    if (headEnd >= 0) {
+      output = output.slice(0, headEnd) + STYLE + output.slice(headEnd);
+    } else {
+      output = STYLE + output;
+    }
+  }
+
+  lower = output.toLowerCase();
+  if (!output.includes('id="aertex-wordmark-runtime"')) {
+    const bodyEnd = lower.lastIndexOf("</body>");
+    if (bodyEnd >= 0) {
+      output = output.slice(0, bodyEnd) + SCRIPT + output.slice(bodyEnd);
+    } else {
+      output += SCRIPT;
+    }
+  }
+
+  return output;
 }
