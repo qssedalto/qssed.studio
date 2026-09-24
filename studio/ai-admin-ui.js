@@ -11,7 +11,7 @@ export function renderAiAdmin(locale) {
     monthly:"月额度 $", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
     official:"OpenAI 官方本月费用", local:"AERTEX 本地估算", remaining:"预算剩余", requests:"本月请求",
     billingOn:"官方账单已连接", billingOff:"未配置 Admin Key", saved:"已保存", projectValidated:"Project Key 验证通过",
-    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户可用模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 Project API Key。", noModelsForKey:"这个 Project API Key 没有返回可用于对话的模型。", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销。", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key"
+    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户可用模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 Project API Key。", noModelsForKey:"这个 Project API Key 没有返回可用于对话的模型。", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销。", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key", regionUnsupported:"当前网络或服务区域暂不支持 OpenAI API 检查。这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能。"
   } : {
     title:"Intelligence Admin", intro:"Manage OpenAI credentials, official costs, user access, and quotas.",
     add:"Add OpenAI Provider", name:"Name", key:"Project API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
@@ -23,7 +23,7 @@ export function renderAiAdmin(locale) {
     monthly:"Monthly quota $", rpm:"RPM", apply:"Save access", empty:"No provider configured",
     official:"OpenAI official month cost", local:"AERTEX local estimate", remaining:"Budget remaining", requests:"Requests this month",
     billingOn:"Official billing connected", billingOff:"No Admin Key", saved:"Saved", projectValidated:"Project Key validated",
-    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the Project API Key first.", noModelsForKey:"This Project API Key returned no chat-capable models.", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key"
+    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the Project API Key first.", noModelsForKey:"This Project API Key returned no chat-capable models.", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key", regionUnsupported:"OpenAI API checks are unavailable from the current network or service region. This does not mean the key is invalid. Use OpenAI-connected features only from an officially supported country or territory."
   };
 
   return `<!doctype html>
@@ -202,7 +202,7 @@ $("checkKey").onclick=async()=>{
     updateProviderPickers();
   }catch(error){
     invalidateProjectKey();
-    $("keyStatus").textContent=error.message||"${t.checkKeyFirst}";
+    $("keyStatus").textContent=friendlyError(error)||"${t.checkKeyFirst}";
     $("keyStatus").className="keyStatus bad";
   }finally{
     button.disabled=false;
@@ -236,17 +236,23 @@ async function api(path,options={}){
   const response=await fetch("/api/ai/admin"+path,{...options,credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json",...(options.headers||{})}});
   const data=await response.json().catch(()=>({}));
   if(response.status===401){location.reload();throw new Error("Authentication required");}
-  if(!response.ok)throw new Error(data.error||("HTTP "+response.status));
+  if(!response.ok){
+    const error=new Error(data.error||("HTTP "+response.status));
+    error.code=data.code||null;
+    throw error;
+  }
   return data;
 }
-
+function friendlyError(error){
+  return error?.code==="REGION_UNSUPPORTED"?"${t.regionUnsupported}":(error?.message||"Error");
+}
 async function load(){
   try{
     state=await api("/state");
     render();
     $("refreshed").textContent=new Date().toLocaleTimeString();
   }catch(error){
-    $("msg").textContent=error.message;
+    $("msg").textContent=friendlyError(error);
     $("msg").className="status bad";
   }
 }
@@ -310,20 +316,12 @@ async function openEditProvider(providerId){
   $("editKeyStatus").textContent="${t.currentKey} · ****"+(provider.key_hint||"");
   $("editKeyStatus").className="keyStatus ok";
   editReplacementKeyChecked=true;
-  try{
-    const modelState=await api("/provider/"+encodeURIComponent(providerId)+"/models");
-    editAvailableModels=Array.isArray(modelState.models)?modelState.models:[];
-    editSelectedModels=(provider.allowed_models||[]).filter(model=>editAvailableModels.includes(model));
-    if(!editSelectedModels.length&&editAvailableModels.length)editSelectedModels=[editAvailableModels[0]];
-    editDefaultModel=editSelectedModels.includes(provider.default_model)?provider.default_model:(editSelectedModels[0]||"");
-    updateEditPickers();
-    $("editProviderDialog").showModal();
-  }catch(error){
-    $("msg").textContent=error.message;
-    $("msg").className="status bad";
-  }
+  editAvailableModels=[...(provider.allowed_models||[])];
+  editSelectedModels=[...(provider.allowed_models||[])];
+  editDefaultModel=editSelectedModels.includes(provider.default_model)?provider.default_model:(editSelectedModels[0]||"");
+  updateEditPickers();
+  $("editProviderDialog").showModal();
 }
-
 $("editKey").addEventListener("input",()=>{
   editReplacementKeyChecked=!$("editKey").value.trim();
   $("editKeyStatus").textContent=editReplacementKeyChecked?"${t.currentKey} · ****"+(editingProvider?.key_hint||""):"${t.keyNotChecked}";
@@ -347,7 +345,7 @@ $("editCheckKey").onclick=async()=>{
     updateEditPickers();
   }catch(error){
     editReplacementKeyChecked=false;
-    $("editKeyStatus").textContent=error.message||"${t.keyNotChecked}";
+    $("editKeyStatus").textContent=friendlyError(error)||"${t.keyNotChecked}";
     $("editKeyStatus").className="keyStatus bad";
   }finally{button.disabled=false;button.textContent="${t.checkReplacement}";}
 };
@@ -399,7 +397,7 @@ $("editSave").onclick=async()=>{
     $("editProviderDialog").close(); editingProvider=null;
     $("msg").textContent="${t.providerUpdated}";$("msg").className="status ok";
     await load();
-  }catch(error){$("msg").textContent=error.message;$("msg").className="status bad";}
+  }catch(error){$("msg").textContent=friendlyError(error);$("msg").className="status bad";}
   finally{button.disabled=false;}
 };
 
@@ -409,7 +407,7 @@ async function deleteProvider(providerId){
     await api("/provider/"+encodeURIComponent(providerId),{method:"DELETE",headers:{"Content-Type":"application/json"}});
     $("msg").textContent="${t.providerDeleted}";$("msg").className="status ok";
     await load();
-  }catch(error){$("msg").textContent=error.message;$("msg").className="status bad";}
+  }catch(error){$("msg").textContent=friendlyError(error);$("msg").className="status bad";}
 }
 
 function providerOptions(selected){
@@ -507,7 +505,7 @@ $("saveProvider").onclick=async()=>{
     $("msg").className="status ok";
     await load();
   }catch(error){
-    $("msg").textContent=error.message;
+    $("msg").textContent=friendlyError(error);
     $("msg").className="status bad";
   }finally{
     button.disabled=false;
@@ -544,7 +542,7 @@ async function saveAccess(event){
     $("msg").className="status ok";
     await load();
   }catch(error){
-    $("msg").textContent=error.message;
+    $("msg").textContent=friendlyError(error);
     $("msg").className="status bad";
   }
 }
