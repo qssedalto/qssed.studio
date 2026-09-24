@@ -1,4 +1,5 @@
 import { ZH_COUNTRIES, SUPABASE_URL } from "./config.js";
+import { injectBrandLogoRuntime } from "./brand-logo.js";
 
 const SUPABASE_ORIGIN = new URL(SUPABASE_URL).origin;
 const SUPABASE_WS_ORIGIN = SUPABASE_ORIGIN.replace(/^https:/, "wss:");
@@ -113,7 +114,7 @@ export function buildLinks(locale, pathname) {
 }
 
 export function html(content, status = 200, options = {}) {
-  return new Response(content, {
+  return new Response(injectBrandLogoRuntime(content), {
     status,
     headers: htmlSecurityHeaders(options)
   });
