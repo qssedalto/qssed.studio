@@ -67,7 +67,10 @@ for (const required of [
   'ai_user_provider_access',
   'validateZhipuKey',
   'const ZHIPU_MODELS = ["glm-4.7-flash"]',
-  'provider_id: p.id'
+  'provider_id: p.id',
+  'code: "RATE_LIMITED"',
+  'function upstreamDiagnostic(response, rawBody)',
+  'response.status === 429'
 ]) {
   assert(aiGateway.includes(required), `AI gateway is missing multi-provider invariant: ${required}`);
 }
