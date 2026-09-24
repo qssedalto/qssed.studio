@@ -11,7 +11,7 @@ export function renderAiAdmin(locale) {
     monthly:"月额度 $", rpm:"RPM", apply:"保存授权", empty:"尚未配置 Provider",
     official:"OpenAI 官方本月费用", local:"AERTEX 本地估算", remaining:"预算剩余", requests:"本月请求",
     billingOn:"官方账单已连接", billingOff:"未配置 Admin Key", saved:"已保存", projectValidated:"Project Key 验证通过",
-    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户可用模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 Project API Key。", noModelsForKey:"这个 Project API Key 没有返回可用于对话的模型。"
+    noProvider:"请先添加 API Provider。", chooseModels:"选择允许模型", chooseDefault:"选择默认模型", chooseUserModels:"选择用户可用模型", selectedModels:"已选择", modelsUnit:"个模型", cancel:"取消", done:"完成", selectAtLeastOne:"请至少选择一个允许模型。", noAllowedModels:"请先选择允许模型。", checkKey:"检查 Key", checkingKey:"正在检查…", keyOk:"Key 正常", keyNotChecked:"尚未检查 Key", checkKeyFirst:"请先检查 Project API Key。", noModelsForKey:"这个 Project API Key 没有返回可用于对话的模型。", edit:"编辑", delete:"删除", editProvider:"编辑 Provider", replaceKey:"替换 Project API Key（留空则保留）", replaceAdminKey:"替换 Admin Key（留空则保留）", clearAdminKey:"清除现有 Admin Key", active:"启用 Provider", saveChanges:"保存修改", deleteConfirm:"确定删除这个 Provider？此操作不可撤销。", providerUpdated:"Provider 已更新", providerDeleted:"Provider 已删除", currentKey:"当前 Key", storedKeyOk:"当前已保存 Key 正常", checkReplacement:"检查新 Key"
   } : {
     title:"Intelligence Admin", intro:"Manage OpenAI credentials, official costs, user access, and quotas.",
     add:"Add OpenAI Provider", name:"Name", key:"Project API Key", adminKey:"OpenAI Admin Key (optional, billing only)",
@@ -23,7 +23,7 @@ export function renderAiAdmin(locale) {
     monthly:"Monthly quota $", rpm:"RPM", apply:"Save access", empty:"No provider configured",
     official:"OpenAI official month cost", local:"AERTEX local estimate", remaining:"Budget remaining", requests:"Requests this month",
     billingOn:"Official billing connected", billingOff:"No Admin Key", saved:"Saved", projectValidated:"Project Key validated",
-    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the Project API Key first.", noModelsForKey:"This Project API Key returned no chat-capable models."
+    noProvider:"Add an API provider first.", chooseModels:"Choose allowed models", chooseDefault:"Choose default model", chooseUserModels:"Choose user models", selectedModels:"Selected", modelsUnit:"models", cancel:"Cancel", done:"Done", selectAtLeastOne:"Select at least one allowed model.", noAllowedModels:"Choose allowed models first.", checkKey:"Check Key", checkingKey:"Checking…", keyOk:"Key valid", keyNotChecked:"Key not checked", checkKeyFirst:"Check the Project API Key first.", noModelsForKey:"This Project API Key returned no chat-capable models.", edit:"Edit", delete:"Delete", editProvider:"Edit Provider", replaceKey:"Replace Project API Key (leave blank to keep)", replaceAdminKey:"Replace Admin Key (leave blank to keep)", clearAdminKey:"Remove existing Admin Key", active:"Provider enabled", saveChanges:"Save changes", deleteConfirm:"Delete this provider? This action cannot be undone.", providerUpdated:"Provider updated", providerDeleted:"Provider deleted", currentKey:"Current key", storedKeyOk:"Stored key is valid", checkReplacement:"Check new key"
   };
 
   return `<!doctype html>
@@ -43,7 +43,7 @@ label{display:block;font-size:12px;color:var(--muted);margin:9px 0 5px}input,sel
 input:focus,select:focus{border-color:var(--text)}button{border:0;border-radius:10px;padding:10px 14px;font-weight:650;cursor:pointer}.primary{background:var(--text);color:var(--bg)}button:disabled{opacity:.42;cursor:not-allowed}.keyRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.checkKeyButton{white-space:nowrap;background:var(--soft);color:var(--text);border:1px solid var(--line)}.keyStatus{margin-top:6px;min-height:18px;font-size:12px;color:var(--muted)}.keyStatus.ok{color:var(--good)}.keyStatus.bad{color:var(--bad)}
 .pickerButton{width:100%;min-width:0;max-width:100%;min-height:42px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;font-weight:500;overflow:hidden}.pickerButton:hover{background:var(--soft)}.pickerValue{display:block;flex:1 1 auto;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pickerChevron{flex:0 0 auto;color:var(--muted);font-size:16px}
 dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.22)}dialog::backdrop{background:rgba(0,0,0,.36);backdrop-filter:blur(2px)}.dialogHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}.dialogHead strong{font-size:17px}.dialogBody{padding:8px 18px 14px;overflow:auto;max-height:50vh}.dialogFoot{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px 16px;border-top:1px solid var(--line)}.dialogFoot .secondaryBtn{background:var(--soft);color:var(--text)}.choice{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid var(--line);font-size:14px}.choice:last-child{border-bottom:0}.choice input{width:19px;height:19px;margin:0;accent-color:var(--text)}
-.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.providerCard{border-top:1px solid var(--line);padding:16px 0}.providerTop{display:flex;align-items:start;justify-content:space-between;gap:14px}.providerName{font-weight:730}.bad{color:var(--bad)}.ok{color:var(--good)}
+.sectionHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.providerCard{border-top:1px solid var(--line);padding:16px 0}.providerTop{display:flex;align-items:start;justify-content:space-between;gap:14px}.providerName{font-weight:730}.providerActions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}.smallButton{padding:7px 10px;border:1px solid var(--line);background:var(--soft);color:var(--text);border-radius:9px;font-size:12px}.dangerButton{color:var(--bad)}.bad{color:var(--bad)}.ok{color:var(--good)}
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.metric{background:var(--soft);border-radius:12px;padding:11px}.metric span{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}.metric strong{font-size:17px}
 .user{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.8fr) minmax(0,.9fr) minmax(0,1.1fr) minmax(0,.58fr) minmax(0,.58fr) minmax(0,.45fr) auto;gap:8px;align-items:end;border-top:1px solid var(--line);padding:12px 0;min-width:0}.user>*{min-width:0}.userName{align-self:center;min-width:0}.userName strong,.userName .hint{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .status{min-height:20px;margin:5px 0 12px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:var(--soft);font-size:11px}
@@ -100,6 +100,37 @@ dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;
   <div class="dialogFoot"><button type="button" class="secondaryBtn" id="userModelsCancel">${t.cancel}</button><button type="button" class="primary" id="userModelsDone">${t.done}</button></div>
 </dialog>
 
+<dialog id="editProviderDialog">
+  <div class="dialogHead"><strong>${t.editProvider}</strong></div>
+  <div class="dialogBody">
+    <label>${t.name}</label><input id="editName">
+    <label>${t.replaceKey}</label>
+    <div class="keyRow"><input id="editKey" type="password" autocomplete="off" spellcheck="false"><button type="button" class="checkKeyButton" id="editCheckKey">${t.checkReplacement}</button></div>
+    <div class="keyStatus" id="editKeyStatus"></div>
+    <label>${t.replaceAdminKey}</label><input id="editAdminKey" type="password" autocomplete="off" spellcheck="false">
+    <label class="choice"><input id="editClearAdminKey" type="checkbox"><span>${t.clearAdminKey}</span></label>
+    <label>${t.models}</label><button type="button" class="pickerButton" id="editModelsPicker"><span class="pickerValue" id="editModelsValue"></span><span class="pickerChevron">›</span></button>
+    <label>${t.def}</label><button type="button" class="pickerButton" id="editDefaultPicker"><span class="pickerValue" id="editDefaultValue"></span><span class="pickerChevron">›</span></button>
+    <label>${t.budget}</label><input id="editBudget" type="number" min="0" step=".01">
+    <label>${t.input}</label><input id="editInput" type="number" min="0" step=".001">
+    <label>${t.output}</label><input id="editOutput" type="number" min="0" step=".001">
+    <label class="choice"><input id="editActive" type="checkbox"><span>${t.active}</span></label>
+  </div>
+  <div class="dialogFoot"><button type="button" class="secondaryBtn" id="editCancel">${t.cancel}</button><button type="button" class="primary" id="editSave">${t.saveChanges}</button></div>
+</dialog>
+
+<dialog id="editModelsDialog">
+  <div class="dialogHead"><strong>${t.chooseModels}</strong></div>
+  <div class="dialogBody" id="editModelsDialogBody"></div>
+  <div class="dialogFoot"><button type="button" class="secondaryBtn" id="editModelsCancel">${t.cancel}</button><button type="button" class="primary" id="editModelsDone">${t.done}</button></div>
+</dialog>
+
+<dialog id="editDefaultDialog">
+  <div class="dialogHead"><strong>${t.chooseDefault}</strong></div>
+  <div class="dialogBody" id="editDefaultDialogBody"></div>
+  <div class="dialogFoot"><button type="button" class="secondaryBtn" id="editDefaultCancel">${t.cancel}</button><button type="button" class="primary" id="editDefaultDone">${t.done}</button></div>
+</dialog>
+
 <script>
 const $=id=>document.getElementById(id);
 let state={providers:[],users:[]};
@@ -109,6 +140,11 @@ let selectedDefaultModel="";
 let projectKeyValidated=false;
 const userModelSelections=new Map();
 let activeUserModelPicker=null;
+let editingProvider=null;
+let editAvailableModels=[];
+let editSelectedModels=[];
+let editDefaultModel="";
+let editReplacementKeyChecked=true;
 const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 const money=value=>value==null?"—":"$"+Number(value||0).toFixed(4);
 
@@ -253,6 +289,129 @@ $("userModelsDone").onclick=()=>{
   $("userModelsDialog").close();
 };
 
+function updateEditPickers(){
+  $("editModelsValue").textContent="${t.selectedModels} "+editSelectedModels.length+" ${t.modelsUnit}";
+  $("editDefaultValue").textContent=editDefaultModel||"—";
+  $("editDefaultPicker").disabled=!editSelectedModels.length;
+}
+
+async function openEditProvider(providerId){
+  const provider=(state.providers||[]).find(item=>item.id===providerId);
+  if(!provider)return;
+  editingProvider=provider;
+  $("editName").value=provider.name||"";
+  $("editKey").value="";
+  $("editAdminKey").value="";
+  $("editClearAdminKey").checked=false;
+  $("editBudget").value=provider.monthly_budget_usd??"";
+  $("editInput").value=provider.input_price_per_million??0;
+  $("editOutput").value=provider.output_price_per_million??0;
+  $("editActive").checked=provider.is_active!==false;
+  $("editKeyStatus").textContent="${t.currentKey} · ****"+(provider.key_hint||"");
+  $("editKeyStatus").className="keyStatus ok";
+  editReplacementKeyChecked=true;
+  try{
+    const modelState=await api("/provider/"+encodeURIComponent(providerId)+"/models");
+    editAvailableModels=Array.isArray(modelState.models)?modelState.models:[];
+    editSelectedModels=(provider.allowed_models||[]).filter(model=>editAvailableModels.includes(model));
+    if(!editSelectedModels.length&&editAvailableModels.length)editSelectedModels=[editAvailableModels[0]];
+    editDefaultModel=editSelectedModels.includes(provider.default_model)?provider.default_model:(editSelectedModels[0]||"");
+    updateEditPickers();
+    $("editProviderDialog").showModal();
+  }catch(error){
+    $("msg").textContent=error.message;
+    $("msg").className="status bad";
+  }
+}
+
+$("editKey").addEventListener("input",()=>{
+  editReplacementKeyChecked=!$("editKey").value.trim();
+  $("editKeyStatus").textContent=editReplacementKeyChecked?"${t.currentKey} · ****"+(editingProvider?.key_hint||""):"${t.keyNotChecked}";
+  $("editKeyStatus").className="keyStatus";
+});
+
+$("editCheckKey").onclick=async()=>{
+  const key=$("editKey").value.trim();
+  if(!key){editReplacementKeyChecked=true;$("editKeyStatus").textContent="${t.currentKey} · ****"+(editingProvider?.key_hint||"");$("editKeyStatus").className="keyStatus ok";return;}
+  const button=$("editCheckKey"); button.disabled=true; button.textContent="${t.checkingKey}";
+  try{
+    const result=await api("/validate-project-key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({api_key:key})});
+    editAvailableModels=Array.isArray(result.models)?result.models:[];
+    if(!editAvailableModels.length)throw new Error("${t.noModelsForKey}");
+    editSelectedModels=editSelectedModels.filter(model=>editAvailableModels.includes(model));
+    if(!editSelectedModels.length)editSelectedModels=[editAvailableModels[0]];
+    if(!editSelectedModels.includes(editDefaultModel))editDefaultModel=editSelectedModels[0];
+    editReplacementKeyChecked=true;
+    $("editKeyStatus").textContent="${t.keyOk} · "+editAvailableModels.length+" ${t.modelsUnit}";
+    $("editKeyStatus").className="keyStatus ok";
+    updateEditPickers();
+  }catch(error){
+    editReplacementKeyChecked=false;
+    $("editKeyStatus").textContent=error.message||"${t.keyNotChecked}";
+    $("editKeyStatus").className="keyStatus bad";
+  }finally{button.disabled=false;button.textContent="${t.checkReplacement}";}
+};
+
+$("editModelsPicker").onclick=()=>{
+  $("editModelsDialogBody").innerHTML=editAvailableModels.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(editSelectedModels.includes(model)?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
+  $("editModelsDialog").showModal();
+};
+$("editModelsCancel").onclick=()=>$("editModelsDialog").close();
+$("editModelsDone").onclick=()=>{
+  const values=[...$("editModelsDialogBody").querySelectorAll('input[type="checkbox"]:checked')].map(input=>input.value);
+  if(!values.length){$("msg").textContent="${t.selectAtLeastOne}";$("msg").className="status bad";return;}
+  editSelectedModels=values;
+  if(!editSelectedModels.includes(editDefaultModel))editDefaultModel=editSelectedModels[0];
+  updateEditPickers(); $("editModelsDialog").close();
+};
+
+$("editDefaultPicker").onclick=()=>{
+  $("editDefaultDialogBody").innerHTML=editSelectedModels.map(model=>'<label class="choice"><input type="radio" name="editDefaultChoice" value="'+esc(model)+'" '+(editDefaultModel===model?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
+  $("editDefaultDialog").showModal();
+};
+$("editDefaultCancel").onclick=()=>$("editDefaultDialog").close();
+$("editDefaultDone").onclick=()=>{
+  const selected=$("editDefaultDialogBody").querySelector('input[name="editDefaultChoice"]:checked');
+  if(selected)editDefaultModel=selected.value;
+  updateEditPickers(); $("editDefaultDialog").close();
+};
+$("editCancel").onclick=()=>{$("editProviderDialog").close();editingProvider=null;};
+
+$("editSave").onclick=async()=>{
+  if(!editingProvider)return;
+  if($("editKey").value.trim()&&!editReplacementKeyChecked){
+    $("msg").textContent="${t.checkKeyFirst}";$("msg").className="status bad";return;
+  }
+  const button=$("editSave");button.disabled=true;
+  try{
+    await api("/provider/"+encodeURIComponent(editingProvider.id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      name:$("editName").value,
+      api_key:$("editKey").value,
+      admin_key:$("editAdminKey").value,
+      clear_admin_key:$("editClearAdminKey").checked,
+      allowed_models:editSelectedModels,
+      default_model:editDefaultModel,
+      monthly_budget_usd:$("editBudget").value,
+      input_price_per_million:$("editInput").value,
+      output_price_per_million:$("editOutput").value,
+      is_active:$("editActive").checked
+    })});
+    $("editProviderDialog").close(); editingProvider=null;
+    $("msg").textContent="${t.providerUpdated}";$("msg").className="status ok";
+    await load();
+  }catch(error){$("msg").textContent=error.message;$("msg").className="status bad";}
+  finally{button.disabled=false;}
+};
+
+async function deleteProvider(providerId){
+  if(!confirm("${t.deleteConfirm}"))return;
+  try{
+    await api("/provider/"+encodeURIComponent(providerId),{method:"DELETE",headers:{"Content-Type":"application/json"}});
+    $("msg").textContent="${t.providerDeleted}";$("msg").className="status ok";
+    await load();
+  }catch(error){$("msg").textContent=error.message;$("msg").className="status bad";}
+}
+
 function providerOptions(selected){
   let html='<option value="">—</option>';
   for(const provider of state.providers||[]){
@@ -275,7 +434,7 @@ function render(){
         return '<div class="providerCard">'
           +'<div class="providerTop"><div><div class="providerName">'+esc(provider.name)+'</div>'
           +'<div class="hint">OpenAI · '+esc(provider.default_model)+' · API ****'+esc(provider.key_hint||"")+' · '+billingLabel+'</div></div>'
-          +'<span class="pill">'+(provider.is_active?"● Active":"○ Disabled")+'</span></div>'
+          +'<div class="providerActions"><span class="pill">'+(provider.is_active?"● Active":"○ Disabled")+'</span><button type="button" class="smallButton editProvider" data-provider="'+esc(provider.id)+'">${t.edit}</button><button type="button" class="smallButton dangerButton deleteProvider" data-provider="'+esc(provider.id)+'">${t.delete}</button></div></div>'
           +'<div class="metrics">'
           +'<div class="metric"><span>${t.official}</span><strong>'+money(official)+'</strong></div>'
           +'<div class="metric"><span>${t.local}</span><strong>'+money(local)+'</strong></div>'
@@ -302,6 +461,8 @@ function render(){
       +'<button class="primary access">${t.apply}</button></div>';
   }).join("");
 
+  document.querySelectorAll(".editProvider").forEach(button=>button.onclick=()=>openEditProvider(button.dataset.provider));
+  document.querySelectorAll(".deleteProvider").forEach(button=>button.onclick=()=>deleteProvider(button.dataset.provider));
   document.querySelectorAll(".access").forEach(button=>button.onclick=saveAccess);
   document.querySelectorAll(".userModelsPicker").forEach(button=>button.onclick=event=>{
     const row=event.currentTarget.closest(".user");
