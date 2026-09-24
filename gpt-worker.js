@@ -96,19 +96,29 @@ function renderAdminDenied(locale) {
   const copy = zh ? {
     title: "此账号无权访问管理后台",
     detail: "此页面仅供 AERTEX Intelligence 管理员使用。我们已经验证了你的登录身份，但当前账号没有管理员权限，因此无法进入 Intelligence 管理后台。",
-    secondary: "你仍然可以返回 Intelligence，继续使用当前账号已经获得授权的功能。如果你认为这里的权限判断有误，请联系站点管理员检查你的账号角色与管理员授权状态。",
+    secondaryBefore: "你仍然可以返回 Intelligence，继续使用当前账号已经获得授权的功能。如果你认为这里的权限判断有误，请",
+    contact: "联系站点管理员",
+    secondaryAfter: "，我们会协助检查你的账号角色与管理员授权状态。",
+    mailSubject: "AERTEX Intelligence 管理员权限检查",
+    mailBody: "你好，\n\n我在访问 AERTEX Intelligence 管理后台时收到“此账号无权访问管理后台”的提示。请协助检查我的账号角色与管理员权限配置。\n\n账号邮箱 / 用户名：\n问题描述：\n访问时间：\n\n谢谢。",
     back: "返回 Intelligence",
     verify: "管理员权限验证",
     section: "Intelligence 管理后台"
   } : {
     title: "This account cannot access the admin console",
     detail: "This page is reserved for AERTEX Intelligence administrators. Your signed-in identity has been verified, but this account does not have administrator privileges, so access to the Intelligence admin console is blocked.",
-    secondary: "You can still return to Intelligence and continue using features already granted to this account. If you believe this authorization result is incorrect, contact the site administrator to review your account role and administrator access.",
+    secondaryBefore: "You can still return to Intelligence and continue using features already granted to this account. If you believe this authorization result is incorrect, ",
+    contact: "contact the site administrator",
+    secondaryAfter: " and we will help review your account role and administrator access.",
+    mailSubject: "AERTEX Intelligence administrator access review",
+    mailBody: "Hello,\n\nI received the “This account cannot access the admin console” message while opening the AERTEX Intelligence admin console. Please help review my account role and administrator permissions.\n\nAccount email / username:\nIssue details:\nTime of access:\n\nThank you.",
     back: "Back to Intelligence",
     verify: "Administrator verification",
     section: "Intelligence Admin"
   };
   const backHref = zh ? "/zh-cn" : "/en";
+  const mailto = "mailto:71-weirs-cedars@icloud.com?subject=" + encodeURIComponent(copy.mailSubject) + "&body=" + encodeURIComponent(copy.mailBody);
+  const secondaryHtml = copy.secondaryBefore + '<a class="contactLink" href="' + mailto + '">' + copy.contact + '</a>' + copy.secondaryAfter;
   const languageHref = zh ? "/en/admin" : "/zh-cn/admin";
   const languageLabel = zh ? "ZH" : "EN";
   const languageTitle = zh ? "Switch to English" : "切换到中文";
@@ -235,6 +245,9 @@ button,a{font:inherit}
 .gate h1{margin:0 0 10px;font-size:28px;line-height:1.18;letter-spacing:-.035em}
 .gate p{color:var(--muted);line-height:1.7;margin:0}
 .gate p+p{margin-top:10px}
+.contactLink{color:var(--text);font-weight:650;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.contactLink:hover{opacity:.72}
+.sideMeta .contactLink{color:inherit}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
 .primary{
   border:0;
@@ -271,7 +284,7 @@ button,a{font:inherit}
   <aside class="sidebar">
     <div class="brand">AERTEX Intelligence<small>Cloud Intelligence</small></div>
     <div class="status"><span class="statusDot"></span><span>${copy.verify}</span></div>
-    <div class="sideMeta">${copy.secondary}</div>
+    <div class="sideMeta">${secondaryHtml}</div>
   </aside>
   <main class="main">
     <header class="topbar">
@@ -286,7 +299,7 @@ button,a{font:inherit}
         <div class="kicker">${copy.verify}</div>
         <h1>${copy.title}</h1>
         <p>${copy.detail}</p>
-        <p>${copy.secondary}</p>
+        <p>${secondaryHtml}</p>
         <div class="actions"><a class="primary" href="${backHref}">${copy.back}</a></div>
       </div>
     </section>
