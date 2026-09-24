@@ -1,8 +1,14 @@
 import { FAVICON_LINKS } from "./favicon.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
 
-export function renderGptApp(locale) {
+export function renderGptApp(locale, bootstrap = {}) {
   const zh = locale === "zh-cn";
+  const bootstrapJson = JSON.stringify({
+    config: bootstrap?.config || null,
+    conversations: Array.isArray(bootstrap?.conversations) ? bootstrap.conversations : [],
+    current: bootstrap?.current || null,
+    isAdmin: bootstrap?.isAdmin === true
+  }).replace(/</g, "\\u003c");
   const t = zh ? {
     title:"AERTEX Intelligence", subtitle:"Cloud Intelligence", online:"Intelligence 在线", offline:"Intelligence 不可用",
     offlineTitle:"AERTEX Intelligence 暂不可用", offlineText:"当前账号尚未获得 AI 使用权限，或管理员尚未完成 API 配置。",
@@ -10,12 +16,12 @@ export function renderGptApp(locale) {
     connectHint:"请联系管理员为此账号分配 API Provider、模型和使用额度。",
     connect:"连接 ChatGPT / Codex", connecting:"正在连接…", openLogin:"打开 OpenAI 登录页",
     codeLabel:"设备代码", codeHint:"在 OpenAI 页面输入设备代码完成授权。完成后这里会自动识别登录状态。",
-    newChat:"新对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
-    noModels:"没有读取到可用模型", regionBlocked:"当前网络区域不可用", noAvailableRegion:"当前网络区域没有可用的已授权模型", rateLimited:"智谱当前返回速率限制，请稍后重试。", rateRetry:"建议等待", reasoning:"推理", thinking:"Intelligence 正在思考…",
-    empty:"开始一个新的对话", emptyHint:"消息由 AERTEX 服务端安全转发到管理员配置的 AI Provider，并以流式方式返回。",
-    error:"发生错误", privateNote:"API 凭据只保存在服务端。你的浏览器不会接触管理员配置的 API Key。",
-    bridgeAuth:"本机 Bridge 的安全凭据配置不一致。",
-    adminConsole:"打开 AERTEX Intelligence 管理后台"
+    newChat:"新对话", conversations:"对话", rename:"重命名", delete:"删除", share:"分享", shareCopied:"分享链接已复制", shareFailed:"无法创建分享链接", confirmDelete:"删除这个对话？", untitled:"未命名对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
+    noModels:"没有读取到可用模型", regionBlocked:"当前网络区域不可用", noAvailableRegion:"当前网络区域没有可用的已授权模型", rateLimited:"当前 Provider 返回速率限制，请稍后重试", rateRetry:"建议等待", reasoning:"推理", thinking:"Intelligence 正在思考…",
+    empty:"开始一个新的对话", emptyHint:"选择模型后直接开始聊天",
+    error:"发生错误",
+    bridgeAuth:"本机 Bridge 的安全凭据配置不一致",
+    adminConsole:"管理"
   } : {
     title:"AERTEX Intelligence", subtitle:"Cloud Intelligence", online:"Intelligence online", offline:"Intelligence unavailable",
     offlineTitle:"AERTEX Intelligence is unavailable", offlineText:"AI access has not been enabled for this account, or the administrator has not completed API configuration.",
@@ -23,12 +29,12 @@ export function renderGptApp(locale) {
     connectHint:"Ask an administrator to assign an API provider, models, and usage quota to this account.",
     connect:"Connect ChatGPT / Codex", connecting:"Connecting…", openLogin:"Open OpenAI sign-in",
     codeLabel:"Device code", codeHint:"Enter the device code on the OpenAI page. This page will detect completion automatically.",
-    newChat:"New chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
-    noModels:"No available models were returned", regionBlocked:"Unavailable on current network", noAvailableRegion:"No authorized model is available on the current network", rateLimited:"Zhipu is rate-limiting requests right now. Try again shortly.", rateRetry:"Retry after", reasoning:"Reasoning", thinking:"Intelligence is thinking…",
-    empty:"Start a new conversation", emptyHint:"Messages are securely proxied by AERTEX to the administrator-configured AI provider and streamed back here.",
-    error:"Error", privateNote:"API credentials remain server-side. Your browser never receives the administrator API key.",
-    bridgeAuth:"The local Bridge security credentials do not match.",
-    adminConsole:"Open AERTEX Intelligence Admin"
+    newChat:"New chat", conversations:"Chats", rename:"Rename", delete:"Delete", share:"Share", shareCopied:"Share link copied", shareFailed:"Unable to create share link", confirmDelete:"Delete this conversation?", untitled:"Untitled chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
+    noModels:"No available models were returned", regionBlocked:"Unavailable on current network", noAvailableRegion:"No authorized model is available on the current network", rateLimited:"The provider is rate-limiting requests right now. Try again shortly.", rateRetry:"Retry after", reasoning:"Reasoning", thinking:"Intelligence is thinking…",
+    empty:"Start a new conversation", emptyHint:"Choose a model and start chatting",
+    error:"Error",
+    bridgeAuth:"The local Bridge security credentials do not match",
+    adminConsole:"Admin"
   };
 
   return `<!doctype html>
