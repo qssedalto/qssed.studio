@@ -1,3 +1,4 @@
+import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
 export function renderAiAdmin(locale) {
   const zh = locale === "zh-cn";
   const t = zh ? {
@@ -49,11 +50,10 @@ dialog{width:min(520px,calc(100vw - 28px));max-height:min(72vh,680px);padding:0;
 .status{min-height:20px;margin:5px 0 12px}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:var(--soft);font-size:11px}
 @media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}.user{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}
 @media(max-width:560px){header{display:block}.metrics,.user{grid-template-columns:1fr}}
-</style>
-</head>
+</style>\n<style>${accountMenuStyles()}</style>\n</head>
 <body>
 <main>
-<header><div><h1>${t.title}</h1><p class="intro">${t.intro}</p></div><span class="pill">AERTEX Intelligence</span></header>
+<header><div><h1>${t.title}</h1><p class="intro">${t.intro}</p></div><div style="display:flex;align-items:center;gap:10px"><span class="pill">AERTEX Intelligence</span>${accountMenuMarkup(zh ? "zh-cn" : "en")}</div></header>
 <div id="msg" class="status hint"></div>
 
 <section class="card">
@@ -629,6 +629,7 @@ updateProviderPickers();
 load();
 setInterval(load,60000);
 </script>
+${accountMenuClientScript({ locale: zh ? "zh-cn" : "en" })}
 </body>
 </html>`;
 }
