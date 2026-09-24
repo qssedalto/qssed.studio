@@ -1,5 +1,6 @@
 import { SUPABASE_URL, SUPABASE_KEY, TEXT } from "./config.js";
 import { FAVICON_LINKS } from "./favicon.js";
+import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
 
 export function baseHead(title) {
   return `
@@ -228,7 +229,7 @@ export function baseHead(title) {
       :root[data-theme="light"] .theme-toggle .theme-sun{display:inline}
       :root.theme-switching body,:root.theme-switching .card{transition:background .20s ease,color .20s ease,border-color .20s ease}
 
-      .top-controls-zone{position:fixed;top:0;right:0;width:132px;height:72px;z-index:80;pointer-events:none}
+      .top-controls-zone{position:fixed;top:0;right:0;width:190px;height:72px;z-index:120;pointer-events:none}
       .top-controls{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:8px;opacity:1;transform:none;pointer-events:auto}
       .top-controls .language-toggle,.top-controls .theme-toggle{position:static!important;top:auto!important;right:auto!important}
 
@@ -368,6 +369,7 @@ export function baseHead(title) {
         }
       }
     </style>
+    <style>${accountMenuStyles()}</style>
   `;
 }
 
@@ -399,13 +401,16 @@ export function languageToggle(links, t) {
 }
 
 export function topControls(links, t) {
+  const locale = t === TEXT.zh ? "zh-cn" : "en";
   return `
     <div class="top-controls-zone" aria-label="Page controls">
       <div class="top-controls">
         ${languageToggle(links, t)}
         ${themeToggle()}
+        ${accountMenuMarkup(locale)}
       </div>
     </div>
+    ${accountMenuClientScript({ locale })}
   `;
 }
 
