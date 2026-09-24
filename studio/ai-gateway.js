@@ -637,6 +637,8 @@ async function chat(request, env, session) {
   }
 
   let conversationId = uuid(b.conversation_id) ? b.conversation_id : null;
+  let createdConversation = false;
+  let historyData = [];
   if (conversationId) {
     const existingConversation = await restData(
       session,
@@ -646,38 +648,14 @@ async function chat(request, env, session) {
     if (!Array.isArray(existingConversation.data) || !existingConversation.data.length) {
       return json({ error: "Conversation not found." }, 404);
     }
-  }
-  if (!conversationId) {
-    const created = await restData(session, "/ai_conversations", {
-      method: "POST",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify({
-        user_id: session.user.id,
-        provider_id: p.id,
-        model,
-        title: message.slice(0, 80)
-      })
-    });
-    if (!created.ok || !created.data?.[0]?.id) return json({ error: "Unable to create conversation." }, 502);
-    conversationId = created.data[0].id;
-  }
 
-  const history = await restData(
-    session,
-    "/ai_messages?conversation_id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) + "&select=role,content&order=created_at.asc&limit=40"
-  );
-  if (!history.ok) return json({ error: "Unable to load conversation." }, 502);
-
-  const inserted = await restData(session, "/ai_messages", {
-    method: "POST",
-    body: JSON.stringify({
-      conversation_id: conversationId,
-      user_id: session.user.id,
-      role: "user",
-      content: message
-    })
-  });
-  if (!inserted.ok) return json({ error: "Unable to save message." }, 502);
+    const history = await restData(
+      session,
+      "/ai_messages?conversation_id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) + "&select=role,content&order=created_at.asc&limit=40"
+    );
+    if (!history.ok) return json({ error: "Unable to load conversation." }, 502);
+    historyData = Array.isArray(history.data) ? history.data : [];
+  }
 
   let apiKey;
   try {
@@ -687,7 +665,7 @@ async function chat(request, env, session) {
   }
 
   const input = [
-    ...(history.data || []).map(item => ({ role: item.role, content: item.content })),
+    ...historyData.map(item => ({ role: item.role, content: item.content })),
     { role: "user", content: message }
   ];
 
@@ -698,15 +676,27 @@ async function chat(request, env, session) {
   const upstreamBody = usesChatCompletions
     ? { model, messages: input, stream: true, stream_options: { include_usage: true } }
     : { model, input, stream: true };
-  const upstream = await fetch(upstreamUrl, {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + apiKey,
-      "Content-Type": "application/json",
-      Accept: "text/event-stream"
-    },
-    body: JSON.stringify(upstreamBody)
-  });
+  let upstream;
+  try {
+    upstream = await fetch(upstreamUrl, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + apiKey,
+        "Content-Type": "application/json",
+        Accept: "text/event-stream"
+      },
+      body: JSON.stringify(upstreamBody)
+    });
+  } catch {
+    return json(
+      {
+        error: providerDisplayName(normalizedProvider) + " is temporarily unreachable.",
+        code: "PROVIDER_UNREACHABLE",
+        provider_id: p.id
+      },
+      502
+    );
+  }
 
   if (!upstream.ok) {
     const raw = await upstream.text();
@@ -739,6 +729,25 @@ async function chat(request, env, session) {
       },
       upstream.status === 429 ? 429 : 502
     );
+  }
+
+  if (!conversationId) {
+    const created = await restData(session, "/ai_conversations", {
+      method: "POST",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({
+        user_id: session.user.id,
+        provider_id: p.id,
+        model,
+        title: message.slice(0, 80)
+      })
+    });
+    if (!created.ok || !created.data?.[0]?.id) {
+      try { await upstream.body?.cancel(); } catch {}
+      return json({ error: "Unable to create conversation." }, 502);
+    }
+    conversationId = created.data[0].id;
+    createdConversation = true;
   }
 
   const reader = upstream.body.getReader();
@@ -810,11 +819,20 @@ async function chat(request, env, session) {
           }
         }
 
-        const cost = estimateCost(model, inputTokens, outputTokens, p);
-        if (full) {
-          await restData(session, "/ai_messages", {
-            method: "POST",
-            body: JSON.stringify({
+        if (!full.trim()) {
+          throw new Error("Provider returned no response content.");
+        }
+
+        const savedMessages = await restData(session, "/ai_messages", {
+          method: "POST",
+          body: JSON.stringify([
+            {
+              conversation_id: conversationId,
+              user_id: session.user.id,
+              role: "user",
+              content: message
+            },
+            {
               conversation_id: conversationId,
               user_id: session.user.id,
               role: "assistant",
@@ -822,9 +840,12 @@ async function chat(request, env, session) {
               provider_response_id: responseId,
               input_tokens: inputTokens,
               output_tokens: outputTokens
-            })
-          });
-        }
+            }
+          ])
+        });
+        if (!savedMessages.ok) throw new Error("Unable to save conversation.");
+
+        const cost = estimateCost(model, inputTokens, outputTokens, p);
         await restData(session, "/ai_usage", {
           method: "POST",
           body: JSON.stringify({
@@ -852,6 +873,12 @@ async function chat(request, env, session) {
         });
         controller.close();
       } catch (error) {
+        if (createdConversation) {
+          await restData(session, "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id), {
+            method: "DELETE",
+            headers: { Prefer: "return=minimal" }
+          }).catch(() => null);
+        }
         emit("error", { error: String(error?.message || "Stream failed").slice(0, 240) });
         controller.close();
       }

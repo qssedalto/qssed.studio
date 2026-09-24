@@ -88,5 +88,18 @@ for (const required of [
 ]) {
   assert(aiGateway.includes(required), `AI gateway is missing multi-provider invariant: ${required}`);
 }
+
+const chatStart = aiGateway.indexOf("async function chat(");
+const chatEnd = aiGateway.indexOf("async function validateProviderKey", chatStart);
+const chatSource = aiGateway.slice(chatStart, chatEnd);
+assert(chatStart >= 0 && chatEnd > chatStart, "AI chat implementation must remain discoverable for persistence checks.");
+assert(!chatSource.includes('const inserted = await restData(session, "/ai_messages"'), "AI chat must not persist the user message before provider success.");
+assert(
+  chatSource.indexOf('const savedMessages = await restData(session, "/ai_messages"') > chatSource.indexOf("if (!upstream.ok)"),
+  "AI chat messages must be persisted only after the provider accepts the request."
+);
+assert(chatSource.includes("if (createdConversation)"), "New conversations must be removed when a provider stream fails.");
+assert(chatSource.includes('method: "DELETE"'), "Failed newly-created conversations must be deleted.");
+
 console.log("GPT authentication handoff looks valid.");
 
