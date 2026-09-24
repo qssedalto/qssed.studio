@@ -149,6 +149,7 @@ let editDefaultModel="";
 let editReplacementKeyChecked=true;
 const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 const money=value=>value==null?"—":"$"+Number(value||0).toFixed(4);
+const normalizeApiKey=value=>String(value||"").replace(/[\\s\\u200B\\u200C\\u200D\\u2060\\uFEFF]+/g,"").trim();
 
 function updateProviderPickers(){
   $("modelsPicker").disabled=!projectKeyValidated;
@@ -190,7 +191,7 @@ function syncProviderType(){
 $("providerType").addEventListener("change",()=>{invalidateProjectKey();syncProviderType();});
 $("key").addEventListener("input",invalidateProjectKey);
 $("checkKey").onclick=async()=>{
-  const key=$("key").value.trim();
+  const key=normalizeApiKey($("key").value);
   if(!key){
     invalidateProjectKey();
     $("keyStatus").textContent="${t.checkKeyFirst}";
@@ -429,7 +430,7 @@ $("editKey").addEventListener("input",()=>{
 });
 
 $("editCheckKey").onclick=async()=>{
-  const key=$("editKey").value.trim();
+  const key=normalizeApiKey($("editKey").value);
   if(!key){editReplacementKeyChecked=true;$("editKeyStatus").textContent="${t.currentKey} · ****"+(editingProvider?.key_hint||"");$("editKeyStatus").className="keyStatus ok";return;}
   const button=$("editCheckKey"); button.disabled=true; button.textContent="${t.checkingKey}";
   try{
@@ -493,8 +494,8 @@ $("editSave").onclick=async()=>{
   try{
     await api("/provider/"+encodeURIComponent(editingProvider.id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       name:$("editName").value,
-      api_key:$("editKey").value,
-      admin_key:$("editAdminKey").value,
+      api_key:normalizeApiKey($("editKey").value),
+      admin_key:normalizeApiKey($("editAdminKey").value),
       clear_admin_key:$("editClearAdminKey").checked,
       allowed_models:editSelectedModels,
       default_model:editDefaultModel,
@@ -586,8 +587,8 @@ $("saveProvider").onclick=async()=>{
     const result=await api("/provider",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       name:$("name").value,
       provider:$("providerType").value,
-      api_key:$("key").value,
-      admin_key:$("adminKey").value,
+      api_key:normalizeApiKey($("key").value),
+      admin_key:normalizeApiKey($("adminKey").value),
       allowed_models:selectedProviderModels,
       default_model:selectedDefaultModel,
       monthly_budget_usd:$("budget").value,
