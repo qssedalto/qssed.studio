@@ -104,6 +104,8 @@ jobs:
           node --check auth-pkce-test.js
           node --check auth-edge-protection.js
           node --check gpt-worker.js
+          node --check studio/ai-gateway.js
+          node --check studio/ai-admin-ui.js
           node --check scripts/auth-edge-protection-check.mjs
           node scripts/auth-edge-protection-check.mjs
 
