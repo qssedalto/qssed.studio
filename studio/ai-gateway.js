@@ -39,9 +39,18 @@ export async function handleAiAdminApi(request, env, session) {
     if (!key) return json({ error: "API Key is required." }, 400);
     const check = await validateProviderKey(provider, key);
     if (!check.ok) {
+      const status = check.code === "REGION_UNSUPPORTED"
+        ? 403
+        : check.code === "RATE_LIMITED"
+          ? 429
+          : 400;
       return json(
-        { error: check.error || "Provider API key validation failed.", code: check.code || null },
-        check.code === "REGION_UNSUPPORTED" ? 403 : 400
+        {
+          error: check.error || "Provider API key validation failed.",
+          code: check.code || null,
+          diagnostic: check.diagnostic || null
+        },
+        status
       );
     }
     return json({ ok: true, provider, models: check.models || [] });
@@ -58,7 +67,17 @@ export async function handleAiAdminApi(request, env, session) {
     try {
       const key = await decrypt(row.encrypted_api_key, row.api_key_iv, env.AI_CREDENTIAL_KEY);
       const check = await validateProviderKey(cleanProvider(row.provider), key);
-      if (!check.ok) return json({ error: check.error || "Stored API Key is no longer valid.", code: check.code || null }, check.code === "REGION_UNSUPPORTED" ? 403 : 400);
+      if (!check.ok) {
+        const status = check.code === "REGION_UNSUPPORTED" ? 403 : check.code === "RATE_LIMITED" ? 429 : 400;
+        return json(
+          {
+            error: check.error || "Stored API Key could not be verified.",
+            code: check.code || null,
+            diagnostic: check.diagnostic || null
+          },
+          status
+        );
+      }
       return json({ ok: true, provider: cleanProvider(row.provider), models: check.models || [] });
     } catch {
       return json({ error: "Stored Project API Key cannot be decrypted." }, 503);
@@ -103,9 +122,14 @@ export async function handleAiAdminApi(request, env, session) {
       }
       const keyCheck = await validateProviderKey(cleanProvider(existing.provider), projectKey);
       if (!keyCheck.ok) {
+        const status = keyCheck.code === "REGION_UNSUPPORTED" ? 403 : keyCheck.code === "RATE_LIMITED" ? 429 : 400;
         return json(
-          { error: keyCheck.error || "Provider API key validation failed.", code: keyCheck.code || null },
-          keyCheck.code === "REGION_UNSUPPORTED" ? 403 : 400
+          {
+            error: keyCheck.error || "Provider API key validation failed.",
+            code: keyCheck.code || null,
+            diagnostic: keyCheck.diagnostic || null
+          },
+          status
         );
       }
       const accessibleModels = new Set(keyCheck.models || []);
@@ -226,7 +250,17 @@ export async function handleAiAdminApi(request, env, session) {
     if (!key || !name) return json({ error: "Provider name and API key are required." }, 400);
 
     const keyCheck = await validateProviderKey(provider, key);
-    if (!keyCheck.ok) return json({ error: keyCheck.error || "Provider API key validation failed.", code: keyCheck.code || null }, keyCheck.code === "REGION_UNSUPPORTED" ? 403 : 400);
+    if (!keyCheck.ok) {
+      const status = keyCheck.code === "REGION_UNSUPPORTED" ? 403 : keyCheck.code === "RATE_LIMITED" ? 429 : 400;
+      return json(
+        {
+          error: keyCheck.error || "Provider API key validation failed.",
+          code: keyCheck.code || null,
+          diagnostic: keyCheck.diagnostic || null
+        },
+        status
+      );
+    }
     const accessibleModels = new Set(keyCheck.models || []);
     if (!allowedModels.length) return json({ error: "Select at least one allowed model." }, 400);
     if (!allowedModels.every(model => accessibleModels.has(model))) {
@@ -546,11 +580,24 @@ async function chat(request, env, session) {
   });
 
   if (!upstream.ok) {
-    const detail = safeUpstreamError(await upstream.text());
+    const raw = await upstream.text();
+    const diagnostic = upstreamDiagnostic(upstream, raw);
+    const detail = diagnostic.message;
     if (p.provider === "openai" && isUnsupportedRegionMessage(detail)) {
       return json(
         { error: "OpenAI is unavailable from the current network region.", code: "REGION_UNSUPPORTED", provider_id: p.id },
         403
+      );
+    }
+    if (p.provider === "zhipu" && upstream.status === 429) {
+      return json(
+        {
+          error: "Zhipu GLM returned HTTP 429 rate limit.",
+          code: "RATE_LIMITED",
+          provider_id: p.id,
+          diagnostic
+        },
+        429
       );
     }
     return json(
@@ -558,7 +605,8 @@ async function chat(request, env, session) {
         error: (p.provider === "zhipu" ? "Zhipu GLM request failed." : "OpenAI request failed."),
         detail,
         code: "PROVIDER_REQUEST_FAILED",
-        provider_id: p.id
+        provider_id: p.id,
+        diagnostic
       },
       upstream.status === 429 ? 429 : 502
     );
@@ -714,10 +762,58 @@ async function validateZhipuKey(key) {
   } catch {
     return { ok: false, error: "Unable to reach Zhipu GLM.", code: "PROVIDER_UNREACHABLE" };
   }
+
+  const raw = await response.text();
   if (!response.ok) {
-    const detail = safeUpstreamError(await response.text());
-    return { ok: false, error: "Zhipu GLM API key rejected: " + detail, code: "KEY_REJECTED" };
+    const diagnostic = upstreamDiagnostic(response, raw);
+    if (response.status === 429) {
+      return {
+        ok: false,
+        code: "RATE_LIMITED",
+        error: "Zhipu GLM returned HTTP 429 rate limit.",
+        diagnostic
+      };
+    }
+    if (response.status === 401) {
+      return {
+        ok: false,
+        code: "PROVIDER_AUTH_INVALID",
+        error: "Zhipu GLM rejected the API Key authentication.",
+        diagnostic
+      };
+    }
+    if (response.status === 402) {
+      return {
+        ok: false,
+        code: "PROVIDER_QUOTA_EXHAUSTED",
+        error: "Zhipu GLM reports insufficient account quota.",
+        diagnostic
+      };
+    }
+    if (response.status === 403) {
+      return {
+        ok: false,
+        code: "PROVIDER_PERMISSION_DENIED",
+        error: "Zhipu GLM denied access to this model or account.",
+        diagnostic
+      };
+    }
+    if (response.status === 503) {
+      return {
+        ok: false,
+        code: "PROVIDER_OVERLOADED",
+        error: "Zhipu GLM is temporarily overloaded.",
+        diagnostic
+      };
+    }
+    return {
+      ok: false,
+      code: "PROVIDER_REJECTED",
+      error: "Zhipu GLM validation request failed: " + diagnostic.message,
+      diagnostic
+    };
   }
+
   return { ok: true, models: [...ZHIPU_MODELS] };
 }
 
@@ -945,6 +1041,49 @@ function sanitizeProvider(row) {
     monthly_budget_usd: row.monthly_budget_usd,
     is_active: row.is_active
   };
+}
+
+function upstreamDiagnostic(response, rawBody) {
+  const raw = String(rawBody || "");
+  let parsed = null;
+  try { parsed = JSON.parse(raw); } catch {}
+
+  const providerCode = cleanDiagnosticValue(
+    parsed?.error?.code ?? parsed?.error_code ?? parsed?.code ?? parsed?.error?.type ?? ""
+  );
+  const requestId = cleanDiagnosticValue(
+    response?.headers?.get("x-request-id") ||
+    response?.headers?.get("x-zhipu-request-id") ||
+    response?.headers?.get("request-id") ||
+    parsed?.request_id ||
+    parsed?.requestId ||
+    ""
+  );
+  const retryAfter = parseRetryAfter(response?.headers?.get("retry-after"));
+  return {
+    upstream_status: Number(response?.status) || null,
+    provider_code: providerCode || null,
+    request_id: requestId || null,
+    retry_after_seconds: retryAfter,
+    checked_at: new Date().toISOString(),
+    message: safeUpstreamError(raw)
+  };
+}
+
+function cleanDiagnosticValue(value) {
+  return String(value || "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .trim()
+    .slice(0, 120);
+}
+
+function parseRetryAfter(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return Math.max(0, Math.min(3600, Number(raw)));
+  const timestamp = Date.parse(raw);
+  if (!Number.isFinite(timestamp)) return null;
+  return Math.max(0, Math.min(3600, Math.ceil((timestamp - Date.now()) / 1000)));
 }
 
 function safeUpstreamError(value) {
