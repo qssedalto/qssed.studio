@@ -124,7 +124,7 @@ function syncForm(targetOrigin, accessToken, refreshToken, remaining, returnTo) 
     headers: {
       "content-type": "text/html;charset=UTF-8",
       "cache-control": "no-store",
-      "referrer-policy": "no-referrer",
+      "referrer-policy": "origin",
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
       "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${targetOrigin}; base-uri 'none'; frame-ancestors 'none'`
