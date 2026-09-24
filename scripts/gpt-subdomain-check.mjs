@@ -58,6 +58,7 @@ assert(!gpt.includes("canonicalGptAlias"), "GPT .online/.studio hosts must stay 
 assert(gpt.includes('conversationRoute = pathname.match'), "GPT Worker must support per-conversation routes.");
 assert(gpt.includes('loadGptBootstrap(request, env, gate, conversationId)'), "GPT Worker must bootstrap Intelligence data before first paint.");
 assert(gpt.includes('pathname.match(/^\\/share\\/'), "GPT Worker must expose explicit read-only share routes.");
+assert(gpt.includes("get_shared_ai_conversation"), "GPT Worker must load explicitly shared conversations through the public RPC.");
 
 assert(gpt.includes("handleAiApi(request, env, gate)"), "GPT Worker must proxy authenticated AI API calls.");
 assert(gpt.includes("renderAdminDenied(locale, identity)"), "GPT Worker must render a dedicated non-admin denial page with verified identity context.");
@@ -81,7 +82,6 @@ for (const required of [
   'DAILY_TOKEN_QUOTA_REACHED',
   'MONTHLY_TOKEN_QUOTA_REACHED',
   'response.status === 429',
-  'get_shared_ai_conversation',
   '/api/ai/conversations',
   'share_token',
   'Conversation not found.'
