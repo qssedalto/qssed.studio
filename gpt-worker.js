@@ -25,7 +25,9 @@ export default {
       return json({
         service: "qsseda-gpt",
         status: "ok",
-        origin: gptOriginForRequest(request)
+        origin: gptOriginForRequest(request),
+        placement: request.headers.get("cf-placement") || null,
+        colo: request.cf?.colo || null
       });
     }
 
