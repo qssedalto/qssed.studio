@@ -11,6 +11,7 @@ const handoff = read("studio/gpt-subdomain.js");
 const session = read("studio/session-gate.js");
 const authHandoff = read("studio/auth-handoff.js");
 const gptWrangler = JSON.parse(read("wrangler.gpt.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
+const aiGateway = read("studio/ai-gateway.js");
 
 for (const required of [
   'verifyStudioPageSession(request)',
@@ -59,4 +60,14 @@ assert(gpt.includes("handleAiApi(request, env, gate)"), "GPT Worker must proxy a
 assert(gpt.includes("renderAdminDenied(locale, identity)"), "GPT Worker must render a dedicated non-admin denial page with verified identity context.");
 assert(gpt.includes("loadDeniedIdentity(gate)"), "GPT Worker must prefill denied-admin support mail with authenticated account context.");
 assert(!gpt.includes("utm_source=chatgpt.com"), "GPT admin links must not include tracking parameters.");
+for (const required of [
+  'const ZHIPU_BASE = "https://open.bigmodel.cn/api"',
+  'providerAvailability(p.provider, country)',
+  'request.cf?.country',
+  'ai_user_provider_access',
+  'validateZhipuKey',
+  'provider_id: p.id'
+]) {
+  assert(aiGateway.includes(required), `AI gateway is missing multi-provider invariant: ${required}`);
+}
 console.log("GPT authentication handoff looks valid.");
