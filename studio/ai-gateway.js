@@ -25,6 +25,10 @@ export async function handleAiAdminApi(request, env, session) {
   const admin = await rpc(session, "is_admin", {});
   if (!admin.ok || admin.data !== true) return json({ error: "Administrator access required." }, 403);
 
+  if (path === "/api/ai/admin/me" && request.method === "GET") {
+    return json({ admin: true });
+  }
+
   if (path === "/api/ai/admin/state" && request.method === "GET") {
     const state = await rpc(session, "get_ai_admin_state", {});
     if (!state.ok) return json({ error: "Unable to load AI administration." }, 502);
