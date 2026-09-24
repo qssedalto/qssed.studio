@@ -20,7 +20,7 @@ for (const locale of ["zh-cn", "en"]) {
     'share.dataset.action="share"',
     'del.dataset.action="delete"',
     'history.replaceState({conversationId:state.conversationId}',
-    'boot.isAdmin===true'
+    'boot.isAdmin===true',
     'qssed_theme',
     'data-theme="dark"',
   ]) {
