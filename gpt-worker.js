@@ -6,6 +6,7 @@ import { renderGptApp } from "./studio/gpt-ui.js";
 import { handleRemoteCodexApi } from "./studio/gpt-bridge.js";
 import { gptOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
+import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 
 
 export default {
@@ -92,12 +93,12 @@ function securityHeaders(contentType) {
     "x-frame-options": "DENY",
     "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
     "strict-transport-security": "max-age=31536000; includeSubDomains",
-    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
   });
 }
 
 function html(markup, status = 200) {
-  return new Response(markup, { status, headers: securityHeaders("text/html;charset=UTF-8") });
+  return new Response(injectBrandLogoRuntime(markup), { status, headers: securityHeaders("text/html;charset=UTF-8") });
 }
 
 function json(data, status = 200) {

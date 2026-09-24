@@ -1,3 +1,5 @@
+import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
+
 const CLIENT_ID = "qsseda-pkce-browser-test";
 const SCOPE = "profile.read session.read";
 const CALLBACK_PATH = "/pkce-test/callback";
@@ -312,7 +314,7 @@ function callbackPage(origin) {
 }
 
 function html(content, status = 200) {
-  return new Response(content, {
+  return new Response(injectBrandLogoRuntime(content), {
     status,
     headers: {
       "content-type": "text/html;charset=UTF-8",

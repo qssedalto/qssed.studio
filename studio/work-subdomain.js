@@ -1,6 +1,7 @@
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 import { authOriginForRequest, isServiceHost, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 import { FAVICON_LINKS } from "./favicon.js";
+import { injectBrandLogoRuntime } from "./brand-logo.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 
@@ -109,9 +110,9 @@ export async function handleMainWorkHandoff(request) {
     "cache-control": "no-store",
     "referrer-policy": "origin",
     "x-content-type-options": "nosniff",
-    "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${workOrigin}; base-uri 'none'; frame-ancestors 'none'`
+    "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; form-action ${workOrigin}; base-uri 'none'; frame-ancestors 'none'`
   });
-  return withStudioSessionCookies(new Response(page, { status: 200, headers }), gate.cookies || []);
+  return withStudioSessionCookies(new Response(injectBrandLogoRuntime(page), { status: 200, headers }), gate.cookies || []);
 }
 
 function preferredLocale(request, pathname) {

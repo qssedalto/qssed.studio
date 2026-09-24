@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
 import { QSS_DOMAIN_ROOTS, authOrigins, rootDomainForHost, serviceOrigin } from "./studio/domain-family.js";
 import { FAVICON_LINKS } from "./studio/favicon.js";
+import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 
 const ACCESS_COOKIE = "__Host-qsseda-access";
 const REFRESH_COOKIE = "__Host-qsseda-refresh";
@@ -119,7 +120,7 @@ async function currentSession(request) {
 function syncForm(targetOrigin, accessToken, refreshToken, remaining, returnTo) {
   const action = `${targetOrigin}/sso/import`;
   const body = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AERTEX ID</title>${FAVICON_LINKS}</head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><p>正在同步 AERTEX ID 登录状态…</p></main><form id="sso" method="post" action="${escapeHtml(action)}"><input type="hidden" name="access_token" value="${escapeHtml(accessToken)}"><input type="hidden" name="refresh_token" value="${escapeHtml(refreshToken)}"><input type="hidden" name="remaining" value="${escapeHtml(remaining.join(","))}"><input type="hidden" name="return_to" value="${escapeHtml(returnTo)}"></form><script>document.getElementById("sso").submit()</script></body></html>`;
-  return new Response(body, {
+  return new Response(injectBrandLogoRuntime(body), {
     status: 200,
     headers: {
       "content-type": "text/html;charset=UTF-8",
@@ -127,7 +128,7 @@ function syncForm(targetOrigin, accessToken, refreshToken, remaining, returnTo) 
       "referrer-policy": "origin",
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
-      "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${targetOrigin}; base-uri 'none'; frame-ancestors 'none'`
+      "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; form-action ${targetOrigin}; base-uri 'none'; frame-ancestors 'none'`
     }
   });
 }

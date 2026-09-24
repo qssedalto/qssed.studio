@@ -1,3 +1,5 @@
+import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
+
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 const ACCESS_COOKIE = "__Host-qsseda-access";
@@ -338,7 +340,7 @@ function json(data, status = 200) {
 function html(content, status = 200) {
   const headers = oauthHeaders("text/html;charset=UTF-8");
   headers.set("content-security-policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
-  return new Response(content, { status, headers });
+  return new Response(injectBrandLogoRuntime(content), { status, headers });
 }
 
 function oauthHeaders(contentType) {
