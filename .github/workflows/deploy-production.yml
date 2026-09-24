@@ -108,6 +108,8 @@ jobs:
           node --check gpt-worker.js
           node --check studio/ai-gateway.js
           node --check studio/ai-admin-ui.js
+          node --check scripts/ai-admin-ui-check.mjs
+          node scripts/ai-admin-ui-check.mjs
           node --check scripts/auth-edge-protection-check.mjs
           node scripts/auth-edge-protection-check.mjs
 
