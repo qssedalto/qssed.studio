@@ -16,9 +16,9 @@ for (const locale of ["zh-cn", "en"]) {
     'provider.provider==="bailian"',
     'REGION_UNSUPPORTED',
     'id="conversationList"',
-    'data-action="rename"',
-    'data-action="share"',
-    'data-action="delete"',
+    'rename.dataset.action="rename"',
+    'share.dataset.action="share"',
+    'del.dataset.action="delete"',
     'history.replaceState({conversationId:state.conversationId}',
     'boot.isAdmin===true'
   ]) {
