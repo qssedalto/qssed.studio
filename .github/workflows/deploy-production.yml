@@ -24,6 +24,8 @@ on:
       - scripts/gpt-subdomain-check.mjs
       - scripts/gpt-ui-check.mjs
       - scripts/account-menu-check.mjs
+      - scripts/r2-storage-audit-check.mjs
+      - scripts/r2-audit-maintenance-worker.js
       - scripts/r2-audit-maintenance-worker.js
       - scripts/brand-check.mjs
       - scripts/codex-bridge-check.mjs
@@ -99,6 +101,9 @@ jobs:
           node --check scripts/gpt-ui-check.mjs
           node scripts/gpt-ui-check.mjs
           node --check scripts/account-menu-check.mjs
+          node --check scripts/r2-storage-audit-check.mjs
+          node scripts/r2-storage-audit-check.mjs
+          node --check scripts/r2-audit-maintenance-worker.js
           node scripts/account-menu-check.mjs
           node --check scripts/codex-bridge-check.mjs
           node scripts/codex-bridge-check.mjs
