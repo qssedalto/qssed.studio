@@ -2,7 +2,6 @@ import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-pr
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { adminOriginForRequest } from "./studio/domain-family.js";
 import { adminSessionRedirect } from "./studio/admin-subdomain.js";
-import { handleAiAdminApi } from "./studio/ai-gateway.js";
 import { handleAuthorizedAccessAuditAdmin, recordAccessAudit } from "./studio/access-audit.js";
 import { handleAdminAccess, handleAdminAction } from "./admin/admin-api.js";
 import {
@@ -77,8 +76,7 @@ async function routeAdminRequest(request, env) {
     } else if (pathname === "/api/admin/access-audit") {
       response = await handleAuthorizedAccessAuditAdmin(request, env);
     } else if (pathname.startsWith("/api/admin/ai/")) {
-      const internal = internalAiAdminRequest(request, pathname);
-      response = await handleAiAdminApi(internal, env, session);
+      response = await proxyAiAdmin(request, env, session, pathname);
     } else {
       const action = pathname.slice("/api/admin/".length);
       response = await handleAdminAction(request, env, action);
@@ -114,16 +112,41 @@ async function routeAdminRequest(request, env) {
     : response;
 }
 
-function internalAiAdminRequest(request, pathname) {
-  const url = new URL(request.url);
-  url.pathname = pathname.replace(/^\/api\/admin\/ai\//, "/api/ai/admin/");
-  const init = {
+async function proxyAiAdmin(request, env, session, pathname) {
+  if (!env?.GPT_CONTROL || !env?.ADMIN_BRIDGE_SECRET) {
+    return json({ error: "Intelligence administration bridge is unavailable." }, 503);
+  }
+
+  const sourceUrl = new URL(request.url);
+  const targetUrl = new URL("https://gpt.qsseda.com/_internal/admin-ai/" + pathname.slice("/api/admin/ai/".length));
+  targetUrl.search = sourceUrl.search;
+
+  const headers = new Headers();
+  headers.set("X-AERTEX-Control-Secret", String(env.ADMIN_BRIDGE_SECRET));
+  headers.set("X-AERTEX-User-Token", String(session.accessToken || ""));
+  headers.set("Accept", request.headers.get("Accept") || "application/json");
+  const contentType = request.headers.get("Content-Type");
+  if (contentType) headers.set("Content-Type", contentType);
+
+  const upstream = await env.GPT_CONTROL.fetch(new Request(targetUrl.toString(), {
     method: request.method,
-    headers: request.headers,
+    headers,
     body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
     redirect: "manual"
-  };
-  return new Request(url.toString(), init);
+  }));
+
+  const responseHeaders = new Headers({
+    "content-type": upstream.headers.get("content-type") || "application/json;charset=UTF-8",
+    "cache-control": "private, no-store",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff",
+    "x-robots-tag": "noindex, nofollow, noarchive, nosnippet"
+  });
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: responseHeaders
+  });
 }
 
 function scheduleAudit(ctx, request, response, env, startedAt) {
