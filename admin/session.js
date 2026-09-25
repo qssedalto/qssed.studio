@@ -27,11 +27,8 @@ export async function handleAdminHandoff(request) {
   const verified = await verifyAccessToken(accessToken);
   if (!verified.ok) return text("Not found.", 404);
 
-  const active = await activeProfile(accessToken, verified.user.id);
-  if (!active) return text("Not found.", 404);
-
-  const admin = await adminCheck(accessToken);
-  if (!admin) return text("Not found.", 404);
+  const profile = await adminProfile(accessToken, verified.user.id);
+  if (!profile?.isAdmin) return text("Not found.", 404);
 
   const maxAge = accessCookieAge(accessToken);
   const headers = new Headers({
@@ -54,11 +51,8 @@ export async function verifyAdminSession(request) {
   const verified = await verifyAccessToken(accessToken);
   if (!verified.ok) return { ok: false, accessToken: "", user: null, cookies: clearAdminSessionCookies() };
 
-  const active = await activeProfile(accessToken, verified.user.id);
-  if (!active) return { ok: false, accessToken: "", user: null, cookies: clearAdminSessionCookies() };
-
-  const admin = await adminCheck(accessToken);
-  if (!admin) return { ok: false, accessToken: "", user: null, cookies: clearAdminSessionCookies() };
+  const profile = await adminProfile(accessToken, verified.user.id);
+  if (!profile?.isAdmin) return { ok: false, accessToken: "", user: null, cookies: clearAdminSessionCookies() };
 
   return { ok: true, accessToken, user: verified.user, cookies: [] };
 }
@@ -126,11 +120,11 @@ async function verifyAccessToken(accessToken) {
   }
 }
 
-async function activeProfile(accessToken, userId) {
-  if (!userId) return false;
+async function adminProfile(accessToken, userId) {
+  if (!userId) return null;
   try {
     const url = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
-    url.searchParams.set("select", "status");
+    url.searchParams.set("select", "role,status");
     url.searchParams.set("id", `eq.${userId}`);
     url.searchParams.set("limit", "1");
     const response = await fetch(url.toString(), {
@@ -140,30 +134,17 @@ async function activeProfile(accessToken, userId) {
         Accept: "application/json"
       }
     });
-    if (!response.ok) return false;
+    if (!response.ok) return null;
     const rows = await response.json();
-    return Array.isArray(rows) && rows[0]?.status === "active";
+    const profile = Array.isArray(rows) && rows.length ? rows[0] : null;
+    if (!profile) return null;
+    return {
+      role: String(profile.role || ""),
+      status: String(profile.status || ""),
+      isAdmin: profile.role === "admin" && profile.status === "active"
+    };
   } catch {
-    return false;
-  }
-}
-
-async function adminCheck(accessToken) {
-  try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${accessToken}`,
-        "content-type": "application/json;charset=UTF-8",
-        Accept: "application/json"
-      },
-      body: "{}"
-    });
-    if (!response.ok) return false;
-    return (await response.json()) === true;
-  } catch {
-    return false;
+    return null;
   }
 }
 
