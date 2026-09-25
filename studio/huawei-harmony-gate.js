@@ -1,10 +1,21 @@
 import { authOriginForRequest, isServiceHost } from "./domain-family.js";
 
 const DETECTION_RE = /(HarmonyOS|OpenHarmony|HuaweiBrowser|HUAWEI)/i;
+const DEVICE_ROUTE_MARKER = "huawei-exempt";
 export function huaweiHarmonyGate(request) {
+  if (hasDeviceRouteMarker(request)) return null;
   if (isExemptionVerificationTransport(request)) return null;
   if (!isHuaweiOrHarmonyRequest(request) && !isExplicitTestRequest(request)) return null;
   return renderHuaweiUnsupportedPage(request);
+}
+
+function hasDeviceRouteMarker(request) {
+  try {
+    const segments = new URL(request.url).pathname.split("/").filter(Boolean);
+    return segments.length >= 2 && String(segments[segments.length - 2] || "").toLowerCase() === DEVICE_ROUTE_MARKER;
+  } catch {
+    return false;
+  }
 }
 
 function isExemptionVerificationTransport(request) {
