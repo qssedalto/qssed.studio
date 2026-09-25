@@ -40,14 +40,6 @@ function parseObjectReference(value) {
   return isStorageObjectId(raw) ? { objectId: raw } : null;
 }
 
-function cleanProfileLabel(value, maximum = 120) {
-  return String(value || "")
-    .replace(/[\u0000-\u001f\u007f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, maximum);
-}
-
 export function cleanStorageFilename(value) {
   const normalized = String(value || "")
     .normalize("NFC")
