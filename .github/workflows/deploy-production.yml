@@ -167,6 +167,19 @@ jobs:
             echo "Created AI_CREDENTIAL_KEY for AERTEX Intelligence."
           fi
 
+      - name: Configure Admin bridge secret
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bridge_secret="$(openssl rand -base64 48 | tr -d '\n')"
+          printf '%s' "$bridge_secret" | npx --yes wrangler@4.136.3 secret put ADMIN_BRIDGE_SECRET -c wrangler.gpt.jsonc
+          printf '%s' "$bridge_secret" | npx --yes wrangler@4.136.3 secret put ADMIN_BRIDGE_SECRET -c wrangler.admin.jsonc
+          unset bridge_secret
+          echo "Synchronized the short-lived control-plane bridge secret."
+
       - name: Deploy AERTEX ID
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
