@@ -2,7 +2,7 @@ export function curatedLinksUserEnhancer(zh) {
   const copy = zh ? {
     add: "新增链接",
     dialogTitle: "新建收藏链接",
-    dialogIntro: "新建的链接只对你自己和管理员可见，不会公开给其他普通用户。",
+    dialogIntro: "新建的链接默认仅属于当前账号，只有你主动公开后才会出现在社区。",
     title: "名称",
     titlePlaceholder: "例如：OpenAI API 文档",
     url: "链接地址",
@@ -17,9 +17,7 @@ export function curatedLinksUserEnhancer(zh) {
     mine: "我创建的",
     userCreated: "用户创建",
     sectionMine: "我的链接",
-    sectionAdmin: "用户创建的链接",
-    sectionHintMine: "只有你和管理员可以看到这里的内容。",
-    sectionHintAdmin: "管理员视图：这里包含所有用户创建的私人链接。",
+    sectionHintMine: "这里仅显示当前账号创建的私人链接。",
     owner: "创建者",
     loadError: "无法读取账号链接",
     createError: "创建失败，请检查链接地址后重试。",
@@ -28,7 +26,7 @@ export function curatedLinksUserEnhancer(zh) {
   } : {
     add: "Add link",
     dialogTitle: "Create saved link",
-    dialogIntro: "Links you create are visible only to you and administrators, never to other regular users.",
+    dialogIntro: "Links you create belong to the current account by default and appear in the community only when you publish them.",
     title: "Name",
     titlePlaceholder: "For example: OpenAI API docs",
     url: "URL",
@@ -43,9 +41,7 @@ export function curatedLinksUserEnhancer(zh) {
     mine: "Created by me",
     userCreated: "User created",
     sectionMine: "My links",
-    sectionAdmin: "User-created links",
-    sectionHintMine: "Only you and administrators can see these links.",
-    sectionHintAdmin: "Administrator view: all private links created by users.",
+    sectionHintMine: "This area shows private links created by the current account only.",
     owner: "Created by",
     loadError: "Could not load account links",
     createError: "Could not create the link. Check the URL and try again.",
@@ -104,7 +100,6 @@ export function curatedLinksUserEnhancer(zh) {
     const submit=document.getElementById('curated-user-link-submit');
     let session=null;
     let links=[];
-    let isAdmin=false;
 
     const addButton=document.createElement('button');
     addButton.type='button';
@@ -156,8 +151,8 @@ export function curatedLinksUserEnhancer(zh) {
         card.innerHTML='<div class="curated-link-card-top"><strong>'+escapeHtml(link.title||href)+'</strong><span aria-hidden="true">↗</span></div><p>'+escapeHtml(link.description||'')+'</p><div class="curated-link-meta"><span class="curated-user-link-owner">'+escapeHtml(ownerText(link))+'</span><code>'+escapeHtml(host(href))+'</code></div>';
         grid.append(card);
       });
-      sectionTitle.innerHTML=escapeHtml(isAdmin?${JSON.stringify(copy.sectionAdmin)}:${JSON.stringify(copy.sectionMine)})+'<span class="curated-user-links-count">'+links.length+'</span>';
-      sectionHint.textContent=isAdmin?${JSON.stringify(copy.sectionHintAdmin)}:${JSON.stringify(copy.sectionHintMine)};
+      sectionTitle.innerHTML=escapeHtml(${JSON.stringify(copy.sectionMine)})+'<span class="curated-user-links-count">'+links.length+'</span>';
+      sectionHint.textContent=${JSON.stringify(copy.sectionHintMine)};
       sectionEmpty.hidden=links.length>0;
       applyUserFilters();
       updateTopCount();
@@ -206,12 +201,12 @@ export function curatedLinksUserEnhancer(zh) {
     function normalizeUrlInput(value){const text=String(value||'').trim();if(!text)return '';return /^https?:\/\//i.test(text)?text:'https://'+text;}
 
     async function loadLinks(){
-      if(!session){links=[];isAdmin=false;addButton.disabled=true;render();return;}
+      if(!session){links=[];addButton.disabled=true;render();return;}
       addButton.disabled=false;
       try{
         const response=await fetch('/api/user-links',{headers:{...authorization(),'Accept':'application/json'},cache:'no-store'});
         if(!response.ok)throw new Error('HTTP '+response.status);
-        const payload=await response.json();links=Array.isArray(payload.links)?payload.links:[];isAdmin=payload.is_admin===true;userOriginOption.textContent=isAdmin?${JSON.stringify(copy.userCreated)}:${JSON.stringify(copy.mine)};render();
+        const payload=await response.json();links=Array.isArray(payload.links)?payload.links:[];userOriginOption.textContent=${JSON.stringify(copy.mine)};render();
       }catch(error){console.error('User links load failed',error);sectionTitle.textContent=${JSON.stringify(copy.loadError)};userSection.classList.add('is-visible');}
     }
 
