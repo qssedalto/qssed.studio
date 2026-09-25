@@ -9,6 +9,7 @@ const ROUTE_EXEMPTION_COOKIE = "__Secure-aertex-huawei-route-exempt";
 const ROUTE_ROUTE_EXEMPTION_COOKIE_VALUE = "v2";
 const ROUTE_EXEMPTION_MAX_AGE = 60 * 60 * 24 * 30;
 const EXEMPTION_CODE = "AERTEX-HW-7K9Q-26";
+const ACCOUNT_MARKER_COOKIE = "__Secure-qsseda-account-id";
 
 export async function huaweiHarmonyGate(request) {
   if (hasDeviceRouteMarker(request)) return handleHuaweiExemptionRoute(request);
@@ -26,6 +27,10 @@ export async function huaweiHarmonyGate(request) {
   if (accountExemption.authorized) {
     const refreshedSession = authorizedAccountSessionRefreshResponse(request, accountExemption.cookies);
     return refreshedSession || null;
+  }
+
+  if (!accountExemption.signedIn && hasDomainAccountMarker(request)) {
+    return redirectToAccountVerification(request);
   }
 
   const blocked = renderHuaweiUnsupportedPage(request, {
@@ -73,6 +78,30 @@ async function huaweiAccountExemption(request) {
   } catch {
     return { authorized: false, signedIn: true, cookies };
   }
+}
+
+function hasDomainAccountMarker(request) {
+  const header = request?.headers?.get("Cookie") || "";
+  for (const part of header.split(";")) {
+    const index = part.indexOf("=");
+    if (index <= 0) continue;
+    if (part.slice(0, index).trim() !== ACCOUNT_MARKER_COOKIE) continue;
+    const value = part.slice(index + 1).trim();
+    return Boolean(value && value !== "signed-out");
+  }
+  return false;
+}
+
+function redirectToAccountVerification(request) {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      location: exemptionVerificationUrl(request, false),
+      "cache-control": "no-store",
+      "referrer-policy": "no-referrer",
+      "x-content-type-options": "nosniff"
+    }
+  });
 }
 
 function authorizedAccountSessionRefreshResponse(request, sessionCookies = []) {
