@@ -60,6 +60,12 @@ for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online"
 assert(!gpt.includes("canonicalGptAlias"), "GPT .online/.studio hosts must stay on their own domains");
 assert(gpt.includes('conversationRoute = pathname.match'), "GPT Worker must support per-conversation routes.");
 assert(gpt.includes('(?:huawei-exempt\\/)?'), "GPT Worker must accept Huawei-exempt conversation aliases.");
+assert(gpt.includes("await huaweiHarmonyGate(request)"), "GPT Worker must await Huawei exemption verification.");
+assert(huaweiGate.includes("handleHuaweiExemptionRoute(request)"), "Huawei exemption routes must require first-use confirmation.");
+assert(huaweiGate.includes('name="device_confirm" value="yes"'), "Huawei exemption challenge must require explicit device confirmation.");
+assert(huaweiGate.includes('name="authorization_code"'), "Huawei exemption challenge must require an authorization code.");
+assert(huaweiGate.includes("EXEMPTION_COOKIE"), "Huawei exemption verification must persist a server-issued browser grant.");
+assert(huaweiGate.includes("HttpOnly"), "Huawei exemption grant cookie must not be readable by page JavaScript.");
 assert(huaweiGate.includes('url.pathname === "/gpt/handoff"'), "Huawei gate must allow the GPT handoff transport.");
 assert(huaweiGate.includes('url.pathname === "/zh-cn/gpt/handoff"'), "Huawei gate must allow the localized GPT handoff transport.");
 assert(gpt.includes('loadGptBootstrap(request, env, gate, conversationId)'), "GPT Worker must bootstrap Intelligence data before first paint.");
