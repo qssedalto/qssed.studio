@@ -71,7 +71,7 @@ async function verifyTexUser(accessToken) {
 
   let profiles;
   try {
-    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status,role&id=eq.${encodeURIComponent(user.id)}`, { headers });
+    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(user.id)}`, { headers });
     if (profileResponse.status === 401 || profileResponse.status === 403) {
       return { error: json({ error: "Session is invalid or expired." }, 401) };
     }
@@ -87,12 +87,7 @@ async function verifyTexUser(accessToken) {
     return { error: json({ error: "Account is not authorized to use TeX storage." }, 403) };
   }
 
-  const metadata = user?.app_metadata || {};
-  const isAdmin = profiles[0]?.role === "admin"
-    || metadata.role === "admin"
-    || metadata.is_admin === true
-    || metadata.is_admin === "true";
-  return { user, isAdmin };
+  return { user };
 }
 
 function handleStatus(request, env) {
