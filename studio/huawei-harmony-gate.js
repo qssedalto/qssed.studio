@@ -25,7 +25,8 @@ function isExemptionVerificationTransport(request) {
   try {
     const url = new URL(request.url);
     if (isServiceHost(url.hostname, "auth")) return true;
-    return url.pathname === "/auth/handoff";
+    if (url.pathname === "/auth/handoff") return true;
+    return url.pathname === "/gpt/handoff" || url.pathname === "/zh-cn/gpt/handoff" || url.pathname === "/en/gpt/handoff";
   } catch {
     return false;
   }
