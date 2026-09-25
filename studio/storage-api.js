@@ -37,10 +37,7 @@ function parseStorageKey(key) {
 
 function parseObjectReference(value) {
   const raw = String(value || "");
-  if (isStorageObjectId(raw)) return { ownerId: null, objectId: raw };
-  const parts = raw.split(":");
-  if (parts.length !== 2 || !isStorageObjectId(parts[0]) || !isStorageObjectId(parts[1])) return null;
-  return { ownerId: parts[0], objectId: parts[1] };
+  return isStorageObjectId(raw) ? { objectId: raw } : null;
 }
 
 function cleanProfileLabel(value, maximum = 120) {
@@ -49,47 +46,6 @@ function cleanProfileLabel(value, maximum = 120) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, maximum);
-}
-
-async function fetchOwnerProfiles(secret, ownerIds) {
-  const map = new Map();
-  const ids = [...new Set(ownerIds.filter(isStorageObjectId))];
-  for (let index = 0; index < ids.length; index += 100) {
-    const chunk = ids.slice(index, index + 100);
-    const url = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
-    url.searchParams.set("select", "id,username,display_name");
-    url.searchParams.set("id", `in.(${chunk.join(",")})`);
-    try {
-      const response = await fetch(url.toString(), { headers: serviceHeaders(secret) });
-      if (!response.ok) {
-        workerLog("warn", "storage.owner_profiles.failed", { upstream_status: response.status, owner_count: chunk.length });
-        continue;
-      }
-      const rows = await response.json();
-      if (!Array.isArray(rows)) continue;
-      for (const row of rows) {
-        if (!isStorageObjectId(row?.id)) continue;
-        map.set(row.id, {
-          username: cleanProfileLabel(row?.username, 80),
-          displayName: cleanProfileLabel(row?.display_name, 120)
-        });
-      }
-    } catch (error) {
-      workerLog("warn", "storage.owner_profiles.error", { error_type: error?.name || "Error", owner_count: chunk.length });
-    }
-  }
-  return map;
-}
-
-function ownerDisplay(profile, ownerId) {
-  const username = profile?.username || "";
-  const displayName = profile?.displayName || "";
-  if (displayName && username && displayName.toLocaleLowerCase() !== username.toLocaleLowerCase()) {
-    return `${displayName} · @${username}`;
-  }
-  if (username) return `@${username}`;
-  if (displayName) return displayName;
-  return `用户 ${String(ownerId || "").slice(0, 8)}`;
 }
 
 export function cleanStorageFilename(value) {
@@ -280,9 +236,6 @@ export async function handleStorageObject(request, env) {
   const reference = parseObjectReference(rawId);
   if (!reference) return json({ error: "Invalid object id." }, 400);
 
-  if (reference.ownerId && reference.ownerId !== auth.user.id) {
-    return json({ error: "Storage object not found." }, 404);
-  }
   const ownerId = auth.user.id;
   const key = storageKey(ownerId, reference.objectId);
 
