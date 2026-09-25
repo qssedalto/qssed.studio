@@ -60,14 +60,13 @@ for (const [host, zone] of [
 }
 
 for (const forbidden of [
-  'pathname === "/api/admin/access"',
-  'pathname.startsWith("/api/admin/")',
   'handleAdminAccess(request)',
   'handleAdminAction(request'
 ]) {
   assertAbsent(mainWorker, forbidden, "Main Worker still exposes admin routing: " + forbidden);
 }
 assertContains(mainWorker, "isLegacyAdminSurface(pathname)", "Main Worker must explicitly hide historical admin routes.");
+assertContains(mainWorker, 'pathname.startsWith("/api/admin/")', "Main Worker must include legacy admin API paths only in its 404 surface detector.");
 assertContains(mainWorker, "handleMainAdminHandoff(request)", "Main Worker must retain only the secure admin session handoff.");
 
 for (const forbidden of [
