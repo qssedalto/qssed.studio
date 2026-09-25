@@ -1,7 +1,7 @@
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
-import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
-import { workerLog } from "./server-runtime.js";
+import { SUPABASE_URL, SUPABASE_KEY } from "../studio/config.js";
+import { json } from "../studio/routing.js";
+import { verifyAdminApiSession, withAdminSessionCookies } from "./session.js";
+import { workerLog } from "../studio/server-runtime.js";
 
 const ACTIONS = {
   overview: { rpc: "get_admin_overview", write: false, params: [] },
@@ -40,13 +40,13 @@ const ACTIONS = {
 };
 
 export async function handleAdminAccess(request) {
-  const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ is_admin: false, error: "Authentication required." }, 401), session.cookies);
+  const session = await verifyAdminApiSession(request);
+  if (!session.ok) return withAdminSessionCookies(json({ is_admin: false, error: "Authentication required." }, 401), session.cookies);
 
   const admin = await checkAdmin(session);
   if (!admin.ok) return adminFailure(session, "admin.access.failed", admin.status);
-  if (!admin.isAdmin) return withStudioSessionCookies(json({ is_admin: false, error: "Administrator access required." }, 403), session.cookies);
-  return withStudioSessionCookies(json({ is_admin: true, user_id: session.user.id }), session.cookies);
+  if (!admin.isAdmin) return withAdminSessionCookies(json({ is_admin: false, error: "Administrator access required." }, 403), session.cookies);
+  return withAdminSessionCookies(json({ is_admin: true, user_id: session.user.id }), session.cookies);
 }
 
 export async function handleAdminAction(request, _env, action) {
@@ -55,12 +55,12 @@ export async function handleAdminAction(request, _env, action) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
 
-  const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+  const session = await verifyAdminApiSession(request);
+  if (!session.ok) return withAdminSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
 
   const admin = await checkAdmin(session);
   if (!admin.ok) return adminFailure(session, "admin.access.failed", admin.status);
-  if (!admin.isAdmin) return withStudioSessionCookies(json({ error: "Administrator access required." }, 403), session.cookies);
+  if (!admin.isAdmin) return withAdminSessionCookies(json({ error: "Administrator access required." }, 403), session.cookies);
 
   let incoming = {};
   try {
@@ -69,7 +69,7 @@ export async function handleAdminAction(request, _env, action) {
     incoming = {};
   }
   if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) {
-    return withStudioSessionCookies(json({ error: "Invalid request body." }, 400), session.cookies);
+    return withAdminSessionCookies(json({ error: "Invalid request body." }, 400), session.cookies);
   }
 
   const params = {};
@@ -77,7 +77,7 @@ export async function handleAdminAction(request, _env, action) {
     if (Object.prototype.hasOwnProperty.call(incoming, key)) params[key] = incoming[key];
   }
 
-  if (spec.write) {
+  if (spec.write && ["user-role", "user-status", "permissions"].includes(action)) {
     params.p_ip_address = request.headers.get("CF-Connecting-IP") || null;
     params.p_user_agent = String(request.headers.get("User-Agent") || "").slice(0, 500) || null;
   }
@@ -91,31 +91,31 @@ export async function handleAdminAction(request, _env, action) {
 
   if (action === "user-role") {
     if (!isUuid(params.p_user_id) || !["admin", "editor", "user"].includes(params.p_role)) {
-      return withStudioSessionCookies(json({ error: "Invalid user role request." }, 400), session.cookies);
+      return withAdminSessionCookies(json({ error: "Invalid user role request." }, 400), session.cookies);
     }
   }
 
   if (action === "user-status") {
     if (!isUuid(params.p_user_id) || !["active", "suspended", "banned"].includes(params.p_status)) {
-      return withStudioSessionCookies(json({ error: "Invalid user status request." }, 400), session.cookies);
+      return withAdminSessionCookies(json({ error: "Invalid user status request." }, 400), session.cookies);
     }
   }
 
   if (action === "permissions") {
     if (!["admin", "editor", "user"].includes(params.p_role) || !Array.isArray(params.p_permissions)) {
-      return withStudioSessionCookies(json({ error: "Invalid role permission request." }, 400), session.cookies);
+      return withAdminSessionCookies(json({ error: "Invalid role permission request." }, 400), session.cookies);
     }
     params.p_permissions = [...new Set(params.p_permissions.map(value => String(value || "").trim()).filter(Boolean))].slice(0, 200);
   }
 
   if (action === "device-exemption") {
     if (!isUuid(params.p_user_id) || typeof params.p_enabled !== "boolean") {
-      return withStudioSessionCookies(json({ error: "Invalid device exemption request." }, 400), session.cookies);
+      return withAdminSessionCookies(json({ error: "Invalid device exemption request." }, 400), session.cookies);
     }
     if (params.p_expires_at != null && params.p_expires_at !== "") {
       const expiresAt = Date.parse(String(params.p_expires_at));
       if (!Number.isFinite(expiresAt)) {
-        return withStudioSessionCookies(json({ error: "Invalid exemption expiration." }, 400), session.cookies);
+        return withAdminSessionCookies(json({ error: "Invalid exemption expiration." }, 400), session.cookies);
       }
       params.p_expires_at = new Date(expiresAt).toISOString();
     } else {
@@ -131,7 +131,7 @@ export async function handleAdminAction(request, _env, action) {
       user_id: session.user.id,
       upstream_status: result.status
     });
-    return withStudioSessionCookies(json({
+    return withAdminSessionCookies(json({
       error: cleanError(result.payload) || "Administrator action failed."
     }, normalizeUpstreamStatus(result.status)), session.cookies);
   }
@@ -143,7 +143,7 @@ export async function handleAdminAction(request, _env, action) {
     });
   }
 
-  return withStudioSessionCookies(json({ data: result.payload }), session.cookies);
+  return withAdminSessionCookies(json({ data: result.payload }), session.cookies);
 }
 
 async function checkAdmin(session) {
@@ -183,7 +183,7 @@ async function callRpc(accessToken, rpc, params) {
 
 function adminFailure(session, event, upstreamStatus) {
   workerLog("warn", event, { user_id: session.user.id, upstream_status: upstreamStatus });
-  return withStudioSessionCookies(json({ error: "Administrator service is temporarily unavailable." }, normalizeUpstreamStatus(upstreamStatus)), session.cookies);
+  return withAdminSessionCookies(json({ error: "Administrator service is temporarily unavailable." }, normalizeUpstreamStatus(upstreamStatus)), session.cookies);
 }
 
 function cleanError(payload) {

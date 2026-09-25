@@ -81,8 +81,6 @@ function safeGptPath(value) {
 function canonicalGptPath(path, locale) {
   const normalizedLocale = locale === "en" ? "en" : "zh-cn";
   const candidate = safeGptPath(path);
-  const admin = candidate === "/admin" || candidate === "/en/admin" || candidate === "/zh-cn/admin";
-  if (admin) return `/${normalizedLocale}/admin`;
   const exemptConversation = candidate.match(/^\/(?:zh-cn|en)\/c\/huawei-exempt\/([0-9a-f-]{36})$/i);
   if (exemptConversation) return `/${normalizedLocale}/c/huawei-exempt/${exemptConversation[1]}`;
   const conversation = candidate.match(/^\/(?:zh-cn|en)\/c\/([0-9a-f-]{36})$/i);

@@ -1,5 +1,4 @@
 import { dashboardStyles } from "./ui-style-dashboard.js";
-import { adminStyles } from "./ui-style-admin.js";
 import { profileStyles } from "./ui-style-profile.js";
 import { knowledgeStyles } from "./ui-style-knowledge.js";
 import { html } from "./routing.js";
@@ -524,7 +523,7 @@ body.os-shell{
 
 ${profileStyles()}    /* SETTINGS_GENERAL_ROUTE_V1 */
 
-${adminStyles()}    /* OS_APPLE_HUBS_V1 */
+    /* OS_APPLE_HUBS_V1 */
     .os-hub-grid{
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));

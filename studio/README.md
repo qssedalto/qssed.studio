@@ -24,7 +24,6 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 - `ui-profile.js` — Profile detail/account/preferences rendering, Profile Hub, and Profile-home personalization/link/media client runtime.
 - `ui-settings.js` — Settings Hub, General/Appearance/Language/Account & Security rendering, and the Settings fallback overview.
 - `ui-storage.js` — private Storage page rendering and browser client runtime; consumes the shared storage-size limit from `config.js`.
-- `ui-admin.js` — Admin Hub, General/Users/Roles/Logs/System rendering, and the Admin browser client application.
 - `ui-dashboard.js` — Dashboard rendering, Dashboard icons and its visit-time/date/theme browser behavior.
 - `ui-information.js` — Information route composition and route-owned Links/Notes/Summaries/Search rendering; delegates the Knowledge Base route tree to `ui-knowledge.js`.
 - `ui-knowledge.js` — Knowledge Base root/category/article composition for 54 bilingual routes.
@@ -36,23 +35,22 @@ Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](.
 - `ui-workspace.js` — Workspace route rendering.
 - `ui-styles.js` — Studio OS style aggregator and remaining shared/product CSS in original output order.
 - `ui-style-profile.js` — Phase 4D Profile-owned CSS fragment extracted verbatim from `ui-styles.js` and reinserted at the original output position.
-- `ui-style-admin.js` — Phase 4D Admin-owned polish CSS fragment extracted verbatim from `ui-styles.js` and reinserted at the original output position.
 - `ui-style-dashboard.js` — Phase 4D Dashboard-owned CSS fragment extracted verbatim from the final `DASHBOARD_APPLE_V2` section of `ui-styles.js` and reinserted at the original output position.
 - `auth-pages.js` — Studio sign-up, login and not-found pages.
 
-Phase 3 product ownership is explicit. Product Hub renderers live with Profile/Admin/Settings.
+Phase 3 product ownership was explicit for the historical monolith. Administrator rendering has since moved out of Studio into the dedicated `admin/` control-plane application.
 
 Phase 4A isolates the previously mixed audit runtime without changing its page order or browser API. Auth login still uses `getAuditDeviceId()`, `clearProfileUiCaches()` and `updateCurrentDevice()`, while the Studio shell still consumes `updateCurrentDevice()`, `hydrateProfileSummary()` and `hydrateProfileAudit()` from the rendered audit script.
 
 Phase 4B renames the remaining neutral `ui-core.js` page infrastructure to `ui-page.js` without changing generated HTML. This removes the misleading `ui-core` ownership name and makes the shared dependency used by `auth-handoff.js`, `auth-pages.js` and `ui-shell.js` explicit.
 
-Phase 4C moves `statusContent()`, `osHubIcon()`, `osHubCard()` and `osHubGrid()` out of `ui-shell.js` into `ui-primitives.js`. Profile, Admin, Settings, Information and Workspace now consume those neutral render primitives directly; no product module depends on `ui-shell.js`.
+Phase 4C moves `statusContent()`, `osHubIcon()`, `osHubCard()` and `osHubGrid()` out of `ui-shell.js` into `ui-primitives.js`. Profile, Settings, Information and Workspace consume those neutral render primitives directly; no product module depends on `ui-shell.js` merely to receive shared primitives.
 
-Phase 4D extracts only clearly bounded product CSS while preserving emitted CSS byte-for-byte. The Profile `PROFILE_HOME_V3` block lives in `ui-style-profile.js`, the `ADMIN_UI_POLISH_V1` block lives in `ui-style-admin.js`, and the final `DASHBOARD_APPLE_V2` block lives in `ui-style-dashboard.js`. Global CSS custom properties remain owned by `ui-page.js`; they are not duplicated into product style modules.
+Phase 4D originally extracted clearly bounded product CSS. After the administrator control-plane split, Studio retains the Profile `PROFILE_HOME_V3` block in `ui-style-profile.js` and the Dashboard `DASHBOARD_APPLE_V2` block in `ui-style-dashboard.js`; administrator styling is owned exclusively by `admin/ui.js`.
 
 Phase 4E is complete. It removed the unused `json` routing import and non-runtime historical/browser-saved snapshots while retaining the top-level Supabase baseline SQL because the incremental migration chain still assumes those baseline objects exist. Phase 4 is now closed; future structural work should start from a concrete requirement rather than file size alone.
 
-Admin authorization remains shell-owned: `is_admin`, the Admin lock, warm snapshot restore and authenticated bootstrap are intentionally not part of `ui-admin.js`.
+Administrator authorization is no longer shell-owned. Studio contains no administrator page routes or administrator client runtime; `admin.qsseda.com` establishes a separate short-lived host-only control-plane session after the server verifies `is_admin`.
 
 Detailed boundaries:
 

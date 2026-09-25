@@ -13,7 +13,7 @@ const authHandoff = read("studio/auth-handoff.js");
 const gptWrangler = JSON.parse(read("wrangler.gpt.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 const aiGateway = read("studio/ai-gateway.js");
 const huaweiGate = read("studio/huawei-harmony-gate.js");
-const adminApi = read("studio/admin-api.js");
+const adminApi = read("admin/admin-api.js");
 const deviceExemptionMigration = read("supabase/migrations/202609251510_huawei_device_access_exemptions.sql");
 
 for (const required of [
@@ -21,7 +21,6 @@ for (const required of [
   'gptSessionRedirect(request, pathname)',
   'pathname === "/auth/handoff"',
   'pathname.startsWith("/api/ai/")',
-  'renderAiAdmin(locale, { state: adminState, theme: intelligenceTheme })',
   'handleAuthHandoff(request, env, locale)'
 ]) {
   assert(gpt.includes(required), `GPT worker is missing authenticated routing invariant: ${required}`);
@@ -52,7 +51,6 @@ assert(session.includes('isServiceHost(hostname, "gpt")'), "Session gate must re
 assert(session.includes("isolatedAppHost && !accountId"), "Isolated GPT session must require the domain-wide account marker");
 assert(authHandoff.includes('isServiceHost(hostname, "gpt")'), "Auth handoff must recognize GPT on every domain family");
 assert(authHandoff.includes('gptTarget ? "AERTEX Intelligence"'), "Auth handoff must render the AERTEX Intelligence product handoff");
-assert(authHandoff.includes('if (adminTarget) return candidateLocale === "zh" ? "/zh-cn/admin" : "/en/admin"'), "GPT handoff must preserve the administrator route safely");
 assert(authHandoff.includes('/c/huawei-exempt/'), "Auth handoff must preserve Huawei-exempt GPT conversation targets.");
 assert(authHandoff.includes('return candidateLocale === "zh" ? "/zh-cn" : "/en"'), "GPT handoff must constrain ordinary return paths to GPT locale roots");
 for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online","qsseda.online"],["gpt.qsseda.studio","qsseda.studio"]]) {
@@ -91,9 +89,13 @@ assert(!gpt.includes("<h1>404</h1>"), "Intelligence not-found pages must not exp
 assert(gpt.includes("intelligenceThemeFromRequest(request)"), "GPT Worker must resolve the shared color mode before rendering.");
 
 assert(gpt.includes("handleAiApi(request, env, gate)"), "GPT Worker must proxy authenticated AI API calls.");
-assert(gpt.includes("renderAdminDenied(locale, identity, intelligenceTheme)"), "GPT Worker must render a dedicated non-admin denial page with verified identity context.");
-assert(gpt.includes("loadDeniedIdentity(gate)"), "GPT Worker must prefill denied-admin support mail with authenticated account context.");
-assert(!gpt.includes("utm_source=chatgpt.com"), "GPT admin links must not include tracking parameters.");
+assert(!gpt.includes("renderAiAdmin"), "GPT Worker must not render an administrator console.");
+assert(gpt.includes('pathname.startsWith("/_internal/admin-ai/")'), "GPT Worker must reserve a private AI admin bridge for the control plane.");
+assert(gpt.includes("X-AERTEX-Control-Secret"), "Private AI admin bridge must require a server-side secret.");
+assert(gpt.includes("handleAiAdminApi(proxied, env"), "AI admin handler may only be reached through the private bridge.");
+assert(!gpt.includes("renderAdminDenied"), "GPT Worker must not carry legacy administrator pages.");
+assert(gpt.includes('pathname.startsWith("/api/ai/admin/")'), "GPT Worker must explicitly hide legacy administrator API paths.");
+assert(gpt.includes('pathname === "/zh-cn/admin"'), "GPT Worker must explicitly hide legacy administrator page paths.");
 for (const required of [
   'const ZHIPU_BASE = "https://open.bigmodel.cn/api/paas/v4"',
   'providerAvailability(p.provider, country)',

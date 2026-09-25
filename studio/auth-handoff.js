@@ -69,8 +69,6 @@ export function normalizeHandoffNext(value, locale, workTarget = false, gptTarge
   }
   if (gptTarget) {
     const candidateLocale = candidate === "/en" || candidate.startsWith("/en/") ? "en" : candidate === "/zh-cn" || candidate.startsWith("/zh-cn/") ? "zh" : locale;
-    const adminTarget = candidate === "/admin" || candidate === "/en/admin" || candidate === "/zh-cn/admin";
-    if (adminTarget) return candidateLocale === "zh" ? "/zh-cn/admin" : "/en/admin";
     const exemptConversation = candidate.match(/^\/(?:zh-cn|en)\/c\/huawei-exempt\/([0-9a-f-]{36})$/i);
     if (exemptConversation) return (candidateLocale === "zh" ? "/zh-cn/c/huawei-exempt/" : "/en/c/huawei-exempt/") + exemptConversation[1];
     const conversation = candidate.match(/^\/(?:zh-cn|en)\/c\/([0-9a-f-]{36})$/i);

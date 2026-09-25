@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import vm from "node:vm";
 import { renderGptApp } from "../studio/gpt-ui.js";
-import { renderAiAdmin } from "../studio/ai-admin-ui.js";
 import { accountMenuMarkup } from "../studio/account-menu.js";
 
 const read = path => fs.readFileSync(path, "utf8");
@@ -16,8 +15,7 @@ for (const required of [
   "handleStudioSessionLogout(request)",
   'pathname === "/api/account/security/summary"',
   'handleAccountSecurity(request, "summary")',
-  "injectAccountMenuRuntime(markup)",
-  "renderAdminDenied(locale, identity"
+  "injectAccountMenuRuntime(markup)"
 ]) {
   assert(gptWorker.includes(required), "Intelligence account escape hatch is missing: " + required);
 }
@@ -43,15 +41,12 @@ assert(accountMenu.includes('--aertex-account-panel:var(--panel,var(--glass-heav
 assert(accountMenu.includes('background:var(--aertex-account-panel)'), "Shared account menu must render from the theme-safe account surface token.");
 
 for (const locale of ["zh-cn", "en"]) {
-  const gpt = renderGptApp(locale);
-  const admin = renderAiAdmin(locale);
-  for (const [name, html] of [["Intelligence", gpt], ["Intelligence Admin", admin]]) {
-    assert(html.includes('id="aertex-account-root"'), name + " must render the account avatar menu for " + locale);
-    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
-    assert(scripts.length >= 2, name + " must retain app and account-menu scripts for " + locale);
-    for (const [index, source] of scripts.entries()) {
-      new vm.Script(source, { filename: `account-menu-${name.replace(/\s+/g,"-")}-${locale}-${index}.js` });
-    }
+  const html = renderGptApp(locale);
+  assert(html.includes('id="aertex-account-root"'), "Intelligence must render the account avatar menu for " + locale);
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+  assert(scripts.length >= 2, "Intelligence must retain app and account-menu scripts for " + locale);
+  for (const [index, source] of scripts.entries()) {
+    new vm.Script(source, { filename: `account-menu-Intelligence-${locale}-${index}.js` });
   }
 }
 

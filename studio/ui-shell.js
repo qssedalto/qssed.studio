@@ -1,7 +1,6 @@
 import { TEXT } from "./config.js";
 import { escapeHtmlText } from "./html-utils.js";
 import { profileClientScript, profileContent, profileHubContent } from "./ui-profile.js";
-import { adminClientScript, adminHubContent, adminLogsContent, adminOverviewContent, adminRolesContent, adminSystemContent, adminUsersContent } from "./ui-admin.js";
 import { dashboardContent } from "./ui-dashboard.js";
 import { informationContent } from "./ui-information.js";
 import { knowledgeSearchClientScript } from "./knowledge-search.js";
@@ -16,13 +15,12 @@ import { auditClientScript } from "./ui-audit.js";
 import { baseHead, supabaseScript, themeScript, topControls } from "./ui-page.js";
 import { osStyles } from "./ui-styles.js";
 
-export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
+export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", productLinks = {}) {
   const path = pathname;
   const zh = t === TEXT.zh;
   const copy = buildOsCopy(zh);
   const page = copy.pages[path] || knowledgePageMeta(path, zh) || copy.pages["/dashboard"];
   const activeSection = page.section;
-  const adminPath = path.startsWith("/admin");
   const dashboardPath = path === "/dashboard";
   const knowledgePath = path.startsWith("/info/knowledge");
   const compactBackUrl = compactBackHref(path, zh);
@@ -47,7 +45,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
     })();
   </script>
 </head>
-<body class="os-shell" data-admin-path="${adminPath ? "true" : "false"}">
+<body class="os-shell">
   ${topControls(links, t)}
   <div id="compact-back-zone" class="compact-back-zone">
     <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${zh ? "返回上一级" : "Back"}" data-fallback-href="${compactBackUrl}">
@@ -116,13 +114,8 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
         </a>` : ""}
       </section>
 
-      <section id="admin-lock" class="os-lock" style="display:none;">
-        <strong>${t.adminOnly}</strong>
-        <p>${copy.adminLock}</p>
-      </section>
-
-      <section id="os-content"${adminPath ? ' style="visibility:hidden"' : ""}>
-        ${renderOsContent(path, copy)}
+      <section id="os-content">
+        ${renderOsContent(path, copy, productLinks)}
       </section>
     </main>
   </div>
@@ -132,10 +125,8 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
   ${path === "/settings/storage" ? storageClientScript(zh, links.login) : ""}
   ${auditClientScript(ipInfo)}
   ${profileClientScript()}
-  ${adminClientScript(ipInfo)}
   <script>
     const loginUrl = ${JSON.stringify(links.login)};
-    const isAdminPath = document.body.dataset.adminPath === "true";
     const compactViewKey = "qssed-compact-view-v1";
     const compactMedia = window.matchMedia("(max-width:1050px)");
 
@@ -180,7 +171,6 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
         document.cookie = "qssed-os-user-name=; Path=/; Max-Age=0; SameSite=Lax; Secure";
       } catch {}
       try { if (typeof clearProfileUiCaches === "function") clearProfileUiCaches(); } catch {}
-      try { if (typeof clearAdminUiCaches === "function") clearAdminUiCaches(); } catch {}
       try {
         [
           "qssed-os-user-name",
@@ -198,24 +188,6 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
       compactMedia.addEventListener("change", applyCompactViewMode);
     } else if (typeof compactMedia.addListener === "function") {
       compactMedia.addListener(applyCompactViewMode);
-    }
-
-    async function restoreWarmAdminSnapshot() {
-      if (!isAdminPath) return;
-      try {
-        const access = JSON.parse(sessionStorage.getItem("qssed-admin-access-v1") || "null");
-        const snapshot = sessionStorage.getItem("qssed-admin-view-v1:" + location.pathname);
-        if (!access?.user_id || !snapshot) return;
-
-        const { data } = await supabaseClient.auth.getSession();
-        const localUserId = data?.session?.user?.id || "";
-        if (!localUserId || localUserId !== access.user_id) return;
-
-        const content = document.getElementById("os-content");
-        if (!content) return;
-        content.innerHTML = snapshot;
-        content.style.visibility = "visible";
-      } catch {}
     }
 
     const hadCachedOsUser = ${JSON.stringify(Boolean(cachedOsUserLabel))};
@@ -290,8 +262,6 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
     async function hydrateOsUser() {
       const authState = await readStableOsUser();
       const data = { user: authState.user };
-      let adminCheck = null;
-
       if (!data.user) {
         if (!authState.definiteSignedOut) {
           window.setTimeout(() => { void hydrateOsUser(); }, 900);
@@ -307,10 +277,6 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
         return;
       }
 
-      if (isAdminPath) {
-        adminCheck = await supabaseClient.rpc("is_admin");
-      }
-
       const name = data.user.user_metadata.username || data.user.user_metadata.display_name || data.user.email;
       const userLabel = "@" + name;
       document.getElementById("os-user-name").innerText = userLabel;
@@ -319,37 +285,12 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "") {
         sessionStorage.removeItem("qssed-os-user-name");
       } catch {}
 
-      if (isAdminPath) {
-        const allowed = !adminCheck?.error && adminCheck?.data === true;
-        const lock = document.getElementById("admin-lock");
-        const content = document.getElementById("os-content");
-        lock.style.display = allowed ? "none" : "block";
-
-        if (!allowed) {
-          content.style.display = "none";
-          content.style.visibility = "hidden";
-          try { if (typeof clearAdminUiCaches === "function") clearAdminUiCaches(); } catch {}
-          void updateCurrentDevice(data.user);
-          return;
-        }
-
-        try {
-          sessionStorage.setItem("qssed-admin-access-v1", JSON.stringify({ user_id: data.user.id }));
-        } catch {}
-        await hydrateAdminModule(data.user);
-        content.style.display = "block";
-        content.style.visibility = "visible";
-        void updateCurrentDevice(data.user);
-        return;
-      }
-
       await updateCurrentDevice(data.user);
       await hydrateProfileSummary(data.user);
       await hydrateProfileHome(data.user);
       await hydrateProfileAudit(data.user);
     }
 
-    void restoreWarmAdminSnapshot();
     hydrateOsUser();
   </script>
   ${themeScript()}
@@ -368,7 +309,6 @@ export function buildOsCopy(zh) {
       aiLabel: "工作流",
       aiTitle: "实验与工具入口",
       aiHref: `${prefix}/workspace/experiments`,
-      adminLock: "当前账号没有管理权限。管理功能仅对授权管理员开放；如认为权限异常，请联系管理员确认账号角色。",
       nav: [
         { id: "dashboard", label: "首页", href: `${prefix}/dashboard`, items: [] },
         { id: "info", label: "信息中心", href: `${prefix}/info`, items: [
@@ -389,13 +329,6 @@ export function buildOsCopy(zh) {
           ["实验室", `${prefix}/workspace/experiments`],
           ["草稿箱", `${prefix}/workspace/drafts`],
           ["任务中心", `${prefix}/workspace/tasks`]
-        ] },
-        { id: "admin", label: "控制台", href: `${prefix}/admin`, items: [
-          ["通用", `${prefix}/admin/general`],
-          ["用户管理", `${prefix}/admin/users`],
-          ["角色权限", `${prefix}/admin/roles`],
-          ["操作日志", `${prefix}/admin/logs`],
-          ["系统状态", `${prefix}/admin/system`]
         ] },
         { id: "settings", label: "设置", href: `${prefix}/settings`, items: [
           ["通用", `${prefix}/settings/general`],
@@ -418,7 +351,6 @@ export function buildOsCopy(zh) {
     aiLabel: "Workflow",
     aiTitle: "Experiments & tools",
     aiHref: `${prefix}/workspace/experiments`,
-    adminLock: "This account does not have management access. Administrative tools are available only to authorized administrators. If this seems incorrect, contact an administrator to verify your role.",
     nav: [
       { id: "dashboard", label: "Dashboard", href: `${prefix}/dashboard`, items: [] },
       { id: "info", label: "Information", href: `${prefix}/info`, items: [
@@ -439,13 +371,6 @@ export function buildOsCopy(zh) {
         ["Experiments", `${prefix}/workspace/experiments`],
         ["Drafts", `${prefix}/workspace/drafts`],
         ["Tasks", `${prefix}/workspace/tasks`]
-      ] },
-      { id: "admin", label: "Console", href: `${prefix}/admin`, items: [
-        ["General", `${prefix}/admin/general`],
-        ["Users", `${prefix}/admin/users`],
-        ["Roles", `${prefix}/admin/roles`],
-        ["Logs", `${prefix}/admin/logs`],
-        ["System", `${prefix}/admin/system`]
       ] },
       { id: "settings", label: "Settings", href: `${prefix}/settings`, items: [
         ["General", `${prefix}/settings/general`],
@@ -481,11 +406,6 @@ export function buildOsPages(zh) {
     experiments: ["实验室", "实验工具尚未接入持久化数据。"],
     drafts: ["草稿箱", "尚未接入草稿数据表。"],
     tasks: ["任务中心", "尚未接入任务数据表。"],
-    admin: ["AERTEX Console", "显示真实用户与管理员数量、最近用户、操作日志和风险事件。"],
-    users: ["用户管理", "用户列表、权限管理和封禁管理。"],
-    roles: ["角色权限", "查看管理员、编辑者与普通成员的权限范围，并管理角色授权。"],
-    logs: ["操作日志", "查看账户与管理操作的审计记录。"],
-    system: ["系统状态", "查看管理功能、数据读取与审计能力的当前状态。"],
     settings: ["设置", "集中管理通用、外观、语言、账户安全、通知、AI、第三方集成和存储等设置。"],
     general: ["通用", "管理网站的基础行为与通用偏好。"],
     appearance: ["外观", "当前支持浅色与深色主题，可使用右上角主题按钮切换。"],
@@ -513,11 +433,6 @@ export function buildOsPages(zh) {
     experiments: ["Lab", "Experiment tools are not connected to persistent data yet."],
     drafts: ["Drafts", "No drafts table is connected yet."],
     tasks: ["Tasks", "No tasks table is connected yet."],
-    admin: ["AERTEX Console", "Shows live user/admin counts, recent users, operation logs, and risk events."],
-    users: ["User Management", "User list, permissions, and bans."],
-    roles: ["Roles", "Review the access scope for administrators, editors, and members, and manage role permissions."],
-    logs: ["Logs", "Review audit records for account and administrative actions."],
-    system: ["System Status", "Review the current availability of management features, data access, and auditing capabilities."],
     settings: ["Settings", "Manage general, appearance, language, account security, notifications, AI, integrations, and storage settings."],
     general: ["General", "Manage the site's basic behavior and general preferences."],
     appearance: ["Appearance", "Light and dark themes are available through the theme button in the top-right corner."],
@@ -546,12 +461,6 @@ export function buildOsPages(zh) {
     "/workspace/experiments": { section: "workspace", title: s.experiments[0], description: s.experiments[1] },
     "/workspace/drafts": { section: "workspace", title: s.drafts[0], description: s.drafts[1] },
     "/workspace/tasks": { section: "workspace", title: s.tasks[0], description: s.tasks[1] },
-    "/admin": { section: "admin", title: s.admin[0], description: s.admin[1] },
-    "/admin/general": { section: "admin", title: zh ? "通用" : "General", description: zh ? "查看管理区域的核心概览、账户统计、近期操作与风险信息。" : "Review the core admin overview, account metrics, recent operations, and risk information." },
-    "/admin/users": { section: "admin", title: s.users[0], description: s.users[1] },
-    "/admin/roles": { section: "admin", title: s.roles[0], description: s.roles[1] },
-    "/admin/logs": { section: "admin", title: s.logs[0], description: s.logs[1] },
-    "/admin/system": { section: "admin", title: s.system[0], description: s.system[1] },
     "/settings": { section: "settings", title: s.settings[0], description: s.settings[1] },
     "/settings/general": { section: "settings", title: zh ? "通用" : "General", description: zh ? "管理网站的基础行为与通用偏好。" : "Manage the site's basic behavior and general preferences." },
     "/settings/appearance": { section: "settings", title: s.appearance[0], description: s.appearance[1] },
@@ -579,26 +488,15 @@ export function renderOsNav(copy, activeSection, currentPath = "") {
   `;
 }
 
-export function renderOsContent(path, copy) {
+export function renderOsContent(path, copy, productLinks = {}) {
   const zh = copy.platform.includes("个人");
-  if (path === "/dashboard") return dashboardContent(zh);
+  if (path === "/dashboard") return dashboardContent(zh, productLinks);
   if (path.startsWith("/info")) return informationContent(path, zh);
   if (path === "/profile") return profileHubContent(zh);
   if (path.startsWith("/profile/")) return profileContent(path, zh);
   if (path.startsWith("/workspace")) return workspaceContent(path, zh);
-  if (path.startsWith("/admin")) return adminContent(path, zh);
   if (path.startsWith("/settings")) return settingsContent(path, zh);
   throw new Error("Unhandled OS path: " + path);
-}
-
-export function adminContent(path, zh) {
-  if (path === "/admin") return adminHubContent(zh);
-  if (path.endsWith("/general")) return adminOverviewContent(zh);
-  if (path.endsWith("/users")) return adminUsersContent(zh);
-  if (path.endsWith("/roles")) return adminRolesContent(zh);
-  if (path.endsWith("/logs")) return adminLogsContent(zh);
-  if (path.endsWith("/system")) return adminSystemContent(zh);
-  return adminOverviewContent(zh);
 }
 
 export function settingsContent(path, zh) {

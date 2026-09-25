@@ -9,11 +9,10 @@ import { privateLinksPageContent } from "../studio/ui-links-workspace.js";
 import { curatedLinksAccountContent } from "../studio/curated-links-account.js";
 import { curatedLinksUserEnhancer } from "../studio/curated-links-user.js";
 import { hardenBrowserMarkup } from "../studio/browser-security.js";
-import { hardenAdminBrowserMarkup } from "../studio/admin-browser-security.js";
 import { hardenLegacyApiBrowserMarkup } from "../studio/legacy-api-browser-security.js";
 
 const ipInfo = { ip: "203.0.113.10", country: "CN", region: "Test", city: "Test" };
-const harden = source => hardenLegacyApiBrowserMarkup(hardenAdminBrowserMarkup(hardenBrowserMarkup(source)));
+const harden = source => hardenLegacyApiBrowserMarkup(hardenBrowserMarkup(source));
 
 const signupLinks = buildLinks("zh", "/sign-up");
 const signup = harden(signUpPage(TEXT.zh, signupLinks, ipInfo));
@@ -29,9 +28,7 @@ for (const endpoint of [
   "/api/profile/home",
   "/api/profile/personalization",
   "/api/profile/link",
-  "/api/profile/media",
-  "/api/admin/",
-  "/api/admin/access"
+  "/api/profile/media"
 ]) {
   assertContains(profile, endpoint, `Profile page must use ${endpoint}`);
 }
@@ -40,8 +37,9 @@ assertBrowserInternalsHidden(profile, "Profile");
 const dashboardLinks = buildLinks("zh", "/dashboard");
 const dashboard = harden(osPage(TEXT.zh, dashboardLinks, "/dashboard", ipInfo, "Test User"));
 assertContains(dashboard, "/api/account/device", "Dashboard must use the Worker device endpoint from the shared runtime");
-assertContains(dashboard, "/api/admin/", "Dashboard shared admin runtime must use the Worker admin endpoint");
 assertBrowserInternalsHidden(dashboard, "Dashboard");
+assertAbsent(dashboard, "/api/admin/", "Dashboard must not expose administrator API routes");
+assertAbsent(dashboard, "/zh-cn/admin", "Dashboard must not expose legacy administrator pages");
 
 const cookieClients = [
   ["Storage", harden(storageSettingsContent(true) + storageClientScript(true, "/zh-cn/login")), ["/api/storage/files", "/api/storage/upload", "/api/storage/object"]],
@@ -60,69 +58,6 @@ for (const [label, source, endpoints] of cookieClients) {
   assertAbsent(source, "const access = await token()", `${label} still reads a token for API authentication`);
   assertContains(source, "same-origin", `${label} must explicitly use same-origin credentials after hardening`);
 }
-
-const legacyAdminProxy = `
-      async function adminRpc(name, params) {
-        const sessionResult = await supabaseClient.auth.getSession();
-        const accessToken = sessionResult?.data?.session?.access_token || "";
-        if (!accessToken) {
-          const error = new Error("Session expired");
-          return { data: null, error };
-        }
-        let response;
-        let payload;
-        try {
-          response = await fetch("/api/admin/" + encodeURIComponent(name), {
-            method: "POST",
-            headers: {
-              Authorization: "Bearer " + accessToken,
-              "Content-Type": "application/json",
-              Accept: "application/json"
-            },
-            body: JSON.stringify(params || {}),
-            cache: "no-store"
-          });
-          payload = await response.json().catch(() => ({}));
-        } catch (requestError) {
-          return { data: null, error: requestError };
-        }
-        if (!response.ok) {
-          const error = new Error(payload?.error || "Administrator request failed");
-          return { data: null, error };
-        }
-        const data = payload?.data;
-        const error = null;
-      }
-
-      if (isAdminPath) {
-        const adminSessionResult = await supabaseClient.auth.getSession();
-        const adminAccessToken = adminSessionResult?.data?.session?.access_token || "";
-        if (!adminAccessToken) {
-          adminCheck = { data: false, error: new Error("Session expired") };
-        } else {
-          try {
-            const adminAccessResponse = await fetch("/api/admin/access", {
-              headers: { Authorization: "Bearer " + adminAccessToken, Accept: "application/json" },
-              cache: "no-store"
-            });
-            const adminAccessPayload = await adminAccessResponse.json().catch(() => ({}));
-            adminCheck = adminAccessResponse.ok
-              ? { data: Boolean(adminAccessPayload?.is_admin), error: null }
-              : { data: false, error: new Error(adminAccessPayload?.error || "Administrator access check failed") };
-          } catch (adminAccessError) {
-            adminCheck = { data: false, error: adminAccessError };
-          }
-        }
-      }
-
-      const name = data.user.user_metadata.username || data.user.email;
-`;
-const hardenedLegacyAdmin = hardenAdminBrowserMarkup(legacyAdminProxy);
-assertAbsent(hardenedLegacyAdmin, "adminSessionResult", "Legacy admin access proxy still reads the browser session");
-assertAbsent(hardenedLegacyAdmin, "const sessionResult = await supabaseClient.auth.getSession()", "Legacy admin RPC proxy still reads the browser session");
-assertAbsent(hardenedLegacyAdmin, 'Authorization: "Bearer " + accessToken', "Legacy admin RPC proxy still sends a browser bearer token");
-assertAbsent(hardenedLegacyAdmin, 'Authorization: "Bearer " + adminAccessToken', "Legacy admin access proxy still sends a browser bearer token");
-assertContains(hardenedLegacyAdmin, 'credentials: "same-origin"', "Legacy admin proxy was not converted to cookie authentication");
 
 console.log("Browser security markup checks passed.");
 

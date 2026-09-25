@@ -9,14 +9,22 @@ export function dashboardIcon(name) {
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     appearance: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 000 16z"/>',
-    language: '<path d="M4 5h10M9 5c-.2 5-2.3 8.3-5 10M6 9c1.8 2.8 4 4.8 7 6M14 10h6M17 7v10M14 17h6"/>'
+    language: '<path d="M4 5h10M9 5c-.2 5-2.3 8.3-5 10M6 9c1.8 2.8 4 4.8 7 6M14 10h6M17 7v10M14 17h6"/>',
+    intelligence: '<path d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3v-3.2A2.5 2.5 0 0 1 5 13.5z"/><path d="M9 9.5h6M9 12.5h4"/>',
+    admin: '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h5M16 13h.01"/>'
   };
   return '<span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (icons[name] || icons.info) + '</svg></span>';
 }
 
-export function dashboardContent(zh) {
+export function dashboardContent(zh, options = {}) {
   const prefix = zh ? "/zh-cn" : "/en";
+  const productLinks = options && typeof options === "object" ? options : {};
+  const gptHref = String(productLinks.gptHref || "");
+  const adminHref = String(productLinks.adminHref || "");
+
   const shortcuts = zh ? [
+    ...(gptHref ? [["AERTEX Intelligence","打开 GPT 工作空间","intelligence",gptHref]] : []),
+    ...(adminHref ? [["管理员控制台","进入独立管理控制面","admin",adminHref]] : []),
     ["用户资料","头像、签名和主页信息","profile",`${prefix}/profile/details`],
     ["工作台","打开工作区","workbench",`${prefix}/workspace/workbench`],
     ["私人存储","管理 R2 文件","storage",`${prefix}/settings/storage`],
@@ -24,6 +32,8 @@ export function dashboardContent(zh) {
     ["账户与安全","设备和登录记录","security",`${prefix}/settings/security`],
     ["设置","外观、语言和其他设置","settings",`${prefix}/settings`]
   ] : [
+    ...(gptHref ? [["AERTEX Intelligence","Open GPT workspace","intelligence",gptHref]] : []),
+    ...(adminHref ? [["Administration","Open isolated control plane","admin",adminHref]] : []),
     ["Profile","Photo, signature, and profile details","profile",`${prefix}/profile/details`],
     ["Workbench","Open Workspace","workbench",`${prefix}/workspace/workbench`],
     ["Private Storage","Manage R2 files","storage",`${prefix}/settings/storage`],

@@ -140,19 +140,26 @@ export async function handleAccessAuditAdmin(request, env) {
 
   const auth = await verifyAdministrator(request);
   if (auth.error) return auth.error;
+  return withStudioSessionCookies(await runAccessAuditAdmin(request, env), auth.cookies);
+}
 
+export async function handleAuthorizedAccessAuditAdmin(request, env) {
+  if (!hasAuditStorage(env)) return json({ error: "Access audit storage is unavailable." }, 503);
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+  return runAccessAuditAdmin(request, env);
+}
+
+async function runAccessAuditAdmin(request, env) {
   let body = {};
   try { body = await request.json(); } catch { body = {}; }
   if (!body || typeof body !== "object" || Array.isArray(body)) body = {};
 
   const action = String(body.action || "list");
-  let response;
-  if (action === "detail") response = await auditDetail(env, body);
-  else if (action === "list") response = await auditList(env, body);
-  else if (action === "summary") response = await auditSummary(env, body);
-  else response = json({ error: "Unknown access audit action." }, 400);
-
-  return withStudioSessionCookies(response, auth.cookies);
+  if (action === "detail") return auditDetail(env, body);
+  if (action === "list") return auditList(env, body);
+  if (action === "summary") return auditSummary(env, body);
+  return json({ error: "Unknown access audit action." }, 400);
 }
 
 export async function cleanupAccessAudit(env, retentionDays = ACCESS_AUDIT_RETENTION_DAYS) {

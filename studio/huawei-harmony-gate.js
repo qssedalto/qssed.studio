@@ -140,6 +140,9 @@ function shouldAutoApplyExemptionRoute(request) {
       pathname === "/gpt/handoff" ||
       pathname === "/zh-cn/gpt/handoff" ||
       pathname === "/en/gpt/handoff" ||
+      pathname === "/control/handoff" ||
+      pathname === "/zh-cn/control/handoff" ||
+      pathname === "/en/control/handoff" ||
       pathname.startsWith("/api/") ||
       pathname.startsWith("/.well-known/") ||
       pathname.startsWith("/favicon")
@@ -439,7 +442,12 @@ function isExemptionVerificationTransport(request) {
     const url = new URL(request.url);
     if (isServiceHost(url.hostname, "auth")) return true;
     if (url.pathname === "/auth/handoff") return true;
-    return url.pathname === "/gpt/handoff" || url.pathname === "/zh-cn/gpt/handoff" || url.pathname === "/en/gpt/handoff";
+    return url.pathname === "/gpt/handoff"
+      || url.pathname === "/zh-cn/gpt/handoff"
+      || url.pathname === "/en/gpt/handoff"
+      || url.pathname === "/control/handoff"
+      || url.pathname === "/zh-cn/control/handoff"
+      || url.pathname === "/en/control/handoff";
   } catch {
     return false;
   }

@@ -1,6 +1,6 @@
 # AERTEX Access Audit
 
-AERTEX Access Audit records security-relevant edge events for the main AERTEX site, the Work custom domain, and the Auth custom domain.
+AERTEX Access Audit records security-relevant edge events for the main AERTEX site, Work, Auth, and the isolated Administration control plane.
 
 It intentionally does **not** archive every request. Routine successful GET/HEAD traffic and low-value anonymous 404 noise are left to Cloudflare observability instead of creating one R2 object per request.
 
@@ -46,20 +46,21 @@ Sensitive query values are replaced with `[REDACTED]` before persistence.
 
 ## Administrator access
 
-The private viewer is available at:
+The viewer is part of the isolated control plane:
 
 ```text
-https://qsseda.com/zh-cn/admin/access-audit
-https://qsseda.com/en/admin/access-audit
+https://admin.qsseda.com/access
 ```
 
-Both the page and its API require a valid AERTEX session plus the existing Supabase `is_admin` check. Non-admin access to the page returns a generic 404.
+The page is never served by the main product domain. The Administration Worker requires a valid short-lived administrator session and revalidates the existing Supabase `is_admin` authorization check. Non-admin and unknown administrator routes return a generic 404.
 
-The API endpoint is:
+The control-plane API endpoint is:
 
 ```text
-POST /api/admin/access-audit
+POST https://admin.qsseda.com/api/admin/access-audit
 ```
+
+Equivalent `admin.qsseda.online` and `admin.qsseda.studio` family hosts use their matching root domain.
 
 Supported actions:
 
@@ -83,4 +84,4 @@ Because raw IP addresses are personal data in many jurisdictions, retention shou
 
 ## Cloudflare built-in logs
 
-Wrangler Observability remains enabled at 100% head sampling for AERTEX, Work, and ID. Access Audit is an application-owned searchable archive in addition to Cloudflare's own invocation logs; it does not replace Cloudflare observability.
+Wrangler Observability remains enabled for AERTEX, Work, ID, Intelligence, and Administration. Access Audit is an application-owned searchable archive in addition to Cloudflare's own invocation logs; it does not replace Cloudflare observability.

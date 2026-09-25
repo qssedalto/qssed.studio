@@ -6,6 +6,7 @@ const assert = (condition, message) => {
 };
 
 const shell = read("studio/ui-shell.js");
+const admin = read("admin/ui.js");
 const gpt = read("studio/gpt-ui.js");
 const gptHandoff = read("studio/gpt-subdomain.js");
 const authHandoff = read("studio/auth-handoff.js");
@@ -26,7 +27,9 @@ assert(shell.includes('platform: "个人工作空间"'), "Chinese main subtitle 
 assert(shell.includes('platform: "Personal Workspace"'), "English main subtitle must be Personal Workspace");
 assert(shell.includes('["AERTEX Knowledge"'), "Knowledge product must be AERTEX Knowledge");
 assert(shell.includes('["AERTEX Drive"'), "Storage product must be AERTEX Drive");
-assert(shell.includes('admin: ["AERTEX Console"'), "Admin product must be AERTEX Console");
+assert(!shell.includes("AERTEX Console"), "Main product shell must not expose the administrator product.");
+assert(admin.includes("<title>AERTEX Administration</title>"), "Admin control plane title must be AERTEX Administration");
+assert(admin.includes("AERTEX ADMIN"), "Admin control plane visible brand must be AERTEX ADMIN");
 
 assert(auth.includes("<strong>AERTEX ID</strong><span>AERTEX Account</span>"), "Auth brand must be AERTEX ID / AERTEX Account");
 assert(auth.includes('"AERTEX User"'), "Auth fallback user must be AERTEX User");
