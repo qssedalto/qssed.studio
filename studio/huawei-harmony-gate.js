@@ -5,9 +5,9 @@ import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gat
 const DETECTION_RE = /(HarmonyOS|OpenHarmony|HuaweiBrowser|HUAWEI)/i;
 const DEVICE_ROUTE_MARKER = "huawei-exempt";
 const PREVIEW_ROUTE = "/hw";
-const ROUTE_ROUTE_EXEMPTION_COOKIE = "__Secure-aertex-huawei-route-exempt";
-const ROUTE_ROUTE_ROUTE_EXEMPTION_COOKIE_VALUE = "v2";
-const ROUTE_ROUTE_EXEMPTION_MAX_AGE = 60 * 60 * 24 * 30;
+const ROUTE_EXEMPTION_COOKIE = "__Secure-aertex-huawei-route-exempt";
+const ROUTE_ROUTE_EXEMPTION_COOKIE_VALUE = "v2";
+const ROUTE_EXEMPTION_MAX_AGE = 60 * 60 * 24 * 30;
 const EXEMPTION_CODE = "AERTEX-HW-7K9Q-26";
 
 export async function huaweiHarmonyGate(request) {
@@ -235,7 +235,7 @@ function hasHuaweiRouteExemptionCookie(request) {
     const name = part.slice(0, index).trim();
     if (name !== ROUTE_EXEMPTION_COOKIE) continue;
     const value = part.slice(index + 1).trim();
-    return value === ROUTE_ROUTE_EXEMPTION_COOKIE_VALUE;
+    return value === ROUTE_EXEMPTION_COOKIE_VALUE;
   }
   return false;
 }
@@ -246,7 +246,7 @@ function huaweiRouteExemptionCookie(request) {
     domain = rootDomainForHost(new URL(request.url).hostname);
   } catch {}
   const domainAttr = domain ? `; Domain=.${domain}` : "";
-  return `${ROUTE_EXEMPTION_COOKIE}=${ROUTE_ROUTE_EXEMPTION_COOKIE_VALUE}; Path=/; Max-Age=${ROUTE_EXEMPTION_MAX_AGE}; Secure; HttpOnly; SameSite=Lax${domainAttr}`;
+  return `${ROUTE_EXEMPTION_COOKIE}=${ROUTE_EXEMPTION_COOKIE_VALUE}; Path=/; Max-Age=${ROUTE_EXEMPTION_MAX_AGE}; Secure; HttpOnly; SameSite=Lax${domainAttr}`;
 }
 
 function ordinaryRouteUrl(request) {
