@@ -20,11 +20,13 @@ for (const locale of ["zh-cn", "en"]) {
     'share.dataset.action="share"',
     'del.dataset.action="delete"',
     'history.replaceState({conversationId:state.conversationId}',
-    'boot.isAdmin===true',
     'qssed_theme',
     'data-theme="dark"',
   ]) {
     if (!html.includes(required)) throw new Error(`GPT UI ${locale} missing multi-provider invariant: ${required}`);
+  }
+  if (html.includes('href="/zh-cn/admin"') || html.includes('href="/en/admin"') || html.includes("adminConsole")) {
+    throw new Error("Intelligence must not expose administrator navigation");
   }
   const notFound = renderIntelligenceNotFound(locale, { kind: "conversation", theme: "dark" });
   if (notFound.includes("<h1>404</h1>")) throw new Error("Intelligence not-found UI must not render a raw 404 heading");
