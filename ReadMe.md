@@ -1,6 +1,6 @@
 # AERTEX
 
-AERTEX is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.com`, a standalone Work surface at `work.qsseda.com`, and the **AERTEX Intelligence** interface at `gpt.qsseda.com`.
+AERTEX is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.com`, a standalone Work surface at `work.qsseda.com`, the **AERTEX Intelligence** interface at `gpt.qsseda.com`, and an isolated administrator control plane at `admin.qsseda.com`.
 
 ## Runtime architecture
 
@@ -10,8 +10,8 @@ AERTEX is a Cloudflare Workers + Supabase application with a separate identity s
 
 - server/routing: `entry.js`, `routing.js`, `server-runtime.js`, `html-utils.js`, `account-api.js`, `storage-api.js`, `auth-handoff.js`, `config.js`;
 - shared UI/runtime: `ui-page.js`, `ui-audit.js`, `ui-primitives.js`, `ui-shell.js`, `ui-styles.js`;
-- product UI: `ui-profile.js`, `ui-settings.js`, `ui-storage.js`, `ui-admin.js`, `ui-dashboard.js`, `ui-information.js`, `ui-workspace.js`;
-- product-owned style fragments: `ui-style-profile.js`, `ui-style-admin.js`, `ui-style-dashboard.js`;
+- product UI: `ui-profile.js`, `ui-settings.js`, `ui-storage.js`, `ui-dashboard.js`, `ui-information.js`, `ui-workspace.js`;
+- product-owned style fragments: `ui-style-profile.js`, `ui-style-dashboard.js`;
 - public Studio login/sign-up/not-found UI: `auth-pages.js`.
 
 The independent Auth service uses:
@@ -28,7 +28,17 @@ The independent GPT surface uses:
 - `gpt-worker.js` — standalone AI interface entrypoint, localized shell, health endpoint and security headers;
 - `wrangler.gpt.jsonc` — Cloudflare Worker configuration binding the custom domain `gpt.qsseda.com`.
 
-The GPT surface intentionally starts as an isolated interface boundary so chat, model selection, history and AI tools can evolve without coupling those concerns to the main Studio Worker.
+The GPT surface intentionally remains an isolated interface boundary so chat, model selection, history and AI tools can evolve without coupling those concerns to the main Studio Worker.
+
+The independent administrator control plane uses:
+
+- `admin-worker.js` — administrator-only routing, health endpoint, access auditing and private control APIs;
+- `admin/session.js` — short-lived host-only administrator session established from the main-site AERTEX ID session;
+- `admin/admin-api.js` — administrator RPC proxy for users, roles, audit records and device exemptions;
+- `admin/ui.js` — dense operations-console UI, intentionally separate from the Personal Workspace visual shell;
+- `wrangler.admin.jsonc` — exact `admin.*` custom-domain routes, R2 audit binding and private service binding to Intelligence.
+
+The public product surfaces do not serve administrator pages or administrator APIs. Historical main-site and Intelligence administrator paths return 404. The main site retains only `/control/handoff` as the authenticated server-side bridge into the isolated control plane.
 
 ## Studio routes and contracts
 
@@ -42,7 +52,7 @@ Public Studio server routes include:
 - `GET|DELETE /api/storage/object`
 - localized Studio UI routes under `/zh-cn/*` and `/en/*`
 
-Auth/OAuth/PKCE, Supabase RLS, R2 isolation, browser cache keys and Admin authorization are separate behavioral contracts; structural module cleanup must not silently change them.
+Auth/OAuth/PKCE, Supabase RLS, R2 isolation, browser cache keys and administrator authorization are separate behavioral contracts; structural module cleanup must not silently change them.
 
 ## Supabase schema history
 
@@ -78,7 +88,7 @@ See [`AUTH_PORTAL.md`](./AUTH_PORTAL.md) for browser sessions, Studio handoff, O
 
 - `Studio Worker Check` syntax-checks every `studio/*.js` module and runs a Wrangler dry-run bundle.
 - `Auth Worker Check` validates and bundles the independent Auth Worker.
-- `Deploy AERTEX Production` validates and deploys Studio, Work, GPT and Auth from `main` after relevant runtime files change.
+- `Deploy AERTEX Production` validates and deploys Studio, Work, GPT, Administration and Auth from `main` after relevant runtime files change.
 - Cloudflare branch previews are required for structural Studio PRs before merge.
 
 ## Development safety
