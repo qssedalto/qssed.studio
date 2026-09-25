@@ -96,7 +96,7 @@ export default {
       return request.method === "HEAD" ? new Response(null,{status:response.status,headers:response.headers}) : response;
     }
 
-    const conversationRoute = pathname.match(/^\/(zh-cn|en)\/c\/([0-9a-f-]{36})$/i);
+    const conversationRoute = pathname.match(/^\/(zh-cn|en)\/c\/(?:huawei-exempt\/)?([0-9a-f-]{36})$/i);
     if (pathname === "/zh-cn" || pathname === "/en" || conversationRoute) {
       const locale = pathname.startsWith("/en") ? "en" : "zh-cn";
       const gate = await verifyStudioPageSession(request);
