@@ -1,0 +1,162 @@
+import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js";
+import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
+import { adminOriginForRequest } from "./studio/domain-family.js";
+import { adminSessionRedirect } from "./studio/admin-subdomain.js";
+import { handleAiAdminApi } from "./studio/ai-gateway.js";
+import { handleAuthorizedAccessAuditAdmin, recordAccessAudit } from "./studio/access-audit.js";
+import { handleAdminAccess, handleAdminAction } from "./admin/admin-api.js";
+import {
+  adminHeaders,
+  adminSessionLogoutResponse,
+  handleAdminHandoff,
+  verifyAdminSession,
+  withAdminSessionCookies
+} from "./admin/session.js";
+import { adminHtml, hiddenAdminNotFound, renderAdminConsole } from "./admin/ui.js";
+
+const PAGE_PATHS = new Set(["/", "/overview", "/users", "/roles", "/access", "/intelligence", "/logs", "/system"]);
+
+export default {
+  async fetch(request, env, ctx) {
+    const blocked = await protectEdgeRequest(request, env);
+    if (blocked) return applyEdgeProtectionHeaders(request, blocked);
+
+    const startedAt = Date.now();
+    let response;
+    try {
+      response = await routeAdminRequest(request, env);
+    } catch (error) {
+      scheduleAudit(ctx, request, new Response(null, { status: 500 }), env, startedAt);
+      throw error;
+    }
+
+    scheduleAudit(ctx, request, response, env, startedAt);
+    return applyEdgeProtectionHeaders(request, response);
+  }
+};
+
+async function routeAdminRequest(request, env) {
+  const url = new URL(request.url);
+  const pathname = normalizePath(url.pathname);
+
+  if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
+
+  if (pathname === "/health") {
+    return json({
+      service: "qsseda-admin",
+      status: "ok",
+      origin: adminOriginForRequest(request),
+      time: new Date().toISOString()
+    });
+  }
+
+  if (pathname === "/robots.txt") {
+    return new Response("User-agent: *\nDisallow: /\n", {
+      status: 200,
+      headers: adminHeaders("text/plain;charset=UTF-8")
+    });
+  }
+
+  if (pathname === "/auth/handoff") {
+    return handleAdminHandoff(request);
+  }
+
+  if (pathname === "/api/auth/logout") {
+    if (request.method !== "POST" || !sameOrigin(request)) return hiddenAdminNotFound();
+    return adminSessionLogoutResponse();
+  }
+
+  if (pathname.startsWith("/api/admin/") || pathname === "/api/admin/access") {
+    const session = await verifyAdminSession(request);
+    if (!session.ok) return withAdminSessionCookies(hiddenAdminNotFound(), session.cookies || []);
+
+    let response;
+    if (pathname === "/api/admin/access") {
+      if (request.method !== "GET") return hiddenAdminNotFound();
+      response = await handleAdminAccess(request);
+    } else if (pathname === "/api/admin/access-audit") {
+      response = await handleAuthorizedAccessAuditAdmin(request, env);
+    } else if (pathname.startsWith("/api/admin/ai/")) {
+      const internal = internalAiAdminRequest(request, pathname);
+      response = await handleAiAdminApi(internal, env, session);
+    } else {
+      const action = pathname.slice("/api/admin/".length);
+      response = await handleAdminAction(request, env, action);
+    }
+    return withAdminSessionCookies(response, session.cookies || []);
+  }
+
+  if (request.method !== "GET" && request.method !== "HEAD") return hiddenAdminNotFound();
+
+  if (!PAGE_PATHS.has(pathname)) return hiddenAdminNotFound();
+  if (pathname === "/overview") return redirect("/");
+
+  const session = await verifyAdminSession(request);
+  if (!session.ok) {
+    return withAdminSessionCookies(adminSessionRedirect(request, pathname), session.cookies || []);
+  }
+
+  const identity = String(
+    session.user?.email ||
+    session.user?.user_metadata?.username ||
+    session.user?.id ||
+    "Administrator"
+  ).slice(0, 180);
+
+  const response = adminHtml(renderAdminConsole(pathname, {
+    identity,
+    root: adminOriginForRequest(request).replace(/^https:\/\//, ""),
+    build: "control-plane-v1"
+  }));
+
+  return request.method === "HEAD"
+    ? new Response(null, { status: response.status, headers: response.headers })
+    : response;
+}
+
+function internalAiAdminRequest(request, pathname) {
+  const url = new URL(request.url);
+  url.pathname = pathname.replace(/^\/api\/admin\/ai\//, "/api/ai/admin/");
+  const init = {
+    method: request.method,
+    headers: request.headers,
+    body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
+    redirect: "manual"
+  };
+  return new Request(url.toString(), init);
+}
+
+function scheduleAudit(ctx, request, response, env, startedAt) {
+  const promise = recordAccessAudit(request, response, env, startedAt, "admin")
+    .catch(error => console.error("Admin access audit write failed", error));
+  if (ctx?.waitUntil) ctx.waitUntil(promise);
+}
+
+function normalizePath(pathname) {
+  if (!pathname || pathname === "/") return "/";
+  return pathname.replace(/\/+$/, "") || "/";
+}
+
+function sameOrigin(request) {
+  const url = new URL(request.url);
+  return (request.headers.get("Origin") || "") === url.origin;
+}
+
+function redirect(location) {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      location,
+      "cache-control": "private, no-store",
+      "referrer-policy": "no-referrer",
+      "x-robots-tag": "noindex, nofollow, noarchive, nosnippet"
+    }
+  });
+}
+
+function json(value, status = 200) {
+  return new Response(JSON.stringify(value), {
+    status,
+    headers: adminHeaders("application/json;charset=UTF-8")
+  });
+}
