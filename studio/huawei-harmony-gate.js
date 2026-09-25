@@ -1,11 +1,15 @@
-import { authOriginForRequest, isServiceHost } from "./domain-family.js";
+import { authOriginForRequest, isServiceHost, rootDomainForHost } from "./domain-family.js";
 
 const DETECTION_RE = /(HarmonyOS|OpenHarmony|HuaweiBrowser|HUAWEI)/i;
 const DEVICE_ROUTE_MARKER = "huawei-exempt";
 const PREVIEW_ROUTE = "/hw";
+const EXEMPTION_COOKIE = "__Secure-aertex-huawei-exempt";
+const EXEMPTION_COOKIE_VALUE = "v1";
+const EXEMPTION_MAX_AGE = 60 * 60 * 24 * 30;
+const EXEMPTION_CODE = "AERTEX-HW-7K9Q-26";
 
-export function huaweiHarmonyGate(request) {
-  if (hasDeviceRouteMarker(request)) return null;
+export async function huaweiHarmonyGate(request) {
+  if (hasDeviceRouteMarker(request)) return handleHuaweiExemptionRoute(request);
   if (isExplicitPreviewRequest(request)) return renderHuaweiUnsupportedPage(request);
   if (isExemptionVerificationTransport(request)) return null;
   if (!isHuaweiOrHarmonyRequest(request)) return null;
@@ -19,6 +23,251 @@ function hasDeviceRouteMarker(request) {
   } catch {
     return false;
   }
+}
+
+async function handleHuaweiExemptionRoute(request) {
+  if (hasHuaweiExemptionCookie(request)) return null;
+
+  const method = String(request?.method || "GET").toUpperCase();
+  if (method === "GET" || method === "HEAD") {
+    return renderHuaweiExemptionChallenge(request);
+  }
+
+  if (method !== "POST") {
+    return new Response("Method not allowed", {
+      status: 405,
+      headers: {
+        "content-type": "text/plain;charset=UTF-8",
+        "cache-control": "no-store",
+        "allow": "GET, HEAD, POST",
+        "x-content-type-options": "nosniff"
+      }
+    });
+  }
+
+  let form;
+  try {
+    form = await request.formData();
+  } catch {
+    return renderHuaweiExemptionChallenge(request, {
+      error: "无法读取验证信息，请重新输入授权码。",
+      showCode: true,
+      status: 400
+    });
+  }
+
+  const confirmed = String(form.get("device_confirm") || "").trim().toLowerCase();
+  const code = String(form.get("authorization_code") || "").trim().toUpperCase();
+
+  if (confirmed !== "yes") {
+    return renderHuaweiExemptionChallenge(request, {
+      error: "请先明确确认你正在使用华为或 HarmonyOS 设备。",
+      showCode: false,
+      status: 400
+    });
+  }
+
+  if (code !== EXEMPTION_CODE) {
+    return renderHuaweiExemptionChallenge(request, {
+      error: "授权码无效。请确认代码后重试。",
+      showCode: true,
+      status: 403
+    });
+  }
+
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch {
+    url = new URL("https://qsseda.com/");
+  }
+
+  const headers = new Headers({
+    location: url.pathname + url.search,
+    "cache-control": "no-store",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff"
+  });
+  headers.append("set-cookie", huaweiExemptionCookie(request));
+  return new Response(null, { status: 303, headers });
+}
+
+function hasHuaweiExemptionCookie(request) {
+  const cookieHeader = request?.headers?.get("Cookie") || "";
+  for (const part of cookieHeader.split(";")) {
+    const index = part.indexOf("=");
+    if (index <= 0) continue;
+    const name = part.slice(0, index).trim();
+    if (name !== EXEMPTION_COOKIE) continue;
+    const value = part.slice(index + 1).trim();
+    return value === EXEMPTION_COOKIE_VALUE;
+  }
+  return false;
+}
+
+function huaweiExemptionCookie(request) {
+  let domain = "";
+  try {
+    domain = rootDomainForHost(new URL(request.url).hostname);
+  } catch {}
+  const domainAttr = domain ? `; Domain=.${domain}` : "";
+  return `${EXEMPTION_COOKIE}=${EXEMPTION_COOKIE_VALUE}; Path=/; Max-Age=${EXEMPTION_MAX_AGE}; Secure; HttpOnly; SameSite=Lax${domainAttr}`;
+}
+
+function ordinaryRouteUrl(request) {
+  try {
+    const url = new URL(request.url);
+    const segments = url.pathname.split("/").filter(Boolean);
+    const markerIndex = segments.length - 2;
+    if (markerIndex >= 0 && String(segments[markerIndex] || "").toLowerCase() === DEVICE_ROUTE_MARKER) {
+      segments.splice(markerIndex, 1);
+      url.pathname = "/" + segments.join("/");
+    }
+    return url.pathname + url.search;
+  } catch {
+    return "/";
+  }
+}
+
+function renderHuaweiExemptionChallenge(request, options = {}) {
+  const error = String(options.error || "");
+  const showCode = Boolean(options.showCode);
+  const status = Number(options.status) || 200;
+  const ordinaryHref = escapeHtml(ordinaryRouteUrl(request));
+  const errorMarkup = error ? `<div class="error" role="alert">${escapeHtml(error)}</div>` : "";
+  const codeClass = showCode ? "code-panel visible" : "code-panel";
+
+  const markup = `<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>华为设备访问豁免验证</title>
+<style>
+  :root{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;
+    color-scheme:light dark;
+    --bg:#f6f7f9;
+    --surface:#fff;
+    --text:#15171a;
+    --muted:#60656d;
+    --line:#dfe3e8;
+    --danger:#b42318;
+    --danger-soft:#fff1f0;
+    --danger-line:#f1b7b2;
+    --button:#15171a;
+    --button-text:#fff;
+    --secondary:#f1f3f5;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+  body{display:flex;justify-content:center}
+  main{width:min(100%,720px);min-height:100vh;padding:clamp(34px,7vw,72px) clamp(22px,6vw,48px) 56px;background:var(--surface)}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;margin:0 0 24px;padding:8px 12px;border:1px solid var(--danger-line);border-radius:999px;background:var(--danger-soft);color:var(--danger);font-size:14px;font-weight:750}
+  .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+  h1{margin:0 0 18px;font-size:clamp(34px,7vw,52px);line-height:1.14;letter-spacing:-.035em}
+  .lead{margin:0 0 28px;font-size:clamp(18px,4vw,24px);line-height:1.75;color:var(--muted)}
+  .warning{margin:0 0 30px;padding:20px 22px;border:1px solid var(--danger-line);border-radius:22px;background:var(--danger-soft)}
+  .warning strong{display:block;margin-bottom:8px;color:var(--danger);font-size:18px}
+  .warning p{margin:0;color:var(--text);line-height:1.7}
+  .question{margin:0 0 14px;font-size:22px;font-weight:780;line-height:1.4}
+  .hint{margin:0 0 22px;color:var(--muted);line-height:1.7}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:26px}
+  button,a.button{appearance:none;border:0;border-radius:16px;min-height:56px;padding:14px 18px;font:inherit;font-weight:730;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;text-align:center}
+  .primary{background:var(--button);color:var(--button-text)}
+  .secondary{background:var(--secondary);color:var(--text);border:1px solid var(--line)!important}
+  .code-panel{display:none;margin-top:8px;padding:24px;border:1px solid var(--line);border-radius:22px;background:rgba(127,127,127,.035)}
+  .code-panel.visible{display:block}
+  .code-panel h2{margin:0 0 8px;font-size:23px}
+  .code-panel p{margin:0 0 18px;color:var(--muted);line-height:1.65}
+  label{display:block;margin-bottom:8px;font-size:14px;font-weight:700}
+  input{width:100%;height:56px;border:1px solid var(--line);border-radius:14px;padding:0 16px;background:var(--surface);color:var(--text);font:inherit;font-size:17px;letter-spacing:.02em;outline:none}
+  input:focus{border-color:var(--text);box-shadow:0 0 0 3px color-mix(in srgb,var(--text) 12%,transparent)}
+  .submit{width:100%;margin-top:14px}
+  .error{margin:0 0 18px;padding:14px 16px;border-radius:14px;background:var(--danger-soft);border:1px solid var(--danger-line);color:var(--danger);font-weight:700;line-height:1.55}
+  .foot{margin:26px 0 0;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;line-height:1.7}
+  @media(max-width:560px){.actions{grid-template-columns:1fr}}
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg:#090c10;
+      --surface:#0f1318;
+      --text:#f4f6f8;
+      --muted:#aeb6c0;
+      --line:#303740;
+      --danger:#ff8a80;
+      --danger-soft:#271516;
+      --danger-line:#6b3434;
+      --button:#f4f6f8;
+      --button-text:#11151a;
+      --secondary:#181e25;
+    }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow"><span class="dot"></span>受限设备访问通道</div>
+  <h1>确认你的设备</h1>
+  <p class="lead">你正在进入华为 / HarmonyOS 设备专用的访问豁免路由。此入口不是普通访问地址。</p>
+
+  <section class="warning" aria-label="重要警告">
+    <strong>⚠️ 重要警告</strong>
+    <p>继续操作代表你明确知道当前页面属于设备访问豁免。豁免只允许绕过设备拦截，不代表本站已经完成华为设备或 HarmonyOS 的兼容适配；后续页面仍可能出现显示、交互或功能异常。</p>
+  </section>
+
+  <p class="question">你现在是否正在使用华为 / HarmonyOS 设备？</p>
+  <p class="hint">请选择真实情况。非华为设备没有必要使用此特殊入口。</p>
+
+  ${errorMarkup}
+
+  <div class="actions">
+    <button class="primary" id="confirmHuawei" type="button">是，我正在使用华为设备</button>
+    <a class="button secondary" href="${ordinaryHref}">否，返回普通入口</a>
+  </div>
+
+  <form method="post" class="${codeClass}" id="codePanel">
+    <input type="hidden" name="device_confirm" value="yes">
+    <h2>输入设备访问授权码</h2>
+    <p>此路由需要额外授权。只有获得站点管理员提供的授权码后才可继续。</p>
+    <label for="authorizationCode">授权码</label>
+    <input id="authorizationCode" name="authorization_code" type="text" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required>
+    <button class="primary submit" type="submit">验证授权码并继续</button>
+  </form>
+
+  <p class="foot">验证成功后，此浏览器在当前 AERTEX 域名体系下 30 天内不会再次显示本确认页。清除 Cookie、切换域名体系或授权失效后需要重新验证。</p>
+</main>
+<script>
+(function(){
+  var button=document.getElementById("confirmHuawei");
+  var panel=document.getElementById("codePanel");
+  var input=document.getElementById("authorizationCode");
+  if(!button||!panel)return;
+  button.addEventListener("click",function(){
+    panel.classList.add("visible");
+    button.setAttribute("aria-expanded","true");
+    setTimeout(function(){if(input)input.focus()},80);
+  });
+  ${showCode ? 'setTimeout(function(){if(input)input.focus()},80);' : ''}
+})();
+</script>
+</body>
+</html>`;
+
+  const headers = new Headers({
+    "content-type": "text/html;charset=UTF-8",
+    "cache-control": "no-store, no-cache, must-revalidate",
+    "pragma": "no-cache",
+    "expires": "0",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+  });
+
+  if (request?.method === "HEAD") return new Response(null, { status, headers });
+  return new Response(markup, { status, headers });
 }
 
 function isExemptionVerificationTransport(request) {
