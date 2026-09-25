@@ -89,8 +89,10 @@ assert(!gpt.includes("<h1>404</h1>"), "Intelligence not-found pages must not exp
 assert(gpt.includes("intelligenceThemeFromRequest(request)"), "GPT Worker must resolve the shared color mode before rendering.");
 
 assert(gpt.includes("handleAiApi(request, env, gate)"), "GPT Worker must proxy authenticated AI API calls.");
-assert(!gpt.includes("handleAiAdminApi"), "GPT Worker must not expose administrator APIs.");
 assert(!gpt.includes("renderAiAdmin"), "GPT Worker must not render an administrator console.");
+assert(gpt.includes('pathname.startsWith("/_internal/admin-ai/")'), "GPT Worker must reserve a private AI admin bridge for the control plane.");
+assert(gpt.includes("X-AERTEX-Control-Secret"), "Private AI admin bridge must require a server-side secret.");
+assert(gpt.includes("handleAiAdminApi(proxied, env"), "AI admin handler may only be reached through the private bridge.");
 assert(!gpt.includes("renderAdminDenied"), "GPT Worker must not carry legacy administrator pages.");
 assert(gpt.includes('pathname.startsWith("/api/ai/admin/")'), "GPT Worker must explicitly hide legacy administrator API paths.");
 assert(gpt.includes('pathname === "/zh-cn/admin"'), "GPT Worker must explicitly hide legacy administrator page paths.");
