@@ -12,23 +12,47 @@ const ACCESS_AUDIT_PAGES = new Set([
   "/en/admin/access-audit"
 ]);
 
+function routeAliasRequest(request) {
+  try {
+    if (request.method !== "GET" && request.method !== "HEAD") return null;
+    const url = new URL(request.url);
+    if (!isMainHost(url.hostname)) return null;
+
+    const segments = url.pathname.split("/").filter(Boolean);
+    if (segments.length < 2) return null;
+    const markerIndex = segments.length - 2;
+    if (String(segments[markerIndex] || "").toLowerCase() !== "huawei-exempt") return null;
+
+    segments.splice(markerIndex, 1);
+    url.pathname = "/" + segments.join("/");
+    return new Request(url.toString(), {
+      method: request.method,
+      headers: request.headers
+    });
+  } catch {
+    return null;
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
-    const deviceGate = huaweiHarmonyGate(request);
+    const aliasRequest = routeAliasRequest(request);
+    const deviceGate = aliasRequest ? null : huaweiHarmonyGate(request);
     if (deviceGate) return deviceGate;
+    const routedRequest = aliasRequest || request;
 
     const startedAt = Date.now();
     let response;
 
     try {
-      const url = new URL(request.url);
+      const url = new URL(routedRequest.url);
       if (isMainHost(url.hostname) && url.pathname === ACCESS_AUDIT_API) {
-        response = await handleAccessAuditAdmin(request, env);
+        response = await handleAccessAuditAdmin(routedRequest, env);
       } else if (isMainHost(url.hostname) && ACCESS_AUDIT_PAGES.has(url.pathname)) {
-        const zh = url.pathname.startsWith("/zh-cn/") || (url.pathname === "/admin/access-audit" && /^zh(?:-|_|,|;|$)/i.test(request.headers.get("Accept-Language") || ""));
-        response = await handleAccessAuditPage(request, zh);
+        const zh = url.pathname.startsWith("/zh-cn/") || (url.pathname === "/admin/access-audit" && /^zh(?:-|_|,|;|$)/i.test(routedRequest.headers.get("Accept-Language") || ""));
+        response = await handleAccessAuditPage(routedRequest, zh);
       } else {
-        response = await worker.fetch(request, env, ctx);
+        response = await worker.fetch(routedRequest, env, ctx);
       }
     } catch (error) {
       scheduleAudit(ctx, request, new Response(null, { status: 500 }), env, startedAt, auditSource(request));
