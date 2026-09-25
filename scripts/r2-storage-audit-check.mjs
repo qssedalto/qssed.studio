@@ -29,12 +29,15 @@ assert(audit("/callback", 200, "GET", "auth") === true, "Auth callback routes mu
 const storageApi = fs.readFileSync(new URL("../studio/storage-api.js", import.meta.url), "utf8");
 assert(!storageApi.includes("readBucketUsage"), "Storage page must not scan the entire R2 bucket for usage.");
 assert(storageApi.includes("used_bytes: visibleUsedBytes"), "Storage API must report user-file usage as used_bytes.");
-assert(storageApi.includes('usage_scope: auth.isAdmin ? "all-user-files" : "own-user-files"'), "Storage API must identify the user-file usage scope.");
+assert(storageApi.includes('usage_scope: "own-user-files"'), "Product storage must identify current-account scope.");
+assert(!storageApi.includes("auth.isAdmin"), "Product storage must never broaden file scope for administrators.");
+assert(!storageApi.includes("account_is_admin"), "Product storage responses must not expose administrator state.");
 
 const storageUi = fs.readFileSync(new URL("../studio/ui-storage.js", import.meta.url), "utf8");
 assert(storageUi.includes("visible_used_bytes ?? data?.used_bytes"), "Storage cache fingerprint must prefer visible user-file bytes.");
 assert(storageUi.includes("visible_used_bytes ?? data.used_bytes"), "Storage UI must render visible user-file bytes.");
-assert(storageUi.includes("系统日志、发布文件和内部对象不计入这里的用户文件空间"), "Administrator storage copy must explain excluded system objects.");
+assert(!storageUi.includes("adminDescription"), "Product storage UI must not contain an administrator mode.");
+assert(!storageUi.includes("isAdminView"), "Product storage UI must not switch into an administrator view.");
 
 
 console.log("R2 storage and access-audit optimization checks passed.");
