@@ -26,7 +26,9 @@ for (const required of [
   "handleAdminAccess(request)",
   "handleAdminAction(request, env, action)",
   "handleAuthorizedAccessAuditAdmin(request, env)",
-  "handleAiAdminApi(internal, env, session)",
+  "proxyAiAdmin(request, env, session, pathname)",
+  "GPT_CONTROL",
+  "ADMIN_BRIDGE_SECRET",
   'service: "qsseda-admin"',
   'pathname === "/robots.txt"'
 ]) {
@@ -70,7 +72,6 @@ assertContains(mainWorker, "handleMainAdminHandoff(request)", "Main Worker must 
 
 for (const forbidden of [
   "renderAiAdmin",
-  "handleAiAdminApi(request",
   "renderAdminDenied",
   'href="/zh-cn/admin"',
   'href="/en/admin"'
@@ -78,6 +79,9 @@ for (const forbidden of [
   assertAbsent(gptWorker, forbidden, "GPT Worker still carries legacy admin surface: " + forbidden);
 }
 assertContains(gptWorker, 'pathname.startsWith("/api/ai/admin/")', "GPT Worker must explicitly 404 legacy admin APIs.");
+assertContains(gptWorker, 'pathname.startsWith("/_internal/admin-ai/")', "GPT Worker must expose only the private control-plane AI bridge.");
+assertContains(gptWorker, 'X-AERTEX-Control-Secret', "GPT control bridge must require the server-side bridge secret.");
+assertContains(gptWorker, 'X-AERTEX-User-Token', "GPT control bridge must carry the verified administrator identity.");
 
 for (const forbidden of [
   'id: "admin"',
@@ -143,6 +147,7 @@ for (const required of [
   "admin-worker.js",
   "Deploy AERTEX Administration",
   "Verify Admin custom domain",
+  "Configure Admin bridge secret",
   "scripts/admin-control-plane-check.mjs"
 ]) {
   assertContains(workflow, required, "Production workflow missing admin deployment invariant: " + required);
