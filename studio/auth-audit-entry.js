@@ -4,7 +4,7 @@ import { recordAccessAudit } from "./access-audit.js";
 
 export default {
   async fetch(request, env, ctx) {
-    const deviceGate = huaweiHarmonyGate(request);
+    const deviceGate = await huaweiHarmonyGate(request);
     if (deviceGate) return deviceGate;
 
     const startedAt = Date.now();
