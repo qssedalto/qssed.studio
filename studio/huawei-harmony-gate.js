@@ -5,9 +5,9 @@ import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gat
 const DETECTION_RE = /(HarmonyOS|OpenHarmony|HuaweiBrowser|HUAWEI)/i;
 const DEVICE_ROUTE_MARKER = "huawei-exempt";
 const PREVIEW_ROUTE = "/hw";
-const EXEMPTION_COOKIE = "__Secure-aertex-huawei-exempt";
-const EXEMPTION_COOKIE_VALUE = "v1";
-const EXEMPTION_MAX_AGE = 60 * 60 * 24 * 30;
+const ROUTE_ROUTE_EXEMPTION_COOKIE = "__Secure-aertex-huawei-route-exempt";
+const ROUTE_ROUTE_ROUTE_EXEMPTION_COOKIE_VALUE = "v2";
+const ROUTE_ROUTE_EXEMPTION_MAX_AGE = 60 * 60 * 24 * 30;
 const EXEMPTION_CODE = "AERTEX-HW-7K9Q-26";
 
 export async function huaweiHarmonyGate(request) {
@@ -15,7 +15,7 @@ export async function huaweiHarmonyGate(request) {
   if (isExplicitPreviewRequest(request)) return renderHuaweiUnsupportedPage(request);
   if (isExemptionVerificationTransport(request)) return null;
 
-  if (hasHuaweiExemptionCookie(request)) {
+  if (hasHuaweiRouteExemptionCookie(request)) {
     if (shouldAutoApplyExemptionRoute(request)) return redirectToHuaweiExemptionRoute(request);
     return null;
   }
@@ -24,7 +24,8 @@ export async function huaweiHarmonyGate(request) {
 
   const accountExemption = await huaweiAccountExemption(request);
   if (accountExemption.authorized) {
-    return grantHuaweiExemptionFromAccount(request, accountExemption.cookies);
+    const refreshedSession = authorizedAccountSessionRefreshResponse(request, accountExemption.cookies);
+    return refreshedSession || null;
   }
 
   const blocked = renderHuaweiUnsupportedPage(request, {
@@ -74,7 +75,9 @@ async function huaweiAccountExemption(request) {
   }
 }
 
-function grantHuaweiExemptionFromAccount(request, sessionCookies = []) {
+function authorizedAccountSessionRefreshResponse(request, sessionCookies = []) {
+  if (!Array.isArray(sessionCookies) || !sessionCookies.length) return null;
+
   let location = "/";
   try {
     const url = new URL(request.url);
@@ -87,7 +90,6 @@ function grantHuaweiExemptionFromAccount(request, sessionCookies = []) {
     "referrer-policy": "no-referrer",
     "x-content-type-options": "nosniff"
   });
-  headers.append("set-cookie", huaweiExemptionCookie(request));
   for (const value of sessionCookies) headers.append("set-cookie", value);
   return new Response(null, { status: 302, headers });
 }
@@ -159,7 +161,7 @@ function hasDeviceRouteMarker(request) {
 }
 
 async function handleHuaweiExemptionRoute(request) {
-  if (hasHuaweiExemptionCookie(request)) return null;
+  if (hasHuaweiRouteExemptionCookie(request)) return null;
 
   const method = String(request?.method || "GET").toUpperCase();
   if (method === "GET" || method === "HEAD") {
@@ -221,30 +223,30 @@ async function handleHuaweiExemptionRoute(request) {
     "referrer-policy": "no-referrer",
     "x-content-type-options": "nosniff"
   });
-  headers.append("set-cookie", huaweiExemptionCookie(request));
+  headers.append("set-cookie", huaweiRouteExemptionCookie(request));
   return new Response(null, { status: 303, headers });
 }
 
-function hasHuaweiExemptionCookie(request) {
+function hasHuaweiRouteExemptionCookie(request) {
   const cookieHeader = request?.headers?.get("Cookie") || "";
   for (const part of cookieHeader.split(";")) {
     const index = part.indexOf("=");
     if (index <= 0) continue;
     const name = part.slice(0, index).trim();
-    if (name !== EXEMPTION_COOKIE) continue;
+    if (name !== ROUTE_EXEMPTION_COOKIE) continue;
     const value = part.slice(index + 1).trim();
-    return value === EXEMPTION_COOKIE_VALUE;
+    return value === ROUTE_ROUTE_EXEMPTION_COOKIE_VALUE;
   }
   return false;
 }
 
-function huaweiExemptionCookie(request) {
+function huaweiRouteExemptionCookie(request) {
   let domain = "";
   try {
     domain = rootDomainForHost(new URL(request.url).hostname);
   } catch {}
   const domainAttr = domain ? `; Domain=.${domain}` : "";
-  return `${EXEMPTION_COOKIE}=${EXEMPTION_COOKIE_VALUE}; Path=/; Max-Age=${EXEMPTION_MAX_AGE}; Secure; HttpOnly; SameSite=Lax${domainAttr}`;
+  return `${ROUTE_EXEMPTION_COOKIE}=${ROUTE_ROUTE_EXEMPTION_COOKIE_VALUE}; Path=/; Max-Age=${ROUTE_EXEMPTION_MAX_AGE}; Secure; HttpOnly; SameSite=Lax${domainAttr}`;
 }
 
 function ordinaryRouteUrl(request) {
