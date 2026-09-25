@@ -43,6 +43,10 @@ export function gptOriginForRequest(request) {
   return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "gpt");
 }
 
+export function adminOriginForRequest(request) {
+  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "admin");
+}
+
 export function isServiceHost(hostname, service) {
   const root = rootDomainForHost(hostname);
   return Boolean(root) && String(hostname || "").toLowerCase() === serviceHost(root, service);
