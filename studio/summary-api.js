@@ -1,4 +1,3 @@
-import { SUPABASE_URL } from "./config.js";
 import { hasStorageBinding, verifyStorageUser } from "./storage-api.js";
 import { json } from "./routing.js";
 import { workerLog } from "./server-runtime.js";
