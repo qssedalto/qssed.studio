@@ -22,8 +22,9 @@ for (const forbidden of [
 }
 
 for (const required of [
-  'pathname === "/api/admin/access"',
-  'pathname.startsWith("/api/admin/")',
+  "isMainAdminHandoffPath(pathname)",
+  "handleMainAdminHandoff(request)",
+  "isLegacyAdminSurface(pathname)",
   "isLegacyCookieApiPath(pathname)",
   "handleLegacyCookieApi(request, env, pathname)",
   "hardenGlobalBrowserResponse(response)",
@@ -62,6 +63,8 @@ for (const binding of [
   assertContains(wrangler, `\"name\": \"${binding}\"`, `wrangler.jsonc is missing edge limiter binding: ${binding}`);
 }
 
+assertAbsent(worker, 'handleAdminAccess(request)', "Main Worker must not serve administrator APIs.");
+assertAbsent(worker, 'handleAdminAction(request', "Main Worker must not serve administrator actions.");
 console.log("Studio API routing and edge protection architecture check passed.");
 
 function assertContains(source, needle, message) {
