@@ -28,10 +28,6 @@ export async function handleMainAdminHandoff(request) {
   const locale = preferredLocale(request, requestUrl.pathname);
   const gate = await verifyStudioPageSession(request);
 
-  let refreshToken = requestCookie(request, REFRESH_COOKIE);
-  const rotatedRefresh = cookieValueFromSetCookies(gate.cookies || [], REFRESH_COOKIE);
-  if (rotatedRefresh) refreshToken = rotatedRefresh;
-
   if (!gate.ok || !gate.accessToken) {
     const returnPath = `/${locale}/control/handoff?next=${encodeURIComponent(next)}`;
     const authUrl = new URL("/continue", authOriginForRequest(request));
@@ -40,10 +36,7 @@ export async function handleMainAdminHandoff(request) {
   }
 
   const adminOrigin = adminOriginForRequest(request);
-  const refreshField = refreshToken
-    ? `<input type="hidden" name="refresh_token" value="${escapeHtml(refreshToken)}">`
-    : "";
-  const page = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AERTEX Administration</title></head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#0a0d12;color:#e8edf5"><p>Establishing administrative session…</p></main><form id="handoff" method="post" action="${adminOrigin}/auth/handoff"><input type="hidden" name="access_token" value="${escapeHtml(gate.accessToken)}">${refreshField}<input type="hidden" name="next" value="${escapeHtml(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  const page = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AERTEX Administration</title></head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#0a0d12;color:#e8edf5"><p>Establishing administrative session…</p></main><form id="handoff" method="post" action="${adminOrigin}/auth/handoff"><input type="hidden" name="access_token" value="${escapeHtml(gate.accessToken)}"><input type="hidden" name="next" value="${escapeHtml(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
 
   const headers = new Headers({
     "content-type": "text/html;charset=UTF-8",
@@ -68,26 +61,6 @@ function preferredLocale(request, pathname) {
   if (pathname.startsWith("/zh-cn/") || pathname === "/zh-cn") return "zh-cn";
   const language = (request.headers.get("Accept-Language") || "").toLowerCase();
   return language.includes("zh") ? "zh-cn" : "en";
-}
-
-function requestCookie(request, name) {
-  const header = request.headers.get("Cookie") || "";
-  for (const part of header.split(";")) {
-    const index = part.indexOf("=");
-    if (index <= 0 || part.slice(0, index).trim() !== name) continue;
-    return part.slice(index + 1).trim();
-  }
-  return "";
-}
-
-function cookieValueFromSetCookies(cookies, name) {
-  for (const value of cookies || []) {
-    const first = String(value || "").split(";", 1)[0];
-    const index = first.indexOf("=");
-    if (index <= 0 || first.slice(0, index).trim() !== name) continue;
-    return first.slice(index + 1).trim();
-  }
-  return "";
 }
 
 function escapeHtml(value) {
