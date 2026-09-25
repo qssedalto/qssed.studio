@@ -11,12 +11,20 @@ const assertAbsent = (source, needle, message) => assert(!source.includes(needle
 const adminWorker = read("admin-worker.js");
 const adminSession = read("admin/session.js");
 const adminApi = read("admin/admin-api.js");
+const adminContentApi = read("admin/content-api.js");
 const adminUi = read("admin/ui.js");
 const adminHandoff = read("studio/admin-subdomain.js");
 const mainWorker = read("worker.js");
 const gptWorker = read("gpt-worker.js");
 const shell = read("studio/ui-shell.js");
 const config = read("studio/config.js");
+const summaryApi = read("studio/summary-api.js");
+const userLinksApi = read("studio/user-links-api.js");
+const storageApi = read("studio/storage-api.js");
+const storageUi = read("studio/ui-storage.js");
+const informationUi = read("studio/ui-information.js");
+const globalSearchApi = read("studio/global-search-api.js");
+const texApi = read("studio/tex-api-core.js");
 const workflow = read(".github/workflows/deploy-production.yml");
 const wrangler = JSON.parse(read("wrangler.admin.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 
@@ -127,10 +135,15 @@ for (const required of [
   "PRODUCTION",
   'href="/users"',
   'href="/access"',
+  'href="/content"',
+  'href="/storage"',
   'href="/intelligence"',
   'id="logout"',
   "/api/admin/overview",
   "/api/admin/access-audit",
+  "/api/admin/content/summaries",
+  "/api/admin/content/links",
+  "/api/admin/storage/files",
   "/api/admin/ai/state?fast=1"
 ]) {
   assertContains(html, required, "Admin UI missing operational console element: " + required);
@@ -154,5 +167,31 @@ for (const required of [
 
 assertContains(adminApi, '"device-exemption"', "Admin control API must own Huawei ID exemption changes.");
 assertAbsent(adminApi, "verifyStudioApiSession", "Admin API must not reuse the ordinary product session verifier.");
+
+for (const required of [
+  'resource === "summaries"',
+  'resource === "links"',
+  'resource === "storage-files"',
+  'resource === "storage-object"',
+  "attachOwners(rows, session.accessToken)"
+]) {
+  assertContains(adminContentApi, required, "Admin content API missing control-plane capability: " + required);
+}
+
+for (const [name, source, forbidden] of [
+  ["product summaries", summaryApi, ["auth.isAdmin", "is_admin", "scope=all", "listAllSummaries"]],
+  ["product private links", userLinksApi, ["auth.isAdmin", "is_admin", "MAX_ADMIN_LINKS"]],
+  ["product storage", storageApi, ["auth.isAdmin", "is_admin", "account_is_admin", "all-user-files", "storage.admin."]],
+  ["product storage UI", storageUi, ["isAdminView", "adminDescription", "data?.is_admin"]],
+  ["product summary UI", informationUi, ["summary-admin", "scope=all", "data?.is_admin", "renderAdmin("]],
+  ["product global search", globalSearchApi, ["auth.isAdmin", "is_admin", 'scope: "admin"']],
+  ["product TeX API", texApi, ["metadata.is_admin", "const isAdmin"]]
+]) {
+  for (const needle of forbidden) assertAbsent(source, needle, name + " still contains administrator behavior: " + needle);
+}
+assertContains(storageApi, 'usage_scope: "own-user-files"', "Product storage must stay current-account scoped.");
+assertContains(userLinksApi, 'scope: scope === "community" ? "community" : "own"', "Private product links must stay current-account scoped.");
+assertContains(summaryApi, 'scope: "own"', "Product summaries must stay current-account scoped.");
+
 
 console.log("AERTEX isolated admin control plane checks passed.");
