@@ -31,6 +31,7 @@ import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js"
 import { osPage } from "./ui-shell.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { birthdayPage } from "./ui-birthday.js";
+import { midAutumnPage } from "./ui-mid-autumn.js";
 import { authOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 
 function safeLocalNext(value) {
@@ -141,6 +142,7 @@ export default {
     }
 
     if (pathname === "/birthday") return localizedPage(birthdayPage(locale), locale);
+    if (pathname === "/mid-autumn") return localizedPage(midAutumnPage(locale), locale);
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
     if (pathname === "/login") {
       const authUrl = new URL("/login", authOriginForRequest(request));
