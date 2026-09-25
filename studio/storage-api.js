@@ -162,7 +162,7 @@ export async function verifyStorageUser(request, env) {
 
   let profiles;
   try {
-    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status,role&id=eq.${encodeURIComponent(user.id)}`, {
+    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(user.id)}`, {
       headers: serviceHeaders(secret)
     });
     if (!profileResponse.ok) return { error: json({ error: "Account service is temporarily unavailable." }, 503) };
@@ -175,12 +175,7 @@ export async function verifyStorageUser(request, env) {
     return { error: json({ error: "Account is not authorized to use storage." }, 403) };
   }
 
-  const metadata = user?.app_metadata || {};
-  const isAdmin = profiles[0]?.role === "admin"
-    || metadata.role === "admin"
-    || metadata.is_admin === true
-    || metadata.is_admin === "true";
-  return { user, isAdmin, secret };
+  return { user, secret };
 }
 
 export async function handleStorageFiles(request, env) {
@@ -189,7 +184,7 @@ export async function handleStorageFiles(request, env) {
   if (!hasStorageBinding(env)) return storageUnavailable();
 
   const files = [];
-  const prefix = auth.isAdmin ? "users/" : storagePrefix(auth.user.id);
+  const prefix = storagePrefix(auth.user.id);
   let cursor;
   let scanned = 0;
   let partial = false;
@@ -208,12 +203,11 @@ export async function handleStorageFiles(request, env) {
       for (const object of page.objects) {
         const parsed = parseStorageKey(object.key);
         if (!parsed) continue;
-        if (!auth.isAdmin && parsed.ownerId !== auth.user.id) continue;
+        if (parsed.ownerId !== auth.user.id) continue;
 
         const mediaType = storageContentType(object.httpMetadata?.contentType);
         files.push({
-          id: auth.isAdmin ? `${parsed.ownerId}:${parsed.objectId}` : parsed.objectId,
-          ownerId: auth.isAdmin ? parsed.ownerId : undefined,
+          id: parsed.objectId,
           name: cleanStorageFilename(object.customMetadata?.originalName),
           size: Number(object.size) || 0,
           uploadedAt: object.uploaded?.toISOString?.() || null,
@@ -230,18 +224,8 @@ export async function handleStorageFiles(request, env) {
       }
     } while (cursor);
   } catch (error) {
-    workerLog("error", "storage.list.failed", { message: String(error?.message || error), admin: auth.isAdmin, user_id: auth.user.id });
+    workerLog("error", "storage.list.failed", { message: String(error?.message || error), user_id: auth.user.id });
     return storageUnavailable();
-  }
-
-  if (auth.isAdmin && files.length) {
-    const owners = await fetchOwnerProfiles(auth.secret, files.map(file => file.ownerId));
-    for (const file of files) {
-      const profile = owners.get(file.ownerId);
-      file.ownerUsername = profile?.username || null;
-      file.ownerDisplayName = profile?.displayName || null;
-      file.ownerLabel = ownerDisplay(profile, file.ownerId);
-    }
   }
 
   const visibleUsedBytes = files.reduce((total, file) => total + file.size, 0);
@@ -249,10 +233,8 @@ export async function handleStorageFiles(request, env) {
   files.sort((a, b) => String(b.uploadedAt || "").localeCompare(String(a.uploadedAt || "")));
   return json({
     connected: true,
-    scope: auth.isAdmin ? "all" : "own",
-    usage_scope: auth.isAdmin ? "all-user-files" : "own-user-files",
-    is_admin: auth.isAdmin,
-    account_is_admin: auth.isAdmin,
+    scope: "own",
+    usage_scope: "own-user-files",
     files,
     file_count: files.length,
     visible_used_bytes: visibleUsedBytes,
@@ -298,10 +280,10 @@ export async function handleStorageObject(request, env) {
   const reference = parseObjectReference(rawId);
   if (!reference) return json({ error: "Invalid object id." }, 400);
 
-  const ownerId = reference.ownerId || auth.user.id;
-  if (ownerId !== auth.user.id && !auth.isAdmin) {
-    return json({ error: "Administrator access required for this storage object." }, 403);
+  if (reference.ownerId && reference.ownerId !== auth.user.id) {
+    return json({ error: "Storage object not found." }, 404);
   }
+  const ownerId = auth.user.id;
   const key = storageKey(ownerId, reference.objectId);
 
   if (request.method === "DELETE") {
@@ -309,10 +291,7 @@ export async function handleStorageObject(request, env) {
       const existing = await env.STORAGE.head(key);
       if (!existing) return json({ error: "File not found." }, 404);
       await env.STORAGE.delete(key);
-      if (ownerId !== auth.user.id) {
-        workerLog("warning", "storage.admin.delete", { actor_user_id: auth.user.id, owner_user_id: ownerId, object_id: reference.objectId });
-      }
-      return json({ id: rawId, message: "File deleted." });
+      return json({ id: reference.objectId, message: "File deleted." });
     } catch (error) {
       workerLog("error", "storage.delete.failed", { message: String(error?.message || error), owner_user_id: ownerId });
       return storageUnavailable();
@@ -322,9 +301,6 @@ export async function handleStorageObject(request, env) {
   try {
     const object = await env.STORAGE.get(key);
     if (!object) return json({ error: "File not found." }, 404);
-    if (ownerId !== auth.user.id) {
-      workerLog("info", "storage.admin.download", { actor_user_id: auth.user.id, owner_user_id: ownerId, object_id: reference.objectId });
-    }
     return new Response(object.body, {
       headers: {
         "content-type": "application/octet-stream",
