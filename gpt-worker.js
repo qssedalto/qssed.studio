@@ -3,7 +3,7 @@ import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCo
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp, renderSharedConversation, renderIntelligenceNotFound } from "./studio/gpt-ui.js";
-import { handleAiApi } from "./studio/ai-gateway.js";
+import { handleAiApi, handleAiAdminApi } from "./studio/ai-gateway.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
 import { gptOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
@@ -58,6 +58,10 @@ export default {
 
     if (pathname === "/api/account/security/summary") {
       return handleAccountSecurity(request, "summary");
+    }
+
+    if (pathname.startsWith("/_internal/admin-ai/")) {
+      return handleInternalAdminAi(request, env, pathname);
     }
 
     if (pathname.startsWith("/api/ai/admin/")) {
@@ -116,6 +120,44 @@ export default {
     return html(renderIntelligenceNotFound(notFoundLocale, { kind: "page", theme: intelligenceTheme }), 404);
   }
 };
+
+async function handleInternalAdminAi(request, env, pathname) {
+  const expectedSecret = String(env?.ADMIN_BRIDGE_SECRET || "");
+  const suppliedSecret = String(request.headers.get("X-AERTEX-Control-Secret") || "");
+  if (!expectedSecret || !suppliedSecret || suppliedSecret !== expectedSecret) {
+    return json({ error: "Not found." }, 404);
+  }
+
+  const accessToken = String(request.headers.get("X-AERTEX-User-Token") || "").trim();
+  if (!accessToken || accessToken.length > 16000) return json({ error: "Not found." }, 404);
+
+  let userResponse;
+  try {
+    userResponse = await fetch(SUPABASE_URL + "/auth/v1/user", {
+      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + accessToken }
+    });
+  } catch {
+    return json({ error: "Control bridge unavailable." }, 503);
+  }
+  if (!userResponse.ok) return json({ error: "Not found." }, 404);
+  const user = await userResponse.json();
+
+  const url = new URL(request.url);
+  url.pathname = pathname.replace(/^\/_internal\/admin-ai\//, "/api/ai/admin/");
+  const headers = new Headers(request.headers);
+  headers.delete("X-AERTEX-Control-Secret");
+  headers.delete("X-AERTEX-User-Token");
+  headers.set("Origin", url.origin);
+  headers.set("Authorization", "Bearer " + accessToken);
+
+  const proxied = new Request(url.toString(), {
+    method: request.method,
+    headers,
+    body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
+    redirect: "manual"
+  });
+  return handleAiAdminApi(proxied, env, { ok: true, user, accessToken, cookies: [] });
+}
 
 function renderShell(locale, bootstrap = {}) {
   return renderGptApp(locale, bootstrap);
