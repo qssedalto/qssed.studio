@@ -58,6 +58,23 @@ nav a.active{color:var(--text);background:var(--panel2);border-color:var(--line)
 .tools{display:flex;gap:8px}
 .btn{height:34px;padding:0 12px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer}
 .btn.primary{border-color:#355b93;background:#15335b;color:#d7e7ff}
+.btn.danger{border-color:#6a3030;background:#251313;color:#ff9a9a}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.inline{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.inline select,.inline input,.compactInput,.multiSelect{min-height:32px;border:1px solid var(--line);background:#0b1016;color:var(--text);padding:5px 8px}
+.multiSelect{min-height:78px;min-width:190px}
+.stack{display:grid;gap:8px}
+.stack label{display:grid;gap:4px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.stack input,.stack select,.stack textarea{width:100%;border:1px solid var(--line);background:#0b1016;color:var(--text);padding:8px}
+.stack textarea{min-height:72px;resize:vertical}
+.controlGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px}
+.permissionGrid{display:grid;gap:8px;padding:12px}
+.permissionRole{border:1px solid var(--line2);background:#0b1016;padding:12px}
+.permissionRoleHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
+.permissionChecks{display:flex;gap:7px;flex-wrap:wrap}
+.permissionChecks label{display:flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid var(--line2);color:var(--muted);font:10px ui-monospace,SFMono-Regular,Menlo,monospace}
+.feedback{min-height:18px;padding:0 12px 10px;color:var(--muted);font-size:11px}
+.feedback.ok{color:var(--good)}.feedback.bad{color:var(--bad)}
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .card{border:1px solid var(--line);background:var(--panel);padding:14px}
 .metric small{display:block;color:var(--quiet);font:10px ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.06em}
@@ -79,8 +96,8 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
 .badge{display:inline-block;padding:3px 6px;border:1px solid var(--line);font:9px ui-monospace,SFMono-Regular,Menlo,monospace}
 .badge.ok{border-color:#235d3c;color:#8de5ad;background:#0e1b14}
 .badge.bad{border-color:#6a3030;color:#ff9999;background:#1c1010}
-@media(max-width:1000px){.app{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}nav{grid-template-columns:repeat(3,minmax(0,1fr))}.sidefoot{display:none}.grid{grid-template-columns:repeat(2,1fr)}.split{grid-template-columns:1fr}.form{grid-template-columns:1fr 1fr}.form .wide{grid-column:1/-1}}
-@media(max-width:560px){.content{padding:14px}.grid{grid-template-columns:1fr 1fr}nav{grid-template-columns:1fr 1fr}.head{align-items:flex-start;display:grid}.form{grid-template-columns:1fr}}
+@media(max-width:1000px){.app{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}nav{grid-template-columns:repeat(3,minmax(0,1fr))}.sidefoot{display:none}.grid{grid-template-columns:repeat(2,1fr)}.split{grid-template-columns:1fr}.form{grid-template-columns:1fr 1fr}.form .wide{grid-column:1/-1}.controlGrid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.content{padding:14px}.grid{grid-template-columns:1fr 1fr}nav{grid-template-columns:1fr 1fr}.head{align-items:flex-start;display:grid}.form{grid-template-columns:1fr}.controlGrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-route="${escapeHtml(current)}">
@@ -139,6 +156,17 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     if(!r.ok)throw new Error(data.error||("HTTP "+r.status));
     return data;
   }
+  async function requestJson(path,options={}){
+    const r=await fetch(path,{...options,credentials:"same-origin",cache:"no-store",headers:{accept:"application/json",...(options.headers||{})}});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok){
+      const error=new Error(data.error||("HTTP "+r.status));
+      error.code=data.code||null;
+      error.diagnostic=data.diagnostic||null;
+      throw error;
+    }
+    return data;
+  }
   function table(rows){
     const list=Array.isArray(rows)?rows:[];
     if(!list.length)return '<div class="state">No records.</div>';
@@ -152,6 +180,8 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     if(!entries.length)return '<div class="state">No metrics.</div>';
     return '<div class="grid">'+entries.slice(0,12).map(([k,v])=>'<article class="card metric"><small>'+esc(k)+'</small><strong>'+esc(typeof v==="object"?(Array.isArray(v)?v.length:"…"):v)+'</strong></article>').join('')+'</div>';
   }
+  const num=value=>{const text=String(value??"").trim();if(!text)return null;const number=Number(text);return Number.isFinite(number)?number:null};
+  const intOrNull=value=>{const number=num(value);return number==null?null:Math.max(0,Math.trunc(number))};
   function errorView(error){view.innerHTML='<div class="section"><div class="state">Control-plane request failed: '+esc(error?.message||error)+'</div></div>'}
 
   async function overview(){
@@ -162,12 +192,59 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   async function users(){
     const result=await post("/api/admin/users");
     const rows=Array.isArray(result.data)?result.data:(result.data?.users||[]);
-    view.innerHTML='<section class="section"><div class="sectionHead"><h2>Accounts</h2></div>'+table(rows)+'</section>';
+    if(!rows.length){view.innerHTML='<section class="section"><div class="state">No accounts.</div></section>';return}
+    view.innerHTML='<section class="section"><div class="sectionHead"><h2>Accounts</h2><span class="mono">'+rows.length+' records</span></div><div class="tableWrap"><table><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody>'+
+      rows.map(row=>'<tr data-user-row="'+esc(row.user_id)+'"><td><strong>'+esc(row.display_name||row.username||"—")+'</strong><br><span class="mono">'+esc(row.user_id)+'</span></td><td class="mono">'+esc(row.email||"—")+'</td>'+
+      '<td><select class="userRole compactInput"><option value="admin" '+(row.role==="admin"?"selected":"")+'>admin</option><option value="editor" '+(row.role==="editor"?"selected":"")+'>editor</option><option value="user" '+(row.role==="user"?"selected":"")+'>user</option></select></td>'+
+      '<td><select class="userStatus compactInput"><option value="active" '+(row.status==="active"?"selected":"")+'>active</option><option value="suspended" '+(row.status==="suspended"?"selected":"")+'>suspended</option><option value="banned" '+(row.status==="banned"?"selected":"")+'>banned</option></select></td>'+
+      '<td class="mono">'+esc(row.last_sign_in_at||row.last_seen_at||"—")+'</td><td><div class="inline"><button class="btn saveUser" type="button">Apply</button></div></td></tr>').join('')+
+      '</tbody></table></div><div class="feedback" id="usersFeedback"></div></section>';
+
+    document.querySelectorAll(".saveUser").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-user-row]");if(!row)return;
+      const userId=row.dataset.userRow;
+      const role=row.querySelector(".userRole")?.value||"user";
+      const status=row.querySelector(".userStatus")?.value||"active";
+      const feedback=document.getElementById("usersFeedback");
+      button.disabled=true;
+      try{
+        await post("/api/admin/user-role",{p_user_id:userId,p_role:role});
+        await post("/api/admin/user-status",{p_user_id:userId,p_status:status});
+        feedback.textContent="Account controls updated and audited.";
+        feedback.className="feedback ok";
+      }catch(error){
+        feedback.textContent=error.message;
+        feedback.className="feedback bad";
+      }finally{button.disabled=false}
+    }));
   }
   async function roles(){
     const result=await post("/api/admin/roles");
-    const rows=Array.isArray(result.data)?result.data:(result.data?.roles||[]);
-    view.innerHTML='<section class="section"><div class="sectionHead"><h2>Permission matrix</h2></div>'+table(rows)+'</section>';
+    const data=result.data||{};
+    const roles=Array.isArray(data.roles)?data.roles:[];
+    const permissions=Array.isArray(data.permissions)?data.permissions:[];
+    const assigned=Array.isArray(data.role_permissions)?data.role_permissions:[];
+    const selectedByRole=new Map(roles.map(role=>[role.name,new Set(assigned.filter(item=>item.role===role.name).map(item=>item.permission))]));
+    view.innerHTML='<section class="section"><div class="sectionHead"><h2>Permission matrix</h2><span class="mono">'+permissions.length+' permissions</span></div><div class="permissionGrid">'+
+      roles.map(role=>'<article class="permissionRole" data-role="'+esc(role.name)+'"><div class="permissionRoleHead"><div><strong>'+esc(role.name)+'</strong><br><span class="mono">'+esc((data.user_counts||{})[role.name]??0)+' users</span></div><button class="btn saveRole" type="button">Save role</button></div><div class="permissionChecks">'+
+        permissions.map(permission=>'<label title="'+esc(permission.description||permission.key)+'"><input type="checkbox" value="'+esc(permission.key)+'" '+(selectedByRole.get(role.name)?.has(permission.key)?"checked":"")+'><span>'+esc(permission.key)+'</span></label>').join('')+
+      '</div></article>').join('')+'</div><div class="feedback" id="rolesFeedback"></div></section>';
+
+    document.querySelectorAll(".saveRole").forEach(button=>button.addEventListener("click",async()=>{
+      const card=button.closest("[data-role]");if(!card)return;
+      const role=card.dataset.role;
+      const list=[...card.querySelectorAll('input[type="checkbox"]:checked')].map(input=>input.value);
+      const feedback=document.getElementById("rolesFeedback");
+      button.disabled=true;
+      try{
+        await post("/api/admin/permissions",{p_role:role,p_permissions:list});
+        feedback.textContent="Role permission matrix updated and audited.";
+        feedback.className="feedback ok";
+      }catch(error){
+        feedback.textContent=error.message;
+        feedback.className="feedback bad";
+      }finally{button.disabled=false}
+    }));
   }
   async function logs(){
     const result=await post("/api/admin/logs",{p_limit:120});
@@ -197,9 +274,85 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   }
   async function intelligence(){
     const state=await get("/api/admin/ai/state?fast=1");
-    view.innerHTML=objCards({providers:Array.isArray(state.providers)?state.providers.length:0,users:Array.isArray(state.users)?state.users.length:0})+
-      '<div class="split"><section class="section"><div class="sectionHead"><h2>Providers</h2></div>'+table(state.providers||[])+'</section>'+
-      '<section class="section"><div class="sectionHead"><h2>User AI access</h2></div>'+table(state.users||[])+'</section></div>';
+    const providers=Array.isArray(state.providers)?state.providers:[];
+    const users=Array.isArray(state.users)?state.users:[];
+    view.innerHTML=objCards({providers:providers.length,users:users.length,active_providers:providers.filter(provider=>provider.is_active!==false).length})+
+      '<section class="section"><div class="sectionHead"><h2>Add provider</h2><span class="mono">credential stays inside Intelligence</span></div>'+
+      '<form class="controlGrid" id="providerForm"><div class="stack"><label>Provider<select name="provider" required><option value="openai">OpenAI</option><option value="zhipu">Zhipu</option><option value="bailian">Bailian</option></select></label><label>Name<input name="name" required></label></div>'+
+      '<div class="stack"><label>Project API key<input name="key" type="password" autocomplete="off" required></label><label>Admin/billing key (OpenAI optional)<input name="adminKey" type="password" autocomplete="off"></label><button class="btn" id="validateProvider" type="button">Validate key & load models</button></div>'+
+      '<div class="stack"><label>Allowed models<textarea name="models" placeholder="Validate the key first"></textarea></label><label>Default model<input name="defaultModel"></label></div>'+
+      '<div class="stack"><label>Monthly budget USD<input name="budget" type="number" min="0" step=".01"></label><label>Input $ / 1M<input name="input" type="number" min="0" step=".001" value="0"></label><label>Output $ / 1M<input name="output" type="number" min="0" step=".001" value="0"></label></div>'+
+      '<div class="stack"><button class="btn primary" type="submit">Create provider</button></div></form><div class="feedback" id="providerFeedback"></div></section>'+
+      '<section class="section"><div class="sectionHead"><h2>Providers</h2></div><div class="tableWrap"><table><thead><tr><th>Name</th><th>Type</th><th>Default</th><th>Models</th><th>Usage this month</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
+      providers.map(provider=>'<tr data-provider="'+esc(provider.id)+'"><td>'+esc(provider.name||"—")+'<br><span class="mono">'+esc(provider.id)+'</span></td><td class="mono">'+esc(provider.provider)+'</td><td class="mono">'+esc(provider.default_model||"—")+'</td><td>'+esc((provider.allowed_models||[]).join(", "))+'</td><td>'+esc(provider.month_usage_usd??0)+' USD · '+esc(provider.month_requests??0)+' req</td><td><span class="badge '+(provider.is_active!==false?"ok":"bad")+'">'+(provider.is_active!==false?"active":"disabled")+'</span></td><td><div class="inline"><button class="btn toggleProvider" type="button">'+(provider.is_active!==false?"Disable":"Enable")+'</button><button class="btn danger deleteProvider" type="button">Delete</button></div></td></tr>').join('')+
+      '</tbody></table></div></section>'+
+      '<section class="section"><div class="sectionHead"><h2>User AI access</h2></div><div class="tableWrap"><table><thead><tr><th>User</th><th>Enabled</th><th>Providers</th><th>USD limits</th><th>Token limits</th><th>RPM</th><th>Action</th></tr></thead><tbody>'+
+      users.map(user=>{const selected=new Set((user.provider_access||[]).filter(item=>item.enabled!==false).map(item=>item.provider_id));return '<tr data-ai-user="'+esc(user.user_id)+'"><td><strong>'+esc(user.display_name||user.username||"—")+'</strong><br><span class="mono">'+esc(user.email||user.user_id)+'</span></td><td><input class="aiEnabled" type="checkbox" '+(user.enabled?"checked":"")+'></td><td><select class="aiProviders multiSelect" multiple>'+providers.filter(provider=>provider.is_active!==false).map(provider=>'<option value="'+esc(provider.id)+'" '+(selected.has(provider.id)?"selected":"")+'>'+esc(provider.name)+'</option>').join('')+'</select></td>'+
+      '<td><input class="dailyUsd compactInput" type="number" min="0" step=".01" value="'+esc(user.daily_limit_usd??"")+'" placeholder="daily"><br><input class="monthlyUsd compactInput" type="number" min="0" step=".01" value="'+esc(user.monthly_limit_usd??"")+'" placeholder="monthly"></td>'+
+      '<td><input class="dailyTokens compactInput" type="number" min="0" step="1" value="'+esc(user.daily_limit_tokens??"")+'" placeholder="daily"><br><input class="monthlyTokens compactInput" type="number" min="0" step="1" value="'+esc(user.monthly_limit_tokens??"")+'" placeholder="monthly"></td>'+
+      '<td><input class="rpm compactInput" type="number" min="1" max="300" value="'+esc(user.requests_per_minute??20)+'"></td><td><button class="btn saveAiAccess" type="button">Apply</button></td></tr>'}).join('')+
+      '</tbody></table></div><div class="feedback" id="aiFeedback"></div></section>';
+
+    const providerForm=document.getElementById("providerForm");
+    const providerFeedback=document.getElementById("providerFeedback");
+    document.getElementById("validateProvider")?.addEventListener("click",async()=>{
+      const fd=new FormData(providerForm);
+      const button=document.getElementById("validateProvider");
+      button.disabled=true;
+      try{
+        const result=await requestJson("/api/admin/ai/validate-project-key",{method:"POST",headers:{"content-type":"application/json;charset=UTF-8"},body:JSON.stringify({provider:String(fd.get("provider")||""),api_key:String(fd.get("key")||"").trim()})});
+        const models=Array.isArray(result.models)?result.models:[];
+        providerForm.elements.models.value=models.join(", ");
+        if(models.length&&!providerForm.elements.defaultModel.value)providerForm.elements.defaultModel.value=models[0];
+        providerFeedback.textContent="Provider key validated. "+models.length+" models available.";
+        providerFeedback.className="feedback ok";
+      }catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad"}finally{button.disabled=false}
+    });
+    providerForm?.addEventListener("submit",async event=>{
+      event.preventDefault();const fd=new FormData(providerForm);
+      const models=String(fd.get("models")||"").split(",").map(value=>value.trim()).filter(Boolean);
+      try{
+        await requestJson("/api/admin/ai/provider",{method:"POST",headers:{"content-type":"application/json;charset=UTF-8"},body:JSON.stringify({
+          provider:String(fd.get("provider")||""),name:String(fd.get("name")||"").trim(),api_key:String(fd.get("key")||"").trim(),admin_key:String(fd.get("adminKey")||"").trim(),
+          allowed_models:models,default_model:String(fd.get("defaultModel")||"").trim(),monthly_budget_usd:num(fd.get("budget")),input_price_per_million:num(fd.get("input"))??0,output_price_per_million:num(fd.get("output"))??0,is_active:true
+        })});
+        await intelligence();
+      }catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad"}
+    });
+
+    document.querySelectorAll(".toggleProvider").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-provider]");const provider=providers.find(item=>item.id===row?.dataset.provider);if(!provider)return;
+      button.disabled=true;
+      try{
+        await requestJson("/api/admin/ai/provider/"+encodeURIComponent(provider.id),{method:"PATCH",headers:{"content-type":"application/json;charset=UTF-8"},body:JSON.stringify({
+          name:provider.name,allowed_models:provider.allowed_models||[],default_model:provider.default_model,monthly_budget_usd:provider.monthly_budget_usd,input_price_per_million:provider.input_price_per_million||0,output_price_per_million:provider.output_price_per_million||0,is_active:provider.is_active===false
+        })});
+        await intelligence();
+      }catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad";button.disabled=false}
+    }));
+    document.querySelectorAll(".deleteProvider").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-provider]");const provider=providers.find(item=>item.id===row?.dataset.provider);if(!provider||!confirm("Delete provider "+provider.name+"?"))return;
+      button.disabled=true;
+      try{await requestJson("/api/admin/ai/provider/"+encodeURIComponent(provider.id),{method:"DELETE"});await intelligence()}
+      catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad";button.disabled=false}
+    }));
+    document.querySelectorAll(".saveAiAccess").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-ai-user]");if(!row)return;
+      const user=users.find(item=>item.user_id===row.dataset.aiUser);if(!user)return;
+      const selected=[...row.querySelector(".aiProviders").selectedOptions].map(option=>option.value);
+      const providerAccess=selected.map(providerId=>{const provider=providers.find(item=>item.id===providerId);return {provider_id:providerId,allowed_models:Array.isArray(provider?.allowed_models)?provider.allowed_models:[]};});
+      const feedback=document.getElementById("aiFeedback");button.disabled=true;
+      try{
+        await requestJson("/api/admin/ai/access",{method:"POST",headers:{"content-type":"application/json;charset=UTF-8"},body:JSON.stringify({
+          user_id:user.user_id,enabled:row.querySelector(".aiEnabled").checked,provider_access:providerAccess,
+          daily_limit_usd:num(row.querySelector(".dailyUsd").value),monthly_limit_usd:num(row.querySelector(".monthlyUsd").value),
+          daily_limit_tokens:intOrNull(row.querySelector(".dailyTokens").value),monthly_limit_tokens:intOrNull(row.querySelector(".monthlyTokens").value),
+          requests_per_minute:Number(row.querySelector(".rpm").value)||20
+        })});
+        feedback.textContent="AI access updated for "+(user.email||user.user_id)+".";
+        feedback.className="feedback ok";
+      }catch(error){feedback.textContent=error.message;feedback.className="feedback bad"}finally{button.disabled=false}
+    }));
   }
   async function system(){
     const health=await get("/health");
