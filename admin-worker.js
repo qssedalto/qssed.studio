@@ -4,6 +4,7 @@ import { adminOriginForRequest } from "./studio/domain-family.js";
 import { adminSessionRedirect } from "./studio/admin-subdomain.js";
 import { handleAuthorizedAccessAuditAdmin, recordAccessAudit } from "./studio/access-audit.js";
 import { handleAdminAccess, handleAdminAction } from "./admin/admin-api.js";
+import { handleAdminContent } from "./admin/content-api.js";
 import {
   adminHeaders,
   adminSessionLogoutResponse,
@@ -13,7 +14,7 @@ import {
 } from "./admin/session.js";
 import { adminHtml, hiddenAdminNotFound, renderAdminConsole } from "./admin/ui.js";
 
-const PAGE_PATHS = new Set(["/", "/overview", "/users", "/roles", "/access", "/intelligence", "/logs", "/system"]);
+const PAGE_PATHS = new Set(["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/intelligence", "/logs", "/system"]);
 
 export default {
   async fetch(request, env, ctx) {
@@ -75,6 +76,16 @@ async function routeAdminRequest(request, env) {
       response = await handleAdminAccess(request);
     } else if (pathname === "/api/admin/access-audit") {
       response = await handleAuthorizedAccessAuditAdmin(request, env);
+    } else if (pathname === "/api/admin/content/summaries") {
+      response = await handleAdminContent(request, env, session, "summaries");
+    } else if (pathname === "/api/admin/content/links") {
+      response = await handleAdminContent(request, env, session, "links");
+    } else if (pathname === "/api/admin/content/link") {
+      response = await handleAdminContent(request, env, session, "link");
+    } else if (pathname === "/api/admin/storage/files") {
+      response = await handleAdminContent(request, env, session, "storage-files");
+    } else if (pathname === "/api/admin/storage/object") {
+      response = await handleAdminContent(request, env, session, "storage-object");
     } else if (pathname.startsWith("/api/admin/ai/")) {
       response = await proxyAiAdmin(request, env, session, pathname);
     } else {

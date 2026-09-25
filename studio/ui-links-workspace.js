@@ -51,8 +51,7 @@ function accountLinksScript(zh, mode) {
     adminEmpty: "目前还没有任何用户创建私人链接。",
     mineTitle: "我的链接",
     adminTitle: "用户创建的链接",
-    mineHint: "只有当前账号和管理员可以看到这些链接。",
-    adminHint: "管理员视图：显示所有用户创建的私人链接，并标明创建者。",
+    mineHint: "这些私人链接仅属于当前账号。",
     owner: "创建者",
     me: "我创建的",
     loginRequired: "请先登录后再新建链接。"
@@ -66,8 +65,7 @@ function accountLinksScript(zh, mode) {
     adminEmpty: "No user-created private links yet.",
     mineTitle: "My links",
     adminTitle: "User-created links",
-    mineHint: "Only this account and administrators can see these links.",
-    adminHint: "Administrator view: all user-created private links with their creator.",
+    mineHint: "These private links belong only to the current account.",
     owner: "Created by",
     me: "Created by me",
     loginRequired: "Sign in before creating a link."
@@ -79,7 +77,6 @@ function accountLinksScript(zh, mode) {
         const mode = ${JSON.stringify(mode)};
         const mineHref = ${JSON.stringify(mineHref)};
         let session = null;
-        let isAdmin = false;
         let links = [];
 
         function esc(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
@@ -115,7 +112,6 @@ function accountLinksScript(zh, mode) {
           const response = await fetch('/api/user-links', { headers: { ...authHeaders(), Accept:'application/json' }, cache:'no-store' });
           if (!response.ok) throw new Error('HTTP ' + response.status);
           const payload = await response.json();
-          isAdmin = payload.is_admin === true;
           links = Array.isArray(payload.links) ? payload.links : [];
           return links;
         }
@@ -159,7 +155,7 @@ function accountLinksScript(zh, mode) {
           const count = document.getElementById('links-hub-private-count');
           const label = document.getElementById('links-hub-private-label');
           if (count) count.textContent = String(links.length);
-          if (label) label.textContent = isAdmin ? ${JSON.stringify(zh ? "所有用户私人链接" : "all user private links")} : ${JSON.stringify(zh ? "当前账号私人链接" : "private links for this account")};
+          if (label) label.textContent = ${JSON.stringify(zh ? "当前账号私人链接" : "private links for this account")};
         }
 
         function renderPrivate() {
@@ -170,8 +166,8 @@ function accountLinksScript(zh, mode) {
           const empty = document.getElementById('links-private-empty');
           const search = document.getElementById('links-private-search');
           if (!grid || !empty) return;
-          if (title) title.textContent = isAdmin ? ${JSON.stringify(strings.adminTitle)} : ${JSON.stringify(strings.mineTitle)};
-          if (hint) hint.textContent = isAdmin ? ${JSON.stringify(strings.adminHint)} : ${JSON.stringify(strings.mineHint)};
+          if (title) title.textContent = ${JSON.stringify(strings.mineTitle)};
+          if (hint) hint.textContent = ${JSON.stringify(strings.mineHint)};
           if (count) count.textContent = String(links.length);
 
           const draw = () => {
@@ -182,7 +178,7 @@ function accountLinksScript(zh, mode) {
               return '<a class="links-private-card" href="' + esc(link.url) + '" target="_blank" rel="noopener noreferrer"><div class="links-private-card-top"><strong>' + esc(link.title) + '</strong><span aria-hidden="true">↗</span></div><p>' + esc(link.description || link.url) + '</p><div class="links-private-meta"><span>' + esc(ownerText) + '</span><code>' + esc(hostname(link.url)) + '</code></div></a>';
             }).join('');
             empty.hidden = visible.length > 0;
-            if (!visible.length) empty.textContent = links.length ? ${JSON.stringify(zh ? "没有符合搜索条件的链接。" : "No links match your search.")} : (isAdmin ? ${JSON.stringify(strings.adminEmpty)} : ${JSON.stringify(strings.empty)});
+            if (!visible.length) empty.textContent = links.length ? ${JSON.stringify(zh ? "没有符合搜索条件的链接。" : "No links match your search.")} : ${JSON.stringify(strings.empty)};
           };
           search?.addEventListener('input', draw);
           draw();
@@ -232,7 +228,7 @@ export function linksHubContent(zh) {
     submit:"新建链接",
     privateEyebrow:"私人链接库",
     privateTitle:"我的链接",
-    privateIntro:"查看当前账号创建的链接。管理员进入后可以查看所有用户创建的私人链接。",
+    privateIntro:"查看当前账号创建的私人链接。",
     publicEyebrow:"公共链接库",
     publicTitle:"精选链接",
     publicIntro:"系统精选、历史对话中使用过的项目、工具、服务和官方资料。搜索、筛选和全部 140 条链接都放在独立页面里。",
@@ -245,7 +241,7 @@ export function linksHubContent(zh) {
     submit:"Create link",
     privateEyebrow:"Private library",
     privateTitle:"My links",
-    privateIntro:"View links created by this account. Administrators can view all user-created private links.",
+    privateIntro:"View private links created by this account.",
     publicEyebrow:"Public library",
     publicTitle:"Curated links",
     publicIntro:"System picks, projects used in prior chats, tools, services, and official references. Search, filters, and all 140 links live on a dedicated page.",
@@ -293,14 +289,14 @@ export function privateLinksPageContent(zh) {
   const copy = zh ? {
     eyebrow:"私人链接库",
     title:"我的链接",
-    intro:"普通用户只会读取自己的链接；管理员会读取所有用户创建的私人链接并显示创建者。",
+    intro:"这里仅展示当前账号创建的私人链接。",
     back:"返回收藏链接",
     search:"搜索我的链接",
     loading:"正在读取账号链接…"
   } : {
     eyebrow:"Private library",
     title:"My links",
-    intro:"Regular users read only their own links. Administrators read all user-created private links and see the creator.",
+    intro:"This area shows private links created by the current account only.",
     back:"Back to Saved Links",
     search:"Search private links",
     loading:"Loading account links…"

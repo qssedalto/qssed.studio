@@ -12,8 +12,6 @@ const SUMMARY_ROOT = "_system/summaries/";
 const USER_LINKS_ROOT = "_system/user-links/";
 const MAX_RESULTS = 80;
 const MAX_NOTES = 240;
-const MAX_SUMMARIES = 500;
-const MAX_PRIVATE_LINKS = 1000;
 const MAX_COMMUNITY_SCAN = 5000;
 
 export async function handleGlobalSearch(request, env) {
@@ -89,7 +87,6 @@ export async function handleGlobalSearch(request, env) {
     counts,
     total: results.length,
     returned: sliced.length,
-    is_admin: auth.isAdmin,
     partial: warnings.length > 0,
     unavailable_modules: warnings
   }), session.cookies);
@@ -155,27 +152,9 @@ async function searchNotes(env, userId, query) {
 
 async function searchSummaries(env, auth, query) {
   const results = [];
-  if (!auth.isAdmin) {
-    const key = `${SUMMARY_ROOT}${auth.user.id}/current.json`;
-    const parsed = await readJsonObject(env, key);
-    if (parsed) pushSummaryResult(results, parsed, auth.user.id, auth.user.id, query);
-    return results;
-  }
-
-  let cursor;
-  let scanned = 0;
-  do {
-    const page = await env.STORAGE.list({ prefix: SUMMARY_ROOT, cursor, limit: Math.min(500, MAX_SUMMARIES - scanned) });
-    for (const object of page.objects) {
-      scanned += 1;
-      const ownerId = summaryOwnerId(object.key);
-      if (!ownerId) continue;
-      const parsed = await readJsonObject(env, object.key);
-      if (parsed) pushSummaryResult(results, parsed, ownerId, auth.user.id, query);
-    }
-    cursor = page.cursor;
-    if (!page.truncated || !cursor || scanned >= MAX_SUMMARIES) break;
-  } while (cursor);
+  const key = `${SUMMARY_ROOT}${auth.user.id}/current.json`;
+  const parsed = await readJsonObject(env, key);
+  if (parsed) pushSummaryResult(results, parsed, auth.user.id, auth.user.id, query);
   return results;
 }
 
@@ -185,7 +164,7 @@ function pushSummaryResult(results, parsed, ownerId, currentUserId, query) {
   results.push({
     id: `summary:${ownerId}`,
     type: "summary",
-    scope: ownerId === currentUserId ? "private" : "admin",
+    scope: "private",
     title: cleanText(parsed.title, 160) || "Untitled summary",
     subtitle: cleanText(parsed.source, 180),
     snippet: excerpt(parsed.core || parsed.purpose || parsed.points, query, 260),
@@ -200,17 +179,16 @@ function pushSummaryResult(results, parsed, ownerId, currentUserId, query) {
 async function searchUserLinks(env, auth, query) {
   const results = [];
   const seen = new Set();
-  const privatePrefix = auth.isAdmin ? USER_LINKS_ROOT : `${USER_LINKS_ROOT}${auth.user.id}/`;
+  const privatePrefix = `${USER_LINKS_ROOT}${auth.user.id}/`;
   let cursor;
   let scanned = 0;
 
   do {
-    const page = await env.STORAGE.list({ prefix: privatePrefix, cursor, limit: Math.min(500, MAX_PRIVATE_LINKS - scanned) });
+    const page = await env.STORAGE.list({ prefix: privatePrefix, cursor, limit: 500 });
     for (const object of page.objects) {
       scanned += 1;
       const ref = userLinkReference(object.key);
-      if (!ref) continue;
-      if (!auth.isAdmin && ref.ownerId !== auth.user.id) continue;
+      if (!ref || ref.ownerId !== auth.user.id) continue;
       const parsed = await readJsonObject(env, object.key);
       if (!validStoredLink(parsed, ref)) continue;
       const score = matchScore(query, parsed.title, parsed.url, parsed.category, parsed.description);
@@ -220,7 +198,7 @@ async function searchUserLinks(env, auth, query) {
       results.push(linkResult(parsed, ref, auth.user.id, score, "private"));
     }
     cursor = page.cursor;
-    if (!page.truncated || !cursor || scanned >= MAX_PRIVATE_LINKS) break;
+    if (!page.truncated || !cursor || scanned >= 240) break;
   } while (cursor);
 
   cursor = undefined;

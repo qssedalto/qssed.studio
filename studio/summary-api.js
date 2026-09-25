@@ -1,11 +1,9 @@
-import { SUPABASE_URL } from "./config.js";
 import { hasStorageBinding, verifyStorageUser } from "./storage-api.js";
 import { json } from "./routing.js";
 import { workerLog } from "./server-runtime.js";
 
 const SUMMARY_ROOT = "_system/summaries/";
 const MAX_SUMMARY_BYTES = 64 * 1024;
-const MAX_ADMIN_SUMMARIES = 500;
 
 function summaryKey(userId) {
   return `${SUMMARY_ROOT}${userId}/current.json`;
@@ -49,61 +47,6 @@ async function readSummaryObject(env, key, ownerId) {
   }
 }
 
-function serviceHeaders(secret) {
-  return {
-    apikey: secret,
-    ...(secret.split(".").length === 3 ? { Authorization: `Bearer ${secret}` } : {})
-  };
-}
-
-async function fetchOwnerLabels(secret, ownerIds) {
-  const unique = [...new Set(ownerIds.filter(Boolean))];
-  const labels = new Map();
-  for (let index = 0; index < unique.length; index += 100) {
-    const chunk = unique.slice(index, index + 100);
-    const url = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
-    url.searchParams.set("select", "id,username,display_name");
-    url.searchParams.set("id", `in.(${chunk.join(",")})`);
-    try {
-      const response = await fetch(url.toString(), { headers: serviceHeaders(secret) });
-      if (!response.ok) continue;
-      const rows = await response.json();
-      for (const row of Array.isArray(rows) ? rows : []) {
-        const username = String(row?.username || "").trim();
-        const displayName = String(row?.display_name || "").trim();
-        const label = displayName && username && displayName.toLowerCase() !== username.toLowerCase()
-          ? `${displayName} · @${username}`
-          : username ? `@${username}` : displayName || `用户 ${String(row?.id || "").slice(0, 8)}`;
-        labels.set(row.id, label);
-      }
-    } catch {}
-  }
-  return labels;
-}
-
-async function listAllSummaries(env, auth) {
-  const items = [];
-  let cursor;
-  do {
-    const page = await env.STORAGE.list({ prefix: SUMMARY_ROOT, cursor, limit: Math.min(1000, MAX_ADMIN_SUMMARIES - items.length), include: ["customMetadata"] });
-    for (const object of page.objects) {
-      const parts = String(object.key || "").split("/");
-      const ownerId = parts.length === 4 && parts[0] === "_system" && parts[1] === "summaries" && parts[3] === "current.json" ? parts[2] : "";
-      if (!ownerId) continue;
-      const summary = await readSummaryObject(env, object.key, ownerId);
-      if (summary && summaryHasContent(summary)) items.push(summary);
-      if (items.length >= MAX_ADMIN_SUMMARIES) break;
-    }
-    cursor = page.cursor;
-    if (!page.truncated || !cursor || items.length >= MAX_ADMIN_SUMMARIES) break;
-  } while (cursor);
-
-  const labels = await fetchOwnerLabels(auth.secret, items.map(item => item.owner_id));
-  for (const item of items) item.owner_label = labels.get(item.owner_id) || `用户 ${String(item.owner_id).slice(0, 8)}`;
-  items.sort((a, b) => String(b.updated_at || "").localeCompare(String(a.updated_at || "")));
-  return items;
-}
-
 export async function handleSummaries(request, env) {
   const auth = await verifyStorageUser(request, env);
   if (auth.error) return auth.error;
@@ -112,14 +55,10 @@ export async function handleSummaries(request, env) {
   if (request.method === "GET") {
     try {
       const own = await readSummaryObject(env, summaryKey(auth.user.id), auth.user.id);
-      const scope = new URL(request.url).searchParams.get("scope") || "own";
-      const all = auth.isAdmin && scope === "all" ? await listAllSummaries(env, auth) : undefined;
       return json({
         connected: true,
-        is_admin: auth.isAdmin,
         summary: own,
-        summaries: all,
-        scope: all ? "all" : "own"
+        scope: "own"
       });
     } catch (error) {
       workerLog("error", "summary.read.failed", { user_id: auth.user.id, message: String(error?.message || error) });

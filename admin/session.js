@@ -98,7 +98,7 @@ export function clearAdminSessionCookies() {
 
 export function canonicalAdminPath(value) {
   const path = typeof value === "string" ? value.trim().slice(0, 300) : "";
-  if (["/", "/overview", "/users", "/roles", "/logs", "/system", "/access", "/intelligence"].includes(path)) return path;
+  if (["/", "/overview", "/users", "/roles", "/logs", "/system", "/access", "/content", "/storage", "/intelligence"].includes(path)) return path;
   return "/";
 }
 

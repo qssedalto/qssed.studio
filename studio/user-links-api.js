@@ -6,7 +6,6 @@ import { workerLog } from "./server-runtime.js";
 const USER_LINKS_ROOT = "_system/user-links/";
 const MAX_LINK_BYTES = 16 * 1024;
 const MAX_OWN_LINKS = 240;
-const MAX_ADMIN_LINKS = 1000;
 const MAX_COMMUNITY_LINKS = 1000;
 
 function userLinksPrefix(userId) {
@@ -118,15 +117,15 @@ async function attachOwnerLabels(items, auth) {
 
 async function listVisibleLinks(env, auth) {
   const result = [];
-  const prefix = auth.isAdmin ? USER_LINKS_ROOT : userLinksPrefix(auth.user.id);
-  const maximum = auth.isAdmin ? MAX_ADMIN_LINKS : MAX_OWN_LINKS;
+  const prefix = userLinksPrefix(auth.user.id);
+  const maximum = MAX_OWN_LINKS;
   let cursor;
   do {
     const page = await env.STORAGE.list({ prefix, cursor, limit: Math.min(1000, maximum - result.length) });
     for (const object of page.objects) {
       const reference = parseStoredReference(object.key);
       if (!reference) continue;
-      if (!auth.isAdmin && reference.ownerId !== auth.user.id) continue;
+      if (reference.ownerId !== auth.user.id) continue;
       const item = await readUserLink(env, reference.ownerId, reference.linkId);
       if (item?.title && item?.url) result.push(item);
       if (result.length >= maximum) break;
@@ -171,10 +170,8 @@ async function parsePayload(request) {
 
 function requestedReference(url, auth) {
   const id = url.searchParams.get("id") || "";
-  const owner = url.searchParams.get("owner") || auth.user.id;
   if (!isStorageObjectId(id)) return null;
-  if (owner !== auth.user.id && !auth.isAdmin) return null;
-  return { ownerId: owner, linkId: id };
+  return { ownerId: auth.user.id, linkId: id };
 }
 
 function linkMetadata(link) {
@@ -200,13 +197,12 @@ export async function handleUserLinks(request, env) {
       const links = scope === "community" ? await listCommunityLinks(env, auth) : await listVisibleLinks(env, auth);
       return json({
         connected: true,
-        is_admin: auth.isAdmin,
         links,
         count: links.length,
-        scope: scope === "community" ? "community" : (auth.isAdmin ? "all" : "own")
+        scope: scope === "community" ? "community" : "own"
       });
     } catch (error) {
-      workerLog("error", "user_links.list.failed", { user_id: auth.user.id, admin: auth.isAdmin, scope, message: String(error?.message || error) });
+      workerLog("error", "user_links.list.failed", { user_id: auth.user.id, scope, message: String(error?.message || error) });
       return json({ error: "Link storage is temporarily unavailable." }, 503);
     }
   }

@@ -2,7 +2,7 @@ import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gat
 import { adminOriginForRequest, authOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
-const ADMIN_PATHS = new Set(["/", "/overview", "/users", "/roles", "/logs", "/system", "/access", "/intelligence"]);
+const ADMIN_PATHS = new Set(["/", "/overview", "/users", "/roles", "/logs", "/system", "/access", "/content", "/storage", "/intelligence"]);
 
 export function isMainAdminHandoffPath(pathname) {
   return pathname === "/control/handoff" || pathname === "/zh-cn/control/handoff" || pathname === "/en/control/handoff";
