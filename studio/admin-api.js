@@ -26,6 +26,16 @@ const ACTIONS = {
     rpc: "update_role_permissions",
     write: true,
     params: ["p_role", "p_permissions"]
+  },
+  "device-exemptions": {
+    rpc: "get_device_access_exemptions",
+    write: false,
+    params: []
+  },
+  "device-exemption": {
+    rpc: "set_device_access_exemption",
+    write: true,
+    params: ["p_user_id", "p_enabled", "p_expires_at", "p_note"]
   }
 };
 
@@ -96,6 +106,22 @@ export async function handleAdminAction(request, _env, action) {
       return withStudioSessionCookies(json({ error: "Invalid role permission request." }, 400), session.cookies);
     }
     params.p_permissions = [...new Set(params.p_permissions.map(value => String(value || "").trim()).filter(Boolean))].slice(0, 200);
+  }
+
+  if (action === "device-exemption") {
+    if (!isUuid(params.p_user_id) || typeof params.p_enabled !== "boolean") {
+      return withStudioSessionCookies(json({ error: "Invalid device exemption request." }, 400), session.cookies);
+    }
+    if (params.p_expires_at != null && params.p_expires_at !== "") {
+      const expiresAt = Date.parse(String(params.p_expires_at));
+      if (!Number.isFinite(expiresAt)) {
+        return withStudioSessionCookies(json({ error: "Invalid exemption expiration." }, 400), session.cookies);
+      }
+      params.p_expires_at = new Date(expiresAt).toISOString();
+    } else {
+      params.p_expires_at = null;
+    }
+    params.p_note = String(params.p_note || "").trim().slice(0, 500) || null;
   }
 
   const result = await callRpc(session.accessToken, spec.rpc, params);
