@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - worker.js
+      - admin-worker.js
+      - admin/**
       - studio/**
       - local-bridge/**
 
@@ -23,6 +25,7 @@ on:
       - scripts/work-subdomain-check.mjs
       - scripts/gpt-subdomain-check.mjs
       - scripts/gpt-ui-check.mjs
+      - scripts/admin-control-plane-check.mjs
       - scripts/account-menu-check.mjs
       - scripts/r2-storage-audit-check.mjs
       - scripts/brand-check.mjs
@@ -40,6 +43,7 @@ on:
       - wrangler.auth.jsonc
       - gpt-worker.js
       - wrangler.gpt.jsonc
+      - wrangler.admin.jsonc
       - .github/workflows/deploy-production.yml
   workflow_dispatch:
 
@@ -66,6 +70,8 @@ jobs:
       - name: Validate Workers
         run: |
           node --check worker.js
+          node --check admin-worker.js
+          for file in admin/*.js; do node --check "$file"; done
           for file in studio/*.js; do node --check "$file"; done
           node --check local-bridge/server.mjs
           node --check local-bridge/codex-server.mjs
@@ -98,6 +104,8 @@ jobs:
           node scripts/gpt-subdomain-check.mjs
           node --check scripts/gpt-ui-check.mjs
           node scripts/gpt-ui-check.mjs
+          node --check scripts/admin-control-plane-check.mjs
+          node scripts/admin-control-plane-check.mjs
           node --check scripts/account-menu-check.mjs
           node --check scripts/r2-storage-audit-check.mjs
           node scripts/r2-storage-audit-check.mjs
@@ -116,9 +124,6 @@ jobs:
           node --check gpt-worker.js
           grep -q '"region": "aws:us-east-1"' wrangler.gpt.jsonc
           node --check studio/ai-gateway.js
-          node --check studio/ai-admin-ui.js
-          node --check scripts/ai-admin-ui-check.mjs
-          node scripts/ai-admin-ui-check.mjs
           node --check scripts/auth-edge-protection-check.mjs
           node scripts/auth-edge-protection-check.mjs
 
@@ -139,6 +144,12 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.gpt.jsonc
+
+      - name: Deploy AERTEX Administration
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.admin.jsonc
 
       - name: Ensure Intelligence credential encryption secret
         env:
@@ -181,6 +192,34 @@ jobs:
             cat /tmp/qsseda-auth-health.json || true
             exit 1
           fi
+      - name: Verify Admin custom domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          ok=0
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-admin-health.json --write-out '%{http_code}' 'https://admin.qsseda.com/health' || true)"
+            if [ "$status" = "200" ] && grep -q '"service":"qsseda-admin"' /tmp/qsseda-admin-health.json && grep -q '"status":"ok"' /tmp/qsseda-admin-health.json; then
+              ok=1
+              break
+            fi
+            echo "Admin custom domain not ready on attempt $attempt (HTTP ${status:-unknown}); retrying..."
+            sleep 4
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "Admin custom domain regression: health endpoint did not become ready."
+            cat /tmp/qsseda-admin-health.json || true
+            exit 1
+          fi
+
+          legacy_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-legacy-admin.txt --write-out '%{http_code}' 'https://qsseda.com/zh-cn/admin' || true)"
+          if [ "$legacy_status" != "404" ]; then
+            echo "Main-site admin isolation regression: legacy admin URL did not return 404."
+            echo "HTTP status: ${legacy_status:-unknown}"
+            cat /tmp/qsseda-legacy-admin.txt || true
+            exit 1
+          fi
+
       - name: Verify GPT custom domain
         shell: bash
         run: |
@@ -213,7 +252,7 @@ jobs:
             exit 1
           fi
 
-      - name: Verify all three independent domains
+      - name: Verify all independent domains
         shell: bash
         run: |
           set -euo pipefail
@@ -270,6 +309,10 @@ jobs:
           verify_health "https://auth.qsseda.com/health" "qsseda-auth"
           verify_health "https://auth.qsseda.online/health" "qsseda-auth"
           verify_health "https://auth.qsseda.studio/health" "qsseda-auth"
+
+          verify_health "https://admin.qsseda.com/health" "qsseda-admin" "https://admin.qsseda.com"
+          verify_health "https://admin.qsseda.online/health" "qsseda-admin" "https://admin.qsseda.online"
+          verify_health "https://admin.qsseda.studio/health" "qsseda-admin" "https://admin.qsseda.studio"
 
           verify_main "https://qsseda.com/robots.txt"
           verify_main "https://qsseda.online/robots.txt"
