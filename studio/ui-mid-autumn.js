@@ -12,6 +12,10 @@ export function midAutumnPage(locale = "zh") {
   const stageCopy = zh ? "月满 · 人安 · 事事圆满" : "Full moon · Peace · Everything comes together";
   const replay = zh ? "再看一次" : "Replay";
   const close = zh ? "关闭" : "Close";
+  const openingTitle = zh ? "有一封中秋祝福" : "A Mid-Autumn wish for you";
+  const openingCopy = zh ? "来自 AERTEX 的一封月光来信" : "A moonlit note from AERTEX";
+  const openingAction = zh ? "打开祝福" : "Open the wish";
+  const openingLoading = zh ? "正在展开月光…" : "Unfolding the moonlight…";
   const otherHref = zh ? "/en/mid-autumn" : "/zh-cn/mid-autumn";
   const otherLabel = zh ? "EN" : "ZH";
 
@@ -299,6 +303,109 @@ export function midAutumnPage(locale = "zh") {
       pointer-events:auto;
       transition:opacity .55s ease;
     }
+    .opening-layer{
+      position:absolute;
+      inset:0;
+      z-index:20;
+      display:grid;
+      place-items:center;
+      padding:max(74px,env(safe-area-inset-top)) 22px max(38px,env(safe-area-inset-bottom));
+      opacity:0;
+      visibility:hidden;
+      background:
+        radial-gradient(circle at 50% 39%,rgba(245,214,143,.105),transparent 23rem),
+        radial-gradient(circle at 20% 80%,rgba(103,70,137,.13),transparent 30rem),
+        linear-gradient(180deg,rgba(7,5,13,.975),rgba(12,8,21,.985));
+      transition:opacity .5s ease,visibility 0s linear .5s;
+    }
+    .festival-stage.active:not(.scene-ready) .opening-layer{
+      opacity:1;
+      visibility:visible;
+      transition:opacity .5s ease;
+    }
+    .opening-card{
+      width:min(92vw,520px);
+      min-height:330px;
+      padding:34px 30px 30px;
+      border-radius:34px;
+      border:1px solid rgba(255,239,198,.12);
+      background:linear-gradient(180deg,rgba(255,255,255,.052),rgba(255,255,255,.022));
+      box-shadow:0 36px 110px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.055);
+      -webkit-backdrop-filter:blur(28px) saturate(1.08);
+      backdrop-filter:blur(28px) saturate(1.08);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+      transform:translateY(10px) scale(.985);
+      opacity:0;
+    }
+    .festival-stage.active:not(.scene-ready) .opening-card{animation:openingCardIn .8s .12s cubic-bezier(.2,.75,.2,1) forwards}
+    .opening-card::before{
+      content:"";
+      position:absolute;
+      width:250px;height:250px;border-radius:50%;
+      top:-142px;right:-92px;
+      background:radial-gradient(circle,rgba(255,224,150,.15),rgba(255,224,150,.025) 52%,transparent 72%);
+      pointer-events:none;
+    }
+    .opening-brand{display:flex;align-items:center;gap:9px;color:rgba(255,249,232,.76);margin-bottom:30px}
+    .opening-brand img{width:27px;height:27px;object-fit:contain}
+    .opening-brand .aertex-wordmark-token{width:82px;height:16px}
+    .letter-mark{
+      width:86px;height:66px;
+      margin-bottom:25px;
+      position:relative;
+      border-radius:18px;
+      border:1px solid rgba(255,229,166,.36);
+      background:linear-gradient(145deg,rgba(255,239,200,.125),rgba(255,255,255,.02));
+      box-shadow:0 18px 55px rgba(0,0,0,.2),0 0 50px rgba(245,214,141,.055);
+    }
+    .letter-mark::before,.letter-mark::after{
+      content:"";position:absolute;top:17px;width:43px;height:1px;background:rgba(255,229,166,.52)
+    }
+    .letter-mark::before{left:6px;transform:rotate(29deg);transform-origin:left center}
+    .letter-mark::after{right:6px;transform:rotate(-29deg);transform-origin:right center}
+    .letter-seal{
+      position:absolute;left:50%;top:29px;transform:translateX(-50%);
+      width:20px;height:20px;border-radius:50%;
+      background:radial-gradient(circle at 35% 30%,#fff1bb 0 14%,#d6ab57 45%,#8d652a 100%);
+      box-shadow:0 0 18px rgba(245,214,141,.22)
+    }
+    .opening-card h2{
+      margin:0;
+      color:#fff9eb;
+      font-size:clamp(28px,5vw,40px);
+      line-height:1.15;
+      letter-spacing:-.035em;
+      font-weight:760;
+    }
+    .opening-card p{
+      margin:13px 0 0;
+      color:rgba(255,248,226,.54);
+      font-size:14px;
+      line-height:1.7;
+    }
+    .opening-action{
+      margin-top:27px;
+      min-height:44px;
+      padding:0 18px;
+      border-radius:999px;
+      border:1px solid rgba(255,235,184,.15);
+      background:rgba(255,239,198,.92);
+      color:#30210e;
+      font-weight:760;
+      font-size:13px;
+      cursor:pointer;
+      box-shadow:0 10px 35px rgba(0,0,0,.18);
+      transition:transform .18s ease,opacity .18s ease;
+    }
+    .opening-action:active{transform:scale(.98)}
+    .opening-action:disabled{opacity:.66;cursor:default}
+    .festival-stage.opening .opening-card{animation:openingLift .72s cubic-bezier(.2,.75,.2,1) forwards}
     #festival-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
     .stage-glow{
       position:absolute;
@@ -312,7 +419,7 @@ export function midAutumnPage(locale = "zh") {
       opacity:0;
       z-index:0;
     }
-    .active .stage-glow{animation:stageGlow 2.2s .2s cubic-bezier(.2,.75,.2,1) forwards}
+    .active.scene-ready .stage-glow{animation:stageGlow 2.2s .2s cubic-bezier(.2,.75,.2,1) forwards}
     .stage-moon{
       position:absolute;
       left:50%;top:42%;
@@ -330,7 +437,7 @@ export function midAutumnPage(locale = "zh") {
         radial-gradient(circle at 49% 45%,#fff6d0 0%,#f4d786 56%,#c89442 100%);
       box-shadow:0 0 40px rgba(250,221,141,.28),0 0 150px rgba(250,221,141,.18);
     }
-    .active .stage-moon{animation:moonEnter 1.8s .2s cubic-bezier(.16,.82,.25,1) forwards}
+    .active.scene-ready .stage-moon{animation:moonEnter 1.8s .2s cubic-bezier(.16,.82,.25,1) forwards}
     .stage-moon::after{
       content:"";
       position:absolute;inset:0;border-radius:50%;
@@ -347,8 +454,8 @@ export function midAutumnPage(locale = "zh") {
     }
     .stage-cloud.left{width:52vw;left:-10vw;top:47%}
     .stage-cloud.right{width:48vw;right:-8vw;top:35%}
-    .active .stage-cloud.left{animation:cloudLeft 2.4s .65s ease-out forwards}
-    .active .stage-cloud.right{animation:cloudRight 2.6s .85s ease-out forwards}
+    .active.scene-ready .stage-cloud.left{animation:cloudLeft 2.4s .65s ease-out forwards}
+    .active.scene-ready .stage-cloud.right{animation:cloudRight 2.6s .85s ease-out forwards}
     .stage-brand{
       position:absolute;
       top:max(20px,env(safe-area-inset-top));
@@ -361,7 +468,7 @@ export function midAutumnPage(locale = "zh") {
       opacity:0;
       color:rgba(255,250,236,.84);
     }
-    .active .stage-brand{animation:fadeDown .85s .45s ease forwards}
+    .active.scene-ready .stage-brand{animation:fadeDown .85s .45s ease forwards}
     .stage-brand img{width:28px;height:28px;object-fit:contain}
     .stage-brand .aertex-wordmark-token{width:86px;height:17px}
     .stage-copy{
@@ -375,7 +482,7 @@ export function midAutumnPage(locale = "zh") {
       opacity:0;
       padding:0 18px;
     }
-    .active .stage-copy{animation:copyEnter 1s 1.45s cubic-bezier(.2,.75,.2,1) forwards}
+    .active.scene-ready .stage-copy{animation:copyEnter 1s 1.45s cubic-bezier(.2,.75,.2,1) forwards}
     .stage-name{
       display:block;
       margin:0 0 9px;
@@ -414,10 +521,10 @@ export function midAutumnPage(locale = "zh") {
     .lantern.l2{right:11%;bottom:10%;transform:scale(.54)}
     .lantern.l3{left:22%;bottom:-2%;transform:scale(.42)}
     .lantern.l4{right:25%;bottom:1%;transform:scale(.38)}
-    .active .lantern.l1{animation:lanternUp 8s 1.2s ease-in infinite}
-    .active .lantern.l2{animation:lanternUp 9s 2.1s ease-in infinite}
-    .active .lantern.l3{animation:lanternUp 8.5s 3.2s ease-in infinite}
-    .active .lantern.l4{animation:lanternUp 10s 4s ease-in infinite}
+    .active.scene-ready .lantern.l1{animation:lanternUp 8s 1.2s ease-in infinite}
+    .active.scene-ready .lantern.l2{animation:lanternUp 9s 2.1s ease-in infinite}
+    .active.scene-ready .lantern.l3{animation:lanternUp 8.5s 3.2s ease-in infinite}
+    .active.scene-ready .lantern.l4{animation:lanternUp 10s 4s ease-in infinite}
     .stage-controls{
       position:absolute;
       left:50%;
@@ -428,7 +535,7 @@ export function midAutumnPage(locale = "zh") {
       gap:10px;
       opacity:0;
     }
-    .active .stage-controls{animation:controlsEnter .8s 2.2s ease forwards}
+    .active.scene-ready .stage-controls{animation:controlsEnter .8s 2.2s ease forwards}
     .stage-btn{
       min-height:40px;
       padding:0 16px;
@@ -443,6 +550,51 @@ export function midAutumnPage(locale = "zh") {
       cursor:pointer;
     }
     .stage-btn.primary{background:rgba(239,208,132,.92);color:#2f2110;border-color:transparent}
+    .blessing-field{
+      position:absolute;
+      inset:0;
+      z-index:5;
+      overflow:hidden;
+      pointer-events:none;
+      perspective:720px;
+      perspective-origin:50% 46%;
+      opacity:0;
+      transition:opacity 1s ease 1.05s;
+      -webkit-mask-image:radial-gradient(ellipse at center,black 0%,black 62%,transparent 100%);
+      mask-image:radial-gradient(ellipse at center,black 0%,black 62%,transparent 100%);
+    }
+    .festival-stage.active.scene-ready .blessing-field{opacity:1}
+    .blessing-word{
+      position:absolute;
+      left:var(--x);
+      top:var(--y);
+      transform:translate3d(-50%,-50%,-900px) rotate(var(--r)) scale(.58);
+      transform-style:preserve-3d;
+      opacity:0;
+      color:rgba(255,232,182,.6);
+      font-size:var(--size);
+      font-weight:590;
+      letter-spacing:.03em;
+      white-space:nowrap;
+      text-shadow:0 0 18px rgba(245,213,140,.13);
+      animation:blessingDepth var(--dur) linear infinite;
+      animation-delay:var(--delay);
+    }
+    .blessing-word:nth-child(3n+2){color:rgba(224,207,247,.46);text-shadow:0 0 18px rgba(183,145,226,.1)}
+    .blessing-word:nth-child(4n){font-weight:510}
+    @keyframes openingCardIn{to{opacity:1;transform:translateY(0) scale(1)}}
+    @keyframes openingLift{
+      0%{opacity:1;transform:translateY(0) scale(1)}
+      55%{opacity:.9;transform:translateY(-4px) scale(1.012)}
+      100%{opacity:0;transform:translateY(-24px) scale(.975)}
+    }
+    @keyframes blessingDepth{
+      0%{opacity:0;transform:translate3d(-50%,-50%,-920px) rotate(var(--r)) scale(.58);filter:blur(2.4px)}
+      18%{opacity:.08}
+      48%{opacity:.23;filter:blur(.6px)}
+      78%{opacity:.15}
+      100%{opacity:0;transform:translate3d(-50%,-50%,180px) rotate(var(--r)) scale(1.08);filter:blur(1.8px)}
+    }
     @keyframes stageGlow{to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
     @keyframes moonEnter{0%{opacity:0;transform:translate(-50%,-50%) scale(.18)}55%{opacity:1}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
     @keyframes cloudLeft{from{opacity:0;transform:translateX(-12%)}to{opacity:1;transform:translateX(18%)}}
@@ -484,19 +636,24 @@ export function midAutumnPage(locale = "zh") {
       .stage-title{font-size:clamp(44px,15vw,72px)}
       .stage-copy p{font-size:13px}
       .stage-controls{width:100%;justify-content:center}
+      .opening-card{min-height:300px;padding:30px 22px 26px;border-radius:28px}
+      .letter-mark{width:78px;height:60px}
+      .blessing-word{font-size:clamp(12px,var(--size),18px)}
     }
     @media(prefers-reduced-motion:reduce){
       *,*::before,*::after{animation:none!important;transition:none!important}
       .festival-stage.active{opacity:1;visibility:visible}
-      .festival-stage.active .stage-glow,
-      .festival-stage.active .stage-moon,
-      .festival-stage.active .stage-brand,
-      .festival-stage.active .stage-copy,
-      .festival-stage.active .stage-controls{opacity:1}
-      .festival-stage.active .stage-moon{transform:translate(-50%,-50%) scale(1)}
-      .festival-stage.active .stage-brand{transform:translateX(-50%)}
-      .festival-stage.active .stage-copy{transform:translate(-50%,0)}
-      .festival-stage.active .stage-controls{transform:translateX(-50%)}
+      .festival-stage.active.scene-ready .stage-glow,
+      .festival-stage.active.scene-ready .stage-moon,
+      .festival-stage.active.scene-ready .stage-brand,
+      .festival-stage.active.scene-ready .stage-copy,
+      .festival-stage.active.scene-ready .stage-controls{opacity:1}
+      .festival-stage.active.scene-ready .stage-moon{transform:translate(-50%,-50%) scale(1)}
+      .festival-stage.active.scene-ready .stage-brand{transform:translateX(-50%)}
+      .festival-stage.active.scene-ready .stage-copy{transform:translate(-50%,0)}
+      .festival-stage.active.scene-ready .stage-controls{transform:translateX(-50%)}
+      .festival-stage.active.scene-ready .blessing-field{opacity:.68}
+      .blessing-word{animation:none!important;opacity:.12}
     }
   </style>
 </head>
@@ -543,6 +700,18 @@ export function midAutumnPage(locale = "zh") {
   </main>
 
   <section class="festival-stage" id="festival-stage" aria-hidden="true" aria-label="${stageTitle}">
+    <div class="opening-layer" id="opening-layer">
+      <div class="opening-card">
+        <div class="opening-brand" aria-label="AERTEX">
+          <img src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true">
+          <span>AERTEX</span>
+        </div>
+        <div class="letter-mark" aria-hidden="true"><i class="letter-seal"></i></div>
+        <h2>${openingTitle}</h2>
+        <p id="opening-copy">${openingCopy}</p>
+        <button class="opening-action" id="opening-action" type="button">${openingAction}</button>
+      </div>
+    </div>
     <canvas id="festival-canvas" aria-hidden="true"></canvas>
     <div class="stage-glow" aria-hidden="true"></div>
     <div class="stage-moon" aria-hidden="true"></div>
@@ -552,6 +721,21 @@ export function midAutumnPage(locale = "zh") {
     <div class="stage-brand" aria-label="AERTEX">
       <img src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true">
       <span>AERTEX</span>
+    </div>
+
+    <div class="blessing-field" aria-hidden="true">
+      <span class="blessing-word" style="--x:14%;--y:19%;--r:-8deg;--size:19px;--dur:10.5s;--delay:-.8s">${zh ? "愿人长久" : "Stay close"}</span>
+      <span class="blessing-word" style="--x:79%;--y:17%;--r:6deg;--size:17px;--dur:12s;--delay:-3.4s">${zh ? "中秋快乐" : "Happy Mid-Autumn"}</span>
+      <span class="blessing-word" style="--x:24%;--y:35%;--r:3deg;--size:23px;--dur:11.6s;--delay:-6.8s">${zh ? "今夜月明" : "Moonlit night"}</span>
+      <span class="blessing-word" style="--x:86%;--y:39%;--r:-5deg;--size:18px;--dur:13s;--delay:-1.7s">${zh ? "团圆" : "Reunion"}</span>
+      <span class="blessing-word" style="--x:12%;--y:57%;--r:5deg;--size:17px;--dur:12.4s;--delay:-8.2s">${zh ? "平安" : "Peace"}</span>
+      <span class="blessing-word" style="--x:76%;--y:61%;--r:-4deg;--size:24px;--dur:10.8s;--delay:-4.6s">${zh ? "月满人安" : "Full moon"}</span>
+      <span class="blessing-word" style="--x:34%;--y:72%;--r:2deg;--size:16px;--dur:13.4s;--delay:-9.1s">${zh ? "好事圆满" : "Good things align"}</span>
+      <span class="blessing-word" style="--x:88%;--y:77%;--r:7deg;--size:18px;--dur:11.9s;--delay:-5.4s">${zh ? "共赏一轮月" : "One moon above us"}</span>
+      <span class="blessing-word" style="--x:18%;--y:86%;--r:-3deg;--size:17px;--dur:12.7s;--delay:-2.5s">${zh ? "所愿皆如意" : "May wishes come true"}</span>
+      <span class="blessing-word" style="--x:61%;--y:28%;--r:-2deg;--size:15px;--dur:13.6s;--delay:-10.1s">${zh ? "千里共婵娟" : "Together under one moon"}</span>
+      <span class="blessing-word" style="--x:48%;--y:83%;--r:4deg;--size:16px;--dur:11.3s;--delay:-7.3s">${zh ? "桂香入梦" : "Autumn fragrance"}</span>
+      <span class="blessing-word" style="--x:66%;--y:49%;--r:-6deg;--size:18px;--dur:12.9s;--delay:-11.4s">${zh ? "人间团圆" : "A night of reunion"}</span>
     </div>
 
     <i class="lantern l1" aria-hidden="true"></i>
@@ -582,7 +766,10 @@ export function midAutumnPage(locale = "zh") {
     var start = document.getElementById("start-festival");
     var replay = document.getElementById("replay-festival");
     var close = document.getElementById("close-festival");
+    var openingActionButton = document.getElementById("opening-action");
+    var openingCopyNode = document.getElementById("opening-copy");
     var reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var openingTimer = 0;
 
     document.getElementById("footer-year").textContent = "© " + new Date().getFullYear();
 
@@ -723,10 +910,21 @@ export function midAutumnPage(locale = "zh") {
       else raf = 0;
     }
 
+    function startScene(){
+      stage.classList.remove("opening");
+      stage.classList.add("scene-ready");
+      resize();
+      sparks = [];
+      startedAt = performance.now();
+      scheduleBursts();
+      if(!raf) raf = requestAnimationFrame(draw);
+      setTimeout(function(){ close.focus({preventScroll:true}); },2200);
+    }
+
     function restartAnimation(){
-      stage.classList.remove("active");
+      stage.classList.remove("scene-ready");
       void stage.offsetWidth;
-      stage.classList.add("active");
+      stage.classList.add("scene-ready");
       sparks = [];
       startedAt = performance.now();
       scheduleBursts();
@@ -734,19 +932,33 @@ export function midAutumnPage(locale = "zh") {
     }
 
     function openStage(){
+      clearTimeout(openingTimer);
       stage.setAttribute("aria-hidden","false");
       document.body.classList.add("stage-open");
+      stage.classList.remove("scene-ready","opening");
       stage.classList.add("active");
+      openingActionButton.disabled = false;
+      openingActionButton.textContent = ${JSON.stringify(openingAction)};
+      openingCopyNode.textContent = ${JSON.stringify(openingCopy)};
       resize();
-      startedAt = performance.now();
       sparks = [];
-      scheduleBursts();
-      if(!raf) raf = requestAnimationFrame(draw);
-      setTimeout(function(){ close.focus({preventScroll:true}); },2300);
+      if(raf){cancelAnimationFrame(raf);raf=0}
+      ctx.clearRect(0,0,w,h);
+      setTimeout(function(){ openingActionButton.focus({preventScroll:true}); },700);
+    }
+
+    function openLetter(){
+      if(stage.classList.contains("opening") || stage.classList.contains("scene-ready")) return;
+      stage.classList.add("opening");
+      openingActionButton.disabled = true;
+      openingActionButton.textContent = ${JSON.stringify(openingLoading)};
+      openingCopyNode.textContent = ${JSON.stringify(zh ? "月光、祝福和今夜的烟花正在抵达。" : "Moonlight, wishes, and tonight’s fireworks are arriving.")};
+      openingTimer = setTimeout(startScene,760);
     }
 
     function closeStage(){
-      stage.classList.remove("active");
+      clearTimeout(openingTimer);
+      stage.classList.remove("active","scene-ready","opening");
       stage.setAttribute("aria-hidden","true");
       document.body.classList.remove("stage-open");
       clearBursts();
@@ -757,10 +969,11 @@ export function midAutumnPage(locale = "zh") {
     }
 
     start.addEventListener("click",openStage);
+    openingActionButton.addEventListener("click",openLetter);
     replay.addEventListener("click",restartAnimation);
     close.addEventListener("click",closeStage);
     stage.addEventListener("pointerdown",function(event){
-      if(!stage.classList.contains("active") || reduceMotion) return;
+      if(!stage.classList.contains("active") || !stage.classList.contains("scene-ready") || reduceMotion) return;
       if(event.target.closest("button")) return;
       firework(event.clientX,event.clientY,.62);
     });
