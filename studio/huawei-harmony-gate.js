@@ -12,8 +12,71 @@ export async function huaweiHarmonyGate(request) {
   if (hasDeviceRouteMarker(request)) return handleHuaweiExemptionRoute(request);
   if (isExplicitPreviewRequest(request)) return renderHuaweiUnsupportedPage(request);
   if (isExemptionVerificationTransport(request)) return null;
+
+  if (hasHuaweiExemptionCookie(request)) {
+    if (shouldAutoApplyExemptionRoute(request)) return redirectToHuaweiExemptionRoute(request);
+    return null;
+  }
+
   if (!isHuaweiOrHarmonyRequest(request)) return null;
   return renderHuaweiUnsupportedPage(request);
+}
+
+function shouldAutoApplyExemptionRoute(request) {
+  try {
+    const method = String(request?.method || "GET").toUpperCase();
+    if (method !== "GET" && method !== "HEAD") return false;
+
+    const url = new URL(request.url);
+    if (hasDeviceRouteMarker(request)) return false;
+
+    const pathname = url.pathname || "/";
+    if (pathname === "/") return false;
+    if (
+      pathname === "/health" ||
+      pathname === "/robots.txt" ||
+      pathname === "/auth/handoff" ||
+      pathname === "/gpt/handoff" ||
+      pathname === "/zh-cn/gpt/handoff" ||
+      pathname === "/en/gpt/handoff" ||
+      pathname.startsWith("/api/") ||
+      pathname.startsWith("/.well-known/") ||
+      pathname.startsWith("/favicon")
+    ) return false;
+
+    const fetchDest = String(request.headers.get("Sec-Fetch-Dest") || "").toLowerCase();
+    if (fetchDest && fetchDest !== "document") return false;
+
+    const accept = String(request.headers.get("Accept") || "").toLowerCase();
+    if (!fetchDest && accept && !accept.includes("text/html") && !accept.includes("*/*")) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function redirectToHuaweiExemptionRoute(request) {
+  try {
+    const url = new URL(request.url);
+    const segments = url.pathname.split("/").filter(Boolean);
+    if (!segments.length) return null;
+
+    segments.splice(Math.max(0, segments.length - 1), 0, DEVICE_ROUTE_MARKER);
+    url.pathname = "/" + segments.join("/");
+
+    return new Response(null, {
+      status: 302,
+      headers: {
+        location: url.pathname + url.search,
+        "cache-control": "no-store",
+        "referrer-policy": "no-referrer",
+        "x-content-type-options": "nosniff"
+      }
+    });
+  } catch {
+    return null;
+  }
 }
 
 function hasDeviceRouteMarker(request) {
