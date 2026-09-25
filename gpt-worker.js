@@ -16,7 +16,7 @@ import { intelligenceThemeAttr, intelligenceThemeBootScript, intelligenceThemeFr
 
 export default {
   async fetch(request, env) {
-    const deviceGate = huaweiHarmonyGate(request);
+    const deviceGate = await huaweiHarmonyGate(request);
     if (deviceGate) return deviceGate;
 
     const url = new URL(request.url);
