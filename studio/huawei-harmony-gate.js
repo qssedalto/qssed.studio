@@ -1,4 +1,4 @@
-import { authOriginForRequest, isMainHost, isServiceHost } from "./domain-family.js";
+import { authOriginForRequest, isServiceHost } from "./domain-family.js";
 
 const DETECTION_RE = /(HarmonyOS|OpenHarmony|HuaweiBrowser|HUAWEI)/i;
 const EXEMPTION_ROUTE_SEGMENT = "huawei-exempt";
