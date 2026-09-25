@@ -7,11 +7,8 @@ export function midAutumnPage(locale = "zh") {
     ? "愿今夜月光所至，都是平安、团圆与好心情。"
     : "May tonight bring you peace, reunion, and a little more joy.";
   const action = zh ? "点亮今夜" : "Light up the night";
-  const hint = zh ? "点击按钮，开启全屏中秋动画" : "Tap to open the full-screen Mid-Autumn animation";
   const stageTitle = zh ? "中秋快乐" : "Happy Mid-Autumn";
   const stageCopy = zh ? "月满 · 人安 · 事事圆满" : "Full moon · Peace · Everything comes together";
-  const replay = zh ? "再看一次" : "Replay";
-  const close = zh ? "关闭" : "Close";
   const openingTitle = zh ? "有一封中秋祝福" : "A Mid-Autumn wish for you";
   const openingCopy = zh ? "来自 AERTEX 的一封月光来信" : "A moonlit note from AERTEX";
   const openingAction = zh ? "打开祝福" : "Open the wish";
@@ -204,7 +201,6 @@ export function midAutumnPage(locale = "zh") {
     .start:hover{transform:translateY(-2px);box-shadow:0 22px 58px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.5)}
     .start:active{transform:scale(.985)}
     @keyframes sheen{0%,68%{transform:translateX(-72%)}85%,100%{transform:translateX(72%)}}
-    .hint{color:rgba(255,255,255,.42);font-size:12px;line-height:1.5}
     .art{
       min-height:520px;
       display:grid;
@@ -525,31 +521,6 @@ export function midAutumnPage(locale = "zh") {
     .active.scene-ready .lantern.l2{animation:lanternUp 9s 2.1s ease-in infinite}
     .active.scene-ready .lantern.l3{animation:lanternUp 8.5s 3.2s ease-in infinite}
     .active.scene-ready .lantern.l4{animation:lanternUp 10s 4s ease-in infinite}
-    .stage-controls{
-      position:absolute;
-      left:50%;
-      bottom:max(18px,env(safe-area-inset-bottom));
-      transform:translateX(-50%) translateY(12px);
-      z-index:9;
-      display:flex;
-      gap:10px;
-      opacity:0;
-    }
-    .active.scene-ready .stage-controls{animation:controlsEnter .8s 2.2s ease forwards}
-    .stage-btn{
-      min-height:40px;
-      padding:0 16px;
-      border-radius:999px;
-      border:1px solid rgba(255,242,207,.16);
-      background:rgba(12,7,22,.38);
-      color:rgba(255,250,235,.82);
-      -webkit-backdrop-filter:blur(18px);
-      backdrop-filter:blur(18px);
-      font-size:12px;
-      font-weight:700;
-      cursor:pointer;
-    }
-    .stage-btn.primary{background:rgba(239,208,132,.92);color:#2f2110;border-color:transparent}
     .blessing-field{
       position:absolute;
       inset:0;
@@ -609,7 +580,6 @@ export function midAutumnPage(locale = "zh") {
     @keyframes cloudRight{from{opacity:0;transform:translateX(14%)}to{opacity:1;transform:translateX(-18%)}}
     @keyframes fadeDown{to{opacity:1;transform:translateX(-50%) translateY(0)}}
     @keyframes copyEnter{to{opacity:1;transform:translate(-50%,0)}}
-    @keyframes controlsEnter{to{opacity:1;transform:translateX(-50%) translateY(0)}}
     @keyframes lanternUp{
       0%{opacity:0;translate:0 0}
       10%{opacity:.88}
@@ -643,7 +613,6 @@ export function midAutumnPage(locale = "zh") {
       .stage-copy{top:65%;padding:0 12px}
       .stage-title{font-size:clamp(44px,15vw,72px)}
       .stage-copy p{font-size:13px}
-      .stage-controls{width:100%;justify-content:center}
       .opening-card{min-height:300px;padding:30px 22px 26px;border-radius:28px}
       .letter-mark{width:78px;height:60px}
       .blessing-word{font-size:clamp(12px,var(--size),18px)}
@@ -655,11 +624,9 @@ export function midAutumnPage(locale = "zh") {
       .festival-stage.active.scene-ready .stage-moon,
       .festival-stage.active.scene-ready .stage-brand,
       .festival-stage.active.scene-ready .stage-copy,
-      .festival-stage.active.scene-ready .stage-controls{opacity:1}
       .festival-stage.active.scene-ready .stage-moon{transform:translate(-50%,-50%) scale(1)}
       .festival-stage.active.scene-ready .stage-brand{transform:translateX(-50%)}
       .festival-stage.active.scene-ready .stage-copy{transform:translate(-50%,0)}
-      .festival-stage.active.scene-ready .stage-controls{transform:translateX(-50%)}
       .festival-stage.active.scene-ready .blessing-field{opacity:.68}
       .blessing-word{animation:none!important;opacity:.28}
     }
@@ -685,7 +652,6 @@ export function midAutumnPage(locale = "zh") {
         <p class="lead">${lead}</p>
         <div class="actions">
           <button class="start" id="start-festival" type="button">${action}</button>
-          <span class="hint">${hint}</span>
         </div>
       </div>
 
@@ -757,10 +723,6 @@ export function midAutumnPage(locale = "zh") {
       <p>${stageCopy}</p>
     </div>
 
-    <div class="stage-controls">
-      <button class="stage-btn primary" id="replay-festival" type="button">${replay}</button>
-      <button class="stage-btn" id="close-festival" type="button">${close}</button>
-    </div>
   </section>
 
   <script>
@@ -772,8 +734,6 @@ export function midAutumnPage(locale = "zh") {
     var stageName = document.getElementById("stage-name");
     var stage = document.getElementById("festival-stage");
     var start = document.getElementById("start-festival");
-    var replay = document.getElementById("replay-festival");
-    var close = document.getElementById("close-festival");
     var openingActionButton = document.getElementById("opening-action");
     var openingCopyNode = document.getElementById("opening-copy");
     var reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -926,17 +886,6 @@ export function midAutumnPage(locale = "zh") {
       startedAt = performance.now();
       scheduleBursts();
       if(!raf) raf = requestAnimationFrame(draw);
-      setTimeout(function(){ close.focus({preventScroll:true}); },2200);
-    }
-
-    function restartAnimation(){
-      stage.classList.remove("scene-ready");
-      void stage.offsetWidth;
-      stage.classList.add("scene-ready");
-      sparks = [];
-      startedAt = performance.now();
-      scheduleBursts();
-      if(!raf) raf = requestAnimationFrame(draw);
     }
 
     function openStage(){
@@ -978,8 +927,6 @@ export function midAutumnPage(locale = "zh") {
 
     start.addEventListener("click",openStage);
     openingActionButton.addEventListener("click",openLetter);
-    replay.addEventListener("click",restartAnimation);
-    close.addEventListener("click",closeStage);
     stage.addEventListener("pointerdown",function(event){
       if(!stage.classList.contains("active") || !stage.classList.contains("scene-ready") || reduceMotion) return;
       if(event.target.closest("button")) return;
