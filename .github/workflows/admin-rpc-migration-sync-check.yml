@@ -1,0 +1,26 @@
+name: Admin RPC Migration Sync Check
+
+on:
+  push:
+    branches:
+      - admin-rpc-migration-version-sync
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24.x"
+      - name: Validate admin migration sync
+        run: |
+          set -euo pipefail
+          test -f supabase/migrations/20260925172204_admin_rpc_private_guard.sql
+          test ! -e supabase/migrations/202609260130_admin_rpc_private_guard.sql
+          node --check scripts/admin-control-plane-check.mjs
+          node scripts/admin-control-plane-check.mjs
