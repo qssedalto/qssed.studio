@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "worker.js"
+      - "admin-worker.js"
+      - "admin/**"
       - "studio/**"
       - "local-bridge/**"
 
@@ -20,6 +22,9 @@ on:
       - "scripts/work-local-bridge-check.mjs"
       - "scripts/work-subdomain-check.mjs"
       - "scripts/gpt-subdomain-check.mjs"
+      - "scripts/gpt-ui-check.mjs"
+      - "scripts/admin-control-plane-check.mjs"
+      - "scripts/account-menu-check.mjs"
       - "scripts/codex-bridge-check.mjs"
       - "scripts/brand-check.mjs"
       - "scripts/r2-storage-audit-check.mjs"
@@ -27,12 +32,15 @@ on:
       - "wrangler.work.jsonc"
       - "gpt-worker.js"
       - "wrangler.gpt.jsonc"
+      - "wrangler.admin.jsonc"
       - ".github/workflows/studio-check.yml"
   push:
     branches:
       - main
     paths:
       - "worker.js"
+      - "admin-worker.js"
+      - "admin/**"
       - "studio/**"
       - "local-bridge/**"
 
@@ -49,6 +57,9 @@ on:
       - "scripts/work-local-bridge-check.mjs"
       - "scripts/work-subdomain-check.mjs"
       - "scripts/gpt-subdomain-check.mjs"
+      - "scripts/gpt-ui-check.mjs"
+      - "scripts/admin-control-plane-check.mjs"
+      - "scripts/account-menu-check.mjs"
       - "scripts/codex-bridge-check.mjs"
       - "scripts/brand-check.mjs"
       - "scripts/r2-storage-audit-check.mjs"
@@ -56,6 +67,7 @@ on:
       - "wrangler.work.jsonc"
       - "gpt-worker.js"
       - "wrangler.gpt.jsonc"
+      - "wrangler.admin.jsonc"
       - ".github/workflows/studio-check.yml"
   workflow_dispatch:
 
@@ -77,6 +89,8 @@ jobs:
       - name: Check Studio JavaScript syntax
         run: |
           node --check worker.js
+          node --check admin-worker.js
+          for file in admin/*.js; do node --check "$file"; done
           for file in studio/*.js; do node --check "$file"; done
           node --check local-bridge/server.mjs
           node --check local-bridge/codex-server.mjs
@@ -94,6 +108,9 @@ jobs:
           node --check scripts/work-local-bridge-check.mjs
           node --check scripts/work-subdomain-check.mjs
           node --check scripts/gpt-subdomain-check.mjs
+          node --check scripts/gpt-ui-check.mjs
+          node --check scripts/admin-control-plane-check.mjs
+          node --check scripts/account-menu-check.mjs
           node --check scripts/codex-bridge-check.mjs
           node --check scripts/brand-check.mjs
           node --check scripts/r2-storage-audit-check.mjs
@@ -138,6 +155,15 @@ jobs:
       - name: Verify GPT authentication handoff
         run: node scripts/gpt-subdomain-check.mjs
 
+      - name: Verify GPT rendered UI
+        run: node scripts/gpt-ui-check.mjs
+
+      - name: Verify isolated admin control plane
+        run: node scripts/admin-control-plane-check.mjs
+
+      - name: Verify shared account menu
+        run: node scripts/account-menu-check.mjs
+
       - name: Verify Codex local provider
         run: node scripts/codex-bridge-check.mjs
 
@@ -155,6 +181,9 @@ jobs:
 
       - name: Bundle GPT Worker
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.gpt.jsonc --dry-run --outdir .wrangler-gpt-check
+
+      - name: Bundle Admin Worker
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.admin.jsonc --dry-run --outdir .wrangler-admin-check
 
       - name: Validate Studio Wrangler JSONC shape
         shell: bash
