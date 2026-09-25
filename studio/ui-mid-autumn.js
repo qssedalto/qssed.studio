@@ -501,11 +501,9 @@ export function midAutumnPage(locale = "zh") {
     }
     .stage-copy p{
       margin:16px 0 0;
-      color:rgba(255,249,232,.92);
-      font-size:clamp(15px,2.1vw,20px);
-      font-weight:600;
-      letter-spacing:.075em;
-      text-shadow:0 2px 18px rgba(0,0,0,.48);
+      color:rgba(255,248,226,.7);
+      font-size:clamp(14px,2vw,20px);
+      letter-spacing:.08em;
     }
     .lantern{
       position:absolute;
@@ -573,17 +571,24 @@ export function midAutumnPage(locale = "zh") {
       transform:translate3d(-50%,-50%,-900px) rotate(var(--r)) scale(.58);
       transform-style:preserve-3d;
       opacity:0;
-      color:rgba(255,232,182,.6);
+      color:rgba(255,236,194,.82);
       font-size:var(--size);
-      font-weight:590;
+      font-weight:620;
       letter-spacing:.03em;
       white-space:nowrap;
-      text-shadow:0 0 18px rgba(245,213,140,.13);
+      text-shadow:
+        0 0 10px rgba(255,228,168,.34),
+        0 0 26px rgba(245,213,140,.18);
       animation:blessingDepth var(--dur) linear infinite;
       animation-delay:var(--delay);
     }
-    .blessing-word:nth-child(3n+2){color:rgba(224,207,247,.46);text-shadow:0 0 18px rgba(183,145,226,.1)}
-    .blessing-word:nth-child(4n){font-weight:510}
+    .blessing-word:nth-child(3n+2){
+      color:rgba(231,216,250,.72);
+      text-shadow:
+        0 0 10px rgba(210,184,244,.26),
+        0 0 24px rgba(183,145,226,.14);
+    }
+    .blessing-word:nth-child(4n){font-weight:560}
     @keyframes openingCardIn{to{opacity:1;transform:translateY(0) scale(1)}}
     @keyframes openingLift{
       0%{opacity:1;transform:translateY(0) scale(1)}
@@ -591,11 +596,12 @@ export function midAutumnPage(locale = "zh") {
       100%{opacity:0;transform:translateY(-24px) scale(.975)}
     }
     @keyframes blessingDepth{
-      0%{opacity:0;transform:translate3d(-50%,-50%,-920px) rotate(var(--r)) scale(.58);filter:blur(2.4px)}
-      18%{opacity:.08}
-      48%{opacity:.23;filter:blur(.6px)}
-      78%{opacity:.15}
-      100%{opacity:0;transform:translate3d(-50%,-50%,180px) rotate(var(--r)) scale(1.08);filter:blur(1.8px)}
+      0%{opacity:0;transform:translate3d(-50%,-50%,-920px) rotate(var(--r)) scale(.58);filter:blur(1.6px)}
+      16%{opacity:.18}
+      46%{opacity:.48;filter:blur(.25px)}
+      76%{opacity:.34}
+      92%{opacity:.12;filter:blur(.7px)}
+      100%{opacity:0;transform:translate3d(-50%,-50%,180px) rotate(var(--r)) scale(1.08);filter:blur(1.2px)}
     }
     @keyframes stageGlow{to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
     @keyframes moonEnter{0%{opacity:0;transform:translate(-50%,-50%) scale(.18)}55%{opacity:1}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
@@ -636,7 +642,7 @@ export function midAutumnPage(locale = "zh") {
       .stage-moon{width:min(78vw,370px);top:38%}
       .stage-copy{top:65%;padding:0 12px}
       .stage-title{font-size:clamp(44px,15vw,72px)}
-      .stage-copy p{font-size:15px;font-weight:620;color:rgba(255,249,232,.94)}
+      .stage-copy p{font-size:13px}
       .stage-controls{width:100%;justify-content:center}
       .opening-card{min-height:300px;padding:30px 22px 26px;border-radius:28px}
       .letter-mark{width:78px;height:60px}
@@ -655,7 +661,7 @@ export function midAutumnPage(locale = "zh") {
       .festival-stage.active.scene-ready .stage-copy{transform:translate(-50%,0)}
       .festival-stage.active.scene-ready .stage-controls{transform:translateX(-50%)}
       .festival-stage.active.scene-ready .blessing-field{opacity:.68}
-      .blessing-word{animation:none!important;opacity:.12}
+      .blessing-word{animation:none!important;opacity:.28}
     }
   </style>
 </head>
