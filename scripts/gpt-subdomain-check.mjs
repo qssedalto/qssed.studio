@@ -66,6 +66,9 @@ assert(huaweiGate.includes('name="device_confirm" value="yes"'), "Huawei exempti
 assert(huaweiGate.includes('name="authorization_code"'), "Huawei exemption challenge must require an authorization code.");
 assert(huaweiGate.includes("EXEMPTION_COOKIE"), "Huawei exemption verification must persist a server-issued browser grant.");
 assert(huaweiGate.includes("HttpOnly"), "Huawei exemption grant cookie must not be readable by page JavaScript.");
+assert(huaweiGate.includes("shouldAutoApplyExemptionRoute(request)"), "Huawei exemption grant must automatically add the exemption route on future page visits.");
+assert(huaweiGate.includes("redirectToHuaweiExemptionRoute(request)"), "Huawei exemption grant must redirect ordinary page URLs into the exemption route.");
+assert(gpt.includes("normalizeHuaweiExemptPath"), "Auto-applied Huawei exemption routes must normalize back to Intelligence routes internally.");
 assert(huaweiGate.includes('url.pathname === "/gpt/handoff"'), "Huawei gate must allow the GPT handoff transport.");
 assert(huaweiGate.includes('url.pathname === "/zh-cn/gpt/handoff"'), "Huawei gate must allow the localized GPT handoff transport.");
 assert(gpt.includes('loadGptBootstrap(request, env, gate, conversationId)'), "GPT Worker must bootstrap Intelligence data before first paint.");
