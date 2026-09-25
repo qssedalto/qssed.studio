@@ -81,7 +81,7 @@ function localizedPage(markup, locale, status = 200, options = {}) {
 async function isAdminAccount(accessToken) {
   if (!accessToken) return false;
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_admin_session`, {
       method: "POST",
       headers: {
         apikey: SUPABASE_KEY,

@@ -27,11 +27,8 @@ export async function handleAdminHandoff(request) {
   const verified = await verifyAccessToken(accessToken);
   if (!verified.ok) return text("Not found.", 404);
 
-  const active = await activeProfile(accessToken, verified.user.id);
-  if (!active) return text("Not found.", 404);
-
-  const admin = await adminCheck(accessToken);
-  if (!admin) return text("Not found.", 404);
+  const adminSession = await verifyAdminDatabaseSession(accessToken);
+  if (!adminSession) return text("Not found.", 404);
 
   const maxAge = accessCookieAge(accessToken);
   const headers = new Headers({
@@ -54,11 +51,8 @@ export async function verifyAdminSession(request) {
   const verified = await verifyAccessToken(accessToken);
   if (!verified.ok) return { ok: false, accessToken: "", user: null, cookies: clearAdminSessionCookies() };
 
-  const active = await activeProfile(accessToken, verified.user.id);
-  if (!active) return { ok: false, accessToken: "", user: null, cookies: clearAdminSessionCookies() };
-
-  const admin = await adminCheck(accessToken);
-  if (!admin) return { ok: false, accessToken: "", user: null, cookies: clearAdminSessionCookies() };
+  const adminSession = await verifyAdminDatabaseSession(accessToken);
+  if (!adminSession) return { ok: false, accessToken: "", user: null, cookies: clearAdminSessionCookies() };
 
   return { ok: true, accessToken, user: verified.user, cookies: [] };
 }
@@ -126,31 +120,9 @@ async function verifyAccessToken(accessToken) {
   }
 }
 
-async function activeProfile(accessToken, userId) {
-  if (!userId) return false;
+async function verifyAdminDatabaseSession(accessToken) {
   try {
-    const url = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
-    url.searchParams.set("select", "status");
-    url.searchParams.set("id", `eq.${userId}`);
-    url.searchParams.set("limit", "1");
-    const response = await fetch(url.toString(), {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json"
-      }
-    });
-    if (!response.ok) return false;
-    const rows = await response.json();
-    return Array.isArray(rows) && rows[0]?.status === "active";
-  } catch {
-    return false;
-  }
-}
-
-async function adminCheck(accessToken) {
-  try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_admin_session`, {
       method: "POST",
       headers: {
         apikey: SUPABASE_KEY,

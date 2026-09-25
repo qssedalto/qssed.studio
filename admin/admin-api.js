@@ -43,9 +43,6 @@ export async function handleAdminAccess(request) {
   const session = await verifyAdminApiSession(request);
   if (!session.ok) return withAdminSessionCookies(json({ is_admin: false, error: "Authentication required." }, 401), session.cookies);
 
-  const admin = await checkAdmin(session);
-  if (!admin.ok) return adminFailure(session, "admin.access.failed", admin.status);
-  if (!admin.isAdmin) return withAdminSessionCookies(json({ is_admin: false, error: "Administrator access required." }, 403), session.cookies);
   return withAdminSessionCookies(json({ is_admin: true, user_id: session.user.id }), session.cookies);
 }
 
@@ -57,10 +54,6 @@ export async function handleAdminAction(request, _env, action) {
 
   const session = await verifyAdminApiSession(request);
   if (!session.ok) return withAdminSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
-
-  const admin = await checkAdmin(session);
-  if (!admin.ok) return adminFailure(session, "admin.access.failed", admin.status);
-  if (!admin.isAdmin) return withAdminSessionCookies(json({ error: "Administrator access required." }, 403), session.cookies);
 
   let incoming = {};
   try {
@@ -146,15 +139,6 @@ export async function handleAdminAction(request, _env, action) {
   return withAdminSessionCookies(json({ data: result.payload }), session.cookies);
 }
 
-async function checkAdmin(session) {
-  const result = await callRpc(session.accessToken, "is_admin", {});
-  return {
-    ok: result.ok,
-    status: result.status,
-    isAdmin: result.ok && result.payload === true
-  };
-}
-
 async function callRpc(accessToken, rpc, params) {
   let upstream;
   try {
@@ -179,11 +163,6 @@ async function callRpc(accessToken, rpc, params) {
     catch { payload = { error: "Administrator service returned an invalid response." }; }
   }
   return { ok: upstream.ok, status: upstream.status, payload };
-}
-
-function adminFailure(session, event, upstreamStatus) {
-  workerLog("warn", event, { user_id: session.user.id, upstream_status: upstreamStatus });
-  return withAdminSessionCookies(json({ error: "Administrator service is temporarily unavailable." }, normalizeUpstreamStatus(upstreamStatus)), session.cookies);
 }
 
 function cleanError(payload) {

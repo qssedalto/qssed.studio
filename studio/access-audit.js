@@ -306,7 +306,7 @@ async function verifyAdministrator(request) {
 
   let response;
   try {
-    response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+    response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_admin_session`, {
       method: "POST",
       headers: {
         apikey: SUPABASE_KEY,

@@ -52,7 +52,7 @@ The viewer is part of the isolated control plane:
 https://admin.qsseda.com/access
 ```
 
-The page is never served by the main product domain. The Administration Worker requires a valid short-lived administrator session and revalidates the existing Supabase `is_admin` authorization check. Non-admin and unknown administrator routes return a generic 404.
+The page is never served by the main product domain. The Administration Worker requires a valid short-lived administrator session and revalidates it against the live account role/status and the matching Supabase Auth `session_id`. Revoked or expired Auth sessions therefore lose administrator access without waiting for stale role claims to age out. Non-admin and unknown administrator routes return a generic 404.
 
 The control-plane API endpoint is:
 
