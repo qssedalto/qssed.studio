@@ -1,4 +1,4 @@
-import { huaweiHarmonyGate, rewriteHuaweiExemptionRoute } from "./huawei-harmony-gate.js";
+import { huaweiHarmonyGate } from "./huawei-harmony-gate.js";
 import worker from "../worker.js";
 import { cleanupAccessAudit, handleAccessAuditAdmin, recordAccessAudit } from "./access-audit.js";
 import { handleAccessAuditPage } from "./access-audit-page.js";
