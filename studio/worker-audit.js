@@ -36,9 +36,9 @@ function routeAliasRequest(request) {
 
 export default {
   async fetch(request, env, ctx) {
-    const aliasRequest = routeAliasRequest(request);
-    const deviceGate = aliasRequest ? null : huaweiHarmonyGate(request);
+    const deviceGate = await huaweiHarmonyGate(request);
     if (deviceGate) return deviceGate;
+    const aliasRequest = routeAliasRequest(request);
     const routedRequest = aliasRequest || request;
 
     const startedAt = Date.now();
