@@ -9,8 +9,7 @@ export function renderGptApp(locale, bootstrap = {}) {
   const bootstrapJson = JSON.stringify({
     config: bootstrap?.config || null,
     conversations: Array.isArray(bootstrap?.conversations) ? bootstrap.conversations : [],
-    current: bootstrap?.current || null,
-    isAdmin: bootstrap?.isAdmin === true
+    current: bootstrap?.current || null
   }).replace(/</g, "\\u003c");
   const t = zh ? {
     title:"AERTEX Intelligence", subtitle:"Cloud Intelligence", online:"Intelligence 在线", offline:"Intelligence 不可用",
@@ -23,8 +22,7 @@ export function renderGptApp(locale, bootstrap = {}) {
     noModels:"没有读取到可用模型", regionBlocked:"当前网络区域不可用", noAvailableRegion:"当前网络区域没有可用的已授权模型", rateLimited:"当前 Provider 返回速率限制，请稍后重试", rateRetry:"建议等待", reasoning:"推理", thinking:"Intelligence 正在思考…",
     empty:"开始一个新的对话", emptyHint:"选择模型后直接开始聊天",
     error:"发生错误",
-    bridgeAuth:"本机 Bridge 的安全凭据配置不一致",
-    adminConsole:"管理"
+    bridgeAuth:"本机 Bridge 的安全凭据配置不一致"
   } : {
     title:"AERTEX Intelligence", subtitle:"Cloud Intelligence", online:"Intelligence online", offline:"Intelligence unavailable",
     offlineTitle:"AERTEX Intelligence is unavailable", offlineText:"AI access has not been enabled for this account, or the administrator has not completed API configuration.",
@@ -36,8 +34,7 @@ export function renderGptApp(locale, bootstrap = {}) {
     noModels:"No available models were returned", regionBlocked:"Unavailable on current network", noAvailableRegion:"No authorized model is available on the current network", rateLimited:"The provider is rate-limiting requests right now. Try again shortly.", rateRetry:"Retry after", reasoning:"Reasoning", thinking:"Intelligence is thinking…",
     empty:"Start a new conversation", emptyHint:"Choose a model and start chatting",
     error:"Error",
-    bridgeAuth:"The local Bridge security credentials do not match",
-    adminConsole:"Admin"
+    bridgeAuth:"The local Bridge security credentials do not match"
   };
 
   return `<!doctype html>
@@ -68,7 +65,7 @@ select{border:1px solid var(--line);background:var(--panel);color:var(--text);bo
 .composerWrap{position:fixed;left:270px;right:0;bottom:0;padding:18px;background:linear-gradient(to top,var(--bg) 72%,transparent)}.composer{width:min(820px,calc(100% - 32px));margin:0 auto;border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:12px;box-shadow:0 12px 42px rgba(0,0,0,.08)}
 textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;border:0;outline:0;background:transparent;color:var(--text);padding:4px 6px;line-height:1.5}.composerFoot{display:flex;align-items:center;justify-content:flex-end;margin-top:8px}
 .primary{border:0;background:var(--accent);color:var(--accentText);border-radius:11px;padding:8px 14px;cursor:pointer;font-weight:650;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.primary:disabled{opacity:.45;cursor:not-allowed}
-.gate{width:min(650px,calc(100% - 36px));margin:80px auto;padding:28px;border:1px solid var(--line);background:var(--panel);border-radius:22px}.gate h2{margin:0 0 8px;font-size:23px}.gate p{color:var(--muted);line-height:1.65}.gateActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.adminButton{border:1px solid var(--line);background:var(--accent);color:var(--accentText);border-radius:12px;padding:10px 13px;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:.42em}.adminButton .aertex-wordmark-token{width:5.18687em;height:1em}.code{font:700 28px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;margin:18px 0 8px}.hidden{display:none!important}.error{color:var(--danger)}
+.gate{width:min(650px,calc(100% - 36px));margin:80px auto;padding:28px;border:1px solid var(--line);background:var(--panel);border-radius:22px}.gate h2{margin:0 0 8px;font-size:23px}.gate p{color:var(--muted);line-height:1.65}.gateActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.code{font:700 28px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;margin:18px 0 8px}.hidden{display:none!important}.error{color:var(--danger)}
 @media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{display:none}.composerWrap{left:0}.topbar{padding:0 10px}.model{min-width:0;flex:1}.account{display:none}.messages{padding-top:28px}}
 </style>\n<style>${accountMenuStyles()}</style>
 </head>
@@ -86,7 +83,6 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   <select class="model" id="modelSelect" disabled><option>${t.loadingModels}</option></select>
   <select id="effortSelect" aria-label="${t.reasoning}" disabled><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="xhigh">Extra High</option></select>
   <div class="account" id="accountLabel">${t.checking}</div>
-  <a class="adminButton${bootstrap?.isAdmin === true ? "" : " hidden"}" id="adminConsole" href="/${zh ? "zh-cn" : "en"}/admin">${t.adminConsole}</a>
   ${accountMenuMarkup(zh ? "zh-cn" : "en")}
 </header>
 <section class="content" id="content">
@@ -117,8 +113,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
     conversations:Array.isArray(boot.conversations)?boot.conversations:[],
     current:boot.current||null,
     conversationId:boot.current?.conversation?.id||"",
-    busy:false,
-    isAdmin:boot.isAdmin===true
+    busy:false
   };
 
   async function req(path,opt={}){
