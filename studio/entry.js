@@ -1,4 +1,4 @@
-import { OS_PATHS, LEGACY_REDIRECTS, TEXT } from "./config.js";
+import { OS_PATHS, LEGACY_REDIRECTS, TEXT, SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { handleAuthHandoff } from "./auth-handoff.js";
 import {
   handleStudioSessionBootstrap,
@@ -32,7 +32,7 @@ import { osPage } from "./ui-shell.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
-import { authOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
+import { adminOriginForRequest, authOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 
 function safeLocalNext(value) {
   const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
@@ -78,6 +78,26 @@ function localizedPage(markup, locale, status = 200, options = {}) {
   return html(localizedMarkup, status, options);
 }
 
+async function isAdminAccount(accessToken) {
+  if (!accessToken) return false;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${accessToken}`,
+        "content-type": "application/json;charset=UTF-8",
+        Accept: "application/json"
+      },
+      body: "{}"
+    });
+    if (!response.ok) return false;
+    return (await response.json()) === true;
+  } catch {
+    return false;
+  }
+}
+
 function replaceOsContent(markup, content) {
   const opening = '<section id="os-content"';
   const start = markup.indexOf(opening);
@@ -117,8 +137,15 @@ export default {
       const zh = locale === "zh";
       const mainOrigin = mainOriginForRequest(request);
       const workOrigin = workOriginForRequest(request);
+      const gptOrigin = gptOriginForRequest(request);
+      const dashboardProductLinks = pathname === "/dashboard"
+        ? {
+            gptHref: `${gptOrigin}/${zh ? "zh-cn" : "en"}`,
+            adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : ""
+          }
+        : {};
       const shellPath = linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
-      let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel);
+      let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel, dashboardProductLinks);
       markup = decorateWorkNavigation(markup, zh, pathname, mainOrigin, workOrigin);
       markup = polishWorkTexNavigation(markup, zh, pathname, workOrigin);
       markup = hardenSessionClientMarkup(markup);
