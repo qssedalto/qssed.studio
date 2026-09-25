@@ -25,6 +25,10 @@ const storageUi = read("studio/ui-storage.js");
 const informationUi = read("studio/ui-information.js");
 const globalSearchApi = read("studio/global-search-api.js");
 const texApi = read("studio/tex-api-core.js");
+const migration = read("supabase/migrations/202609260130_admin_rpc_private_guard.sql");
+const entry = read("studio/entry.js");
+const aiGateway = read("studio/ai-gateway.js");
+const accessAudit = read("studio/access-audit.js");
 const workflow = read(".github/workflows/deploy-production.yml");
 const wrangler = JSON.parse(read("wrangler.admin.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 
@@ -46,14 +50,19 @@ for (const required of [
 for (const required of [
   'const ACCESS_COOKIE = "__Host-aertex-admin-access"',
   "SameSite=Strict",
-  "adminCheck(accessToken)",
-  "activeProfile(accessToken",
+  "verifyAdminDatabaseSession(accessToken)",
+  "/rest/v1/rpc/verify_admin_session",
   "handleAdminHandoff(request)",
   "clearAdminSessionCookies()"
 ]) {
   assertContains(adminSession, required, "Admin session isolation missing: " + required);
 }
 assertAbsent(adminSession, "refresh_token", "Admin host session must not retain a Supabase refresh token.");
+assertAbsent(adminSession, "/rest/v1/rpc/is_admin", "Admin session verification must not depend on the legacy public is_admin RPC.");
+assertAbsent(adminApi, '"is_admin"', "Admin API must not redundantly call the legacy public is_admin RPC.");
+assertContains(entry, "/rest/v1/rpc/verify_admin_session", "Dashboard admin shortcut must use a live session-backed administrator check.");
+assertContains(aiGateway, '"verify_admin_session"', "Intelligence administrator routes must use live session-backed administrator checks.");
+assertContains(accessAudit, "/rest/v1/rpc/verify_admin_session", "Legacy access-audit verification must use the live administrator session check.");
 assertAbsent(adminHandoff, 'name="refresh_token"', "Main-to-admin handoff must not transfer a refresh token.");
 assertContains(adminHandoff, 'name="access_token"', "Main-to-admin handoff must transfer the short-lived access token.");
 assertContains(adminHandoff, 'new URL("/control/handoff"', "Admin session redirect must use the main-site control handoff.");
@@ -192,6 +201,33 @@ for (const [name, source, forbidden] of [
 assertContains(storageApi, 'usage_scope: "own-user-files"', "Product storage must stay current-account scoped.");
 assertContains(userLinksApi, 'scope: scope === "community" ? "community" : "own"', "Private product links must stay current-account scoped.");
 assertContains(summaryApi, 'scope: "own"', "Product summaries must stay current-account scoped.");
+
+for (const required of [
+  "create schema if not exists aertex_private",
+  "create or replace function aertex_private.verify_admin_session()",
+  "from auth.sessions s",
+  "create or replace function public.verify_admin_session()",
+  "security invoker",
+  "create or replace function aertex_private.admin_get_overview()",
+  "create or replace function aertex_private.admin_get_users()",
+  "create or replace function aertex_private.admin_get_role_permissions()",
+  "create or replace function aertex_private.admin_get_audit_logs(",
+  "create or replace function aertex_private.admin_update_user_role(",
+  "create or replace function aertex_private.admin_update_user_status(",
+  "create or replace function aertex_private.admin_update_role_permissions(",
+  "create or replace function aertex_private.admin_get_ai_state()",
+  "revoke execute on function public.is_admin() from public, anon, authenticated",
+  "drop function if exists public.admin_assert()"
+]) {
+  assertContains(migration, required, "Admin RPC hardening migration missing invariant: " + required);
+}
+for (const source of [adminWorker, adminSession, adminApi]) {
+  assertAbsent(source, "SUPABASE_SERVICE_ROLE_KEY", "Admin control plane must not carry a Supabase service-role key.");
+  assertAbsent(source, "SUPABASE_SECRET_KEY", "Admin control plane must not carry a Supabase secret key.");
+}
+assertAbsent(migration, "auth.jwt()->'app_metadata'->>'role'", "Administrator authority must not fall back to stale JWT role claims.");
+assertAbsent(migration, "auth.jwt()->'app_metadata'->>'is_admin'", "Administrator authority must not fall back to stale JWT admin claims.");
+
 
 
 console.log("AERTEX isolated admin control plane checks passed.");
