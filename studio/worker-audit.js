@@ -21,14 +21,14 @@ export default {
     let response;
 
     try {
-      const url = new URL(routedRequest.url);
+      const url = new URL(request.url);
       if (isMainHost(url.hostname) && url.pathname === ACCESS_AUDIT_API) {
-        response = await handleAccessAuditAdmin(routedRequest, env);
+        response = await handleAccessAuditAdmin(request, env);
       } else if (isMainHost(url.hostname) && ACCESS_AUDIT_PAGES.has(url.pathname)) {
-        const zh = url.pathname.startsWith("/zh-cn/") || (url.pathname === "/admin/access-audit" && /^zh(?:-|_|,|;|$)/i.test(routedRequest.headers.get("Accept-Language") || ""));
-        response = await handleAccessAuditPage(routedRequest, zh);
+        const zh = url.pathname.startsWith("/zh-cn/") || (url.pathname === "/admin/access-audit" && /^zh(?:-|_|,|;|$)/i.test(request.headers.get("Accept-Language") || ""));
+        response = await handleAccessAuditPage(request, zh);
       } else {
-        response = await worker.fetch(routedRequest, env, ctx);
+        response = await worker.fetch(request, env, ctx);
       }
     } catch (error) {
       scheduleAudit(ctx, request, new Response(null, { status: 500 }), env, startedAt, auditSource(request));
