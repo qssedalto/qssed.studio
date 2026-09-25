@@ -44,11 +44,13 @@ for (const required of [
 
 assert(!handoff.includes("access_token="), "GPT handoff must not place access tokens in a URL");
 assert(!handoff.includes("refresh_token="), "GPT handoff must not place refresh tokens in a URL");
+assert(handoff.includes('/c/huawei-exempt/'), "Main GPT handoff must preserve Huawei-exempt conversation aliases.");
 assert(session.includes('isServiceHost(hostname, "gpt")'), "Session gate must recognize GPT on every domain family");
 assert(session.includes("isolatedAppHost && !accountId"), "Isolated GPT session must require the domain-wide account marker");
 assert(authHandoff.includes('isServiceHost(hostname, "gpt")'), "Auth handoff must recognize GPT on every domain family");
 assert(authHandoff.includes('gptTarget ? "AERTEX Intelligence"'), "Auth handoff must render the AERTEX Intelligence product handoff");
 assert(authHandoff.includes('if (adminTarget) return candidateLocale === "zh" ? "/zh-cn/admin" : "/en/admin"'), "GPT handoff must preserve the administrator route safely");
+assert(authHandoff.includes('/c/huawei-exempt/'), "Auth handoff must preserve Huawei-exempt GPT conversation targets.");
 assert(authHandoff.includes('return candidateLocale === "zh" ? "/zh-cn" : "/en"'), "GPT handoff must constrain ordinary return paths to GPT locale roots");
 for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online","qsseda.online"],["gpt.qsseda.studio","qsseda.studio"]]) {
   assert(gptWrangler.routes?.some(route => route.pattern === `${host}/*` && route.zone_name === zone), `${host} exact Worker route must outrank the main-site wildcard route`);
@@ -56,6 +58,7 @@ for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online"
 }
 assert(!gpt.includes("canonicalGptAlias"), "GPT .online/.studio hosts must stay on their own domains");
 assert(gpt.includes('conversationRoute = pathname.match'), "GPT Worker must support per-conversation routes.");
+assert(gpt.includes('(?:huawei-exempt\\/)?'), "GPT Worker must accept Huawei-exempt conversation aliases.");
 assert(gpt.includes('loadGptBootstrap(request, env, gate, conversationId)'), "GPT Worker must bootstrap Intelligence data before first paint.");
 assert(gpt.includes('pathname.match(/^\\/share\\/'), "GPT Worker must expose explicit read-only share routes.");
 assert(gpt.includes("get_shared_ai_conversation"), "GPT Worker must load explicitly shared conversations through the public RPC.");
