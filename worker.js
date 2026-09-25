@@ -14,7 +14,6 @@ import { handleCuratedFavorites } from "./studio/favorites-api.js";
 import { handleRegistrationUsernameCheck } from "./studio/registration-check-api.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
 import { handleProfileApi } from "./studio/profile-api.js";
-import { handleAdminAccess, handleAdminAction } from "./studio/admin-api.js";
 import { isLegacyCookieApiPath, handleLegacyCookieApi } from "./studio/legacy-cookie-api.js";
 import { hardenGlobalBrowserResponse } from "./studio/global-browser-security.js";
 import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js";
@@ -31,6 +30,11 @@ import {
   handleMainGptHandoff,
   isMainGptHandoffPath
 } from "./studio/gpt-subdomain.js";
+import {
+  handleMainAdminHandoff,
+  isMainAdminHandoffPath
+} from "./studio/admin-subdomain.js";
+import { isMainHost } from "./studio/domain-family.js";
 
 const AUTH_ABUSE_PATHS = new Set([
   "/api/auth/login",
@@ -60,6 +64,7 @@ async function routeStudioRequest(request, env, ctx) {
 
   if (!workHost && isMainWorkHandoffPath(pathname)) return handleMainWorkHandoff(request);
   if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);
+  if (!workHost && isMainAdminHandoffPath(pathname)) return handleMainAdminHandoff(request);
 
   if (!workHost) {
     const workTarget = mainWorkRedirect(request, pathname);
@@ -100,14 +105,8 @@ async function routeStudioRequest(request, env, ctx) {
   if (pathname.startsWith("/api/work/")) return handleWorkApi(request, env, pathname.slice("/api/work/".length));
   if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
   if (pathname === "/api/auth/username-check") return handleRegistrationUsernameCheck(request, env);
-  if (pathname === "/api/admin/access") {
-    if (request.method !== "GET") return methodNotAllowed();
-    return handleAdminAccess(request);
-  }
-  if (pathname.startsWith("/api/admin/")) {
-    const action = pathname.slice("/api/admin/".length);
-    return handleAdminAction(request, env, action);
-  }
+  if (isMainHost(url.hostname) && isLegacyAdminSurface(pathname)) return notFound();
+
   if (pathname.startsWith("/api/account/")) {
     const action = pathname.slice("/api/account/".length);
     return handleAccountSecurity(request, action);
@@ -184,6 +183,29 @@ async function digest(value) {
 
 function redirect(location) {
   return new Response(null, { status: 302, headers: { location, "cache-control": "no-store", "referrer-policy": "no-referrer" } });
+}
+
+function isLegacyAdminSurface(pathname) {
+  return pathname === "/admin"
+    || pathname.startsWith("/admin/")
+    || pathname === "/zh-cn/admin"
+    || pathname.startsWith("/zh-cn/admin/")
+    || pathname === "/en/admin"
+    || pathname.startsWith("/en/admin/")
+    || pathname === "/api/admin"
+    || pathname.startsWith("/api/admin/");
+}
+
+function notFound() {
+  return new Response("Not found.", {
+    status: 404,
+    headers: {
+      "content-type": "text/plain;charset=UTF-8",
+      "cache-control": "private, no-store",
+      "x-content-type-options": "nosniff",
+      "x-robots-tag": "noindex, nofollow, noarchive, nosnippet"
+    }
+  });
 }
 
 function methodNotAllowed() {
