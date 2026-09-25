@@ -1,4 +1,6 @@
 import { authOriginForRequest, isServiceHost, rootDomainForHost } from "./domain-family.js";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
+import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 
 const DETECTION_RE = /(HarmonyOS|OpenHarmony|HuaweiBrowser|HUAWEI)/i;
 const DEVICE_ROUTE_MARKER = "huawei-exempt";
@@ -19,7 +21,75 @@ export async function huaweiHarmonyGate(request) {
   }
 
   if (!isHuaweiOrHarmonyRequest(request)) return null;
-  return renderHuaweiUnsupportedPage(request);
+
+  const accountExemption = await huaweiAccountExemption(request);
+  if (accountExemption.authorized) {
+    return grantHuaweiExemptionFromAccount(request, accountExemption.cookies);
+  }
+
+  const blocked = renderHuaweiUnsupportedPage(request, {
+    signedIn: accountExemption.signedIn,
+    authorized: false
+  });
+  return withStudioSessionCookies(blocked, accountExemption.cookies);
+}
+
+async function huaweiAccountExemption(request) {
+  let session;
+  try {
+    session = await verifyStudioPageSession(request);
+  } catch {
+    return { authorized: false, signedIn: false, cookies: [] };
+  }
+
+  const cookies = Array.isArray(session?.cookies) ? session.cookies : [];
+  if (!session?.ok || !session?.user?.id || !session?.accessToken) {
+    return { authorized: false, signedIn: false, cookies };
+  }
+
+  try {
+    const url = new URL(SUPABASE_URL + "/rest/v1/device_access_exemptions");
+    url.searchParams.set("select", "enabled,expires_at");
+    url.searchParams.set("user_id", "eq." + session.user.id);
+    url.searchParams.set("policy", "eq.huawei_device");
+    url.searchParams.set("limit", "1");
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: "Bearer " + session.accessToken,
+        Accept: "application/json"
+      }
+    });
+    if (!response.ok) return { authorized: false, signedIn: true, cookies };
+
+    const rows = await response.json().catch(() => []);
+    const row = Array.isArray(rows) ? rows[0] : null;
+    const active = row?.enabled === true
+      && (!row?.expires_at || Date.parse(row.expires_at) > Date.now());
+
+    return { authorized: active, signedIn: true, cookies };
+  } catch {
+    return { authorized: false, signedIn: true, cookies };
+  }
+}
+
+function grantHuaweiExemptionFromAccount(request, sessionCookies = []) {
+  let location = "/";
+  try {
+    const url = new URL(request.url);
+    location = url.pathname + url.search;
+  } catch {}
+
+  const headers = new Headers({
+    location,
+    "cache-control": "no-store",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff"
+  });
+  headers.append("set-cookie", huaweiExemptionCookie(request));
+  for (const value of sessionCookies) headers.append("set-cookie", value);
+  return new Response(null, { status: 302, headers });
 }
 
 function shouldAutoApplyExemptionRoute(request) {
@@ -389,8 +459,20 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function renderHuaweiUnsupportedPage(request) {
+function renderHuaweiUnsupportedPage(request, options = {}) {
   const verifyHref = escapeHtml(exemptionVerificationUrl(request));
+  const signedIn = Boolean(options.signedIn);
+  const exemptionCopy = signedIn
+    ? {
+        title: "当前 AERTEX ID 未获得访问豁免",
+        body: "你已经登录 AERTEX ID，但当前账号没有华为 / HarmonyOS 设备访问豁免。如需继续，请使用另一个已获授权的 AERTEX ID。",
+        button: "使用其他 AERTEX ID 验证"
+      }
+    : {
+        title: "拥有访问豁免？",
+        body: "如果管理员已为您的 AERTEX ID 授予设备访问豁免，可验证身份后继续。",
+        button: "使用 AERTEX ID 验证"
+      };
   const markup = `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -453,9 +535,9 @@ function renderHuaweiUnsupportedPage(request) {
   <p class="lead">本站目前暂未适配华为手机、鸿蒙系统及相关运行环境。</p>
   <p class="notice">需要明确说明：本站没有适配华为设备的义务。</p>
   <section class="exemption" aria-labelledby="exemption-title">
-    <h2 id="exemption-title">拥有访问豁免？</h2>
-    <p>如果管理员已为您的 AERTEX ID 授予设备访问豁免，可验证身份后继续。</p>
-    <a class="verify-button" href="${verifyHref}">使用 AERTEX ID 验证</a>
+    <h2 id="exemption-title">${escapeHtml(exemptionCopy.title)}</h2>
+    <p>${escapeHtml(exemptionCopy.body)}</p>
+    <a class="verify-button" href="${verifyHref}">${escapeHtml(exemptionCopy.button)}</a>
   </section>
   <section class="card" aria-labelledby="why">
     <h2 id="why">关于“为什么不适配”</h2>
