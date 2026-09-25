@@ -16,7 +16,7 @@ function routeAliasRequest(request) {
   try {
     if (request.method !== "GET" && request.method !== "HEAD") return null;
     const url = new URL(request.url);
-    if (!isMainHost(url.hostname)) return null;
+    if (!isMainHost(url.hostname) && !isServiceHost(url.hostname, "work")) return null;
 
     const segments = url.pathname.split("/").filter(Boolean);
     if (segments.length < 2) return null;
