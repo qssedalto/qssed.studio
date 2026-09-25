@@ -2,7 +2,7 @@ export function curatedLinksAccountContent(zh) {
   const copy = zh ? {
     add: "新增链接",
     title: "新建收藏链接",
-    intro: "你创建的链接只对当前账号和管理员可见，其他普通用户无法读取。",
+    intro: "你创建的私人链接默认仅属于当前账号。",
     name: "名称",
     namePlaceholder: "例如：OpenAI API 文档",
     url: "链接地址",
@@ -14,9 +14,7 @@ export function curatedLinksAccountContent(zh) {
     create: "创建链接",
     creating: "正在创建…",
     mine: "我的链接",
-    admin: "用户创建的链接",
-    mineHint: "只有你和管理员可以看到这些内容。",
-    adminHint: "管理员视图：这里显示所有用户创建的私人链接。",
+    mineHint: "这里仅显示当前账号创建的私人链接。",
     empty: "还没有账号私人链接",
     owner: "创建者",
     me: "我创建的",
@@ -26,7 +24,7 @@ export function curatedLinksAccountContent(zh) {
   } : {
     add: "Add link",
     title: "Create saved link",
-    intro: "Links you create are visible only to your account and administrators. Other regular users cannot read them.",
+    intro: "Private links you create belong only to the current account by default.",
     name: "Name",
     namePlaceholder: "For example: OpenAI API docs",
     url: "URL",
@@ -38,9 +36,7 @@ export function curatedLinksAccountContent(zh) {
     create: "Create link",
     creating: "Creating…",
     mine: "My links",
-    admin: "User-created links",
-    mineHint: "Only you and administrators can see these links.",
-    adminHint: "Administrator view: all private links created by users.",
+    mineHint: "This area shows private links created by the current account only.",
     empty: "No private account links yet",
     owner: "Created by",
     me: "Created by me",
@@ -112,7 +108,6 @@ export function curatedLinksAccountContent(zh) {
         const stats = overview?.querySelector('.curated-links-stats');
         const categoryFilter = document.getElementById('curated-link-category');
         let session = null;
-        let isAdmin = false;
 
         if (overview && action) {
           action.style.display = 'contents';
@@ -143,8 +138,8 @@ export function curatedLinksAccountContent(zh) {
             card.innerHTML = '<div class="curated-link-card-top"><strong>' + esc(link.title) + '</strong><span aria-hidden="true">↗</span></div><p>' + esc(link.description || '') + '</p><div class="curated-link-meta"><span class="account-link-owner">' + esc(ownerText) + '</span><code>' + esc(hostname(link.url)) + '</code></div>';
             grid.append(card);
           }
-          title.textContent = isAdmin ? ${JSON.stringify(copy.admin)} : ${JSON.stringify(copy.mine)};
-          hint.textContent = isAdmin ? ${JSON.stringify(copy.adminHint)} : ${JSON.stringify(copy.mineHint)};
+          title.textContent = ${JSON.stringify(copy.mine)};
+          hint.textContent = ${JSON.stringify(copy.mineHint)};
           count.textContent = String(links.length);
           empty.textContent = ${JSON.stringify(copy.empty)};
           empty.hidden = links.length > 0;
@@ -158,7 +153,6 @@ export function curatedLinksAccountContent(zh) {
             const response = await fetch('/api/user-links', { headers: { ...authHeaders(), Accept: 'application/json' }, cache: 'no-store' });
             if (!response.ok) throw new Error('HTTP ' + response.status);
             const payload = await response.json();
-            isAdmin = payload.is_admin === true;
             render(Array.isArray(payload.links) ? payload.links : []);
           } catch (error) {
             console.error('Account links load failed', error);
