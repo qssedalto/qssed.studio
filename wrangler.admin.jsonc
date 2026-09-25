@@ -18,6 +18,9 @@
   "r2_buckets": [
     { "binding": "STORAGE", "bucket_name": "qsseda-studio-storage" }
   ],
+  "services": [
+    { "binding": "GPT_CONTROL", "service": "qsseda-gpt" }
+  ],
   "routes": [
     { "pattern": "admin.qsseda.com/*", "zone_name": "qsseda.com" },
     { "pattern": "admin.qsseda.com", "custom_domain": true },
