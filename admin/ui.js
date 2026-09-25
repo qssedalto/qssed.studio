@@ -3,6 +3,8 @@ const NAV = [
   ["/users", "Users", "US"],
   ["/roles", "Roles & permissions", "RL"],
   ["/access", "Access control", "AC"],
+  ["/content", "Content", "CT"],
+  ["/storage", "Storage", "ST"],
   ["/intelligence", "Intelligence", "AI"],
   ["/logs", "Audit logs", "LG"],
   ["/system", "System", "SY"]
@@ -137,6 +139,8 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     "/roles":["Roles & permissions","Administrative role and permission matrix."],
     "/logs":["Audit logs","Administrative and account-change audit events."],
     "/access":["Access control","Device exemptions and access-audit telemetry."],
+    "/content":["Content","Cross-account summaries and private-link administration, isolated from user products."],
+    "/storage":["Storage","Cross-account R2 user-file inventory and administrative file operations."],
     "/intelligence":["Intelligence","Provider, model, and user-access administration."],
     "/system":["System","Control-plane health and deployment context."]
   };
@@ -182,6 +186,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   }
   const num=value=>{const text=String(value??"").trim();if(!text)return null;const number=Number(text);return Number.isFinite(number)?number:null};
   const intOrNull=value=>{const number=num(value);return number==null?null:Math.max(0,Math.trunc(number))};
+  const bytes=value=>{let n=Number(value)||0;const units=["B","KB","MB","GB","TB"];let i=0;while(n>=1024&&i<units.length-1){n/=1024;i++}return n.toLocaleString(undefined,{maximumFractionDigits:i?1:0})+" "+units[i]};
   function errorView(error){view.innerHTML='<div class="section"><div class="state">Control-plane request failed: '+esc(error?.message||error)+'</div></div>'}
 
   async function overview(){
@@ -272,6 +277,66 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       }catch(error){alert(error.message)}
     });
   }
+  async function content(){
+    const [summaries,links]=await Promise.all([
+      get("/api/admin/content/summaries"),
+      get("/api/admin/content/links")
+    ]);
+    const summaryRows=(summaries.rows||[]).map(row=>({
+      owner:row.owner_label||row.owner_id,
+      title:row.title||"—",
+      source:row.source||"—",
+      tags:row.tags||"—",
+      updated_at:row.updated_at||"—"
+    }));
+    const linkRows=Array.isArray(links.rows)?links.rows:[];
+    view.innerHTML=objCards({summaries:summaries.count||0,private_links:linkRows.filter(row=>!row.community).length,community_links:linkRows.filter(row=>row.community).length})+
+      '<section class="section"><div class="sectionHead"><h2>User summaries</h2><span class="mono">'+summaryRows.length+' records</span></div>'+table(summaryRows)+'</section>'+
+      '<section class="section"><div class="sectionHead"><h2>User-created links</h2><span class="mono">'+linkRows.length+' records</span></div><div class="tableWrap"><table><thead><tr><th>Owner</th><th>Title</th><th>URL</th><th>Scope</th><th>Updated</th><th>Actions</th></tr></thead><tbody>'+
+      linkRows.map(row=>'<tr data-link-owner="'+esc(row.owner_id)+'" data-link-id="'+esc(row.id)+'"><td>'+esc(row.owner_label||row.owner_id)+'</td><td>'+esc(row.title||"—")+'</td><td class="mono">'+esc(row.url||"—")+'</td><td><span class="badge '+(row.community?"ok":"")+'">'+(row.community?"community":"private")+'</span></td><td class="mono">'+esc(row.updated_at||"—")+'</td><td><div class="inline"><button class="btn toggleLinkScope" type="button">'+(row.community?"Make private":"Publish")+'</button><button class="btn danger deleteLink" type="button">Delete</button></div></td></tr>').join('')+
+      '</tbody></table></div><div class="feedback" id="contentFeedback"></div></section>';
+
+    document.querySelectorAll(".toggleLinkScope").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-link-owner]");if(!row)return;
+      const item=linkRows.find(link=>link.owner_id===row.dataset.linkOwner&&link.id===row.dataset.linkId);if(!item)return;
+      button.disabled=true;
+      try{
+        await requestJson("/api/admin/content/link?owner="+encodeURIComponent(item.owner_id)+"&id="+encodeURIComponent(item.id),{
+          method:"PUT",headers:{"content-type":"application/json;charset=UTF-8"},
+          body:JSON.stringify({title:item.title,url:item.url,category:item.category,description:item.description,community:!item.community})
+        });
+        await content();
+      }catch(error){const feedback=document.getElementById("contentFeedback");if(feedback){feedback.textContent=error.message;feedback.className="feedback bad"}button.disabled=false}
+    }));
+    document.querySelectorAll(".deleteLink").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-link-owner]");if(!row)return;
+      const item=linkRows.find(link=>link.owner_id===row.dataset.linkOwner&&link.id===row.dataset.linkId);if(!item||!confirm("Delete link "+(item.title||item.id)+"?"))return;
+      button.disabled=true;
+      try{
+        await requestJson("/api/admin/content/link?owner="+encodeURIComponent(item.owner_id)+"&id="+encodeURIComponent(item.id),{method:"DELETE"});
+        await content();
+      }catch(error){const feedback=document.getElementById("contentFeedback");if(feedback){feedback.textContent=error.message;feedback.className="feedback bad"}button.disabled=false}
+    }));
+  }
+
+  async function storage(){
+    const result=await get("/api/admin/storage/files");
+    const rows=Array.isArray(result.rows)?result.rows:[];
+    view.innerHTML=objCards({files:result.count||0,used:bytes(result.used_bytes||0),partial:result.partial?"yes":"no"})+
+      '<section class="section"><div class="sectionHead"><h2>User files</h2><span class="mono">'+rows.length+' records</span></div><div class="tableWrap"><table><thead><tr><th>Owner</th><th>Name</th><th>Type</th><th>Size</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>'+
+      rows.map(row=>'<tr data-storage-ref="'+esc(row.reference)+'"><td>'+esc(row.owner_label||row.owner_id)+'</td><td>'+esc(row.name||"file")+'<br><span class="mono">'+esc(row.reference)+'</span></td><td class="mono">'+esc(row.content_type||"application/octet-stream")+'</td><td>'+esc(bytes(row.size))+'</td><td class="mono">'+esc(row.uploaded_at||"—")+'</td><td><div class="inline"><a class="btn" href="/api/admin/storage/object?id='+encodeURIComponent(row.reference)+'">Download</a><button class="btn danger deleteStorage" type="button">Delete</button></div></td></tr>').join('')+
+      '</tbody></table></div><div class="feedback" id="storageFeedback"></div></section>';
+
+    document.querySelectorAll(".deleteStorage").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-storage-ref]");const ref=row?.dataset.storageRef;if(!ref||!confirm("Delete storage object "+ref+"?"))return;
+      button.disabled=true;
+      try{
+        await requestJson("/api/admin/storage/object?id="+encodeURIComponent(ref),{method:"DELETE"});
+        await storage();
+      }catch(error){const feedback=document.getElementById("storageFeedback");if(feedback){feedback.textContent=error.message;feedback.className="feedback bad"}button.disabled=false}
+    }));
+  }
+
   async function intelligence(){
     const state=await get("/api/admin/ai/state?fast=1");
     const providers=Array.isArray(state.providers)?state.providers:[];
@@ -360,7 +425,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     view.innerHTML=objCards({service:health.service||"admin",status:health.status||"unknown",origin:health.origin||location.origin,time:health.time||"—"})+
       '<section class="section"><div class="sectionHead"><h2>Control plane</h2></div><pre>'+esc(JSON.stringify({health,overview:overviewResult.data||{}},null,2))+'</pre></section>';
   }
-  const loaders={"/":overview,"/users":users,"/roles":roles,"/logs":logs,"/access":access,"/intelligence":intelligence,"/system":system};
+  const loaders={"/":overview,"/users":users,"/roles":roles,"/logs":logs,"/access":access,"/content":content,"/storage":storage,"/intelligence":intelligence,"/system":system};
   async function load(){view.innerHTML='<div class="state">Loading control-plane data…</div>';try{await (loaders[route]||overview)()}catch(error){errorView(error)}}
   document.getElementById("refresh")?.addEventListener("click",()=>void load());
   document.getElementById("logout")?.addEventListener("click",async()=>{
