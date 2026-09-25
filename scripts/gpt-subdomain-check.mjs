@@ -13,6 +13,8 @@ const authHandoff = read("studio/auth-handoff.js");
 const gptWrangler = JSON.parse(read("wrangler.gpt.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 const aiGateway = read("studio/ai-gateway.js");
 const huaweiGate = read("studio/huawei-harmony-gate.js");
+const adminApi = read("studio/admin-api.js");
+const deviceExemptionMigration = read("supabase/migrations/202609251510_huawei_device_access_exemptions.sql");
 
 for (const required of [
   'verifyStudioPageSession(request)',
@@ -68,6 +70,14 @@ assert(huaweiGate.includes("EXEMPTION_COOKIE"), "Huawei exemption verification m
 assert(huaweiGate.includes("HttpOnly"), "Huawei exemption grant cookie must not be readable by page JavaScript.");
 assert(huaweiGate.includes("shouldAutoApplyExemptionRoute(request)"), "Huawei exemption grant must automatically add the exemption route on future page visits.");
 assert(huaweiGate.includes("redirectToHuaweiExemptionRoute(request)"), "Huawei exemption grant must redirect ordinary page URLs into the exemption route.");
+assert(huaweiGate.includes("device_access_exemptions"), "Huawei gate must check account-based device exemptions.");
+assert(huaweiGate.includes("verifyStudioPageSession(request)"), "Huawei account exemption checks must use the authenticated AERTEX session.");
+assert(huaweiGate.includes("grantHuaweiExemptionFromAccount"), "Authorized AERTEX IDs must receive a persistent Huawei exemption grant without another login.");
+assert(huaweiGate.includes('/gpt/handoff?next='), "Huawei ID verification from Intelligence must preserve the GPT return target.");
+assert(huaweiGate.includes('/work/handoff?next='), "Huawei ID verification from Work must preserve the Work return target.");
+assert(adminApi.includes('"device-exemption"'), "Admin API must expose device exemption grant and revoke controls.");
+assert(deviceExemptionMigration.includes("enable row level security"), "Device exemption records must remain protected by RLS.");
+assert(deviceExemptionMigration.includes("device exemption own or admin read"), "Users may only read their own device exemption record unless they are administrators.");
 assert(gpt.includes("normalizeHuaweiExemptPath"), "Auto-applied Huawei exemption routes must normalize back to Intelligence routes internally.");
 assert(huaweiGate.includes('url.pathname === "/gpt/handoff"'), "Huawei gate must allow the GPT handoff transport.");
 assert(huaweiGate.includes('url.pathname === "/zh-cn/gpt/handoff"'), "Huawei gate must allow the localized GPT handoff transport.");
