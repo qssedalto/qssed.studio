@@ -125,7 +125,7 @@ export async function handleAiApi(request, env, session) {
 export async function handleAiAdminApi(request, env, session) {
   const requestUrl = new URL(request.url);
   const path = requestUrl.pathname;
-  const admin = await rpc(session, "is_admin", {});
+  const admin = await rpc(session, "verify_admin_session", {});
   if (!admin.ok || admin.data !== true) return json({ error: "Administrator access required." }, 403);
 
   if (path === "/api/ai/admin/me" && request.method === "GET") {
