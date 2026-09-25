@@ -439,11 +439,28 @@ export function isHuaweiOrHarmonyRequest(request) {
   return DETECTION_RE.test(fingerprint);
 }
 
-function exemptionVerificationUrl(request) {
+function exemptionVerificationUrl(request, forceAccountSwitch = false) {
   try {
     const current = new URL(request.url);
-    const target = new URL("/continue", authOriginForRequest(request));
-    target.searchParams.set("next", current.pathname + current.search);
+    const currentPath = current.pathname + current.search;
+    const locale = current.pathname === "/en" || current.pathname.startsWith("/en/") ? "en" : "zh-cn";
+
+    let returnPath = currentPath;
+    if (isServiceHost(current.hostname, "gpt")) {
+      returnPath = `/${locale}/gpt/handoff?next=${encodeURIComponent(currentPath)}`;
+    } else if (isServiceHost(current.hostname, "work")) {
+      returnPath = `/${locale}/work/handoff?next=${encodeURIComponent(currentPath)}`;
+    }
+
+    const authOrigin = authOriginForRequest(request);
+    if (forceAccountSwitch) {
+      const logout = new URL("/logout", authOrigin);
+      logout.searchParams.set("next", "/continue?next=" + encodeURIComponent(returnPath));
+      return logout.toString();
+    }
+
+    const target = new URL("/continue", authOrigin);
+    target.searchParams.set("next", returnPath);
     return target.toString();
   } catch {
     return "https://auth.qsseda.com/continue";
@@ -460,8 +477,8 @@ function escapeHtml(value) {
 }
 
 function renderHuaweiUnsupportedPage(request, options = {}) {
-  const verifyHref = escapeHtml(exemptionVerificationUrl(request));
   const signedIn = Boolean(options.signedIn);
+  const verifyHref = escapeHtml(exemptionVerificationUrl(request, signedIn));
   const exemptionCopy = signedIn
     ? {
         title: "当前 AERTEX ID 未获得访问豁免",
