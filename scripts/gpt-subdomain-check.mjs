@@ -72,7 +72,9 @@ assert(huaweiGate.includes("shouldAutoApplyExemptionRoute(request)"), "Huawei ex
 assert(huaweiGate.includes("redirectToHuaweiExemptionRoute(request)"), "Huawei exemption grant must redirect ordinary page URLs into the exemption route.");
 assert(huaweiGate.includes("device_access_exemptions"), "Huawei gate must check account-based device exemptions.");
 assert(huaweiGate.includes("verifyStudioPageSession(request)"), "Huawei account exemption checks must use the authenticated AERTEX session.");
-assert(huaweiGate.includes("grantHuaweiExemptionFromAccount"), "Authorized AERTEX IDs must receive a persistent Huawei exemption grant without another login.");
+assert(!huaweiGate.includes("grantHuaweiExemptionFromAccount"), "AERTEX ID exemptions must remain separate from the route-code exemption system.");
+assert(huaweiGate.includes("hasDomainAccountMarker(request)"), "Existing AERTEX ID sessions must be restored silently across product subdomains.");
+assert(huaweiGate.includes("authorizedAccountSessionRefreshResponse"), "Authorized AERTEX IDs must continue through the normal route without receiving the route-code exemption.");
 assert(huaweiGate.includes('/gpt/handoff?next='), "Huawei ID verification from Intelligence must preserve the GPT return target.");
 assert(huaweiGate.includes('/work/handoff?next='), "Huawei ID verification from Work must preserve the Work return target.");
 assert(adminApi.includes('"device-exemption"'), "Admin API must expose device exemption grant and revoke controls.");
