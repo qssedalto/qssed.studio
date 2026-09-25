@@ -2,10 +2,13 @@ import { authOriginForRequest, isServiceHost } from "./domain-family.js";
 
 const DETECTION_RE = /(HarmonyOS|OpenHarmony|HuaweiBrowser|HUAWEI)/i;
 const DEVICE_ROUTE_MARKER = "huawei-exempt";
+const PREVIEW_ROUTE = "/hw";
+
 export function huaweiHarmonyGate(request) {
   if (hasDeviceRouteMarker(request)) return null;
+  if (isExplicitPreviewRequest(request)) return renderHuaweiUnsupportedPage(request);
   if (isExemptionVerificationTransport(request)) return null;
-  if (!isHuaweiOrHarmonyRequest(request) && !isExplicitTestRequest(request)) return null;
+  if (!isHuaweiOrHarmonyRequest(request)) return null;
   return renderHuaweiUnsupportedPage(request);
 }
 
@@ -28,10 +31,12 @@ function isExemptionVerificationTransport(request) {
   }
 }
 
-function isExplicitTestRequest(request) {
+function isExplicitPreviewRequest(request) {
   try {
+    if (request?.method && request.method !== "GET" && request.method !== "HEAD") return false;
     const url = new URL(request.url);
-    return url.pathname === "/__test/huawei-device-gate";
+    const pathname = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : url.pathname;
+    return pathname === "/__test/huawei-device-gate" || pathname.toLowerCase() === PREVIEW_ROUTE;
   } catch {
     return false;
   }
