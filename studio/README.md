@@ -50,7 +50,7 @@ Phase 4D originally extracted clearly bounded product CSS. After the administrat
 
 Phase 4E is complete. It removed the unused `json` routing import and non-runtime historical/browser-saved snapshots while retaining the top-level Supabase baseline SQL because the incremental migration chain still assumes those baseline objects exist. Phase 4 is now closed; future structural work should start from a concrete requirement rather than file size alone.
 
-Administrator authorization is no longer shell-owned. Studio contains no administrator page routes or administrator client runtime; `admin.qsseda.com` establishes a separate short-lived host-only control-plane session after the server verifies `is_admin`.
+Administrator authorization is no longer shell-owned. Studio contains no administrator page routes or administrator client runtime; `admin.qsseda.com` establishes a separate short-lived host-only control-plane session only after the server verifies the current database role/status and a live matching Supabase Auth session. Privileged database implementations live in the non-exposed `aertex_private` schema while public administrator RPC names are thin `SECURITY INVOKER` wrappers.
 
 Detailed boundaries:
 
