@@ -20,7 +20,7 @@ export default {
     if (deviceGate) return deviceGate;
 
     const url = new URL(request.url);
-    const pathname = normalizePath(url.pathname);
+    const pathname = normalizeHuaweiExemptPath(normalizePath(url.pathname));
     const intelligenceTheme = intelligenceThemeFromRequest(request);
 
     if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
@@ -437,6 +437,17 @@ function preferredLocale(request) {
 function normalizePath(pathname) {
   if (!pathname || pathname === "/") return "/";
   return pathname.replace(/\/+$/, "") || "/";
+}
+
+function normalizeHuaweiExemptPath(pathname) {
+  const segments = String(pathname || "/").split("/").filter(Boolean);
+  if (segments.length < 2) return pathname || "/";
+
+  const markerIndex = segments.length - 2;
+  if (String(segments[markerIndex] || "").toLowerCase() !== "huawei-exempt") return pathname || "/";
+
+  segments.splice(markerIndex, 1);
+  return "/" + segments.join("/");
 }
 
 function securityHeaders(contentType) {
