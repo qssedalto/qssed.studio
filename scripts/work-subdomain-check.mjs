@@ -19,6 +19,7 @@ assert(worker.includes("mapped.canonical"), "Work aliases must redirect to local
 assert(worker.includes("suppressWorkClientSessionBounce"), "Authenticated Work HTML must suppress the main-site origin-local session bounce");
 assert(worker.includes('markup.replace(\n    "    hydrateOsUser();"'), "Work suppression must target the inherited main-site hydrateOsUser call only");
 assert(worker.includes("server-side host-only session gate"), "Work session suppression must document that the server-side gate remains authoritative");
+assert(workAuditWrapper.includes('isServiceHost(url.hostname, "work")'), "Huawei exemption aliases must normalize on the Work custom domain.");
 
 for (const required of [
   'workOriginForRequest(request)',
