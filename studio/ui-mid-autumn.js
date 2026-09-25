@@ -17,7 +17,7 @@ export function midAutumnPage(locale = "zh") {
   const openingAction = zh ? "打开祝福" : "Open the wish";
   const openingLoading = zh ? "正在展开月光…" : "Unfolding the moonlight…";
   const otherHref = zh ? "/en/mid-autumn" : "/zh-cn/mid-autumn";
-  const otherLabel = zh ? "EN" : "ZH";
+  const otherLabel = zh ? "ZH" : "EN";
 
   return `<!doctype html>
 <html lang="${lang}">
@@ -501,9 +501,11 @@ export function midAutumnPage(locale = "zh") {
     }
     .stage-copy p{
       margin:16px 0 0;
-      color:rgba(255,248,226,.7);
-      font-size:clamp(14px,2vw,20px);
-      letter-spacing:.08em;
+      color:rgba(255,249,232,.92);
+      font-size:clamp(15px,2.1vw,20px);
+      font-weight:600;
+      letter-spacing:.075em;
+      text-shadow:0 2px 18px rgba(0,0,0,.48);
     }
     .lantern{
       position:absolute;
@@ -634,7 +636,7 @@ export function midAutumnPage(locale = "zh") {
       .stage-moon{width:min(78vw,370px);top:38%}
       .stage-copy{top:65%;padding:0 12px}
       .stage-title{font-size:clamp(44px,15vw,72px)}
-      .stage-copy p{font-size:13px}
+      .stage-copy p{font-size:15px;font-weight:620;color:rgba(255,249,232,.94)}
       .stage-controls{width:100%;justify-content:center}
       .opening-card{min-height:300px;padding:30px 22px 26px;border-radius:28px}
       .letter-mark{width:78px;height:60px}
