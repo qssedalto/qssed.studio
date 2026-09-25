@@ -12,6 +12,7 @@ const session = read("studio/session-gate.js");
 const authHandoff = read("studio/auth-handoff.js");
 const gptWrangler = JSON.parse(read("wrangler.gpt.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 const aiGateway = read("studio/ai-gateway.js");
+const huaweiGate = read("studio/huawei-harmony-gate.js");
 
 for (const required of [
   'verifyStudioPageSession(request)',
@@ -59,6 +60,8 @@ for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online"
 assert(!gpt.includes("canonicalGptAlias"), "GPT .online/.studio hosts must stay on their own domains");
 assert(gpt.includes('conversationRoute = pathname.match'), "GPT Worker must support per-conversation routes.");
 assert(gpt.includes('(?:huawei-exempt\\/)?'), "GPT Worker must accept Huawei-exempt conversation aliases.");
+assert(huaweiGate.includes('url.pathname === "/gpt/handoff"'), "Huawei gate must allow the GPT handoff transport.");
+assert(huaweiGate.includes('url.pathname === "/zh-cn/gpt/handoff"'), "Huawei gate must allow the localized GPT handoff transport.");
 assert(gpt.includes('loadGptBootstrap(request, env, gate, conversationId)'), "GPT Worker must bootstrap Intelligence data before first paint.");
 assert(gpt.includes('pathname.match(/^\\/share\\/'), "GPT Worker must expose explicit read-only share routes.");
 assert(gpt.includes("get_shared_ai_conversation"), "GPT Worker must load explicitly shared conversations through the public RPC.");
