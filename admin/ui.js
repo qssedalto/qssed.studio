@@ -148,6 +148,26 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
 
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const scalar=v=>v==null?"—":typeof v==="object"?JSON.stringify(v):String(v);
+  const FIELD_LABELS={
+    id:"ID",user_id:"用户 ID",display_name:"显示名称",username:"用户名",email:"邮箱",role:"角色",status:"状态",
+    last_sign_in_at:"最近登录",last_seen_at:"最近活动",created_at:"创建时间",updated_at:"更新时间",
+    owner:"所有者",owner_id:"所有者 ID",owner_label:"所有者",title:"标题",source:"来源",tags:"标签",
+    url:"URL",scope:"范围",category:"分类",description:"说明",community:"社区公开",reference:"文件标识",
+    name:"名称",content_type:"文件类型",size:"大小",uploaded_at:"上传时间",enabled:"启用",expires_at:"到期时间",
+    note:"备注",ip:"IP",user_agent:"设备信息",action:"操作",resource_type:"资源类型",resource_id:"资源 ID",
+    event_type:"事件类型",success:"成功",result:"结果",reason:"原因",timestamp:"时间",time:"时间",
+    service:"服务",origin:"来源",files:"文件数",used:"已用空间",partial:"部分结果",summaries:"摘要数",
+    private_links:"私有链接",community_links:"社区链接",providers:"服务商",users:"用户数",
+    active_providers:"启用服务商",count:"数量",total:"总数",active:"正常",suspended:"已暂停",banned:"已封禁"
+  };
+  const fieldLabel=key=>FIELD_LABELS[String(key)]||String(key);
+  const roleLabel=value=>({admin:"管理员",editor:"编辑者",user:"普通用户"}[String(value)]||String(value));
+  const permissionLabel=value=>({
+    "users.read":"查看用户","users.update":"修改用户","users.ban":"暂停或封禁用户",
+    "roles.read":"查看角色与权限","roles.update":"修改角色权限","logs.read":"查看操作日志",
+    "system.read":"查看系统状态","notes.read":"查看笔记","notes.create":"创建笔记","notes.update":"修改笔记","notes.delete":"删除笔记",
+    "links.read":"查看链接","links.create":"创建链接","links.update":"修改链接","links.delete":"删除链接"
+  }[String(value)]||String(value));
   async function post(path,body={}){
     const r=await fetch(path,{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"content-type":"application/json;charset=UTF-8",accept:"application/json"},body:JSON.stringify(body)});
     const data=await r.json().catch(()=>({}));
@@ -175,7 +195,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const list=Array.isArray(rows)?rows:[];
     if(!list.length)return '<div class="state">No records.</div>';
     const cols=[...new Set(list.flatMap(row=>Object.keys(row||{})))].slice(0,12);
-    return '<div class="tableWrap"><table><thead><tr>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+
+    return '<div class="tableWrap"><table><thead><tr>'+cols.map(c=>'<th>'+esc(fieldLabel(c))+'</th>').join('')+'</tr></thead><tbody>'+
       list.map(row=>'<tr>'+cols.map(c=>'<td class="'+(/id|uuid|time|date|email|ip/i.test(c)?"mono":"")+'">'+esc(scalar(row?.[c]))+'</td>').join('')+'</tr>').join('')+
       '</tbody></table></div>';
   }
@@ -231,8 +251,8 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const assigned=Array.isArray(data.role_permissions)?data.role_permissions:[];
     const selectedByRole=new Map(roles.map(role=>[role.name,new Set(assigned.filter(item=>item.role===role.name).map(item=>item.permission))]));
     view.innerHTML='<section class="section"><div class="sectionHead"><h2>Permission matrix</h2><span class="mono">'+permissions.length+' permissions</span></div><div class="permissionGrid">'+
-      roles.map(role=>'<article class="permissionRole" data-role="'+esc(role.name)+'"><div class="permissionRoleHead"><div><strong>'+esc(role.name)+'</strong><br><span class="mono">'+esc((data.user_counts||{})[role.name]??0)+' users</span></div><button class="btn saveRole" type="button">Save role</button></div><div class="permissionChecks">'+
-        permissions.map(permission=>'<label title="'+esc(permission.description||permission.key)+'"><input type="checkbox" value="'+esc(permission.key)+'" '+(selectedByRole.get(role.name)?.has(permission.key)?"checked":"")+'><span>'+esc(permission.key)+'</span></label>').join('')+
+      roles.map(role=>'<article class="permissionRole" data-role="'+esc(role.name)+'"><div class="permissionRoleHead"><div><strong>'+esc(roleLabel(role.name))+'</strong><br><span class="mono">'+esc((data.user_counts||{})[role.name]??0)+' users</span></div><button class="btn saveRole" type="button">Save role</button></div><div class="permissionChecks">'+
+        permissions.map(permission=>'<label title="'+esc(permission.description||permission.key)+'"><input type="checkbox" value="'+esc(permission.key)+'" '+(selectedByRole.get(role.name)?.has(permission.key)?"checked":"")+'><span>'+esc(permissionLabel(permission.key))+'</span></label>').join('')+
       '</div></article>').join('')+'</div><div class="feedback" id="rolesFeedback"></div></section>';
 
     document.querySelectorAll(".saveRole").forEach(button=>button.addEventListener("click",async()=>{
