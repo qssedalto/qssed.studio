@@ -236,7 +236,13 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
                   display_name: profile.display_name || "",
                   avatar_url: profile.avatar_url || "",
                   role: profile.role || "",
-                  status: profile.status || ""
+                  status: profile.status || "",
+                  first_name: profile.first_name || "",
+                  last_name: profile.last_name || "",
+                  birth_date: profile.birth_date || "",
+                  gender: profile.gender || "",
+                  hide_gender_on_profile: Boolean(profile.hide_gender_on_profile),
+                  created_at: profile.created_at || serverUser.created_at || ""
                 }
               },
               definiteSignedOut: false,
@@ -327,17 +333,29 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
             email: data.user.email || "",
             role: data.user.user_metadata?.role || "",
             status: data.user.user_metadata?.status || "",
-            avatar_url: data.user.user_metadata?.avatar_url || ""
+            avatar_url: data.user.user_metadata?.avatar_url || "",
+            username: data.user.user_metadata?.username || "",
+            first_name: data.user.user_metadata?.first_name || "",
+            last_name: data.user.user_metadata?.last_name || "",
+            birth_date: data.user.user_metadata?.birth_date || "",
+            gender: data.user.user_metadata?.gender || "",
+            hide_gender_on_profile: Boolean(data.user.user_metadata?.hide_gender_on_profile)
           });
         }
       } catch (error) {
         console.warn("Immediate account summary render failed", error);
       }
 
-      await updateCurrentDevice(data.user);
-      await hydrateProfileSummary(data.user);
-      await hydrateProfileHome(data.user);
-      await hydrateProfileAudit(data.user);
+      try {
+        await hydrateProfileSummary(data.user);
+      } catch (error) {
+        console.warn("Account summary hydration failed", error);
+      }
+      void Promise.allSettled([
+        updateCurrentDevice(data.user),
+        hydrateProfileHome(data.user),
+        hydrateProfileAudit(data.user)
+      ]);
     }
 
     hydrateOsUser();
@@ -503,7 +521,7 @@ export function buildOsPages(zh) {
     "/info/summaries": { section: "info", title: s.summaries[0], description: s.summaries[1] },
     "/info/search": { section: "info", title: s.search[0], description: s.search[1] },
     "/profile": { section: "profile", title: s.profile[0], description: s.profile[1] },
-    "/profile/details": { section: "profile", title: zh ? "用户资料" : "Profile Details", description: zh ? "查看和维护头像、个性签名、个人介绍、状态、兴趣与主页背景。" : "View and maintain your photo, signature, bio, presence, interests, and profile background." },
+    "/profile/details": { section: "profile", title: zh ? "个人信息" : "Personal Information", description: "" },
     "/profile/account": { section: "profile", title: s.account[0], description: s.account[1] },
     "/profile/preferences": { section: "profile", title: s.preferences[0], description: s.preferences[1] },
     "/workspace": { section: "workspace", title: s.workspace[0], description: s.workspace[1] },
