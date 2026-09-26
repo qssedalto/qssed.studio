@@ -28,7 +28,7 @@ assert(shell.includes('platform: "Personal Workspace"'), "English main subtitle 
 assert(shell.includes('["AERTEX Knowledge"'), "Knowledge product must be AERTEX Knowledge");
 assert(shell.includes('["AERTEX Drive"'), "Storage product must be AERTEX Drive");
 assert(!shell.includes("AERTEX Console"), "Main product shell must not expose the administrator product.");
-assert(admin.includes("<title>AERTEX Administration</title>"), "Admin control plane title must be AERTEX Administration");
+assert(admin.includes("<title>AERTEX 管理控制台</title>"), "Admin control plane title must preserve AERTEX branding in the localized console.");
 assert(admin.includes("AERTEX ADMIN"), "Admin control plane visible brand must be AERTEX ADMIN");
 
 assert(auth.includes("<strong>AERTEX ID</strong><span>AERTEX Account</span>"), "Auth brand must be AERTEX ID / AERTEX Account");
