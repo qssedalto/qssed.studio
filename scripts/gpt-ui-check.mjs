@@ -56,8 +56,11 @@ for (const locale of ["zh-cn", "en"]) {
   if (!html.includes('.app.sidebar-collapsed .composerWrap{left:0}')) {
     throw new Error("Intelligence composer must follow desktop sidebar collapse state");
   }
-  if (html.includes('assistant.textContent=streamed') || html.includes('bubble.className="bubble";bubble.textContent=content')) {
-    throw new Error("Assistant output must not fall back to the legacy plain-text rendering path");
+  if (!html.includes('window.AERTEXRich.stream(assistant,streamed)') || !html.includes('window.AERTEXRich.finalize(assistant,streamed)')) {
+    throw new Error("Assistant output must use the rich streaming render path");
+  }
+  if (html.includes('bubble.className="bubble";bubble.textContent=content')) {
+    throw new Error("Assistant history rendering must not use the legacy unconditional plain-text path");
   }
   const shared = renderSharedConversation(locale, { conversation: { title: "Rich share", author_name: "Example Author" }, messages: [{ role: "assistant", content: "**bold**\n\n```js\nconst x=1;\n```" }] }, "dark");
   if (!shared.includes('data-rich-message="true"') || !shared.includes("AERTEXRich.enhance(document)")) {
