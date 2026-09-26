@@ -1,7 +1,7 @@
 import { TEXT } from "./config.js";
 import { escapeHtmlText } from "./html-utils.js";
 import { profileClientScript, profileContent, profileHubContent } from "./ui-profile.js";
-import { dashboardContent } from "./ui-dashboard.js";
+import { dashboardContent, dashboardIcon } from "./ui-dashboard.js";
 import { informationContent } from "./ui-information.js";
 import { knowledgeSearchClientScript } from "./knowledge-search.js";
 import { compactBackHref, compactBackScript } from "./ui-navigation.js";
@@ -389,7 +389,7 @@ export function buildOsCopy(zh) {
 
 export function buildOsPages(zh) {
   const z = {
-    dashboard: ["仪表盘", "汇总账号状态与核心模块，快速查看当前可用功能。"],
+    dashboard: ["首页", ""],
     info: ["信息中心", "知识模块尚未建立持久化数据表；当前仅保留清晰的模块入口。"],
     knowledge: ["AERTEX Knowledge", "整理值得长期保留的知识内容，方便持续积累、查找与回顾。"],
     links: ["收藏链接", "尚未接入收藏链接数据表。"],
@@ -416,7 +416,7 @@ export function buildOsPages(zh) {
     storage: ["AERTEX Drive", "管理仅属于当前账号的私人 Cloudflare R2 文件。"]
   };
   const e = {
-    dashboard: ["Dashboard", "Overview of your account status and core modules, with quick access to currently available features."],
+    dashboard: ["Home", ""],
     info: ["Information Center", "Persistent knowledge tables are not implemented yet; this area currently provides module entry points."],
     knowledge: ["AERTEX Knowledge", "Organize knowledge worth keeping so it stays easy to build on, find, and revisit."],
     links: ["Saved Links", "No saved-links table is connected yet."],
@@ -477,26 +477,46 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
   const zh = copy.platform.includes("个人");
   const gptHref = String(productLinks?.gptHref || "");
   const adminHref = String(productLinks?.adminHref || "");
+  const iconBySection = {
+    dashboard: "workbench",
+    info: "info",
+    profile: "profile",
+    workspace: "workbench",
+    settings: "settings"
+  };
   const productGroups = [
-    ...(gptHref ? [{ id: "intelligence", label: "AERTEX Intelligence", href: gptHref }] : []),
-    ...(adminHref ? [{ id: "admin-console", label: zh ? "管理员控制台" : "Admin Console", href: adminHref }] : [])
+    ...(gptHref ? [{ id: "intelligence", label: "AERTEX Intelligence", href: gptHref, icon: "intelligence" }] : []),
+    ...(adminHref ? [{ id: "admin-console", label: zh ? "管理员控制台" : "Admin Console", href: adminHref, icon: "admin" }] : [])
   ];
 
   return `
     <nav class="os-nav">
-      ${productGroups.map(group => `
-        <section class="os-nav-group os-nav-product">
-          <a class="os-nav-title" href="${group.href}" data-product-link="${group.id}">${group.label}</a>
-        </section>
-      `).join("")}
-      ${copy.nav.map(group => `
-        <section class="os-nav-group ${group.id === activeSection ? "is-active" : ""}">
-          <a class="os-nav-title" href="${group.href}">${group.label}</a>
-          ${group.items.length ? `<div class="os-nav-items">
-            ${group.items.map(item => `<a href="${item[1]}"${item[1].endsWith(currentPath) ? ` aria-current="page"` : ""}>${item[0]}</a>`).join("")}
-          </div>` : ""}
-        </section>
-      `).join("")}
+      ${productGroups.length ? `<section class="os-nav-group os-nav-products">
+        ${productGroups.map(group => `
+          <a class="os-nav-title os-nav-product-link" href="${group.href}" data-product-link="${group.id}">
+            ${dashboardIcon(group.icon)}
+            <span>${group.label}</span>
+            <b aria-hidden="true">›</b>
+          </a>
+        `).join("")}
+      </section>` : ""}
+      <section class="os-nav-group os-nav-primary">
+        ${copy.nav.map(group => {
+          const active = group.id === activeSection;
+          return `
+            <div class="os-nav-entry ${active ? "is-active" : ""}">
+              <a class="os-nav-title" href="${group.href}">
+                ${dashboardIcon(iconBySection[group.id] || "info")}
+                <span>${group.label}</span>
+                <b aria-hidden="true">›</b>
+              </a>
+              ${active && group.items.length ? `<div class="os-nav-items">
+                ${group.items.map(item => `<a href="${item[1]}"${item[1].endsWith(currentPath) ? ` aria-current="page"` : ""}>${item[0]}</a>`).join("")}
+              </div>` : ""}
+            </div>
+          `;
+        }).join("")}
+      </section>
     </nav>
   `;
 }
