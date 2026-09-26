@@ -307,7 +307,7 @@ export async function handleRegistrationSignup(request, env, ipInfo) {
         email,
         password,
         data: {
-          display_name: username,
+          display_name: enforceChineseNameRules ? `${firstName}${lastName}` : `${firstName} ${lastName}`.trim(),
           username,
           first_name: firstName,
           last_name: lastName,
@@ -330,6 +330,34 @@ export async function handleRegistrationSignup(request, env, ipInfo) {
   }
 
   const userId = authPayload?.user?.id || authPayload?.id || "";
+  const displayName = enforceChineseNameRules ? `${firstName}${lastName}` : `${firstName} ${lastName}`.trim();
+  if (userId) {
+    try {
+      const identityResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+        method: "PATCH",
+        headers: {
+          ...privilegedHeaders,
+          "content-type": "application/json",
+          prefer: "return=minimal"
+        },
+        body: JSON.stringify({
+          display_name: displayName,
+          first_name: firstName,
+          last_name: lastName,
+          birth_date: birthDate,
+          gender,
+          hide_gender_on_profile: hideGenderOnProfile,
+          updated_at: new Date().toISOString()
+        })
+      });
+      if (!identityResponse.ok) {
+        workerLog("warn", "auth.signup.identity_profile_update_failed", { request_id: requestId, upstream_status: identityResponse.status });
+      }
+    } catch (error) {
+      workerLog("warn", "auth.signup.identity_profile_update_error", { request_id: requestId, error_type: error?.name || "Error" });
+    }
+  }
+
   let avatarStatus = avatarFile ? "failed" : "skipped";
 
   if (avatarFile && userId) {
