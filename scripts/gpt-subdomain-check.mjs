@@ -130,6 +130,10 @@ assert(
   chatSource.indexOf('const savedMessages = await restData(session, "/ai_messages"') > chatSource.indexOf("if (!upstream.ok)"),
   "AI chat messages must be persisted only after the provider accepts the request."
 );
+assert(chatSource.includes("provider_response_id: null"), "User and assistant ai_messages rows must keep the same PostgREST bulk-insert shape.");
+assert(chatSource.includes("input_tokens: null"), "User ai_messages rows must explicitly include nullable token fields.");
+assert(chatSource.includes("output_tokens: null"), "User ai_messages rows must explicitly include nullable token fields.");
+assert(authHandoff.includes("aertex-auth-handoff-retry"), "Auth handoff must recover once from a stale or revoked browser session.");
 assert(chatSource.includes("if (createdConversation)"), "New conversations must be removed when a provider stream fails.");
 assert(chatSource.includes('method: "DELETE"'), "Failed newly-created conversations must be deleted.");
 

@@ -1,5 +1,5 @@
 import { handleOAuthRequest } from "./auth-oauth.js";
-import { mainOriginForRequest, rootDomainForRequest } from "./studio/domain-family.js";
+import { mainOriginForRequest, rootDomainForRequest, serviceOrigin } from "./studio/domain-family.js";
 import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
@@ -162,7 +162,7 @@ async function revokeCurrentSession(request) {
 
   if (accessToken) {
     try {
-      await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+      await fetch(`${SUPABASE_URL}/auth/v1/logout?scope=local`, {
         method: "POST",
         headers: {
           apikey: SUPABASE_KEY,
@@ -228,17 +228,35 @@ async function handleContinue(request, env) {
   const requestUrl = new URL(request.url);
   const next = safeNextPath(requestUrl.searchParams.get("next"));
   const mainSite = mainOriginForRequest(request) || safeHttpsOrigin(env?.MAIN_SITE_URL) || "https://qsseda.com";
+  const handoff = resolveHandoffTarget(request, next, mainSite);
   const headers = new Headers(baseHeaders("text/html;charset=UTF-8"));
   headers.set("referrer-policy", "origin");
-  headers.set("content-security-policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${mainSite}; base-uri 'none'; frame-ancestors 'none'`);
+  headers.set("content-security-policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${handoff.origin}; base-uri 'none'; frame-ancestors 'none'`);
   if (rotated) for (const value of sessionCookies(rotated)) headers.append("set-cookie", value);
 
-  return new Response(injectBrandLogoRuntime(handoffPage(mainSite, accessToken, refreshToken, next, intelligenceThemeFromRequest(request))), { status: 200, headers });
+  return new Response(injectBrandLogoRuntime(handoffPage(handoff.origin, accessToken, refreshToken, handoff.next, intelligenceThemeFromRequest(request))), { status: 200, headers });
+}
+
+function validatedNextPath(value) {
+  const path = cleanText(value, 500);
+  return path.startsWith("/") && !path.startsWith("//") && !path.includes("\u0000") ? path : "";
 }
 
 function safeNextPath(value) {
-  const path = cleanText(value, 500);
-  return path.startsWith("/") && !path.startsWith("//") ? path : "/dashboard";
+  return validatedNextPath(value) || "/dashboard";
+}
+
+function resolveHandoffTarget(request, next, mainSite) {
+  const root = rootDomainForRequest(request) || "qsseda.com";
+  try {
+    const parsed = new URL(next, "https://handoff.invalid");
+    const match = parsed.pathname.match(/^\/(?:zh-cn|en)\/(gpt|work)\/handoff$/);
+    const nested = match ? validatedNextPath(parsed.searchParams.get("next")) : "";
+    if (match && nested) {
+      return { origin: serviceOrigin(root, match[1]), next: nested };
+    }
+  } catch {}
+  return { origin: mainSite, next };
 }
 
 function safeHttpsOrigin(value) {
@@ -260,10 +278,10 @@ function htmlEscape(value) {
   return String(value || "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "\'": "&#39;" }[character]));
 }
 
-function handoffPage(mainSite, accessToken, refreshToken, next, theme = "") {
+function handoffPage(targetOrigin, accessToken, refreshToken, next, theme = "") {
   const themeAttr = intelligenceThemeAttr(theme);
   const themeBoot = intelligenceThemeBootScript();
-  return `<!doctype html><html lang="zh-CN"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><title>AERTEX ID</title>${FAVICON_LINKS}${themeBoot}<style>:root{color-scheme:dark;--bg:#0b0b0d;--text:#f5f5f7;--muted:#a1a1a6;--ring:#3a3a3c;--accent:#0a84ff}@media(prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}}:root[data-theme="light"]{color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}html,body{height:100%;margin:0;background:var(--bg);color:var(--text)}body{display:grid;place-items:center;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid var(--ring);border-top-color:var(--accent);border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:var(--muted)}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 AERTEX</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(mainSite)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  return `<!doctype html><html lang="zh-CN"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><title>AERTEX ID</title>${FAVICON_LINKS}${themeBoot}<style>:root{color-scheme:dark;--bg:#0b0b0d;--text:#f5f5f7;--muted:#a1a1a6;--ring:#3a3a3c;--accent:#0a84ff}@media(prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}}:root[data-theme="light"]{color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}html,body{height:100%;margin:0;background:var(--bg);color:var(--text)}body{display:grid;place-items:center;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid var(--ring);border-top-color:var(--accent);border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:var(--muted)}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 AERTEX</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(targetOrigin)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
 }
 
 async function fetchUser(accessToken) {
@@ -591,7 +609,7 @@ function authPage(pathname, request) {
     if(page==="authorize"){document.getElementById("signedInTitle").textContent=copy.authorizeTitle;document.getElementById("signedInLead").textContent=copy.authorizeLead;var params=new URLSearchParams(location.search);document.getElementById("clientId").textContent=params.get("client_id")||"client_id: —";document.getElementById("clientName").textContent=params.get("client_name")||copy.appRequest}
   }
   async function checkSession(){try{var response=await fetch("/api/session",{credentials:"same-origin",cache:"no-store"});var data=await response.json();if(response.ok&&data.authenticated&&data.user)showLoggedIn(data);else showLoggedOut()}catch(e){showLoggedOut();loginMessage.textContent=copy.connectError;loginMessage.classList.add("error")}}
-  loginForm.addEventListener("submit",async function(event){event.preventDefault();loginMessage.textContent=copy.loggingIn;loginMessage.classList.remove("error");loginButton.disabled=true;try{var response=await fetch("/api/login",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({email:document.getElementById("email").value,password:document.getElementById("password").value})});var data=await response.json();if(!response.ok||!data.authenticated)throw new Error(data.error||"Login failed");document.getElementById("password").value="";var p=new URLSearchParams(location.search),n=p.get("next")||"";location.replace("/sso/start"+(n?"?next="+encodeURIComponent(n):""));return}catch(error){loginMessage.textContent=error&&error.message?error.message:"Login failed";loginMessage.classList.add("error")}finally{loginButton.disabled=false}});
+  loginForm.addEventListener("submit",async function(event){event.preventDefault();loginMessage.textContent=copy.loggingIn;loginMessage.classList.remove("error");loginButton.disabled=true;try{var response=await fetch("/api/login",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({email:document.getElementById("email").value,password:document.getElementById("password").value})});var data=await response.json();if(!response.ok||!data.authenticated)throw new Error(data.error||"Login failed");document.getElementById("password").value="";var p=new URLSearchParams(location.search),n=p.get("next")||"";location.replace("/continue"+(n?"?next="+encodeURIComponent(n):""));return}catch(error){loginMessage.textContent=error&&error.message?error.message:"Login failed";loginMessage.classList.add("error")}finally{loginButton.disabled=false}});
   async function signOut(button){if(button)button.disabled=true;try{await fetch("/api/logout",{method:"POST",credentials:"same-origin"})}catch(e){}location.replace("/login")}
   if(logoutButton)logoutButton.addEventListener("click",function(){signOut(logoutButton)});
   if(homeLogoutButton)homeLogoutButton.addEventListener("click",function(){signOut(homeLogoutButton)});

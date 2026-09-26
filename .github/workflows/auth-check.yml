@@ -71,7 +71,7 @@ jobs:
       - name: Verify AERTEX product naming
         run: node scripts/brand-check.mjs
 
-      - name: Verify three-domain SSO contract
+      - name: Verify streamlined Auth handoff contract
         run: |
           node <<'NODE'
           const fs = require('fs');
@@ -83,12 +83,16 @@ jobs:
             if (!family.includes(`"${root}"`)) throw new Error(`Missing domain root: ${root}`);
           }
           for (const path of ['/sso/start','/sso/import','/sso/complete']) {
-            if (!sso.includes(`"${path}"`)) throw new Error(`Missing SSO path: ${path}`);
+            if (!sso.includes(`"${path}"`)) throw new Error(`Missing compatibility SSO path: ${path}`);
           }
-          if (!entry.includes('handleAuthSsoRequest(request)')) throw new Error('Auth entry must route SSO requests');
-          if (!auth.includes('location.replace("/sso/start"')) throw new Error('Successful Auth login must start three-domain session synchronization');
-          if (!sso.includes('"referrer-policy": "origin"')) throw new Error('SSO relay pages must preserve an origin-only referrer for cross-domain validation');
-          console.log('Three-domain SSO contract looks valid.');
+          if (!entry.includes('handleAuthSsoRequest(request)')) throw new Error('Auth entry must keep compatibility SSO routing');
+          if (!auth.includes('location.replace("/continue"')) throw new Error('Successful Auth login must continue directly without cross-root SSO pages');
+          if (!auth.includes('/auth/v1/logout?scope=local')) throw new Error('Interactive sign-out must revoke only the current Supabase session');
+          if (!auth.includes('resolveHandoffTarget(request, next, mainSite)')) throw new Error('Auth continuation must collapse GPT/Work handoff hops');
+          const start = sso.slice(sso.indexOf('async function startSync'), sso.indexOf('async function importSync'));
+          if (start.includes('syncForm(')) throw new Error('Ordinary /sso/start must not visibly relay through every domain family');
+          if (!sso.includes('"referrer-policy": "origin"')) throw new Error('Legacy SSO relay pages must preserve an origin-only referrer');
+          console.log('Streamlined Auth handoff contract looks valid.');
           NODE
 
       - name: Bundle Auth Worker

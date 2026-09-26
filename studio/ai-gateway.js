@@ -830,7 +830,10 @@ async function chat(request, env, session) {
               conversation_id: conversationId,
               user_id: session.user.id,
               role: "user",
-              content: message
+              content: message,
+              provider_response_id: null,
+              input_tokens: null,
+              output_tokens: null
             },
             {
               conversation_id: conversationId,

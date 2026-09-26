@@ -51,18 +51,11 @@ async function startSync(request) {
     return redirect(login.toString());
   }
 
-  const remaining = QSS_DOMAIN_ROOTS.filter(item => item !== root);
-  if (!remaining.length) return finishUrl(url.origin, next);
-
-  const returnTo = new URL("/sso/complete", url.origin);
-  if (next) returnTo.searchParams.set("next", next);
-  return syncForm(
-    serviceOrigin(remaining[0], "auth"),
-    session.accessToken,
-    session.refreshToken,
-    remaining.slice(1),
-    returnTo.toString()
-  );
+  // Keep the browser on the current domain family. Cross-root propagation made
+  // one sign-in visibly bounce through multiple Auth hosts and is not required
+  // for the active application handoff. Legacy /sso/import stays available for
+  // explicit migrations, but ordinary sign-in finishes locally.
+  return finishUrl(url.origin, next);
 }
 
 async function importSync(request) {
