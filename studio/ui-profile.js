@@ -3,129 +3,105 @@ import { osHubIcon } from "./ui-primitives.js";
 export function profileContent(path, zh) {
   if (path.endsWith("/account")) return accountAuditContent(zh);
 
-  if (path.endsWith("/preferences")) return `<section class="os-card is-large"><h2>${zh ? "偏好设置" : "Preferences"}</h2><p>${zh ? "主题和语言可通过页面右上角按钮切换。字体和通知偏好目前没有保存或配置接口。" : "Theme and language can be switched with the controls in the top-right corner. Font and notification preferences do not currently have configuration or persistence APIs."}</p></section>`;
+  if (path.endsWith("/preferences")) return `<section class="os-card is-large"><h2>${zh ? "偏好设置" : "Preferences"}</h2><p>${zh ? "主题和语言可通过页面右上角按钮切换。其他通信与通知偏好会逐步集中到这里。" : "Theme and language can be switched from the top-right controls. Additional communication and notification preferences will live here."}</p></section>`;
+
+  const prefix = zh ? "/zh-cn" : "/en";
   return `
-    <section id="profile-summary" class="profile-home" data-profile-home>
-      <div id="profile-cover" class="profile-cover" data-cover-style="aurora">
-        <div class="profile-cover-noise" aria-hidden="true"></div>
-        <div class="profile-cover-actions">
-          <button id="profile-edit-button" class="profile-pill-button" type="button">${zh ? "编辑资料" : "Edit profile"}</button>
-        </div>
+    <section id="profile-summary" class="profile-personal-info" data-profile-personal-info>
+      <div class="profile-personal-avatar-block">
+        <div id="profile-avatar" class="profile-personal-avatar">A</div>
+        <button id="profile-avatar-change" class="profile-personal-change" type="button">${zh ? "更改" : "Change"}</button>
+        <input id="profile-avatar-file-simple" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <span id="profile-avatar-status-simple" class="profile-personal-avatar-status" aria-live="polite"></span>
       </div>
 
-      <div class="profile-identity">
-        <div id="profile-avatar" class="os-avatar profile-avatar-large">...</div>
-        <div class="profile-identity-copy">
-          <div class="profile-name-row">
-            <h2 id="profile-display-name">${zh ? "正在读取账号资料..." : "Loading account profile..."}</h2>
-            <span class="profile-name-lock" title="${zh ? "姓名不可修改" : "Name cannot be changed"}">🔒</span>
-          </div>
-          <p id="profile-email">...</p>
-          <div id="profile-tags" class="os-chip-row"></div>
-          <p id="profile-signature" class="profile-signature"></p>
+      <section class="profile-personal-group">
+        <div class="profile-personal-row">
+          <span>${zh ? "姓名" : "Name"}</span>
+          <strong id="profile-real-name-value">—</strong>
         </div>
-      </div>
+      </section>
 
-      <div class="profile-home-grid">
-        <article class="profile-section-card profile-about-card">
-          <div class="profile-section-head">
-            <div>
-              <span class="profile-eyebrow">${zh ? "关于我" : "About"}</span>
-              <h3>${zh ? "个人介绍" : "Profile"}</h3>
-            </div>
-          </div>
-          <p id="profile-bio" class="profile-bio">${zh ? "还没有填写个人介绍。" : "No bio yet."}</p>
-          <div class="profile-meta-row">
-            <span id="profile-presence" class="profile-presence">✨ ${zh ? "在线" : "Online"}</span>
-            <span id="profile-location" class="profile-location"></span>
-          </div>
-          <div id="profile-interests" class="profile-interest-list"></div>
-        </article>
-
-        <article class="profile-section-card">
-          <div class="profile-section-head">
-            <div>
-              <span class="profile-eyebrow">${zh ? "快捷入口" : "Quick access"}</span>
-              <h3>${zh ? "我的空间" : "My space"}</h3>
-            </div>
-          </div>
-          <div class="profile-quick-grid">
-            <a href="${zh ? "/zh-cn/profile/account" : "/en/profile/account"}"><span>◷</span><strong>${zh ? "账户信息" : "Account"}</strong><small>${zh ? "登录、设备与审计" : "Sign-in, devices & audit"}</small></a>
-            <a href="${zh ? "/zh-cn/settings/storage" : "/en/settings/storage"}"><span>☁︎</span><strong>${zh ? "私人存储" : "Private storage"}</strong><small>${zh ? "管理 R2 文件" : "Manage R2 files"}</small></a>
-            <a href="${zh ? "/zh-cn/info/links" : "/en/info/links"}"><span>⌘</span><strong>${zh ? "收藏链接" : "Saved links"}</strong><small>${zh ? "信息中心入口" : "Information center"}</small></a>
-            <a href="${zh ? "/zh-cn/profile/preferences" : "/en/profile/preferences"}"><span>⚙︎</span><strong>${zh ? "偏好设置" : "Preferences"}</strong><small>${zh ? "外观与语言" : "Appearance & language"}</small></a>
-          </div>
-        </article>
-      </div>
-
-      <article class="profile-section-card profile-links-card">
-        <div class="profile-section-head">
-          <div>
-            <span class="profile-eyebrow">${zh ? "联系与链接" : "Contact & links"}</span>
-            <h3>${zh ? "我的链接库" : "My link library"}</h3>
-            <p>${zh ? "把 QQ、GitHub、Bilibili、X、个人网站或其他入口集中在这里。" : "Keep QQ, GitHub, Bilibili, X, personal sites, and other destinations in one place."}</p>
-          </div>
-          <button id="profile-add-link" class="profile-pill-button profile-pill-secondary" type="button">＋ ${zh ? "添加链接" : "Add link"}</button>
+      <section class="profile-personal-group">
+        <div class="profile-personal-row">
+          <span>${zh ? "用户名" : "Username"}</span>
+          <strong id="profile-username-value">—</strong>
         </div>
-        <div id="profile-link-list" class="profile-link-list"></div>
-      </article>
+        <div class="profile-personal-row">
+          <span>${zh ? "电子邮件" : "Email"}</span>
+          <strong id="profile-email-value">—</strong>
+        </div>
+      </section>
+
+      <section class="profile-personal-group">
+        <div class="profile-personal-row">
+          <span>${zh ? "出生日期" : "Date of Birth"}</span>
+          <strong id="profile-birth-date-value">—</strong>
+        </div>
+        <div class="profile-personal-row">
+          <span>${zh ? "性别" : "Gender"}</span>
+          <strong id="profile-gender-value">—</strong>
+        </div>
+        <div class="profile-personal-row">
+          <span>${zh ? "性别展示" : "Gender Visibility"}</span>
+          <strong id="profile-gender-privacy-value">—</strong>
+        </div>
+      </section>
+
+      <section class="profile-personal-group">
+        <a class="profile-personal-row is-link" href="${prefix}/settings/security">
+          <span>${zh ? "登录与安全" : "Sign-In & Security"}</span>
+          <span class="profile-personal-chevron" aria-hidden="true">›</span>
+        </a>
+        <a class="profile-personal-row is-link" href="${prefix}/profile/preferences">
+          <span>${zh ? "通信与偏好设置" : "Communication & Preferences"}</span>
+          <span class="profile-personal-chevron" aria-hidden="true">›</span>
+        </a>
+      </section>
+
+      <p class="profile-personal-note">${zh ? "姓名、出生日期与性别来自注册时提交的账户资料。头像可在这里更改。" : "Name, date of birth, and gender come from the account information submitted during registration. You can change your profile photo here."}</p>
     </section>
 
-    <div id="profile-sheet-backdrop" class="profile-sheet-backdrop" hidden></div>
-
-    <aside id="profile-edit-sheet" class="profile-sheet" aria-hidden="true">
-      <div class="profile-sheet-grabber" aria-hidden="true"></div>
-      <div class="profile-sheet-head">
-        <div><span class="profile-eyebrow">${zh ? "个人主页" : "Profile"}</span><h3>${zh ? "编辑资料" : "Edit profile"}</h3></div>
-        <button class="profile-sheet-close" type="button" data-close-profile-sheet aria-label="${zh ? "关闭" : "Close"}">×</button>
-      </div>
-      <div class="profile-sheet-body">
-        <label class="profile-field"><span>${zh ? "姓名" : "Name"}</span><input id="profile-readonly-name" type="text" readonly aria-readonly="true"><small>${zh ? "姓名由账号资料确定，不允许在个人主页中修改。" : "Your name comes from your account profile and cannot be changed here."}</small></label>
-        <div class="profile-field">
-          <span>${zh ? "头像" : "Profile photo"}</span>
-          <div class="profile-media-editor">
-            <div id="profile-avatar-preview" class="profile-media-preview profile-avatar-preview"></div>
-            <div class="profile-media-copy"><strong>${zh ? "更换头像" : "Change profile photo"}</strong><small>${zh ? "支持 JPG、PNG、WebP，最大 5 MB。头像会保存到你的账号资料中。" : "JPG, PNG, or WebP up to 5 MB. Your photo is saved to your account profile."}</small><button id="profile-avatar-choose" class="profile-inline-button" type="button">${zh ? "选择图片" : "Choose image"}</button></div>
-            <input id="profile-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-          </div>
-        </div>
-        <div class="profile-field">
-          <span>${zh ? "自定义背景" : "Custom background"}</span>
-          <div class="profile-media-editor">
-            <div id="profile-background-preview" class="profile-media-preview profile-background-preview"></div>
-            <div class="profile-media-copy"><strong>${zh ? "上传封面背景" : "Upload cover background"}</strong><small>${zh ? "支持 JPG、PNG、WebP，最大 8 MB。上传图片后会覆盖下面的主页配色；清除后会恢复配色。" : "JPG, PNG, or WebP up to 8 MB. An uploaded image overrides the color preset below; clearing it restores the preset."}</small><div class="profile-media-actions"><button id="profile-background-choose" class="profile-inline-button" type="button">${zh ? "选择图片" : "Choose image"}</button><button id="profile-background-clear" class="profile-inline-button secondary" type="button">${zh ? "清除背景" : "Clear background"}</button></div></div>
-            <input id="profile-background-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-          </div>
-        </div>
-        <label class="profile-field"><span>${zh ? "个性签名" : "Signature"}</span><input id="profile-edit-signature" type="text" maxlength="80" placeholder="${zh ? "一句话介绍现在的你" : "A short line about you"}"><small>${zh ? "会显示在姓名与邮箱下方，建议控制在一句话内。" : "Shown under your name and email. Keep it to one concise line."}</small></label>
-        <label class="profile-field"><span>${zh ? "个人介绍" : "Bio"}</span><textarea id="profile-edit-bio" maxlength="500" rows="5" placeholder="${zh ? "介绍你的兴趣、方向或正在做的事" : "Share your interests, focus, or what you are working on"}"></textarea><small>${zh ? "用于“关于我”区域，适合写长期兴趣、学习方向或正在进行的项目。" : "Used in the About section for longer-term interests, focus areas, or current projects."}</small></label>
-        <label class="profile-field"><span>${zh ? "所在地" : "Location"}</span><input id="profile-edit-location" type="text" maxlength="80" placeholder="${zh ? "例如：苏州" : "For example: Suzhou"}"><small>${zh ? "仅填写你愿意公开展示的城市或地区，不建议填写具体住址。" : "Only add a city or region you are comfortable showing. Avoid a precise address."}</small></label>
-        <div class="profile-field"><span>${zh ? "在线状态" : "Status"}</span><div class="profile-status-editor"><select id="profile-edit-status-kind"><option value="online">${zh ? "在线" : "Online"}</option><option value="focus">${zh ? "专注中" : "Focus"}</option><option value="busy">${zh ? "忙碌" : "Busy"}</option><option value="away">${zh ? "离开" : "Away"}</option><option value="offline">${zh ? "隐身" : "Offline"}</option></select><input id="profile-edit-status-emoji" type="text" maxlength="8" value="✨" aria-label="${zh ? "状态表情" : "Status emoji"}"><input id="profile-edit-status-text" type="text" maxlength="80" placeholder="${zh ? "自定义状态文字" : "Custom status text"}"></div></div>
-        <label class="profile-field"><span>${zh ? "兴趣标签" : "Interests"}</span><input id="profile-edit-interests" type="text" placeholder="${zh ? "用逗号分隔，例如：统计学, AI, 骑行" : "Comma-separated, e.g. Statistics, AI, Cycling"}"><small>${zh ? "最多 12 个标签。" : "Up to 12 tags."}</small></label>
-        <div class="profile-field"><span>${zh ? "主页配色" : "Profile cover"}</span><div id="profile-cover-picker" class="profile-cover-picker">${["aurora","sky","sunset","grape","graphite","mint"].map(value => `<button type="button" data-cover-choice="${value}" aria-label="${value}"><span data-cover-style="${value}"></span></button>`).join("")}</div></div>
-      </div>
-      <div class="profile-sheet-actions"><button id="profile-save-button" class="profile-save-button" type="button">${zh ? "保存" : "Save"}</button></div>
-    </aside>
-
-    <aside id="profile-link-sheet" class="profile-sheet profile-link-sheet" aria-hidden="true">
-      <div class="profile-sheet-grabber" aria-hidden="true"></div>
-      <div class="profile-sheet-head">
-        <div><span class="profile-eyebrow">${zh ? "链接库" : "Link library"}</span><h3 id="profile-link-sheet-title">${zh ? "添加链接" : "Add link"}</h3></div>
-        <button class="profile-sheet-close" type="button" data-close-profile-link-sheet aria-label="${zh ? "关闭" : "Close"}">×</button>
-      </div>
-      <div class="profile-sheet-body">
-        <input id="profile-link-id" type="hidden">
-        <div class="profile-link-presets"><button type="button" data-link-preset="QQ">QQ</button><button type="button" data-link-preset="GitHub">GitHub</button><button type="button" data-link-preset="Bilibili">Bilibili</button><button type="button" data-link-preset="X">X</button><button type="button" data-link-preset="${zh ? "个人网站" : "Website"}">${zh ? "个人网站" : "Website"}</button></div>
-        <label class="profile-field"><span>${zh ? "名称" : "Title"}</span><input id="profile-link-title" type="text" maxlength="50" placeholder="QQ / GitHub / Website"></label>
-        <label class="profile-field"><span>${zh ? "链接" : "URL"}</span><input id="profile-link-url" type="url" maxlength="1024" placeholder="https://"></label>
-        <label class="profile-field"><span>${zh ? "分类" : "Category"}</span><select id="profile-link-category"><option value="social">${zh ? "社交" : "Social"}</option><option value="developer">${zh ? "开发者" : "Developer"}</option><option value="site">${zh ? "网站" : "Website"}</option><option value="contact">${zh ? "联系方式" : "Contact"}</option><option value="other">${zh ? "其他" : "Other"}</option></select></label>
-        <label class="profile-field"><span>${zh ? "备注" : "Note"}</span><input id="profile-link-note" type="text" maxlength="140" placeholder="${zh ? "可选" : "Optional"}"></label>
-        <label class="profile-pin-row"><input id="profile-link-pinned" type="checkbox"><span>${zh ? "置顶这个链接" : "Pin this link"}</span></label>
-      </div>
-      <div class="profile-sheet-actions"><button id="profile-link-save" class="profile-save-button" type="button">${zh ? "保存链接" : "Save link"}</button></div>
-    </aside>
+    <script>
+      (() => {
+        const button = document.getElementById("profile-avatar-change");
+        const input = document.getElementById("profile-avatar-file-simple");
+        const status = document.getElementById("profile-avatar-status-simple");
+        if (!button || !input) return;
+        button.addEventListener("click", () => input.click());
+        input.addEventListener("change", async event => {
+          const file = event.target.files && event.target.files[0];
+          event.target.value = "";
+          if (!file) return;
+          if (!["image/jpeg","image/png","image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+            if (status) status.textContent = ${JSON.stringify(zh ? "请选择不超过 5 MB 的 JPG、PNG 或 WebP 图片。" : "Choose a JPG, PNG, or WebP image no larger than 5 MB.")};
+            return;
+          }
+          button.disabled = true;
+          if (status) status.textContent = ${JSON.stringify(zh ? "正在更新…" : "Updating…")};
+          try {
+            const form = new FormData();
+            form.append("kind", "avatar");
+            form.append("file", file);
+            const response = await fetch("/api/profile/media", { method:"POST", credentials:"same-origin", body:form, cache:"no-store" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.url) throw new Error(data.error || "Upload failed");
+            const avatar = document.getElementById("profile-avatar");
+            if (avatar) avatar.innerHTML = '<img src="' + String(data.url).replace(/"/g, "%22") + '" alt="">';
+            try { sessionStorage.removeItem("qssed-profile-summary-v2"); } catch {}
+            if (status) status.textContent = "";
+          } catch (error) {
+            console.error("Profile photo update failed", error);
+            if (status) status.textContent = ${JSON.stringify(zh ? "头像更新失败，请稍后再试。" : "Could not update the profile photo.")};
+          } finally {
+            button.disabled = false;
+          }
+        });
+      })();
+    <\/script>
   `;
 }
+
 export function accountAuditContent(zh) {
   return `
     <section class="audit-grid">
