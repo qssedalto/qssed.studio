@@ -30,7 +30,7 @@ export function compactBackHref(path, zh) {
     if (path.startsWith(root + "/")) return `${prefix}${root}`;
   }
 
-  return `${prefix}/dashboard`;
+  return `${prefix}`;
 }
 
 export function compactBackScript(path, zh) {
