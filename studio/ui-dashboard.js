@@ -32,7 +32,7 @@ export function dashboardIcon(name) {
     intelligence: '<path d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3v-3.2A2.5 2.5 0 0 1 5 13.5z"/><path d="M9 9.5h6M9 12.5h4"/>',
     admin: '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h5M16 13h.01"/>',
     wishes: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M12 7v6M9.5 10h5"/>',
-    gift: '<path d="M4 10h16v10H4z"/><path d="M3 7h18v3H3zM12 7v13"/><path d="M12 7H8.8A2.8 2.8 0 1 1 12 3.8zM12 7h3.2A2.8 2.8 0 1 0 12 3.8z"/>',
+    gift: '<rect x="5" y="10" width="14" height="10" rx="1.5"/><path d="M4 7h16v4H4M12 7v13"/><path d="M12 7C10 7 7.5 6.2 7.5 4.6 7.5 3.6 8.3 3 9.2 3 10.9 3 12 5.3 12 7z"/><path d="M12 7c2 0 4.5-.8 4.5-2.4 0-1-.8-1.6-1.7-1.6C13.1 3 12 5.3 12 7z"/>',
     moon: '<path d="M19.2 15.4A7.8 7.8 0 0 1 8.6 4.8 8.2 8.2 0 1 0 19.2 15.4z"/>'
   };
   const key = icons[name] ? name : "info";
