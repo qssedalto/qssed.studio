@@ -35,7 +35,8 @@ export function dashboardIcon(name) {
     gift: '<path d="M4 10h16v10H4z"/><path d="M3 7h18v3H3zM12 7v13"/><path d="M12 7H8.8A2.8 2.8 0 1 1 12 3.8zM12 7h3.2A2.8 2.8 0 1 0 12 3.8z"/>',
     moon: '<path d="M19.2 15.4A7.8 7.8 0 0 1 8.6 4.8 8.2 8.2 0 1 0 19.2 15.4z"/>'
   };
-  return '<span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (icons[name] || icons.info) + '</svg></span>';
+  const key = icons[name] ? name : "info";
+  return '<span class="dashboard-icon dashboard-icon-' + key + '" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + icons[key] + '</svg></span>';
 }
 
 export function dashboardContent(zh, options = {}) {
