@@ -84,6 +84,38 @@ export function dashboardContent(zh, options = {}) {
       </div>
     </section>
 
+    <section class="dashboard-home-wishes" aria-labelledby="dashboard-home-wishes-title">
+      <div class="dashboard-home-wishes-copy">
+        <span class="dashboard-eyebrow">${zh ? "祝福" : "Wishes"}</span>
+        <h2 id="dashboard-home-wishes-title">${zh ? "送一份祝福" : "Send a wish"}</h2>
+        <p>${zh ? "生日快乐和中秋快乐现在可以直接从首页生成。名字可以填写，也可以留空。" : "Create birthday or Mid-Autumn greeting links directly from Home. The recipient name is optional."}</p>
+      </div>
+      <div class="dashboard-home-wishes-builder" data-home-wish-builder>
+        <div class="dashboard-home-wish-types" role="radiogroup" aria-label="${zh ? "选择祝福" : "Choose a wish"}">
+          <button class="dashboard-home-wish-type is-active" type="button" data-home-wish-kind="birthday" role="radio" aria-checked="true">
+            <strong>${zh ? "生日快乐" : "Happy Birthday"}</strong>
+            <span>${zh ? "生日祝福" : "Birthday greeting"}</span>
+          </button>
+          <button class="dashboard-home-wish-type" type="button" data-home-wish-kind="mid-autumn" role="radio" aria-checked="false">
+            <strong>${zh ? "中秋快乐" : "Happy Mid-Autumn"}</strong>
+            <span>${zh ? "中秋祝福" : "Mid-Autumn greeting"}</span>
+          </button>
+        </div>
+        <label class="dashboard-home-wish-name">
+          <span>${zh ? "要祝福谁？" : "Who is this for?"}<small>${zh ? "可选" : "Optional"}</small></span>
+          <input id="dashboard-home-wish-name" type="text" maxlength="36" autocomplete="off" placeholder="${zh ? "输入名字，也可以留空" : "Enter a name or leave it blank"}">
+        </label>
+        <div class="dashboard-home-wish-preview">
+          <small>${zh ? "分享路由" : "Share route"}</small>
+          <code id="dashboard-home-wish-route">${prefix}/wish/birthday</code>
+        </div>
+        <div class="dashboard-home-wish-actions">
+          <a id="dashboard-home-wish-open" class="dashboard-primary-action" href="${prefix}/wish/birthday">${zh ? "生成并打开" : "Create & Open"}<span>›</span></a>
+          <a class="dashboard-secondary-action" href="${prefix}/wishes">${zh ? "打开祝福中心" : "Open Wish Links"}<span>›</span></a>
+        </div>
+      </div>
+    </section>
+
     <section class="dashboard-section">
       <div class="dashboard-section-head">
         <div><small>${zh ? "快捷入口" : "Shortcuts"}</small><h2>${zh ? "常用" : "Common"}</h2></div>
@@ -135,6 +167,11 @@ export function dashboardContent(zh, options = {}) {
         const zone = document.getElementById("dashboard-live-zone");
         const week = document.getElementById("dashboard-live-week");
         const theme = document.getElementById("dashboard-theme-label");
+        const wishNameInput = document.getElementById("dashboard-home-wish-name");
+        const wishRoute = document.getElementById("dashboard-home-wish-route");
+        const wishOpen = document.getElementById("dashboard-home-wish-open");
+        const wishTypeButtons = [...document.querySelectorAll("[data-home-wish-kind]")];
+        let wishKind = "birthday";
         const zh = ${zh ? "true" : "false"};
         const isoWeek = value => {
           const d = new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
@@ -143,6 +180,31 @@ export function dashboardContent(zh, options = {}) {
           const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
           return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
         };
+        const cleanWishName = value => String(value || "")
+          .replace(/[\\u0000-\\u001f\\u007f]/g, " ")
+          .replace(/\\s+/g, " ")
+          .trim()
+          .slice(0, 36);
+        const paintWish = () => {
+          if (!wishRoute || !wishOpen) return;
+          const name = cleanWishName(wishNameInput?.value || "");
+          const suffix = name ? "?name=" + encodeURIComponent(name) : "";
+          const path = ${JSON.stringify(prefix)} + "/wish/" + wishKind + suffix;
+          wishRoute.textContent = path;
+          wishOpen.href = path;
+        };
+        wishTypeButtons.forEach(button => button.addEventListener("click", () => {
+          wishKind = button.dataset.homeWishKind === "mid-autumn" ? "mid-autumn" : "birthday";
+          wishTypeButtons.forEach(item => {
+            const active = item.dataset.homeWishKind === wishKind;
+            item.classList.toggle("is-active", active);
+            item.setAttribute("aria-checked", active ? "true" : "false");
+          });
+          paintWish();
+        }));
+        wishNameInput?.addEventListener("input", paintWish);
+        paintWish();
+
         const paint = () => {
           const now = new Date();
           if (time) time.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { hour:"2-digit", minute:"2-digit", hour12:false }).format(now);

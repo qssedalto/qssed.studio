@@ -27,6 +27,11 @@ const zh = dashboardContent(true, { gptHref: "https://gpt.qsseda.com/zh-cn", adm
 const en = dashboardContent(false, { gptHref: "https://gpt.qsseda.com/en", adminHref: "" });
 assert(zh.includes("祝福链接") && zh.includes("/zh-cn/wishes"), "Chinese dashboard must expose Wish Links.");
 assert(en.includes("Wish Links") && en.includes("/en/wishes"), "English dashboard must expose Wish Links.");
+assert(zh.includes('data-home-wish-builder'), "Chinese Home must render the wish builder directly.");
+assert(en.includes('data-home-wish-builder'), "English Home must render the wish builder directly.");
+assert(zh.includes('data-home-wish-kind="birthday"') && zh.includes('data-home-wish-kind="mid-autumn"'), "Home wish builder must expose both greeting types.");
+assert(zh.includes('id="dashboard-home-wish-name"'), "Home wish builder must ask for an optional recipient.");
+assert(zh.includes('id="dashboard-home-wish-route"'), "Home wish builder must preview the share route.");
 
 assert(!entry.includes("redirect_uri"), "Wish router must not become an arbitrary redirector.");
 assert(!entry.includes('searchParams.get("url")'), "Wish router must not accept arbitrary destination URLs.");
