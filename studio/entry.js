@@ -98,6 +98,186 @@ async function isAdminAccount(accessToken) {
   }
 }
 
+
+function wishDestination(kind) {
+  if (kind === "birthday") return "/birthday";
+  if (kind === "mid-autumn") return "/mid-autumn";
+  return "";
+}
+
+function wishRedirect(request, locale, pathname) {
+  const match = String(pathname || "").match(/^\/wish\/(birthday|mid-autumn)$/);
+  if (!match) return null;
+  const destination = wishDestination(match[1]);
+  if (!destination) return null;
+  const source = new URL(request.url);
+  const target = new URL(request.url);
+  target.pathname = `${locale === "zh" ? "/zh-cn" : "/en"}${destination}`;
+  const name = String(source.searchParams.get("name") || "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 36);
+  target.search = "";
+  if (name) target.searchParams.set("name", name);
+  return Response.redirect(target.toString(), 302);
+}
+
+function wishesPage(locale = "zh") {
+  const zh = locale === "zh";
+  const lang = zh ? "zh-CN" : "en";
+  const prefix = zh ? "/zh-cn" : "/en";
+  const text = zh ? {
+    title: "祝福链接 · AERTEX",
+    eyebrow: "AERTEX · WISHES",
+    heading: "把祝福发给想祝福的人。",
+    lead: "选择一个祝福页面。名字可以填写，也可以留空；AERTEX 会生成一条简洁的分享路由，再自动导向对应的祝福。",
+    choose: "选择祝福",
+    birthday: "生日快乐",
+    birthdayNote: "适合生日当天发送。",
+    midAutumn: "中秋快乐",
+    midAutumnNote: "适合中秋节发送。",
+    recipient: "要祝福谁？",
+    optional: "可选",
+    placeholder: "输入名字，也可以留空",
+    example: "例如：焦晨阳",
+    share: "分享路由",
+    destination: "实际导向",
+    open: "打开祝福",
+    copy: "复制链接",
+    copied: "已复制",
+    failed: "复制失败，请长按链接复制。",
+    note: "留空时会生成不带 ?name= 的通用祝福链接；填写名字后会自动附加 ?name=xxx。",
+    lang: "EN"
+  } : {
+    title: "Wish Links · AERTEX",
+    eyebrow: "AERTEX · WISHES",
+    heading: "Send a wish to someone.",
+    lead: "Choose a greeting page. A name is optional; AERTEX creates a clean share route and redirects it to the selected greeting.",
+    choose: "Choose a wish",
+    birthday: "Happy Birthday",
+    birthdayNote: "For birthdays.",
+    midAutumn: "Happy Mid-Autumn Festival",
+    midAutumnNote: "For the Mid-Autumn Festival.",
+    recipient: "Who is this for?",
+    optional: "Optional",
+    placeholder: "Enter a name or leave it blank",
+    example: "For example: Alex",
+    share: "Share route",
+    destination: "Destination",
+    open: "Open wish",
+    copy: "Copy link",
+    copied: "Copied",
+    failed: "Copy failed. Press and hold the link to copy it.",
+    note: "Leave the name blank for a generic link. Adding a name automatically appends ?name=xxx.",
+    lang: "ZH"
+  };
+
+  return `<!doctype html>
+<html lang="${lang}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>${text.title}</title>
+  <style>
+    :root{color-scheme:light dark;--bg:#f6f6f4;--panel:rgba(255,255,255,.82);--solid:#fff;--text:#171719;--muted:#737378;--line:rgba(0,0,0,.09);--soft:#efefed;--shadow:0 26px 80px rgba(0,0,0,.08)}
+    @media(prefers-color-scheme:dark){:root{--bg:#101011;--panel:rgba(28,28,30,.82);--solid:#1c1c1e;--text:#f5f5f7;--muted:#a1a1a7;--line:rgba(255,255,255,.1);--soft:#252527;--shadow:0 30px 90px rgba(0,0,0,.35)}}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","PingFang SC","Helvetica Neue",Arial,sans-serif}
+    body{padding:max(18px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom))}
+    button,input{font:inherit}.shell{width:min(920px,100%);margin:0 auto}.topbar{height:46px;display:flex;align-items:center;justify-content:space-between}
+    .brand,.language-toggle{color:inherit;text-decoration:none}.brand{font-size:15px;font-weight:760;letter-spacing:.08em}.language-toggle{font-size:12px;font-weight:700;padding:8px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+    .hero{padding:72px 0 34px}.eyebrow{font-size:12px;font-weight:760;letter-spacing:.17em;color:var(--muted)}h1{font-size:clamp(38px,7vw,68px);line-height:.99;letter-spacing:-.055em;margin:14px 0 18px;max-width:830px}.lead{max-width:730px;margin:0;color:var(--muted);font-size:17px;line-height:1.7}
+    .panel{background:var(--panel);backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden}.section{padding:24px}.section+.section{border-top:1px solid var(--line)}
+    .label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:14px}.optional{font-size:11px;padding:3px 7px;border-radius:999px;background:var(--soft)}
+    .choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.choice{appearance:none;border:1px solid var(--line);background:var(--solid);color:var(--text);border-radius:20px;padding:18px;text-align:left;cursor:pointer;transition:.18s ease;min-height:112px}.choice:hover{transform:translateY(-1px)}.choice.active{border-color:var(--text);box-shadow:inset 0 0 0 1px var(--text)}.choice strong{display:block;font-size:18px;letter-spacing:-.02em;margin-bottom:8px}.choice span{display:block;font-size:13px;color:var(--muted);line-height:1.45}
+    .name{width:100%;border:1px solid var(--line);background:var(--solid);color:var(--text);border-radius:16px;padding:14px 15px;outline:none}.name:focus{border-color:var(--text);box-shadow:0 0 0 3px rgba(127,127,127,.14)}.example{margin-top:8px;font-size:12px;color:var(--muted)}
+    .results{display:grid;grid-template-columns:1fr 1fr;gap:12px}.result{min-width:0;padding:16px;border-radius:18px;background:var(--soft);border:1px solid var(--line)}.result small{display:block;color:var(--muted);font-size:11px;margin-bottom:8px}.result a{display:block;color:inherit;text-decoration:none;font:600 13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.action{border:0;border-radius:14px;padding:12px 16px;font-weight:720;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.primary{background:var(--text);color:var(--bg)}.secondary{background:var(--soft);color:var(--text);border:1px solid var(--line)}.note{margin:14px 0 0;color:var(--muted);font-size:12px;line-height:1.55}.status{min-height:18px;margin-top:10px;font-size:12px;color:var(--muted)}footer{padding:28px 4px 4px;color:var(--muted);font-size:12px}
+    @media(max-width:680px){body{padding-left:14px;padding-right:14px}.hero{padding-top:48px}.choices,.results{grid-template-columns:1fr}.section{padding:18px}.panel{border-radius:24px}.actions{display:grid;grid-template-columns:1fr 1fr}.action{width:100%}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topbar">
+      <a class="brand" href="${prefix}/dashboard">AERTEX</a>
+      <a class="language-toggle" href="${zh ? "/en/wishes" : "/zh-cn/wishes"}">${text.lang}</a>
+    </div>
+    <section class="hero">
+      <div class="eyebrow">${text.eyebrow}</div>
+      <h1>${text.heading}</h1>
+      <p class="lead">${text.lead}</p>
+    </section>
+    <section class="panel">
+      <div class="section">
+        <div class="label">${text.choose}</div>
+        <div class="choices" role="radiogroup" aria-label="${text.choose}">
+          <button class="choice active" type="button" data-kind="birthday" role="radio" aria-checked="true"><strong>${text.birthday}</strong><span>${text.birthdayNote}</span></button>
+          <button class="choice" type="button" data-kind="mid-autumn" role="radio" aria-checked="false"><strong>${text.midAutumn}</strong><span>${text.midAutumnNote}</span></button>
+        </div>
+      </div>
+      <div class="section">
+        <div class="label">${text.recipient}<span class="optional">${text.optional}</span></div>
+        <input id="wish-name" class="name" type="text" maxlength="36" autocomplete="off" placeholder="${text.placeholder}" aria-label="${text.recipient}">
+        <div class="example">${text.example}</div>
+      </div>
+      <div class="section">
+        <div class="results">
+          <div class="result"><small>${text.share}</small><a id="share-link" href="${prefix}/wish/birthday">${prefix}/wish/birthday</a></div>
+          <div class="result"><small>${text.destination}</small><a id="destination-link" href="${prefix}/birthday">${prefix}/birthday</a></div>
+        </div>
+        <div class="actions">
+          <a id="open-link" class="action primary" href="${prefix}/wish/birthday">${text.open}</a>
+          <button id="copy-link" class="action secondary" type="button">${text.copy}</button>
+        </div>
+        <p class="note">${text.note}</p>
+        <div id="copy-status" class="status" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+    <footer>© AERTEX</footer>
+  </main>
+  <script>
+    (() => {
+      const prefix=${JSON.stringify(prefix)};
+      const copyLabel=${JSON.stringify(text.copy)};
+      const copiedLabel=${JSON.stringify(text.copied)};
+      const failedLabel=${JSON.stringify(text.failed)};
+      const choices=[...document.querySelectorAll("[data-kind]")];
+      const nameInput=document.getElementById("wish-name");
+      const shareLink=document.getElementById("share-link");
+      const destinationLink=document.getElementById("destination-link");
+      const openLink=document.getElementById("open-link");
+      const copyButton=document.getElementById("copy-link");
+      const status=document.getElementById("copy-status");
+      let kind="birthday";
+      const cleanName=value=>String(value||"").replace(/[\\u0000-\\u001f\\u007f]/g," ").replace(/\\s+/g," ").trim().slice(0,36);
+      const paint=()=>{
+        const name=cleanName(nameInput.value);
+        const suffix=name?"?name="+encodeURIComponent(name):"";
+        const shortPath=prefix+"/wish/"+kind+suffix;
+        const targetPath=prefix+"/"+kind+suffix;
+        const shortUrl=location.origin+shortPath;
+        shareLink.href=shortUrl;shareLink.textContent=shortPath;shareLink.title=shortUrl;
+        destinationLink.href=location.origin+targetPath;destinationLink.textContent=targetPath;
+        openLink.href=shortUrl;
+        const state=new URLSearchParams();state.set("type",kind);if(name)state.set("name",name);
+        history.replaceState(null,"",location.pathname+"?"+state.toString());
+      };
+      const select=next=>{
+        kind=next==="mid-autumn"?"mid-autumn":"birthday";
+        choices.forEach(button=>{const active=button.dataset.kind===kind;button.classList.toggle("active",active);button.setAttribute("aria-checked",active?"true":"false")});
+        status.textContent="";copyButton.textContent=copyLabel;paint();
+      };
+      choices.forEach(button=>button.addEventListener("click",()=>select(button.dataset.kind)));
+      nameInput.addEventListener("input",()=>{status.textContent="";copyButton.textContent=copyLabel;paint()});
+      copyButton.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(shareLink.href);copyButton.textContent=copiedLabel;status.textContent=copiedLabel;setTimeout(()=>copyButton.textContent=copyLabel,1600)}catch{status.textContent=failedLabel}});
+      const initial=new URLSearchParams(location.search);const initialName=cleanName(initial.get("name"));if(initialName)nameInput.value=initialName;select(initial.get("type"));
+    })();
+  <\/script>
+</body>
+</html>`;
+}
+
 function replaceOsContent(markup, content) {
   const opening = '<section id="os-content"';
   const start = markup.indexOf(opening);
@@ -121,6 +301,9 @@ export default {
 
     const legacyTarget = LEGACY_REDIRECTS.get(pathname);
     if (legacyTarget) return localizedRedirect(request, locale, legacyTarget);
+
+    const wishRoute = wishRedirect(request, locale, pathname);
+    if (wishRoute) return wishRoute;
 
     const t = TEXT[locale];
     const links = buildLinks(locale, pathname);
@@ -168,6 +351,7 @@ export default {
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }
 
+    if (pathname === "/wishes") return localizedPage(wishesPage(locale), locale);
     if (pathname === "/birthday") return localizedPage(birthdayPage(locale), locale);
     if (pathname === "/mid-autumn") return localizedPage(midAutumnPage(locale), locale);
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);

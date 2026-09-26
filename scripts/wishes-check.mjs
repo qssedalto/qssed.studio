@@ -1,0 +1,34 @@
+import fs from "node:fs";
+import { dashboardContent } from "../studio/ui-dashboard.js";
+
+const read = path => fs.readFileSync(path, "utf8");
+const assert = (condition, message) => { if (!condition) throw new Error(message); };
+
+const entry = read("studio/entry.js");
+const birthday = read("studio/ui-birthday.js");
+const midAutumn = read("studio/ui-mid-autumn.js");
+
+for (const required of [
+  'if (pathname === "/wishes") return localizedPage(wishesPage(locale), locale);',
+  '/^\\/wish\\/(birthday|mid-autumn)$/',
+  'if (kind === "birthday") return "/birthday";',
+  'if (kind === "mid-autumn") return "/mid-autumn";',
+  'target.search = "";',
+  'target.searchParams.set("name", name)',
+  '.slice(0, 36)'
+]) {
+  assert(entry.includes(required), "Wish routing invariant missing: " + required);
+}
+
+assert(birthday.includes('params.get("name")'), "Birthday page must support ?name=.");
+assert(midAutumn.includes('params.get("name")'), "Mid-Autumn page must support ?name=.");
+
+const zh = dashboardContent(true, { gptHref: "https://gpt.qsseda.com/zh-cn", adminHref: "" });
+const en = dashboardContent(false, { gptHref: "https://gpt.qsseda.com/en", adminHref: "" });
+assert(zh.includes("祝福链接") && zh.includes("/zh-cn/wishes"), "Chinese dashboard must expose Wish Links.");
+assert(en.includes("Wish Links") && en.includes("/en/wishes"), "English dashboard must expose Wish Links.");
+
+assert(!entry.includes("redirect_uri"), "Wish router must not become an arbitrary redirector.");
+assert(!entry.includes('searchParams.get("url")'), "Wish router must not accept arbitrary destination URLs.");
+
+console.log("AERTEX wish-link routing checks passed.");

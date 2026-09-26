@@ -11,7 +11,8 @@ export function dashboardIcon(name) {
     appearance: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 000 16z"/>',
     language: '<path d="M4 5h10M9 5c-.2 5-2.3 8.3-5 10M6 9c1.8 2.8 4 4.8 7 6M14 10h6M17 7v10M14 17h6"/>',
     intelligence: '<path d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3v-3.2A2.5 2.5 0 0 1 5 13.5z"/><path d="M9 9.5h6M9 12.5h4"/>',
-    admin: '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h5M16 13h.01"/>'
+    admin: '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h5M16 13h.01"/>',
+    wishes: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M12 7v6M9.5 10h5"/>'
   };
   return '<span class="dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (icons[name] || icons.info) + '</svg></span>';
 }
@@ -25,6 +26,7 @@ export function dashboardContent(zh, options = {}) {
   const shortcuts = zh ? [
     ...(gptHref ? [["AERTEX Intelligence","打开 GPT 工作空间","intelligence",gptHref]] : []),
     ...(adminHref ? [["管理员控制台","进入独立管理控制面","admin",adminHref]] : []),
+    ["祝福链接","生日、中秋与专属姓名分享链接","wishes",`${prefix}/wishes`],
     ["用户资料","头像、签名和主页信息","profile",`${prefix}/profile/details`],
     ["工作台","打开工作区","workbench",`${prefix}/workspace/workbench`],
     ["私人存储","管理 R2 文件","storage",`${prefix}/settings/storage`],
@@ -34,6 +36,7 @@ export function dashboardContent(zh, options = {}) {
   ] : [
     ...(gptHref ? [["AERTEX Intelligence","Open GPT workspace","intelligence",gptHref]] : []),
     ...(adminHref ? [["Administration","Open isolated control plane","admin",adminHref]] : []),
+    ["Wish Links","Birthday, Mid-Autumn, and named greeting links","wishes",`${prefix}/wishes`],
     ["Profile","Photo, signature, and profile details","profile",`${prefix}/profile/details`],
     ["Workbench","Open Workspace","workbench",`${prefix}/workspace/workbench`],
     ["Private Storage","Manage R2 files","storage",`${prefix}/settings/storage`],
