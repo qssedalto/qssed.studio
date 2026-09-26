@@ -50,7 +50,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
   <div id="compact-back-zone" class="compact-back-zone">
     <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${zh ? "返回上一级" : "Back"}" data-fallback-href="${compactBackUrl}">
       <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-        <path d="M14.5 5.5 8 12l6.5 6.5"/>
+        <path d="M15 5.5 8.5 12 15 18.5"/>
       </svg>
       <span>${zh ? "返回" : "Back"}</span>
     </button>

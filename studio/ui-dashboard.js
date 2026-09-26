@@ -32,11 +32,11 @@ export function dashboardIcon(name) {
     intelligence: '<path d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3v-3.2A2.5 2.5 0 0 1 5 13.5z"/><path d="M9 9.5h6M9 12.5h4"/>',
     admin: '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h5M16 13h.01"/>',
     wishes: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M12 7v6M9.5 10h5"/>',
-    gift: '<path d="M4 12h16v8H4z"/><path d="M4 15c2 1.4 4 1.4 6 0 2 1.4 4 1.4 6 0 1.3.9 2.7 1.2 4 .7"/><path d="M12 12V7"/><path d="M12 4.2c1.1 1 1.1 1.9 0 2.8-1.1-.9-1.1-1.8 0-2.8z"/>',
+    gift: '<rect x="4.5" y="11" width="15" height="9" rx="1.5"/><path d="M4.5 15h15M12 11V7"/><path d="M12 4.2c1.15 1 1.15 1.9 0 2.8-1.15-.9-1.15-1.8 0-2.8Z"/>',
     moon: '<path d="M19.2 15.4A7.8 7.8 0 0 1 8.6 4.8 8.2 8.2 0 1 0 19.2 15.4z"/>'
   };
   const key = icons[name] ? name : "info";
-  return '<span class="dashboard-icon dashboard-icon-' + key + '" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + icons[key] + '</svg></span>';
+  return '<span class="dashboard-icon dashboard-icon-' + key + '" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">' + icons[key] + '</svg></span>';
 }
 
 export function dashboardContent(zh, options = {}) {

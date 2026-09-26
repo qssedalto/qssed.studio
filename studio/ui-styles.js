@@ -751,10 +751,10 @@ ${profileStyles()}    /* SETTINGS_GENERAL_ROUTE_V1 */
     }
     /* COMPACT_BACK_NAV_V2 */
     @media(max-width:900px){
-      .compact-back-zone{width:142px;height:82px}
-      .compact-back-button{width:auto!important;min-width:88px!important;height:48px!important;min-height:48px!important;padding:0 15px 0 12px!important;border-radius:999px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;margin:0!important;font-size:13px!important;font-weight:760!important;letter-spacing:0!important;-webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);transition:transform .12s ease,background .15s ease,border-color .15s ease,box-shadow .15s ease!important}
-      .compact-back-button span{display:inline!important;color:inherit!important;line-height:1!important}
-      .compact-back-button svg{width:21px!important;height:21px!important;stroke:currentColor!important}
+      .compact-back-zone{width:72px;height:72px}
+      .compact-back-button{width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important;min-height:48px!important;max-height:48px!important;padding:0!important;border-radius:50%!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:0!important;margin:0!important;font-size:0!important;line-height:0!important;letter-spacing:0!important;-webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);transition:transform .12s ease,background .15s ease,border-color .15s ease,box-shadow .15s ease!important}
+      .compact-back-button span{display:none!important}
+      .compact-back-button svg{display:block!important;width:22px!important;height:22px!important;flex:0 0 22px!important;overflow:visible!important;fill:none!important;stroke:currentColor!important;stroke-width:2.2!important;stroke-linecap:round!important;stroke-linejoin:round!important;transform:none!important;transform-origin:50% 50%!important}
       :root:not([data-theme="light"]) .compact-back-button{background:#000!important;color:#fff!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 10px 28px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.09)!important}
       :root[data-theme="light"] .compact-back-button{background:rgba(255,255,255,.94)!important;color:#111!important;border:1px solid rgba(17,24,39,.10)!important;box-shadow:0 10px 26px rgba(18,26,38,.12),inset 0 1px 0 rgba(255,255,255,.75)!important}
       .compact-back-button:active{transform:scale(.955)!important}
