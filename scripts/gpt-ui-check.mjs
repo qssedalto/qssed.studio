@@ -35,7 +35,6 @@ for (const locale of ["zh-cn", "en"]) {
     'id="shareAnonymous"',
     'share_author_name:shareAuthorName',
     'chooseShareIdentity()',
-    'conversation.author_name',
     'window.AERTEXRich',
     'window.AERTEXRich.stream(assistant,streamed)',
     'window.AERTEXRich.finalize(assistant,streamed)',
@@ -60,9 +59,16 @@ for (const locale of ["zh-cn", "en"]) {
   if (html.includes('assistant.textContent=streamed') || html.includes('bubble.className="bubble";bubble.textContent=content')) {
     throw new Error("Assistant output must not fall back to the legacy plain-text rendering path");
   }
-  const shared = renderSharedConversation(locale, { conversation: { title: "Rich share" }, messages: [{ role: "assistant", content: "**bold**\n\n```js\nconst x=1;\n```" }] }, "dark");
+  const shared = renderSharedConversation(locale, { conversation: { title: "Rich share", author_name: "Example Author" }, messages: [{ role: "assistant", content: "**bold**\n\n```js\nconst x=1;\n```" }] }, "dark");
   if (!shared.includes('data-rich-message="true"') || !shared.includes("AERTEXRich.enhance(document)")) {
     throw new Error("Shared Intelligence conversations must preserve rich assistant formatting");
+  }
+  if (!shared.includes("Example Author")) {
+    throw new Error("Shared Intelligence conversation must render an explicitly shared author name");
+  }
+  const anonymousShared = renderSharedConversation(locale, { conversation: { title: "Anonymous share", author_name: "" }, messages: [] }, "dark");
+  if (anonymousShared.includes("Example Author")) {
+    throw new Error("Anonymous shared Intelligence conversations must not leak an author name");
   }
   if (html.includes('href="/zh-cn/admin"') || html.includes('href="/en/admin"') || html.includes("adminConsole")) {
     throw new Error("Intelligence must not expose administrator navigation");
