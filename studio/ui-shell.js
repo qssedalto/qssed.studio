@@ -36,9 +36,9 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
       try {
         const compactMedia = window.matchMedia("(max-width:1050px)");
         if (!compactMedia.matches) return;
-        const state = sessionStorage.getItem("qssed-compact-view-v1");
+        const state = sessionStorage.getItem("qssed-compact-view-v2");
         const currentPath = ${JSON.stringify(path)};
-        const showContent = state === "content" || (state !== "menu" && currentPath !== "/dashboard");
+        const showContent = state !== "menu";
         document.documentElement.classList.toggle("compact-content-view", showContent);
         document.documentElement.classList.toggle("compact-menu-view", !showContent);
       } catch {}
@@ -81,7 +81,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
       try {
         const sidebar = document.getElementById("os-sidebar");
         const sidebarKey = "qssed-sidebar-scroll-v1";
-        const compactViewKey = "qssed-compact-view-v1";
+        const compactViewKey = "qssed-compact-view-v2";
         const compactMedia = window.matchMedia("(max-width:1050px)");
         const savedSidebarScroll = Number(sessionStorage.getItem(sidebarKey) || "0");
         if (sidebar && Number.isFinite(savedSidebarScroll)) {
@@ -127,7 +127,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
   ${profileClientScript()}
   <script>
     const loginUrl = ${JSON.stringify(links.login)};
-    const compactViewKey = "qssed-compact-view-v1";
+    const compactViewKey = "qssed-compact-view-v2";
     const compactMedia = window.matchMedia("(max-width:1050px)");
 
     function applyCompactViewMode() {
@@ -137,7 +137,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
       }
       let state = null;
       try { state = sessionStorage.getItem(compactViewKey); } catch {}
-      const showContent = state === "content" || (state !== "menu" && ${JSON.stringify(path)} !== "/dashboard");
+      const showContent = state !== "menu";
       document.documentElement.classList.toggle("compact-content-view", showContent);
       document.documentElement.classList.toggle("compact-menu-view", !showContent);
     }
@@ -175,6 +175,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
         [
           "qssed-os-user-name",
           "qssed-sidebar-scroll-v1",
+          "qssed-compact-view-v2",
           "qssed-compact-view-v1"
         ].forEach(key => sessionStorage.removeItem(key));
       } catch {}
@@ -478,23 +479,35 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
   const gptHref = String(productLinks?.gptHref || "");
   const adminHref = String(productLinks?.adminHref || "");
   const iconBySection = {
-    dashboard: "workbench",
+    dashboard: "home",
     info: "info",
     profile: "profile",
-    workspace: "workbench",
+    workspace: "workspace",
     settings: "settings"
   };
   const iconForItem = href => {
     const value = String(href || "");
-    if (value.includes("/knowledge")) return "info";
+    if (value.includes("/knowledge")) return "knowledge";
     if (value.includes("/links")) return "links";
-    if (value.includes("/notes") || value.includes("/summaries") || value.includes("/search")) return "info";
-    if (value.includes("/profile")) return "profile";
-    if (value.includes("/projects") || value.includes("/tasks") || value.includes("/drafts") || value.includes("/experiments") || value.includes("/workbench")) return "workbench";
-    if (value.includes("/storage")) return "storage";
-    if (value.includes("/security")) return "security";
-    if (value.includes("/appearance")) return "appearance";
-    if (value.includes("/language")) return "language";
+    if (value.includes("/notes")) return "notes";
+    if (value.includes("/summaries")) return "summary";
+    if (value.includes("/search")) return "search";
+    if (value.includes("/profile/details")) return "profile";
+    if (value.includes("/profile/account")) return "account";
+    if (value.includes("/profile/preferences")) return "preferences";
+    if (value.includes("/workspace/projects")) return "projects";
+    if (value.includes("/workspace/experiments")) return "experiments";
+    if (value.includes("/workspace/drafts")) return "drafts";
+    if (value.includes("/workspace/tasks")) return "tasks";
+    if (value.includes("/workspace/workbench")) return "workbench";
+    if (value.includes("/settings/storage")) return "storage";
+    if (value.includes("/settings/security")) return "security";
+    if (value.includes("/settings/appearance")) return "appearance";
+    if (value.includes("/settings/language")) return "language";
+    if (value.includes("/settings/notifications")) return "notifications";
+    if (value.includes("/settings/ai")) return "ai";
+    if (value.includes("/settings/integrations")) return "integrations";
+    if (value.includes("/settings/general")) return "general";
     if (value.includes("/settings")) return "settings";
     return "info";
   };
@@ -517,7 +530,7 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
       ${copy.nav.map(group => {
         const active = group.id === activeSection;
         return `
-          <section class="os-nav-group os-nav-entry ${active ? "is-active" : ""}">
+          <section class="os-nav-group os-nav-entry ${active ? "is-active" : ""}" data-nav-section="${group.id}">
             <a class="os-nav-title" href="${group.href}">
               ${dashboardIcon(iconBySection[group.id] || "info")}
               <span>${group.label}</span>
