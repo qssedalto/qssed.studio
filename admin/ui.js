@@ -162,6 +162,18 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   };
   const fieldLabel=key=>FIELD_LABELS[String(key)]||String(key);
   const roleLabel=value=>({admin:"管理员",editor:"编辑者",user:"普通用户"}[String(value)]||String(value));
+  const valueLabel=(key,value)=>{
+    if(key==="role")return roleLabel(value);
+    if(key==="status")return ({active:"正常",suspended:"已暂停",banned:"已封禁",disabled:"已停用"}[String(value)]||scalar(value));
+    if(typeof value==="boolean")return value?"是":"否";
+    return scalar(value);
+  };
+  const localizeForDisplay=value=>{
+    if(Array.isArray(value))return value.map(localizeForDisplay);
+    if(value&&typeof value==="object")return Object.fromEntries(Object.entries(value).map(([key,item])=>[fieldLabel(key),localizeForDisplay(item)]));
+    if(typeof value==="boolean")return value?"是":"否";
+    return value;
+  };
   const permissionLabel=value=>({
     "users.read":"查看用户","users.update":"修改用户","users.ban":"暂停或封禁用户",
     "roles.read":"查看角色与权限","roles.update":"修改角色权限","logs.read":"查看操作日志",
@@ -196,13 +208,13 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     if(!list.length)return '<div class="state">暂无记录。</div>';
     const cols=[...new Set(list.flatMap(row=>Object.keys(row||{})))].slice(0,12);
     return '<div class="tableWrap"><table><thead><tr>'+cols.map(c=>'<th>'+esc(fieldLabel(c))+'</th>').join('')+'</tr></thead><tbody>'+
-      list.map(row=>'<tr>'+cols.map(c=>'<td class="'+(/id|uuid|time|date|email|ip/i.test(c)?"mono":"")+'">'+esc(scalar(row?.[c]))+'</td>').join('')+'</tr>').join('')+
+      list.map(row=>'<tr>'+cols.map(c=>'<td class="'+(/id|uuid|time|date|email|ip/i.test(c)?"mono":"")+'">'+esc(valueLabel(c,row?.[c]))+'</td>').join('')+'</tr>').join('')+
       '</tbody></table></div>';
   }
   function objCards(obj){
     const entries=Object.entries(obj||{});
     if(!entries.length)return '<div class="state">暂无指标。</div>';
-    return '<div class="grid">'+entries.slice(0,12).map(([k,v])=>'<article class="card metric"><small>'+esc(k)+'</small><strong>'+esc(typeof v==="object"?(Array.isArray(v)?v.length:"…"):v)+'</strong></article>').join('')+'</div>';
+    return '<div class="grid">'+entries.slice(0,12).map(([k,v])=>'<article class="card metric"><small>'+esc(fieldLabel(k))+'</small><strong>'+esc(typeof v==="object"?(Array.isArray(v)?v.length:"…"):v)+'</strong></article>').join('')+'</div>';
   }
   const num=value=>{const text=String(value??"").trim();if(!text)return null;const number=Number(text);return Number.isFinite(number)?number:null};
   const intOrNull=value=>{const number=num(value);return number==null?null:Math.max(0,Math.trunc(number))};
@@ -212,7 +224,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   async function overview(){
     const result=await post("/api/admin/overview");
     const data=result.data||{};
-    view.innerHTML=objCards(data)+'<section class="section"><div class="sectionHead"><h2>原始管理概览</h2></div><pre>'+esc(JSON.stringify(data,null,2))+'</pre></section>';
+    view.innerHTML=objCards(data)+'<section class="section"><div class="sectionHead"><h2>原始管理概览</h2></div><pre>'+esc(JSON.stringify(localizeForDisplay(data),null,2))+'</pre></section>';
   }
   async function users(){
     const result=await post("/api/admin/users");
@@ -285,7 +297,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const rows=Array.isArray(exemptions.data)?exemptions.data:[];
     const auditRows=Array.isArray(auditList.entries)?auditList.entries:[];
     view.innerHTML='<div class="split"><section class="section"><div class="sectionHead"><h2>华为设备 ID 豁免</h2></div>'+table(rows)+'</section>'+
-      '<section class="section"><div class="sectionHead"><h2>访问审计摘要</h2></div><pre>'+esc(JSON.stringify(auditSummary.summary||{},null,2))+'</pre></section></div>'+
+      '<section class="section"><div class="sectionHead"><h2>访问审计摘要</h2></div><pre>'+esc(JSON.stringify(localizeForDisplay(auditSummary.summary||{}),null,2))+'</pre></section></div>'+
       '<section class="section"><div class="sectionHead"><h2>授予或撤销账户豁免</h2></div><form class="form" id="exemptionForm">'+
       '<input name="user" placeholder="用户 UUID" required><select name="enabled"><option value="true">授予</option><option value="false">撤销</option></select><input name="expires" placeholder="到期时间 ISO（可选）"><input class="wide" name="note" placeholder="管理备注"><button class="btn primary" type="submit">应用</button></form></section>'+
       '<section class="section"><div class="sectionHead"><h2>最近访问审计事件</h2></div>'+table(auditRows)+'</section>';
@@ -369,7 +381,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       '<div class="stack"><label>每月预算（USD）<input name="budget" type="number" min="0" step=".01"></label><label>输入价格 / 百万 Token（USD）<input name="input" type="number" min="0" step=".001" value="0"></label><label>输出价格 / 百万 Token（USD）<input name="output" type="number" min="0" step=".001" value="0"></label></div>'+
       '<div class="stack"><button class="btn primary" type="submit">创建服务商</button></div></form><div class="feedback" id="providerFeedback"></div></section>'+
       '<section class="section"><div class="sectionHead"><h2>服务商</h2></div><div class="tableWrap"><table><thead><tr><th>名称</th><th>类型</th><th>默认模型</th><th>模型</th><th>本月用量</th><th>状态</th><th>操作</th></tr></thead><tbody>'+
-      providers.map(provider=>'<tr data-provider="'+esc(provider.id)+'"><td>'+esc(provider.name||"—")+'<br><span class="mono">'+esc(provider.id)+'</span></td><td class="mono">'+esc(provider.provider)+'</td><td class="mono">'+esc(provider.default_model||"—")+'</td><td>'+esc((provider.allowed_models||[]).join(", "))+'</td><td>'+esc(provider.month_usage_usd??0)+' USD · '+esc(provider.month_requests??0)+' req</td><td><span class="badge '+(provider.is_active!==false?"ok":"bad")+'">'+(provider.is_active!==false?"已启用":"已停用")+'</span></td><td><div class="inline"><button class="btn toggleProvider" type="button">'+(provider.is_active!==false?"停用":"启用")+'</button><button class="btn danger deleteProvider" type="button">删除</button></div></td></tr>').join('')+
+      providers.map(provider=>'<tr data-provider="'+esc(provider.id)+'"><td>'+esc(provider.name||"—")+'<br><span class="mono">'+esc(provider.id)+'</span></td><td class="mono">'+esc(provider.provider)+'</td><td class="mono">'+esc(provider.default_model||"—")+'</td><td>'+esc((provider.allowed_models||[]).join(", "))+'</td><td>'+esc(provider.month_usage_usd??0)+' USD · '+esc(provider.month_requests??0)+' 次请求</td><td><span class="badge '+(provider.is_active!==false?"ok":"bad")+'">'+(provider.is_active!==false?"已启用":"已停用")+'</span></td><td><div class="inline"><button class="btn toggleProvider" type="button">'+(provider.is_active!==false?"停用":"启用")+'</button><button class="btn danger deleteProvider" type="button">删除</button></div></td></tr>').join('')+
       '</tbody></table></div></section>'+
       '<section class="section"><div class="sectionHead"><h2>用户 AI 访问权限</h2></div><div class="tableWrap"><table><thead><tr><th>用户</th><th>启用</th><th>服务商</th><th>美元限额</th><th>Token 限额</th><th>每分钟请求</th><th>操作</th></tr></thead><tbody>'+
       users.map(user=>{const selected=new Set((user.provider_access||[]).filter(item=>item.enabled!==false).map(item=>item.provider_id));return '<tr data-ai-user="'+esc(user.user_id)+'"><td><strong>'+esc(user.display_name||user.username||"—")+'</strong><br><span class="mono">'+esc(user.email||user.user_id)+'</span></td><td><input class="aiEnabled" type="checkbox" '+(user.enabled?"checked":"")+'></td><td><select class="aiProviders multiSelect" multiple>'+providers.filter(provider=>provider.is_active!==false).map(provider=>'<option value="'+esc(provider.id)+'" '+(selected.has(provider.id)?"selected":"")+'>'+esc(provider.name)+'</option>').join('')+'</select></td>'+
@@ -443,7 +455,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const health=await get("/health");
     const overviewResult=await post("/api/admin/overview").catch(()=>({data:{}}));
     view.innerHTML=objCards({service:health.service||"admin",status:health.status||"unknown",origin:health.origin||location.origin,time:health.time||"—"})+
-      '<section class="section"><div class="sectionHead"><h2>管理控制面</h2></div><pre>'+esc(JSON.stringify({health,overview:overviewResult.data||{}},null,2))+'</pre></section>';
+      '<section class="section"><div class="sectionHead"><h2>管理控制面</h2></div><pre>'+esc(JSON.stringify(localizeForDisplay({health,overview:overviewResult.data||{}}),null,2))+'</pre></section>';
   }
   const loaders={"/":overview,"/users":users,"/roles":roles,"/logs":logs,"/access":access,"/content":content,"/storage":storage,"/intelligence":intelligence,"/system":system};
   async function load(){view.innerHTML='<div class="state">正在加载管理数据…</div>';try{await (loaders[route]||overview)()}catch(error){errorView(error)}}
