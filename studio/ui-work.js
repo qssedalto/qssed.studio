@@ -1,3 +1,4 @@
+import { dashboardIcon } from "./ui-dashboard.js";
 function workStyles() {
   return `
     <style id="qsseda-work-product-ui">
@@ -770,12 +771,16 @@ export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https
   const rootCurrent = pathname === "/work" ? ' aria-current="page"' : "";
   const localCurrent = pathname === "/work/local" ? ' aria-current="page"' : "";
   const group = `
-        <section class="os-nav-group ${isWork ? "is-active" : ""}" data-qsseda-work-nav="1">
-          <span class="os-nav-title">Work</span>
+        <section class="os-nav-group os-nav-entry ${isWork ? "is-active" : ""}" data-qsseda-work-nav="1" data-nav-section="work">
+          <a class="os-nav-title" href="${mainOrigin}${prefix}/work">
+            ${dashboardIcon("work")}
+            <span>Work</span>
+            <b aria-hidden="true">›</b>
+          </a>
           <div class="os-nav-items">
-            <a href="${mainOrigin}${prefix}/work"${rootCurrent}>${zh ? "概览" : "Overview"}</a>
-            <a href="${mainOrigin}${prefix}/work/local"${localCurrent}>${zh ? "本机连接" : "Computer"}</a>
-            <a href="${workTexUrl}">${zh ? "TeX 工作台" : "TeX Workbench"}</a>
+            <a href="${mainOrigin}${prefix}/work"${rootCurrent}>${dashboardIcon("work")}<span>${zh ? "概览" : "Overview"}</span></a>
+            <a href="${mainOrigin}${prefix}/work/local"${localCurrent}>${dashboardIcon("computer")}<span>${zh ? "本机连接" : "Computer"}</span></a>
+            <a href="${workTexUrl}">${dashboardIcon("tex")}<span>${zh ? "TeX 工作台" : "TeX Workbench"}</span></a>
           </div>
         </section>
       `;
@@ -783,9 +788,9 @@ export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https
   output = output.replace(/\s*<section class="os-nav-group[^"]*" data-qsseda-work-nav="1">[\s\S]*?<\/section>\s*/g, "\n");
 
   if (isWork) output = output.replaceAll("os-nav-group is-active", "os-nav-group ");
-  const adminAnchor = `<a class="os-nav-title" href="${prefix}/admin">`;
-  const anchorIndex = output.indexOf(adminAnchor);
-  const sectionIndex = anchorIndex >= 0 ? output.lastIndexOf('<section class="os-nav-group', anchorIndex) : -1;
+  const settingsMarker = 'data-nav-section="settings"';
+  const settingsIndex = output.indexOf(settingsMarker);
+  const sectionIndex = settingsIndex >= 0 ? output.lastIndexOf('<section', settingsIndex) : -1;
   if (sectionIndex >= 0) output = output.slice(0, sectionIndex) + group + output.slice(sectionIndex);
   else output = output.replace("</nav>", group + "</nav>");
 
