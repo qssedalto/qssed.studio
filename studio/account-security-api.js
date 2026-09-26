@@ -20,7 +20,7 @@ export async function handleAccountSecurity(request, action) {
 
 async function accountSummary(session) {
   const url = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
-  url.searchParams.set("select", "username,display_name,avatar_url,role,status");
+  url.searchParams.set("select", "username,display_name,avatar_url,role,status,first_name,last_name,birth_date,gender,hide_gender_on_profile,created_at");
   url.searchParams.set("id", `eq.${session.user.id}`);
   url.searchParams.set("limit", "1");
 
@@ -31,7 +31,9 @@ async function accountSummary(session) {
     profile,
     user: {
       id: session.user.id,
-      email: String(session.user.email || "")
+      email: String(session.user.email || ""),
+      created_at: session.user.created_at || null,
+      last_sign_in_at: session.user.last_sign_in_at || null
     }
   }), session.cookies);
 }
