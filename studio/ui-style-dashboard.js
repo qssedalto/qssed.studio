@@ -64,7 +64,7 @@ export function dashboardStyles() {
       background:linear-gradient(155deg,#91e7f3 0%,#20798d 100%);
       box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);
     }
-    .dashboard-account-avatar img{width:56%;height:56%;object-fit:contain;filter:brightness(0) invert(1)}
+    .dashboard-account-avatar>span{display:block;color:#fff;font-size:31px;font-weight:720;line-height:1;text-shadow:0 1px 1px rgba(0,0,0,.10)}
     .dashboard-account-copy{min-width:0}
     .dashboard-account-copy strong,.dashboard-account-copy small{display:block}
     .dashboard-account-copy strong{font-size:25px;line-height:1.1;letter-spacing:-.035em}
