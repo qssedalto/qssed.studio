@@ -49,7 +49,7 @@ export function dashboardContent(zh, options = {}) {
     ...(gptHref ? [["AERTEX Intelligence","打开 GPT 工作空间","intelligence",gptHref]] : []),
     ...(adminHref ? [["管理员控制台","进入独立管理控制面","admin",adminHref]] : []),
     ["祝福链接","生日、中秋与专属姓名分享链接","wishes",`${prefix}/wishes`],
-    ["用户资料","头像、签名和主页信息","profile",`${prefix}/profile/details`],
+    ["AERTEX 账户","个人信息、登录与安全和账户服务","profile",`${prefix}/profile`],
     ["工作台","打开工作区","workbench",`${prefix}/workspace/workbench`],
     ["私人存储","管理 R2 文件","storage",`${prefix}/settings/storage`],
     ["收藏链接","常用链接和收藏","links",`${prefix}/info/links`],
@@ -59,7 +59,7 @@ export function dashboardContent(zh, options = {}) {
     ...(gptHref ? [["AERTEX Intelligence","Open GPT workspace","intelligence",gptHref]] : []),
     ...(adminHref ? [["Administration","Open isolated control plane","admin",adminHref]] : []),
     ["Wish Links","Birthday, Mid-Autumn, and named greeting links","wishes",`${prefix}/wishes`],
-    ["Profile","Photo, signature, and profile details","profile",`${prefix}/profile/details`],
+    ["AERTEX Account","Personal information, sign-in & security, and account services","profile",`${prefix}/profile`],
     ["Workbench","Open Workspace","workbench",`${prefix}/workspace/workbench`],
     ["Private Storage","Manage R2 files","storage",`${prefix}/settings/storage`],
     ["Saved Links","Links and bookmarks","links",`${prefix}/info/links`],
@@ -68,7 +68,7 @@ export function dashboardContent(zh, options = {}) {
   ];
 
   const moduleRows = zh ? [
-    ["个人主页","可用","资料、状态、兴趣和链接。","profile",`${prefix}/profile`],
+    ["AERTEX 账户","可用","个人信息、安全、偏好和账户服务。","profile",`${prefix}/profile`],
     ["私人存储","可用","Cloudflare R2 私人文件。","storage",`${prefix}/settings/storage`],
     ["工作区","部分可用","工作台、项目、实验、草稿和任务。","workbench",`${prefix}/workspace`],
     ["信息中心","部分可用","知识库、链接和账号摘要。","info",`${prefix}/info`]
