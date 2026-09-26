@@ -357,12 +357,12 @@ export function profileClientScript() {
 export function profileHubContent(zh) {
   const prefix = zh ? "/zh-cn" : "/en";
   const primaryRows = zh ? [
-    ["个人信息", "头像、姓名、签名与个人主页资料", "profile", "blue", `${prefix}/profile/details`],
+    ["个人信息", "头像、姓名、用户名、出生日期与性别", "profile", "blue", `${prefix}/profile/details`],
     ["登录与安全", "设备、登录记录与账户安全", "shield", "green", `${prefix}/settings/security`],
     ["账户信息", "邮箱、账号 ID、注册时间与审计记录", "account", "gray", `${prefix}/profile/account`],
     ["偏好设置", "个人使用体验与偏好入口", "preferences", "purple", `${prefix}/profile/preferences`]
   ] : [
-    ["Personal Information", "Photo, name, signature, and profile details", "profile", "blue", `${prefix}/profile/details`],
+    ["Personal Information", "Photo, name, username, date of birth, and gender", "profile", "blue", `${prefix}/profile/details`],
     ["Sign-In & Security", "Devices, sign-in history, and account security", "shield", "green", `${prefix}/settings/security`],
     ["Account Information", "Email, account ID, registration, and audit history", "account", "gray", `${prefix}/profile/account`],
     ["Preferences", "Personal experience and preference entry points", "preferences", "purple", `${prefix}/profile/preferences`]
