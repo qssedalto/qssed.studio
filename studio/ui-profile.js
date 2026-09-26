@@ -1,4 +1,4 @@
-import { osHubGrid } from "./ui-primitives.js";
+import { osHubIcon } from "./ui-primitives.js";
 
 export function profileContent(path, zh) {
   if (path.endsWith("/account")) return accountAuditContent(zh);
@@ -380,20 +380,52 @@ export function profileClientScript() {
 
 export function profileHubContent(zh) {
   const prefix = zh ? "/zh-cn" : "/en";
-  const items = zh ? [
-    { title:"用户资料", meta:"个人空间", description:"头像、主页背景、个性签名、个人介绍、在线状态与兴趣标签。", href:`${prefix}/profile/details`, icon:"profile", featured:true, tone:"blue" },
-    { title:"账户信息", meta:"账号", description:"查看账号 ID、邮箱、注册时间、最近登录与登录记录。", href:`${prefix}/profile/account`, icon:"account" },
-    { title:"账户与安全", meta:"安全", description:"查看当前设备、登录历史与异常登录提示。", href:`${prefix}/settings/security`, icon:"shield" },
-    { title:"偏好设置", meta:"偏好", description:"管理与个人使用体验相关的设置入口。", href:`${prefix}/profile/preferences`, icon:"preferences" },
-    { title:"收藏链接", meta:"内容", description:"进入你的链接收藏与常用入口。", href:`${prefix}/info/links`, icon:"links" },
-    { title:"私人存储", meta:"R2", description:"上传、下载并管理只属于当前账号的私人文件。", href:`${prefix}/settings/storage`, icon:"storage" }
+  const primaryRows = zh ? [
+    ["个人信息", "头像、姓名、签名与个人主页资料", "profile", "blue", `${prefix}/profile/details`],
+    ["登录与安全", "设备、登录记录与账户安全", "shield", "green", `${prefix}/settings/security`],
+    ["账户信息", "邮箱、账号 ID、注册时间与审计记录", "account", "gray", `${prefix}/profile/account`],
+    ["偏好设置", "个人使用体验与偏好入口", "preferences", "purple", `${prefix}/profile/preferences`]
   ] : [
-    { title:"Profile Details", meta:"Personal", description:"Profile photo, background, signature, bio, presence, and interests.", href:`${prefix}/profile/details`, icon:"profile", featured:true, tone:"blue" },
-    { title:"Account", meta:"Account", description:"Review account ID, email, registration time, recent sign-in, and login records.", href:`${prefix}/profile/account`, icon:"account" },
-    { title:"Account & Security", meta:"Security", description:"Review the current device, login history, and risk alerts.", href:`${prefix}/settings/security`, icon:"shield" },
-    { title:"Preferences", meta:"Preferences", description:"Manage entry points related to your personal experience.", href:`${prefix}/profile/preferences`, icon:"preferences" },
-    { title:"Saved Links", meta:"Content", description:"Open your saved links and frequently used destinations.", href:`${prefix}/info/links`, icon:"links" },
-    { title:"Private Storage", meta:"R2", description:"Upload, download, and manage files private to this account.", href:`${prefix}/settings/storage`, icon:"storage" }
+    ["Personal Information", "Photo, name, signature, and profile details", "profile", "blue", `${prefix}/profile/details`],
+    ["Sign-In & Security", "Devices, sign-in history, and account security", "shield", "green", `${prefix}/settings/security`],
+    ["Account Information", "Email, account ID, registration, and audit history", "account", "gray", `${prefix}/profile/account`],
+    ["Preferences", "Personal experience and preference entry points", "preferences", "purple", `${prefix}/profile/preferences`]
   ];
-  return osHubGrid(items, "profile-hub-grid");
+  const serviceRows = zh ? [
+    ["AERTEX Drive", "私人文件与存储", "storage", "cyan", `${prefix}/settings/storage`],
+    ["收藏链接", "你的链接与常用入口", "links", "orange", `${prefix}/info/links`]
+  ] : [
+    ["AERTEX Drive", "Private files and storage", "storage", "cyan", `${prefix}/settings/storage`],
+    ["Saved Links", "Your links and frequent destinations", "links", "orange", `${prefix}/info/links`]
+  ];
+
+  const renderRow = ([title, detail, icon, tone, href]) => `
+    <a class="profile-account-row" href="${href}">
+      <span class="profile-account-row-icon tone-${tone}">${osHubIcon(icon)}</span>
+      <span class="profile-account-row-copy">
+        <strong>${title}</strong>
+        <small>${detail}</small>
+      </span>
+      <span class="profile-account-chevron" aria-hidden="true">›</span>
+    </a>`;
+
+  return `
+    <section id="profile-summary" class="profile-account-home" data-profile-account-home>
+      <header class="profile-account-identity">
+        <div id="profile-avatar" class="profile-account-avatar">A</div>
+        <h2 id="profile-display-name">${zh ? "正在读取账户..." : "Loading account..."}</h2>
+        <p id="profile-email">...</p>
+      </header>
+
+      <section class="profile-account-section">
+        <div class="profile-account-group">${primaryRows.map(renderRow).join("")}</div>
+      </section>
+
+      <section class="profile-account-section">
+        <div class="profile-account-group">${serviceRows.map(renderRow).join("")}</div>
+      </section>
+
+      <p class="profile-account-footnote">${zh ? "这里集中管理与你的 AERTEX 账户相关的个人资料、安全与内容入口。" : "Manage the personal information, security, and content connected to your AERTEX account."}</p>
+    </section>
+  `;
 }
