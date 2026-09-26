@@ -59,10 +59,12 @@ ${themeBoot}
 .sidebarHead{display:flex;align-items:center;gap:8px;min-width:0}
 .brand{min-width:0;flex:1;font-weight:760;letter-spacing:-.03em;font-size:20px;padding:8px 6px}.brand small{display:block;color:var(--muted);font-size:12px;font-weight:500;letter-spacing:0;margin-top:4px}
 .iconButton,.quietButton{border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer}
-.iconButton{width:42px;height:42px;min-width:42px;min-height:42px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;line-height:0;box-shadow:0 1px 0 rgba(255,255,255,.22) inset;transition:background .12s ease,transform .1s ease,border-color .12s ease}
-.iconButton:hover{background:color-mix(in srgb,var(--panel) 76%,var(--panel2))}
+.iconButton{width:48px;height:48px;min-width:48px;min-height:48px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;line-height:0;border:1px solid color-mix(in srgb,var(--text) 15%,transparent);background:color-mix(in srgb,var(--panel) 96%,transparent);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.30) inset;transition:background .12s ease,transform .1s ease,border-color .12s ease}
+.iconButton:hover{background:color-mix(in srgb,var(--panel) 82%,var(--panel2));border-color:color-mix(in srgb,var(--text) 22%,transparent)}
 .iconButton:active{transform:scale(.94)}
-.iconButton svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.iconButton svg{display:block;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.sidebarToggleGlyph{width:25px!important;height:25px!important;stroke-width:2.65!important}
+.composeGlyph{width:25px!important;height:25px!important;stroke-width:2.35!important}
 .sidebarNewChat{flex:0 0 auto}
 .quietButton{border-radius:12px;padding:10px 12px;font-size:12px}
 .sidebarBackdrop{display:none}
@@ -84,7 +86,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   .app.sidebar-open .sidebarBackdrop{opacity:1;pointer-events:auto}
   .composerWrap,.app.sidebar-collapsed .composerWrap{left:0;padding:12px max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
   .topbar{height:60px;padding:0 10px;gap:8px;position:relative;z-index:50}
-  .iconButton{width:42px;height:42px;min-width:42px;min-height:42px}
+  .iconButton{width:48px;height:48px;min-width:48px;min-height:48px}
   .model{min-width:0;max-width:none;flex:1}
   .account{display:none}
   .messages{padding-top:28px}
@@ -92,8 +94,9 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
 }
 @media(max-width:430px){
   .topbar{gap:6px;padding-left:8px;padding-right:8px}
-  .topbar .iconButton{width:40px;height:40px;min-width:40px;min-height:40px}
-  .topbar .iconButton svg{width:21px;height:21px}
+  .topbar .iconButton{width:46px;height:46px;min-width:46px;min-height:46px}
+  .topbar .sidebarToggleGlyph{width:24px!important;height:24px!important}
+  .topbar .composeGlyph{width:24px!important;height:24px!important}
   .model{font-size:13px;padding-left:8px;padding-right:8px}
   .aertex-account-button{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important}
 }
@@ -106,7 +109,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   <div class="sidebarHead">
     <div class="brand">${t.title}<small>${t.subtitle}</small></div>
     <button class="iconButton sidebarNewChat" id="newChat" type="button" aria-label="${t.newChat}" title="${t.newChat}">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13.5 5H7.8A2.8 2.8 0 0 0 5 7.8v8.4A2.8 2.8 0 0 0 7.8 19h8.4a2.8 2.8 0 0 0 2.8-2.8v-5.7"/><path d="M15.2 4.8 19.2 8.8M9.4 14.6l1.2-4 6.9-6.9a1.9 1.9 0 0 1 2.7 2.7l-6.9 6.9-3.9 1.3Z"/></svg>
+      <svg class="composeGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13 4.5H7.25A2.75 2.75 0 0 0 4.5 7.25v9.5a2.75 2.75 0 0 0 2.75 2.75h9.5a2.75 2.75 0 0 0 2.75-2.75V11"/><path d="M9 15l1.15-4.1 6.95-6.95a2.15 2.15 0 0 1 3.05 3.05l-6.95 6.95L9 15Z"/><path d="m16.2 4.85 3 3"/></svg>
     </button>
   </div>
   <div class="statusRow"><span class="dot" id="sideDot"></span><span id="sideStatus">${t.checking}</span></div>
@@ -117,14 +120,14 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
 <main class="main">
 <header class="topbar">
   <button class="iconButton topbarToggle" id="sidebarToggle" type="button" aria-label="${t.toggleSidebar}" title="${t.toggleSidebar}" aria-controls="gptSidebar" aria-expanded="true">
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 8h14M5 16h10"/></svg>
+    <svg class="sidebarToggleGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.25 8.25h13.5"/><path d="M5.25 15.75h9"/></svg>
   </button>
   <select class="model" id="modelSelect" disabled><option>${t.loadingModels}</option></select>
   <select id="effortSelect" aria-label="${t.reasoning}" disabled><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="xhigh">Extra High</option></select>
   <div class="topbarSpacer"></div>
   <div class="account" id="accountLabel">${t.checking}</div>
   <button class="iconButton topbarNewChat" id="topNewChat" type="button" aria-label="${t.newChat}" title="${t.newChat}">
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13.5 5H7.8A2.8 2.8 0 0 0 5 7.8v8.4A2.8 2.8 0 0 0 7.8 19h8.4a2.8 2.8 0 0 0 2.8-2.8v-5.7"/><path d="M15.2 4.8 19.2 8.8M9.4 14.6l1.2-4 6.9-6.9a1.9 1.9 0 0 1 2.7 2.7l-6.9 6.9-3.9 1.3Z"/></svg>
+    <svg class="composeGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13 4.5H7.25A2.75 2.75 0 0 0 4.5 7.25v9.5a2.75 2.75 0 0 0 2.75 2.75h9.5a2.75 2.75 0 0 0 2.75-2.75V11"/><path d="M9 15l1.15-4.1 6.95-6.95a2.15 2.15 0 0 1 3.05 3.05l-6.95 6.95L9 15Z"/><path d="m16.2 4.85 3 3"/></svg>
   </button>
   ${accountMenuMarkup(zh ? "zh-cn" : "en")}
 </header>
