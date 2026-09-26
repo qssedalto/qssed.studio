@@ -139,5 +139,50 @@ export function dashboardStyles() {
       .dashboard-setting-label strong{font-size:15px}
     }
 
+    /* SIDEBAR_SETTINGS_V5 */
+    .os-nav{gap:12px}
+    .os-nav-group{
+      overflow:hidden;
+      padding:0;
+      border:0;
+      border-radius:18px;
+      background:var(--card);
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--border) 68%,transparent);
+    }
+    .os-nav-group.is-active{border:0;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--border) 68%,transparent)}
+    .os-nav-entry{position:relative}
+    .os-nav-entry+.os-nav-entry:before,.os-nav-product-link+.os-nav-product-link:before{
+      content:"";position:absolute;left:54px;right:12px;top:0;height:1px;background:var(--hairline);
+    }
+    .os-nav-product-link{position:relative}
+    .os-nav-title{
+      min-height:50px;
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      gap:10px;
+      align-items:center;
+      padding:6px 12px;
+      font-size:14px;
+      font-weight:620;
+      transition:background .12s ease,transform .1s ease;
+    }
+    .os-nav-title:hover{background:var(--secondary)}
+    .os-nav-title:active{transform:scale(.992)}
+    .os-nav-title .dashboard-icon{
+      width:32px;height:32px;border-radius:9px;color:#fff;background:#8e8e93;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+    }
+    .os-nav-title .dashboard-icon svg{width:17px;height:17px;stroke-width:1.9}
+    .os-nav-entry.is-active>.os-nav-title .dashboard-icon{background:#0a84ff}
+    .os-nav-product-link[data-product-link="intelligence"] .dashboard-icon{background:#5856d6}
+    .os-nav-product-link[data-product-link="admin-console"] .dashboard-icon{background:#8e8e93}
+    .os-nav-title>b{color:var(--quiet);font-size:20px;font-weight:450}
+    .os-nav-items{gap:0;padding:0 10px 8px 54px}
+    .os-nav-items a{
+      min-height:34px;display:flex;align-items:center;padding:5px 8px;border-radius:9px;
+      font-size:12px;color:var(--muted);
+    }
+    .os-nav-items a[aria-current="page"]{color:var(--text);background:var(--fill);font-weight:650}
+
   `;
 }
