@@ -484,6 +484,20 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
     workspace: "workbench",
     settings: "settings"
   };
+  const iconForItem = href => {
+    const value = String(href || "");
+    if (value.includes("/knowledge")) return "info";
+    if (value.includes("/links")) return "links";
+    if (value.includes("/notes") || value.includes("/summaries") || value.includes("/search")) return "info";
+    if (value.includes("/profile")) return "profile";
+    if (value.includes("/projects") || value.includes("/tasks") || value.includes("/drafts") || value.includes("/experiments") || value.includes("/workbench")) return "workbench";
+    if (value.includes("/storage")) return "storage";
+    if (value.includes("/security")) return "security";
+    if (value.includes("/appearance")) return "appearance";
+    if (value.includes("/language")) return "language";
+    if (value.includes("/settings")) return "settings";
+    return "info";
+  };
   const productGroups = [
     ...(gptHref ? [{ id: "intelligence", label: "AERTEX Intelligence", href: gptHref, icon: "intelligence" }] : []),
     ...(adminHref ? [{ id: "admin-console", label: zh ? "管理员控制台" : "Admin Console", href: adminHref, icon: "admin" }] : [])
@@ -500,23 +514,26 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
           </a>
         `).join("")}
       </section>` : ""}
-      <section class="os-nav-group os-nav-primary">
-        ${copy.nav.map(group => {
-          const active = group.id === activeSection;
-          return `
-            <div class="os-nav-entry ${active ? "is-active" : ""}">
-              <a class="os-nav-title" href="${group.href}">
-                ${dashboardIcon(iconBySection[group.id] || "info")}
-                <span>${group.label}</span>
-                <b aria-hidden="true">›</b>
-              </a>
-              ${active && group.items.length ? `<div class="os-nav-items">
-                ${group.items.map(item => `<a href="${item[1]}"${item[1].endsWith(currentPath) ? ` aria-current="page"` : ""}>${item[0]}</a>`).join("")}
-              </div>` : ""}
-            </div>
-          `;
-        }).join("")}
-      </section>
+      ${copy.nav.map(group => {
+        const active = group.id === activeSection;
+        return `
+          <section class="os-nav-group os-nav-entry ${active ? "is-active" : ""}">
+            <a class="os-nav-title" href="${group.href}">
+              ${dashboardIcon(iconBySection[group.id] || "info")}
+              <span>${group.label}</span>
+              <b aria-hidden="true">›</b>
+            </a>
+            ${group.items.length ? `<div class="os-nav-items">
+              ${group.items.map(item => `
+                <a href="${item[1]}"${item[1].endsWith(currentPath) ? ` aria-current="page"` : ""}>
+                  ${dashboardIcon(iconForItem(item[1]))}
+                  <span>${item[0]}</span>
+                </a>
+              `).join("")}
+            </div>` : ""}
+          </section>
+        `;
+      }).join("")}
     </nav>
   `;
 }
