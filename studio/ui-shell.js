@@ -312,6 +312,7 @@ export function buildOsCopy(zh) {
       aiHref: `${prefix}/workspace/experiments`,
       nav: [
         { id: "dashboard", label: "首页", href: `${prefix}/dashboard`, items: [] },
+        { id: "wishes", label: "祝福中心", href: `${prefix}/wishes`, items: [] },
         { id: "info", label: "信息中心", href: `${prefix}/info`, items: [
           ["AERTEX Knowledge", `${prefix}/info/knowledge`],
           ["收藏链接", `${prefix}/info/links`],
@@ -354,6 +355,7 @@ export function buildOsCopy(zh) {
     aiHref: `${prefix}/workspace/experiments`,
     nav: [
       { id: "dashboard", label: "Dashboard", href: `${prefix}/dashboard`, items: [] },
+      { id: "wishes", label: "Wish Center", href: `${prefix}/wishes`, items: [] },
       { id: "info", label: "Information", href: `${prefix}/info`, items: [
         ["AERTEX Knowledge", `${prefix}/info/knowledge`],
         ["Links", `${prefix}/info/links`],
@@ -480,6 +482,7 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
   const adminHref = String(productLinks?.adminHref || "");
   const iconBySection = {
     dashboard: "home",
+    wishes: "wishes",
     info: "info",
     profile: "profile",
     workspace: "workspace",
