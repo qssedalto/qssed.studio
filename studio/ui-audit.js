@@ -142,16 +142,47 @@ export function auditClientScript(ipInfo) {
         const name = document.getElementById("profile-display-name");
         const email = document.getElementById("profile-email");
         const tags = document.getElementById("profile-tags");
+        const set = (id, value) => {
+          const element = document.getElementById(id);
+          if (element) element.textContent = value == null || value === "" ? "—" : String(value);
+        };
+        const isZh = location.pathname.startsWith("/zh-cn");
+        const firstName = String(snapshot.first_name || "").trim();
+        const lastName = String(snapshot.last_name || "").trim();
+        const realName = String(snapshot.realName || snapshot.displayName || "").trim() ||
+          ([firstName, lastName].filter(Boolean).join(isZh ? "" : " ")) ||
+          snapshot.username || snapshot.email || "User";
+
         if (avatar) {
-          const fallback = String(snapshot.displayName || "User").slice(0, 1).toUpperCase();
+          const fallback = Array.from(realName || "A")[0] || "A";
           avatar.innerHTML = snapshot.avatar_url ? '<img src="' + auditEscape(snapshot.avatar_url) + '" alt="">' : auditEscape(fallback);
         }
-        if (name) name.innerText = snapshot.displayName || "User";
-        if (email) email.innerText = snapshot.email || "-";
+        if (name) name.innerText = realName;
+        if (email) email.innerText = snapshot.email || "—";
         if (tags) {
           const values = [snapshot.role, snapshot.status].filter(Boolean);
           tags.innerHTML = values.map(value => "<span>" + auditEscape(value) + "</span>").join("");
         }
+
+        set("profile-real-name-value", realName);
+        set("profile-username-value", snapshot.username ? "@" + String(snapshot.username).replace(/^@+/, "") : "—");
+        set("profile-email-value", snapshot.email || "—");
+        if (snapshot.birth_date) {
+          const parts = String(snapshot.birth_date).slice(0,10).split("-");
+          const birthday = parts.length === 3
+            ? (isZh ? Number(parts[0]) + "年" + Number(parts[1]) + "月" + Number(parts[2]) + "日" : parts.join("-"))
+            : snapshot.birth_date;
+          set("profile-birth-date-value", birthday);
+        } else {
+          set("profile-birth-date-value", "—");
+        }
+        const gender = snapshot.gender === "male"
+          ? (isZh ? "男" : "Male")
+          : snapshot.gender === "female"
+            ? (isZh ? "女" : "Female")
+            : "—";
+        set("profile-gender-value", gender);
+        set("profile-gender-privacy-value", snapshot.hide_gender_on_profile ? (isZh ? "隐藏" : "Hidden") : (isZh ? "显示" : "Visible"));
       }
 
       function buildAuditFingerprint(user, events, devices) {
@@ -196,7 +227,7 @@ export function auditClientScript(ipInfo) {
 
         const { data: profile, error: profileError } = await supabaseClient
           .from("profiles")
-          .select("username, display_name, avatar_url, role, status")
+          .select("username, display_name, avatar_url, role, status, first_name, last_name, birth_date, gender, hide_gender_on_profile, created_at")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -216,10 +247,17 @@ export function auditClientScript(ipInfo) {
         const snapshot = {
           user_id: user.id,
           displayName,
+          realName: profile?.display_name || "",
+          username: profile?.username || user.user_metadata?.username || "",
           email: user.email || "",
           role: profile?.role || "",
           status: profile?.status || "",
-          avatar_url: profile?.avatar_url || ""
+          avatar_url: profile?.avatar_url || "",
+          first_name: profile?.first_name || user.user_metadata?.first_name || "",
+          last_name: profile?.last_name || user.user_metadata?.last_name || "",
+          birth_date: profile?.birth_date || user.user_metadata?.birth_date || "",
+          gender: profile?.gender || user.user_metadata?.gender || "",
+          hide_gender_on_profile: Boolean(profile?.hide_gender_on_profile ?? user.user_metadata?.hide_gender_on_profile)
         };
         renderProfileSummarySnapshot(snapshot);
         writeProfileCache(PROFILE_SUMMARY_CACHE_KEY, snapshot);
