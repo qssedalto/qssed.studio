@@ -310,9 +310,10 @@ export default {
     const linksSubroute = pathname === "/info/links/mine" || pathname === "/info/links/community" || pathname === "/info/links/curated";
     const labSubroute = pathname === "/workspace/experiments/tex";
     const workRoute = pathname === "/work" || pathname === "/work/local" || pathname === "/work/tex";
+    const isHomeRoute = pathname === "/";
     const isProtectedOsRoute = OS_PATHS.has(pathname) || linksSubroute;
 
-    if (isProtectedOsRoute) {
+    if (isHomeRoute || isProtectedOsRoute) {
       const gate = await verifyStudioPageSession(request);
       if (!gate.ok) return withStudioSessionCookies(studioSessionBootstrapPage(locale, request), gate.cookies);
 
@@ -325,7 +326,7 @@ export default {
         gptHref: `${gptOrigin}/${zh ? "zh-cn" : "en"}`,
         adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : ""
       };
-      const shellPath = pathname === "/" ? "/dashboard" : linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
+      const shellPath = pathname === "/" ? "/" : linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
       let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel, shellProductLinks);
       markup = decorateWorkNavigation(markup, zh, pathname, mainOrigin, workOrigin);
       markup = polishWorkTexNavigation(markup, zh, pathname, workOrigin);
