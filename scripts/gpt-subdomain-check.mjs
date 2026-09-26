@@ -10,6 +10,8 @@ const main = read("worker.js");
 const handoff = read("studio/gpt-subdomain.js");
 const session = read("studio/session-gate.js");
 const authHandoff = read("studio/auth-handoff.js");
+const uiPage = read("studio/ui-page.js");
+const uiShell = read("studio/ui-shell.js");
 const gptWrangler = JSON.parse(read("wrangler.gpt.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 const aiGateway = read("studio/ai-gateway.js");
 const huaweiGate = read("studio/huawei-harmony-gate.js");
@@ -133,7 +135,12 @@ assert(
 assert(chatSource.includes("provider_response_id: null"), "User and assistant ai_messages rows must keep the same PostgREST bulk-insert shape.");
 assert(chatSource.includes("input_tokens: null"), "User ai_messages rows must explicitly include nullable token fields.");
 assert(chatSource.includes("output_tokens: null"), "User ai_messages rows must explicitly include nullable token fields.");
-assert(authHandoff.includes("aertex-auth-handoff-retry"), "Auth handoff must recover once from a stale or revoked browser session.");
+assert(uiPage.includes('storageKey: AERTEX_SUPABASE_STORAGE_KEY'), "Browser Supabase auth must use the versioned AERTEX storage key.");
+assert(uiPage.includes('sessionStorage.setItem(key, value)'), "Browser Supabase auth must fall back when localStorage persistence is unavailable.");
+assert(uiShell.includes('fetch("/api/account/security/summary"'), "Authenticated UI must trust the server session before redirecting back to Auth.");
+assert(uiShell.includes("serverOnly: true"), "Authenticated UI must support a server-session-only recovery path.");
+assert(!authHandoff.includes("登录状态已失效，请重新登录。"), "A validated handoff must not dead-end solely because browser auth persistence failed.");
+assert(authHandoff.includes("Browser auth persistence failed; continuing with validated server session"), "Handoff must continue with its validated server session when client persistence is unavailable.");
 assert(chatSource.includes("if (createdConversation)"), "New conversations must be removed when a provider stream fails.");
 assert(chatSource.includes('method: "DELETE"'), "Failed newly-created conversations must be deleted.");
 

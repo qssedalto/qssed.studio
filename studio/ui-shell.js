@@ -217,7 +217,34 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
       }
 
       if (!session?.user) {
-        return { user: null, definiteSignedOut: !sessionResult?.error };
+        try {
+          const response = await fetch("/api/account/security/summary", {
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: { Accept: "application/json" }
+          });
+          if (response.ok) {
+            const summary = await response.json();
+            const profile = summary?.profile || {};
+            const serverUser = summary?.user || {};
+            return {
+              user: {
+                id: serverUser.id || "",
+                email: serverUser.email || "",
+                user_metadata: {
+                  username: profile.username || "",
+                  display_name: profile.display_name || ""
+                }
+              },
+              definiteSignedOut: false,
+              serverOnly: true
+            };
+          }
+          if (response.status === 401) return { user: null, definiteSignedOut: true };
+        } catch (error) {
+          console.warn("Server session summary is temporarily unavailable", error);
+        }
+        return { user: null, definiteSignedOut: false };
       }
 
       let lastError = null;
@@ -286,10 +313,12 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
         sessionStorage.removeItem("qssed-os-user-name");
       } catch {}
 
-      await updateCurrentDevice(data.user);
-      await hydrateProfileSummary(data.user);
-      await hydrateProfileHome(data.user);
-      await hydrateProfileAudit(data.user);
+      if (!authState.serverOnly) {
+        await updateCurrentDevice(data.user);
+        await hydrateProfileSummary(data.user);
+        await hydrateProfileHome(data.user);
+        await hydrateProfileAudit(data.user);
+      }
     }
 
     hydrateOsUser();

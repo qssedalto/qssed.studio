@@ -391,9 +391,48 @@ export function baseHead(title) {
 export function supabaseScript() {
   return `
     <script>
+      const AERTEX_SUPABASE_STORAGE_KEY = "aertex-supabase-auth-v3";
+      const aertexAuthMemory = new Map();
+      const aertexAuthStorage = {
+        getItem(key) {
+          try {
+            const value = localStorage.getItem(key);
+            if (value !== null) return value;
+          } catch {}
+          try {
+            const value = sessionStorage.getItem(key);
+            if (value !== null) return value;
+          } catch {}
+          return aertexAuthMemory.has(key) ? aertexAuthMemory.get(key) : null;
+        },
+        setItem(key, value) {
+          let persisted = false;
+          try { localStorage.setItem(key, value); persisted = true; } catch {}
+          if (!persisted) {
+            try { sessionStorage.setItem(key, value); persisted = true; } catch {}
+          }
+          aertexAuthMemory.set(key, value);
+        },
+        removeItem(key) {
+          try { localStorage.removeItem(key); } catch {}
+          try { sessionStorage.removeItem(key); } catch {}
+          aertexAuthMemory.delete(key);
+        }
+      };
+      try { localStorage.removeItem("sb-xunbsoxijasekzadckob-auth-token"); } catch {}
+      try { sessionStorage.removeItem("sb-xunbsoxijasekzadckob-auth-token"); } catch {}
       const supabaseClient = supabase.createClient(
         "${SUPABASE_URL}",
-        "${SUPABASE_KEY}"
+        "${SUPABASE_KEY}",
+        {
+          auth: {
+            storage: aertexAuthStorage,
+            storageKey: AERTEX_SUPABASE_STORAGE_KEY,
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: false
+          }
+        }
       );
     </script>
   `;
