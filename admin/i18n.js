@@ -1,4 +1,4 @@
-const PAGE_PATHS = ["/", "/users", "/roles", "/access", "/content", "/storage", "/intelligence", "/logs", "/system"];
+const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/intelligence", "/logs", "/system"];
 
 const EN = [
   ["AERTEX 管理控制台","AERTEX Administration"],
