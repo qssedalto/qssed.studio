@@ -23,203 +23,73 @@ export function dashboardContent(zh, options = {}) {
   const gptHref = String(productLinks.gptHref || "");
   const adminHref = String(productLinks.adminHref || "");
 
-  const shortcuts = zh ? [
-    ...(gptHref ? [["AERTEX Intelligence","打开 GPT 工作空间","intelligence",gptHref]] : []),
-    ...(adminHref ? [["管理员控制台","进入独立管理控制面","admin",adminHref]] : []),
-    ["祝福链接","生日、中秋与专属姓名分享链接","wishes",`${prefix}/wishes`],
-    ["用户资料","头像、签名和主页信息","profile",`${prefix}/profile/details`],
-    ["工作台","打开工作区","workbench",`${prefix}/workspace/workbench`],
-    ["私人存储","管理 R2 文件","storage",`${prefix}/settings/storage`],
-    ["收藏链接","常用链接和收藏","links",`${prefix}/info/links`],
-    ["账户与安全","设备和登录记录","security",`${prefix}/settings/security`],
-    ["设置","外观、语言和其他设置","settings",`${prefix}/settings`]
+  const primaryRows = zh ? [
+    ...(gptHref ? [["AERTEX Intelligence","intelligence","tone-blue",gptHref,"GPT"]] : []),
+    ...(adminHref ? [["管理员控制台","admin","tone-gray",adminHref,"Admin"]] : []),
+    ["工作台","workbench","tone-indigo",`${prefix}/workspace/workbench`,""],
+    ["AERTEX Drive","storage","tone-cyan",`${prefix}/settings/storage`,""]
   ] : [
-    ...(gptHref ? [["AERTEX Intelligence","Open GPT workspace","intelligence",gptHref]] : []),
-    ...(adminHref ? [["Administration","Open isolated control plane","admin",adminHref]] : []),
-    ["Wish Links","Birthday, Mid-Autumn, and named greeting links","wishes",`${prefix}/wishes`],
-    ["Profile","Photo, signature, and profile details","profile",`${prefix}/profile/details`],
-    ["Workbench","Open Workspace","workbench",`${prefix}/workspace/workbench`],
-    ["Private Storage","Manage R2 files","storage",`${prefix}/settings/storage`],
-    ["Saved Links","Links and bookmarks","links",`${prefix}/info/links`],
-    ["Account & Security","Devices and sign-in history","security",`${prefix}/settings/security`],
-    ["Settings","Appearance, language, and more","settings",`${prefix}/settings`]
+    ...(gptHref ? [["AERTEX Intelligence","intelligence","tone-blue",gptHref,"GPT"]] : []),
+    ...(adminHref ? [["Admin Console","admin","tone-gray",adminHref,"Admin"]] : []),
+    ["Workbench","workbench","tone-indigo",`${prefix}/workspace/workbench`,""],
+    ["AERTEX Drive","storage","tone-cyan",`${prefix}/settings/storage`,""]
   ];
 
-  const moduleRows = zh ? [
-    ["个人主页","可用","资料、状态、兴趣和链接。","profile",`${prefix}/profile`],
-    ["私人存储","可用","Cloudflare R2 私人文件。","storage",`${prefix}/settings/storage`],
-    ["工作区","部分可用","工作台、项目、实验、草稿和任务。","workbench",`${prefix}/workspace`],
-    ["信息中心","部分可用","知识库、链接和账号摘要。","info",`${prefix}/info`]
+  const accountRows = zh ? [
+    ["用户资料","profile","tone-teal",`${prefix}/profile/details`,""],
+    ["收藏链接","links","tone-green",`${prefix}/info/links`,""],
+    ["账户与安全","security","tone-red",`${prefix}/settings/security`,""],
+    ["设置","settings","tone-gray",`${prefix}/settings`,""]
   ] : [
-    ["Profile","Available","Profile details, presence, interests, and links.","profile",`${prefix}/profile`],
-    ["Private Storage","Available","Private Cloudflare R2 files.","storage",`${prefix}/settings/storage`],
-    ["Workspace","Partial","Workbench, projects, experiments, drafts, and tasks.","workbench",`${prefix}/workspace`],
-    ["Information","Partial","Knowledge, links, and account summaries.","info",`${prefix}/info`]
+    ["Profile","profile","tone-teal",`${prefix}/profile/details`,""],
+    ["Saved Links","links","tone-green",`${prefix}/info/links`,""],
+    ["Account & Security","security","tone-red",`${prefix}/settings/security`,""],
+    ["Settings","settings","tone-gray",`${prefix}/settings`,""]
   ];
+
+  const moreRows = zh ? [
+    ["祝福链接","wishes","tone-orange",`${prefix}/wishes`,"生日 · 中秋"],
+    ["信息中心","info","tone-blue",`${prefix}/info`,""]
+  ] : [
+    ["Wish Links","wishes","tone-orange",`${prefix}/wishes`,"Birthday · Mid-Autumn"],
+    ["Information","info","tone-blue",`${prefix}/info`,""]
+  ];
+
+  const row = item => {
+    const detail = item[4] ? "<small>" + item[4] + "</small>" : "";
+    return `<a class="dashboard-setting-row ${item[2]}" href="${item[3]}">${dashboardIcon(item[1])}<span class="dashboard-setting-label"><strong>${item[0]}</strong>${detail}</span><b aria-hidden="true">›</b></a>`;
+  };
+  const group = (label, items) => `<section class="dashboard-settings-section"><div class="dashboard-settings-caption">${label}</div><div class="dashboard-settings-group">${items.map(row).join("")}</div></section>`;
 
   return `
-    <section class="dashboard-welcome">
-      <div class="dashboard-welcome-copy">
-        <span class="dashboard-eyebrow">AERTEX</span>
-        <h2>${zh ? "欢迎回来" : "Welcome back"}</h2>
-        <p>${zh ? "继续上次的工作，或者直接打开常用功能。" : "Pick up where you left off or open a common tool."}</p>
-        <div class="dashboard-welcome-actions">
-          <a class="dashboard-primary-action" href="${prefix}/workspace/workbench">${zh ? "打开工作台" : "Open Workbench"}<span>›</span></a>
-          <a class="dashboard-secondary-action" href="${prefix}/profile/details">${zh ? "用户资料" : "Profile"}<span>›</span></a>
-        </div>
-      </div>
-      <div class="dashboard-today-card" aria-label="${zh ? "当前时间" : "Current time"}">
-        <div class="dashboard-today-main">
-          ${dashboardIcon("clock")}
-          <div class="dashboard-today-copy">
-            <small>${zh ? "现在" : "Now"}</small>
-            <strong id="dashboard-live-time">--:--</strong>
-            <span id="dashboard-live-date">----</span>
-          </div>
-        </div>
-        <div class="dashboard-today-meta">
-          <div><small>${zh ? "时区" : "Time zone"}</small><strong id="dashboard-live-zone">—</strong></div>
-          <div><small>${zh ? "日历" : "Calendar"}</small><strong id="dashboard-live-week">—</strong></div>
-        </div>
-      </div>
-    </section>
+    <div class="dashboard-settings-shell">
+      <a class="dashboard-account-card" href="${prefix}/profile/details">
+        <span class="dashboard-account-avatar"><img src="/favicon.svg?v=aertex-20260924-3" alt=""></span>
+        <span class="dashboard-account-copy">
+          <strong id="dashboard-account-name">${zh ? "AERTEX 用户" : "AERTEX User"}</strong>
+          <small>${zh ? "AERTEX 账户 · 个人工作空间" : "AERTEX Account · Personal Workspace"}</small>
+        </span>
+        <b aria-hidden="true">›</b>
+      </a>
 
-    <section class="dashboard-home-wishes" aria-labelledby="dashboard-home-wishes-title">
-      <div class="dashboard-home-wishes-copy">
-        <span class="dashboard-eyebrow">${zh ? "祝福" : "Wishes"}</span>
-        <h2 id="dashboard-home-wishes-title">${zh ? "送一份祝福" : "Send a wish"}</h2>
-        <p>${zh ? "生日快乐和中秋快乐现在可以直接从首页生成。名字可以填写，也可以留空。" : "Create birthday or Mid-Autumn greeting links directly from Home. The recipient name is optional."}</p>
-      </div>
-      <div class="dashboard-home-wishes-builder" data-home-wish-builder>
-        <div class="dashboard-home-wish-types" role="radiogroup" aria-label="${zh ? "选择祝福" : "Choose a wish"}">
-          <button class="dashboard-home-wish-type is-active" type="button" data-home-wish-kind="birthday" role="radio" aria-checked="true">
-            <strong>${zh ? "生日快乐" : "Happy Birthday"}</strong>
-            <span>${zh ? "生日祝福" : "Birthday greeting"}</span>
-          </button>
-          <button class="dashboard-home-wish-type" type="button" data-home-wish-kind="mid-autumn" role="radio" aria-checked="false">
-            <strong>${zh ? "中秋快乐" : "Happy Mid-Autumn"}</strong>
-            <span>${zh ? "中秋祝福" : "Mid-Autumn greeting"}</span>
-          </button>
-        </div>
-        <label class="dashboard-home-wish-name">
-          <span>${zh ? "要祝福谁？" : "Who is this for?"}<small>${zh ? "可选" : "Optional"}</small></span>
-          <input id="dashboard-home-wish-name" type="text" maxlength="36" autocomplete="off" placeholder="${zh ? "输入名字，也可以留空" : "Enter a name or leave it blank"}">
-        </label>
-        <div class="dashboard-home-wish-preview">
-          <small>${zh ? "分享路由" : "Share route"}</small>
-          <code id="dashboard-home-wish-route">${prefix}/wish/birthday</code>
-        </div>
-        <div class="dashboard-home-wish-actions">
-          <a id="dashboard-home-wish-open" class="dashboard-primary-action" href="${prefix}/wish/birthday">${zh ? "生成并打开" : "Create & Open"}<span>›</span></a>
-          <a class="dashboard-secondary-action" href="${prefix}/wishes">${zh ? "打开祝福中心" : "Open Wish Links"}<span>›</span></a>
-        </div>
-      </div>
-    </section>
-
-    <section class="dashboard-section">
-      <div class="dashboard-section-head">
-        <div><small>${zh ? "快捷入口" : "Shortcuts"}</small><h2>${zh ? "常用" : "Common"}</h2></div>
-      </div>
-      <div class="dashboard-shortcuts">
-        ${shortcuts.map(item => `<a class="dashboard-shortcut" href="${item[3]}">${dashboardIcon(item[2])}<span><strong>${item[0]}</strong><small>${item[1]}</small></span><b aria-hidden="true">›</b></a>`).join("")}
-      </div>
-    </section>
-
-    <section class="dashboard-split">
-      <article class="os-card dashboard-module-card">
-        <div class="dashboard-section-head compact">
-          <div><small>${zh ? "模块" : "Modules"}</small><h2>${zh ? "当前状态" : "Status"}</h2></div>
-        </div>
-        <div class="dashboard-module-list">
-          ${moduleRows.map(row => `<a href="${row[4]}">${dashboardIcon(row[3])}<span><strong>${row[0]}</strong><small>${row[2]}</small></span><em>${row[1]}</em><b aria-hidden="true">›</b></a>`).join("")}
-        </div>
-      </article>
-
-      <article class="os-card dashboard-session-card">
-        <div class="dashboard-section-head compact">
-          <div><small>${zh ? "当前" : "Current"}</small><h2>${zh ? "环境" : "Environment"}</h2></div>
-        </div>
-        <div class="dashboard-session-facts">
-          <div>${dashboardIcon("appearance")}<span><small>${zh ? "外观" : "Appearance"}</small><strong id="dashboard-theme-label">—</strong></span></div>
-          <div>${dashboardIcon("language")}<span><small>${zh ? "语言" : "Language"}</small><strong>${zh ? "简体中文" : "English"}</strong></span></div>
-          <div>${dashboardIcon("storage")}<span><small>${zh ? "存储" : "Storage"}</small><strong>Cloudflare R2</strong></span></div>
-        </div>
-        <a class="dashboard-session-settings" href="${prefix}/settings">${zh ? "设置" : "Settings"}<span>›</span></a>
-      </article>
-    </section>
-
-    <section class="os-card dashboard-activity-card">
-      <div class="dashboard-section-head compact">
-        <div><small>${zh ? "活动" : "Activity"}</small><h2>${zh ? "最近动态" : "Recent"}</h2></div>
-      </div>
-      <div class="dashboard-empty-activity">
-        <span></span>
-        <strong>${zh ? "暂无动态" : "No recent activity"}</strong>
-        <p>${zh ? "项目、草稿和任务接入后会显示在这里。" : "Projects, drafts, and tasks will appear here once connected."}</p>
-        <a href="${prefix}/workspace">${zh ? "打开工作区" : "Open Workspace"} <b>›</b></a>
-      </div>
-    </section>
+      ${group(zh ? "常用" : "Common", primaryRows)}
+      ${group(zh ? "账户与内容" : "Account & Content", accountRows)}
+      ${group(zh ? "更多" : "More", moreRows)}
+    </div>
 
     <script>
       (() => {
-        const time = document.getElementById("dashboard-live-time");
-        const date = document.getElementById("dashboard-live-date");
-        const zone = document.getElementById("dashboard-live-zone");
-        const week = document.getElementById("dashboard-live-week");
-        const theme = document.getElementById("dashboard-theme-label");
-        const wishNameInput = document.getElementById("dashboard-home-wish-name");
-        const wishRoute = document.getElementById("dashboard-home-wish-route");
-        const wishOpen = document.getElementById("dashboard-home-wish-open");
-        const wishTypeButtons = [...document.querySelectorAll("[data-home-wish-kind]")];
-        let wishKind = "birthday";
-        const zh = ${zh ? "true" : "false"};
-        const isoWeek = value => {
-          const d = new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
-          const day = d.getUTCDay() || 7;
-          d.setUTCDate(d.getUTCDate() + 4 - day);
-          const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-          return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-        };
-        const cleanWishName = value => String(value || "")
-          .replace(/[\\u0000-\\u001f\\u007f]/g, " ")
-          .replace(/\\s+/g, " ")
-          .trim()
-          .slice(0, 36);
-        const paintWish = () => {
-          if (!wishRoute || !wishOpen) return;
-          const name = cleanWishName(wishNameInput?.value || "");
-          const suffix = name ? "?name=" + encodeURIComponent(name) : "";
-          const path = ${JSON.stringify(prefix)} + "/wish/" + wishKind + suffix;
-          wishRoute.textContent = path;
-          wishOpen.href = path;
-        };
-        wishTypeButtons.forEach(button => button.addEventListener("click", () => {
-          wishKind = button.dataset.homeWishKind === "mid-autumn" ? "mid-autumn" : "birthday";
-          wishTypeButtons.forEach(item => {
-            const active = item.dataset.homeWishKind === wishKind;
-            item.classList.toggle("is-active", active);
-            item.setAttribute("aria-checked", active ? "true" : "false");
-          });
-          paintWish();
-        }));
-        wishNameInput?.addEventListener("input", paintWish);
-        paintWish();
-
+        const source = document.getElementById("os-user-name");
+        const target = document.getElementById("dashboard-account-name");
+        if (!target) return;
+        const fallback = ${JSON.stringify(zh ? "AERTEX 用户" : "AERTEX User")};
         const paint = () => {
-          const now = new Date();
-          if (time) time.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { hour:"2-digit", minute:"2-digit", hour12:false }).format(now);
-          if (date) date.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { year:"numeric", month:"long", day:"numeric", weekday:"short" }).format(now);
-          if (zone) zone.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || "Local";
-          if (week) week.textContent = zh ? ("第 " + isoWeek(now) + " 周") : ("Week " + isoWeek(now));
-          if (theme) {
-            const current = document.documentElement.dataset.theme || "light";
-            theme.textContent = current === "dark" ? (zh ? "深色" : "Dark") : (zh ? "浅色" : "Light");
-          }
+          const value = String(source?.textContent || "").trim();
+          target.textContent = value || fallback;
         };
         paint();
-        window.setInterval(paint, 30000);
-        new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+        if (source) new MutationObserver(paint).observe(source, { childList: true, characterData: true, subtree: true });
       })();
-    </script>
+    <\/script>
   `;
 }
