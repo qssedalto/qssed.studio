@@ -1,5 +1,6 @@
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 import { adminOriginForRequest, authOriginForRequest, mainOriginForRequest } from "./domain-family.js";
+import { adminCanonicalPath as localizedAdminPath, adminLocaleFromPath } from "../admin/i18n.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const ADMIN_PATHS = new Set(["/", "/overview", "/users", "/roles", "/logs", "/system", "/access", "/content", "/storage", "/intelligence"]);
@@ -52,8 +53,10 @@ export async function handleMainAdminHandoff(request) {
 
 export function canonicalAdminPath(value) {
   const path = typeof value === "string" ? value.trim() : "";
-  if (ADMIN_PATHS.has(path)) return path;
-  return "/";
+  const parsed = adminLocaleFromPath(path);
+  if (!parsed.path) return "/";
+  if (parsed.locale) return localizedAdminPath(parsed.locale, parsed.path);
+  return parsed.path;
 }
 
 function preferredLocale(request, pathname) {
