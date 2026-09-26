@@ -1,28 +1,28 @@
 const NAV = [
-  ["/", "Overview", "OV"],
-  ["/users", "Users", "US"],
-  ["/roles", "Roles & permissions", "RL"],
-  ["/access", "Access control", "AC"],
-  ["/content", "Content", "CT"],
-  ["/storage", "Storage", "ST"],
-  ["/intelligence", "Intelligence", "AI"],
-  ["/logs", "Audit logs", "LG"],
-  ["/system", "System", "SY"]
+  ["/", "总览", "OV"],
+  ["/users", "用户", "US"],
+  ["/roles", "角色与权限", "RL"],
+  ["/access", "访问控制", "AC"],
+  ["/content", "内容", "CT"],
+  ["/storage", "存储", "ST"],
+  ["/intelligence", "AI 管理", "AI"],
+  ["/logs", "审计日志", "LG"],
+  ["/system", "系统", "SY"]
 ];
 
 export function renderAdminConsole(route, options = {}) {
   const current = NAV.some(([path]) => path === route) ? route : "/";
-  const identity = escapeHtml(options.identity || "Administrator");
+  const identity = escapeHtml(options.identity || "管理员");
   const root = escapeHtml(options.root || "qsseda.com");
   const build = escapeHtml(options.build || "control-plane-v1");
 
   return `<!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>AERTEX Administration</title>
+<title>AERTEX 管理控制台</title>
 <style>
 :root{
   color-scheme:dark;
@@ -105,25 +105,25 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
 <body data-route="${escapeHtml(current)}">
 <div class="app">
   <aside class="side">
-    <div class="brand"><strong>AERTEX ADMIN</strong><span>CONTROL PLANE · ${build}</span></div>
-    <div class="env">PRODUCTION · ${root}</div>
+    <div class="brand"><strong>AERTEX ADMIN</strong><span>管理控制面 · ${build}</span></div>
+    <div class="env">生产环境 · ${root}</div>
     <nav>
       ${NAV.map(([path,label,code])=>`<a href="${path}" class="${path===current?"active":""}"><b>${code}</b><span>${escapeHtml(label)}</span></a>`).join("")}
     </nav>
     <div class="sidefoot">
       <div>${identity}</div>
-      <div>Administrative surface isolated from user products.</div>
-      <button id="logout" type="button">Close admin session</button>
+      <div>此管理界面与用户产品完全隔离。</div>
+      <button id="logout" type="button">退出管理员会话</button>
     </div>
   </aside>
   <main class="main">
     <header class="top"><span class="path">admin://${escapeHtml(current === "/" ? "overview" : current.slice(1))}</span><span class="who">${identity}</span></header>
     <div class="content">
       <div class="head">
-        <div><h1 id="pageTitle">Loading…</h1><p id="pageDescription">Reading administrative state.</p></div>
-        <div class="tools"><button class="btn" id="refresh" type="button">Refresh</button></div>
+        <div><h1 id="pageTitle">加载中…</h1><p id="pageDescription">正在读取管理状态。</p></div>
+        <div class="tools"><button class="btn" id="refresh" type="button">刷新</button></div>
       </div>
-      <div id="view"><div class="state">Loading control-plane data…</div></div>
+      <div id="view"><div class="state">正在加载管理数据…</div></div>
     </div>
   </main>
 </div>
@@ -134,15 +134,15 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   const title=document.getElementById("pageTitle");
   const description=document.getElementById("pageDescription");
   const pageMeta={
-    "/":["System overview","Operational status and administrator-only metrics."],
-    "/users":["Users","Accounts, status, and role assignments."],
-    "/roles":["Roles & permissions","Administrative role and permission matrix."],
-    "/logs":["Audit logs","Administrative and account-change audit events."],
-    "/access":["Access control","Device exemptions and access-audit telemetry."],
-    "/content":["Content","Cross-account summaries and private-link administration, isolated from user products."],
-    "/storage":["Storage","Cross-account R2 user-file inventory and administrative file operations."],
-    "/intelligence":["Intelligence","Provider, model, and user-access administration."],
-    "/system":["System","Control-plane health and deployment context."]
+    "/":["系统总览","查看运行状态和仅管理员可见的指标。"],
+    "/users":["用户","管理账户、状态与角色分配。"],
+    "/roles":["角色与权限","管理角色与权限矩阵。"],
+    "/logs":["审计日志","查看管理操作与账户变更审计事件。"],
+    "/access":["访问控制","管理设备豁免并查看访问审计记录。"],
+    "/content":["内容","跨账户管理摘要与私有链接；与用户产品保持隔离。"],
+    "/storage":["存储","查看跨账户 R2 用户文件，并执行管理操作。"],
+    "/intelligence":["AI 管理","管理服务商、模型和用户 AI 访问权限。"],
+    "/system":["系统","查看管理控制面的健康状态与部署信息。"]
   };
   [title.textContent,description.textContent]=pageMeta[route]||pageMeta["/"];
 
@@ -193,7 +193,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   }
   function table(rows){
     const list=Array.isArray(rows)?rows:[];
-    if(!list.length)return '<div class="state">No records.</div>';
+    if(!list.length)return '<div class="state">暂无记录。</div>';
     const cols=[...new Set(list.flatMap(row=>Object.keys(row||{})))].slice(0,12);
     return '<div class="tableWrap"><table><thead><tr>'+cols.map(c=>'<th>'+esc(fieldLabel(c))+'</th>').join('')+'</tr></thead><tbody>'+
       list.map(row=>'<tr>'+cols.map(c=>'<td class="'+(/id|uuid|time|date|email|ip/i.test(c)?"mono":"")+'">'+esc(scalar(row?.[c]))+'</td>').join('')+'</tr>').join('')+
@@ -201,28 +201,28 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   }
   function objCards(obj){
     const entries=Object.entries(obj||{});
-    if(!entries.length)return '<div class="state">No metrics.</div>';
+    if(!entries.length)return '<div class="state">暂无指标。</div>';
     return '<div class="grid">'+entries.slice(0,12).map(([k,v])=>'<article class="card metric"><small>'+esc(k)+'</small><strong>'+esc(typeof v==="object"?(Array.isArray(v)?v.length:"…"):v)+'</strong></article>').join('')+'</div>';
   }
   const num=value=>{const text=String(value??"").trim();if(!text)return null;const number=Number(text);return Number.isFinite(number)?number:null};
   const intOrNull=value=>{const number=num(value);return number==null?null:Math.max(0,Math.trunc(number))};
   const bytes=value=>{let n=Number(value)||0;const units=["B","KB","MB","GB","TB"];let i=0;while(n>=1024&&i<units.length-1){n/=1024;i++}return n.toLocaleString(undefined,{maximumFractionDigits:i?1:0})+" "+units[i]};
-  function errorView(error){view.innerHTML='<div class="section"><div class="state">Control-plane request failed: '+esc(error?.message||error)+'</div></div>'}
+  function errorView(error){view.innerHTML='<div class="section"><div class="state">管理请求失败：'+esc(error?.message||error)+'</div></div>'}
 
   async function overview(){
     const result=await post("/api/admin/overview");
     const data=result.data||{};
-    view.innerHTML=objCards(data)+'<section class="section"><div class="sectionHead"><h2>Raw administrative overview</h2></div><pre>'+esc(JSON.stringify(data,null,2))+'</pre></section>';
+    view.innerHTML=objCards(data)+'<section class="section"><div class="sectionHead"><h2>原始管理概览</h2></div><pre>'+esc(JSON.stringify(data,null,2))+'</pre></section>';
   }
   async function users(){
     const result=await post("/api/admin/users");
     const rows=Array.isArray(result.data)?result.data:(result.data?.users||[]);
-    if(!rows.length){view.innerHTML='<section class="section"><div class="state">No accounts.</div></section>';return}
-    view.innerHTML='<section class="section"><div class="sectionHead"><h2>Accounts</h2><span class="mono">'+rows.length+' records</span></div><div class="tableWrap"><table><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody>'+
+    if(!rows.length){view.innerHTML='<section class="section"><div class="state">暂无账户。</div></section>';return}
+    view.innerHTML='<section class="section"><div class="sectionHead"><h2>账户</h2><span class="mono">'+rows.length+' 条记录</span></div><div class="tableWrap"><table><thead><tr><th>用户</th><th>邮箱</th><th>角色</th><th>状态</th><th>最近登录</th><th>操作</th></tr></thead><tbody>'+
       rows.map(row=>'<tr data-user-row="'+esc(row.user_id)+'"><td><strong>'+esc(row.display_name||row.username||"—")+'</strong><br><span class="mono">'+esc(row.user_id)+'</span></td><td class="mono">'+esc(row.email||"—")+'</td>'+
-      '<td><select class="userRole compactInput"><option value="admin" '+(row.role==="admin"?"selected":"")+'>admin</option><option value="editor" '+(row.role==="editor"?"selected":"")+'>editor</option><option value="user" '+(row.role==="user"?"selected":"")+'>user</option></select></td>'+
-      '<td><select class="userStatus compactInput"><option value="active" '+(row.status==="active"?"selected":"")+'>active</option><option value="suspended" '+(row.status==="suspended"?"selected":"")+'>suspended</option><option value="banned" '+(row.status==="banned"?"selected":"")+'>banned</option></select></td>'+
-      '<td class="mono">'+esc(row.last_sign_in_at||row.last_seen_at||"—")+'</td><td><div class="inline"><button class="btn saveUser" type="button">Apply</button></div></td></tr>').join('')+
+      '<td><select class="userRole compactInput"><option value="admin" '+(row.role==="admin"?"selected":"")+'>管理员</option><option value="editor" '+(row.role==="editor"?"selected":"")+'>编辑者</option><option value="user" '+(row.role==="user"?"selected":"")+'>普通用户</option></select></td>'+
+      '<td><select class="userStatus compactInput"><option value="active" '+(row.status==="active"?"selected":"")+'>正常</option><option value="suspended" '+(row.status==="suspended"?"selected":"")+'>已暂停</option><option value="banned" '+(row.status==="banned"?"selected":"")+'>已封禁</option></select></td>'+
+      '<td class="mono">'+esc(row.last_sign_in_at||row.last_seen_at||"—")+'</td><td><div class="inline"><button class="btn saveUser" type="button">应用</button></div></td></tr>').join('')+
       '</tbody></table></div><div class="feedback" id="usersFeedback"></div></section>';
 
     document.querySelectorAll(".saveUser").forEach(button=>button.addEventListener("click",async()=>{
@@ -235,7 +235,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       try{
         await post("/api/admin/user-role",{p_user_id:userId,p_role:role});
         await post("/api/admin/user-status",{p_user_id:userId,p_status:status});
-        feedback.textContent="Account controls updated and audited.";
+        feedback.textContent="账户设置已更新，并已写入审计日志。";
         feedback.className="feedback ok";
       }catch(error){
         feedback.textContent=error.message;
@@ -250,8 +250,8 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const permissions=Array.isArray(data.permissions)?data.permissions:[];
     const assigned=Array.isArray(data.role_permissions)?data.role_permissions:[];
     const selectedByRole=new Map(roles.map(role=>[role.name,new Set(assigned.filter(item=>item.role===role.name).map(item=>item.permission))]));
-    view.innerHTML='<section class="section"><div class="sectionHead"><h2>Permission matrix</h2><span class="mono">'+permissions.length+' permissions</span></div><div class="permissionGrid">'+
-      roles.map(role=>'<article class="permissionRole" data-role="'+esc(role.name)+'"><div class="permissionRoleHead"><div><strong>'+esc(roleLabel(role.name))+'</strong><br><span class="mono">'+esc((data.user_counts||{})[role.name]??0)+' users</span></div><button class="btn saveRole" type="button">Save role</button></div><div class="permissionChecks">'+
+    view.innerHTML='<section class="section"><div class="sectionHead"><h2>权限矩阵</h2><span class="mono">'+permissions.length+' 项权限</span></div><div class="permissionGrid">'+
+      roles.map(role=>'<article class="permissionRole" data-role="'+esc(role.name)+'"><div class="permissionRoleHead"><div><strong>'+esc(roleLabel(role.name))+'</strong><br><span class="mono">'+esc((data.user_counts||{})[role.name]??0)+' 位用户</span></div><button class="btn saveRole" type="button">保存角色</button></div><div class="permissionChecks">'+
         permissions.map(permission=>'<label title="'+esc(permission.description||permission.key)+'"><input type="checkbox" value="'+esc(permission.key)+'" '+(selectedByRole.get(role.name)?.has(permission.key)?"checked":"")+'><span>'+esc(permissionLabel(permission.key))+'</span></label>').join('')+
       '</div></article>').join('')+'</div><div class="feedback" id="rolesFeedback"></div></section>';
 
@@ -263,7 +263,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       button.disabled=true;
       try{
         await post("/api/admin/permissions",{p_role:role,p_permissions:list});
-        feedback.textContent="Role permission matrix updated and audited.";
+        feedback.textContent="角色权限矩阵已更新，并已写入审计日志。";
         feedback.className="feedback ok";
       }catch(error){
         feedback.textContent=error.message;
@@ -274,7 +274,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   async function logs(){
     const result=await post("/api/admin/logs",{p_limit:120});
     const rows=Array.isArray(result.data)?result.data:(result.data?.logs||[]);
-    view.innerHTML='<section class="section"><div class="sectionHead"><h2>Recent events</h2></div>'+table(rows)+'</section>';
+    view.innerHTML='<section class="section"><div class="sectionHead"><h2>最近事件</h2></div>'+table(rows)+'</section>';
   }
   async function access(){
     const [exemptions,auditSummary,auditList]=await Promise.all([
@@ -284,11 +284,11 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     ]);
     const rows=Array.isArray(exemptions.data)?exemptions.data:[];
     const auditRows=Array.isArray(auditList.entries)?auditList.entries:[];
-    view.innerHTML='<div class="split"><section class="section"><div class="sectionHead"><h2>Huawei device ID exemptions</h2></div>'+table(rows)+'</section>'+
-      '<section class="section"><div class="sectionHead"><h2>Access audit summary</h2></div><pre>'+esc(JSON.stringify(auditSummary.summary||{},null,2))+'</pre></section></div>'+
-      '<section class="section"><div class="sectionHead"><h2>Grant or revoke account exemption</h2></div><form class="form" id="exemptionForm">'+
-      '<input name="user" placeholder="User UUID" required><select name="enabled"><option value="true">Grant</option><option value="false">Revoke</option></select><input name="expires" placeholder="Expiration ISO (optional)"><input class="wide" name="note" placeholder="Administrative note"><button class="btn primary" type="submit">Apply</button></form></section>'+
-      '<section class="section"><div class="sectionHead"><h2>Recent access-audit events</h2></div>'+table(auditRows)+'</section>';
+    view.innerHTML='<div class="split"><section class="section"><div class="sectionHead"><h2>华为设备 ID 豁免</h2></div>'+table(rows)+'</section>'+
+      '<section class="section"><div class="sectionHead"><h2>访问审计摘要</h2></div><pre>'+esc(JSON.stringify(auditSummary.summary||{},null,2))+'</pre></section></div>'+
+      '<section class="section"><div class="sectionHead"><h2>授予或撤销账户豁免</h2></div><form class="form" id="exemptionForm">'+
+      '<input name="user" placeholder="用户 UUID" required><select name="enabled"><option value="true">授予</option><option value="false">撤销</option></select><input name="expires" placeholder="到期时间 ISO（可选）"><input class="wide" name="note" placeholder="管理备注"><button class="btn primary" type="submit">应用</button></form></section>'+
+      '<section class="section"><div class="sectionHead"><h2>最近访问审计事件</h2></div>'+table(auditRows)+'</section>';
     document.getElementById("exemptionForm")?.addEventListener("submit",async event=>{
       event.preventDefault();const fd=new FormData(event.currentTarget);
       try{
@@ -311,9 +311,9 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     }));
     const linkRows=Array.isArray(links.rows)?links.rows:[];
     view.innerHTML=objCards({summaries:summaries.count||0,private_links:linkRows.filter(row=>!row.community).length,community_links:linkRows.filter(row=>row.community).length})+
-      '<section class="section"><div class="sectionHead"><h2>User summaries</h2><span class="mono">'+summaryRows.length+' records</span></div>'+table(summaryRows)+'</section>'+
-      '<section class="section"><div class="sectionHead"><h2>User-created links</h2><span class="mono">'+linkRows.length+' records</span></div><div class="tableWrap"><table><thead><tr><th>Owner</th><th>Title</th><th>URL</th><th>Scope</th><th>Updated</th><th>Actions</th></tr></thead><tbody>'+
-      linkRows.map(row=>'<tr data-link-owner="'+esc(row.owner_id)+'" data-link-id="'+esc(row.id)+'"><td>'+esc(row.owner_label||row.owner_id)+'</td><td>'+esc(row.title||"—")+'</td><td class="mono">'+esc(row.url||"—")+'</td><td><span class="badge '+(row.community?"ok":"")+'">'+(row.community?"community":"private")+'</span></td><td class="mono">'+esc(row.updated_at||"—")+'</td><td><div class="inline"><button class="btn toggleLinkScope" type="button">'+(row.community?"Make private":"Publish")+'</button><button class="btn danger deleteLink" type="button">Delete</button></div></td></tr>').join('')+
+      '<section class="section"><div class="sectionHead"><h2>用户摘要</h2><span class="mono">'+summaryRows.length+' 条记录</span></div>'+table(summaryRows)+'</section>'+
+      '<section class="section"><div class="sectionHead"><h2>用户创建的链接</h2><span class="mono">'+linkRows.length+' 条记录</span></div><div class="tableWrap"><table><thead><tr><th>所有者</th><th>标题</th><th>URL</th><th>范围</th><th>更新时间</th><th>操作</th></tr></thead><tbody>'+
+      linkRows.map(row=>'<tr data-link-owner="'+esc(row.owner_id)+'" data-link-id="'+esc(row.id)+'"><td>'+esc(row.owner_label||row.owner_id)+'</td><td>'+esc(row.title||"—")+'</td><td class="mono">'+esc(row.url||"—")+'</td><td><span class="badge '+(row.community?"ok":"")+'">'+(row.community?"社区":"私有")+'</span></td><td class="mono">'+esc(row.updated_at||"—")+'</td><td><div class="inline"><button class="btn toggleLinkScope" type="button">'+(row.community?"转为私有":"发布")+'</button><button class="btn danger deleteLink" type="button">删除</button></div></td></tr>').join('')+
       '</tbody></table></div><div class="feedback" id="contentFeedback"></div></section>';
 
     document.querySelectorAll(".toggleLinkScope").forEach(button=>button.addEventListener("click",async()=>{
@@ -330,7 +330,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     }));
     document.querySelectorAll(".deleteLink").forEach(button=>button.addEventListener("click",async()=>{
       const row=button.closest("[data-link-owner]");if(!row)return;
-      const item=linkRows.find(link=>link.owner_id===row.dataset.linkOwner&&link.id===row.dataset.linkId);if(!item||!confirm("Delete link "+(item.title||item.id)+"?"))return;
+      const item=linkRows.find(link=>link.owner_id===row.dataset.linkOwner&&link.id===row.dataset.linkId);if(!item||!confirm("确定删除链接 “"+(item.title||item.id)+"” 吗？"))return;
       button.disabled=true;
       try{
         await requestJson("/api/admin/content/link?owner="+encodeURIComponent(item.owner_id)+"&id="+encodeURIComponent(item.id),{method:"DELETE"});
@@ -343,12 +343,12 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const result=await get("/api/admin/storage/files");
     const rows=Array.isArray(result.rows)?result.rows:[];
     view.innerHTML=objCards({files:result.count||0,used:bytes(result.used_bytes||0),partial:result.partial?"yes":"no"})+
-      '<section class="section"><div class="sectionHead"><h2>User files</h2><span class="mono">'+rows.length+' records</span></div><div class="tableWrap"><table><thead><tr><th>Owner</th><th>Name</th><th>Type</th><th>Size</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>'+
-      rows.map(row=>'<tr data-storage-ref="'+esc(row.reference)+'"><td>'+esc(row.owner_label||row.owner_id)+'</td><td>'+esc(row.name||"file")+'<br><span class="mono">'+esc(row.reference)+'</span></td><td class="mono">'+esc(row.content_type||"application/octet-stream")+'</td><td>'+esc(bytes(row.size))+'</td><td class="mono">'+esc(row.uploaded_at||"—")+'</td><td><div class="inline"><a class="btn" href="/api/admin/storage/object?id='+encodeURIComponent(row.reference)+'">Download</a><button class="btn danger deleteStorage" type="button">Delete</button></div></td></tr>').join('')+
+      '<section class="section"><div class="sectionHead"><h2>用户文件</h2><span class="mono">'+rows.length+' 条记录</span></div><div class="tableWrap"><table><thead><tr><th>所有者</th><th>名称</th><th>类型</th><th>大小</th><th>上传时间</th><th>操作</th></tr></thead><tbody>'+
+      rows.map(row=>'<tr data-storage-ref="'+esc(row.reference)+'"><td>'+esc(row.owner_label||row.owner_id)+'</td><td>'+esc(row.name||"file")+'<br><span class="mono">'+esc(row.reference)+'</span></td><td class="mono">'+esc(row.content_type||"application/octet-stream")+'</td><td>'+esc(bytes(row.size))+'</td><td class="mono">'+esc(row.uploaded_at||"—")+'</td><td><div class="inline"><a class="btn" href="/api/admin/storage/object?id='+encodeURIComponent(row.reference)+'">下载</a><button class="btn danger deleteStorage" type="button">删除</button></div></td></tr>').join('')+
       '</tbody></table></div><div class="feedback" id="storageFeedback"></div></section>';
 
     document.querySelectorAll(".deleteStorage").forEach(button=>button.addEventListener("click",async()=>{
-      const row=button.closest("[data-storage-ref]");const ref=row?.dataset.storageRef;if(!ref||!confirm("Delete storage object "+ref+"?"))return;
+      const row=button.closest("[data-storage-ref]");const ref=row?.dataset.storageRef;if(!ref||!confirm("确定删除存储对象 “"+ref+"” 吗？"))return;
       button.disabled=true;
       try{
         await requestJson("/api/admin/storage/object?id="+encodeURIComponent(ref),{method:"DELETE"});
@@ -362,20 +362,20 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const providers=Array.isArray(state.providers)?state.providers:[];
     const users=Array.isArray(state.users)?state.users:[];
     view.innerHTML=objCards({providers:providers.length,users:users.length,active_providers:providers.filter(provider=>provider.is_active!==false).length})+
-      '<section class="section"><div class="sectionHead"><h2>Add provider</h2><span class="mono">credential stays inside Intelligence</span></div>'+
-      '<form class="controlGrid" id="providerForm"><div class="stack"><label>Provider<select name="provider" required><option value="openai">OpenAI</option><option value="zhipu">Zhipu</option><option value="bailian">Bailian</option></select></label><label>Name<input name="name" required></label></div>'+
-      '<div class="stack"><label>Project API key<input name="key" type="password" autocomplete="off" required></label><label>Admin/billing key (OpenAI optional)<input name="adminKey" type="password" autocomplete="off"></label><button class="btn" id="validateProvider" type="button">Validate key & load models</button></div>'+
-      '<div class="stack"><label>Allowed models<textarea name="models" placeholder="Validate the key first"></textarea></label><label>Default model<input name="defaultModel"></label></div>'+
-      '<div class="stack"><label>Monthly budget USD<input name="budget" type="number" min="0" step=".01"></label><label>Input $ / 1M<input name="input" type="number" min="0" step=".001" value="0"></label><label>Output $ / 1M<input name="output" type="number" min="0" step=".001" value="0"></label></div>'+
-      '<div class="stack"><button class="btn primary" type="submit">Create provider</button></div></form><div class="feedback" id="providerFeedback"></div></section>'+
-      '<section class="section"><div class="sectionHead"><h2>Providers</h2></div><div class="tableWrap"><table><thead><tr><th>Name</th><th>Type</th><th>Default</th><th>Models</th><th>Usage this month</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
-      providers.map(provider=>'<tr data-provider="'+esc(provider.id)+'"><td>'+esc(provider.name||"—")+'<br><span class="mono">'+esc(provider.id)+'</span></td><td class="mono">'+esc(provider.provider)+'</td><td class="mono">'+esc(provider.default_model||"—")+'</td><td>'+esc((provider.allowed_models||[]).join(", "))+'</td><td>'+esc(provider.month_usage_usd??0)+' USD · '+esc(provider.month_requests??0)+' req</td><td><span class="badge '+(provider.is_active!==false?"ok":"bad")+'">'+(provider.is_active!==false?"active":"disabled")+'</span></td><td><div class="inline"><button class="btn toggleProvider" type="button">'+(provider.is_active!==false?"Disable":"Enable")+'</button><button class="btn danger deleteProvider" type="button">Delete</button></div></td></tr>').join('')+
+      '<section class="section"><div class="sectionHead"><h2>添加服务商</h2><span class="mono">凭据仅保存在 AI 管理模块</span></div>'+
+      '<form class="controlGrid" id="providerForm"><div class="stack"><label>服务商<select name="provider" required><option value="openai">OpenAI</option><option value="zhipu">Zhipu</option><option value="bailian">Bailian</option></select></label><label>名称<input name="name" required></label></div>'+
+      '<div class="stack"><label>项目 API 密钥<input name="key" type="password" autocomplete="off" required></label><label>管理/计费密钥（OpenAI 可选）<input name="adminKey" type="password" autocomplete="off"></label><button class="btn" id="validateProvider" type="button">验证密钥并加载模型</button></div>'+
+      '<div class="stack"><label>允许的模型<textarea name="models" placeholder="请先验证密钥"></textarea></label><label>默认模型<input name="defaultModel"></label></div>'+
+      '<div class="stack"><label>每月预算（USD）<input name="budget" type="number" min="0" step=".01"></label><label>输入价格 / 百万 Token（USD）<input name="input" type="number" min="0" step=".001" value="0"></label><label>输出价格 / 百万 Token（USD）<input name="output" type="number" min="0" step=".001" value="0"></label></div>'+
+      '<div class="stack"><button class="btn primary" type="submit">创建服务商</button></div></form><div class="feedback" id="providerFeedback"></div></section>'+
+      '<section class="section"><div class="sectionHead"><h2>服务商</h2></div><div class="tableWrap"><table><thead><tr><th>名称</th><th>类型</th><th>默认模型</th><th>模型</th><th>本月用量</th><th>状态</th><th>操作</th></tr></thead><tbody>'+
+      providers.map(provider=>'<tr data-provider="'+esc(provider.id)+'"><td>'+esc(provider.name||"—")+'<br><span class="mono">'+esc(provider.id)+'</span></td><td class="mono">'+esc(provider.provider)+'</td><td class="mono">'+esc(provider.default_model||"—")+'</td><td>'+esc((provider.allowed_models||[]).join(", "))+'</td><td>'+esc(provider.month_usage_usd??0)+' USD · '+esc(provider.month_requests??0)+' req</td><td><span class="badge '+(provider.is_active!==false?"ok":"bad")+'">'+(provider.is_active!==false?"已启用":"已停用")+'</span></td><td><div class="inline"><button class="btn toggleProvider" type="button">'+(provider.is_active!==false?"停用":"启用")+'</button><button class="btn danger deleteProvider" type="button">删除</button></div></td></tr>').join('')+
       '</tbody></table></div></section>'+
-      '<section class="section"><div class="sectionHead"><h2>User AI access</h2></div><div class="tableWrap"><table><thead><tr><th>User</th><th>Enabled</th><th>Providers</th><th>USD limits</th><th>Token limits</th><th>RPM</th><th>Action</th></tr></thead><tbody>'+
+      '<section class="section"><div class="sectionHead"><h2>用户 AI 访问权限</h2></div><div class="tableWrap"><table><thead><tr><th>用户</th><th>启用</th><th>服务商</th><th>美元限额</th><th>Token 限额</th><th>每分钟请求</th><th>操作</th></tr></thead><tbody>'+
       users.map(user=>{const selected=new Set((user.provider_access||[]).filter(item=>item.enabled!==false).map(item=>item.provider_id));return '<tr data-ai-user="'+esc(user.user_id)+'"><td><strong>'+esc(user.display_name||user.username||"—")+'</strong><br><span class="mono">'+esc(user.email||user.user_id)+'</span></td><td><input class="aiEnabled" type="checkbox" '+(user.enabled?"checked":"")+'></td><td><select class="aiProviders multiSelect" multiple>'+providers.filter(provider=>provider.is_active!==false).map(provider=>'<option value="'+esc(provider.id)+'" '+(selected.has(provider.id)?"selected":"")+'>'+esc(provider.name)+'</option>').join('')+'</select></td>'+
-      '<td><input class="dailyUsd compactInput" type="number" min="0" step=".01" value="'+esc(user.daily_limit_usd??"")+'" placeholder="daily"><br><input class="monthlyUsd compactInput" type="number" min="0" step=".01" value="'+esc(user.monthly_limit_usd??"")+'" placeholder="monthly"></td>'+
-      '<td><input class="dailyTokens compactInput" type="number" min="0" step="1" value="'+esc(user.daily_limit_tokens??"")+'" placeholder="daily"><br><input class="monthlyTokens compactInput" type="number" min="0" step="1" value="'+esc(user.monthly_limit_tokens??"")+'" placeholder="monthly"></td>'+
-      '<td><input class="rpm compactInput" type="number" min="1" max="300" value="'+esc(user.requests_per_minute??20)+'"></td><td><button class="btn saveAiAccess" type="button">Apply</button></td></tr>'}).join('')+
+      '<td><input class="dailyUsd compactInput" type="number" min="0" step=".01" value="'+esc(user.daily_limit_usd??"")+'" placeholder="每日"><br><input class="monthlyUsd compactInput" type="number" min="0" step=".01" value="'+esc(user.monthly_limit_usd??"")+'" placeholder="每月"></td>'+
+      '<td><input class="dailyTokens compactInput" type="number" min="0" step="1" value="'+esc(user.daily_limit_tokens??"")+'" placeholder="每日"><br><input class="monthlyTokens compactInput" type="number" min="0" step="1" value="'+esc(user.monthly_limit_tokens??"")+'" placeholder="每月"></td>'+
+      '<td><input class="rpm compactInput" type="number" min="1" max="300" value="'+esc(user.requests_per_minute??20)+'"></td><td><button class="btn saveAiAccess" type="button">应用</button></td></tr>'}).join('')+
       '</tbody></table></div><div class="feedback" id="aiFeedback"></div></section>';
 
     const providerForm=document.getElementById("providerForm");
@@ -389,7 +389,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
         const models=Array.isArray(result.models)?result.models:[];
         providerForm.elements.models.value=models.join(", ");
         if(models.length&&!providerForm.elements.defaultModel.value)providerForm.elements.defaultModel.value=models[0];
-        providerFeedback.textContent="Provider key validated. "+models.length+" models available.";
+        providerFeedback.textContent="服务商密钥验证成功，共 "+models.length+" 个模型可用。";
         providerFeedback.className="feedback ok";
       }catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad"}finally{button.disabled=false}
     });
@@ -416,7 +416,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       }catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad";button.disabled=false}
     }));
     document.querySelectorAll(".deleteProvider").forEach(button=>button.addEventListener("click",async()=>{
-      const row=button.closest("[data-provider]");const provider=providers.find(item=>item.id===row?.dataset.provider);if(!provider||!confirm("Delete provider "+provider.name+"?"))return;
+      const row=button.closest("[data-provider]");const provider=providers.find(item=>item.id===row?.dataset.provider);if(!provider||!confirm("确定删除服务商 “"+provider.name+"” 吗？"))return;
       button.disabled=true;
       try{await requestJson("/api/admin/ai/provider/"+encodeURIComponent(provider.id),{method:"DELETE"});await intelligence()}
       catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad";button.disabled=false}
@@ -434,7 +434,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
           daily_limit_tokens:intOrNull(row.querySelector(".dailyTokens").value),monthly_limit_tokens:intOrNull(row.querySelector(".monthlyTokens").value),
           requests_per_minute:Number(row.querySelector(".rpm").value)||20
         })});
-        feedback.textContent="AI access updated for "+(user.email||user.user_id)+".";
+        feedback.textContent="已更新 "+(user.email||user.user_id)+" 的 AI 访问权限。";
         feedback.className="feedback ok";
       }catch(error){feedback.textContent=error.message;feedback.className="feedback bad"}finally{button.disabled=false}
     }));
@@ -443,10 +443,10 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const health=await get("/health");
     const overviewResult=await post("/api/admin/overview").catch(()=>({data:{}}));
     view.innerHTML=objCards({service:health.service||"admin",status:health.status||"unknown",origin:health.origin||location.origin,time:health.time||"—"})+
-      '<section class="section"><div class="sectionHead"><h2>Control plane</h2></div><pre>'+esc(JSON.stringify({health,overview:overviewResult.data||{}},null,2))+'</pre></section>';
+      '<section class="section"><div class="sectionHead"><h2>管理控制面</h2></div><pre>'+esc(JSON.stringify({health,overview:overviewResult.data||{}},null,2))+'</pre></section>';
   }
   const loaders={"/":overview,"/users":users,"/roles":roles,"/logs":logs,"/access":access,"/content":content,"/storage":storage,"/intelligence":intelligence,"/system":system};
-  async function load(){view.innerHTML='<div class="state">Loading control-plane data…</div>';try{await (loaders[route]||overview)()}catch(error){errorView(error)}}
+  async function load(){view.innerHTML='<div class="state">正在加载管理数据…</div>';try{await (loaders[route]||overview)()}catch(error){errorView(error)}}
   document.getElementById("refresh")?.addEventListener("click",()=>void load());
   document.getElementById("logout")?.addEventListener("click",async()=>{
     await fetch("/api/auth/logout",{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:"{}"}).catch(()=>{});
