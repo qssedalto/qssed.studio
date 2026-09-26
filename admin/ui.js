@@ -5,7 +5,7 @@ const NAV = [
   ["/access", "访问控制", "AC"],
   ["/content", "内容", "CT"],
   ["/storage", "存储", "ST"],
-  ["/intelligence", "AI 管理", "AI"],
+  ["/intelligence", "AERTEX Intelligence", "AI"],
   ["/logs", "审计日志", "LG"],
   ["/system", "系统", "SY"]
 ];
@@ -141,7 +141,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     "/access":["访问控制","管理设备豁免并查看访问审计记录。"],
     "/content":["内容","跨账户管理摘要与私有链接；与用户产品保持隔离。"],
     "/storage":["存储","查看跨账户 R2 用户文件，并执行管理操作。"],
-    "/intelligence":["AI 管理","管理服务商、模型和用户 AI 访问权限。"],
+    "/intelligence":["AERTEX Intelligence","管理服务商、模型和用户 AI 访问权限；此模块直接属于 admin.qsseda.com 管理控制面。"],
     "/system":["系统","查看管理控制面的健康状态与部署信息。"]
   };
   [title.textContent,description.textContent]=pageMeta[route]||pageMeta["/"];
