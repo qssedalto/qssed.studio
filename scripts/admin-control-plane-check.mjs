@@ -178,6 +178,22 @@ for (const required of [
 }
 assertAbsent(html, "Personal Workspace", "Admin UI must not imitate the main Personal Workspace shell.");
 assertAbsent(html, 'class="os-shell"', "Admin UI must not reuse the main product shell.");
+
+for (const required of [
+  "openUserProvidersDialog",
+  "openUserModelsDialog",
+  "editProviderDialog",
+  "editCheckKey",
+  "clear_admin_key",
+  "official_month_usd",
+  "startRetryCooldown",
+  "provider_access:providerAccess",
+  "userProviderAccessSelections",
+  "normalizedUserAccess"
+]) {
+  assertContains(html, required, "Admin Intelligence workspace lost migrated capability: " + required);
+}
+
 for (const [index, source] of [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]).entries()) {
   new vm.Script(source, { filename: `admin-control-plane-inline-${index}.js` });
 }
