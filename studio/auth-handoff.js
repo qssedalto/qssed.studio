@@ -75,11 +75,11 @@ export function normalizeHandoffNext(value, locale, workTarget = false, gptTarge
     if (conversation) return (candidateLocale === "zh" ? "/zh-cn/c/" : "/en/c/") + conversation[1];
     return candidateLocale === "zh" ? "/zh-cn" : "/en";
   }
-  const fallback = locale === "zh" ? "/zh-cn/dashboard" : "/en/dashboard";
+  const fallback = locale === "zh" ? "/zh-cn" : "/en";
   if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\u0000")) return fallback;
-  if (candidate.startsWith("/zh-cn/") || candidate.startsWith("/en/")) return candidate;
+  if (candidate === "/zh-cn" || candidate === "/en" || candidate.startsWith("/zh-cn/") || candidate.startsWith("/en/")) return candidate;
   const prefix = locale === "zh" ? "/zh-cn" : "/en";
-  return `${prefix}${candidate === "/" ? "/dashboard" : candidate}`;
+  return candidate === "/" ? prefix : `${prefix}${candidate}`;
 }
 
 export function scriptLiteral(value) {
