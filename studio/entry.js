@@ -140,7 +140,6 @@ function wishesPage(locale = "zh") {
     recipient: "要祝福谁？",
     optional: "可选",
     placeholder: "输入名字，也可以留空",
-    example: "例如：焦晨阳",
     share: "分享路由",
     destination: "实际导向",
     open: "打开祝福",
@@ -162,7 +161,6 @@ function wishesPage(locale = "zh") {
     recipient: "Who is this for?",
     optional: "Optional",
     placeholder: "Enter a name or leave it blank",
-    example: "For example: Alex",
     share: "Share route",
     destination: "Destination",
     open: "Open wish",
@@ -191,7 +189,7 @@ function wishesPage(locale = "zh") {
     .panel{background:var(--panel);backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden}.section{padding:24px}.section+.section{border-top:1px solid var(--line)}
     .label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:14px}.optional{font-size:11px;padding:3px 7px;border-radius:999px;background:var(--soft)}
     .choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.choice{appearance:none;border:1px solid var(--line);background:var(--solid);color:var(--text);border-radius:20px;padding:18px;text-align:left;cursor:pointer;transition:.18s ease;min-height:112px}.choice:hover{transform:translateY(-1px)}.choice.active{border-color:var(--text);box-shadow:inset 0 0 0 1px var(--text)}.choice strong{display:block;font-size:18px;letter-spacing:-.02em;margin-bottom:8px}.choice span{display:block;font-size:13px;color:var(--muted);line-height:1.45}
-    .name{width:100%;border:1px solid var(--line);background:var(--solid);color:var(--text);border-radius:16px;padding:14px 15px;outline:none}.name:focus{border-color:var(--text);box-shadow:0 0 0 3px rgba(127,127,127,.14)}.example{margin-top:8px;font-size:12px;color:var(--muted)}
+    .name{width:100%;border:1px solid var(--line);background:var(--solid);color:var(--text);border-radius:16px;padding:14px 15px;outline:none}.name:focus{border-color:var(--text);box-shadow:0 0 0 3px rgba(127,127,127,.14)}
     .results{display:grid;grid-template-columns:1fr 1fr;gap:12px}.result{min-width:0;padding:16px;border-radius:18px;background:var(--soft);border:1px solid var(--line)}.result small{display:block;color:var(--muted);font-size:11px;margin-bottom:8px}.result a{display:block;color:inherit;text-decoration:none;font:600 13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.action{border:0;border-radius:14px;padding:12px 16px;font-weight:720;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.primary{background:var(--text);color:var(--bg)}.secondary{background:var(--soft);color:var(--text);border:1px solid var(--line)}.note{margin:14px 0 0;color:var(--muted);font-size:12px;line-height:1.55}.status{min-height:18px;margin-top:10px;font-size:12px;color:var(--muted)}footer{padding:28px 4px 4px;color:var(--muted);font-size:12px}
     @media(max-width:680px){body{padding-left:14px;padding-right:14px}.hero{padding-top:48px}.choices,.results{grid-template-columns:1fr}.section{padding:18px}.panel{border-radius:24px}.actions{display:grid;grid-template-columns:1fr 1fr}.action{width:100%}}
@@ -219,7 +217,6 @@ function wishesPage(locale = "zh") {
       <div class="section">
         <div class="label">${text.recipient}<span class="optional">${text.optional}</span></div>
         <input id="wish-name" class="name" type="text" maxlength="36" autocomplete="off" placeholder="${text.placeholder}" aria-label="${text.recipient}">
-        <div class="example">${text.example}</div>
       </div>
       <div class="section">
         <div class="results">
