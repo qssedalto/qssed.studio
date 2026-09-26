@@ -1,6 +1,7 @@
 import { FAVICON_LINKS } from "./favicon.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
 import { intelligenceThemeAttr, intelligenceThemeBootScript } from "./intelligence-theme.js";
+import { richMessageClientScript, richMessageStyles } from "./gpt-rich-renderer.js";
 
 export function renderGptApp(locale, bootstrap = {}) {
   const zh = locale === "zh-cn";
@@ -20,7 +21,7 @@ export function renderGptApp(locale, bootstrap = {}) {
     codeLabel:"设备代码", codeHint:"在 OpenAI 页面输入设备代码完成授权。完成后这里会自动识别登录状态。",
     newChat:"新对话", conversations:"对话", toggleSidebar:"切换侧栏", closeSidebar:"关闭侧栏", rename:"重命名", delete:"删除", share:"分享", shareCopied:"分享链接已复制", shareFailed:"无法创建分享链接", shareIdentityTitle:"共享这个对话", shareIdentityText:"是否在公开共享页面显示你的姓名？你可以匿名共享，也可以明确选择显示姓名。", shareAnonymous:"匿名共享", shareWithName:"显示姓名并共享", shareCancel:"取消", confirmDelete:"删除这个对话？", untitled:"未命名对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
     noModels:"没有读取到可用模型", regionBlocked:"当前网络区域不可用", noAvailableRegion:"当前网络区域没有可用的已授权模型", rateLimited:"当前 Provider 返回速率限制，请稍后重试", rateRetry:"建议等待", reasoning:"推理", thinking:"Intelligence 正在思考…",
-    empty:"开始一个新的对话", emptyHint:"选择模型后直接开始聊天",
+    empty:"开始一个新的对话", emptyHint:"选择模型后直接开始聊天", copyCode:"复制", copiedCode:"已复制", codeBlock:"代码",
     error:"发生错误",
     bridgeAuth:"本机 Bridge 的安全凭据配置不一致"
   } : {
@@ -32,7 +33,7 @@ export function renderGptApp(locale, bootstrap = {}) {
     codeLabel:"Device code", codeHint:"Enter the device code on the OpenAI page. This page will detect completion automatically.",
     newChat:"New chat", conversations:"Chats", toggleSidebar:"Toggle sidebar", closeSidebar:"Close sidebar", rename:"Rename", delete:"Delete", share:"Share", shareCopied:"Share link copied", shareFailed:"Unable to create share link", shareIdentityTitle:"Share this conversation", shareIdentityText:"Choose whether your name appears on the public share page. You can share anonymously or explicitly include your name.", shareAnonymous:"Share anonymously", shareWithName:"Share with my name", shareCancel:"Cancel", confirmDelete:"Delete this conversation?", untitled:"Untitled chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
     noModels:"No available models were returned", regionBlocked:"Unavailable on current network", noAvailableRegion:"No authorized model is available on the current network", rateLimited:"The provider is rate-limiting requests right now. Try again shortly.", rateRetry:"Retry after", reasoning:"Reasoning", thinking:"Intelligence is thinking…",
-    empty:"Start a new conversation", emptyHint:"Choose a model and start chatting",
+    empty:"Start a new conversation", emptyHint:"Choose a model and start chatting", copyCode:"Copy", copiedCode:"Copied", codeBlock:"Code",
     error:"Error",
     bridgeAuth:"The local Bridge security credentials do not match"
   };
@@ -73,7 +74,7 @@ ${themeBoot}
 .main{min-width:0;height:100vh;display:flex;flex-direction:column}.topbar{height:62px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%)}.topbarToggle{flex:0 0 auto}.topbarNewChat{flex:0 0 auto}.topbarSpacer{flex:1;min-width:0}
 select{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;padding:8px 10px}.model{min-width:190px;max-width:340px}.account{margin-left:auto;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
 .content{flex:1;min-height:0;overflow:auto}.messages{width:min(820px,calc(100% - 32px));margin:0 auto;padding:42px 0 160px}.empty{min-height:58vh;display:grid;place-items:center;text-align:center}.empty h1{font-size:30px;letter-spacing:-.04em;margin:0 0 8px}.empty p{max-width:600px;margin:0;color:var(--muted);line-height:1.7}
-.msg{margin:0 0 28px}.msg.user{display:flex;justify-content:flex-end}.msg.user .bubble{max-width:78%;padding:11px 15px;background:var(--panel2);border-radius:18px;white-space:pre-wrap;line-height:1.55}.msg.assistant .bubble{white-space:pre-wrap;line-height:1.72}.status{color:var(--muted);font-size:13px;margin-top:8px}
+.msg{margin:0 0 28px}.msg.user{display:flex;justify-content:flex-end}.msg.user .bubble{max-width:78%;padding:11px 15px;background:var(--panel2);border-radius:18px;white-space:pre-wrap;line-height:1.55}.msg.assistant .bubble{white-space:normal;line-height:1.72;min-width:0}.status{color:var(--muted);font-size:13px;margin-top:8px}
 .composerWrap{position:fixed;left:270px;right:0;bottom:0;padding:18px;background:linear-gradient(to top,var(--bg) 72%,transparent);transition:left .22s cubic-bezier(.2,.8,.2,1)}.app.sidebar-collapsed .composerWrap{left:0}.composer{width:min(820px,calc(100% - 32px));margin:0 auto;border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:12px;box-shadow:0 12px 42px rgba(0,0,0,.08)}
 textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;border:0;outline:0;background:transparent;color:var(--text);padding:4px 6px;line-height:1.5}.composerFoot{display:flex;align-items:center;justify-content:flex-end;margin-top:8px}
 .primary{border:0;background:var(--accent);color:var(--accentText);border-radius:11px;padding:8px 14px;cursor:pointer;font-weight:650;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.primary:disabled{opacity:.45;cursor:not-allowed}
@@ -101,7 +102,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   .aertex-account-button{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important}
 }
 @media(prefers-reduced-motion:reduce){.app,.sidebar,.composerWrap,.sidebarBackdrop,.iconButton{transition:none!important}}
-</style>\n<style>${accountMenuStyles()}</style>
+</style>\n<style>${richMessageStyles()}</style>\n<style>${accountMenuStyles()}</style>
 </head>
 <body>
 <div class="app">
@@ -151,6 +152,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
 </main>
 </div>
 <div class="shareChoice" id="shareChoice" role="dialog" aria-modal="true" aria-labelledby="shareChoiceTitle" hidden><div class="shareChoiceBackdrop" id="shareChoiceBackdrop"></div><section class="shareChoiceCard"><h2 id="shareChoiceTitle">${t.shareIdentityTitle}</h2><p>${t.shareIdentityText}</p><div class="shareChoiceActions"><button class="shareChoiceAction primaryChoice" id="shareWithName" type="button">${t.shareWithName}</button><button class="shareChoiceAction" id="shareAnonymous" type="button">${t.shareAnonymous}</button><button class="shareChoiceAction cancelChoice" id="shareCancel" type="button">${t.shareCancel}</button></div></section></div>
+${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.codeBlock })}
 <script>
 (() => {
   const text=${JSON.stringify(t)}, boot=${bootstrapJson}, $=id=>document.getElementById(id);
@@ -224,7 +226,8 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   function append(role,content,scroll=true){
     $("emptyState").classList.add("hidden");
     const root=document.createElement("div");root.className="msg "+role;
-    const bubble=document.createElement("div");bubble.className="bubble";bubble.textContent=content;
+    const bubble=document.createElement("div");bubble.className="bubble";
+    if(role==="assistant"&&window.AERTEXRich)window.AERTEXRich.render(bubble,content,{final:true});else bubble.textContent=content;
     root.appendChild(bubble);$("messages").appendChild(root);
     if(scroll)$("content").scrollTop=$("content").scrollHeight;
     return bubble;
@@ -332,12 +335,13 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
             state.conversationId=payload.conversation_id;
             history.replaceState({conversationId:state.conversationId},"",routeFor(state.conversationId));
           }
-          if(event==="delta"&&payload?.delta){streamed+=payload.delta;assistant.textContent=streamed;$("content").scrollTop=$("content").scrollHeight}
+          if(event==="delta"&&payload?.delta){streamed+=payload.delta;if(window.AERTEXRich)window.AERTEXRich.stream(assistant,streamed);else assistant.textContent=streamed;$("content").scrollTop=$("content").scrollHeight}
           if(event==="done")status.textContent="";
           if(event==="error")throw new Error(payload?.error||text.error);
         }
       }
-      if(!assistant.textContent)assistant.textContent="—";
+      if(!streamed.trim())streamed="—";
+      if(window.AERTEXRich)window.AERTEXRich.finalize(assistant,streamed);else assistant.textContent=streamed;
       if(createdNow)state.current={conversation:{id:state.conversationId,title:message.slice(0,80),model:selected.value,provider_id:selected.dataset.providerId||null},messages:[]};
       void loadConversations();
     }catch(e){
@@ -404,11 +408,13 @@ export function renderSharedConversation(locale, payload, theme = "") {
   const title = esc(conversation.title || (zh ? "共享对话" : "Shared conversation"));
   const authorName = esc(conversation.author_name || "");
   const sharedMeta = authorName ? (zh ? ("由 " + authorName + " 分享 · AERTEX Intelligence 共享对话 · 只读") : ("Shared by " + authorName + " · AERTEX Intelligence shared conversation · Read only")) : (zh ? "AERTEX Intelligence 共享对话 · 只读" : "AERTEX Intelligence shared conversation · Read only");
+  const richStyles = richMessageStyles();
+  const richScript = richMessageClientScript({ copy: zh ? "复制" : "Copy", copied: zh ? "已复制" : "Copied", code: zh ? "代码" : "Code" });
   const body = messages.map(item => {
     const role = item?.role === "user" ? (zh ? "用户" : "User") : "AERTEX";
-    return '<article class="msg '+(item?.role === "user" ? "user" : "assistant")+'"><div class="role">'+role+'</div><div class="bubble">'+esc(item?.content || "")+'</div></article>';
+    return '<article class="msg '+(item?.role === "user" ? "user" : "assistant")+'"><div class="role">'+role+'</div><div class="bubble"'+(item?.role === "user" ? "" : ' data-rich-message="true"')+'>'+esc(item?.content || "")+'</div></article>';
   }).join("");
-  return '<!doctype html><html lang="'+(zh ? "zh-CN" : "en")+'"'+themeAttr+'> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>'+title+' · AERTEX Intelligence</title>'+FAVICON_LINKS+themeBoot+'<style>:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}}:root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}:root[data-theme="light"]{color-scheme:light;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(860px,calc(100% - 32px));margin:0 auto;padding:38px 0 80px}header{padding-bottom:24px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:30px;letter-spacing:-.04em}.meta{margin-top:8px;color:var(--muted);font-size:13px}.msg{padding:24px 0;border-bottom:1px solid var(--line)}.role{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px}.bubble{white-space:pre-wrap;line-height:1.72}.user .bubble{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:16px}.footer{margin-top:28px;color:var(--muted);font-size:12px}</style></head><body><main><header><h1>'+title+'</h1><div class="meta">'+sharedMeta+'</div></header>'+body+'<div class="footer">'+(zh ? "此链接由对话所有者主动分享" : "This link was explicitly shared by the conversation owner")+'</div></main></body></html>';
+  return '<!doctype html><html lang="'+(zh ? "zh-CN" : "en")+'"'+themeAttr+'> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>'+title+' · AERTEX Intelligence</title>'+FAVICON_LINKS+themeBoot+'<style>:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}}:root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}:root[data-theme="light"]{color-scheme:light;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(860px,calc(100% - 32px));margin:0 auto;padding:38px 0 80px}header{padding-bottom:24px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:30px;letter-spacing:-.04em}.meta{margin-top:8px;color:var(--muted);font-size:13px}.msg{padding:24px 0;border-bottom:1px solid var(--line)}.role{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px}.bubble{white-space:pre-wrap;line-height:1.72}.user .bubble{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:16px}.footer{margin-top:28px;color:var(--muted);font-size:12px}</style><style>'+richStyles+'</style></head><body><main><header><h1>'+title+'</h1><div class="meta">'+sharedMeta+'</div></header>'+body+'<div class="footer">'+(zh ? "此链接由对话所有者主动分享" : "This link was explicitly shared by the conversation owner")+'</div></main>'+richScript+'<script>window.AERTEXRich&&window.AERTEXRich.enhance(document)</script></body></html>';
 }
 
 

@@ -120,7 +120,10 @@ for (const required of [
   '/api/ai/conversations',
   'share_token',
   'share_author_name',
-  'Conversation not found.'
+  'Conversation not found.',
+  'RICH_FORMAT_SYSTEM',
+  'Use $...$ for inline LaTeX math',
+  '{ role: "system", content: RICH_FORMAT_SYSTEM }'
 ]) {
   assert(aiGateway.includes(required), `AI gateway is missing multi-provider invariant: ${required}`);
 }
