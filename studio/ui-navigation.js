@@ -55,7 +55,7 @@ export function compactBackScript(path, zh) {
     }
 
     function showCompactMenu() {
-      try { sessionStorage.setItem("qssed-compact-view-v1", "menu"); } catch {}
+      try { sessionStorage.setItem("qssed-compact-view-v2", "menu"); } catch {}
       document.documentElement.classList.remove("compact-content-view");
       document.documentElement.classList.add("compact-menu-view");
       if (typeof applyCompactViewMode === "function") applyCompactViewMode();
@@ -84,7 +84,7 @@ export function compactBackScript(path, zh) {
 
       // Child pages use their deterministic parent route. The parent remains in
       // content mode; pressing back once more from that top-level page opens menu.
-      try { sessionStorage.setItem("qssed-compact-view-v1", "content"); } catch {}
+      try { sessionStorage.setItem("qssed-compact-view-v2", "content"); } catch {}
       window.location.assign(compactFallbackHref);
     }
 
