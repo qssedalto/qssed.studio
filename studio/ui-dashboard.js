@@ -87,7 +87,7 @@ export function dashboardContent(zh, options = {}) {
         <p>${zh ? "继续上次的工作，或者直接打开常用功能。" : "Pick up where you left off or open a common tool."}</p>
         <div class="dashboard-welcome-actions">
           <a class="dashboard-primary-action" href="${prefix}/workspace/workbench">${dashboardIcon("workbench")}<span class="dashboard-action-label">${zh ? "打开工作台" : "Open Workbench"}</span><span class="dashboard-action-arrow">›</span></a>
-          <a class="dashboard-secondary-action" href="${prefix}/profile/details">${dashboardIcon("profile")}<span class="dashboard-action-label">${zh ? "用户资料" : "Profile"}</span><span class="dashboard-action-arrow">›</span></a>
+          <a class="dashboard-secondary-action" href="${prefix}/profile">${dashboardIcon("profile")}<span class="dashboard-action-label">${zh ? "AERTEX 账户" : "AERTEX Account"}</span><span class="dashboard-action-arrow">›</span></a>
         </div>
       </div>
       <div class="dashboard-today-card" aria-label="${zh ? "当前时间" : "Current time"}">
