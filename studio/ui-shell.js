@@ -233,7 +233,10 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
                 email: serverUser.email || "",
                 user_metadata: {
                   username: profile.username || "",
-                  display_name: profile.display_name || ""
+                  display_name: profile.display_name || "",
+                  avatar_url: profile.avatar_url || "",
+                  role: profile.role || "",
+                  status: profile.status || ""
                 }
               },
               definiteSignedOut: false,
@@ -313,12 +316,28 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
         sessionStorage.removeItem("qssed-os-user-name");
       } catch {}
 
-      if (!authState.serverOnly) {
-        await updateCurrentDevice(data.user);
-        await hydrateProfileSummary(data.user);
-        await hydrateProfileHome(data.user);
-        await hydrateProfileAudit(data.user);
+      // A valid server session is enough to hydrate account UI. Browser-side
+      // Supabase persistence may be unavailable on Safari/private modes, so never
+      // leave Profile stuck on "Loading..." just because authState.serverOnly is true.
+      try {
+        if (typeof renderProfileSummarySnapshot === "function" && document.getElementById("profile-summary")) {
+          renderProfileSummarySnapshot({
+            user_id: data.user.id || "",
+            displayName: data.user.user_metadata?.display_name || data.user.user_metadata?.username || data.user.email || "User",
+            email: data.user.email || "",
+            role: data.user.user_metadata?.role || "",
+            status: data.user.user_metadata?.status || "",
+            avatar_url: data.user.user_metadata?.avatar_url || ""
+          });
+        }
+      } catch (error) {
+        console.warn("Immediate account summary render failed", error);
       }
+
+      await updateCurrentDevice(data.user);
+      await hydrateProfileSummary(data.user);
+      await hydrateProfileHome(data.user);
+      await hydrateProfileAudit(data.user);
     }
 
     hydrateOsUser();
