@@ -13,6 +13,7 @@ import {
   withAdminSessionCookies
 } from "./admin/session.js";
 import { adminHtml, hiddenAdminNotFound, renderAdminConsole } from "./admin/ui.js";
+import { adminCanonicalPath, adminLocaleFromPath, localizeAdminHtml, preferredAdminLocale } from "./admin/i18n.js";
 
 const PAGE_PATHS = new Set(["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/intelligence", "/logs", "/system"]);
 
@@ -97,12 +98,21 @@ async function routeAdminRequest(request, env) {
 
   if (request.method !== "GET" && request.method !== "HEAD") return hiddenAdminNotFound();
 
-  if (!PAGE_PATHS.has(pathname)) return hiddenAdminNotFound();
-  if (pathname === "/overview") return redirect("/");
+  const page = adminLocaleFromPath(pathname);
+  if (!page.path) return hiddenAdminNotFound();
+
+  if (!page.locale) {
+    const targetPath = page.path === "/overview" ? "/" : page.path;
+    return redirect(adminCanonicalPath(preferredAdminLocale(request), targetPath));
+  }
+  if (page.path === "/overview") return redirect(adminCanonicalPath(page.locale, "/"));
 
   const session = await verifyAdminSession(request);
   if (!session.ok) {
-    return withAdminSessionCookies(adminSessionRedirect(request, pathname), session.cookies || []);
+    return withAdminSessionCookies(
+      adminSessionRedirect(request, adminCanonicalPath(page.locale, page.path)),
+      session.cookies || []
+    );
   }
 
   const identity = String(
@@ -112,11 +122,12 @@ async function routeAdminRequest(request, env) {
     "Administrator"
   ).slice(0, 180);
 
-  const response = adminHtml(renderAdminConsole(pathname, {
+  const markup = renderAdminConsole(page.path, {
     identity,
     root: adminOriginForRequest(request).replace(/^https:\/\//, ""),
     build: "control-plane-v1"
-  }));
+  });
+  const response = adminHtml(localizeAdminHtml(markup, page.locale, page.path));
 
   return request.method === "HEAD"
     ? new Response(null, { status: response.status, headers: response.headers })
