@@ -37,5 +37,107 @@ export function dashboardStyles() {
     @media(max-width:760px){.dashboard-welcome{grid-template-columns:1fr;padding:17px}.dashboard-home-wishes{padding:15px}.dashboard-today-card{min-height:156px}.dashboard-today-meta{grid-template-columns:1fr 1fr}.dashboard-shortcuts{grid-template-columns:1fr}.dashboard-module-list>a{grid-template-columns:auto minmax(0,1fr) auto}.dashboard-module-list em{display:none}}
     @media(max-width:430px){.dashboard-home-wish-types{grid-template-columns:1fr}.dashboard-home-wish-actions{display:grid;grid-template-columns:1fr}.dashboard-home-wish-actions a{width:100%;justify-content:center}.dashboard-today-meta{grid-template-columns:1fr}}
     @media(prefers-reduced-motion:reduce){.dashboard-primary-action,.dashboard-secondary-action,.dashboard-shortcut,.dashboard-module-list>a,.dashboard-session-settings{transition:background .12s ease!important;transform:none!important}}
+    /* DASHBOARD_SETTINGS_V5 — Apple Settings inspired, adapted for AERTEX */
+    .dashboard-settings-shell{
+      width:min(820px,100%);
+      margin:0 auto;
+      padding:4px 0 36px;
+    }
+    .dashboard-account-card{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      gap:16px;
+      align-items:center;
+      min-height:112px;
+      padding:18px 20px;
+      border-radius:22px;
+      color:var(--text);
+      text-decoration:none;
+      background:var(--card);
+      box-shadow:0 1px 0 color-mix(in srgb,var(--border) 70%,transparent),0 12px 32px rgba(0,0,0,.035);
+      transition:background .14s ease,transform .1s ease;
+    }
+    .dashboard-account-card:hover{background:color-mix(in srgb,var(--card) 94%,var(--secondary))}
+    .dashboard-account-card:active{transform:scale(.993)}
+    .dashboard-account-avatar{
+      width:70px;height:70px;display:grid;place-items:center;overflow:hidden;border-radius:50%;
+      background:linear-gradient(155deg,#91e7f3 0%,#20798d 100%);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);
+    }
+    .dashboard-account-avatar img{width:56%;height:56%;object-fit:contain;filter:brightness(0) invert(1)}
+    .dashboard-account-copy{min-width:0}
+    .dashboard-account-copy strong,.dashboard-account-copy small{display:block}
+    .dashboard-account-copy strong{font-size:25px;line-height:1.1;letter-spacing:-.035em}
+    .dashboard-account-copy small{margin-top:6px;color:var(--muted);font-size:13px;line-height:1.35}
+    .dashboard-account-card>b,.dashboard-setting-row>b{color:var(--quiet);font-size:26px;font-weight:420;line-height:1}
+    .dashboard-settings-section{margin-top:28px}
+    .dashboard-settings-caption{margin:0 14px 8px;color:var(--muted);font-size:12px;font-weight:620}
+    .dashboard-settings-group{
+      overflow:hidden;
+      border-radius:22px;
+      background:var(--card);
+      box-shadow:0 1px 0 color-mix(in srgb,var(--border) 70%,transparent),0 12px 32px rgba(0,0,0,.025);
+    }
+    .dashboard-setting-row{
+      position:relative;
+      min-height:66px;
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      gap:14px;
+      align-items:center;
+      padding:9px 16px;
+      color:var(--text);
+      text-decoration:none;
+      transition:background .12s ease,transform .1s ease;
+    }
+    .dashboard-setting-row+.dashboard-setting-row:before{
+      content:"";position:absolute;left:68px;right:16px;top:0;height:1px;background:var(--hairline);
+    }
+    .dashboard-setting-row:hover{background:var(--secondary)}
+    .dashboard-setting-row:active{transform:scale(.995)}
+    .dashboard-setting-row .dashboard-icon{
+      width:38px;height:38px;border-radius:10px;color:#fff;background:#8e8e93;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
+    }
+    .dashboard-setting-row .dashboard-icon svg{width:21px;height:21px;stroke-width:1.85}
+    .dashboard-setting-row.tone-blue .dashboard-icon{background:#0a84ff}
+    .dashboard-setting-row.tone-indigo .dashboard-icon{background:#5856d6}
+    .dashboard-setting-row.tone-cyan .dashboard-icon{background:#32ade6}
+    .dashboard-setting-row.tone-teal .dashboard-icon{background:#30b0c7}
+    .dashboard-setting-row.tone-green .dashboard-icon{background:#34c759}
+    .dashboard-setting-row.tone-red .dashboard-icon{background:#ff453a}
+    .dashboard-setting-row.tone-orange .dashboard-icon{background:#ff9f0a}
+    .dashboard-setting-row.tone-gray .dashboard-icon{background:#8e8e93}
+    .dashboard-setting-label{min-width:0}
+    .dashboard-setting-label strong,.dashboard-setting-label small{display:block}
+    .dashboard-setting-label strong{font-size:16px;line-height:1.25;font-weight:620;letter-spacing:-.012em}
+    .dashboard-setting-label small{margin-top:3px;color:var(--muted);font-size:12px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    body.os-shell:has(.dashboard-settings-shell) .os-hero{
+      width:min(820px,100%);margin:0 auto 18px;align-items:end;
+    }
+    body.os-shell:has(.dashboard-settings-shell) .os-hero h1{
+      margin:0;font-size:clamp(34px,4.4vw,48px);letter-spacing:-.045em;
+    }
+    body.os-shell:has(.dashboard-settings-shell) .os-hero>div>p:not(.os-kicker){display:none}
+    body.os-shell:has(.dashboard-settings-shell) .os-ai{display:none}
+    @media(max-width:760px){
+      .dashboard-settings-shell{padding-top:0}
+      .dashboard-account-card{min-height:100px;padding:15px 16px;border-radius:20px}
+      .dashboard-account-avatar{width:64px;height:64px}
+      .dashboard-account-copy strong{font-size:23px}
+      .dashboard-settings-section{margin-top:22px}
+      .dashboard-settings-group{border-radius:20px}
+      .dashboard-setting-row{min-height:62px;padding:8px 14px}
+      .dashboard-setting-row+.dashboard-setting-row:before{left:64px;right:14px}
+      .dashboard-setting-row .dashboard-icon{width:36px;height:36px}
+      body.os-shell:has(.dashboard-settings-shell) .os-hero{margin-bottom:14px}
+    }
+    @media(max-width:430px){
+      .dashboard-account-card{gap:13px}
+      .dashboard-account-copy strong{font-size:21px}
+      .dashboard-account-copy small{font-size:12px}
+      .dashboard-setting-label strong{font-size:15px}
+    }
+
   `;
 }
