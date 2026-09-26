@@ -74,5 +74,29 @@ export function dashboardStyles() {
     .dashboard-activity-action{display:inline-flex!important;align-items:center;justify-content:center;gap:8px}
     .dashboard-activity-action>b{margin-left:2px}
 
+    /* NAV_DISCOVERABILITY_V6 — keep every feature visible */
+    .os-nav-entry+.os-nav-entry:before{display:none}
+    .os-nav-items{display:grid;gap:3px;padding:0 8px 8px}
+    .os-nav-items a{
+      min-height:38px;
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr);
+      gap:9px;
+      align-items:center;
+      padding:5px 8px;
+      border-radius:10px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .os-nav-items a .dashboard-icon{
+      width:27px;height:27px;border-radius:8px;
+      color:var(--muted);background:var(--fill);
+      box-shadow:none;
+    }
+    .os-nav-items a .dashboard-icon svg{width:14px;height:14px;stroke-width:1.8}
+    .os-nav-items a:hover{background:var(--secondary);color:var(--text)}
+    .os-nav-items a[aria-current="page"]{color:var(--text);background:var(--fill);font-weight:650}
+    .os-nav-items a[aria-current="page"] .dashboard-icon{color:#fff;background:#0a84ff}
+
   `;
 }
