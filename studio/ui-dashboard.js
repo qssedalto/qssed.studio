@@ -64,7 +64,7 @@ export function dashboardContent(zh, options = {}) {
   return `
     <div class="dashboard-settings-shell">
       <a class="dashboard-account-card" href="${prefix}/profile/details">
-        <span class="dashboard-account-avatar"><img src="/favicon.svg?v=aertex-20260924-3" alt=""></span>
+        <span class="dashboard-account-avatar" aria-hidden="true"><span id="dashboard-account-initial">A</span></span>
         <span class="dashboard-account-copy">
           <strong id="dashboard-account-name">${zh ? "AERTEX 用户" : "AERTEX User"}</strong>
           <small>${zh ? "AERTEX 账户 · 个人工作空间" : "AERTEX Account · Personal Workspace"}</small>
@@ -81,11 +81,14 @@ export function dashboardContent(zh, options = {}) {
       (() => {
         const source = document.getElementById("os-user-name");
         const target = document.getElementById("dashboard-account-name");
+        const initial = document.getElementById("dashboard-account-initial");
         if (!target) return;
         const fallback = ${JSON.stringify(zh ? "AERTEX 用户" : "AERTEX User")};
         const paint = () => {
           const value = String(source?.textContent || "").trim();
-          target.textContent = value || fallback;
+          const label = value || fallback;
+          target.textContent = label;
+          if (initial) initial.textContent = Array.from(label.trim())[0] || "A";
         };
         paint();
         if (source) new MutationObserver(paint).observe(source, { childList: true, characterData: true, subtree: true });
