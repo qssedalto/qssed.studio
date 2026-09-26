@@ -135,6 +135,27 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
 .aiChoice strong{color:var(--text)}.aiDialogProvider{padding:10px 0}.aiDialogProvider+.aiDialogProvider{border-top:1px solid var(--line2)}
 .aiDialogGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.aiDialogGrid .wide{grid-column:1/-1}
 .aiEmpty{padding:26px 12px;color:var(--muted);text-align:center}
+.aiWorkbench .hint{color:var(--muted);font-size:10px;line-height:1.5}.aiWorkbench .status{min-height:20px;margin:0 0 10px}
+.aiWorkbench label{display:block;margin:7px 0 4px;color:var(--quiet);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.aiWorkbench input,.aiWorkbench select{width:100%;min-width:0;height:34px;border:1px solid var(--line);background:#0b1016;color:var(--text);padding:0 9px}
+.aiWorkbench .keyRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.aiWorkbench .checkKeyButton{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:0 11px;cursor:pointer}
+.aiWorkbench .keyStatus{min-height:17px;margin-top:5px;color:var(--muted);font-size:10px}.aiWorkbench .keyStatus.ok{color:var(--good)}.aiWorkbench .keyStatus.bad{color:var(--bad)}.aiWorkbench .keyStatus.warn{color:var(--warn)}
+.aiWorkbench .pickerButton{width:100%;min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);background:#0b1016;color:var(--text);padding:6px 9px;cursor:pointer;text-align:left}
+.aiWorkbench .pickerButton:disabled{opacity:.45;cursor:not-allowed}.aiWorkbench .pickerValue{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.aiWorkbench .pickerChevron{color:var(--quiet)}
+.aiWorkbench .providerCard{border-top:1px solid var(--line2);padding:13px 0}.aiWorkbench .providerTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.aiWorkbench .providerName{font-weight:700;font-size:12px}.aiWorkbench .providerActions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.aiWorkbench .smallButton{height:30px;padding:0 9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer}.aiWorkbench .dangerButton{color:var(--bad)}
+.aiWorkbench .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:10px}.aiWorkbench .metrics .metric{border:1px solid var(--line2);background:var(--panel);padding:9px}.aiWorkbench .metrics .metric span{display:block;color:var(--quiet);font-size:9px}.aiWorkbench .metrics .metric strong{display:block;margin-top:4px;font-size:13px}
+.aiWorkbench .statusPill{display:inline-flex;align-items:center;gap:6px}.aiWorkbench .statusDot{width:7px;height:7px;border-radius:50%;background:var(--quiet);display:inline-block}.aiWorkbench .statusDot.active{background:var(--good)}
+.aiWorkbench .pill{display:inline-block;padding:3px 6px;border:1px solid var(--line);font:9px ui-monospace,SFMono-Regular,Menlo,monospace}
+.aiWorkbench .user{display:grid;grid-template-columns:minmax(190px,1.4fr) repeat(4,minmax(115px,1fr));gap:8px;align-items:end;border-top:1px solid var(--line2);padding:12px 0;min-width:0}.aiWorkbench .user>*{min-width:0}.aiWorkbench .userName{align-self:center}.aiWorkbench .userName strong,.aiWorkbench .userName .hint{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aiWorkbench .accessCell{display:grid;gap:5px}.aiWorkbench .accessFeedback{min-height:15px;font-size:10px;color:var(--muted)}.aiWorkbench .accessFeedback.ok{color:var(--good)}.aiWorkbench .accessFeedback.bad{color:var(--bad)}.aiWorkbench .access.isSaved{border-color:#235d3c;color:var(--good)}
+.aiDialog .dialogHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}.aiDialog .dialogBody{padding:12px 16px;overflow:auto;max-height:60vh}.aiDialog .dialogFoot{display:flex;justify-content:flex-end;gap:7px;padding:12px 16px;border-top:1px solid var(--line)}
+.aiDialog .secondaryBtn{height:32px;padding:0 10px;border:1px solid var(--line);background:var(--panel);color:var(--text)}.aiDialog .primary{height:32px;padding:0 10px;border:1px solid #355b93;background:#15335b;color:#d7e7ff}
+.aiDialog .choice{display:flex;align-items:flex-start;gap:8px;padding:9px 2px;border-bottom:1px solid var(--line2);color:var(--muted);font-size:11px}.aiDialog .choice:last-child{border-bottom:0}.aiDialog .choice input{width:auto;height:auto;margin-top:1px;accent-color:var(--accent)}
+.aiDialog label{display:block;margin:8px 0 4px;color:var(--quiet);font-size:10px;text-transform:uppercase;letter-spacing:.04em}.aiDialog input{width:100%;height:34px;border:1px solid var(--line);background:#0b1016;color:var(--text);padding:0 9px}
+@media(max-width:1200px){.aiWorkbench .user{grid-template-columns:repeat(3,minmax(0,1fr))}.aiWorkbench .userName{grid-column:1/-1}.aiWorkbench .metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.aiWorkbench .user{grid-template-columns:1fr 1fr}.aiWorkbench .providerTop{display:grid}.aiWorkbench .providerActions{justify-content:flex-start}.aiWorkbench .metrics{grid-template-columns:1fr 1fr}}
+
 @media(max-width:1200px){.aiAccessGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.aiSaveCell{grid-column:span 2}.aiProviderList{grid-template-columns:1fr}.aiMetrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.aiSummary{grid-template-columns:1fr 1fr}.aiCreateGrid{grid-template-columns:1fr}.aiAccessGrid{grid-template-columns:1fr 1fr}.aiSaveCell{grid-column:1/-1}.aiDialogGrid{grid-template-columns:1fr}.aiDialogGrid .wide{grid-column:auto}}
 
@@ -410,86 +431,625 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   }
 
   async function intelligence(){
-    const state=await get("/api/admin/ai/state?fast=1");
-    const providers=Array.isArray(state.providers)?state.providers:[];
-    const users=Array.isArray(state.users)?state.users:[];
-    view.innerHTML=objCards({providers:providers.length,users:users.length,active_providers:providers.filter(provider=>provider.is_active!==false).length})+
-      '<section class="section"><div class="sectionHead"><h2>添加服务商</h2><span class="mono">凭据仅保存在 AI 管理模块</span></div>'+
-      '<form class="controlGrid" id="providerForm"><div class="stack"><label>服务商<select name="provider" required><option value="openai">OpenAI</option><option value="zhipu">Zhipu</option><option value="bailian">Bailian</option></select></label><label>名称<input name="name" required></label></div>'+
-      '<div class="stack"><label>项目 API 密钥<input name="key" type="password" autocomplete="off" required></label><label>管理/计费密钥（OpenAI 可选）<input name="adminKey" type="password" autocomplete="off"></label><button class="btn" id="validateProvider" type="button">验证密钥并加载模型</button></div>'+
-      '<div class="stack"><label>允许的模型<textarea name="models" placeholder="请先验证密钥"></textarea></label><label>默认模型<input name="defaultModel"></label></div>'+
-      '<div class="stack"><label>每月预算（USD）<input name="budget" type="number" min="0" step=".01"></label><label>输入价格 / 百万 Token（USD）<input name="input" type="number" min="0" step=".001" value="0"></label><label>输出价格 / 百万 Token（USD）<input name="output" type="number" min="0" step=".001" value="0"></label></div>'+
-      '<div class="stack"><button class="btn primary" type="submit">创建服务商</button></div></form><div class="feedback" id="providerFeedback"></div></section>'+
-      '<section class="section"><div class="sectionHead"><h2>服务商</h2></div><div class="tableWrap"><table><thead><tr><th>名称</th><th>类型</th><th>默认模型</th><th>模型</th><th>本月用量</th><th>状态</th><th>操作</th></tr></thead><tbody>'+
-      providers.map(provider=>'<tr data-provider="'+esc(provider.id)+'"><td>'+esc(provider.name||"—")+'<br><span class="mono">'+esc(provider.id)+'</span></td><td class="mono">'+esc(provider.provider)+'</td><td class="mono">'+esc(provider.default_model||"—")+'</td><td>'+esc((provider.allowed_models||[]).join(", "))+'</td><td>'+esc(provider.month_usage_usd??0)+' USD · '+esc(provider.month_requests??0)+' 次请求</td><td><span class="badge '+(provider.is_active!==false?"ok":"bad")+'">'+(provider.is_active!==false?"已启用":"已停用")+'</span></td><td><div class="inline"><button class="btn toggleProvider" type="button">'+(provider.is_active!==false?"停用":"启用")+'</button><button class="btn danger deleteProvider" type="button">删除</button></div></td></tr>').join('')+
-      '</tbody></table></div></section>'+
-      '<section class="section"><div class="sectionHead"><h2>用户 AI 访问权限</h2></div><div class="tableWrap"><table><thead><tr><th>用户</th><th>启用</th><th>服务商</th><th>美元限额</th><th>Token 限额</th><th>每分钟请求</th><th>操作</th></tr></thead><tbody>'+
-      users.map(user=>{const selected=new Set((user.provider_access||[]).filter(item=>item.enabled!==false).map(item=>item.provider_id));return '<tr data-ai-user="'+esc(user.user_id)+'"><td><strong>'+esc(user.display_name||user.username||"—")+'</strong><br><span class="mono">'+esc(user.email||user.user_id)+'</span></td><td><input class="aiEnabled" type="checkbox" '+(user.enabled?"checked":"")+'></td><td><select class="aiProviders multiSelect" multiple>'+providers.filter(provider=>provider.is_active!==false).map(provider=>'<option value="'+esc(provider.id)+'" '+(selected.has(provider.id)?"selected":"")+'>'+esc(provider.name)+'</option>').join('')+'</select></td>'+
-      '<td><input class="dailyUsd compactInput" type="number" min="0" step=".01" value="'+esc(user.daily_limit_usd??"")+'" placeholder="每日"><br><input class="monthlyUsd compactInput" type="number" min="0" step=".01" value="'+esc(user.monthly_limit_usd??"")+'" placeholder="每月"></td>'+
-      '<td><input class="dailyTokens compactInput" type="number" min="0" step="1" value="'+esc(user.daily_limit_tokens??"")+'" placeholder="每日"><br><input class="monthlyTokens compactInput" type="number" min="0" step="1" value="'+esc(user.monthly_limit_tokens??"")+'" placeholder="每月"></td>'+
-      '<td><input class="rpm compactInput" type="number" min="1" max="300" value="'+esc(user.requests_per_minute??20)+'"></td><td><button class="btn saveAiAccess" type="button">应用</button></td></tr>'}).join('')+
-      '</tbody></table></div><div class="feedback" id="aiFeedback"></div></section>';
-
-    const providerForm=document.getElementById("providerForm");
-    const providerFeedback=document.getElementById("providerFeedback");
-    document.getElementById("validateProvider")?.addEventListener("click",async()=>{
-      const fd=new FormData(providerForm);
-      const button=document.getElementById("validateProvider");
+    if(window.__aertexAdminAiTimer){clearInterval(window.__aertexAdminAiTimer);window.__aertexAdminAiTimer=null;}
+    const initialState=await get("/api/admin/ai/state");
+    const initialProviders=Array.isArray(initialState.providers)?initialState.providers:[];
+    const initialUsers=Array.isArray(initialState.users)?initialState.users:[];
+    view.innerHTML=objCards({
+      providers:initialProviders.length,
+      users:initialUsers.length,
+      active_providers:initialProviders.filter(provider=>provider.is_active!==false).length,
+      configured_models:initialProviders.reduce((sum,provider)=>sum+(Array.isArray(provider.allowed_models)?provider.allowed_models.length:0),0)
+    })+'<div class="aiWorkbench">'+"<div id=\"msg\" class=\"status hint\"></div>\n\n<section class=\"section aiPanel\">\n  <div class=\"sectionHead\"><h2>添加 AI Provider</h2></div>\n  <div class=\"aiCreateGrid\">\n    <div><label>Provider 类型</label><select id=\"providerType\"><option value=\"\" disabled selected>请选择 Provider</option><option value=\"openai\">OpenAI</option><option value=\"zhipu\">智谱 GLM</option><option value=\"bailian\">阿里云百炼</option></select></div>\n    <div><label>名称</label><input id=\"name\" value=\"\"></div>\n    <div><label>API Key</label><div class=\"keyRow\"><input id=\"key\" type=\"password\" autocomplete=\"off\" spellcheck=\"false\"><button type=\"button\" class=\"checkKeyButton\" id=\"checkKey\" disabled>检查 Key</button></div><div class=\"keyStatus\" id=\"keyStatus\">尚未检查 Key</div></div>\n    <div id=\"adminKeyField\"><label>OpenAI Admin Key（可选，仅账单）</label><input id=\"adminKey\" type=\"password\" autocomplete=\"off\" spellcheck=\"false\"><div class=\"hint\">Admin Key 只用于读取 OpenAI Organization Costs，不参与用户聊天</div></div>\n    <div><label>允许模型</label><button type=\"button\" class=\"pickerButton\" id=\"modelsPicker\" disabled><span class=\"pickerValue\" id=\"modelsPickerValue\"></span><span class=\"pickerChevron\">›</span></button></div>\n    <div><label>默认模型</label><button type=\"button\" class=\"pickerButton\" id=\"defaultPicker\" disabled><span class=\"pickerValue\" id=\"defaultPickerValue\"></span><span class=\"pickerChevron\">›</span></button></div>\n    <div><label>AERTEX 月预算（USD）</label><input id=\"budget\" type=\"number\" min=\"0\" step=\".01\"></div>\n    <div><label>自定义模型输入 $/百万 Token</label><input id=\"input\" type=\"number\" min=\"0\" step=\".001\" value=\"4\"></div>\n    <div><label>自定义模型输出 $/百万 Token</label><input id=\"output\" type=\"number\" min=\"0\" step=\".001\" value=\"20\"></div>\n  </div>\n  <p><button class=\"primary\" id=\"saveProvider\">验证并保存 Provider</button></p>\n</section>\n\n<section class=\"section aiPanel\">\n  <div class=\"sectionHead\"><h2>API Providers</h2><span class=\"hint\" id=\"refreshed\"></span></div>\n  <div id=\"providers\">正在加载…</div>\n</section>\n\n<section class=\"section aiPanel\">\n  <div class=\"sectionHead\"><h2>用户授权</h2></div>\n  <div id=\"users\">正在加载…</div>\n</section>\n\n\n<dialog class=\"aiDialog\" id=\"modelsDialog\">\n  <div class=\"dialogHead\"><strong>选择允许模型</strong></div>\n  <div class=\"dialogBody\" id=\"modelsDialogBody\"></div>\n  <div class=\"dialogFoot\"><button type=\"button\" class=\"secondaryBtn\" id=\"modelsCancel\">取消</button><button type=\"button\" class=\"primary\" id=\"modelsDone\">完成</button></div>\n</dialog>\n\n<dialog class=\"aiDialog\" id=\"defaultDialog\">\n  <div class=\"dialogHead\"><strong>选择默认模型</strong></div>\n  <div class=\"dialogBody\" id=\"defaultDialogBody\"></div>\n  <div class=\"dialogFoot\"><button type=\"button\" class=\"secondaryBtn\" id=\"defaultCancel\">取消</button><button type=\"button\" class=\"primary\" id=\"defaultDone\">完成</button></div>\n</dialog>\n\n<dialog class=\"aiDialog\" id=\"userProvidersDialog\">\n  <div class=\"dialogHead\"><strong>选择 Provider</strong></div>\n  <div class=\"dialogBody\" id=\"userProvidersDialogBody\"></div>\n  <div class=\"dialogFoot\"><button type=\"button\" class=\"secondaryBtn\" id=\"userProvidersCancel\">取消</button><button type=\"button\" class=\"primary\" id=\"userProvidersDone\">完成</button></div>\n</dialog>\n\n<dialog class=\"aiDialog\" id=\"userModelsDialog\">\n  <div class=\"dialogHead\"><strong>选择用户模型</strong></div>\n  <div class=\"dialogBody\" id=\"userModelsDialogBody\"></div>\n  <div class=\"dialogFoot\"><button type=\"button\" class=\"secondaryBtn\" id=\"userModelsCancel\">取消</button><button type=\"button\" class=\"primary\" id=\"userModelsDone\">完成</button></div>\n</dialog>\n\n<dialog class=\"aiDialog\" id=\"editProviderDialog\">\n  <div class=\"dialogHead\"><strong>编辑 Provider</strong></div>\n  <div class=\"dialogBody\">\n    <label>Provider 类型</label><div class=\"pill\" id=\"editProviderType\"></div>\n    <label>名称</label><input id=\"editName\">\n    <label>替换 Project API Key（留空则保留）</label>\n    <div class=\"keyRow\"><input id=\"editKey\" type=\"password\" autocomplete=\"off\" spellcheck=\"false\"><button type=\"button\" class=\"checkKeyButton\" id=\"editCheckKey\">检查新 Key</button></div>\n    <div class=\"keyStatus\" id=\"editKeyStatus\"></div>\n    <div id=\"editAdminKeyField\"><label>替换 Admin Key（留空则保留）</label><input id=\"editAdminKey\" type=\"password\" autocomplete=\"off\" spellcheck=\"false\">\n    <label class=\"choice\"><input id=\"editClearAdminKey\" type=\"checkbox\"><span>清除现有 Admin Key</span></label></div>\n    <label>允许模型</label><button type=\"button\" class=\"pickerButton\" id=\"editModelsPicker\"><span class=\"pickerValue\" id=\"editModelsValue\"></span><span class=\"pickerChevron\">›</span></button>\n    <label>默认模型</label><button type=\"button\" class=\"pickerButton\" id=\"editDefaultPicker\"><span class=\"pickerValue\" id=\"editDefaultValue\"></span><span class=\"pickerChevron\">›</span></button>\n    <label>AERTEX 月预算（USD）</label><input id=\"editBudget\" type=\"number\" min=\"0\" step=\".01\">\n    <label>自定义模型输入 $/百万 Token</label><input id=\"editInput\" type=\"number\" min=\"0\" step=\".001\">\n    <label>自定义模型输出 $/百万 Token</label><input id=\"editOutput\" type=\"number\" min=\"0\" step=\".001\">\n    <label class=\"choice\"><input id=\"editActive\" type=\"checkbox\"><span>启用 Provider</span></label>\n  </div>\n  <div class=\"dialogFoot\"><button type=\"button\" class=\"secondaryBtn\" id=\"editCancel\">取消</button><button type=\"button\" class=\"primary\" id=\"editSave\">保存修改</button></div>\n</dialog>\n\n<dialog class=\"aiDialog\" id=\"editModelsDialog\">\n  <div class=\"dialogHead\"><strong>选择允许模型</strong></div>\n  <div class=\"dialogBody\" id=\"editModelsDialogBody\"></div>\n  <div class=\"dialogFoot\"><button type=\"button\" class=\"secondaryBtn\" id=\"editModelsCancel\">取消</button><button type=\"button\" class=\"primary\" id=\"editModelsDone\">完成</button></div>\n</dialog>\n\n<dialog class=\"aiDialog\" id=\"editDefaultDialog\">\n  <div class=\"dialogHead\"><strong>选择默认模型</strong></div>\n  <div class=\"dialogBody\" id=\"editDefaultDialogBody\"></div>\n  <div class=\"dialogFoot\"><button type=\"button\" class=\"secondaryBtn\" id=\"editDefaultCancel\">取消</button><button type=\"button\" class=\"primary\" id=\"editDefaultDone\">完成</button></div>\n</dialog>"+'</div>';
+    const $=id=>document.getElementById(id);
+    let state=initialState;
+    const hasBootstrapState=true;
+    let availableProjectModels=[];
+    let selectedProviderModels=[];
+    let selectedDefaultModel="";
+    let projectKeyValidated=false;
+    const userProviderAccessSelections=new Map();
+    let activeUserProviderPicker=null;
+    let activeUserModelPicker=null;
+    let editingProvider=null;
+    let editAvailableModels=[];
+    let editSelectedModels=[];
+    let editDefaultModel="";
+    let editReplacementKeyChecked=true;
+    const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+    const money=value=>value==null?"—":"$"+Number(value||0).toFixed(4);
+    const tokenCount=value=>Number(value||0).toLocaleString();
+    const normalizeApiKey=value=>String(value||"").replace(/[\\s\\u200B\\u200C\\u200D\\u2060\\uFEFF]+/g,"").trim();
+    
+    function updateProviderPickers(){
+      $("modelsPicker").disabled=!projectKeyValidated;
+      $("defaultPicker").disabled=!projectKeyValidated||!selectedProviderModels.length;
+      $("modelsPickerValue").textContent=selectedProviderModels.length
+        ? "已选择 "+selectedProviderModels.length+" 个模型"
+        : (projectKeyValidated?"选择允许模型":"请先检查 API Key");
+      $("defaultPickerValue").textContent=selectedDefaultModel||(projectKeyValidated?"选择默认模型":"—");
+    }
+    
+    function invalidateProjectKey(){
+      projectKeyValidated=false;
+      availableProjectModels=[];
+      selectedProviderModels=[];
+      selectedDefaultModel="";
+      $("keyStatus").textContent="尚未检查 Key";
+      $("keyStatus").className="keyStatus";
+      updateProviderPickers();
+    }
+    
+    function renderModelsDialog(){
+      $("modelsDialogBody").innerHTML=availableProjectModels.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(selectedProviderModels.includes(model)?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
+    }
+    
+    function renderDefaultDialog(){
+      $("defaultDialogBody").innerHTML=selectedProviderModels.map(model=>'<label class="choice"><input type="radio" name="defaultModelChoice" value="'+esc(model)+'" '+(selectedDefaultModel===model?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
+    }
+    
+    function syncProviderType(){
+      const kind=$("providerType").value;
+      $("checkKey").disabled=!kind;
+      $("adminKeyField").classList.toggle("hidden",kind!=="openai");
+      if(kind!=="openai")$("adminKey").value="";
+      if(!kind){
+        $("name").value="";
+        $("input").value="0";
+        $("output").value="0";
+        return;
+      }
+      if(kind==="zhipu"&&(!$("name").value||$("name").value==="OpenAI Primary"||$("name").value==="Alibaba Cloud Bailian"))$("name").value="Zhipu GLM";
+      if(kind==="bailian"&&(!$("name").value||$("name").value==="OpenAI Primary"||$("name").value==="Zhipu GLM"))$("name").value="Alibaba Cloud Bailian";
+      if(kind==="openai"&&(!$("name").value||$("name").value==="Zhipu GLM"||$("name").value==="Alibaba Cloud Bailian"))$("name").value="OpenAI Primary";
+      $("input").value=kind==="openai"?"4":"0";
+      $("output").value=kind==="openai"?"20":"0";
+    }
+    $("providerType").addEventListener("change",()=>{invalidateProjectKey();syncProviderType();});
+    $("key").addEventListener("input",invalidateProjectKey);
+    $("checkKey").onclick=async()=>{
+      const providerType=$("providerType").value;
+      if(!providerType)return;
+      const key=normalizeApiKey($("key").value);
+      if(!key){
+        invalidateProjectKey();
+        $("keyStatus").textContent="请先检查 API Key";
+        $("keyStatus").className="keyStatus bad";
+        return;
+      }
+      const button=$("checkKey");
       button.disabled=true;
+      button.textContent="正在检查…";
+      $("keyStatus").textContent="正在检查…";
+      $("keyStatus").className="keyStatus";
       try{
-        const result=await requestJson("/api/admin/ai/validate-project-key",{method:"POST",headers:{"content-type":"application/json;charset=UTF-8"},body:JSON.stringify({provider:String(fd.get("provider")||""),api_key:String(fd.get("key")||"").trim()})});
-        const models=Array.isArray(result.models)?result.models:[];
-        providerForm.elements.models.value=models.join(", ");
-        if(models.length&&!providerForm.elements.defaultModel.value)providerForm.elements.defaultModel.value=models[0];
-        providerFeedback.textContent="服务商密钥验证成功，共 "+models.length+" 个模型可用。";
-        providerFeedback.className="feedback ok";
-      }catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad"}finally{button.disabled=false}
+        const result=await api("/validate-project-key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({api_key:key,provider:providerType})});
+        availableProjectModels=Array.isArray(result.models)?result.models:[];
+        if(!availableProjectModels.length)throw new Error("这个 API Key 没有返回可用于对话的模型");
+        projectKeyValidated=true;
+        const preferred=($("providerType").value==="zhipu"
+          ? ["glm-4.7-flash"]
+          : $("providerType").value==="bailian"
+            ? ["qwen3.7-plus","glm-5","qwen-max","qwen-plus-2025-07-28"]
+            : ["gpt-5.6","gpt-5.6-sol","gpt-5.6-terra","gpt-5.6-luna"])
+          .filter(model=>availableProjectModels.includes(model));
+        selectedProviderModels=preferred.length?preferred.slice(0,4):[availableProjectModels[0]];
+        selectedDefaultModel=selectedProviderModels[0];
+        $("keyStatus").textContent="Key 正常 · "+availableProjectModels.length+" 个模型";
+        $("keyStatus").className="keyStatus ok";
+        updateProviderPickers();
+      }catch(error){
+        invalidateProjectKey();
+        $("keyStatus").textContent=friendlyError(error)||"请先检查 API Key";
+        $("keyStatus").className=error?.code==="RATE_LIMITED"?"keyStatus warn":"keyStatus bad";
+        if(error?.code==="RATE_LIMITED"){
+          startRetryCooldown(button,"检查 Key",error);
+          return;
+        }
+      }finally{
+        if(!button.disabled||button.textContent==="正在检查…"){
+          button.disabled=false;
+          button.textContent="检查 Key";
+        }
+      }
+    };
+    
+    $("modelsPicker").onclick=()=>{if(!projectKeyValidated)return;renderModelsDialog();$("modelsDialog").showModal();};
+    $("modelsCancel").onclick=()=>$("modelsDialog").close();
+    $("modelsDone").onclick=()=>{
+      const values=[...$("modelsDialogBody").querySelectorAll('input[type="checkbox"]:checked')].map(input=>input.value);
+      if(!values.length){$("msg").textContent="请至少选择一个允许模型";$("msg").className="status bad";return;}
+      selectedProviderModels=values;
+      if(!selectedProviderModels.includes(selectedDefaultModel))selectedDefaultModel=selectedProviderModels[0];
+      updateProviderPickers();
+      $("modelsDialog").close();
+    };
+    $("defaultPicker").onclick=()=>{
+      if(!projectKeyValidated||!selectedProviderModels.length){$("msg").textContent="请先选择允许模型";$("msg").className="status bad";return;}
+      renderDefaultDialog();$("defaultDialog").showModal();
+    };
+    $("defaultCancel").onclick=()=>$("defaultDialog").close();
+    $("defaultDone").onclick=()=>{
+      const selected=$("defaultDialogBody").querySelector('input[name="defaultModelChoice"]:checked');
+      if(selected)selectedDefaultModel=selected.value;
+      updateProviderPickers();
+      $("defaultDialog").close();
+    };
+    
+    async function api(path,options={}){
+      const response=await fetch("/api/admin/ai"+path,{...options,credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json",...(options.headers||{})}});
+      const data=await response.json().catch(()=>({}));
+      if(response.status===401&&!data.code){location.reload();throw new Error("Authentication required");}
+      if(!response.ok){
+        const error=new Error(data.error||("HTTP "+response.status));
+        error.code=data.code||null;
+        error.diagnostic=data.diagnostic||null;
+        error.httpStatus=response.status;
+        throw error;
+      }
+      return data;
+    }
+    function diagnosticSuffix(error){
+      const d=error?.diagnostic||{};
+      const parts=[];
+      if(d.upstream_status)parts.push("上游状态: HTTP "+d.upstream_status);
+      if(d.provider_code)parts.push("Provider 错误码: "+d.provider_code);
+      if(d.retry_after_seconds!=null&&Number.isFinite(Number(d.retry_after_seconds)))parts.push("建议等待 "+d.retry_after_seconds+" 秒后重试");
+      else if(error?.code==="RATE_LIMITED")parts.push("上游未返回 Retry-After；AERTEX 不会自动连续重试");
+      if(d.request_id)parts.push("请求 ID: "+d.request_id);
+      if(d.checked_at){
+        const date=new Date(d.checked_at);
+        if(!Number.isNaN(date.getTime()))parts.push("检查时间: "+date.toLocaleTimeString());
+      }
+      return parts.length?" · "+parts.join(" · "):"";
+    }
+    function friendlyError(error){
+      if(error?.code==="REGION_UNSUPPORTED")return "当前网络或服务区域暂不支持 OpenAI API 检查这里不是在判定 Key 无效；请在 OpenAI 官方支持的国家或地区使用需要连接 OpenAI 的功能";
+      if(error?.code==="RATE_LIMITED")return "已确认上游 Provider 限流：AERTEX 收到真实 HTTP 429这个结果不能判定 Key 无效"+diagnosticSuffix(error);
+      if(error?.code==="PROVIDER_AUTH_INVALID")return "上游 Provider 明确拒绝了 API Key 身份验证"+diagnosticSuffix(error);
+      if(error?.code==="PROVIDER_QUOTA_EXHAUSTED")return "上游 Provider 报告当前账户额度不足"+diagnosticSuffix(error);
+      if(error?.code==="PROVIDER_PERMISSION_DENIED")return "上游 Provider 拒绝当前账户或模型的访问权限"+diagnosticSuffix(error);
+      if(error?.code==="PROVIDER_OVERLOADED")return "上游 Provider 当前过载，请稍后重试"+diagnosticSuffix(error);
+      return (error?.message||"Error")+diagnosticSuffix(error);
+    }
+    function startRetryCooldown(button,normalLabel,error){
+      if(error?.code!=="RATE_LIMITED"){button.disabled=false;button.textContent=normalLabel;return;}
+      const rawRetry=error?.diagnostic?.retry_after_seconds;
+      const upstream=rawRetry==null?NaN:Number(rawRetry);
+      let seconds=Number.isFinite(upstream)&&upstream>0?Math.min(120,Math.ceil(upstream)):15;
+      button.disabled=true;
+      const tick=()=>{
+        button.textContent=seconds+"s 后重试";
+        if(seconds<=0){button.disabled=false;button.textContent=normalLabel;return;}
+        seconds-=1;
+        window.setTimeout(tick,1000);
+      };
+      tick();
+    }
+    async function load(){
+      try{
+        state=await api("/state");
+        render();
+        $("refreshed").textContent=new Date().toLocaleTimeString();
+      }catch(error){
+        $("msg").textContent=friendlyError(error);
+        $("msg").className="status bad";
+      }
+    }
+    
+    function userProvidersSummary(access){
+      const values=Array.isArray(access)?access:[];
+      return "已选择 "+values.length+" 个 Provider";
+    }
+    function userModelsSummary(access){
+      const values=Array.isArray(access)?access:[];
+      const count=values.reduce((sum,item)=>sum+(Array.isArray(item.allowed_models)?item.allowed_models.length:0),0);
+      return "已选择 "+count+" 个模型";
+    }
+    function normalizedUserAccess(user){
+      const raw=Array.isArray(user.provider_access)?user.provider_access.filter(item=>item&&item.enabled!==false):[];
+      return raw.map(item=>{
+        const provider=(state.providers||[]).find(p=>p.id===item.provider_id);
+        if(!provider)return null;
+        const available=Array.isArray(provider.allowed_models)?provider.allowed_models:[];
+        const selected=(Array.isArray(item.allowed_models)&&item.allowed_models.length?item.allowed_models:available)
+          .filter(model=>available.includes(model));
+        return {provider_id:provider.id,allowed_models:selected.length?selected:[...available]};
+      }).filter(Boolean);
+    }
+    function openUserProvidersDialog(userId){
+      const row=document.querySelector('.user[data-user="'+CSS.escape(userId)+'"]');
+      if(!row)return;
+      const current=userProviderAccessSelections.get(userId)||[];
+      const selectedIds=new Set(current.map(item=>item.provider_id));
+      const providers=(state.providers||[]).filter(provider=>provider.is_active!==false);
+      activeUserProviderPicker={userId};
+      $("userProvidersDialogBody").innerHTML=providers.map(provider=>{
+        const providerTypeLabel=provider.provider==="zhipu"?"智谱 GLM":provider.provider==="bailian"?"阿里云百炼":"OpenAI";
+        return '<label class="choice"><input class="userProviderOnly" type="checkbox" value="'+esc(provider.id)+'" '+(selectedIds.has(provider.id)?"checked":"")+'><span><strong>'+esc(provider.name)+'</strong> · '+providerTypeLabel+'</span></label>';
+      }).join("");
+      $("userProvidersDialog").showModal();
+    }
+    $("userProvidersCancel").onclick=()=>{activeUserProviderPicker=null;$("userProvidersDialog").close();};
+    $("userProvidersDone").onclick=()=>{
+      if(!activeUserProviderPicker)return;
+      const userId=activeUserProviderPicker.userId;
+      const current=userProviderAccessSelections.get(userId)||[];
+      const currentById=new Map(current.map(item=>[item.provider_id,item]));
+      const selectedIds=[...$("userProvidersDialogBody").querySelectorAll(".userProviderOnly:checked")].map(input=>input.value);
+      const access=selectedIds.map(providerId=>{
+        const provider=(state.providers||[]).find(item=>item.id===providerId);
+        const existing=currentById.get(providerId);
+        const available=Array.isArray(provider?.allowed_models)?provider.allowed_models:[];
+        const selected=(existing?.allowed_models||[]).filter(model=>available.includes(model));
+        return {provider_id:providerId,allowed_models:selected.length?selected:[...available]};
+      });
+      userProviderAccessSelections.set(userId,access);
+      const row=document.querySelector('.user[data-user="'+CSS.escape(userId)+'"]');
+      if(row){
+        row.querySelector(".userProvidersValue").textContent=userProvidersSummary(access);
+        row.querySelector(".userModelsValue").textContent=userModelsSummary(access);
+      }
+      activeUserProviderPicker=null;
+      $("userProvidersDialog").close();
+    };
+    
+    function openUserModelsDialog(userId){
+      const row=document.querySelector('.user[data-user="'+CSS.escape(userId)+'"]');
+      if(!row)return;
+      const current=userProviderAccessSelections.get(userId)||[];
+      if(!current.length){
+        $("msg").textContent="请至少为用户选择一个 Provider";
+        $("msg").className="status bad";
+        return;
+      }
+      activeUserModelPicker={userId};
+      $("userModelsDialogBody").innerHTML=current.map(item=>{
+        const provider=(state.providers||[]).find(value=>value.id===item.provider_id);
+        if(!provider)return "";
+        const selected=item.allowed_models||[];
+        const models=provider.allowed_models||[];
+        return '<div class="providerCard userProviderGroup" data-provider="'+esc(provider.id)+'">'
+          +'<div class="providerName">'+esc(provider.name)+'</div>'
+          +'<div class="providerModelChoices">'
+          +models.map(model=>'<label class="choice"><input class="userProviderModel" data-provider="'+esc(provider.id)+'" type="checkbox" value="'+esc(model)+'" '+(selected.includes(model)?"checked":"")+'><span>'+esc(model)+'</span></label>').join("")
+          +'</div></div>';
+      }).join("");
+      $("userModelsDialog").showModal();
+    }
+    $("userModelsCancel").onclick=()=>{activeUserModelPicker=null;$("userModelsDialog").close();};
+    $("userModelsDone").onclick=()=>{
+      if(!activeUserModelPicker)return;
+      const userId=activeUserModelPicker.userId;
+      const access=[];
+      for(const group of $("userModelsDialogBody").querySelectorAll(".userProviderGroup")){
+        const providerId=group.dataset.provider;
+        const values=[...group.querySelectorAll(".userProviderModel:checked")].map(input=>input.value);
+        if(!values.length){
+          $("msg").textContent="请至少选择一个允许模型";
+          $("msg").className="status bad";
+          return;
+        }
+        access.push({provider_id:providerId,allowed_models:values});
+      }
+      userProviderAccessSelections.set(userId,access);
+      const row=document.querySelector('.user[data-user="'+CSS.escape(userId)+'"]');
+      if(row){
+        row.querySelector(".userProvidersValue").textContent=userProvidersSummary(access);
+        row.querySelector(".userModelsValue").textContent=userModelsSummary(access);
+      }
+      activeUserModelPicker=null;
+      $("userModelsDialog").close();
+    };
+    
+    function updateEditPickers(){
+      $("editModelsValue").textContent="已选择 "+editSelectedModels.length+" 个模型";
+      $("editDefaultValue").textContent=editDefaultModel||"—";
+      $("editDefaultPicker").disabled=!editSelectedModels.length;
+    }
+    
+    async function openEditProvider(providerId){
+      const provider=(state.providers||[]).find(item=>item.id===providerId);
+      if(!provider)return;
+      editingProvider=provider;
+      $("editProviderType").textContent=provider.provider==="zhipu"?"智谱 GLM":provider.provider==="bailian"?"阿里云百炼":"OpenAI";
+      $("editAdminKeyField").classList.toggle("hidden",provider.provider!=="openai");
+      $("editName").value=provider.name||"";
+      $("editKey").value="";
+      $("editAdminKey").value="";
+      $("editClearAdminKey").checked=false;
+      $("editBudget").value=provider.monthly_budget_usd??"";
+      $("editInput").value=provider.input_price_per_million??0;
+      $("editOutput").value=provider.output_price_per_million??0;
+      $("editActive").checked=provider.is_active!==false;
+      $("editKeyStatus").textContent="当前 Key · ****"+(provider.key_hint||"");
+      $("editKeyStatus").className="keyStatus ok";
+      editReplacementKeyChecked=true;
+      editAvailableModels=[...(provider.allowed_models||[])];
+      editSelectedModels=[...(provider.allowed_models||[])];
+      editDefaultModel=editSelectedModels.includes(provider.default_model)?provider.default_model:(editSelectedModels[0]||"");
+      updateEditPickers();
+      $("editProviderDialog").showModal();
+    }
+    $("editKey").addEventListener("input",()=>{
+      editReplacementKeyChecked=!$("editKey").value.trim();
+      $("editKeyStatus").textContent=editReplacementKeyChecked?"当前 Key · ****"+(editingProvider?.key_hint||""):"尚未检查 Key";
+      $("editKeyStatus").className="keyStatus";
     });
-    providerForm?.addEventListener("submit",async event=>{
-      event.preventDefault();const fd=new FormData(providerForm);
-      const models=String(fd.get("models")||"").split(",").map(value=>value.trim()).filter(Boolean);
+    
+    $("editCheckKey").onclick=async()=>{
+      const key=normalizeApiKey($("editKey").value);
+      if(!key){editReplacementKeyChecked=true;$("editKeyStatus").textContent="当前 Key · ****"+(editingProvider?.key_hint||"");$("editKeyStatus").className="keyStatus ok";return;}
+      const button=$("editCheckKey"); button.disabled=true; button.textContent="正在检查…";
       try{
-        await requestJson("/api/admin/ai/provider",{method:"POST",headers:{"content-type":"application/json;charset=UTF-8"},body:JSON.stringify({
-          provider:String(fd.get("provider")||""),name:String(fd.get("name")||"").trim(),api_key:String(fd.get("key")||"").trim(),admin_key:String(fd.get("adminKey")||"").trim(),
-          allowed_models:models,default_model:String(fd.get("defaultModel")||"").trim(),monthly_budget_usd:num(fd.get("budget")),input_price_per_million:num(fd.get("input"))??0,output_price_per_million:num(fd.get("output"))??0,is_active:true
+        const result=await api("/validate-project-key",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({api_key:key,provider:editingProvider?.provider||"openai"})});
+        editAvailableModels=Array.isArray(result.models)?result.models:[];
+        if(!editAvailableModels.length)throw new Error("这个 API Key 没有返回可用于对话的模型");
+        editSelectedModels=editSelectedModels.filter(model=>editAvailableModels.includes(model));
+        if(!editSelectedModels.length)editSelectedModels=[editAvailableModels[0]];
+        if(!editSelectedModels.includes(editDefaultModel))editDefaultModel=editSelectedModels[0];
+        editReplacementKeyChecked=true;
+        $("editKeyStatus").textContent="Key 正常 · "+editAvailableModels.length+" 个模型";
+        $("editKeyStatus").className="keyStatus ok";
+        updateEditPickers();
+      }catch(error){
+        editReplacementKeyChecked=false;
+        $("editKeyStatus").textContent=friendlyError(error)||"尚未检查 Key";
+        $("editKeyStatus").className=error?.code==="RATE_LIMITED"?"keyStatus warn":"keyStatus bad";
+        if(error?.code==="RATE_LIMITED"){
+          startRetryCooldown(button,"检查新 Key",error);
+          return;
+        }
+      }finally{
+        if(!button.disabled||button.textContent==="正在检查…"){
+          button.disabled=false;
+          button.textContent="检查新 Key";
+        }
+      }
+    };
+    
+    $("editModelsPicker").onclick=()=>{
+      $("editModelsDialogBody").innerHTML=editAvailableModels.map(model=>'<label class="choice"><input type="checkbox" value="'+esc(model)+'" '+(editSelectedModels.includes(model)?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
+      $("editModelsDialog").showModal();
+    };
+    $("editModelsCancel").onclick=()=>$("editModelsDialog").close();
+    $("editModelsDone").onclick=()=>{
+      const values=[...$("editModelsDialogBody").querySelectorAll('input[type="checkbox"]:checked')].map(input=>input.value);
+      if(!values.length){$("msg").textContent="请至少选择一个允许模型";$("msg").className="status bad";return;}
+      editSelectedModels=values;
+      if(!editSelectedModels.includes(editDefaultModel))editDefaultModel=editSelectedModels[0];
+      updateEditPickers(); $("editModelsDialog").close();
+    };
+    
+    $("editDefaultPicker").onclick=()=>{
+      $("editDefaultDialogBody").innerHTML=editSelectedModels.map(model=>'<label class="choice"><input type="radio" name="editDefaultChoice" value="'+esc(model)+'" '+(editDefaultModel===model?"checked":"")+'><span>'+esc(model)+'</span></label>').join("");
+      $("editDefaultDialog").showModal();
+    };
+    $("editDefaultCancel").onclick=()=>$("editDefaultDialog").close();
+    $("editDefaultDone").onclick=()=>{
+      const selected=$("editDefaultDialogBody").querySelector('input[name="editDefaultChoice"]:checked');
+      if(selected)editDefaultModel=selected.value;
+      updateEditPickers(); $("editDefaultDialog").close();
+    };
+    $("editCancel").onclick=()=>{$("editProviderDialog").close();editingProvider=null;};
+    
+    $("editSave").onclick=async()=>{
+      if(!editingProvider)return;
+      if($("editKey").value.trim()&&!editReplacementKeyChecked){
+        $("msg").textContent="请先检查 API Key";$("msg").className="status bad";return;
+      }
+      const button=$("editSave");button.disabled=true;
+      try{
+        await api("/provider/"+encodeURIComponent(editingProvider.id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+          name:$("editName").value,
+          api_key:normalizeApiKey($("editKey").value),
+          admin_key:normalizeApiKey($("editAdminKey").value),
+          clear_admin_key:$("editClearAdminKey").checked,
+          allowed_models:editSelectedModels,
+          default_model:editDefaultModel,
+          monthly_budget_usd:$("editBudget").value,
+          input_price_per_million:$("editInput").value,
+          output_price_per_million:$("editOutput").value,
+          is_active:$("editActive").checked
         })});
-        await intelligence();
-      }catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad"}
-    });
-
-    document.querySelectorAll(".toggleProvider").forEach(button=>button.addEventListener("click",async()=>{
-      const row=button.closest("[data-provider]");const provider=providers.find(item=>item.id===row?.dataset.provider);if(!provider)return;
+        $("editProviderDialog").close(); editingProvider=null;
+        $("msg").textContent="Provider 已更新";$("msg").className="status ok";
+        await load();
+      }catch(error){$("msg").textContent=friendlyError(error);$("msg").className="status bad";}
+      finally{button.disabled=false;}
+    };
+    
+    async function deleteProvider(providerId){
+      if(!confirm("确定删除这个 Provider？此操作不可撤销"))return;
+      try{
+        await api("/provider/"+encodeURIComponent(providerId),{method:"DELETE",headers:{"Content-Type":"application/json"}});
+        $("msg").textContent="Provider 已删除";$("msg").className="status ok";
+        await load();
+      }catch(error){$("msg").textContent=friendlyError(error);$("msg").className="status bad";}
+    }
+    
+    function render(){
+      $("providers").innerHTML=(state.providers||[]).length
+        ? state.providers.map(provider=>{
+            const official=provider.billing?.available?Number(provider.billing.official_month_usd||0):null;
+            const local=Number(provider.month_usage_usd||0);
+            const spent=official==null?local:official;
+            const budget=provider.monthly_budget_usd==null?null:Number(provider.monthly_budget_usd);
+            const remaining=budget==null?null:Math.max(0,budget-spent);
+            const providerLabel=provider.provider==="zhipu"?"智谱 GLM":provider.provider==="bailian"?"阿里云百炼":"OpenAI";
+            const billingLabel=provider.provider==="openai"
+              ? (provider.admin_key_configured
+                  ? (provider.billing?.available?"官方账单已连接":"官方账单已连接 · "+esc(provider.billing?.error||""))
+                  : "未配置 Admin Key")
+              : "兼容 API";
+            const metricItems = []; // Render only metrics that apply to this provider.
+            if(provider.provider==="openai"){
+              metricItems.push('<div class="metric"><span>官方本月费用</span><strong>'+money(official)+'</strong></div>');
+            }
+            metricItems.push('<div class="metric"><span>AERTEX 本地估算</span><strong>'+money(local)+'</strong></div>');
+            if(budget!=null){
+              metricItems.push('<div class="metric"><span>预算剩余</span><strong>'+money(remaining)+'</strong></div>');
+            }
+            metricItems.push('<div class="metric"><span>本月请求</span><strong>'+Number(provider.month_requests||0).toLocaleString()+'</strong></div>');
+            return '<div class="providerCard">'
+              +'<div class="providerTop"><div><div class="providerName">'+esc(provider.name)+'</div>'
+              +'<div class="hint">'+providerLabel+' · '+esc(provider.default_model)+' · API ****'+esc(provider.key_hint||"")+' · '+billingLabel+'</div></div>'
+              +'<div class="providerActions"><span class="pill statusPill"><span class="statusDot '+(provider.is_active?"active":"")+'"></span>'+(provider.is_active?"Active":"Disabled")+'</span><button type="button" class="smallButton editProvider" data-provider="'+esc(provider.id)+'">编辑</button><button type="button" class="smallButton dangerButton deleteProvider" data-provider="'+esc(provider.id)+'">删除</button></div></div>'
+              +'<div class="metrics">'+metricItems.join("")+'</div></div>';
+          }).join("")
+        : "尚未配置 Provider";
+    
+      $("users").innerHTML=(state.users||[]).map(user=>{
+        const access=normalizedUserAccess(user);
+        userProviderAccessSelections.set(user.user_id,access);
+        return '<div class="user" data-user="'+esc(user.user_id)+'">'
+          +'<div class="userName"><strong>'+esc(user.display_name||user.username||user.email)+'</strong><span class="hint">'+esc(user.email||"")+' · '+money(user.month_usage_usd||0)+' · '+tokenCount(user.month_usage_tokens||0)+' tokens</span></div>'
+          +'<div><label>允许使用</label><select class="enabled"><option value="0">Off</option><option value="1" '+(user.enabled?"selected":"")+'>On</option></select></div>'
+          +'<div><label>Providers</label><button type="button" class="pickerButton userProvidersPicker"><span class="pickerValue userProvidersValue">'+esc(userProvidersSummary(access))+'</span><span class="pickerChevron">›</span></button></div>'
+          +'<div><label>用户可用模型</label><button type="button" class="pickerButton userModelsPicker"><span class="pickerValue userModelsValue">'+esc(userModelsSummary(access))+'</span><span class="pickerChevron">›</span></button></div>'
+          +'<div><label>日费用上限 $</label><input class="daily" type="number" min="0" step=".01" value="'+esc(user.daily_limit_usd??"")+'"></div>'
+          +'<div><label>月费用上限 $</label><input class="monthly" type="number" min="0" step=".01" value="'+esc(user.monthly_limit_usd??"")+'"></div>'
+          +'<div><label>日 Token 上限</label><input class="dailyTokens" type="number" min="0" step="1000" value="'+esc(user.daily_limit_tokens??"")+'"></div>'
+          +'<div><label>月 Token 上限</label><input class="monthlyTokens" type="number" min="0" step="1000" value="'+esc(user.monthly_limit_tokens??"")+'"></div>'
+          +'<div><label>RPM</label><input class="rpm" type="number" min="1" max="300" value="'+esc(user.requests_per_minute||20)+'"></div>'
+          +'<div class="accessCell"><button class="primary access" type="button">保存授权</button><div class="accessFeedback" aria-live="polite"></div></div></div>';
+      }).join("");
+    
+      document.querySelectorAll(".editProvider").forEach(button=>button.onclick=()=>openEditProvider(button.dataset.provider));
+      document.querySelectorAll(".deleteProvider").forEach(button=>button.onclick=()=>deleteProvider(button.dataset.provider));
+      document.querySelectorAll(".access").forEach(button=>button.onclick=saveAccess);
+      document.querySelectorAll(".userProvidersPicker").forEach(button=>button.onclick=event=>{
+        const row=event.currentTarget.closest(".user");
+        openUserProvidersDialog(row.dataset.user);
+      });
+      document.querySelectorAll(".userModelsPicker").forEach(button=>button.onclick=event=>{
+        const row=event.currentTarget.closest(".user");
+        openUserModelsDialog(row.dataset.user);
+      });
+    }
+    
+    
+    $("saveProvider").onclick=async()=>{
+      const button=$("saveProvider");
       button.disabled=true;
+      button.textContent="正在验证…";
+      $("msg").textContent="";
+      if(!projectKeyValidated){
+        $("msg").textContent="请先检查 API Key";
+        $("msg").className="status bad";
+        button.disabled=false;
+        button.textContent="验证并保存 Provider";
+        return;
+      }
       try{
-        await requestJson("/api/admin/ai/provider/"+encodeURIComponent(provider.id),{method:"PATCH",headers:{"content-type":"application/json;charset=UTF-8"},body:JSON.stringify({
-          name:provider.name,allowed_models:provider.allowed_models||[],default_model:provider.default_model,monthly_budget_usd:provider.monthly_budget_usd,input_price_per_million:provider.input_price_per_million||0,output_price_per_million:provider.output_price_per_million||0,is_active:provider.is_active===false
+        const result=await api("/provider",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+          name:$("name").value,
+          provider:$("providerType").value,
+          api_key:normalizeApiKey($("key").value),
+          admin_key:normalizeApiKey($("adminKey").value),
+          allowed_models:selectedProviderModels,
+          default_model:selectedDefaultModel,
+          monthly_budget_usd:$("budget").value,
+          input_price_per_million:$("input").value,
+          output_price_per_million:$("output").value
         })});
-        await intelligence();
-      }catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad";button.disabled=false}
-    }));
-    document.querySelectorAll(".deleteProvider").forEach(button=>button.addEventListener("click",async()=>{
-      const row=button.closest("[data-provider]");const provider=providers.find(item=>item.id===row?.dataset.provider);if(!provider||!confirm("确定删除服务商 “"+provider.name+"” 吗？"))return;
+        $("key").value="";
+        $("adminKey").value="";
+        invalidateProjectKey();
+        $("msg").textContent="已保存 · Project Key 验证通过"+(result.validation?.billing_key?" · 官方账单已连接":"");
+        $("msg").className="status ok";
+        await load();
+      }catch(error){
+        $("msg").textContent=friendlyError(error);
+        $("msg").className="status bad";
+      }finally{
+        button.disabled=false;
+        button.textContent="验证并保存 Provider";
+      }
+    };
+    
+    async function saveAccess(event){
+      const button=event.currentTarget;
+      const row=button.closest(".user");
+      const feedback=row.querySelector(".accessFeedback");
+      const user=(state.users||[]).find(item=>item.user_id===row.dataset.user);
+      if(!user)return;
+    
+      const providerAccess=userProviderAccessSelections.get(user.user_id)||[];
+      const reset=()=>{
+        button.disabled=false;
+        button.classList.remove("isSaved");
+        button.textContent="保存授权";
+      };
+      const fail=message=>{
+        feedback.textContent=message;
+        feedback.className="accessFeedback bad";
+        reset();
+      };
+    
+      if(row.querySelector(".enabled").value==="1"&&!providerAccess.length){
+        fail("请至少为用户选择一个 Provider");
+        return;
+      }
+      if(row.querySelector(".enabled").value==="1"&&providerAccess.some(item=>!item.allowed_models?.length)){
+        fail("请至少选择一个允许模型");
+        return;
+      }
+    
       button.disabled=true;
-      try{await requestJson("/api/admin/ai/provider/"+encodeURIComponent(provider.id),{method:"DELETE"});await intelligence()}
-      catch(error){providerFeedback.textContent=error.message;providerFeedback.className="feedback bad";button.disabled=false}
-    }));
-    document.querySelectorAll(".saveAiAccess").forEach(button=>button.addEventListener("click",async()=>{
-      const row=button.closest("[data-ai-user]");if(!row)return;
-      const user=users.find(item=>item.user_id===row.dataset.aiUser);if(!user)return;
-      const selected=[...row.querySelector(".aiProviders").selectedOptions].map(option=>option.value);
-      const providerAccess=selected.map(providerId=>{const provider=providers.find(item=>item.id===providerId);return {provider_id:providerId,allowed_models:Array.isArray(provider?.allowed_models)?provider.allowed_models:[]};});
-      const feedback=document.getElementById("aiFeedback");button.disabled=true;
+      button.classList.remove("isSaved");
+      button.textContent="保存中…";
+      feedback.textContent="保存中…";
+      feedback.className="accessFeedback";
+      $("msg").textContent="";
+    
       try{
-        await requestJson("/api/admin/ai/access",{method:"POST",headers:{"content-type":"application/json;charset=UTF-8"},body:JSON.stringify({
-          user_id:user.user_id,enabled:row.querySelector(".aiEnabled").checked,provider_access:providerAccess,
-          daily_limit_usd:num(row.querySelector(".dailyUsd").value),monthly_limit_usd:num(row.querySelector(".monthlyUsd").value),
-          daily_limit_tokens:intOrNull(row.querySelector(".dailyTokens").value),monthly_limit_tokens:intOrNull(row.querySelector(".monthlyTokens").value),
-          requests_per_minute:Number(row.querySelector(".rpm").value)||20
+        await api("/access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+          user_id:user.user_id,
+          enabled:row.querySelector(".enabled").value==="1",
+          provider_access:providerAccess,
+          daily_limit_usd:row.querySelector(".daily").value,
+          monthly_limit_usd:row.querySelector(".monthly").value,
+          daily_limit_tokens:row.querySelector(".dailyTokens").value,
+          monthly_limit_tokens:row.querySelector(".monthlyTokens").value,
+          requests_per_minute:row.querySelector(".rpm").value
         })});
-        feedback.textContent="已更新 "+(user.email||user.user_id)+" 的 AI 访问权限。";
-        feedback.className="feedback ok";
-      }catch(error){feedback.textContent=error.message;feedback.className="feedback bad"}finally{button.disabled=false}
-    }));
+    
+        button.textContent="已保存 ✓";
+        button.classList.add("isSaved");
+        feedback.textContent="已保存 ✓";
+        feedback.className="accessFeedback ok";
+        $("msg").textContent="已保存";
+        $("msg").className="status ok";
+    
+        window.setTimeout(()=>{
+          if(document.body.contains(button))reset();
+        },1800);
+        window.setTimeout(()=>{
+          if(document.body.contains(feedback)){
+            feedback.textContent="";
+            feedback.className="accessFeedback";
+          }
+        },3500);
+      }catch(error){
+        const message=friendlyError(error);
+        fail(message);
+        $("msg").textContent=message;
+        $("msg").className="status bad";
+      }
+    }
+    
+    
+    syncProviderType();
+    updateProviderPickers();
+    if(hasBootstrapState){
+      render();
+      $("refreshed").textContent=new Date().toLocaleTimeString();
+      window.setTimeout(()=>void load(),1200);
+    }else{
+      void load();
+    }
+    window.__aertexAdminAiTimer=setInterval(load,60000);
   }
   async function system(){
     const health=await get("/health");
