@@ -98,5 +98,46 @@ export function dashboardStyles() {
     .os-nav-items a[aria-current="page"]{color:var(--text);background:var(--fill);font-weight:650}
     .os-nav-items a[aria-current="page"] .dashboard-icon{color:#fff;background:#0a84ff}
 
+    /* NAV_SEMANTIC_COLORS_V7 — distinct, SF Symbols-inspired semantic palette */
+    .os-nav .dashboard-icon{color:#fff!important}
+    .os-nav .dashboard-icon-home{background:#0a84ff!important}
+    .os-nav .dashboard-icon-wishes,.os-nav .dashboard-icon-gift{background:#ff9f0a!important}
+    .os-nav .dashboard-icon-info{background:#32ade6!important}
+    .os-nav .dashboard-icon-knowledge{background:#af52de!important}
+    .os-nav .dashboard-icon-links{background:#34c759!important}
+    .os-nav .dashboard-icon-notes{background:#ff9f0a!important}
+    .os-nav .dashboard-icon-summary{background:#5856d6!important}
+    .os-nav .dashboard-icon-search{background:#0a84ff!important}
+    .os-nav .dashboard-icon-profile{background:#30b0c7!important}
+    .os-nav .dashboard-icon-account{background:#64d2ff!important}
+    .os-nav .dashboard-icon-preferences{background:#bf5af2!important}
+    .os-nav .dashboard-icon-workspace{background:#5856d6!important}
+    .os-nav .dashboard-icon-workbench{background:#0a84ff!important}
+    .os-nav .dashboard-icon-projects{background:#ff9f0a!important}
+    .os-nav .dashboard-icon-experiments{background:#af52de!important}
+    .os-nav .dashboard-icon-drafts{background:#8e8e93!important}
+    .os-nav .dashboard-icon-tasks{background:#34c759!important}
+    .os-nav .dashboard-icon-settings{background:#8e8e93!important}
+    .os-nav .dashboard-icon-general{background:#636366!important}
+    .os-nav .dashboard-icon-appearance{background:#5856d6!important}
+    .os-nav .dashboard-icon-language{background:#0a84ff!important}
+    .os-nav .dashboard-icon-security{background:#34c759!important}
+    .os-nav .dashboard-icon-notifications{background:#ff453a!important}
+    .os-nav .dashboard-icon-ai,.os-nav .dashboard-icon-intelligence{background:#af52de!important}
+    .os-nav .dashboard-icon-integrations{background:#30b0c7!important}
+    .os-nav .dashboard-icon-storage{background:#32ade6!important}
+    .os-nav .dashboard-icon-work{background:#ff9f0a!important}
+    .os-nav .dashboard-icon-computer{background:#34c759!important}
+    .os-nav .dashboard-icon-tex{background:#5856d6!important}
+    .os-nav .dashboard-icon-admin{background:#636366!important}
+    .os-nav-items a .dashboard-icon{
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)!important;
+    }
+    .os-nav-items a[aria-current="page"] .dashboard-icon{
+      filter:saturate(1.08) brightness(1.02);
+    }
+    .os-nav-entry[data-nav-section="work"]{margin:0}
+    .os-nav-entry[data-nav-section="work"] .os-nav-title{font-weight:680}
+
   `;
 }
