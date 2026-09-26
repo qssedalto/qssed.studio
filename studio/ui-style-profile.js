@@ -196,5 +196,52 @@ export function profileStyles() {
     @media(max-width:620px){.profile-media-editor{grid-template-columns:72px minmax(0,1fr)}.profile-media-preview{width:72px;height:58px}.profile-avatar-preview{width:64px;height:64px}}
     /* PROFILE_HOME_V3_POLISH_2_HOTFIX */
     /* PROFILE_HOME_V3_CONTROLS_HITBOX_FIX */ html.profile-sheet-open .top-controls{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:none!important;right:calc(min(520px,92vw) + 20px)!important;z-index:130!important}.profile-sheet-head{position:relative!important;padding-right:62px!important}.profile-sheet-close{position:absolute!important;top:14px!important;right:14px!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;margin:0!important;display:grid!important;place-items:center!important;border-radius:50%!important;z-index:160!important;pointer-events:auto!important;touch-action:manipulation!important;line-height:1!important}.profile-sheet-close::before{content:"";position:absolute;inset:-4px}@media(max-width:760px){html.profile-sheet-open .top-controls{right:16px!important;z-index:130!important}.profile-sheet-head{padding-right:62px!important}}    /* PROFILE_SHEET_VIEWPORT_FIX */ .profile-sheet-backdrop{position:fixed!important;inset:0!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;z-index:110!important}.profile-sheet-backdrop.is-visible{pointer-events:auto!important}html.profile-sheet-open,html.profile-sheet-open body{overflow:hidden!important;overscroll-behavior:none!important}
+    /* PROFILE_ACCOUNT_HOME_V4 */
+    body.os-shell:has(.profile-account-home) .os-hero{display:flex;justify-content:center;align-items:center!important;margin:0 auto 28px!important;text-align:center}
+    body.os-shell:has(.profile-account-home) .os-hero>div{width:100%}
+    body.os-shell:has(.profile-account-home) .os-hero h1{margin:0!important;font-size:clamp(25px,3vw,32px)!important;font-weight:720!important;letter-spacing:-.035em!important}
+    body.os-shell:has(.profile-account-home) .os-hero>div>p{display:none!important}
+    .profile-account-home{width:min(760px,100%);margin:0 auto;padding:4px 0 34px}
+    .profile-account-identity{display:grid;justify-items:center;text-align:center;padding:8px 18px 26px}
+    .profile-account-avatar{width:116px;height:116px;display:grid;place-items:center;overflow:hidden;border-radius:50%;background:linear-gradient(180deg,#89e5f2 0%,#1f7f92 100%);color:#fff;font-size:48px;font-weight:720;line-height:1;box-shadow:inset 0 0 0 1px rgba(255,255,255,.38),0 10px 28px rgba(0,0,0,.08)}
+    .profile-account-avatar img{width:100%;height:100%;display:block;object-fit:cover}
+    .profile-account-identity h2{margin:17px 0 0;font-size:30px;line-height:1.08;letter-spacing:-.04em;font-weight:730}
+    .profile-account-identity p{margin:7px 0 0;color:var(--muted);font-size:16px;line-height:1.35}
+    .profile-account-section{margin-top:22px}
+    .profile-account-group{overflow:hidden;border-radius:24px;background:var(--card);box-shadow:0 1px 0 color-mix(in srgb,var(--border) 72%,transparent),0 14px 36px rgba(0,0,0,.035)}
+    .profile-account-row{position:relative;min-height:76px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:10px 18px;color:var(--text);text-decoration:none;transition:background .13s ease,transform .1s ease}
+    .profile-account-row+.profile-account-row:before{content:"";position:absolute;left:72px;right:18px;top:0;height:1px;background:var(--hairline)}
+    .profile-account-row:hover{background:var(--secondary)}
+    .profile-account-row:active{transform:scale(.994)}
+    .profile-account-row-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:11px;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+    .profile-account-row-icon .os-hub-icon{width:42px!important;height:42px!important;display:grid!important;place-items:center!important;border:0!important;border-radius:11px!important;background:transparent!important;color:inherit!important;box-shadow:none!important}
+    .profile-account-row-icon .os-hub-icon svg{width:22px!important;height:22px!important}
+    .profile-account-row-icon.tone-blue{background:#0a84ff}
+    .profile-account-row-icon.tone-green{background:#34c759}
+    .profile-account-row-icon.tone-gray{background:#8e8e93}
+    .profile-account-row-icon.tone-purple{background:#af52de}
+    .profile-account-row-icon.tone-cyan{background:#32ade6}
+    .profile-account-row-icon.tone-orange{background:#ff9f0a}
+    .profile-account-row-copy{min-width:0}
+    .profile-account-row-copy strong,.profile-account-row-copy small{display:block}
+    .profile-account-row-copy strong{font-size:17px;line-height:1.25;font-weight:620;letter-spacing:-.015em}
+    .profile-account-row-copy small{margin-top:4px;overflow:hidden;color:var(--muted);font-size:12px;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}
+    .profile-account-chevron{color:var(--quiet);font-size:28px;font-weight:420;line-height:1}
+    .profile-account-footnote{margin:18px 16px 0;color:var(--muted);font-size:11px;line-height:1.55;text-align:center}
+    @media(max-width:760px){
+      body.os-shell:has(.profile-account-home) .os-hero{margin-bottom:20px!important}
+      .profile-account-home{padding-top:0}
+      .profile-account-identity{padding-top:0}
+      .profile-account-avatar{width:104px;height:104px;font-size:43px}
+      .profile-account-identity h2{font-size:28px}
+      .profile-account-identity p{font-size:15px}
+      .profile-account-section{margin-top:18px}
+      .profile-account-group{border-radius:22px}
+      .profile-account-row{min-height:72px;padding:9px 15px}
+      .profile-account-row+.profile-account-row:before{left:68px;right:15px}
+      .profile-account-row-icon,.profile-account-row-icon .os-hub-icon{width:40px!important;height:40px!important}
+      .profile-account-row-copy strong{font-size:16px}
+    }
+
 `;
 }
