@@ -71,14 +71,25 @@ function hardenProfileSummaryQuery(markup) {
   const start = "        const { data: profile, error: profileError } = await supabaseClient";
   const end = "          .maybeSingle();";
   if (!markup.includes(start)) return markup;
-  const replacement = `        const profileResponse = await fetch("/api/account/summary", {
-          credentials: "same-origin",
-          headers: { Accept: "application/json" },
-          cache: "no-store"
-        });
-        const profilePayload = await profileResponse.json().catch(() => ({}));
-        const profile = profilePayload?.profile || null;
-        const profileError = profileResponse.ok ? null : new Error(profilePayload?.error || "Profile query failed");`;
+  const replacement = `        let profile = null;
+        let profileError = null;
+        const profileController = typeof AbortController === "function" ? new AbortController() : null;
+        const profileTimeout = window.setTimeout(() => { try { profileController?.abort(); } catch {} }, 7000);
+        try {
+          const profileResponse = await fetch("/api/account/summary", {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+            ...(profileController ? { signal: profileController.signal } : {})
+          });
+          const profilePayload = await profileResponse.json().catch(() => ({}));
+          profile = profilePayload?.profile || null;
+          profileError = profileResponse.ok ? null : new Error(profilePayload?.error || "Profile query failed");
+        } catch (error) {
+          profileError = error;
+        } finally {
+          window.clearTimeout(profileTimeout);
+        }`;
   return replaceRange(markup, start, end, replacement, true);
 }
 
