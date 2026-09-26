@@ -159,8 +159,8 @@ assertContains(adminNav, "https://admin.qsseda.com/", "Administrator menu must t
 const html = renderAdminConsole("/", { identity: "admin@example.test", root: "admin.qsseda.com" });
 for (const required of [
   "AERTEX ADMIN",
-  "CONTROL PLANE",
-  "PRODUCTION",
+  "管理控制面",
+  "生产环境",
   'href="/users"',
   'href="/access"',
   'href="/content"',
