@@ -1,5 +1,7 @@
 import { authOriginForRequest, isServiceHost, rootDomainForHost } from "./domain-family.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
+import { SUPABASE_URL, SUPABASE_KEY, TEXT } from "./config.js";
+import { buildLinks, getRouteInfo, html } from "./routing.js";
+import { notFoundPage } from "./auth-pages.js";
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 
 const DETECTION_RE = /(HarmonyOS|OpenHarmony|HuaweiBrowser|HUAWEI)/i;
@@ -12,6 +14,8 @@ const EXEMPTION_CODE = "AERTEX-HW-7K9Q-26";
 const ACCOUNT_MARKER_COOKIE = "__Secure-qsseda-account-id";
 
 export async function huaweiHarmonyGate(request) {
+  const invalidRoute = invalidHuaweiRouteResponse(request);
+  if (invalidRoute) return invalidRoute;
   if (hasDeviceRouteMarker(request)) return handleHuaweiExemptionRoute(request);
   if (isExplicitPreviewRequest(request)) return renderHuaweiUnsupportedPage(request);
   if (isExemptionVerificationTransport(request)) return null;
@@ -38,6 +42,42 @@ export async function huaweiHarmonyGate(request) {
     authorized: false
   });
   return withStudioSessionCookies(blocked, accountExemption.cookies);
+}
+
+function invalidHuaweiRouteResponse(request) {
+  try {
+    const url = new URL(request.url);
+    const segments = url.pathname.split("/").filter(Boolean).map(normalizeRouteSegment);
+    const exemptionCount = segments.filter(segment => segment === DEVICE_ROUTE_MARKER).length;
+    const hasPreviewMarker = segments.includes(PREVIEW_ROUTE.slice(1).toLowerCase());
+
+    if (exemptionCount >= 2) return brandedNotFound(request);
+    if (exemptionCount === 1 && hasPreviewMarker) return brandedNotFound(request);
+
+    if (exemptionCount === 1) {
+      const markerIndex = segments.lastIndexOf(DEVICE_ROUTE_MARKER);
+      if (markerIndex !== segments.length - 2) return brandedNotFound(request);
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeRouteSegment(segment) {
+  const value = String(segment || "");
+  try {
+    return decodeURIComponent(value).toLowerCase();
+  } catch {
+    return value.toLowerCase();
+  }
+}
+
+function brandedNotFound(request) {
+  const { pathname, locale } = getRouteInfo(request);
+  const t = TEXT[locale];
+  return html(notFoundPage(t, buildLinks(locale, pathname)), 404);
 }
 
 async function huaweiAccountExemption(request) {
