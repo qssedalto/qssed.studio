@@ -79,7 +79,7 @@ export function normalizeHandoffNext(value, locale, workTarget = false, gptTarge
   if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\u0000")) return fallback;
   if (candidate === "/zh-cn" || candidate === "/en" || candidate.startsWith("/zh-cn/") || candidate.startsWith("/en/")) return candidate;
   const prefix = locale === "zh" ? "/zh-cn" : "/en";
-  return candidate === "/" ? prefix : `${prefix}${candidate}`;
+  return candidate === "/" ? "/" : `${prefix}${candidate}`;
 }
 
 export function scriptLiteral(value) {
