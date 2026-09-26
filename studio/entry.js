@@ -325,7 +325,7 @@ export default {
         gptHref: `${gptOrigin}/${zh ? "zh-cn" : "en"}`,
         adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : ""
       };
-      const shellPath = linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
+      const shellPath = pathname === "/" ? "/dashboard" : linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
       let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel, shellProductLinks);
       markup = decorateWorkNavigation(markup, zh, pathname, mainOrigin, workOrigin);
       markup = polishWorkTexNavigation(markup, zh, pathname, workOrigin);
@@ -356,7 +356,7 @@ export default {
     if (pathname === "/login") {
       const authUrl = new URL("/login", authOriginForRequest(request));
       const requestedNext = new URL(request.url).searchParams.get("next");
-      const fallbackNext = locale === "zh" ? "/zh-cn/dashboard" : "/en/dashboard";
+      const fallbackNext = locale === "zh" ? "/zh-cn" : "/en";
       authUrl.searchParams.set("next", safeLocalNext(requestedNext) || fallbackNext);
       return Response.redirect(authUrl.toString(), 302);
     }
