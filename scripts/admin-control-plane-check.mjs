@@ -172,7 +172,7 @@ for (const required of [
   "/api/admin/content/summaries",
   "/api/admin/content/links",
   "/api/admin/storage/files",
-  "/api/admin/ai/state?fast=1"
+  "/api/admin/ai/state"
 ]) {
   assertContains(html, required, "Admin UI missing operational console element: " + required);
 }
