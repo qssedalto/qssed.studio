@@ -1,5 +1,6 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "../studio/config.js";
 import { mainOriginForRequest, rootDomainForHost } from "../studio/domain-family.js";
+import { adminCanonicalPath as localizedAdminPath, adminLocaleFromPath } from "./i18n.js";
 
 const ACCESS_COOKIE = "__Host-aertex-admin-access";
 const ACCESS_MAX_AGE = 55 * 60;
@@ -92,8 +93,10 @@ export function clearAdminSessionCookies() {
 
 export function canonicalAdminPath(value) {
   const path = typeof value === "string" ? value.trim().slice(0, 300) : "";
-  if (["/", "/overview", "/users", "/roles", "/logs", "/system", "/access", "/content", "/storage", "/intelligence"].includes(path)) return path;
-  return "/";
+  const parsed = adminLocaleFromPath(path);
+  if (!parsed.path) return "/";
+  if (parsed.locale) return localizedAdminPath(parsed.locale, parsed.path);
+  return parsed.path;
 }
 
 export function adminHeaders(contentType = "text/plain;charset=UTF-8") {
