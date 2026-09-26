@@ -349,8 +349,8 @@ export function buildOsCopy(zh) {
           ["内容摘要", `${prefix}/info/summaries`],
           ["全局搜索", `${prefix}/info/search`]
         ] },
-        { id: "profile", label: "个人主页", href: `${prefix}/profile`, items: [
-          ["用户资料", `${prefix}/profile/details`],
+        { id: "profile", label: "AERTEX 账户", href: `${prefix}/profile`, items: [
+          ["个人信息", `${prefix}/profile/details`],
           ["账户信息", `${prefix}/profile/account`],
           ["偏好设置", `${prefix}/profile/preferences`]
         ] },
@@ -392,8 +392,8 @@ export function buildOsCopy(zh) {
         ["Summaries", `${prefix}/info/summaries`],
         ["Search", `${prefix}/info/search`]
       ] },
-      { id: "profile", label: "Profile", href: `${prefix}/profile`, items: [
-        ["Profile Details", `${prefix}/profile/details`],
+      { id: "profile", label: "AERTEX Account", href: `${prefix}/profile`, items: [
+        ["Personal Information", `${prefix}/profile/details`],
         ["Account", `${prefix}/profile/account`],
         ["Preferences", `${prefix}/profile/preferences`]
       ] },
@@ -428,7 +428,7 @@ export function buildOsPages(zh) {
     notes: ["研究笔记", "尚未接入笔记存储与 Markdown 保存接口。"],
     summaries: ["内容摘要", "尚未接入摘要数据源。"],
     search: ["全局搜索", "尚未接入跨模块搜索索引。"],
-    profile: ["个人主页", ""],
+    profile: ["AERTEX 账户", ""],
     account: ["账户信息", "账号 ID、邮箱、创建时间、最近登录和登录记录。"],
     security: ["账户与安全", "管理登录设备、登录历史与账户安全记录。"],
     preferences: ["偏好设置", "主题与语言可直接切换；字体和通知设置尚未实现。"],
@@ -455,7 +455,7 @@ export function buildOsPages(zh) {
     notes: ["Research Notes", "Note storage and Markdown persistence are not connected yet."],
     summaries: ["Summaries", "No summary data source is connected yet."],
     search: ["Global Search", "No cross-module search index is connected yet."],
-    profile: ["Profile", ""],
+    profile: ["AERTEX Account", ""],
     account: ["Account", "Account ID, email, creation time, last sign-in, and login records."],
     security: ["Account & Security", "Manage signed-in devices, login history, and account security records."],
     preferences: ["Preferences", "Theme and language can be switched now; font and notification preferences are not implemented."],
