@@ -252,7 +252,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const selectedByRole=new Map(roles.map(role=>[role.name,new Set(assigned.filter(item=>item.role===role.name).map(item=>item.permission))]));
     view.innerHTML='<section class="section"><div class="sectionHead"><h2>权限矩阵</h2><span class="mono">'+permissions.length+' 项权限</span></div><div class="permissionGrid">'+
       roles.map(role=>'<article class="permissionRole" data-role="'+esc(role.name)+'"><div class="permissionRoleHead"><div><strong>'+esc(roleLabel(role.name))+'</strong><br><span class="mono">'+esc((data.user_counts||{})[role.name]??0)+' 位用户</span></div><button class="btn saveRole" type="button">保存角色</button></div><div class="permissionChecks">'+
-        permissions.map(permission=>'<label title="'+esc(permission.description||permission.key)+'"><input type="checkbox" value="'+esc(permission.key)+'" '+(selectedByRole.get(role.name)?.has(permission.key)?"checked":"")+'><span>'+esc(permissionLabel(permission.key))+'</span></label>').join('')+
+        permissions.map(permission=>'<label title="'+esc(permissionLabel(permission.key))+'"><input type="checkbox" value="'+esc(permission.key)+'" '+(selectedByRole.get(role.name)?.has(permission.key)?"checked":"")+'><span>'+esc(permissionLabel(permission.key))+'</span></label>').join('')+
       '</div></article>').join('')+'</div><div class="feedback" id="rolesFeedback"></div></section>';
 
     document.querySelectorAll(".saveRole").forEach(button=>button.addEventListener("click",async()=>{
@@ -342,7 +342,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   async function storage(){
     const result=await get("/api/admin/storage/files");
     const rows=Array.isArray(result.rows)?result.rows:[];
-    view.innerHTML=objCards({files:result.count||0,used:bytes(result.used_bytes||0),partial:result.partial?"yes":"no"})+
+    view.innerHTML=objCards({files:result.count||0,used:bytes(result.used_bytes||0),partial:result.partial?"是":"否"})+
       '<section class="section"><div class="sectionHead"><h2>用户文件</h2><span class="mono">'+rows.length+' 条记录</span></div><div class="tableWrap"><table><thead><tr><th>所有者</th><th>名称</th><th>类型</th><th>大小</th><th>上传时间</th><th>操作</th></tr></thead><tbody>'+
       rows.map(row=>'<tr data-storage-ref="'+esc(row.reference)+'"><td>'+esc(row.owner_label||row.owner_id)+'</td><td>'+esc(row.name||"file")+'<br><span class="mono">'+esc(row.reference)+'</span></td><td class="mono">'+esc(row.content_type||"application/octet-stream")+'</td><td>'+esc(bytes(row.size))+'</td><td class="mono">'+esc(row.uploaded_at||"—")+'</td><td><div class="inline"><a class="btn" href="/api/admin/storage/object?id='+encodeURIComponent(row.reference)+'">下载</a><button class="btn danger deleteStorage" type="button">删除</button></div></td></tr>').join('')+
       '</tbody></table></div><div class="feedback" id="storageFeedback"></div></section>';
