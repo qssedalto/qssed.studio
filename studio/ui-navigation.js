@@ -5,6 +5,7 @@ function prefixFor(zh) {
 }
 
 const COMPACT_MENU_ROOTS = new Set([
+  "/",
   "/dashboard",
   "/info",
   "/profile",
@@ -15,6 +16,7 @@ const COMPACT_MENU_ROOTS = new Set([
 
 export function compactBackHref(path, zh) {
   const prefix = prefixFor(zh);
+  if (path === "/") return prefix;
 
   if (path === KNOWLEDGE_ROOT) return `${prefix}/info`;
   if (path.startsWith(KNOWLEDGE_ROOT + "/")) {
