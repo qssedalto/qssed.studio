@@ -75,7 +75,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
           <span id="os-signout-label">${zh ? "退出登录" : "Sign Out"}</span>
         </button>
       </div>
-      ${renderOsNav(copy, activeSection, path)}
+      ${renderOsNav(copy, activeSection, path, productLinks)}
     </aside>
     <script>
       try {
@@ -473,9 +473,22 @@ export function buildOsPages(zh) {
   };
 }
 
-export function renderOsNav(copy, activeSection, currentPath = "") {
+export function renderOsNav(copy, activeSection, currentPath = "", productLinks = {}) {
+  const zh = copy.platform.includes("个人");
+  const gptHref = String(productLinks?.gptHref || "");
+  const adminHref = String(productLinks?.adminHref || "");
+  const productGroups = [
+    ...(gptHref ? [{ id: "intelligence", label: "AERTEX Intelligence", href: gptHref }] : []),
+    ...(adminHref ? [{ id: "admin-console", label: zh ? "管理员控制台" : "Admin Console", href: adminHref }] : [])
+  ];
+
   return `
     <nav class="os-nav">
+      ${productGroups.map(group => `
+        <section class="os-nav-group os-nav-product">
+          <a class="os-nav-title" href="${group.href}" data-product-link="${group.id}">${group.label}</a>
+        </section>
+      `).join("")}
       ${copy.nav.map(group => `
         <section class="os-nav-group ${group.id === activeSection ? "is-active" : ""}">
           <a class="os-nav-title" href="${group.href}">${group.label}</a>

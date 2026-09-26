@@ -2,6 +2,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 import { renderAdminConsole } from "../admin/ui.js";
 import { dashboardContent } from "../studio/ui-dashboard.js";
+import { renderOsNav } from "../studio/ui-shell.js";
 
 const read = path => fs.readFileSync(path, "utf8");
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
@@ -136,6 +137,24 @@ const adminDashboard = dashboardContent(true, {
 assertContains(adminDashboard, "AERTEX Intelligence", "Administrator dashboard must keep the GPT entry.");
 assertContains(adminDashboard, "管理员控制台", "Administrator dashboard must expose the explicit admin-domain shortcut.");
 assertContains(adminDashboard, "https://admin.qsseda.com/", "Administrator shortcut must target the admin prefix domain.");
+
+const normalNav = renderOsNav({ platform: "个人工作空间", nav: [] }, "", "", {
+  gptHref: "https://gpt.qsseda.com/zh-cn",
+  adminHref: ""
+});
+assertContains(normalNav, 'data-product-link="intelligence"', "Every authenticated user menu must expose the GPT entry.");
+assertContains(normalNav, "https://gpt.qsseda.com/zh-cn", "User menu GPT entry must target the GPT prefix domain.");
+assertAbsent(normalNav, 'data-product-link="admin-console"', "Non-admin menu must not expose the admin shortcut.");
+assertAbsent(normalNav, "admin.qsseda.com", "Non-admin menu must not reveal the admin domain.");
+
+const adminNav = renderOsNav({ platform: "个人工作空间", nav: [] }, "", "", {
+  gptHref: "https://gpt.qsseda.com/zh-cn",
+  adminHref: "https://admin.qsseda.com/"
+});
+assertContains(adminNav, 'data-product-link="intelligence"', "Administrator menu must keep the GPT entry.");
+assertContains(adminNav, 'data-product-link="admin-console"', "Administrator menu must expose the admin shortcut.");
+assertContains(adminNav, "管理员控制台", "Administrator menu must label the control-plane shortcut.");
+assertContains(adminNav, "https://admin.qsseda.com/", "Administrator menu must target the admin prefix domain.");
 
 const html = renderAdminConsole("/", { identity: "admin@example.test", root: "admin.qsseda.com" });
 for (const required of [

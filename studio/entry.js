@@ -321,14 +321,12 @@ export default {
       const mainOrigin = mainOriginForRequest(request);
       const workOrigin = workOriginForRequest(request);
       const gptOrigin = gptOriginForRequest(request);
-      const dashboardProductLinks = pathname === "/dashboard"
-        ? {
-            gptHref: `${gptOrigin}/${zh ? "zh-cn" : "en"}`,
-            adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : ""
-          }
-        : {};
+      const shellProductLinks = {
+        gptHref: `${gptOrigin}/${zh ? "zh-cn" : "en"}`,
+        adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : ""
+      };
       const shellPath = linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
-      let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel, dashboardProductLinks);
+      let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel, shellProductLinks);
       markup = decorateWorkNavigation(markup, zh, pathname, mainOrigin, workOrigin);
       markup = polishWorkTexNavigation(markup, zh, pathname, workOrigin);
       markup = hardenSessionClientMarkup(markup);
