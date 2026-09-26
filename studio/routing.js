@@ -107,7 +107,7 @@ export function buildLinks(locale, pathname) {
   return {
     login: `${prefix}/login`,
     signUp: `${prefix}/sign-up`,
-    dashboard: `${prefix}/dashboard`,
+    dashboard: `${prefix}`,
     zhCurrent: `/zh-cn${currentPath}`,
     enCurrent: `/en${currentPath}`
   };
