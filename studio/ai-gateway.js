@@ -19,7 +19,7 @@ export async function handleAiApi(request, env, session) {
   const path = new URL(request.url).pathname;
   if (path === "/api/ai/config" && request.method === "GET") return userConfig(request, session);
   if (path === "/api/ai/conversations" && request.method === "GET") {
-    return rest(session, "/ai_conversations?user_id=eq." + encodeURIComponent(session.user.id) + "&select=id,title,model,provider_id,is_shared,share_token,created_at,updated_at&order=updated_at.desc&limit=100");
+    return rest(session, "/ai_conversations?user_id=eq." + encodeURIComponent(session.user.id) + "&select=id,title,model,provider_id,is_shared,share_token,share_author_name,created_at,updated_at&order=updated_at.desc&limit=100");
   }
 
   const shareMatch = path.match(/^\/api\/ai\/conversations\/([0-9a-f-]{36})\/share$/i);
@@ -27,6 +27,8 @@ export async function handleAiApi(request, env, session) {
     const conversationId = shareMatch[1];
     if (request.method === "POST") {
       if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+      const b = await body(request);
+      const shareAuthorName = b.share_author_name === true;
       const token = crypto.randomUUID();
       const shared = await restData(
         session,
@@ -37,6 +39,7 @@ export async function handleAiApi(request, env, session) {
           body: JSON.stringify({
             is_shared: true,
             share_token: token,
+            share_author_name: shareAuthorName,
             shared_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
@@ -57,6 +60,7 @@ export async function handleAiApi(request, env, session) {
           body: JSON.stringify({
             is_shared: false,
             share_token: null,
+            share_author_name: false,
             shared_at: null,
             updated_at: new Date().toISOString()
           })
@@ -75,7 +79,7 @@ export async function handleAiApi(request, env, session) {
       const conversation = await restData(
         session,
         "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) +
-        "&select=id,title,model,provider_id,is_shared,share_token,created_at,updated_at&limit=1"
+        "&select=id,title,model,provider_id,is_shared,share_token,share_author_name,created_at,updated_at&limit=1"
       );
       const row = conversation.ok && Array.isArray(conversation.data) ? conversation.data[0] : null;
       if (!row) return json({ error: "Conversation not found." }, 404);

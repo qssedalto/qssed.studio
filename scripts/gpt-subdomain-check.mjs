@@ -17,6 +17,7 @@ const aiGateway = read("studio/ai-gateway.js");
 const huaweiGate = read("studio/huawei-harmony-gate.js");
 const adminApi = read("admin/admin-api.js");
 const deviceExemptionMigration = read("supabase/migrations/202609251510_huawei_device_access_exemptions.sql");
+const shareAuthorMigration = read("supabase/migrations/202609261610_shared_conversation_author_choice.sql");
 
 for (const required of [
   'verifyStudioPageSession(request)',
@@ -118,6 +119,7 @@ for (const required of [
   'response.status === 429',
   '/api/ai/conversations',
   'share_token',
+  'share_author_name',
   'Conversation not found.'
 ]) {
   assert(aiGateway.includes(required), `AI gateway is missing multi-provider invariant: ${required}`);
@@ -143,6 +145,9 @@ assert(!authHandoff.includes("登录状态已失效，请重新登录。"), "A v
 assert(authHandoff.includes("Browser auth persistence failed; continuing with validated server session"), "Handoff must continue with its validated server session when client persistence is unavailable.");
 assert(chatSource.includes("if (createdConversation)"), "New conversations must be removed when a provider stream fails.");
 assert(chatSource.includes('method: "DELETE"'), "Failed newly-created conversations must be deleted.");
+assert(shareAuthorMigration.includes("share_author_name boolean not null default false"), "Shared conversations must default to anonymous author identity.");
+assert(shareAuthorMigration.includes("'author_name'"), "Public share RPC must expose an author name field.");
+assert(shareAuthorMigration.includes("when c.share_author_name"), "Public share RPC must gate identity on explicit user consent.");
 
 console.log("GPT authentication handoff looks valid.");
 

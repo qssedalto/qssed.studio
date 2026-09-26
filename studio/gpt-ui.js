@@ -18,7 +18,7 @@ export function renderGptApp(locale, bootstrap = {}) {
     connectHint:"请联系管理员为此账号分配 API Provider、模型和使用额度。",
     connect:"连接 ChatGPT / Codex", connecting:"正在连接…", openLogin:"打开 OpenAI 登录页",
     codeLabel:"设备代码", codeHint:"在 OpenAI 页面输入设备代码完成授权。完成后这里会自动识别登录状态。",
-    newChat:"新对话", conversations:"对话", toggleSidebar:"切换侧栏", closeSidebar:"关闭侧栏", rename:"重命名", delete:"删除", share:"分享", shareCopied:"分享链接已复制", shareFailed:"无法创建分享链接", confirmDelete:"删除这个对话？", untitled:"未命名对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
+    newChat:"新对话", conversations:"对话", toggleSidebar:"切换侧栏", closeSidebar:"关闭侧栏", rename:"重命名", delete:"删除", share:"分享", shareCopied:"分享链接已复制", shareFailed:"无法创建分享链接", shareIdentityTitle:"共享这个对话", shareIdentityText:"是否在公开共享页面显示你的姓名？你可以匿名共享，也可以明确选择显示姓名。", shareAnonymous:"匿名共享", shareWithName:"显示姓名并共享", shareCancel:"取消", confirmDelete:"删除这个对话？", untitled:"未命名对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
     noModels:"没有读取到可用模型", regionBlocked:"当前网络区域不可用", noAvailableRegion:"当前网络区域没有可用的已授权模型", rateLimited:"当前 Provider 返回速率限制，请稍后重试", rateRetry:"建议等待", reasoning:"推理", thinking:"Intelligence 正在思考…",
     empty:"开始一个新的对话", emptyHint:"选择模型后直接开始聊天",
     error:"发生错误",
@@ -30,7 +30,7 @@ export function renderGptApp(locale, bootstrap = {}) {
     connectHint:"Ask an administrator to assign an API provider, models, and usage quota to this account.",
     connect:"Connect ChatGPT / Codex", connecting:"Connecting…", openLogin:"Open OpenAI sign-in",
     codeLabel:"Device code", codeHint:"Enter the device code on the OpenAI page. This page will detect completion automatically.",
-    newChat:"New chat", conversations:"Chats", toggleSidebar:"Toggle sidebar", closeSidebar:"Close sidebar", rename:"Rename", delete:"Delete", share:"Share", shareCopied:"Share link copied", shareFailed:"Unable to create share link", confirmDelete:"Delete this conversation?", untitled:"Untitled chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
+    newChat:"New chat", conversations:"Chats", toggleSidebar:"Toggle sidebar", closeSidebar:"Close sidebar", rename:"Rename", delete:"Delete", share:"Share", shareCopied:"Share link copied", shareFailed:"Unable to create share link", shareIdentityTitle:"Share this conversation", shareIdentityText:"Choose whether your name appears on the public share page. You can share anonymously or explicitly include your name.", shareAnonymous:"Share anonymously", shareWithName:"Share with my name", shareCancel:"Cancel", confirmDelete:"Delete this conversation?", untitled:"Untitled chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
     noModels:"No available models were returned", regionBlocked:"Unavailable on current network", noAvailableRegion:"No authorized model is available on the current network", rateLimited:"The provider is rate-limiting requests right now. Try again shortly.", rateRetry:"Retry after", reasoning:"Reasoning", thinking:"Intelligence is thinking…",
     empty:"Start a new conversation", emptyHint:"Choose a model and start chatting",
     error:"Error",
@@ -77,7 +77,7 @@ select{border:1px solid var(--line);background:var(--panel);color:var(--text);bo
 .composerWrap{position:fixed;left:270px;right:0;bottom:0;padding:18px;background:linear-gradient(to top,var(--bg) 72%,transparent);transition:left .22s cubic-bezier(.2,.8,.2,1)}.app.sidebar-collapsed .composerWrap{left:0}.composer{width:min(820px,calc(100% - 32px));margin:0 auto;border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:12px;box-shadow:0 12px 42px rgba(0,0,0,.08)}
 textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;border:0;outline:0;background:transparent;color:var(--text);padding:4px 6px;line-height:1.5}.composerFoot{display:flex;align-items:center;justify-content:flex-end;margin-top:8px}
 .primary{border:0;background:var(--accent);color:var(--accentText);border-radius:11px;padding:8px 14px;cursor:pointer;font-weight:650;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.primary:disabled{opacity:.45;cursor:not-allowed}
-.gate{width:min(650px,calc(100% - 36px));margin:80px auto;padding:28px;border:1px solid var(--line);background:var(--panel);border-radius:22px}.gate h2{margin:0 0 8px;font-size:23px}.gate p{color:var(--muted);line-height:1.65}.gateActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.code{font:700 28px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;margin:18px 0 8px}.hidden{display:none!important}.error{color:var(--danger)}
+.gate{width:min(650px,calc(100% - 36px));margin:80px auto;padding:28px;border:1px solid var(--line);background:var(--panel);border-radius:22px}.gate h2{margin:0 0 8px;font-size:23px}.gate p{color:var(--muted);line-height:1.65}.gateActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.code{font:700 28px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;margin:18px 0 8px}.hidden{display:none!important}.error{color:var(--danger)}.shareChoice{position:fixed;z-index:400;inset:0;display:grid;place-items:center;padding:20px}.shareChoice[hidden]{display:none!important}.shareChoiceBackdrop{position:absolute;inset:0;background:rgba(0,0,0,.28);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}.shareChoiceCard{position:relative;width:min(440px,calc(100vw - 32px));padding:22px;border:1px solid var(--line);border-radius:22px;background:var(--panel);box-shadow:0 28px 90px rgba(0,0,0,.22)}.shareChoiceCard h2{margin:0;font-size:21px}.shareChoiceCard p{margin:8px 0 18px;color:var(--muted);font-size:14px;line-height:1.55}.shareChoiceActions{display:grid;gap:8px}.shareChoiceAction{min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--text);font:inherit;font-weight:650;cursor:pointer}.shareChoiceAction.primaryChoice{border-color:var(--accent);background:var(--accent);color:var(--accentText)}.shareChoiceAction.cancelChoice{background:transparent;color:var(--muted)}
 @media(max-width:760px){
   .app,.app.sidebar-collapsed{display:block}
   .sidebar{position:fixed;z-index:210;inset:0 auto 0 0;width:min(84vw,320px);min-width:0;padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));border-right:1px solid var(--line);box-shadow:20px 0 60px rgba(0,0,0,.18);transform:translateX(-105%);opacity:1;pointer-events:none}
@@ -150,6 +150,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
 <div class="composerWrap hidden" id="composerWrap"><div class="composer"><textarea id="composer" placeholder="${t.placeholder}" rows="1"></textarea><div class="composerFoot"><button class="primary" id="sendButton">${t.send}</button></div></div></div>
 </main>
 </div>
+<div class="shareChoice" id="shareChoice" role="dialog" aria-modal="true" aria-labelledby="shareChoiceTitle" hidden><div class="shareChoiceBackdrop" id="shareChoiceBackdrop"></div><section class="shareChoiceCard"><h2 id="shareChoiceTitle">${t.shareIdentityTitle}</h2><p>${t.shareIdentityText}</p><div class="shareChoiceActions"><button class="shareChoiceAction primaryChoice" id="shareWithName" type="button">${t.shareWithName}</button><button class="shareChoiceAction" id="shareAnonymous" type="button">${t.shareAnonymous}</button><button class="shareChoiceAction cancelChoice" id="shareCancel" type="button">${t.shareCancel}</button></div></section></div>
 <script>
 (() => {
   const text=${JSON.stringify(t)}, boot=${bootstrapJson}, $=id=>document.getElementById(id);
@@ -194,6 +195,18 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
     if(!mobileSidebar.matches)return;
     app.classList.remove("sidebar-open");
     updateSidebarA11y();
+  }
+
+  function chooseShareIdentity(){
+    return new Promise(resolve=>{
+      const modal=$("shareChoice"),named=$("shareWithName"),anonymous=$("shareAnonymous"),cancel=$("shareCancel"),backdrop=$("shareChoiceBackdrop");
+      if(!modal||!named||!anonymous||!cancel||!backdrop){resolve(false);return}
+      modal.hidden=false;
+      const cleanup=()=>{named.removeEventListener("click",onNamed);anonymous.removeEventListener("click",onAnon);cancel.removeEventListener("click",onCancel);backdrop.removeEventListener("click",onCancel);document.removeEventListener("keydown",onKey)};
+      const finish=value=>{cleanup();modal.hidden=true;resolve(value)};
+      const onNamed=()=>finish(true),onAnon=()=>finish(false),onCancel=()=>finish(null),onKey=e=>{if(e.key==="Escape")onCancel()};
+      named.addEventListener("click",onNamed);anonymous.addEventListener("click",onAnon);cancel.addEventListener("click",onCancel);backdrop.addEventListener("click",onCancel);document.addEventListener("keydown",onKey);named.focus();
+    });
   }
 
   async function req(path,opt={}){
@@ -347,8 +360,10 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
       try{await req("/conversations/"+id,{method:"DELETE"});if(id===state.conversationId){state.conversationId="";state.current=null;history.replaceState({},"",localeBase);$("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden")}await loadConversations()}catch{}
     }
     if(action==="share"){
+      const shareAuthorName=await chooseShareIdentity();
+      if(shareAuthorName===null)return;
       try{
-        const result=await req("/conversations/"+id+"/share",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+        const result=await req("/conversations/"+id+"/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({share_author_name:shareAuthorName})});
         const url=location.origin+(result.share_path||("/share/"+result.share_token));
         try{await navigator.clipboard.writeText(url);window.alert(text.shareCopied)}catch{window.prompt(text.share,url)}
       }catch{window.alert(text.shareFailed)}
@@ -387,11 +402,13 @@ export function renderSharedConversation(locale, payload, theme = "") {
   const messages = Array.isArray(payload?.messages) ? payload.messages : [];
   const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
   const title = esc(conversation.title || (zh ? "共享对话" : "Shared conversation"));
+  const authorName = esc(conversation.author_name || "");
+  const sharedMeta = authorName ? (zh ? ("由 " + authorName + " 分享 · AERTEX Intelligence 共享对话 · 只读") : ("Shared by " + authorName + " · AERTEX Intelligence shared conversation · Read only")) : (zh ? "AERTEX Intelligence 共享对话 · 只读" : "AERTEX Intelligence shared conversation · Read only");
   const body = messages.map(item => {
     const role = item?.role === "user" ? (zh ? "用户" : "User") : "AERTEX";
     return '<article class="msg '+(item?.role === "user" ? "user" : "assistant")+'"><div class="role">'+role+'</div><div class="bubble">'+esc(item?.content || "")+'</div></article>';
   }).join("");
-  return '<!doctype html><html lang="'+(zh ? "zh-CN" : "en")+'"'+themeAttr+'> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>'+title+' · AERTEX Intelligence</title>'+FAVICON_LINKS+themeBoot+'<style>:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}}:root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}:root[data-theme="light"]{color-scheme:light;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(860px,calc(100% - 32px));margin:0 auto;padding:38px 0 80px}header{padding-bottom:24px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:30px;letter-spacing:-.04em}.meta{margin-top:8px;color:var(--muted);font-size:13px}.msg{padding:24px 0;border-bottom:1px solid var(--line)}.role{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px}.bubble{white-space:pre-wrap;line-height:1.72}.user .bubble{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:16px}.footer{margin-top:28px;color:var(--muted);font-size:12px}</style></head><body><main><header><h1>'+title+'</h1><div class="meta">'+(zh ? "AERTEX Intelligence 共享对话 · 只读" : "AERTEX Intelligence shared conversation · Read only")+'</div></header>'+body+'<div class="footer">'+(zh ? "此链接由对话所有者主动分享" : "This link was explicitly shared by the conversation owner")+'</div></main></body></html>';
+  return '<!doctype html><html lang="'+(zh ? "zh-CN" : "en")+'"'+themeAttr+'> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>'+title+' · AERTEX Intelligence</title>'+FAVICON_LINKS+themeBoot+'<style>:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}}:root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}:root[data-theme="light"]{color-scheme:light;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(860px,calc(100% - 32px));margin:0 auto;padding:38px 0 80px}header{padding-bottom:24px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:30px;letter-spacing:-.04em}.meta{margin-top:8px;color:var(--muted);font-size:13px}.msg{padding:24px 0;border-bottom:1px solid var(--line)}.role{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px}.bubble{white-space:pre-wrap;line-height:1.72}.user .bubble{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:16px}.footer{margin-top:28px;color:var(--muted);font-size:12px}</style></head><body><main><header><h1>'+title+'</h1><div class="meta">'+sharedMeta+'</div></header>'+body+'<div class="footer">'+(zh ? "此链接由对话所有者主动分享" : "This link was explicitly shared by the conversation owner")+'</div></main></body></html>';
 }
 
 
