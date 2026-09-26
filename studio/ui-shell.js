@@ -21,7 +21,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
   const copy = buildOsCopy(zh);
   const page = copy.pages[path] || knowledgePageMeta(path, zh) || copy.pages["/dashboard"];
   const activeSection = page.section;
-  const dashboardPath = path === "/dashboard";
+  const dashboardPath = path === "/" || path === "/dashboard";
   const knowledgePath = path.startsWith("/info/knowledge");
   const compactBackUrl = compactBackHref(path, zh);
 
@@ -311,7 +311,7 @@ export function buildOsCopy(zh) {
       aiTitle: "实验与工具入口",
       aiHref: `${prefix}/workspace/experiments`,
       nav: [
-        { id: "dashboard", label: "首页", href: `${prefix}/dashboard`, items: [] },
+        { id: "dashboard", label: "首页", href: `${prefix}`, items: [] },
         { id: "wishes", label: "祝福中心", href: `${prefix}/wishes`, items: [] },
         { id: "info", label: "信息中心", href: `${prefix}/info`, items: [
           ["AERTEX Knowledge", `${prefix}/info/knowledge`],
@@ -354,7 +354,7 @@ export function buildOsCopy(zh) {
     aiTitle: "Experiments & tools",
     aiHref: `${prefix}/workspace/experiments`,
     nav: [
-      { id: "dashboard", label: "Dashboard", href: `${prefix}/dashboard`, items: [] },
+      { id: "dashboard", label: "Home", href: `${prefix}`, items: [] },
       { id: "wishes", label: "Wish Center", href: `${prefix}/wishes`, items: [] },
       { id: "info", label: "Information", href: `${prefix}/info`, items: [
         ["AERTEX Knowledge", `${prefix}/info/knowledge`],
@@ -556,7 +556,7 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
 
 export function renderOsContent(path, copy, productLinks = {}) {
   const zh = copy.platform.includes("个人");
-  if (path === "/dashboard") return dashboardContent(zh, productLinks);
+  if (path === "/" || path === "/dashboard") return dashboardContent(zh, productLinks);
   if (path.startsWith("/info")) return informationContent(path, zh);
   if (path === "/profile") return profileHubContent(zh);
   if (path.startsWith("/profile/")) return profileContent(path, zh);
