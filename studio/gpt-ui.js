@@ -18,7 +18,7 @@ export function renderGptApp(locale, bootstrap = {}) {
     connectHint:"请联系管理员为此账号分配 API Provider、模型和使用额度。",
     connect:"连接 ChatGPT / Codex", connecting:"正在连接…", openLogin:"打开 OpenAI 登录页",
     codeLabel:"设备代码", codeHint:"在 OpenAI 页面输入设备代码完成授权。完成后这里会自动识别登录状态。",
-    newChat:"新对话", conversations:"对话", rename:"重命名", delete:"删除", share:"分享", shareCopied:"分享链接已复制", shareFailed:"无法创建分享链接", confirmDelete:"删除这个对话？", untitled:"未命名对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
+    newChat:"新对话", conversations:"对话", toggleSidebar:"切换侧栏", closeSidebar:"关闭侧栏", rename:"重命名", delete:"删除", share:"分享", shareCopied:"分享链接已复制", shareFailed:"无法创建分享链接", confirmDelete:"删除这个对话？", untitled:"未命名对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
     noModels:"没有读取到可用模型", regionBlocked:"当前网络区域不可用", noAvailableRegion:"当前网络区域没有可用的已授权模型", rateLimited:"当前 Provider 返回速率限制，请稍后重试", rateRetry:"建议等待", reasoning:"推理", thinking:"Intelligence 正在思考…",
     empty:"开始一个新的对话", emptyHint:"选择模型后直接开始聊天",
     error:"发生错误",
@@ -30,7 +30,7 @@ export function renderGptApp(locale, bootstrap = {}) {
     connectHint:"Ask an administrator to assign an API provider, models, and usage quota to this account.",
     connect:"Connect ChatGPT / Codex", connecting:"Connecting…", openLogin:"Open OpenAI sign-in",
     codeLabel:"Device code", codeHint:"Enter the device code on the OpenAI page. This page will detect completion automatically.",
-    newChat:"New chat", conversations:"Chats", rename:"Rename", delete:"Delete", share:"Share", shareCopied:"Share link copied", shareFailed:"Unable to create share link", confirmDelete:"Delete this conversation?", untitled:"Untitled chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
+    newChat:"New chat", conversations:"Chats", toggleSidebar:"Toggle sidebar", closeSidebar:"Close sidebar", rename:"Rename", delete:"Delete", share:"Share", shareCopied:"Share link copied", shareFailed:"Unable to create share link", confirmDelete:"Delete this conversation?", untitled:"Untitled chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
     noModels:"No available models were returned", regionBlocked:"Unavailable on current network", noAvailableRegion:"No authorized model is available on the current network", rateLimited:"The provider is rate-limiting requests right now. Try again shortly.", rateRetry:"Retry after", reasoning:"Reasoning", thinking:"Intelligence is thinking…",
     empty:"Start a new conversation", emptyHint:"Choose a model and start chatting",
     error:"Error",
@@ -52,37 +52,80 @@ ${themeBoot}
 :root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09);--accent:#f4f4f4;--accentText:#111;--danger:#ff766d;--success:#52c986}
 :root[data-theme="light"]{color-scheme:light;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09);--accent:#111;--accentText:#fff;--danger:#b42318;--success:#18864b}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}button,select,textarea{font:inherit}
-.app{min-height:100vh;display:grid;grid-template-columns:270px minmax(0,1fr)}
-.sidebar{border-right:1px solid var(--line);padding:18px;background:var(--panel2);display:flex;flex-direction:column;gap:14px}
-.brand{font-weight:760;letter-spacing:-.03em;font-size:20px;padding:8px 6px}.brand small{display:block;color:var(--muted);font-size:12px;font-weight:500;letter-spacing:0;margin-top:4px}
-.sideButton,.quietButton{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:12px;padding:10px 12px;cursor:pointer}.sideButton{text-align:left}.quietButton{font-size:12px}
+.app{min-height:100vh;display:grid;grid-template-columns:270px minmax(0,1fr);transition:grid-template-columns .22s cubic-bezier(.2,.8,.2,1)}
+.app.sidebar-collapsed{grid-template-columns:0 minmax(0,1fr)}
+.sidebar{width:270px;min-width:270px;border-right:1px solid var(--line);padding:14px;background:var(--panel2);display:flex;flex-direction:column;gap:12px;overflow:hidden;transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .18s ease}
+.app.sidebar-collapsed .sidebar{transform:translateX(-100%);opacity:0;pointer-events:none}
+.sidebarHead{display:flex;align-items:center;gap:8px;min-width:0}
+.brand{min-width:0;flex:1;font-weight:760;letter-spacing:-.03em;font-size:20px;padding:8px 6px}.brand small{display:block;color:var(--muted);font-size:12px;font-weight:500;letter-spacing:0;margin-top:4px}
+.iconButton,.quietButton{border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer}
+.iconButton{width:42px;height:42px;min-width:42px;min-height:42px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;line-height:0;box-shadow:0 1px 0 rgba(255,255,255,.22) inset;transition:background .12s ease,transform .1s ease,border-color .12s ease}
+.iconButton:hover{background:color-mix(in srgb,var(--panel) 76%,var(--panel2))}
+.iconButton:active{transform:scale(.94)}
+.iconButton svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.sidebarNewChat{flex:0 0 auto}
+.quietButton{border-radius:12px;padding:10px 12px;font-size:12px}
+.sidebarBackdrop{display:none}
 .statusRow{display:flex;align-items:center;gap:9px;font-size:13px}.dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}.dot.online{background:var(--success);box-shadow:0 0 0 5px color-mix(in srgb,var(--success) 15%,transparent)}.dot.offline{background:var(--danger);box-shadow:0 0 0 5px color-mix(in srgb,var(--danger) 12%,transparent)}
 .sideSectionTitle{padding:8px 6px 2px;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}.chatList{min-height:0;overflow:auto;display:grid;gap:4px}.chatItem{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px;border-radius:10px}.chatItem.active{background:var(--panel)}.chatLink{min-width:0;padding:9px 8px;color:var(--text);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.chatActions{display:flex;gap:2px;padding-right:4px;opacity:.1}.chatItem:hover .chatActions,.chatItem.active .chatActions{opacity:1}.chatAction{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:5px;border-radius:7px;font-size:12px}.chatAction:hover{background:var(--panel2);color:var(--text)}
-.main{min-width:0;height:100vh;display:flex;flex-direction:column}.topbar{height:62px;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--line)}
+.main{min-width:0;height:100vh;display:flex;flex-direction:column}.topbar{height:62px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%)}.topbarToggle{flex:0 0 auto}.topbarNewChat{flex:0 0 auto}.topbarSpacer{flex:1;min-width:0}
 select{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;padding:8px 10px}.model{min-width:190px;max-width:340px}.account{margin-left:auto;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
 .content{flex:1;min-height:0;overflow:auto}.messages{width:min(820px,calc(100% - 32px));margin:0 auto;padding:42px 0 160px}.empty{min-height:58vh;display:grid;place-items:center;text-align:center}.empty h1{font-size:30px;letter-spacing:-.04em;margin:0 0 8px}.empty p{max-width:600px;margin:0;color:var(--muted);line-height:1.7}
 .msg{margin:0 0 28px}.msg.user{display:flex;justify-content:flex-end}.msg.user .bubble{max-width:78%;padding:11px 15px;background:var(--panel2);border-radius:18px;white-space:pre-wrap;line-height:1.55}.msg.assistant .bubble{white-space:pre-wrap;line-height:1.72}.status{color:var(--muted);font-size:13px;margin-top:8px}
-.composerWrap{position:fixed;left:270px;right:0;bottom:0;padding:18px;background:linear-gradient(to top,var(--bg) 72%,transparent)}.composer{width:min(820px,calc(100% - 32px));margin:0 auto;border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:12px;box-shadow:0 12px 42px rgba(0,0,0,.08)}
+.composerWrap{position:fixed;left:270px;right:0;bottom:0;padding:18px;background:linear-gradient(to top,var(--bg) 72%,transparent);transition:left .22s cubic-bezier(.2,.8,.2,1)}.app.sidebar-collapsed .composerWrap{left:0}.composer{width:min(820px,calc(100% - 32px));margin:0 auto;border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:12px;box-shadow:0 12px 42px rgba(0,0,0,.08)}
 textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;border:0;outline:0;background:transparent;color:var(--text);padding:4px 6px;line-height:1.5}.composerFoot{display:flex;align-items:center;justify-content:flex-end;margin-top:8px}
 .primary{border:0;background:var(--accent);color:var(--accentText);border-radius:11px;padding:8px 14px;cursor:pointer;font-weight:650;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.primary:disabled{opacity:.45;cursor:not-allowed}
 .gate{width:min(650px,calc(100% - 36px));margin:80px auto;padding:28px;border:1px solid var(--line);background:var(--panel);border-radius:22px}.gate h2{margin:0 0 8px;font-size:23px}.gate p{color:var(--muted);line-height:1.65}.gateActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.code{font:700 28px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;margin:18px 0 8px}.hidden{display:none!important}.error{color:var(--danger)}
-@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{display:none}.composerWrap{left:0}.topbar{padding:0 10px}.model{min-width:0;flex:1}.account{display:none}.messages{padding-top:28px}}
+@media(max-width:760px){
+  .app,.app.sidebar-collapsed{display:block}
+  .sidebar{position:fixed;z-index:210;inset:0 auto 0 0;width:min(84vw,320px);min-width:0;padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));border-right:1px solid var(--line);box-shadow:20px 0 60px rgba(0,0,0,.18);transform:translateX(-105%);opacity:1;pointer-events:none}
+  .app.sidebar-open .sidebar{transform:translateX(0);pointer-events:auto}
+  .sidebarBackdrop{display:block;position:fixed;z-index:200;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;background:rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .18s ease;-webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px)}
+  .app.sidebar-open .sidebarBackdrop{opacity:1;pointer-events:auto}
+  .composerWrap,.app.sidebar-collapsed .composerWrap{left:0;padding:12px max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+  .topbar{height:60px;padding:0 10px;gap:8px;position:relative;z-index:50}
+  .iconButton{width:42px;height:42px;min-width:42px;min-height:42px}
+  .model{min-width:0;max-width:none;flex:1}
+  .account{display:none}
+  .messages{padding-top:28px}
+  .aertex-account-root{flex:0 0 auto}
+}
+@media(max-width:430px){
+  .topbar{gap:6px;padding-left:8px;padding-right:8px}
+  .topbar .iconButton{width:40px;height:40px;min-width:40px;min-height:40px}
+  .topbar .iconButton svg{width:21px;height:21px}
+  .model{font-size:13px;padding-left:8px;padding-right:8px}
+  .aertex-account-button{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important}
+}
+@media(prefers-reduced-motion:reduce){.app,.sidebar,.composerWrap,.sidebarBackdrop,.iconButton{transition:none!important}}
 </style>\n<style>${accountMenuStyles()}</style>
 </head>
 <body>
 <div class="app">
-<aside class="sidebar">
-  <div class="brand">${t.title}<small>${t.subtitle}</small></div>
-  <button class="sideButton" id="newChat">${t.newChat}</button>
+<aside class="sidebar" id="gptSidebar" aria-label="${t.conversations}">
+  <div class="sidebarHead">
+    <div class="brand">${t.title}<small>${t.subtitle}</small></div>
+    <button class="iconButton sidebarNewChat" id="newChat" type="button" aria-label="${t.newChat}" title="${t.newChat}">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13.5 5H7.8A2.8 2.8 0 0 0 5 7.8v8.4A2.8 2.8 0 0 0 7.8 19h8.4a2.8 2.8 0 0 0 2.8-2.8v-5.7"/><path d="M15.2 4.8 19.2 8.8M9.4 14.6l1.2-4 6.9-6.9a1.9 1.9 0 0 1 2.7 2.7l-6.9 6.9-3.9 1.3Z"/></svg>
+    </button>
+  </div>
   <div class="statusRow"><span class="dot" id="sideDot"></span><span id="sideStatus">${t.checking}</span></div>
   <div class="sideSectionTitle">${t.conversations}</div>
   <nav class="chatList" id="conversationList" aria-label="${t.conversations}"></nav>
 </aside>
+<button class="sidebarBackdrop" id="sidebarBackdrop" type="button" aria-label="${t.closeSidebar}" tabindex="-1"></button>
 <main class="main">
 <header class="topbar">
+  <button class="iconButton topbarToggle" id="sidebarToggle" type="button" aria-label="${t.toggleSidebar}" title="${t.toggleSidebar}" aria-controls="gptSidebar" aria-expanded="true">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 8h14M5 16h10"/></svg>
+  </button>
   <select class="model" id="modelSelect" disabled><option>${t.loadingModels}</option></select>
   <select id="effortSelect" aria-label="${t.reasoning}" disabled><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="xhigh">Extra High</option></select>
+  <div class="topbarSpacer"></div>
   <div class="account" id="accountLabel">${t.checking}</div>
+  <button class="iconButton topbarNewChat" id="topNewChat" type="button" aria-label="${t.newChat}" title="${t.newChat}">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13.5 5H7.8A2.8 2.8 0 0 0 5 7.8v8.4A2.8 2.8 0 0 0 7.8 19h8.4a2.8 2.8 0 0 0 2.8-2.8v-5.7"/><path d="M15.2 4.8 19.2 8.8M9.4 14.6l1.2-4 6.9-6.9a1.9 1.9 0 0 1 2.7 2.7l-6.9 6.9-3.9 1.3Z"/></svg>
+  </button>
   ${accountMenuMarkup(zh ? "zh-cn" : "en")}
 </header>
 <section class="content" id="content">
@@ -115,6 +158,40 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
     conversationId:boot.current?.conversation?.id||"",
     busy:false
   };
+  const app=document.querySelector(".app");
+  const mobileSidebar=window.matchMedia("(max-width:760px)");
+  const sidebarStorageKey="aertex-intelligence-sidebar-v1";
+
+  function updateSidebarA11y(){
+    const open=mobileSidebar.matches?app.classList.contains("sidebar-open"):!app.classList.contains("sidebar-collapsed");
+    $("sidebarToggle")?.setAttribute("aria-expanded",open?"true":"false");
+  }
+  function applySidebarMode(){
+    if(mobileSidebar.matches){
+      app.classList.remove("sidebar-collapsed");
+      app.classList.remove("sidebar-open");
+    }else{
+      let collapsed=false;
+      try{collapsed=localStorage.getItem(sidebarStorageKey)==="collapsed"}catch{}
+      app.classList.toggle("sidebar-collapsed",collapsed);
+      app.classList.remove("sidebar-open");
+    }
+    updateSidebarA11y();
+  }
+  function toggleSidebar(){
+    if(mobileSidebar.matches){
+      app.classList.toggle("sidebar-open");
+    }else{
+      const collapsed=app.classList.toggle("sidebar-collapsed");
+      try{localStorage.setItem(sidebarStorageKey,collapsed?"collapsed":"open")}catch{}
+    }
+    updateSidebarA11y();
+  }
+  function closeMobileSidebar(){
+    if(!mobileSidebar.matches)return;
+    app.classList.remove("sidebar-open");
+    updateSidebarA11y();
+  }
 
   async function req(path,opt={}){
     const r=await fetch("/api/ai"+path,{...opt,credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json",...(opt.headers||{})}});
@@ -275,10 +352,18 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
     }
   });
   $("retry").addEventListener("click",()=>void checkStatus(true));
-  $("newChat").addEventListener("click",()=>{
+  function startNewChat(){
     state.conversationId="";state.current=null;history.pushState({},"",localeBase);
-    $("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden");renderConversationList();$("composer").focus();
-  });
+    $("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden");renderConversationList();closeMobileSidebar();$("composer").focus();
+  }
+  $("newChat").addEventListener("click",startNewChat);
+  $("topNewChat").addEventListener("click",startNewChat);
+  $("sidebarToggle").addEventListener("click",toggleSidebar);
+  $("sidebarBackdrop").addEventListener("click",closeMobileSidebar);
+  $("conversationList").addEventListener("click",event=>{if(event.target.closest(".chatLink"))closeMobileSidebar()});
+  if(typeof mobileSidebar.addEventListener==="function")mobileSidebar.addEventListener("change",applySidebarMode);
+  else if(typeof mobileSidebar.addListener==="function")mobileSidebar.addListener(applySidebarMode);
+  applySidebarMode();
   $("sendButton").addEventListener("click",send);
   $("composer").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void send()}});
   $("composer").addEventListener("input",e=>{e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,180)+"px"});

@@ -16,6 +16,14 @@ for (const locale of ["zh-cn", "en"]) {
     'provider.provider==="bailian"',
     'REGION_UNSUPPORTED',
     'id="conversationList"',
+    'id="sidebarToggle"',
+    'id="topNewChat"',
+    'id="sidebarBackdrop"',
+    'aria-controls="gptSidebar"',
+    'class="iconButton sidebarNewChat"',
+    'aertex-intelligence-sidebar-v1',
+    'app.classList.toggle("sidebar-collapsed"',
+    'app.classList.toggle("sidebar-open"',
     'rename.dataset.action="rename"',
     'share.dataset.action="share"',
     'del.dataset.action="delete"',
@@ -24,6 +32,12 @@ for (const locale of ["zh-cn", "en"]) {
     'data-theme="dark"',
   ]) {
     if (!html.includes(required)) throw new Error(`GPT UI ${locale} missing multi-provider invariant: ${required}`);
+  }
+  if (!html.includes('@media(max-width:760px)') || !html.includes('.app.sidebar-open .sidebar')) {
+    throw new Error("Intelligence must provide mobile overlay sidebar behavior");
+  }
+  if (!html.includes('.app.sidebar-collapsed .composerWrap{left:0}')) {
+    throw new Error("Intelligence composer must follow desktop sidebar collapse state");
   }
   if (html.includes('href="/zh-cn/admin"') || html.includes('href="/en/admin"') || html.includes("adminConsole")) {
     throw new Error("Intelligence must not expose administrator navigation");
