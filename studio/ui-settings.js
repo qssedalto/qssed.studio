@@ -172,6 +172,7 @@ export function aiSettingsContent(zh) {
     <script>
       (() => {
         const copy=${JSON.stringify(copy)};
+        const isZh=${JSON.stringify(zh)};
         const root=document.getElementById("ai-settings-state");
         const preferenceKey="aertex-ai-default-model-v1";
         const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
@@ -208,12 +209,12 @@ export function aiSettingsContent(zh) {
                 '<div class="ai-settings-panel"><small>'+esc(copy.providers)+'</small><strong>'+esc(String(providers.filter(p=>p.available!==false).length))+'</strong><p>'+esc(available.length+" "+copy.models)+'</p></div>'+
               '</div>'+
               '<div class="ai-settings-panel"><small>'+esc(copy.providers)+'</small><div class="ai-provider-list">'+
-                providers.map(p=>'<div class="ai-provider-row"><strong>'+esc(providerLabel(p))+'</strong><span>'+esc(p.available===false?(zh?"当前网络不可用":"Unavailable on current network"):(zh?"可用":"Available"))+'</span></div>').join("")+
+                providers.map(p=>'<div class="ai-provider-row"><strong>'+esc(providerLabel(p))+'</strong><span>'+esc(p.available===false?(isZh?"当前网络不可用":"Unavailable on current network"):(isZh?"可用":"Available"))+'</span></div>').join("")+
               '</div></div>'+
               '<div class="ai-settings-panel"><small>'+esc(copy.models)+'</small><strong>'+esc(chosen?.model||"—")+'</strong>'+
                 '<select id="ai-default-model" class="ai-model-select" '+(available.length?"":"disabled")+'>'+
                   available.map(item=>'<option value="'+esc(item.provider_id+"|"+item.model)+'" '+(chosen&&item.provider_id===chosen.provider_id&&item.model===chosen.model?"selected":"")+'>'+esc(providerLabel(providers.find(p=>p.id===item.provider_id)))+' · '+esc(item.model)+'</option>').join("")+
-                '</select><div class="ai-settings-actions"><a class="btn primary" href="'+esc((location.pathname.startsWith("/en")?"/en":"/zh-cn")+"/gpt")+'">'+esc(copy.open)+'</a><span id="ai-settings-feedback" class="ai-settings-feedback"></span></div></div>'+
+                '</select><div class="ai-settings-actions"><a class="btn primary" href="'+esc((location.pathname.startsWith("/en")?"/en":"/zh-cn")+"/gpt/handoff?next="+encodeURIComponent(location.pathname.startsWith("/en")?"/en":"/zh-cn"))+'">'+esc(copy.open)+'</a><span id="ai-settings-feedback" class="ai-settings-feedback"></span></div></div>'+
               '<div class="ai-settings-panel"><small>'+esc(copy.usage)+'</small>'+
                 '<div class="ai-usage-line"><span>'+esc(copy.today+" · "+copy.tokens)+'</span><strong>'+esc(limit(cfg.usage?.today_tokens,cfg.limits?.daily_tokens,"tokens"))+'</strong></div>'+
                 '<div class="ai-usage-line"><span>'+esc(copy.month+" · "+copy.tokens)+'</span><strong>'+esc(limit(cfg.usage?.month_tokens,cfg.limits?.monthly_tokens,"tokens"))+'</strong></div>'+
