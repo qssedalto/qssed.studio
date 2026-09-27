@@ -66,6 +66,11 @@ contains(billingUi, 'id="student-pending-actions" hidden', "Pending student veri
 contains(billingUi, 'studentPendingActions.hidden=!pending', "Pending-state actions must be toggled from server state.");
 contains(billingUi, 'studentVerificationForm.style.display="none"', "Pending state must force-hide the verification form.");
 contains(billingUi, '#student-consent{width:22px!important', "Student consent checkbox must remain touch-sized without inheriting oversized input styles.");
+contains(billingUi, 'const isZh=', "Student verification browser script must receive an explicit locale flag.");
+assert(!billingUi.includes('textContent=zh?') && !billingUi.includes('detail=zh?'), "Student verification browser script must not reference the server-only zh variable at runtime.");
+contains(billingUi, 'studentQrFile.disabled=!canUseForm;', "QR file selection must unlock immediately after the tutorial step.");
+contains(billingUi, 'studentTarget.disabled=!canUseForm;', "Official verification URL input must unlock immediately after the tutorial step.");
+
 contains(legacyApi, '"/api/student-verification"', "Student verification must use the hardened cookie API boundary.");
 contains(adminApi, '"student-verification-review"', "Admin API must expose controlled student review.");
 contains(adminUi, '"/student-verification"', "Admin UI must expose student verification.");
