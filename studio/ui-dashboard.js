@@ -51,7 +51,7 @@ export function dashboardContent(zh, options = {}) {
     ["祝福链接","生日、中秋与专属姓名分享链接","wishes",`${prefix}/wishes`],
     ["AERTEX 账户","个人信息、登录与安全和账户服务","profile",`${prefix}/profile`],
     ["工作台","打开工作区","workbench",`${prefix}/workspace/workbench`],
-    ["私人存储","管理 R2 文件","storage",`${prefix}/settings/storage`],
+    ["AERTEX Drive","管理私人云盘","storage",`${prefix}/settings/storage`],
     ["收藏链接","常用链接和收藏","links",`${prefix}/info/links`],
     ["账户与安全","设备和登录记录","security",`${prefix}/settings/security`],
     ["设置","外观、语言和其他设置","settings",`${prefix}/settings`]
@@ -61,7 +61,7 @@ export function dashboardContent(zh, options = {}) {
     ["Wish Links","Birthday, Mid-Autumn, and named greeting links","wishes",`${prefix}/wishes`],
     ["AERTEX Account","Personal information, sign-in & security, and account services","profile",`${prefix}/profile`],
     ["Workbench","Open Workspace","workbench",`${prefix}/workspace/workbench`],
-    ["Private Storage","Manage R2 files","storage",`${prefix}/settings/storage`],
+    ["AERTEX Drive","Manage private cloud files","storage",`${prefix}/settings/storage`],
     ["Saved Links","Links and bookmarks","links",`${prefix}/info/links`],
     ["Account & Security","Devices and sign-in history","security",`${prefix}/settings/security`],
     ["Settings","Appearance, language, and more","settings",`${prefix}/settings`]
@@ -69,12 +69,12 @@ export function dashboardContent(zh, options = {}) {
 
   const moduleRows = zh ? [
     ["AERTEX 账户","可用","个人信息、安全、偏好和账户服务。","profile",`${prefix}/profile`],
-    ["私人存储","可用","Cloudflare R2 私人文件。","storage",`${prefix}/settings/storage`],
+    ["AERTEX Drive","可用","私人云盘文件。","storage",`${prefix}/settings/storage`],
     ["工作区","部分可用","工作台、项目、实验、草稿和任务。","workbench",`${prefix}/workspace`],
     ["信息中心","部分可用","知识库、链接和账号摘要。","info",`${prefix}/info`]
   ] : [
     ["Profile","Available","Profile details, presence, interests, and links.","profile",`${prefix}/profile`],
-    ["Private Storage","Available","Private Cloudflare R2 files.","storage",`${prefix}/settings/storage`],
+    ["AERTEX Drive","Available","Private cloud-drive files.","storage",`${prefix}/settings/storage`],
     ["Workspace","Partial","Workbench, projects, experiments, drafts, and tasks.","workbench",`${prefix}/workspace`],
     ["Information","Partial","Knowledge, links, and account summaries.","info",`${prefix}/info`]
   ];
@@ -162,7 +162,7 @@ export function dashboardContent(zh, options = {}) {
         <div class="dashboard-session-facts">
           <div>${dashboardIcon("appearance")}<span><small>${zh ? "外观" : "Appearance"}</small><strong id="dashboard-theme-label">—</strong></span></div>
           <div>${dashboardIcon("language")}<span><small>${zh ? "语言" : "Language"}</small><strong>${zh ? "简体中文" : "English"}</strong></span></div>
-          <div>${dashboardIcon("storage")}<span><small>${zh ? "存储" : "Storage"}</small><strong>Cloudflare R2</strong></span></div>
+          <div>${dashboardIcon("storage")}<span><small>${zh ? "存储" : "Storage"}</small><strong>AERTEX Drive</strong></span></div>
         </div>
         <a class="dashboard-session-settings" href="${prefix}/settings">${dashboardIcon("settings")}<span class="dashboard-action-label">${zh ? "设置" : "Settings"}</span><span class="dashboard-action-arrow">›</span></a>
       </article>
