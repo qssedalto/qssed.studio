@@ -81,6 +81,11 @@ export function billingSettingsContent(zh) {
         .student-file-replace{grid-column:1/-1;width:100%!important}
         #student-target{font-size:16px!important}
       }
+      @media (max-width:1050px) and (hover:none) and (pointer:coarse){
+        body.os-shell:has(#student-verification){height:auto!important;min-height:100dvh!important;overflow-y:auto!important;overscroll-behavior-y:none!important}
+        body.os-shell:has(#student-verification) .os-layout{height:auto!important;min-height:calc(100dvh - 20px)!important}
+        body.os-shell:has(#student-verification) .os-main{height:auto!important;min-height:calc(100dvh - 20px)!important;overflow:visible!important;overscroll-behavior-y:none!important}
+      }
     </style>
     <section id="billing-settings" class="os-card is-large settings-detail-card">
       <div class="settings-general-heading">
