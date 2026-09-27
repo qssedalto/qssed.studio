@@ -4,6 +4,7 @@ import { handleStudentVerification } from "./student-verification-api.js";
 import { handleSummaries } from "./summary-api.js";
 import { handleNotes } from "./notes-api.js";
 import { handleUserLinks } from "./user-links-api.js";
+import { handleAiApi } from "./ai-gateway.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 
@@ -15,7 +16,8 @@ const ROUTES = new Map([
   ["/api/storage/object", { methods: new Set(["GET", "DELETE"]), handler: handleStorageObject }],
   ["/api/summaries", { methods: new Set(["GET", "PUT", "DELETE"]), handler: handleSummaries }],
   ["/api/notes", { methods: new Set(["GET", "POST", "PUT", "DELETE"]), handler: handleNotes }],
-  ["/api/user-links", { methods: new Set(["GET", "POST", "PUT", "DELETE"]), handler: handleUserLinks }]
+  ["/api/user-links", { methods: new Set(["GET", "POST", "PUT", "DELETE"]), handler: handleUserLinks }],
+  ["/api/ai/config", { methods: new Set(["GET"]), handler: (request, env, session) => handleAiApi(request, env, session) }]
 ]);
 
 export function isLegacyCookieApiPath(pathname) {
@@ -39,7 +41,7 @@ export async function handleLegacyCookieApi(request, env, pathname) {
   const headers = new Headers(request.headers);
   headers.set("Authorization", `Bearer ${session.accessToken}`);
   const internalRequest = new Request(request, { headers });
-  const response = await route.handler(internalRequest, env);
+  const response = await route.handler(internalRequest, env, session);
   return withStudioSessionCookies(response, session.cookies);
 }
 

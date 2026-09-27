@@ -3,8 +3,6 @@ import { researchNotesContent } from "./ui-notes.js";
 const STATUS_COPY = {
   "通知": ["通知尚未开放", "通知服务还没接入。"],
   "Notifications": ["Notifications aren’t available yet", "Notification delivery is not connected yet."],
-  "AI 设置": ["AI 设置尚未开放", "用户级 AI 配置还没开放。"],
-  "AI Settings": ["AI settings aren’t available yet", "User-level AI configuration is not available yet."],
   "第三方集成": ["第三方集成尚未开放", "用户级集成配置还没开放。"],
   "Integrations": ["Integrations aren’t available yet", "User-level integrations are not available yet."]
 };
