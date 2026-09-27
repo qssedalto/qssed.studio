@@ -73,6 +73,22 @@ export function billingSettingsContent(zh) {
       #student-target{font-size:16px!important;scroll-margin-top:120px}
       .student-file-picker.is-disabled{opacity:.48}
       .student-file-picker.is-disabled .student-file-button{cursor:not-allowed;pointer-events:none}
+      .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px}
+      .pricing-card{position:relative;min-width:0;padding:18px;border:1px solid var(--border);border-radius:20px;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.025);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+      .pricing-card:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.055)}
+      .pricing-card.is-selected{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+      .pricing-card.is-featured{background:linear-gradient(180deg,var(--card),var(--surface-soft))}
+      .pricing-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .pricing-name{font-size:18px;line-height:1.2;font-weight:800;letter-spacing:-.02em}
+      .pricing-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border-radius:999px;background:var(--fill);color:var(--text);font-size:11px;font-weight:750;white-space:nowrap}
+      .pricing-capacity{margin-top:18px;font-size:30px;line-height:1;font-weight:850;letter-spacing:-.045em}
+      .pricing-price-row{display:flex;align-items:baseline;gap:5px;margin-top:14px}
+      .pricing-price{font-size:24px;line-height:1;font-weight:820;letter-spacing:-.035em}
+      .pricing-period{color:var(--muted);font-size:12px}
+      .pricing-student{display:inline-flex;align-items:baseline;gap:4px;margin-top:10px;padding:7px 10px;border-radius:999px;background:var(--surface-soft);font-size:13px;font-weight:760}
+      .pricing-student strong{font-size:15px}
+      .pricing-desc{margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+      .pricing-footnote{margin:12px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
       @media (max-width:620px){
         .student-file-picker{min-height:104px;padding:16px 14px}
         .student-file-button{width:min(100%,320px)}
@@ -169,8 +185,9 @@ export function billingSettingsContent(zh) {
     </section>
     <section class="os-card settings-general-note">
       <strong>${text.plans}</strong>
-      <div id="billing-plan-list" class="settings-choice-grid"></div>
-      <p id="billing-status" style="margin-top:16px">${text.unavailableDetail}</p>
+      <div id="billing-plan-list" class="pricing-grid"></div>
+      <p class="pricing-footnote">${zh ? "学生认证通过后可使用学生价格；学生资格只影响价格，不改变套餐容量与权益。" : "Verified students can use student pricing. Student eligibility changes price only, not plan capacity or entitlements."}</p>
+      <p id="billing-status" style="margin-top:12px">${text.unavailableDetail}</p>
     </section>
     <script>
       (() => {
@@ -202,6 +219,16 @@ export function billingSettingsContent(zh) {
         const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
         const date=value=>{if(!value)return copy.free;const d=new Date(value);return Number.isNaN(d.getTime())?copy.free:d.toLocaleString()};
         const source=value=>value==="admin_grant"?copy.manual:value==="system"?copy.system:String(value||copy.system);
+        const pricingCatalog=[
+          {id:"aertex_free",name:"Free",capacity:"10GB",price:"免费",student:"免费",descZh:"基础使用",descEn:"Core storage"},
+          {id:"aertex_mini",name:"Mini",capacity:"20GB",price:"¥3.9",student:"¥2.9",descZh:"轻量扩容",descEn:"Light storage expansion"},
+          {id:"aertex_plus",name:"Plus",capacity:"60GB",price:"¥9.9",student:"¥7.9",descZh:"日常文件",descEn:"Everyday files"},
+          {id:"aertex_pro",name:"Pro",capacity:"200GB",price:"¥34.9",student:"¥25.9",descZh:"照片、文档、学习资料",descEn:"Photos, documents, and study files",featured:true},
+          {id:"aertex_max",name:"Max",capacity:"1TB",price:"¥159",student:"¥119",descZh:"主力个人云盘",descEn:"Primary personal cloud storage"},
+          {id:"aertex_ultra",name:"Ultra",capacity:"2TB",price:"¥309",student:"¥229",descZh:"重度存储",descEn:"Heavy storage"},
+          {id:"aertex_studio",name:"Studio",capacity:"6TB",price:"¥899",student:"¥699",descZh:"创作者 / 大型项目",descEn:"Creators and large projects"},
+          {id:"aertex_vault",name:"Vault",capacity:"12TB",price:"¥1,799",student:"¥1,399",descZh:"超大容量长期存储",descEn:"Very large long-term storage"}
+        ];
         let studentTutorialAcknowledged=false;
         let studentLocked=false;
         let studentPreviewUrl="";
@@ -360,13 +387,19 @@ export function billingSettingsContent(zh) {
               '<div class="settings-choice"><strong>'+esc(copy.quota)+'</strong><span>'+esc(bytes(quota))+'</span></div>'+
               '<div class="settings-choice"><strong>'+esc(copy.renew)+'</strong><span>'+esc(date(subscription?.current_period_end))+'</span></div>'+
               '<div class="settings-choice"><strong>'+esc(copy.autoRenew)+'</strong><span>'+esc(subscription?.auto_renew?copy.on:copy.off)+' · '+esc(source(subscription?.source))+'</span></div>';
-            const plans=Array.isArray(data.plans)?data.plans:[];
-            planList.innerHTML=plans.map(item=>{
+            planList.innerHTML=pricingCatalog.map(item=>{
               const selected=item.id===plan.id;
-              const title=item.display_name_${zh ? "zh" : "en"}||item.display_name_en||item.id;
-              const detail=item.description_${zh ? "zh" : "en"}||item.description_en||"";
-              const storage=bytes(item.entitlements?.drive_storage_bytes||0);
-              return '<div class="settings-choice '+(selected?'is-selected':'')+'"><strong>'+esc(title)+'</strong><span>'+esc(detail)+' · '+esc(storage)+'</span></div>';
+              const description=isZh?item.descZh:item.descEn;
+              const badge=selected?(isZh?"当前套餐":"Current"):item.featured?(isZh?"推荐":"Popular"):"";
+              const ordinary=item.price==="免费"?(isZh?"免费":"Free"):item.price;
+              const student=item.student==="免费"?(isZh?"免费":"Free"):item.student;
+              return '<article class="pricing-card '+(selected?'is-selected ':'')+(item.featured?'is-featured':'')+'">'+
+                '<div class="pricing-head"><strong class="pricing-name">'+esc(item.name)+'</strong>'+(badge?'<span class="pricing-badge">'+esc(badge)+'</span>':'')+'</div>'+
+                '<div class="pricing-capacity">'+esc(item.capacity)+'</div>'+
+                '<div class="pricing-price-row"><span class="pricing-price">'+esc(ordinary)+'</span>'+(ordinary===(isZh?"免费":"Free")?'':'<span class="pricing-period">'+(isZh?"/ 月":"/ month")+'</span>')+'</div>'+
+                '<div class="pricing-student"><strong>'+esc(student)+'</strong>'+(student===(isZh?"免费":"Free")?'':'<span>'+(isZh?"/月 · 学生":"/ month · Student")+'</span>')+'</div>'+
+                '<p class="pricing-desc">'+esc(description)+'</p>'+
+              '</article>';
             }).join("");
             status.textContent=copy.unavailable+" · "+copy.unavailableDetail;
           }catch(error){
