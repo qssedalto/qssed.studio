@@ -15,7 +15,7 @@ import {
 import { adminHtml, hiddenAdminNotFound, renderAdminConsole } from "./admin/ui.js";
 import { adminCanonicalPath, adminLocaleFromPath, localizeAdminHtml, preferredAdminLocale } from "./admin/i18n.js";
 
-const PAGE_PATHS = new Set(["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/intelligence", "/logs", "/system"]);
+const PAGE_PATHS = new Set(["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/billing", "/intelligence", "/logs", "/system"]);
 
 export default {
   async fetch(request, env, ctx) {
