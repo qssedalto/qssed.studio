@@ -125,6 +125,7 @@ export function billingSettingsContent(zh) {
     <script>
       (() => {
         const copy=${JSON.stringify(text)};
+        const isZh=${zh ? "true" : "false"};
         const current=document.getElementById("billing-current");
         const planList=document.getElementById("billing-plan-list");
         const status=document.getElementById("billing-status");
@@ -157,9 +158,9 @@ export function billingSettingsContent(zh) {
           const state=data&&typeof data==="object"?data:{status:"not_submitted",eligible:false};
           let detail="—";
           if(state.status==="verified"&&state.report_expires_at)detail=copy.verifyingUntil+" "+date(state.report_expires_at);
-          else if(state.status==="pending")detail=zh?"正在等待管理员通过学信网官方渠道核验。":"Waiting for administrator review through the official CHSI verification service.";
+          else if(state.status==="pending")detail=isZh?"正在等待管理员通过学信网官方渠道核验。":"Waiting for administrator review through the official CHSI verification service.";
           else if(state.status==="rejected"&&state.review_note)detail=String(state.review_note);
-          else if(state.status==="expired")detail=zh?"请重新提交有效的学生认证。":"Submit a new valid student verification.";
+          else if(state.status==="expired")detail=isZh?"请重新提交有效的学生认证。":"Submit a new valid student verification.";
           studentState.innerHTML='<div class="settings-choice '+(state.eligible?'is-selected':'')+'"><strong>'+esc(studentStatusLabel(state.status))+'</strong><span>'+esc(detail)+'</span></div>';
           const pending=state.status==="pending";
           studentPendingActions.hidden=!pending;
@@ -215,7 +216,7 @@ export function billingSettingsContent(zh) {
             const target=allowedStudentTarget(codes[0]?.rawValue||"");
             if(!target){studentFeedback.textContent=copy.invalidQr;return}
             studentTarget.value=target;
-            studentFeedback.textContent=zh?"已在本地识别官方验证二维码，图片不会上传。":"Official verification QR decoded locally; the image will not be uploaded.";
+            studentFeedback.textContent=isZh?"已在本地识别官方验证二维码，图片不会上传。":"Official verification QR decoded locally; the image will not be uploaded.";
           }catch(error){
             console.error("Local QR decode failed",error);
             studentFeedback.textContent=copy.invalidQr;
@@ -258,15 +259,15 @@ export function billingSettingsContent(zh) {
           studentTutorialAcknowledged=true;
           studentVerificationForm.hidden=false;
           studentVerificationForm.style.display="";
-          studentTutorialReady.textContent=zh?"教程已阅读 ✓":"Guide completed ✓";
+          studentTutorialReady.textContent=isZh?"教程已阅读 ✓":"Guide completed ✓";
           studentVerificationForm.scrollIntoView({behavior:"smooth",block:"nearest"});
           syncStudentControls();
         });
         studentConsent?.addEventListener("change",()=>{
           if(studentConsent.checked){
-            studentFeedback.textContent=zh?"已确认隐私提示。选择二维码或粘贴官方验证链接后即可提交。":"Privacy notice confirmed. Choose a QR image or paste the official verification URL to continue.";
+            studentFeedback.textContent=isZh?"已确认隐私提示。选择二维码或粘贴官方验证链接后即可提交。":"Privacy notice confirmed. Choose a QR image or paste the official verification URL to continue.";
           }else{
-            studentFeedback.textContent=zh?"提交前需要勾选隐私确认；二维码图片仍只在本地解析。":"You must confirm the privacy notice before submitting; QR images are still decoded locally.";
+            studentFeedback.textContent=isZh?"提交前需要勾选隐私确认；二维码图片仍只在本地解析。":"You must confirm the privacy notice before submitting; QR images are still decoded locally.";
           }
           syncStudentControls();
         });
