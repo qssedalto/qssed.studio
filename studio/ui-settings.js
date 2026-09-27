@@ -188,8 +188,26 @@ export function aiSettingsContent(zh) {
           const vendor=p?.provider==="zhipu"?"智谱 GLM":p?.provider==="bailian"?"阿里云百炼":p?.provider==="openai"?"OpenAI":String(p?.provider||"Provider");
           return vendor+(name?" · "+name:"");
         };
-        const readPreference=()=>{try{return JSON.parse(localStorage.getItem(preferenceKey)||"null")}catch{return null}};
-        const savePreference=(providerId,model)=>{try{localStorage.setItem(preferenceKey,JSON.stringify({provider_id:providerId,model}))}catch{}};
+        const preferenceDomain=()=>{
+          const host=String(location.hostname||"").toLowerCase();
+          return ["qsseda.com","qsseda.online","qsseda.studio"].find(domain=>host===domain||host.endsWith("."+domain))||"";
+        };
+        const readPreference=()=>{
+          try{
+            const prefix=preferenceKey+"=";
+            const raw=document.cookie.split(";").map(part=>part.trim()).find(part=>part.startsWith(prefix));
+            if(raw)return JSON.parse(decodeURIComponent(raw.slice(prefix.length)));
+          }catch{}
+          try{return JSON.parse(localStorage.getItem(preferenceKey)||"null")}catch{return null}
+        };
+        const savePreference=(providerId,model)=>{
+          const value=JSON.stringify({provider_id:providerId,model});
+          try{localStorage.setItem(preferenceKey,value)}catch{}
+          try{
+            const domain=preferenceDomain();
+            document.cookie=preferenceKey+"="+encodeURIComponent(value)+"; Path=/; Max-Age=31536000; SameSite=Lax; Secure"+(domain?"; Domain="+domain:"");
+          }catch{}
+        };
         async function load(){
           try{
             const response=await fetch("/api/ai/config",{credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json"}});
