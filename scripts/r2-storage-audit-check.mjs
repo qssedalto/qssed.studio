@@ -28,14 +28,17 @@ assert(audit("/callback", 200, "GET", "auth") === true, "Auth callback routes mu
 
 const storageApi = fs.readFileSync(new URL("../studio/storage-api.js", import.meta.url), "utf8");
 assert(!storageApi.includes("readBucketUsage"), "Storage page must not scan the entire R2 bucket for usage.");
-assert(storageApi.includes("used_bytes: visibleUsedBytes"), "Storage API must report user-file usage as used_bytes.");
+assert(storageApi.includes("used_bytes: usedBytes"), "Storage API must report complete current-user Drive usage as used_bytes.");
+assert(storageApi.includes("quota_bytes: DEFAULT_STORAGE_QUOTA_BYTES"), "Storage API must report the current AERTEX Drive quota.");
+assert(storageApi.includes("prefix = storagePrefix(ownerId)"), "Quota accounting must stay scoped to the current user prefix.");
 assert(storageApi.includes('usage_scope: "own-user-files"'), "Product storage must identify current-account scope.");
 assert(!storageApi.includes("auth.isAdmin"), "Product storage must never broaden file scope for administrators.");
 assert(!storageApi.includes("account_is_admin"), "Product storage responses must not expose administrator state.");
 
 const storageUi = fs.readFileSync(new URL("../studio/ui-storage.js", import.meta.url), "utf8");
 assert(storageUi.includes("visible_used_bytes ?? data?.used_bytes"), "Storage cache fingerprint must prefer visible user-file bytes.");
-assert(storageUi.includes("visible_used_bytes ?? data.used_bytes"), "Storage UI must render visible user-file bytes.");
+assert(storageUi.includes("data.used_bytes ?? data.visible_used_bytes"), "Storage UI must render complete Drive usage when quota data is available.");
+assert(storageUi.includes("data?.quota_bytes"), "Storage UI cache must include the account quota.");
 assert(!storageUi.includes("adminDescription"), "Product storage UI must not contain an administrator mode.");
 assert(!storageUi.includes("isAdminView"), "Product storage UI must not switch into an administrator view.");
 

@@ -1,4 +1,4 @@
-import { SUPABASE_URL, SUPABASE_KEY, MAX_STORAGE_FILE_BYTES, MAX_STORAGE_LIST_OBJECTS, UUID_PATTERN } from "./config.js";
+import { SUPABASE_URL, SUPABASE_KEY, MAX_STORAGE_FILE_BYTES, DEFAULT_STORAGE_QUOTA_BYTES, MAX_STORAGE_LIST_OBJECTS, UUID_PATTERN } from "./config.js";
 import { getSupabaseSecret, workerLog } from "./server-runtime.js";
 import { json } from "./routing.js";
 
@@ -20,6 +20,26 @@ export function storageKey(ownerId, objectId) {
 
 export function storagePrefix(ownerId) {
   return `users/${ownerId}/`;
+}
+
+async function storageUsedBytes(env, ownerId, stopAfter = Number.POSITIVE_INFINITY) {
+  const prefix = storagePrefix(ownerId);
+  let cursor;
+  let usedBytes = 0;
+
+  do {
+    const page = await env.STORAGE.list({ prefix, cursor, limit: 1000 });
+    for (const object of page.objects || []) {
+      const parsed = parseStorageKey(object.key);
+      if (!parsed || parsed.ownerId !== ownerId) continue;
+      usedBytes += Number(object.size) || 0;
+      if (usedBytes > stopAfter) return usedBytes;
+    }
+    cursor = page.cursor;
+    if (!page.truncated || !cursor) break;
+  } while (cursor);
+
+  return usedBytes;
 }
 
 function serviceHeaders(secret) {
@@ -177,6 +197,16 @@ export async function handleStorageFiles(request, env) {
   }
 
   const visibleUsedBytes = files.reduce((total, file) => total + file.size, 0);
+  let usedBytes = visibleUsedBytes;
+  if (partial) {
+    try {
+      usedBytes = await storageUsedBytes(env, auth.user.id);
+    } catch (error) {
+      workerLog("error", "storage.usage.failed", { message: String(error?.message || error), user_id: auth.user.id });
+      return storageUnavailable();
+    }
+  }
+  const remainingBytes = Math.max(0, DEFAULT_STORAGE_QUOTA_BYTES - usedBytes);
 
   files.sort((a, b) => String(b.uploadedAt || "").localeCompare(String(a.uploadedAt || "")));
   return json({
@@ -186,7 +216,10 @@ export async function handleStorageFiles(request, env) {
     files,
     file_count: files.length,
     visible_used_bytes: visibleUsedBytes,
-    used_bytes: visibleUsedBytes,
+    used_bytes: usedBytes,
+    quota_bytes: DEFAULT_STORAGE_QUOTA_BYTES,
+    remaining_bytes: remainingBytes,
+    plan_name: "AERTEX Drive Free",
     partial
   });
 }
@@ -197,10 +230,32 @@ export async function handleStorageUpload(request, env) {
   if (!hasStorageBinding(env)) return storageUnavailable();
 
   const headerSize = request.headers.get("Content-Length") || request.headers.get("X-File-Size");
-  if (headerSize && (!/^\d+$/.test(headerSize) || Number(headerSize) > MAX_STORAGE_FILE_BYTES)) {
+  if (!headerSize || !/^\d+$/.test(headerSize)) {
+    return json({ error: "File size is required." }, 411);
+  }
+  const incomingSize = Number(headerSize);
+  if (incomingSize > MAX_STORAGE_FILE_BYTES) {
     return json({ error: "File exceeds the 50 MB limit." }, 413);
   }
   if (!request.body) return json({ error: "A file body is required." }, 400);
+
+  let usedBytes;
+  try {
+    usedBytes = await storageUsedBytes(env, auth.user.id, DEFAULT_STORAGE_QUOTA_BYTES);
+  } catch (error) {
+    workerLog("error", "storage.usage.failed", { message: String(error?.message || error), user_id: auth.user.id });
+    return storageUnavailable();
+  }
+
+  if (usedBytes + incomingSize > DEFAULT_STORAGE_QUOTA_BYTES) {
+    return json({
+      error: "AERTEX Drive storage limit reached.",
+      code: "storage_quota_exceeded",
+      used_bytes: usedBytes,
+      quota_bytes: DEFAULT_STORAGE_QUOTA_BYTES,
+      incoming_bytes: incomingSize
+    }, 507);
+  }
 
   const id = crypto.randomUUID();
   const key = storageKey(auth.user.id, id);
@@ -210,6 +265,22 @@ export async function handleStorageUpload(request, env) {
       httpMetadata: { contentType: storageContentType(request.headers.get("Content-Type")) },
       customMetadata: { originalName: name, ownerId: auth.user.id }
     });
+
+    const written = await env.STORAGE.head(key);
+    const actualSize = Number(written?.size) || 0;
+    if (actualSize > MAX_STORAGE_FILE_BYTES || usedBytes + actualSize > DEFAULT_STORAGE_QUOTA_BYTES) {
+      await env.STORAGE.delete(key);
+      if (actualSize > MAX_STORAGE_FILE_BYTES) {
+        return json({ error: "File exceeds the 50 MB limit." }, 413);
+      }
+      return json({
+        error: "AERTEX Drive storage limit reached.",
+        code: "storage_quota_exceeded",
+        used_bytes: usedBytes,
+        quota_bytes: DEFAULT_STORAGE_QUOTA_BYTES,
+        incoming_bytes: actualSize
+      }, 507);
+    }
   } catch (error) {
     try { await env.STORAGE.delete(key); } catch {}
     workerLog("error", "storage.upload.failed", { message: String(error?.message || error) });

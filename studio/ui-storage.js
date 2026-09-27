@@ -5,7 +5,7 @@ export function storageSettingsContent(zh) {
     connected: "已连接",
     checking: "检查中",
     files: "文件",
-    used: "用户文件空间",
+    used: "云盘空间",
     refreshed: "最近更新",
     select: "选择文件",
     refresh: "刷新",
@@ -21,7 +21,7 @@ export function storageSettingsContent(zh) {
     empty: "还没有文件。选择文件后即可上传到你的私人存储空间。",
     partial: "文件数量较多，当前统计仅包含前 10,000 个对象。",
     uploadIdle: "每个文件最大 50 MB，文件会逐个上传。",
-    storage: "Cloudflare R2",
+    storage: "AERTEX Drive",
     unavailable: "存储服务暂时不可用。",
     notAuthorized: "当前账号不可使用私人存储。",
     signInAgain: "登录状态已失效，请重新登录。",
@@ -35,12 +35,12 @@ export function storageSettingsContent(zh) {
     deleteFailed: "删除失败：{message}",
     refreshedNow: "刚刚",
     tooLarge: "“{name}”超过 50 MB，未上传。",
-    connectionDescription: "文件仅对当前账号可见，并通过已登录的 Worker API 安全存取；浏览器不会直接访问 R2。"
+    connectionDescription: "AERTEX Drive 是你的私人云盘。文件仅对当前账号可见，并通过登录状态安全存取。"
   } : {
     connected: "Connected",
     checking: "Checking",
     files: "Files",
-    used: "User file storage",
+    used: "Cloud storage",
     refreshed: "Updated",
     select: "Choose Files",
     refresh: "Refresh",
@@ -56,7 +56,7 @@ export function storageSettingsContent(zh) {
     empty: "No files yet. Choose files to upload them to your private storage.",
     partial: "There are many files; this statistic includes only the first 10,000 objects.",
     uploadIdle: "50 MB maximum per file. Files upload one at a time.",
-    storage: "Cloudflare R2",
+    storage: "AERTEX Drive",
     unavailable: "Storage service is temporarily unavailable.",
     notAuthorized: "This account is not allowed to use private storage.",
     signInAgain: "Your session has expired. Please sign in again.",
@@ -70,11 +70,13 @@ export function storageSettingsContent(zh) {
     deleteFailed: "Delete failed: {message}",
     refreshedNow: "Just now",
     tooLarge: "“{name}” exceeds 50 MB and was not uploaded.",
-    connectionDescription: "Files are private to the current account and accessed securely through the signed-in Worker API; the browser never connects to R2 directly."
+    connectionDescription: "AERTEX Drive is your private cloud drive. Files are visible only to the current signed-in account."
   };
 
   return `
     <style>
+      .storage-capacity-track{height:5px;margin-top:9px;overflow:hidden;border-radius:999px;background:color-mix(in srgb,var(--border) 74%,transparent)}
+      .storage-capacity-track>span{display:block;width:0;height:100%;border-radius:inherit;background:var(--primary);transition:width .28s ease}
     </style>
     <section id="storage-manager" class="storage-manager">
       <section class="storage-overview-panel">
@@ -94,6 +96,7 @@ export function storageSettingsContent(zh) {
           <div class="storage-stat">
             <span>${copy.used}</span>
             <strong id="storage-used-bytes">—</strong>
+            <div class="storage-capacity-track" aria-hidden="true"><span id="storage-capacity-fill"></span></div>
           </div>
           <div class="storage-refresh-group">
             <div>
@@ -168,7 +171,8 @@ export function storageClientScript(zh, loginUrl) {
     deleteConfirm: "确定要删除“{name}”吗？此操作无法撤销。",
     tooLarge: "“{name}”超过 50 MB，未上传。",
     refreshedNow: "刚刚",
-    userDescription: "文件仅对当前账号可见，并通过已登录的 Worker API 安全存取；浏览器不会直接访问 R2。"
+    userDescription: "AERTEX Drive 是你的私人云盘。文件仅对当前账号可见，并通过登录状态安全存取。",
+    quotaExceeded: "云盘空间已满，请删除部分文件后再上传。"
   } : {
     connected: "Connected",
     checking: "Checking",
@@ -195,7 +199,8 @@ export function storageClientScript(zh, loginUrl) {
     deleteConfirm: "Delete “{name}”? This cannot be undone.",
     tooLarge: "“{name}” exceeds 50 MB and was not uploaded.",
     refreshedNow: "Just now",
-    userDescription: "Files are private to the current account and accessed securely through the signed-in Worker API; the browser never connects to R2 directly."
+    userDescription: "AERTEX Drive is your private cloud drive. Files are visible only to the current signed-in account.",
+    quotaExceeded: "Your cloud drive is full. Delete some files before uploading more."
   };
 
   return `
@@ -220,6 +225,7 @@ export function storageClientScript(zh, loginUrl) {
         const connection = document.getElementById("storage-connection");
         const fileCount = document.getElementById("storage-file-count");
         const usedBytes = document.getElementById("storage-used-bytes");
+        const capacityFill = document.getElementById("storage-capacity-fill");
         const refreshedAt = document.getElementById("storage-refreshed-at");
         const storageDescription = document.getElementById("storage-description");
 
@@ -319,6 +325,7 @@ export function storageClientScript(zh, loginUrl) {
           return JSON.stringify([
             Number(data?.file_count) || 0,
             Number(data?.visible_used_bytes ?? data?.used_bytes) || 0,
+            Number(data?.quota_bytes) || 0,
             Boolean(data?.partial),
             normalizedFiles
           ]);
@@ -327,6 +334,7 @@ export function storageClientScript(zh, loginUrl) {
         function resetMetrics() {
           fileCount.textContent = "—";
           usedBytes.textContent = "—";
+          if (capacityFill) capacityFill.style.width = "0%";
           refreshedAt.textContent = "—";
           partial = false;
           partialNotice.hidden = true;
@@ -394,6 +402,7 @@ export function storageClientScript(zh, loginUrl) {
             const payload = await response.json().catch(() => ({}));
             const error = new Error(payload?.error || copy.unavailable);
             error.status = response.status;
+            error.code = payload?.code || "";
             throw error;
           }
           return response;
@@ -489,7 +498,13 @@ export function storageClientScript(zh, loginUrl) {
 
         function renderMetrics(data, refreshedAtValue) {
           fileCount.textContent = String(Number(data.file_count) || 0) + (data.partial ? "+" : "");
-          usedBytes.textContent = formatBytes(data.visible_used_bytes ?? data.used_bytes);
+          const used = Number(data.used_bytes ?? data.visible_used_bytes) || 0;
+          const quota = Number(data.quota_bytes) || 0;
+          usedBytes.textContent = quota > 0 ? (formatBytes(used) + " / " + formatBytes(quota)) : formatBytes(used);
+          if (capacityFill) {
+            const percentage = quota > 0 ? Math.min(100, Math.max(0, used / quota * 100)) : 0;
+            capacityFill.style.width = percentage.toFixed(2) + "%";
+          }
           refreshedAt.textContent = formatRefreshTime(refreshedAtValue);
           partial = Boolean(data.partial);
           partialNotice.hidden = !partial;
@@ -644,6 +659,9 @@ export function storageClientScript(zh, loginUrl) {
               showSessionExpired();
             } else if (error instanceof StorageForbiddenError) {
               showStorageForbidden();
+            } else if (error?.code === "storage_quota_exceeded") {
+              setUploadStatus(copy.quotaExceeded, "error");
+              if (completed) await refreshFiles({ force: true });
             } else {
               setUploadStatus(message(copy.uploadFailed, { message: error.message || copy.unavailable }), "error");
               if (completed) await refreshFiles({ force: true });

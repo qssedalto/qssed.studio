@@ -108,7 +108,7 @@ export function settingsHubContent(zh) {
     { title:"通知", meta:"未开放", description:"提醒和站内消息。", href:`${prefix}/settings/notifications`, icon:"notifications" },
     { title:"AI", meta:"未开放", description:"Provider、模型和偏好。", href:`${prefix}/settings/ai`, icon:"ai" },
     { title:"第三方集成", meta:"未开放", description:"外部服务和授权。", href:`${prefix}/settings/integrations`, icon:"integrations" },
-    { title:"存储", meta:"可用", description:"私人 Cloudflare R2 文件。", href:`${prefix}/settings/storage`, icon:"storage" }
+    { title:"存储", meta:"可用", description:"AERTEX Drive 私人云盘。", href:`${prefix}/settings/storage`, icon:"storage" }
   ] : [
     { title:"General", meta:"Settings", description:"Common settings.", href:`${prefix}/settings/general`, icon:"general", featured:true, tone:"blue" },
     { title:"Appearance", meta:"Available", description:"Light or dark.", href:`${prefix}/settings/appearance`, icon:"appearance" },
@@ -117,7 +117,7 @@ export function settingsHubContent(zh) {
     { title:"Notifications", meta:"Unavailable", description:"Alerts and in-app messages.", href:`${prefix}/settings/notifications`, icon:"notifications" },
     { title:"AI", meta:"Unavailable", description:"Providers, models, and preferences.", href:`${prefix}/settings/ai`, icon:"ai" },
     { title:"Integrations", meta:"Unavailable", description:"External services and authorization.", href:`${prefix}/settings/integrations`, icon:"integrations" },
-    { title:"Storage", meta:"Available", description:"Private Cloudflare R2 files.", href:`${prefix}/settings/storage`, icon:"storage" }
+    { title:"Storage", meta:"Available", description:"Private files in AERTEX Drive.", href:`${prefix}/settings/storage`, icon:"storage" }
   ];
   return osHubGrid(items, "settings-hub-grid");
 }
@@ -132,7 +132,7 @@ export function settingsFallbackContent(zh) {
         ["通知", "未开放", "提醒和站内消息。", `${prefix}/settings/notifications`],
         ["AI", "未开放", "Provider、模型和偏好。", `${prefix}/settings/ai`],
         ["第三方集成", "未开放", "外部服务和授权。", `${prefix}/settings/integrations`],
-        ["存储", "可用", "私人 R2 文件。", `${prefix}/settings/storage`]
+        ["存储", "可用", "AERTEX Drive 私人云盘。", `${prefix}/settings/storage`]
       ]
     : [
         ["Appearance", "Available", "Light or dark.", `${prefix}/settings/appearance`],
@@ -141,7 +141,7 @@ export function settingsFallbackContent(zh) {
         ["Notifications", "Unavailable", "Alerts and in-app messages.", `${prefix}/settings/notifications`],
         ["AI", "Unavailable", "Providers, models, and preferences.", `${prefix}/settings/ai`],
         ["Integrations", "Unavailable", "External services and authorization.", `${prefix}/settings/integrations`],
-        ["Storage", "Available", "Private R2 files.", `${prefix}/settings/storage`]
+        ["Storage", "Available", "Private files in AERTEX Drive.", `${prefix}/settings/storage`]
       ];
   return `<section class="os-grid settings-grid">${items.map(item => `<a class="os-card settings-card-link" href="${item[3]}"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p><span class="settings-card-arrow" aria-hidden="true">›</span></a>`).join("")}</section>`;
 }
