@@ -54,6 +54,37 @@ create table if not exists aertex_private.student_verification_targets (
 revoke all on aertex_private.student_verification_targets from public, anon, authenticated;
 grant select, insert, update, delete on aertex_private.student_verification_targets to service_role;
 
+create or replace function aertex_private.purge_expired_student_verification_targets()
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_count integer := 0;
+begin
+  update public.student_verifications sv
+  set status = 'expired',
+      updated_at = now()
+  where sv.status = 'pending'
+    and exists (
+      select 1
+      from aertex_private.student_verification_targets t
+      where t.verification_id = sv.id
+        and t.expires_at <= now()
+    );
+
+  delete from aertex_private.student_verification_targets
+  where expires_at <= now();
+
+  get diagnostics v_count = row_count;
+  return v_count;
+end;
+$;
+
+revoke all on function aertex_private.purge_expired_student_verification_targets() from public, anon;
+grant execute on function aertex_private.purge_expired_student_verification_targets() to authenticated, service_role;
+
 alter table public.billing_prices
   add column if not exists eligibility_key text;
 
@@ -158,7 +189,6 @@ grant execute on function aertex_private.billing_eligibility_for_user(uuid) to a
 create or replace function public.get_my_student_verification()
 returns jsonb
 language plpgsql
-stable
 security invoker
 set search_path = ''
 as $$
@@ -169,6 +199,7 @@ begin
     raise exception 'authenticated user required' using errcode = '42501';
   end if;
 
+  perform aertex_private.purge_expired_student_verification_targets();
   return aertex_private.student_eligibility_for_user(v_user);
 end;
 $$;
@@ -402,7 +433,6 @@ grant execute on function public.cancel_my_student_verification() to authenticat
 create or replace function aertex_private.admin_get_student_verifications()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = ''
 as $$
@@ -410,6 +440,7 @@ declare
   v_result jsonb;
 begin
   perform aertex_private.admin_assert();
+  perform aertex_private.purge_expired_student_verification_targets();
 
   select jsonb_build_object(
     'summary', jsonb_build_object(
