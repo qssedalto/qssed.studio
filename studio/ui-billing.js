@@ -9,7 +9,7 @@ export function billingSettingsContent(zh) {
     privacy:"仅选择二维码区域。不要提交完整报告，也不要提交身份证号、学号、姓名、证件照片、账号密码或其他无关个人信息。",
     localOnly:"二维码图片只在你的浏览器本地解析，不会上传到 AERTEX。服务器只接收经校验的学信网官方验证链接。",
     consent:"我确认所选图片仅包含用于认证的二维码，不包含其他敏感个人信息。",
-    chooseQr:"选择二维码图片", pasteLink:"或粘贴扫码得到的学信网官方验证链接", submitStudent:"提交学生认证",
+    chooseQr:"选择二维码图片", chooseQrHint:"可从照片图库、文件或系统相机选择", pasteLink:"或粘贴扫码得到的学信网官方验证链接", submitStudent:"提交学生认证",
     cancelStudent:"取消待审核申请", pending:"待审核", verified:"已认证", rejected:"未通过", expired:"已过期",
     notSubmitted:"尚未认证", unsupportedQr:"当前浏览器无法本地识别二维码，请使用系统相机扫码后粘贴官方验证链接。",
     invalidQr:"未识别到受支持的学信网官方验证二维码。", tooLarge:"图片过大，请选择 5 MB 以内的二维码截图。",
@@ -33,7 +33,7 @@ export function billingSettingsContent(zh) {
     privacy:"Select only the QR-code area. Do not submit a full report or any image containing an ID number, student number, name, portrait, account credentials, or unrelated personal information.",
     localOnly:"The QR image is decoded locally in your browser and is never uploaded to AERTEX. The server receives only a validated official CHSI verification URL.",
     consent:"I confirm the selected image contains only the verification QR code and no other sensitive personal information.",
-    chooseQr:"Choose QR image", pasteLink:"Or paste the official CHSI verification URL obtained by scanning the QR code", submitStudent:"Submit verification",
+    chooseQr:"Choose QR image", chooseQrHint:"Choose from Photos, Files, or the system camera", pasteLink:"Or paste the official CHSI verification URL obtained by scanning the QR code", submitStudent:"Submit verification",
     cancelStudent:"Cancel pending request", pending:"Pending review", verified:"Verified", rejected:"Rejected", expired:"Expired",
     notSubmitted:"Not verified", unsupportedQr:"This browser cannot decode QR codes locally. Scan it with the system camera and paste the official verification URL instead.",
     invalidQr:"No supported official CHSI verification QR code was found.", tooLarge:"Image is too large. Use a QR crop under 5 MB.",
@@ -55,6 +55,18 @@ export function billingSettingsContent(zh) {
       #student-consent{width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;flex:0 0 22px;margin:2px 0 0!important;padding:0!important}
       #student-pending-actions{margin-top:14px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--surface-soft)}
       #student-pending-actions p{margin:0 0 12px}
+      .student-file-picker{display:grid;place-items:center;gap:7px;min-height:116px;padding:18px;border:1px solid var(--border);border-radius:18px;background:var(--surface-soft);text-align:center}
+      .student-file-picker input[type="file"]{position:absolute!important;width:1px!important;height:1px!important;min-width:1px!important;min-height:1px!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important}
+      .student-file-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:13px;background:var(--primary);color:var(--primary-ink);font-weight:800;cursor:pointer;user-select:none}
+      .student-file-button:active{transform:scale(.98)}
+      .student-file-button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+      .student-file-picker small{display:block;color:var(--muted);font-size:12px;line-height:1.45}
+      .student-file-picker.is-disabled{opacity:.48}
+      .student-file-picker.is-disabled .student-file-button{cursor:not-allowed;pointer-events:none}
+      @media (max-width:620px){
+        .student-file-picker{min-height:104px;padding:16px 14px}
+        .student-file-button{width:min(100%,320px)}
+      }
     </style>
     <section id="billing-settings" class="os-card is-large settings-detail-card">
       <div class="settings-general-heading">
@@ -108,7 +120,14 @@ export function billingSettingsContent(zh) {
           <span>${text.consent}</span>
         </label>
         <div style="display:grid;gap:10px;margin-top:14px">
-          <input id="student-qr-file" type="file" accept="image/png,image/jpeg,image/webp" capture="environment">
+          <div id="student-file-picker" class="student-file-picker">
+            <input id="student-qr-file" type="file" accept="image/png,image/jpeg,image/webp">
+            <label id="student-file-button" class="student-file-button" for="student-qr-file">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7.5 8.5 12 4l4.5 4.5M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>
+              <span>${text.chooseQr}</span>
+            </label>
+            <small>${text.chooseQrHint}</small>
+          </div>
           <input id="student-target" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="${text.pasteLink}">
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button id="student-submit" class="btn primary" type="button" disabled>${text.submitStudent}</button>
@@ -136,6 +155,8 @@ export function billingSettingsContent(zh) {
         const studentVerificationForm=document.getElementById("student-verification-form");
         const studentConsent=document.getElementById("student-consent");
         const studentQrFile=document.getElementById("student-qr-file");
+        const studentFilePicker=document.getElementById("student-file-picker");
+        const studentFileButton=document.getElementById("student-file-button");
         const studentTarget=document.getElementById("student-target");
         const studentSubmit=document.getElementById("student-submit");
         const studentCancel=document.getElementById("student-cancel");
@@ -182,6 +203,8 @@ export function billingSettingsContent(zh) {
           const canUseForm=studentTutorialAcknowledged&&!studentLocked&&!studentVerificationForm.hidden&&studentVerificationForm.style.display!=="none";
           studentConsent.disabled=!canUseForm;
           studentQrFile.disabled=!canUseForm;
+          studentFilePicker.classList.toggle("is-disabled",!canUseForm);
+          studentFileButton.setAttribute("aria-disabled",String(!canUseForm));
           studentTarget.disabled=!canUseForm;
           studentSubmit.disabled=!canUseForm||!studentConsent.checked||!allowedStudentTarget(studentTarget.value);
         }
