@@ -47,7 +47,7 @@ function normalizeOfficialTarget(value) {
 
   if (url.protocol !== "https:") return "";
   if (url.username || url.password || url.port) return "";
-  if (!ALLOWED_HOST.test(url.hostname)) return "";
+  if (!ALLOWED_HOSTS.has(url.hostname.toLowerCase())) return "";
   if (!ALLOWED_PATH.test(url.pathname)) return "";
 
   url.hash = "";
