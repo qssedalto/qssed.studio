@@ -14,7 +14,15 @@ export function billingSettingsContent(zh) {
     notSubmitted:"尚未认证", unsupportedQr:"当前浏览器无法本地识别二维码，请使用系统相机扫码后粘贴官方验证链接。",
     invalidQr:"未识别到受支持的学信网官方验证二维码。", tooLarge:"图片过大，请选择 5 MB 以内的二维码截图。",
     imageOnly:"仅支持 PNG、JPEG 或 WebP 图片。", multipleQr:"图片中检测到多个二维码，请裁剪到只剩一个二维码。",
-    submitted:"学生认证申请已提交。", canceled:"待审核申请已取消。", verifyingUntil:"有效期至"
+    submitted:"学生认证申请已提交。", canceled:"待审核申请已取消。", verifyingUntil:"有效期至",
+    tutorialTitle:"认证教程", tutorialIntro:"先准备好学信网《教育部学籍在线验证报告》的二维码，再开始上传。",
+    tutorialStep1:"打开学信网并登录“学信档案”。",
+    tutorialStep2:"进入“在线验证报告”，申请《教育部学籍在线验证报告》。",
+    tutorialStep3:"打开或下载报告，找到报告中的官方验证二维码。",
+    tutorialStep4:"只截取二维码区域，不要把整份报告、姓名、身份证号、学号、照片等内容截进去。",
+    tutorialStep5:"返回 AERTEX，点击下方“我已准备好二维码”，再选择二维码图片完成认证。",
+    tutorialReady:"我已准备好二维码，开始认证", tutorialOfficial:"前往学信网申请报告 ↗",
+    tutorialTip:"提示：如果手机能直接识别二维码，也可以扫码后复制学信网官方验证链接，再粘贴到下方。"
   } : {
     loading:"Loading subscription…", current:"Current plan", drive:"AERTEX Drive", renew:"Valid through",
     free:"No expiry", source:"Source", plans:"Available plans", unavailable:"Checkout is not available yet",
@@ -30,7 +38,15 @@ export function billingSettingsContent(zh) {
     notSubmitted:"Not verified", unsupportedQr:"This browser cannot decode QR codes locally. Scan it with the system camera and paste the official verification URL instead.",
     invalidQr:"No supported official CHSI verification QR code was found.", tooLarge:"Image is too large. Use a QR crop under 5 MB.",
     imageOnly:"Only PNG, JPEG, or WebP images are supported.", multipleQr:"Multiple QR codes were detected. Crop the image so only one QR code remains.",
-    submitted:"Student verification request submitted.", canceled:"Pending verification request canceled.", verifyingUntil:"Valid through"
+    submitted:"Student verification request submitted.", canceled:"Pending verification request canceled.", verifyingUntil:"Valid through",
+    tutorialTitle:"Verification guide", tutorialIntro:"Prepare the QR code from your official CHSI Online Verification Report of Student Record before uploading anything.",
+    tutorialStep1:"Open CHSI and sign in to your CHSI Archive.",
+    tutorialStep2:"Open Online Verification Reports and apply for the Online Verification Report of Student Record.",
+    tutorialStep3:"Open or download the report and locate its official verification QR code.",
+    tutorialStep4:"Crop only the QR-code area. Do not include the full report, name, ID number, student number, portrait, or other personal information.",
+    tutorialStep5:"Return to AERTEX, choose “My QR code is ready”, then select the cropped QR image to continue.",
+    tutorialReady:"My QR code is ready — start verification", tutorialOfficial:"Open CHSI report application ↗",
+    tutorialTip:"Tip: if your phone can scan the QR code directly, you can copy the official CHSI verification URL and paste it below instead."
   };
 
   return `
@@ -57,7 +73,23 @@ export function billingSettingsContent(zh) {
       <div id="student-state" class="settings-choice-grid">
         <div class="settings-choice"><strong>${text.notSubmitted}</strong><span>—</span></div>
       </div>
-      <div style="margin-top:18px;padding:16px;border:1px solid var(--border);border-radius:16px">
+      <div id="student-tutorial" style="margin-top:18px;padding:18px;border:1px solid var(--border);border-radius:16px">
+        <div>
+          <strong style="font-size:15px">${text.tutorialTitle}</strong>
+          <p style="margin:8px 0 0">${text.tutorialIntro}</p>
+        </div>
+        <ol style="margin:14px 0 0;padding-left:22px;display:grid;gap:10px;line-height:1.55">
+          <li>${text.tutorialStep1}</li>
+          <li>${text.tutorialStep2}</li>
+          <li>${text.tutorialStep3}</li>
+          <li><strong>${text.tutorialStep4}</strong></li>
+          <li>${text.tutorialStep5}</li>
+        </ol>
+        <p style="margin:14px 0 0"><a href="https://www.chsi.com.cn/xlcx/rhsq.jsp" target="_blank" rel="noopener noreferrer">${text.tutorialOfficial}</a></p>
+        <p style="margin:10px 0 0;opacity:.78">${text.tutorialTip}</p>
+        <button id="student-tutorial-ready" class="btn primary" type="button" style="margin-top:16px">${text.tutorialReady}</button>
+      </div>
+      <div id="student-verification-form" hidden style="margin-top:18px;padding:16px;border:1px solid var(--border);border-radius:16px">
         <strong>${zh ? "隐私提醒" : "Privacy notice"}</strong>
         <p style="margin:8px 0 0">${text.privacy}</p>
         <p style="margin:8px 0 0">${text.localOnly}</p>
@@ -75,7 +107,6 @@ export function billingSettingsContent(zh) {
           <p id="student-feedback" style="margin:0"></p>
         </div>
       </div>
-      <p style="margin-top:14px"><a href="https://www.chsi.com.cn/xlcx/rhsq.jsp" target="_blank" rel="noopener noreferrer">${zh ? "前往学信网申请在线验证报告 ↗" : "Apply for a CHSI online verification report ↗"}</a></p>
     </section>
     <section class="os-card settings-general-note">
       <strong>${text.plans}</strong>
@@ -89,6 +120,9 @@ export function billingSettingsContent(zh) {
         const planList=document.getElementById("billing-plan-list");
         const status=document.getElementById("billing-status");
         const studentState=document.getElementById("student-state");
+        const studentTutorial=document.getElementById("student-tutorial");
+        const studentTutorialReady=document.getElementById("student-tutorial-ready");
+        const studentVerificationForm=document.getElementById("student-verification-form");
         const studentConsent=document.getElementById("student-consent");
         const studentQrFile=document.getElementById("student-qr-file");
         const studentTarget=document.getElementById("student-target");
@@ -99,6 +133,8 @@ export function billingSettingsContent(zh) {
         const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
         const date=value=>{if(!value)return copy.free;const d=new Date(value);return Number.isNaN(d.getTime())?copy.free:d.toLocaleString()};
         const source=value=>value==="admin_grant"?copy.manual:value==="system"?copy.system:String(value||copy.system);
+        let studentTutorialAcknowledged=false;
+        let studentLocked=false;
         const allowedStudentTarget=value=>{
           try{
             const url=new URL(String(value||"").trim());
@@ -116,11 +152,22 @@ export function billingSettingsContent(zh) {
           else if(state.status==="expired")detail=zh?"请重新提交有效的学生认证。":"Submit a new valid student verification.";
           studentState.innerHTML='<div class="settings-choice '+(state.eligible?'is-selected':'')+'"><strong>'+esc(studentStatusLabel(state.status))+'</strong><span>'+esc(detail)+'</span></div>';
           studentCancel.hidden=state.status!=="pending";
-          const locked=state.status==="pending"||state.eligible;
-          studentConsent.disabled=locked;
-          studentQrFile.disabled=locked||!studentConsent.checked;
-          studentTarget.disabled=locked||!studentConsent.checked;
-          studentSubmit.disabled=locked||!studentConsent.checked||!allowedStudentTarget(studentTarget.value);
+          studentLocked=state.status==="pending"||state.eligible;
+          if(studentLocked){
+            studentTutorialReady.disabled=true;
+            studentVerificationForm.hidden=true;
+          }else{
+            studentTutorialReady.disabled=false;
+            studentVerificationForm.hidden=!studentTutorialAcknowledged;
+          }
+          syncStudentControls();
+        }
+        function syncStudentControls(){
+          const canUseForm=studentTutorialAcknowledged&&!studentLocked&&!studentVerificationForm.hidden;
+          studentConsent.disabled=!canUseForm;
+          studentQrFile.disabled=!canUseForm||!studentConsent.checked;
+          studentTarget.disabled=!canUseForm||!studentConsent.checked;
+          studentSubmit.disabled=!canUseForm||!studentConsent.checked||!allowedStudentTarget(studentTarget.value);
         }
         async function loadStudent(){
           try{
@@ -160,7 +207,7 @@ export function billingSettingsContent(zh) {
           }finally{
             try{bitmap?.close?.()}catch{}
             studentQrFile.value="";
-            studentSubmit.disabled=!studentConsent.checked||!allowedStudentTarget(studentTarget.value);
+            syncStudentControls();
           }
         }
         async function load(){
@@ -191,21 +238,25 @@ export function billingSettingsContent(zh) {
             if(status)status.textContent=copy.error;
           }
         }
+        studentTutorialReady?.addEventListener("click",()=>{
+          if(studentLocked)return;
+          studentTutorialAcknowledged=true;
+          studentVerificationForm.hidden=false;
+          studentTutorialReady.textContent=zh?"教程已阅读 ✓":"Guide completed ✓";
+          studentVerificationForm.scrollIntoView({behavior:"smooth",block:"nearest"});
+          syncStudentControls();
+        });
         studentConsent?.addEventListener("change",()=>{
           const enabled=studentConsent.checked;
-          studentQrFile.disabled=!enabled;
-          studentTarget.disabled=!enabled;
-          studentSubmit.disabled=!enabled||!allowedStudentTarget(studentTarget.value);
           if(!enabled){
             studentTarget.value="";
             studentQrFile.value="";
             studentFeedback.textContent="";
           }
+          syncStudentControls();
         });
         studentQrFile?.addEventListener("change",event=>void decodeQrLocally(event.target.files?.[0]));
-        studentTarget?.addEventListener("input",()=>{
-          studentSubmit.disabled=!studentConsent.checked||!allowedStudentTarget(studentTarget.value);
-        });
+        studentTarget?.addEventListener("input",()=>syncStudentControls());
         studentSubmit?.addEventListener("click",async()=>{
           const target=allowedStudentTarget(studentTarget.value);
           if(!studentConsent.checked||!target){studentFeedback.textContent=copy.invalidQr;return}
