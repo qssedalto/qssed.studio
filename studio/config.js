@@ -5,6 +5,7 @@ export const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 export const ZH_COUNTRIES = ["CN", "HK", "MO", "TW", "SG"];
 export const ADMIN_EMAILS = [""];
 export const MAX_STORAGE_FILE_BYTES = 50 * 1024 * 1024;
+export const DEFAULT_STORAGE_QUOTA_BYTES = 5 * 1024 * 1024 * 1024;
 export const MAX_STORAGE_LIST_OBJECTS = 10000;
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const OS_PATHS = new Set([
