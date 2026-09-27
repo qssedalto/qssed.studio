@@ -7,6 +7,7 @@ const contains = (source, needle, message) => assert(source.includes(needle), me
 const migration = read("supabase/migrations/202609271530_billing_subscriptions_foundation.sql");
 const studentMigration = read("supabase/migrations/202609271700_student_verification_qr_privacy.sql");
 const studentReadonlyFix = read("supabase/migrations/202609272035_fix_admin_student_verification_readonly.sql");
+const pricingMigration = read("supabase/migrations/202609272115_subscription_catalog_student_pricing.sql");
 const billingApi = read("studio/billing-api.js");
 const studentApi = read("studio/student-verification-api.js");
 const billingUi = read("studio/ui-billing.js");
@@ -51,6 +52,19 @@ contains(studentMigration, "cancel_my_student_verification", "Users must be able
 contains(studentMigration, "admin_review_student_verification", "Admin student review RPC is missing.");
 contains(studentReadonlyFix, "alter function public.get_admin_student_verifications() volatile;", "Admin student verification getter must stay VOLATILE because it performs expiry cleanup writes.");
 contains(studentMigration, "eligibility_key text", "Billing prices must support eligibility-qualified pricing.");
+contains(pricingMigration, "'aertex_mini'", "Pricing catalog must include Mini.");
+contains(pricingMigration, "'aertex_max'", "Pricing catalog must include Max.");
+contains(pricingMigration, "'aertex_ultra'", "Pricing catalog must include Ultra.");
+contains(pricingMigration, "'aertex_studio'", "Pricing catalog must include Studio.");
+contains(pricingMigration, "'aertex_vault'", "Pricing catalog must include Vault.");
+contains(pricingMigration, "10737418240", "Free plan must provide 10 GB.");
+contains(pricingMigration, "'pro_cny_month', 'aertex_pro', 'CNY', 3490", "Pro monthly price must be ¥34.9.");
+contains(pricingMigration, "'pro_student_cny_month', 'aertex_pro', 'CNY', 2590", "Pro student monthly price must be ¥25.9.");
+contains(pricingMigration, "'vault_cny_month', 'aertex_vault', 'CNY', 179900", "Vault monthly price must be ¥1,799.");
+contains(pricingMigration, "'vault_student_cny_month', 'aertex_vault', 'CNY', 139900", "Vault student monthly price must be ¥1,399.");
+contains(billingUi, 'name:"Free",capacity:"10GB"', "Pricing UI must show Free 10GB.");
+contains(billingUi, 'name:"Pro",capacity:"200GB",price:"¥34.9",student:"¥25.9"', "Pricing UI must show Pro ordinary and student prices.");
+contains(billingUi, 'name:"Vault",capacity:"12TB",price:"¥1,799",student:"¥1,399"', "Pricing UI must show Vault ordinary and student prices.");
 contains(studentApi, 'new Set(["chsi.com.cn", "www.chsi.com.cn"])', "Student verification API must use the exact CHSI host allow-list.");
 contains(studentApi, 'url.protocol !== "https:"', "Student verification API must require HTTPS.");
 contains(studentApi, '"submit_student_verification_target"', "Student verification API must submit validated official targets only.");
