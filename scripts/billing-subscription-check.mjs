@@ -61,6 +61,11 @@ contains(billingUi, 'id="student-verification-form" hidden', "Student verificati
 contains(billingUi, 'id="student-tutorial-ready"', "Student verification tutorial must require an explicit continue action.");
 contains(billingUi, "tutorialStep4", "Tutorial must explain QR-only cropping and sensitive-data minimization.");
 contains(billingUi, "studentTutorialAcknowledged", "Student verification controls must be gated on tutorial acknowledgement.");
+contains(billingUi, '#student-verification [hidden]{display:none!important}', "Student verification hidden states must override generic form styles.");
+contains(billingUi, 'id="student-pending-actions" hidden', "Pending student verification must show a dedicated pending state.");
+contains(billingUi, 'studentPendingActions.hidden=!pending', "Pending-state actions must be toggled from server state.");
+contains(billingUi, 'studentVerificationForm.style.display="none"', "Pending state must force-hide the verification form.");
+contains(billingUi, '#student-consent{width:22px!important', "Student consent checkbox must remain touch-sized without inheriting oversized input styles.");
 contains(legacyApi, '"/api/student-verification"', "Student verification must use the hardened cookie API boundary.");
 contains(adminApi, '"student-verification-review"', "Admin API must expose controlled student review.");
 contains(adminUi, '"/student-verification"', "Admin UI must expose student verification.");
