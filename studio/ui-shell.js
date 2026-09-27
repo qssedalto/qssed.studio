@@ -483,7 +483,7 @@ export function buildOsPages(zh) {
     appearance: ["外观", "当前支持浅色与深色主题，可使用右上角主题按钮切换。"],
     language: ["语言", "设置网页显示语言；当前支持中文与 English。"],
     notifications: ["通知", "管理提醒、站内消息与其他通知偏好。"],
-    ai: ["AI 设置", "当前没有浏览器端 API Key 配置功能；敏感密钥不应保存在前端。"],
+    ai: ["AI 设置", "查看 Intelligence 权限、可用 Provider 与模型、使用额度和当前浏览器默认模型。"],
     integrations: ["第三方集成", "当前站点运行依赖 Cloudflare 与 Supabase；此页尚无用户级集成配置。"],
     subscription: ["订阅与权益", "查看当前套餐、有效期和 AERTEX 产品权益。"],
     storage: ["AERTEX Drive", "管理仅属于当前账号的私人云盘文件，并查看可用容量。"]
