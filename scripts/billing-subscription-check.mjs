@@ -70,6 +70,12 @@ contains(billingUi, 'const isZh=', "Student verification browser script must rec
 assert(!billingUi.includes('textContent=zh?') && !billingUi.includes('detail=zh?'), "Student verification browser script must not reference the server-only zh variable at runtime.");
 contains(billingUi, 'studentQrFile.disabled=!canUseForm;', "QR file selection must unlock immediately after the tutorial step.");
 contains(billingUi, 'studentTarget.disabled=!canUseForm;', "Official verification URL input must unlock immediately after the tutorial step.");
+assert(!billingUi.includes('capture="environment"'), "Student QR picker must not force the rear camera; users need Photos/Files choices on mobile.");
+contains(billingUi, 'id="student-file-picker"', "Student QR selection must use the custom centered picker UI.");
+contains(billingUi, 'class="student-file-button"', "Student QR picker must expose a centered custom trigger.");
+contains(billingUi, 'chooseQrHint:"可从照片图库、文件或系统相机选择"', "Student QR picker must explain the available mobile sources.");
+contains(billingUi, '.student-file-picker{display:grid;place-items:center', "Student QR picker controls must be visually centered.");
+
 
 contains(legacyApi, '"/api/student-verification"', "Student verification must use the hardened cookie API boundary.");
 contains(adminApi, '"student-verification-review"', "Admin API must expose controlled student review.");
