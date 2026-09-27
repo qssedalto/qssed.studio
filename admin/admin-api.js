@@ -36,6 +36,21 @@ const ACTIONS = {
     rpc: "set_device_access_exemption",
     write: true,
     params: ["p_user_id", "p_enabled", "p_expires_at", "p_note"]
+  },
+  billing: {
+    rpc: "get_admin_billing_state",
+    write: false,
+    params: []
+  },
+  "subscription-grant": {
+    rpc: "admin_grant_subscription",
+    write: true,
+    params: ["p_user_id", "p_plan_id", "p_days", "p_note"]
+  },
+  "subscription-reset": {
+    rpc: "admin_reset_subscription",
+    write: true,
+    params: ["p_user_id", "p_note"]
   }
 };
 
@@ -70,7 +85,7 @@ export async function handleAdminAction(request, _env, action) {
     if (Object.prototype.hasOwnProperty.call(incoming, key)) params[key] = incoming[key];
   }
 
-  if (spec.write && ["user-role", "user-status", "permissions"].includes(action)) {
+  if (spec.write && ["user-role", "user-status", "permissions", "subscription-grant", "subscription-reset"].includes(action)) {
     params.p_ip_address = request.headers.get("CF-Connecting-IP") || null;
     params.p_user_agent = String(request.headers.get("User-Agent") || "").slice(0, 500) || null;
   }
@@ -99,6 +114,22 @@ export async function handleAdminAction(request, _env, action) {
       return withAdminSessionCookies(json({ error: "Invalid role permission request." }, 400), session.cookies);
     }
     params.p_permissions = [...new Set(params.p_permissions.map(value => String(value || "").trim()).filter(Boolean))].slice(0, 200);
+  }
+
+  if (action === "subscription-grant") {
+    const days = Number(params.p_days);
+    if (!isUuid(params.p_user_id) || !/^[a-z0-9][a-z0-9_-]{1,63}$/.test(String(params.p_plan_id || "")) || !Number.isInteger(days) || days < 1 || days > 3650) {
+      return withAdminSessionCookies(json({ error: "Invalid subscription grant request." }, 400), session.cookies);
+    }
+    params.p_days = days;
+    params.p_note = String(params.p_note || "").trim().slice(0, 500) || null;
+  }
+
+  if (action === "subscription-reset") {
+    if (!isUuid(params.p_user_id)) {
+      return withAdminSessionCookies(json({ error: "Invalid subscription reset request." }, 400), session.cookies);
+    }
+    params.p_note = String(params.p_note || "").trim().slice(0, 500) || null;
   }
 
   if (action === "device-exemption") {
