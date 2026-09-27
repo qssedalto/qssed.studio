@@ -27,6 +27,7 @@ const informationUi = read("studio/ui-information.js");
 const globalSearchApi = read("studio/global-search-api.js");
 const texApi = read("studio/tex-api-core.js");
 const migration = read("supabase/migrations/20260925172204_admin_rpc_private_guard.sql");
+const billingMigration = read("supabase/migrations/202609271530_billing_subscriptions_foundation.sql");
 const entry = read("studio/entry.js");
 const aiGateway = read("studio/ai-gateway.js");
 const accessAudit = read("studio/access-audit.js");
@@ -165,6 +166,7 @@ for (const required of [
   'href="/access"',
   'href="/content"',
   'href="/storage"',
+  'href="/billing"',
   'href="/intelligence"',
   'id="logout"',
   "/api/admin/overview",
@@ -172,6 +174,7 @@ for (const required of [
   "/api/admin/content/summaries",
   "/api/admin/content/links",
   "/api/admin/storage/files",
+  "/api/admin/billing",
   "/api/admin/ai/state"
 ]) {
   assertContains(html, required, "Admin UI missing operational console element: " + required);
@@ -210,6 +213,8 @@ for (const required of [
 }
 
 assertContains(adminApi, '"device-exemption"', "Admin control API must own Huawei ID exemption changes.");
+assertContains(adminApi, '"subscription-grant"', "Admin control API must own manual subscription grants.");
+assertContains(adminApi, '"subscription-reset"', "Admin control API must own subscription reset.");
 assertAbsent(adminApi, "verifyStudioApiSession", "Admin API must not reuse the ordinary product session verifier.");
 
 for (const required of [
@@ -256,6 +261,16 @@ for (const required of [
 ]) {
   assertContains(migration, required, "Admin RPC hardening migration missing invariant: " + required);
 }
+for (const required of [
+  "create table if not exists public.billing_subscriptions",
+  "create table if not exists public.billing_orders",
+  "create or replace function public.get_admin_billing_state()",
+  "create or replace function public.admin_grant_subscription(",
+  "create or replace function public.admin_reset_subscription("
+]) {
+  assertContains(billingMigration, required, "Billing control-plane migration missing invariant: " + required);
+}
+
 for (const source of [adminWorker, adminSession, adminApi]) {
   assertAbsent(source, "SUPABASE_SERVICE_ROLE_KEY", "Admin control plane must not carry a Supabase service-role key.");
   assertAbsent(source, "SUPABASE_SECRET_KEY", "Admin control plane must not carry a Supabase secret key.");

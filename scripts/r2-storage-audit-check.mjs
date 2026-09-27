@@ -29,7 +29,8 @@ assert(audit("/callback", 200, "GET", "auth") === true, "Auth callback routes mu
 const storageApi = fs.readFileSync(new URL("../studio/storage-api.js", import.meta.url), "utf8");
 assert(!storageApi.includes("readBucketUsage"), "Storage page must not scan the entire R2 bucket for usage.");
 assert(storageApi.includes("used_bytes: usedBytes"), "Storage API must report complete current-user Drive usage as used_bytes.");
-assert(storageApi.includes("quota_bytes: DEFAULT_STORAGE_QUOTA_BYTES"), "Storage API must report the current AERTEX Drive quota.");
+assert(storageApi.includes("resolveBillingEntitlements(request)"), "Storage API must resolve AERTEX Drive quota from subscription entitlements.");
+assert(storageApi.includes("quota_bytes: quotaBytes"), "Storage API must report the resolved AERTEX Drive quota.");
 assert(storageApi.includes("prefix = storagePrefix(ownerId)"), "Quota accounting must stay scoped to the current user prefix.");
 assert(storageApi.includes('usage_scope: "own-user-files"'), "Product storage must identify current-account scope.");
 assert(!storageApi.includes("auth.isAdmin"), "Product storage must never broaden file scope for administrators.");

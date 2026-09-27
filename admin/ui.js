@@ -5,6 +5,7 @@ const NAV = [
   ["/access", "访问控制", "AC"],
   ["/content", "内容", "CT"],
   ["/storage", "存储", "ST"],
+  ["/billing", "订阅与权益", "BL"],
   ["/intelligence", "AERTEX Intelligence", "AI"],
   ["/logs", "审计日志", "LG"],
   ["/system", "系统", "SY"]
@@ -209,6 +210,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     "/access":["访问控制","管理设备豁免并查看访问审计记录。"],
     "/content":["内容","跨账户管理摘要与私有链接；与用户产品保持隔离。"],
     "/storage":["存储","查看跨账户 R2 用户文件，并执行管理操作。"],
+    "/billing":["订阅与权益","管理套餐、有效期与用户产品权益。"],
     "/intelligence":["AERTEX Intelligence","管理服务商、模型和用户 AI 访问权限；此模块直接属于 admin.qsseda.com 管理控制面。"],
     "/system":["系统","查看管理控制面的健康状态与部署信息。"]
   };
@@ -226,6 +228,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     event_type:"事件类型",success:"成功",result:"结果",reason:"原因",timestamp:"时间",time:"时间",
     service:"服务",origin:"来源",files:"文件数",used:"已用空间",partial:"部分结果",summaries:"摘要数",
     private_links:"私有链接",community_links:"社区链接",providers:"服务商",users:"用户数",
+    active_subscriptions:"有效订阅",manual_grants:"管理员授权",plan_id:"套餐",quota:"云盘配额",
     active_providers:"启用服务商",count:"数量",total:"总数",active:"正常",suspended:"已暂停",banned:"已封禁"
   };
   const fieldLabel=key=>FIELD_LABELS[String(key)]||String(key);
@@ -434,6 +437,60 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
         await requestJson("/api/admin/storage/object?id="+encodeURIComponent(ref),{method:"DELETE"});
         await storage();
       }catch(error){const feedback=document.getElementById("storageFeedback");if(feedback){feedback.textContent=error.message;feedback.className="feedback bad"}button.disabled=false}
+    }));
+  }
+
+  async function billing(){
+    const result=await post("/api/admin/billing");
+    const data=result.data||{};
+    const users=Array.isArray(data.users)?data.users:[];
+    const plans=Array.isArray(data.plans)?data.plans:[];
+    const paidPlans=plans.filter(plan=>plan.id!=="aertex_free");
+    const summary=data.summary||{};
+    const planOptions=paidPlans.map(plan=>'<option value="'+esc(plan.id)+'">'+esc(plan.display_name_zh||plan.display_name_en||plan.id)+'</option>').join("");
+    view.innerHTML=objCards({
+      users:summary.users||users.length,
+      active_subscriptions:summary.active_subscriptions||0,
+      manual_grants:summary.manual_grants||0,
+      plans:plans.length
+    })+
+      '<section class="section"><div class="sectionHead"><h2>订阅与权益</h2><span class="mono">'+users.length+' 位用户</span></div><div class="tableWrap"><table><thead><tr><th>用户</th><th>当前套餐</th><th>云盘配额</th><th>有效期至</th><th>来源</th><th>操作</th></tr></thead><tbody>'+
+      users.map(row=>{
+        const state=row.billing||{};
+        const plan=state.plan||{};
+        const subscription=state.subscription||null;
+        const quota=Number(state.entitlements?.drive_storage_bytes)||0;
+        return '<tr data-billing-user="'+esc(row.user_id)+'"><td><strong>'+esc(row.display_name||row.username||row.email||"—")+'</strong><br><span class="mono">'+esc(row.email||row.user_id)+'</span></td>'+
+          '<td><strong>'+esc(plan.display_name_zh||plan.display_name_en||plan.id||"AERTEX Free")+'</strong><br><span class="mono">'+esc(subscription?.status||"free")+'</span></td>'+
+          '<td>'+esc(bytes(quota))+'</td><td class="mono">'+esc(subscription?.current_period_end||"长期有效")+'</td><td>'+esc(subscription?.source||"system")+'</td>'+
+          '<td><div class="inline"><select class="billingPlan compactInput">'+planOptions+'</select><input class="billingDays compactInput" type="number" min="1" max="3650" value="30" style="width:82px" aria-label="授权天数"><button class="btn primary grantSubscription" type="button">授予套餐</button><button class="btn danger resetSubscription" type="button">恢复 Free</button></div></td></tr>';
+      }).join('')+
+      '</tbody></table></div><div class="feedback" id="billingFeedback"></div></section>';
+
+    const feedback=document.getElementById("billingFeedback");
+    document.querySelectorAll(".grantSubscription").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-billing-user]");if(!row)return;
+      const userId=row.dataset.billingUser;
+      const planId=row.querySelector(".billingPlan")?.value||"";
+      const days=Number(row.querySelector(".billingDays")?.value||30);
+      if(!planId)return;
+      button.disabled=true;
+      try{
+        await post("/api/admin/subscription-grant",{p_user_id:userId,p_plan_id:planId,p_days:days,p_note:"Admin Billing console grant"});
+        if(feedback){feedback.textContent="管理员授权已更新。";feedback.className="feedback ok";}
+        await billing();
+      }catch(error){if(feedback){feedback.textContent=error.message;feedback.className="feedback bad"}button.disabled=false}
+    }));
+    document.querySelectorAll(".resetSubscription").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-billing-user]");if(!row)return;
+      const userId=row.dataset.billingUser;
+      if(!confirm("恢复 AERTEX Free？当前有效付费权益将立即结束。"))return;
+      button.disabled=true;
+      try{
+        await post("/api/admin/subscription-reset",{p_user_id:userId,p_note:"Admin Billing console reset"});
+        if(feedback){feedback.textContent="管理员授权已更新。";feedback.className="feedback ok";}
+        await billing();
+      }catch(error){if(feedback){feedback.textContent=error.message;feedback.className="feedback bad"}button.disabled=false}
     }));
   }
 
@@ -1064,7 +1121,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     view.innerHTML=objCards({service:health.service||"admin",status:health.status||"unknown",origin:health.origin||location.origin,time:health.time||"—"})+
       '<section class="section"><div class="sectionHead"><h2>管理控制面</h2></div><pre>'+esc(JSON.stringify(localizeForDisplay({health,overview:overviewResult.data||{}}),null,2))+'</pre></section>';
   }
-  const loaders={"/":overview,"/users":users,"/roles":roles,"/logs":logs,"/access":access,"/content":content,"/storage":storage,"/intelligence":intelligence,"/system":system};
+  const loaders={"/":overview,"/users":users,"/roles":roles,"/logs":logs,"/access":access,"/content":content,"/storage":storage,"/billing":billing,"/intelligence":intelligence,"/system":system};
   async function load(){view.innerHTML='<div class="state">正在加载管理数据…</div>';try{await (loaders[route]||overview)()}catch(error){errorView(error)}}
   document.getElementById("refresh")?.addEventListener("click",()=>void load());
   document.getElementById("logout")?.addEventListener("click",async()=>{

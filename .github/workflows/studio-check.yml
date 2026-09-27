@@ -7,6 +7,7 @@ on:
       - "admin-worker.js"
       - "admin/**"
       - "studio/**"
+      - "supabase/migrations/**"
       - "local-bridge/**"
 
       - "scripts/security-markup-check.mjs"
@@ -28,6 +29,7 @@ on:
       - "scripts/codex-bridge-check.mjs"
       - "scripts/brand-check.mjs"
       - "scripts/r2-storage-audit-check.mjs"
+      - "scripts/billing-subscription-check.mjs"
       - "scripts/wishes-check.mjs"
       - "wrangler.jsonc"
       - "wrangler.work.jsonc"
@@ -43,6 +45,7 @@ on:
       - "admin-worker.js"
       - "admin/**"
       - "studio/**"
+      - "supabase/migrations/**"
       - "local-bridge/**"
 
       - "scripts/security-markup-check.mjs"
@@ -64,6 +67,7 @@ on:
       - "scripts/codex-bridge-check.mjs"
       - "scripts/brand-check.mjs"
       - "scripts/r2-storage-audit-check.mjs"
+      - "scripts/billing-subscription-check.mjs"
       - "scripts/wishes-check.mjs"
       - "wrangler.jsonc"
       - "wrangler.work.jsonc"
@@ -116,6 +120,7 @@ jobs:
           node --check scripts/codex-bridge-check.mjs
           node --check scripts/brand-check.mjs
           node --check scripts/r2-storage-audit-check.mjs
+          node --check scripts/billing-subscription-check.mjs
           node --check scripts/wishes-check.mjs
           node --check gpt-worker.js
 
@@ -175,6 +180,9 @@ jobs:
 
       - name: Verify R2 storage and access-audit optimization
         run: node scripts/r2-storage-audit-check.mjs
+
+      - name: Verify subscription and entitlement foundation
+        run: node scripts/billing-subscription-check.mjs
 
       - name: Verify wish link builder and short routes
         run: node scripts/wishes-check.mjs

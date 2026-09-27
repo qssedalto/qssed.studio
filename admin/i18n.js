@@ -1,4 +1,4 @@
-const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/intelligence", "/logs", "/system"];
+const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/billing", "/intelligence", "/logs", "/system"];
 
 const EN = [
   ["AERTEX 管理控制台","AERTEX Administration"],
@@ -16,6 +16,15 @@ const EN = [
   ["管理设备豁免并查看访问审计记录。","Device exemptions and access-audit telemetry."],
   ["跨账户管理摘要与私有链接；与用户产品保持隔离。","Cross-account summaries and private-link administration, isolated from user products."],
   ["查看跨账户 R2 用户文件，并执行管理操作。","Cross-account R2 user-file inventory and administrative file operations."],
+  ["订阅与权益","Billing & Entitlements"],
+  ["管理套餐、有效期与用户产品权益。","Manage plans, validity periods, and user product entitlements."],
+  ["当前套餐","Current plan"],
+  ["云盘配额","Drive quota"],
+  ["有效期至","Valid through"],
+  ["授权天数","Grant days"],
+  ["授予套餐","Grant plan"],
+  ["恢复 Free","Reset to Free"],
+  ["管理员授权已更新。","Administrator subscription grant updated."],
   ["AI 管理","Intelligence"],
   ["管理服务商、模型和用户 AI 访问权限。","Provider, model, and user-access administration."],
   ["查看管理控制面的健康状态与部署信息。","Control-plane health and deployment context."],

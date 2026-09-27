@@ -1,4 +1,5 @@
 import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./storage-api.js";
+import { handleBillingState } from "./billing-api.js";
 import { handleSummaries } from "./summary-api.js";
 import { handleNotes } from "./notes-api.js";
 import { handleUserLinks } from "./user-links-api.js";
@@ -6,6 +7,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 
 const ROUTES = new Map([
+  ["/api/billing/state", { methods: new Set(["GET"]), handler: handleBillingState }],
   ["/api/storage/files", { methods: new Set(["GET"]), handler: handleStorageFiles }],
   ["/api/storage/upload", { methods: new Set(["POST"]), handler: handleStorageUpload }],
   ["/api/storage/object", { methods: new Set(["GET", "DELETE"]), handler: handleStorageObject }],
