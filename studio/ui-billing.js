@@ -50,6 +50,12 @@ export function billingSettingsContent(zh) {
   };
 
   return `
+    <style>
+      #student-verification [hidden]{display:none!important}
+      #student-consent{width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;flex:0 0 22px;margin:2px 0 0!important;padding:0!important}
+      #student-pending-actions{margin-top:14px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--surface-soft)}
+      #student-pending-actions p{margin:0 0 12px}
+    </style>
     <section id="billing-settings" class="os-card is-large settings-detail-card">
       <div class="settings-general-heading">
         <div>
@@ -72,6 +78,10 @@ export function billingSettingsContent(zh) {
       </div>
       <div id="student-state" class="settings-choice-grid">
         <div class="settings-choice"><strong>${text.notSubmitted}</strong><span>—</span></div>
+      </div>
+      <div id="student-pending-actions" hidden>
+        <p>${zh ? "你已经提交过学生认证，当前正在等待审核。审核期间不能重复上传二维码；如需重新提交，请先取消当前申请。" : "You already have a student verification request pending. You cannot submit another QR code while it is under review. Cancel the current request first if you need to resubmit."}</p>
+        <button id="student-cancel" class="btn" type="button">${text.cancelStudent}</button>
       </div>
       <div id="student-tutorial" style="margin-top:18px;padding:18px;border:1px solid var(--border);border-radius:16px">
         <div>
@@ -102,7 +112,6 @@ export function billingSettingsContent(zh) {
           <input id="student-target" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="${text.pasteLink}" disabled>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button id="student-submit" class="btn primary" type="button" disabled>${text.submitStudent}</button>
-            <button id="student-cancel" class="btn" type="button" hidden>${text.cancelStudent}</button>
           </div>
           <p id="student-feedback" style="margin:0"></p>
         </div>
@@ -120,6 +129,7 @@ export function billingSettingsContent(zh) {
         const planList=document.getElementById("billing-plan-list");
         const status=document.getElementById("billing-status");
         const studentState=document.getElementById("student-state");
+        const studentPendingActions=document.getElementById("student-pending-actions");
         const studentTutorial=document.getElementById("student-tutorial");
         const studentTutorialReady=document.getElementById("student-tutorial-ready");
         const studentVerificationForm=document.getElementById("student-verification-form");
@@ -151,19 +161,24 @@ export function billingSettingsContent(zh) {
           else if(state.status==="rejected"&&state.review_note)detail=String(state.review_note);
           else if(state.status==="expired")detail=zh?"请重新提交有效的学生认证。":"Submit a new valid student verification.";
           studentState.innerHTML='<div class="settings-choice '+(state.eligible?'is-selected':'')+'"><strong>'+esc(studentStatusLabel(state.status))+'</strong><span>'+esc(detail)+'</span></div>';
-          studentCancel.hidden=state.status!=="pending";
-          studentLocked=state.status==="pending"||state.eligible;
+          const pending=state.status==="pending";
+          studentPendingActions.hidden=!pending;
+          studentLocked=pending||state.eligible;
           if(studentLocked){
             studentTutorialReady.disabled=true;
+            studentTutorial.style.display="none";
             studentVerificationForm.hidden=true;
+            studentVerificationForm.style.display="none";
           }else{
             studentTutorialReady.disabled=false;
+            studentTutorial.style.display="";
             studentVerificationForm.hidden=!studentTutorialAcknowledged;
+            studentVerificationForm.style.display=studentTutorialAcknowledged?"":"none";
           }
           syncStudentControls();
         }
         function syncStudentControls(){
-          const canUseForm=studentTutorialAcknowledged&&!studentLocked&&!studentVerificationForm.hidden;
+          const canUseForm=studentTutorialAcknowledged&&!studentLocked&&!studentVerificationForm.hidden&&studentVerificationForm.style.display!=="none";
           studentConsent.disabled=!canUseForm;
           studentQrFile.disabled=!canUseForm||!studentConsent.checked;
           studentTarget.disabled=!canUseForm||!studentConsent.checked;
@@ -242,6 +257,7 @@ export function billingSettingsContent(zh) {
           if(studentLocked)return;
           studentTutorialAcknowledged=true;
           studentVerificationForm.hidden=false;
+          studentVerificationForm.style.display="";
           studentTutorialReady.textContent=zh?"教程已阅读 ✓":"Guide completed ✓";
           studentVerificationForm.scrollIntoView({behavior:"smooth",block:"nearest"});
           syncStudentControls();
