@@ -7,13 +7,13 @@ export function billingSettingsContent(zh) {
     system:"系统", autoRenew:"自动续费", off:"关闭", on:"开启", quota:"云盘容量",
     student:"学生资格", studentIntro:"使用学信网《教育部学籍在线验证报告》中的二维码申请学生资格。AERTEX 不需要你的学信网账号或密码。",
     privacy:"仅选择二维码区域。不要提交完整报告，也不要提交身份证号、学号、姓名、证件照片、账号密码或其他无关个人信息。",
-    localOnly:"二维码图片只在你的浏览器本地解析，不会上传到 AERTEX。服务器只接收经校验的学信网官方验证链接。",
+    localOnly:"二维码图片只在你的浏览器本地解析，不会上传到 AERTEX。服务器只接收用于人工核验的 16 位在线验证码或学信网官方验证地址。",
     consent:"我确认所选图片仅包含用于认证的二维码，不包含其他敏感个人信息。",
-    chooseQr:"选择二维码图片", chooseQrHint:"可从照片图库、文件或系统相机选择", pasteLink:"粘贴扫码得到的学信网官方验证链接", submitStudent:"提交学生认证",
-    previewTitle:"已选择的二维码图片", replaceQr:"重新选择", manualLink:"无法识别？手动粘贴验证链接", hideManualLink:"收起手动输入", localPreview:"图片仅在本机预览和识别，不会上传到 AERTEX。",
+    chooseQr:"选择二维码图片", chooseQrHint:"可从照片图库、文件或系统相机选择", pasteLink:"粘贴 16 位在线验证码或学信网官方验证链接", submitStudent:"提交学生认证",
+    previewTitle:"已选择的二维码图片", replaceQr:"重新选择", manualLink:"无法识别？手动输入验证码 / 链接", hideManualLink:"收起手动输入", localPreview:"图片仅在本机预览和识别，不会上传到 AERTEX。",
     cancelStudent:"取消待审核申请", pending:"待审核", verified:"已认证", rejected:"未通过", expired:"已过期",
     notSubmitted:"尚未认证", unsupportedQr:"当前浏览器无法本地识别二维码，请使用系统相机扫码后粘贴官方验证链接。",
-    invalidQr:"未识别到受支持的学信网官方验证二维码。", tooLarge:"图片过大，请选择 5 MB 以内的二维码截图。",
+    invalidQr:"未识别到学信网二维码中的 16 位在线验证码或受支持的官方验证链接。", tooLarge:"图片过大，请选择 5 MB 以内的二维码截图。",
     imageOnly:"仅支持 PNG、JPEG 或 WebP 图片。", multipleQr:"图片中检测到多个二维码，请裁剪到只剩一个二维码。",
     submitted:"学生认证申请已提交。", canceled:"待审核申请已取消。", verifyingUntil:"有效期至",
     tutorialTitle:"认证教程", tutorialIntro:"先准备好学信网《教育部学籍在线验证报告》的二维码，再开始上传。",
@@ -23,7 +23,7 @@ export function billingSettingsContent(zh) {
     tutorialStep4:"只截取二维码区域，不要把整份报告、姓名、身份证号、学号、照片等内容截进去。",
     tutorialStep5:"返回 AERTEX，点击下方“我已准备好二维码”，再选择二维码图片完成认证。",
     tutorialReady:"我已准备好二维码，开始认证", tutorialOfficial:"前往学信网申请报告 ↗",
-    tutorialTip:"提示：如果手机能直接识别二维码，也可以扫码后复制学信网官方验证链接，再粘贴到下方。"
+    tutorialTip:"提示：新版学信二维码可能编码的是“学信网报告在线验证”提示和 16 位在线验证码，不一定是网址；AERTEX 会自动提取验证码。"
   } : {
     loading:"Loading subscription…", current:"Current plan", drive:"AERTEX Drive", renew:"Valid through",
     free:"No expiry", source:"Source", plans:"Available plans", unavailable:"Checkout is not available yet",
@@ -32,13 +32,13 @@ export function billingSettingsContent(zh) {
     system:"System", autoRenew:"Auto-renew", off:"Off", on:"On", quota:"Drive quota",
     student:"Student eligibility", studentIntro:"Use the QR code from an official CHSI Online Verification Report of Student Record. AERTEX never asks for your CHSI account password.",
     privacy:"Select only the QR-code area. Do not submit a full report or any image containing an ID number, student number, name, portrait, account credentials, or unrelated personal information.",
-    localOnly:"The QR image is decoded locally in your browser and is never uploaded to AERTEX. The server receives only a validated official CHSI verification URL.",
+    localOnly:"The QR image is decoded locally in your browser and is never uploaded to AERTEX. The server receives only a 16-character online verification code or an official CHSI verification URL for manual review.",
     consent:"I confirm the selected image contains only the verification QR code and no other sensitive personal information.",
-    chooseQr:"Choose QR image", chooseQrHint:"Choose from Photos, Files, or the system camera", pasteLink:"Paste the official CHSI verification URL obtained by scanning the QR code", submitStudent:"Submit verification",
-    previewTitle:"Selected QR image", replaceQr:"Choose another image", manualLink:"Can't decode it? Paste the verification URL manually", hideManualLink:"Hide manual entry", localPreview:"The image is previewed and decoded only on this device and is never uploaded to AERTEX.",
+    chooseQr:"Choose QR image", chooseQrHint:"Choose from Photos, Files, or the system camera", pasteLink:"Paste the 16-character online verification code or official CHSI verification URL", submitStudent:"Submit verification",
+    previewTitle:"Selected QR image", replaceQr:"Choose another image", manualLink:"Can't decode it? Enter the code / URL manually", hideManualLink:"Hide manual entry", localPreview:"The image is previewed and decoded only on this device and is never uploaded to AERTEX.",
     cancelStudent:"Cancel pending request", pending:"Pending review", verified:"Verified", rejected:"Rejected", expired:"Expired",
     notSubmitted:"Not verified", unsupportedQr:"This browser cannot decode QR codes locally. Scan it with the system camera and paste the official verification URL instead.",
-    invalidQr:"No supported official CHSI verification QR code was found.", tooLarge:"Image is too large. Use a QR crop under 5 MB.",
+    invalidQr:"No CHSI 16-character online verification code or supported official verification URL was found in the QR code.", tooLarge:"Image is too large. Use a QR crop under 5 MB.",
     imageOnly:"Only PNG, JPEG, or WebP images are supported.", multipleQr:"Multiple QR codes were detected. Crop the image so only one QR code remains.",
     submitted:"Student verification request submitted.", canceled:"Pending verification request canceled.", verifyingUntil:"Valid through",
     tutorialTitle:"Verification guide", tutorialIntro:"Prepare the QR code from your official CHSI Online Verification Report of Student Record before uploading anything.",
@@ -48,7 +48,7 @@ export function billingSettingsContent(zh) {
     tutorialStep4:"Crop only the QR-code area. Do not include the full report, name, ID number, student number, portrait, or other personal information.",
     tutorialStep5:"Return to AERTEX, choose “My QR code is ready”, then select the cropped QR image to continue.",
     tutorialReady:"My QR code is ready — start verification", tutorialOfficial:"Open CHSI report application ↗",
-    tutorialTip:"Tip: if your phone can scan the QR code directly, you can copy the official CHSI verification URL and paste it below instead."
+    tutorialTip:"Tip: newer CHSI QR codes can contain a CHSI verification instruction plus a 16-character online verification code rather than a URL. AERTEX extracts that code automatically."
   };
 
   return `
@@ -158,7 +158,7 @@ export function billingSettingsContent(zh) {
           </div>
           <button id="student-manual-toggle" class="student-manual-toggle" type="button">${text.manualLink}</button>
           <div id="student-manual-wrap" hidden>
-            <input id="student-target" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${text.pasteLink}">
+            <input id="student-target" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="${text.pasteLink}">
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button id="student-submit" class="btn primary" type="button" disabled>${text.submitStudent}</button>
@@ -205,12 +205,34 @@ export function billingSettingsContent(zh) {
         let studentTutorialAcknowledged=false;
         let studentLocked=false;
         let studentPreviewUrl="";
+        const normalizeStudentCode=value=>{
+          const code=String(value||"").trim().toUpperCase();
+          return /^[A-Z0-9]{16}$/.test(code)?code:"";
+        };
         const allowedStudentTarget=value=>{
           try{
             const url=new URL(String(value||"").trim());
             const host=url.hostname.toLowerCase();
             return url.protocol==="https:"&&!url.username&&!url.password&&!url.port&&(host==="chsi.com.cn"||host==="www.chsi.com.cn")&&/^\\/xlcx\\//i.test(url.pathname)?url.toString():"";
           }catch{return ""}
+        };
+        const studentEvidence=value=>{
+          const raw=String(value||"").trim();
+          const directCode=normalizeStudentCode(raw);
+          if(directCode)return {kind:"code",code:directCode};
+          const url=allowedStudentTarget(raw);
+          if(url)return {kind:"url",url};
+          const codeMatch=raw.match(/#([A-Z0-9]{16})#/i);
+          if(codeMatch&&/学信网报告在线验证/.test(raw)&&/扫码验证/.test(raw)){
+            const code=normalizeStudentCode(codeMatch[1]);
+            if(code)return {kind:"code",code};
+          }
+          return null;
+        };
+        const studentTransportTarget=evidence=>{
+          if(!evidence)return "";
+          if(evidence.kind==="url")return evidence.url;
+          return "https://www.chsi.com.cn/xlcx/bgcx.jsp?__aertex_online_code="+encodeURIComponent(evidence.code);
         };
         const studentStatusLabel=value=>({pending:copy.pending,verified:copy.verified,rejected:copy.rejected,expired:copy.expired,not_submitted:copy.notSubmitted}[String(value)]||copy.notSubmitted);
         function renderStudent(data){
@@ -246,7 +268,7 @@ export function billingSettingsContent(zh) {
           studentTarget.disabled=!canUseForm;
           studentManualToggle.disabled=!canUseForm;
           studentFileReplace.disabled=!canUseForm;
-          studentSubmit.disabled=!canUseForm||!studentConsent.checked||!allowedStudentTarget(studentTarget.value);
+          studentSubmit.disabled=!canUseForm||!studentConsent.checked||!studentEvidence(studentTarget.value);
         }
         async function loadStudent(){
           try{
@@ -302,17 +324,19 @@ export function billingSettingsContent(zh) {
               }catch(error){console.warn("BarcodeDetector QR decode failed",error)}
             }
             if(!raw)raw=await decodeWithJsQr(bitmap);
-            const target=allowedStudentTarget(raw);
-            if(!target){
+            const evidence=studentEvidence(raw);
+            if(!evidence){
               studentFeedback.textContent=copy.invalidQr;
               studentManualWrap.hidden=false;
               studentManualToggle.textContent=copy.hideManualLink;
               return;
             }
-            studentTarget.value=target;
+            studentTarget.value=evidence.kind==="code"?evidence.code:evidence.url;
             studentManualWrap.hidden=true;
             studentManualToggle.textContent=copy.manualLink;
-            studentFeedback.textContent=isZh?"已识别学信网官方二维码。图片仅保留在当前页面本地预览，不会上传。":"Official CHSI QR code recognized. The image remains only as a local preview on this page and is never uploaded.";
+            studentFeedback.textContent=evidence.kind==="code"
+              ?(isZh?"已识别学信网 16 位在线验证码。图片仅保留在当前页面本地预览，不会上传。":"CHSI 16-character online verification code recognized. The image remains only as a local preview on this page and is never uploaded.")
+              :(isZh?"已识别学信网官方验证链接。图片仅保留在当前页面本地预览，不会上传。":"Official CHSI verification URL recognized. The image remains only as a local preview on this page and is never uploaded.");
           }catch(error){
             console.error("Local QR decode failed",error);
             studentFeedback.textContent=copy.invalidQr;
@@ -362,7 +386,7 @@ export function billingSettingsContent(zh) {
         });
         studentConsent?.addEventListener("change",()=>{
           if(studentConsent.checked){
-            studentFeedback.textContent=isZh?"已确认隐私提示。选择二维码或粘贴官方验证链接后即可提交。":"Privacy notice confirmed. Choose a QR image or paste the official verification URL to continue.";
+            studentFeedback.textContent=isZh?"已确认隐私提示。选择二维码，或输入 16 位在线验证码 / 官方验证链接后即可提交。":"Privacy notice confirmed. Choose a QR image, or enter the 16-character code / official verification URL to continue.";
           }else{
             studentFeedback.textContent=isZh?"提交前需要勾选隐私确认；二维码图片仍只在本地解析。":"You must confirm the privacy notice before submitting; QR images are still decoded locally.";
           }
@@ -383,7 +407,8 @@ export function billingSettingsContent(zh) {
         });
         studentTarget?.addEventListener("input",()=>syncStudentControls());
         studentSubmit?.addEventListener("click",async()=>{
-          const target=allowedStudentTarget(studentTarget.value);
+          const evidence=studentEvidence(studentTarget.value);
+          const target=studentTransportTarget(evidence);
           if(!studentConsent.checked||!target){studentFeedback.textContent=copy.invalidQr;return}
           studentSubmit.disabled=true;
           try{
