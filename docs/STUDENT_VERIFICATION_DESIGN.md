@@ -19,19 +19,22 @@ AERTEX does not ask the user to sign in to CHSI. The user selects only the QR-co
 ## Privacy-first QR flow
 
 1. The user opens Settings -> Subscription & Entitlements -> Student eligibility.
-2. The page shows a privacy warning before the file picker is enabled.
-3. The user confirms that the selected image contains only the QR code.
-4. PNG, JPEG and WebP files up to 5 MB are accepted by the browser UI.
-5. Where BarcodeDetector is available, the QR code is decoded locally in the browser.
-6. The selected image is never submitted to AERTEX.
-7. If local QR decoding is unavailable, the user can scan with the device camera and paste the official verification URL.
-8. Client and server independently validate HTTPS, host and path.
-9. Only chsi.com.cn or www.chsi.com.cn under /xlcx/ are accepted.
-10. The server stores a SHA-256 target hash in the public verification record.
-11. The full official target URL is held only in aertex_private for the pending review window.
-12. After review, cancellation, or expiry, the temporary target is deleted.
-13. The administrator must explicitly open the official verification target and make a review decision.
-14. A verified student remains eligible only until report_expires_at.
+2. AERTEX first shows a verification tutorial; the QR picker and verification form remain hidden.
+3. The tutorial explains how to open CHSI Archive, apply for the Online Verification Report of Student Record, find the official QR code, and crop only the QR-code area.
+4. The user explicitly chooses “My QR code is ready” before the verification form is revealed.
+5. The page then shows the privacy warning and requires a separate consent checkbox before the file picker is enabled.
+6. The user confirms that the selected image contains only the QR code.
+7. PNG, JPEG and WebP files up to 5 MB are accepted by the browser UI.
+8. Where BarcodeDetector is available, the QR code is decoded locally in the browser.
+9. The selected image is never submitted to AERTEX.
+10. If local QR decoding is unavailable, the user can scan with the device camera and paste the official verification URL.
+11. Client and server independently validate HTTPS, host and path.
+12. Only chsi.com.cn or www.chsi.com.cn under /xlcx/ are accepted.
+13. The server stores a SHA-256 target hash in the public verification record.
+14. The full official target URL is held only in aertex_private for the pending review window.
+15. After review, cancellation, or expiry, the temporary target is deleted.
+16. The administrator must explicitly open the official verification target and make a review decision.
+17. A verified student remains eligible only until report_expires_at.
 
 ## Security controls
 
