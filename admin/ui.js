@@ -101,6 +101,46 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
 .badge.ok{border-color:#235d3c;color:#8de5ad;background:#0e1b14}
 
 .badge.bad{border-color:#6a3030;color:#ff9999;background:#1c1010}
+
+.studentVerify{display:grid;gap:14px}
+.studentSummary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.studentSummaryCard{min-height:104px;border:1px solid var(--line);background:linear-gradient(180deg,#10161d,#0d1218);padding:16px;display:grid;grid-template-columns:48px minmax(0,1fr);gap:14px;align-items:center}
+.studentSummaryIcon{width:48px;height:48px;display:grid;place-items:center;border:1px solid #29415e;background:#101d2c;color:#8eb7ff;font-size:19px;font-weight:800}
+.studentSummaryCard small{display:block;color:var(--muted);font-size:11px}
+.studentSummaryCard strong{display:block;margin-top:5px;font-size:28px;line-height:1}
+.studentInfo{border:1px solid #2e537e;background:linear-gradient(180deg,rgba(21,51,91,.28),rgba(14,19,25,.92));padding:16px;display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px}
+.studentInfoIcon{width:28px;height:28px;border:1px solid #4c7db8;border-radius:50%;display:grid;place-items:center;color:#8eb7ff;font-weight:800}
+.studentInfo h3{margin:0 0 7px;font-size:13px}
+.studentInfo p{margin:0;color:var(--muted);font-size:11px;line-height:1.7}
+.studentRequestSection{border:1px solid var(--line);background:var(--panel)}
+.studentRequestHead{min-height:48px;padding:0 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.studentRequestHead h2{margin:0;font-size:13px}
+.studentRequestHead span{color:var(--muted);font-size:11px}
+.studentRequestList{display:grid;gap:12px;padding:12px}
+.studentRequestCard{border:1px solid var(--line2);background:#0b1016;padding:14px;display:grid;gap:12px}
+.studentRequestTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.studentIdentity{min-width:0}
+.studentIdentity strong{display:block;font-size:13px}
+.studentIdentity span{display:block;margin-top:4px;color:var(--quiet);font:10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}
+.studentStatus{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 9px;border:1px solid #76551f;background:#241b0c;color:#f4c870;font-size:10px;white-space:nowrap}
+.studentStatus.verified{border-color:#235d3c;background:#0e1b14;color:#8de5ad}
+.studentStatus.expired{border-color:#495461;background:#151b22;color:#9ba7b4}
+.studentStatus.rejected{border-color:#6a3030;background:#1c1010;color:#ff9999}
+.studentRequestGrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(160px,.8fr);gap:10px}
+.studentField{min-width:0;border-top:1px solid var(--line2);padding-top:9px}
+.studentField.wide{grid-column:1/-1}
+.studentField label{display:block;margin-bottom:6px;color:var(--quiet);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.studentFieldValue{min-height:34px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:var(--text);font-size:11px;line-height:1.5}
+.studentCode{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;overflow-wrap:anywhere}
+.studentField input{width:100%;min-width:0;height:38px;border:1px solid var(--line);background:#0a0f15;color:var(--text);padding:0 10px}
+.studentField input:focus{outline:none;border-color:#355b93;box-shadow:0 0 0 2px rgba(53,91,147,.18)}
+.studentVerifyLinks{display:flex;gap:7px;flex-wrap:wrap}
+.studentVerifyLinks .btn{height:32px}
+.studentActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:2px}
+.studentActions .btn{height:44px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;white-space:nowrap}
+.studentActions .primary{background:#174b89;border-color:#3a74ba;color:#eff6ff}
+.studentActions .danger{background:#2a1414;border-color:#8a3a3a;color:#ffadad}
+.studentEmpty{padding:28px 16px;color:var(--muted);text-align:center}
 .aiSummary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
 .aiSummary .metric{min-height:78px}
 .aiWorkbench{display:grid;gap:12px}
@@ -169,7 +209,27 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
 @media(max-width:760px){.aiSummary{grid-template-columns:1fr 1fr}.aiCreateGrid{grid-template-columns:1fr}.aiAccessGrid{grid-template-columns:1fr 1fr}.aiSaveCell{grid-column:1/-1}.aiDialogGrid{grid-template-columns:1fr}.aiDialogGrid .wide{grid-column:auto}}
 
 @media(max-width:1000px){.app{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}nav{grid-template-columns:repeat(3,minmax(0,1fr))}.sidefoot{display:none}.grid{grid-template-columns:repeat(2,1fr)}.split{grid-template-columns:1fr}.form{grid-template-columns:1fr 1fr}.form .wide{grid-column:1/-1}.controlGrid{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.content{padding:14px}.grid{grid-template-columns:1fr 1fr}nav{grid-template-columns:1fr 1fr}.head{align-items:flex-start;display:grid}.form{grid-template-columns:1fr}.controlGrid{grid-template-columns:1fr}}
+@media(max-width:700px){
+  .studentSummary{grid-template-columns:1fr 1fr}
+  .studentSummaryCard{min-height:92px;padding:13px;grid-template-columns:40px minmax(0,1fr);gap:11px}
+  .studentSummaryIcon{width:40px;height:40px}
+  .studentRequestGrid{grid-template-columns:1fr}
+  .studentField.wide{grid-column:auto}
+  .studentActions{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .content{padding:14px}.grid{grid-template-columns:1fr 1fr}nav{grid-template-columns:1fr 1fr}.head{align-items:flex-start;display:grid}.form{grid-template-columns:1fr}.controlGrid{grid-template-columns:1fr}
+  .studentVerify{gap:12px}
+  .studentSummary{gap:8px}
+  .studentSummaryCard{padding:12px;grid-template-columns:1fr;gap:8px;align-content:start}
+  .studentSummaryIcon{width:36px;height:36px}
+  .studentSummaryCard strong{font-size:24px}
+  .studentInfo{padding:14px;grid-template-columns:28px minmax(0,1fr)}
+  .studentInfo p{font-size:12px;line-height:1.65}
+  .studentRequestList{padding:10px}
+  .studentRequestCard{padding:12px}
+  .studentActions .btn{height:46px;font-size:12px}
+}
 </style>
 </head>
 <body data-route="${escapeHtml(current)}">
@@ -212,7 +272,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     "/content":["内容","跨账户管理摘要与私有链接；与用户产品保持隔离。"],
     "/storage":["存储","查看跨账户 R2 用户文件，并执行管理操作。"],
     "/billing":["订阅与权益","管理套餐、有效期与用户产品权益。"],
-    "/student-verification":["学生认证","通过学信网官方验证目标审核学生资格；二维码原图不会进入管理控制面。"],
+    "/student-verification":["学生认证","审核并管理学生的学信网验证申请。"],
     "/intelligence":["AERTEX Intelligence","管理服务商、模型和用户 AI 访问权限；此模块直接属于 admin.qsseda.com 管理控制面。"],
     "/system":["系统","查看管理控制面的健康状态与部署信息。"]
   };
@@ -502,6 +562,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const data=result.data||{};
     const rows=Array.isArray(data.rows)?data.rows:[];
     const summary=data.summary||{};
+
     const safeTarget=value=>{
       try{
         const url=new URL(String(value||""));
@@ -520,40 +581,57 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       return {valid:true,kind:"url",url:target};
     };
     const statusLabel=value=>({pending:"待审核",verified:"已认证",expired:"已过期",rejected:"未通过"}[String(value)]||String(value||"—"));
+    const statusClass=value=>({pending:"",verified:"verified",expired:"expired",rejected:"rejected"}[String(value)]||"");
     const dateInputValue=value=>{
       const d=new Date(value||Date.now()+15552000000);
       if(Number.isNaN(d.getTime()))return "";
       const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
       return local.toISOString().slice(0,16);
     };
-    view.innerHTML=objCards({
-      pending:summary.pending||0,
-      verified_active:summary.verified_active||0,
-      expired:summary.expired||0,
-      rejected:summary.rejected||0
-    })+
-      '<section class="section"><div class="sectionHead"><h2>学生认证</h2><span class="mono">'+rows.length+' 条申请</span></div>'+
-      '<p class="hint">管理员只处理经过白名单校验的学信网验证证据。新版二维码可能提供 16 位在线验证码而不是网址；请在学信网“在线验证报告”页面输入验证码核验。不要要求用户提供学信网密码、身份证、完整学籍报告或人脸信息。</p>'+
-      '<div class="tableWrap"><table><thead><tr><th>用户</th><th>状态</th><th>提交时间</th><th>官方验证</th><th>学校 / 层次</th><th>报告有效期</th><th>操作</th></tr></thead><tbody>'+
-      rows.map(row=>{
-        const evidence=verificationEvidence(row.target_url);
-        const pending=row.status==="pending";
-        const verificationCell=!pending||!evidence.valid
-          ?'<span class="mono">'+esc(row.target_host||"—")+'</span>'
-          :evidence.kind==="code"
-            ?'<div class="inline"><span class="mono">'+esc(evidence.code)+'</span><button class="btn copyStudentCode" type="button" data-code="'+esc(evidence.code)+'">复制验证码</button><a class="btn" href="'+esc(evidence.verifyUrl)+'" target="_blank" rel="noopener noreferrer">打开学信网在线验证 ↗</a></div>'
-            :'<a class="btn" href="'+esc(evidence.url)+'" target="_blank" rel="noopener noreferrer">打开学信网官方验证 ↗</a>';
-        return '<tr data-student-verification="'+esc(row.id)+'">'+
-          '<td><strong>'+esc(row.display_name||row.username||row.email||"—")+'</strong><br><span class="mono">'+esc(row.email||row.user_id||"")+'</span></td>'+
-          '<td>'+esc(statusLabel(row.status))+'</td>'+
-          '<td class="mono">'+esc(row.submitted_at||"—")+'</td>'+
-          '<td>'+verificationCell+'</td>'+
-          '<td>'+(pending?'<div class="inline"><input class="studentSchool compactInput" maxlength="180" placeholder="学校（可选）"><input class="studentLevel compactInput" maxlength="120" placeholder="学历层次（可选）"></div>':esc([row.school_name,row.education_level].filter(Boolean).join(" · ")||"—"))+'</td>'+
-          '<td>'+(pending?'<input class="studentExpires compactInput" type="datetime-local" value="'+esc(dateInputValue(row.report_expires_at))+'">':'<span class="mono">'+esc(row.report_expires_at||"—")+'</span>')+'</td>'+
-          '<td>'+(pending?'<div class="inline"><button class="btn primary verifyStudent" type="button" '+(!evidence.valid?'disabled':'')+'>认证通过</button><button class="btn danger rejectStudent" type="button">拒绝</button></div>':'<span class="mono">'+esc(row.reviewed_at||row.verified_at||"—")+'</span>')+'</td>'+
-        '</tr>';
-      }).join('')+
-      '</tbody></table></div><div class="feedback" id="studentVerificationFeedback"></div></section>';
+
+    const requestCards=rows.map(row=>{
+      const evidence=verificationEvidence(row.target_url);
+      const pending=row.status==="pending";
+      const verificationBlock=!pending||!evidence.valid
+        ?'<div class="studentFieldValue"><span class="mono">'+esc(row.target_host||"—")+'</span></div>'
+        :evidence.kind==="code"
+          ?'<div class="studentFieldValue"><span class="studentCode">'+esc(evidence.code)+'</span><div class="studentVerifyLinks"><button class="btn copyStudentCode" type="button" data-code="'+esc(evidence.code)+'">复制验证码</button><a class="btn" href="'+esc(evidence.verifyUrl)+'" target="_blank" rel="noopener noreferrer">打开学信网验证 ↗</a></div></div>'
+          :'<div class="studentFieldValue"><div class="studentVerifyLinks"><a class="btn" href="'+esc(evidence.url)+'" target="_blank" rel="noopener noreferrer">打开学信网官方验证 ↗</a></div></div>';
+
+      const schoolField=pending
+        ?'<input class="studentSchool" maxlength="180" placeholder="可选">'
+        :'<div class="studentFieldValue">'+esc(row.school_name||"—")+'</div>';
+      const levelField=pending
+        ?'<input class="studentLevel" maxlength="120" placeholder="可选">'
+        :'<div class="studentFieldValue">'+esc(row.education_level||"—")+'</div>';
+      const expiryField=pending
+        ?'<input class="studentExpires" type="datetime-local" value="'+esc(dateInputValue(row.report_expires_at))+'">'
+        :'<div class="studentFieldValue mono">'+esc(row.report_expires_at||"—")+'</div>';
+      const actions=pending
+        ?'<div class="studentActions"><button class="btn primary verifyStudent" type="button" '+(!evidence.valid?'disabled':'')+'>认证通过</button><button class="btn danger rejectStudent" type="button">拒绝</button></div>'
+        :'<div class="studentFieldValue mono">'+esc(row.reviewed_at||row.verified_at||"—")+'</div>';
+
+      return '<article class="studentRequestCard" data-student-verification="'+esc(row.id)+'">'+
+        '<div class="studentRequestTop"><div class="studentIdentity"><strong>'+esc(row.display_name||row.username||row.email||"—")+'</strong><span>'+esc(row.email||row.user_id||"")+'</span></div><span class="studentStatus '+esc(statusClass(row.status))+'">'+esc(statusLabel(row.status))+'</span></div>'+
+        '<div class="studentRequestGrid">'+
+          '<div class="studentField wide"><label>验证信息</label>'+verificationBlock+'</div>'+
+          '<div class="studentField"><label>学校（可选）</label>'+schoolField+'</div>'+
+          '<div class="studentField"><label>学历层次（可选）</label>'+levelField+'</div>'+
+          '<div class="studentField wide"><label>报告有效期</label>'+expiryField+'</div>'+
+        '</div>'+
+        actions+
+      '</article>';
+    }).join("");
+
+    view.innerHTML=
+      '<div class="studentVerify">'+
+        '<div class="studentSummary">'+
+          '<article class="studentSummaryCard"><div class="studentSummaryIcon">SV</div><div><small>待审核申请</small><strong>'+esc(summary.pending||0)+'</strong></div></article>'+
+          '<article class="studentSummaryCard"><div class="studentSummaryIcon">✓</div><div><small>已通过</small><strong>'+esc(summary.verified_active||0)+'</strong></div></article>'+
+        '</div>'+
+        '<section class="studentInfo"><div class="studentInfoIcon">i</div><div><h3>审核说明</h3><p>管理员仅核验经过白名单检查的学信网验证信息。新版报告二维码可能包含 16 位在线验证码而非网址；遇到验证码时，请在学信网“在线验证报告”页面完成核验。请勿要求用户提供学信网密码、身份证、完整学籍报告或人脸信息。</p></div></section>'+
+        '<section class="studentRequestSection"><div class="studentRequestHead"><h2>待审核申请</h2><span>共 '+rows.length+' 条申请</span></div><div class="studentRequestList">'+(requestCards||'<div class="studentEmpty">暂无学生认证申请。</div>')+'</div><div class="feedback" id="studentVerificationFeedback"></div></section>'+
+      '</div>';
 
     const feedback=document.getElementById("studentVerificationFeedback");
     document.querySelectorAll(".copyStudentCode").forEach(button=>button.addEventListener("click",async()=>{
