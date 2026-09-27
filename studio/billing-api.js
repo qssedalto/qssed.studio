@@ -4,8 +4,8 @@ import { workerLog } from "./server-runtime.js";
 
 const FREE_PLAN = Object.freeze({
   id: "aertex_free",
-  display_name_zh: "AERTEX Free",
-  display_name_en: "AERTEX Free",
+  display_name_zh: "Free",
+  display_name_en: "Free",
   description_zh: "基础账户与 10 GB AERTEX Drive。",
   description_en: "Core account with 10 GB of AERTEX Drive.",
   checkout_enabled: false
