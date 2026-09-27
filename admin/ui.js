@@ -509,6 +509,16 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
         return url.protocol==="https:"&&!url.username&&!url.password&&!url.port&&(host==="chsi.com.cn"||host==="www.chsi.com.cn")&&/^\\/xlcx\\//i.test(url.pathname)?url.toString():"";
       }catch{return ""}
     };
+    const verificationEvidence=value=>{
+      const target=safeTarget(value);
+      if(!target)return {valid:false};
+      const url=new URL(target);
+      const code=String(url.searchParams.get("__aertex_online_code")||"").trim().toUpperCase();
+      if(/^[A-Z0-9]{16}$/.test(code)){
+        return {valid:true,kind:"code",code,verifyUrl:"https://www.chsi.com.cn/xlcx/bgcx.jsp"};
+      }
+      return {valid:true,kind:"url",url:target};
+    };
     const statusLabel=value=>({pending:"待审核",verified:"已认证",expired:"已过期",rejected:"未通过"}[String(value)]||String(value||"—"));
     const dateInputValue=value=>{
       const d=new Date(value||Date.now()+15552000000);
@@ -523,24 +533,41 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       rejected:summary.rejected||0
     })+
       '<section class="section"><div class="sectionHead"><h2>学生认证</h2><span class="mono">'+rows.length+' 条申请</span></div>'+
-      '<p class="hint">管理员只处理经过双重白名单校验的学信网官方验证目标。不要要求用户提供学信网密码、身份证、完整学籍报告或人脸信息。</p>'+
+      '<p class="hint">管理员只处理经过白名单校验的学信网验证证据。新版二维码可能提供 16 位在线验证码而不是网址；请在学信网“在线验证报告”页面输入验证码核验。不要要求用户提供学信网密码、身份证、完整学籍报告或人脸信息。</p>'+
       '<div class="tableWrap"><table><thead><tr><th>用户</th><th>状态</th><th>提交时间</th><th>官方验证</th><th>学校 / 层次</th><th>报告有效期</th><th>操作</th></tr></thead><tbody>'+
       rows.map(row=>{
-        const target=safeTarget(row.target_url);
+        const evidence=verificationEvidence(row.target_url);
         const pending=row.status==="pending";
+        const verificationCell=!pending||!evidence.valid
+          ?'<span class="mono">'+esc(row.target_host||"—")+'</span>'
+          :evidence.kind==="code"
+            ?'<div class="inline"><span class="mono">'+esc(evidence.code)+'</span><button class="btn copyStudentCode" type="button" data-code="'+esc(evidence.code)+'">复制验证码</button><a class="btn" href="'+esc(evidence.verifyUrl)+'" target="_blank" rel="noopener noreferrer">打开学信网在线验证 ↗</a></div>'
+            :'<a class="btn" href="'+esc(evidence.url)+'" target="_blank" rel="noopener noreferrer">打开学信网官方验证 ↗</a>';
         return '<tr data-student-verification="'+esc(row.id)+'">'+
           '<td><strong>'+esc(row.display_name||row.username||row.email||"—")+'</strong><br><span class="mono">'+esc(row.email||row.user_id||"")+'</span></td>'+
           '<td>'+esc(statusLabel(row.status))+'</td>'+
           '<td class="mono">'+esc(row.submitted_at||"—")+'</td>'+
-          '<td>'+(pending&&target?'<a class="btn" href="'+esc(target)+'" target="_blank" rel="noopener noreferrer">打开学信网官方验证 ↗</a>':'<span class="mono">'+esc(row.target_host||"—")+'</span>')+'</td>'+
+          '<td>'+verificationCell+'</td>'+
           '<td>'+(pending?'<div class="inline"><input class="studentSchool compactInput" maxlength="180" placeholder="学校（可选）"><input class="studentLevel compactInput" maxlength="120" placeholder="学历层次（可选）"></div>':esc([row.school_name,row.education_level].filter(Boolean).join(" · ")||"—"))+'</td>'+
           '<td>'+(pending?'<input class="studentExpires compactInput" type="datetime-local" value="'+esc(dateInputValue(row.report_expires_at))+'">':'<span class="mono">'+esc(row.report_expires_at||"—")+'</span>')+'</td>'+
-          '<td>'+(pending?'<div class="inline"><button class="btn primary verifyStudent" type="button" '+(!target?'disabled':'')+'>认证通过</button><button class="btn danger rejectStudent" type="button">拒绝</button></div>':'<span class="mono">'+esc(row.reviewed_at||row.verified_at||"—")+'</span>')+'</td>'+
+          '<td>'+(pending?'<div class="inline"><button class="btn primary verifyStudent" type="button" '+(!evidence.valid?'disabled':'')+'>认证通过</button><button class="btn danger rejectStudent" type="button">拒绝</button></div>':'<span class="mono">'+esc(row.reviewed_at||row.verified_at||"—")+'</span>')+'</td>'+
         '</tr>';
       }).join('')+
       '</tbody></table></div><div class="feedback" id="studentVerificationFeedback"></div></section>';
 
     const feedback=document.getElementById("studentVerificationFeedback");
+    document.querySelectorAll(".copyStudentCode").forEach(button=>button.addEventListener("click",async()=>{
+      const code=String(button.dataset.code||"");
+      if(!/^[A-Z0-9]{16}$/.test(code))return;
+      try{
+        await navigator.clipboard.writeText(code);
+        button.textContent="已复制";
+        setTimeout(()=>{button.textContent="复制验证码"},1200);
+      }catch{
+        feedback.textContent="无法自动复制，请手动复制验证码。";
+        feedback.className="feedback bad";
+      }
+    }));
     document.querySelectorAll(".verifyStudent").forEach(button=>button.addEventListener("click",async()=>{
       const row=button.closest("[data-student-verification]");if(!row)return;
       const verificationId=row.dataset.studentVerification;
