@@ -167,6 +167,24 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
   const app=document.querySelector(".app");
   const mobileSidebar=window.matchMedia("(max-width:760px)");
   const sidebarStorageKey="aertex-intelligence-sidebar-v1";
+  const modelPreferenceKey="aertex-ai-default-model-v1";
+  function readModelPreference(){
+    try{
+      const prefix=modelPreferenceKey+"=";
+      const raw=document.cookie.split(";").map(part=>part.trim()).find(part=>part.startsWith(prefix));
+      if(raw)return JSON.parse(decodeURIComponent(raw.slice(prefix.length)));
+    }catch{}
+    try{return JSON.parse(localStorage.getItem(modelPreferenceKey)||"null")}catch{return null}
+  }
+  function saveModelPreference(providerId,model){
+    const value=JSON.stringify({provider_id:providerId,model});
+    try{localStorage.setItem(modelPreferenceKey,value)}catch{}
+    try{
+      const host=String(location.hostname||"").toLowerCase();
+      const domain=["qsseda.com","qsseda.online","qsseda.studio"].find(item=>host===item||host.endsWith("."+item))||"";
+      document.cookie=modelPreferenceKey+"="+encodeURIComponent(value)+"; Path=/; Max-Age=31536000; SameSite=Lax; Secure"+(domain?"; Domain="+domain:"");
+    }catch{}
+  }
 
   function updateSidebarA11y(){
     const open=mobileSidebar.matches?app.classList.contains("sidebar-open"):!app.classList.contains("sidebar-collapsed");
@@ -264,6 +282,10 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
     const select=$("modelSelect");select.textContent="";
     const models=Array.isArray(cfg?.models)?cfg.models:[];
     const providers=Array.isArray(cfg?.providers)?cfg.providers:[];
+    const savedPreference=readModelPreference();
+    const savedAvailable=models.find(item=>item.available!==false&&item.provider_id===savedPreference?.provider_id&&item.model===savedPreference?.model);
+    const preferredProviderId=savedAvailable?.provider_id||cfg.default_provider_id;
+    const preferredModel=savedAvailable?.model||cfg.default_model;
     for(const provider of providers){
       const group=document.createElement("optgroup");
       group.label=(provider.provider==="zhipu"?"智谱 GLM · ":provider.provider==="bailian"?"阿里云百炼 · ":"OpenAI · ")+(provider.name||"");
@@ -273,7 +295,7 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
         option.textContent=item.model+(item.available===false?" · "+text.regionBlocked:"");
         const current=state.current?.conversation;
         if(current&&item.provider_id===current.provider_id&&item.model===current.model&&item.available!==false)option.selected=true;
-        else if(!current&&item.provider_id===cfg.default_provider_id&&item.model===cfg.default_model&&item.available!==false)option.selected=true;
+        else if(!current&&item.provider_id===preferredProviderId&&item.model===preferredModel&&item.available!==false)option.selected=true;
         group.appendChild(option);
       }
       if(group.children.length)select.appendChild(group);
@@ -386,6 +408,11 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
   if(typeof mobileSidebar.addEventListener==="function")mobileSidebar.addEventListener("change",applySidebarMode);
   else if(typeof mobileSidebar.addListener==="function")mobileSidebar.addListener(applySidebarMode);
   applySidebarMode();
+  $("modelSelect").addEventListener("change",()=>{
+    if(state.conversationId)return;
+    const selected=$("modelSelect").selectedOptions[0];
+    if(selected&&!selected.disabled)saveModelPreference(selected.dataset.providerId||"",selected.value||"");
+  });
   $("sendButton").addEventListener("click",send);
   $("composer").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void send()}});
   $("composer").addEventListener("input",e=>{e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,180)+"px"});
