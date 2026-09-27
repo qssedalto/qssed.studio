@@ -482,7 +482,7 @@ export function buildOsPages(zh) {
     notifications: ["通知", "管理提醒、站内消息与其他通知偏好。"],
     ai: ["AI 设置", "当前没有浏览器端 API Key 配置功能；敏感密钥不应保存在前端。"],
     integrations: ["第三方集成", "当前站点运行依赖 Cloudflare 与 Supabase；此页尚无用户级集成配置。"],
-    storage: ["AERTEX Drive", "管理仅属于当前账号的私人 Cloudflare R2 文件。"]
+    storage: ["AERTEX Drive", "管理仅属于当前账号的私人云盘文件，并查看可用容量。"]
   };
   const e = {
     dashboard: ["Home", ""],
@@ -509,7 +509,7 @@ export function buildOsPages(zh) {
     notifications: ["Notifications", "Manage reminders, in-app messages, and other notification preferences."],
     ai: ["AI Settings", "There is no browser-side API-key configuration. Sensitive keys should not be stored in frontend code."],
     integrations: ["Integrations", "The site currently depends on Cloudflare and Supabase; user-configurable integrations are not implemented."],
-    storage: ["AERTEX Drive", "Manage private Cloudflare R2 files belonging only to your account."]
+    storage: ["AERTEX Drive", "Manage private cloud-drive files and view available capacity for your account."]
   };
   const s = zh ? z : e;
   return {
