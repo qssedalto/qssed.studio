@@ -5,7 +5,10 @@ const assert = (condition, message) => { if (!condition) throw new Error(message
 const contains = (source, needle, message) => assert(source.includes(needle), message);
 
 const migration = read("supabase/migrations/202609271530_billing_subscriptions_foundation.sql");
+const studentMigration = read("supabase/migrations/202609271700_student_verification_qr_privacy.sql");
 const billingApi = read("studio/billing-api.js");
+const studentApi = read("studio/student-verification-api.js");
+const billingUi = read("studio/ui-billing.js");
 const storageApi = read("studio/storage-api.js");
 const legacyApi = read("studio/legacy-cookie-api.js");
 const shell = read("studio/ui-shell.js");
@@ -37,6 +40,25 @@ for (const required of [
 
 contains(billingApi, 'rpc/get_my_billing_state', "User billing state must come from the entitlement RPC.");
 contains(billingApi, "fallbackBillingState", "Billing resolver must fail closed to Free entitlements.");
+contains(studentMigration, "create table if not exists public.student_verifications", "Student eligibility schema is missing.");
+contains(studentMigration, "create table if not exists aertex_private.student_verification_targets", "Transient verification targets must stay in the private schema.");
+contains(studentMigration, "student_verifications_active_target_unique", "Active verification targets must be replay-protected.");
+contains(studentMigration, "student_verifications_one_pending_per_user", "Accounts must have at most one pending student verification.");
+contains(studentMigration, "purge_expired_student_verification_targets", "Expired verification targets must be purged.");
+contains(studentMigration, "submit_student_verification_target", "Student verification target submission RPC is missing.");
+contains(studentMigration, "cancel_my_student_verification", "Users must be able to cancel pending student verification.");
+contains(studentMigration, "admin_review_student_verification", "Admin student review RPC is missing.");
+contains(studentMigration, "eligibility_key text", "Billing prices must support eligibility-qualified pricing.");
+contains(studentApi, 'new Set(["chsi.com.cn", "www.chsi.com.cn"])', "Student verification API must use the exact CHSI host allow-list.");
+contains(studentApi, 'url.protocol !== "https:"', "Student verification API must require HTTPS.");
+contains(studentApi, '"submit_student_verification_target"', "Student verification API must submit validated official targets only.");
+contains(studentApi, '"cancel_my_student_verification"', "Student verification API must support cancellation.");
+contains(billingUi, "BarcodeDetector", "Student verification UI must decode QR images locally where supported.");
+contains(billingUi, "5*1024*1024", "Student verification UI must cap local QR image size.");
+contains(billingUi, "图片只在你的浏览器本地解析", "Student verification UI must disclose local-only QR processing.");
+contains(legacyApi, '"/api/student-verification"', "Student verification must use the hardened cookie API boundary.");
+contains(adminApi, '"student-verification-review"', "Admin API must expose controlled student review.");
+contains(adminUi, '"/student-verification"', "Admin UI must expose student verification.");
 assert(!billingApi.includes("SUPABASE_SERVICE_ROLE_KEY"), "User billing API must not carry a service-role key.");
 
 contains(legacyApi, '"/api/billing/state"', "Billing state must use the hardened cookie API boundary.");

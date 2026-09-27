@@ -51,6 +51,16 @@ const ACTIONS = {
     rpc: "admin_reset_subscription",
     write: true,
     params: ["p_user_id", "p_note"]
+  },
+  "student-verifications": {
+    rpc: "get_admin_student_verifications",
+    write: false,
+    params: []
+  },
+  "student-verification-review": {
+    rpc: "admin_review_student_verification",
+    write: true,
+    params: ["p_verification_id", "p_decision", "p_school_name", "p_education_level", "p_report_expires_at", "p_note"]
   }
 };
 
@@ -85,7 +95,7 @@ export async function handleAdminAction(request, _env, action) {
     if (Object.prototype.hasOwnProperty.call(incoming, key)) params[key] = incoming[key];
   }
 
-  if (spec.write && ["user-role", "user-status", "permissions", "subscription-grant", "subscription-reset"].includes(action)) {
+  if (spec.write && ["user-role", "user-status", "permissions", "subscription-grant", "subscription-reset", "student-verification-review"].includes(action)) {
     params.p_ip_address = request.headers.get("CF-Connecting-IP") || null;
     params.p_user_agent = String(request.headers.get("User-Agent") || "").slice(0, 500) || null;
   }
@@ -130,6 +140,24 @@ export async function handleAdminAction(request, _env, action) {
       return withAdminSessionCookies(json({ error: "Invalid subscription reset request." }, 400), session.cookies);
     }
     params.p_note = String(params.p_note || "").trim().slice(0, 500) || null;
+  }
+
+  if (action === "student-verification-review") {
+    if (!isUuid(params.p_verification_id) || !["verified", "rejected"].includes(params.p_decision)) {
+      return withAdminSessionCookies(json({ error: "Invalid student verification review." }, 400), session.cookies);
+    }
+    params.p_school_name = String(params.p_school_name || "").trim().slice(0, 180) || null;
+    params.p_education_level = String(params.p_education_level || "").trim().slice(0, 120) || null;
+    params.p_note = String(params.p_note || "").trim().slice(0, 500) || null;
+    if (params.p_decision === "verified") {
+      const expiresAt = Date.parse(String(params.p_report_expires_at || ""));
+      if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+        return withAdminSessionCookies(json({ error: "A future report expiration is required." }, 400), session.cookies);
+      }
+      params.p_report_expires_at = new Date(expiresAt).toISOString();
+    } else {
+      params.p_report_expires_at = null;
+    }
   }
 
   if (action === "device-exemption") {

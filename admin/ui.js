@@ -6,6 +6,7 @@ const NAV = [
   ["/content", "内容", "CT"],
   ["/storage", "存储", "ST"],
   ["/billing", "订阅与权益", "BL"],
+  ["/student-verification", "学生认证", "SV"],
   ["/intelligence", "AERTEX Intelligence", "AI"],
   ["/logs", "审计日志", "LG"],
   ["/system", "系统", "SY"]
@@ -211,6 +212,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     "/content":["内容","跨账户管理摘要与私有链接；与用户产品保持隔离。"],
     "/storage":["存储","查看跨账户 R2 用户文件，并执行管理操作。"],
     "/billing":["订阅与权益","管理套餐、有效期与用户产品权益。"],
+    "/student-verification":["学生认证","通过学信网官方验证目标审核学生资格；二维码原图不会进入管理控制面。"],
     "/intelligence":["AERTEX Intelligence","管理服务商、模型和用户 AI 访问权限；此模块直接属于 admin.qsseda.com 管理控制面。"],
     "/system":["系统","查看管理控制面的健康状态与部署信息。"]
   };
@@ -229,6 +231,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     service:"服务",origin:"来源",files:"文件数",used:"已用空间",partial:"部分结果",summaries:"摘要数",
     private_links:"私有链接",community_links:"社区链接",providers:"服务商",users:"用户数",
     active_subscriptions:"有效订阅",manual_grants:"管理员授权",plan_id:"套餐",quota:"云盘配额",
+    pending:"待审核",verified_active:"有效学生认证",expired:"已过期",rejected:"未通过",
     active_providers:"启用服务商",count:"数量",total:"总数",active:"正常",suspended:"已暂停",banned:"已封禁"
   };
   const fieldLabel=key=>FIELD_LABELS[String(key)]||String(key);
@@ -491,6 +494,93 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
         if(feedback){feedback.textContent="管理员授权已更新。";feedback.className="feedback ok";}
         await billing();
       }catch(error){if(feedback){feedback.textContent=error.message;feedback.className="feedback bad"}button.disabled=false}
+    }));
+  }
+
+  async function studentVerification(){
+    const result=await post("/api/admin/student-verifications");
+    const data=result.data||{};
+    const rows=Array.isArray(data.rows)?data.rows:[];
+    const summary=data.summary||{};
+    const safeTarget=value=>{
+      try{
+        const url=new URL(String(value||""));
+        const host=url.hostname.toLowerCase();
+        return url.protocol==="https:"&&!url.username&&!url.password&&!url.port&&(host==="chsi.com.cn"||host==="www.chsi.com.cn")&&/^\\/xlcx\\//i.test(url.pathname)?url.toString():"";
+      }catch{return ""}
+    };
+    const statusLabel=value=>({pending:"待审核",verified:"已认证",expired:"已过期",rejected:"未通过"}[String(value)]||String(value||"—"));
+    const dateInputValue=value=>{
+      const d=new Date(value||Date.now()+15552000000);
+      if(Number.isNaN(d.getTime()))return "";
+      const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+      return local.toISOString().slice(0,16);
+    };
+    view.innerHTML=objCards({
+      pending:summary.pending||0,
+      verified_active:summary.verified_active||0,
+      expired:summary.expired||0,
+      rejected:summary.rejected||0
+    })+
+      '<section class="section"><div class="sectionHead"><h2>学生认证</h2><span class="mono">'+rows.length+' 条申请</span></div>'+
+      '<p class="hint">管理员只处理经过双重白名单校验的学信网官方验证目标。不要要求用户提供学信网密码、身份证、完整学籍报告或人脸信息。</p>'+
+      '<div class="tableWrap"><table><thead><tr><th>用户</th><th>状态</th><th>提交时间</th><th>官方验证</th><th>学校 / 层次</th><th>报告有效期</th><th>操作</th></tr></thead><tbody>'+
+      rows.map(row=>{
+        const target=safeTarget(row.target_url);
+        const pending=row.status==="pending";
+        return '<tr data-student-verification="'+esc(row.id)+'">'+
+          '<td><strong>'+esc(row.display_name||row.username||row.email||"—")+'</strong><br><span class="mono">'+esc(row.email||row.user_id||"")+'</span></td>'+
+          '<td>'+esc(statusLabel(row.status))+'</td>'+
+          '<td class="mono">'+esc(row.submitted_at||"—")+'</td>'+
+          '<td>'+(pending&&target?'<a class="btn" href="'+esc(target)+'" target="_blank" rel="noopener noreferrer">打开学信网官方验证 ↗</a>':'<span class="mono">'+esc(row.target_host||"—")+'</span>')+'</td>'+
+          '<td>'+(pending?'<div class="inline"><input class="studentSchool compactInput" maxlength="180" placeholder="学校（可选）"><input class="studentLevel compactInput" maxlength="120" placeholder="学历层次（可选）"></div>':esc([row.school_name,row.education_level].filter(Boolean).join(" · ")||"—"))+'</td>'+
+          '<td>'+(pending?'<input class="studentExpires compactInput" type="datetime-local" value="'+esc(dateInputValue(row.report_expires_at))+'">':'<span class="mono">'+esc(row.report_expires_at||"—")+'</span>')+'</td>'+
+          '<td>'+(pending?'<div class="inline"><button class="btn primary verifyStudent" type="button" '+(!target?'disabled':'')+'>认证通过</button><button class="btn danger rejectStudent" type="button">拒绝</button></div>':'<span class="mono">'+esc(row.reviewed_at||row.verified_at||"—")+'</span>')+'</td>'+
+        '</tr>';
+      }).join('')+
+      '</tbody></table></div><div class="feedback" id="studentVerificationFeedback"></div></section>';
+
+    const feedback=document.getElementById("studentVerificationFeedback");
+    document.querySelectorAll(".verifyStudent").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-student-verification]");if(!row)return;
+      const verificationId=row.dataset.studentVerification;
+      const expiresRaw=row.querySelector(".studentExpires")?.value||"";
+      const expiresAt=Date.parse(expiresRaw);
+      if(!Number.isFinite(expiresAt)||expiresAt<=Date.now()){
+        feedback.textContent="请输入未来的报告有效期。";feedback.className="feedback bad";return;
+      }
+      if(!confirm("已经通过学信网官方验证页面核验，并确认该用户当前具有学生身份？"))return;
+      button.disabled=true;
+      try{
+        await post("/api/admin/student-verification-review",{
+          p_verification_id:verificationId,
+          p_decision:"verified",
+          p_school_name:row.querySelector(".studentSchool")?.value||null,
+          p_education_level:row.querySelector(".studentLevel")?.value||null,
+          p_report_expires_at:new Date(expiresAt).toISOString(),
+          p_note:"Verified using the official CHSI verification target."
+        });
+        feedback.textContent="学生资格已认证并写入审计日志。";feedback.className="feedback ok";
+        await studentVerification();
+      }catch(error){feedback.textContent=error.message;feedback.className="feedback bad";button.disabled=false}
+    }));
+    document.querySelectorAll(".rejectStudent").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-student-verification]");if(!row)return;
+      const reason=prompt("请输入拒绝原因（不要记录身份证号、学号等敏感信息）：","");
+      if(reason===null)return;
+      button.disabled=true;
+      try{
+        await post("/api/admin/student-verification-review",{
+          p_verification_id:row.dataset.studentVerification,
+          p_decision:"rejected",
+          p_school_name:null,
+          p_education_level:null,
+          p_report_expires_at:null,
+          p_note:String(reason||"Official verification did not pass.").slice(0,500)
+        });
+        feedback.textContent="申请已拒绝并写入审计日志。";feedback.className="feedback ok";
+        await studentVerification();
+      }catch(error){feedback.textContent=error.message;feedback.className="feedback bad";button.disabled=false}
     }));
   }
 
@@ -1121,7 +1211,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     view.innerHTML=objCards({service:health.service||"admin",status:health.status||"unknown",origin:health.origin||location.origin,time:health.time||"—"})+
       '<section class="section"><div class="sectionHead"><h2>管理控制面</h2></div><pre>'+esc(JSON.stringify(localizeForDisplay({health,overview:overviewResult.data||{}}),null,2))+'</pre></section>';
   }
-  const loaders={"/":overview,"/users":users,"/roles":roles,"/logs":logs,"/access":access,"/content":content,"/storage":storage,"/billing":billing,"/intelligence":intelligence,"/system":system};
+  const loaders={"/":overview,"/users":users,"/roles":roles,"/logs":logs,"/access":access,"/content":content,"/storage":storage,"/billing":billing,"/student-verification":studentVerification,"/intelligence":intelligence,"/system":system};
   async function load(){view.innerHTML='<div class="state">正在加载管理数据…</div>';try{await (loaders[route]||overview)()}catch(error){errorView(error)}}
   document.getElementById("refresh")?.addEventListener("click",()=>void load());
   document.getElementById("logout")?.addEventListener("click",async()=>{
