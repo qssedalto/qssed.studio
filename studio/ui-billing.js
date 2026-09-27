@@ -9,7 +9,8 @@ export function billingSettingsContent(zh) {
     privacy:"仅选择二维码区域。不要提交完整报告，也不要提交身份证号、学号、姓名、证件照片、账号密码或其他无关个人信息。",
     localOnly:"二维码图片只在你的浏览器本地解析，不会上传到 AERTEX。服务器只接收经校验的学信网官方验证链接。",
     consent:"我确认所选图片仅包含用于认证的二维码，不包含其他敏感个人信息。",
-    chooseQr:"选择二维码图片", chooseQrHint:"可从照片图库、文件或系统相机选择", pasteLink:"或粘贴扫码得到的学信网官方验证链接", submitStudent:"提交学生认证",
+    chooseQr:"选择二维码图片", chooseQrHint:"可从照片图库、文件或系统相机选择", pasteLink:"粘贴扫码得到的学信网官方验证链接", submitStudent:"提交学生认证",
+    previewTitle:"已选择的二维码图片", replaceQr:"重新选择", manualLink:"无法识别？手动粘贴验证链接", hideManualLink:"收起手动输入", localPreview:"图片仅在本机预览和识别，不会上传到 AERTEX。",
     cancelStudent:"取消待审核申请", pending:"待审核", verified:"已认证", rejected:"未通过", expired:"已过期",
     notSubmitted:"尚未认证", unsupportedQr:"当前浏览器无法本地识别二维码，请使用系统相机扫码后粘贴官方验证链接。",
     invalidQr:"未识别到受支持的学信网官方验证二维码。", tooLarge:"图片过大，请选择 5 MB 以内的二维码截图。",
@@ -33,7 +34,8 @@ export function billingSettingsContent(zh) {
     privacy:"Select only the QR-code area. Do not submit a full report or any image containing an ID number, student number, name, portrait, account credentials, or unrelated personal information.",
     localOnly:"The QR image is decoded locally in your browser and is never uploaded to AERTEX. The server receives only a validated official CHSI verification URL.",
     consent:"I confirm the selected image contains only the verification QR code and no other sensitive personal information.",
-    chooseQr:"Choose QR image", chooseQrHint:"Choose from Photos, Files, or the system camera", pasteLink:"Or paste the official CHSI verification URL obtained by scanning the QR code", submitStudent:"Submit verification",
+    chooseQr:"Choose QR image", chooseQrHint:"Choose from Photos, Files, or the system camera", pasteLink:"Paste the official CHSI verification URL obtained by scanning the QR code", submitStudent:"Submit verification",
+    previewTitle:"Selected QR image", replaceQr:"Choose another image", manualLink:"Can't decode it? Paste the verification URL manually", hideManualLink:"Hide manual entry", localPreview:"The image is previewed and decoded only on this device and is never uploaded to AERTEX.",
     cancelStudent:"Cancel pending request", pending:"Pending review", verified:"Verified", rejected:"Rejected", expired:"Expired",
     notSubmitted:"Not verified", unsupportedQr:"This browser cannot decode QR codes locally. Scan it with the system camera and paste the official verification URL instead.",
     invalidQr:"No supported official CHSI verification QR code was found.", tooLarge:"Image is too large. Use a QR crop under 5 MB.",
@@ -61,11 +63,23 @@ export function billingSettingsContent(zh) {
       .student-file-button:active{transform:scale(.98)}
       .student-file-button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
       .student-file-picker small{display:block;color:var(--muted);font-size:12px;line-height:1.45}
+      .student-file-preview{display:none;gap:12px;align-items:center;width:100%;padding:12px;border-radius:14px;background:var(--card);box-shadow:inset 0 0 0 1px var(--border);text-align:left}
+      .student-file-preview.is-visible{display:grid;grid-template-columns:76px minmax(0,1fr) auto}
+      .student-file-preview img{display:block;width:76px;height:76px;object-fit:contain;border-radius:10px;background:#fff}
+      .student-file-preview-copy{min-width:0}.student-file-preview-copy strong,.student-file-preview-copy span{display:block;overflow:hidden;text-overflow:ellipsis}.student-file-preview-copy span{margin-top:4px;color:var(--muted);font-size:12px;white-space:nowrap}
+      .student-file-replace{width:auto!important;min-width:0!important;min-height:38px!important;margin:0!important;padding:0 12px!important;border-radius:10px!important;background:var(--fill)!important;color:var(--text)!important;font-size:12px!important}
+      .student-manual-toggle{width:auto!important;justify-self:start;min-height:40px!important;margin:2px 0 0!important;padding:0 12px!important;background:transparent!important;color:var(--primary)!important}
+      #student-manual-wrap[hidden]{display:none!important}
+      #student-target{font-size:16px!important;scroll-margin-top:120px}
       .student-file-picker.is-disabled{opacity:.48}
       .student-file-picker.is-disabled .student-file-button{cursor:not-allowed;pointer-events:none}
       @media (max-width:620px){
         .student-file-picker{min-height:104px;padding:16px 14px}
         .student-file-button{width:min(100%,320px)}
+        .student-file-preview.is-visible{grid-template-columns:64px minmax(0,1fr)}
+        .student-file-preview img{width:64px;height:64px}
+        .student-file-replace{grid-column:1/-1;width:100%!important}
+        #student-target{font-size:16px!important}
       }
     </style>
     <section id="billing-settings" class="os-card is-large settings-detail-card">
@@ -127,8 +141,20 @@ export function billingSettingsContent(zh) {
               <span>${text.chooseQr}</span>
             </label>
             <small>${text.chooseQrHint}</small>
+            <div id="student-file-preview" class="student-file-preview">
+              <img id="student-file-preview-image" alt="">
+              <div class="student-file-preview-copy">
+                <strong>${text.previewTitle}</strong>
+                <span id="student-file-preview-name"></span>
+                <span>${text.localPreview}</span>
+              </div>
+              <button id="student-file-replace" class="student-file-replace" type="button">${text.replaceQr}</button>
+            </div>
           </div>
-          <input id="student-target" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="${text.pasteLink}">
+          <button id="student-manual-toggle" class="student-manual-toggle" type="button">${text.manualLink}</button>
+          <div id="student-manual-wrap" hidden>
+            <input id="student-target" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${text.pasteLink}">
+          </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button id="student-submit" class="btn primary" type="button" disabled>${text.submitStudent}</button>
           </div>
@@ -157,6 +183,12 @@ export function billingSettingsContent(zh) {
         const studentQrFile=document.getElementById("student-qr-file");
         const studentFilePicker=document.getElementById("student-file-picker");
         const studentFileButton=document.getElementById("student-file-button");
+        const studentFilePreview=document.getElementById("student-file-preview");
+        const studentFilePreviewImage=document.getElementById("student-file-preview-image");
+        const studentFilePreviewName=document.getElementById("student-file-preview-name");
+        const studentFileReplace=document.getElementById("student-file-replace");
+        const studentManualToggle=document.getElementById("student-manual-toggle");
+        const studentManualWrap=document.getElementById("student-manual-wrap");
         const studentTarget=document.getElementById("student-target");
         const studentSubmit=document.getElementById("student-submit");
         const studentCancel=document.getElementById("student-cancel");
@@ -167,6 +199,7 @@ export function billingSettingsContent(zh) {
         const source=value=>value==="admin_grant"?copy.manual:value==="system"?copy.system:String(value||copy.system);
         let studentTutorialAcknowledged=false;
         let studentLocked=false;
+        let studentPreviewUrl="";
         const allowedStudentTarget=value=>{
           try{
             const url=new URL(String(value||"").trim());
@@ -206,6 +239,8 @@ export function billingSettingsContent(zh) {
           studentFilePicker.classList.toggle("is-disabled",!canUseForm);
           studentFileButton.setAttribute("aria-disabled",String(!canUseForm));
           studentTarget.disabled=!canUseForm;
+          studentManualToggle.disabled=!canUseForm;
+          studentFileReplace.disabled=!canUseForm;
           studentSubmit.disabled=!canUseForm||!studentConsent.checked||!allowedStudentTarget(studentTarget.value);
         }
         async function loadStudent(){
@@ -218,34 +253,68 @@ export function billingSettingsContent(zh) {
             studentFeedback.textContent=copy.error;
           }
         }
+        function clearStudentPreview(){
+          if(studentPreviewUrl){try{URL.revokeObjectURL(studentPreviewUrl)}catch{}}
+          studentPreviewUrl="";
+          studentFilePreview.classList.remove("is-visible");
+          studentFilePreviewImage.removeAttribute("src");
+          studentFilePreviewName.textContent="";
+        }
+        function showStudentPreview(file){
+          clearStudentPreview();
+          studentPreviewUrl=URL.createObjectURL(file);
+          studentFilePreviewImage.src=studentPreviewUrl;
+          studentFilePreviewName.textContent=file.name||copy.chooseQr;
+          studentFilePreview.classList.add("is-visible");
+        }
+        async function decodeWithJsQr(bitmap){
+          const canvas=document.createElement("canvas");
+          canvas.width=bitmap.width;canvas.height=bitmap.height;
+          const ctx=canvas.getContext("2d",{willReadFrequently:true});
+          if(!ctx)return "";
+          ctx.drawImage(bitmap,0,0);
+          const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+          const mod=await import("https://cdn.jsdelivr.net/npm/jsqr@1.4.0/+esm");
+          const jsQR=mod.default||mod;
+          return String(jsQR(imageData.data,imageData.width,imageData.height,{inversionAttempts:"attemptBoth"})?.data||"");
+        }
         async function decodeQrLocally(file){
           studentFeedback.textContent="";
           if(!file)return;
-          if(file.size>5*1024*1024){studentFeedback.textContent=copy.tooLarge;return}
-          if(!["image/png","image/jpeg","image/webp"].includes(file.type)){studentFeedback.textContent=copy.imageOnly;return}
-          if(typeof BarcodeDetector!=="function"){
-            studentFeedback.textContent=copy.unsupportedQr;
-            return;
-          }
+          if(file.size>5*1024*1024){clearStudentPreview();studentFeedback.textContent=copy.tooLarge;return}
+          if(!["image/png","image/jpeg","image/webp"].includes(file.type)){clearStudentPreview();studentFeedback.textContent=copy.imageOnly;return}
+          showStudentPreview(file);
           let bitmap;
           try{
             bitmap=await createImageBitmap(file);
-            const detector=new BarcodeDetector({formats:["qr_code"]});
-            const codes=await detector.detect(bitmap);
-            if(codes.length!==1){
-              studentFeedback.textContent=codes.length>1?copy.multipleQr:copy.invalidQr;
+            let raw="";
+            if(typeof BarcodeDetector==="function"){
+              try{
+                const detector=new BarcodeDetector({formats:["qr_code"]});
+                const codes=await detector.detect(bitmap);
+                if(codes.length>1){studentFeedback.textContent=copy.multipleQr;return}
+                raw=String(codes[0]?.rawValue||"");
+              }catch(error){console.warn("BarcodeDetector QR decode failed",error)}
+            }
+            if(!raw)raw=await decodeWithJsQr(bitmap);
+            const target=allowedStudentTarget(raw);
+            if(!target){
+              studentFeedback.textContent=copy.invalidQr;
+              studentManualWrap.hidden=false;
+              studentManualToggle.textContent=copy.hideManualLink;
               return;
             }
-            const target=allowedStudentTarget(codes[0]?.rawValue||"");
-            if(!target){studentFeedback.textContent=copy.invalidQr;return}
             studentTarget.value=target;
-            studentFeedback.textContent=isZh?"已在本地识别官方验证二维码，图片不会上传。":"Official verification QR decoded locally; the image will not be uploaded.";
+            studentManualWrap.hidden=true;
+            studentManualToggle.textContent=copy.manualLink;
+            studentFeedback.textContent=isZh?"已识别学信网官方二维码。图片仅保留在当前页面本地预览，不会上传。":"Official CHSI QR code recognized. The image remains only as a local preview on this page and is never uploaded.";
           }catch(error){
             console.error("Local QR decode failed",error);
             studentFeedback.textContent=copy.invalidQr;
+            studentManualWrap.hidden=false;
+            studentManualToggle.textContent=copy.hideManualLink;
           }finally{
             try{bitmap?.close?.()}catch{}
-            studentQrFile.value="";
             syncStudentControls();
           }
         }
@@ -295,6 +364,18 @@ export function billingSettingsContent(zh) {
           syncStudentControls();
         });
         studentQrFile?.addEventListener("change",event=>void decodeQrLocally(event.target.files?.[0]));
+        studentFileReplace?.addEventListener("click",()=>studentQrFile.click());
+        studentManualToggle?.addEventListener("click",()=>{
+          const willShow=studentManualWrap.hidden;
+          studentManualWrap.hidden=!willShow;
+          studentManualToggle.textContent=willShow?copy.hideManualLink:copy.manualLink;
+          if(willShow){
+            requestAnimationFrame(()=>{
+              studentTarget.focus({preventScroll:true});
+              studentTarget.scrollIntoView({block:"center",behavior:"smooth"});
+            });
+          }
+        });
         studentTarget?.addEventListener("input",()=>syncStudentControls());
         studentSubmit?.addEventListener("click",async()=>{
           const target=allowedStudentTarget(studentTarget.value);
@@ -305,6 +386,8 @@ export function billingSettingsContent(zh) {
             const payload=await response.json().catch(()=>({}));
             if(!response.ok)throw new Error(payload.error||("HTTP "+response.status));
             studentTarget.value="";
+            clearStudentPreview();
+            studentQrFile.value="";
             studentFeedback.textContent=copy.submitted;
             renderStudent(payload);
           }catch(error){studentFeedback.textContent=String(error?.message||copy.error)}
