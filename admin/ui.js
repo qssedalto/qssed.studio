@@ -272,7 +272,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     "/content":["内容","跨账户管理摘要与私有链接；与用户产品保持隔离。"],
     "/storage":["存储","查看跨账户 R2 用户文件，并执行管理操作。"],
     "/billing":["订阅与权益","管理套餐、有效期与用户产品权益。"],
-    "/student-verification":["学生认证","通过学信网官方验证目标审核学生资格；二维码原图不会进入管理控制面。"],
+    "/student-verification":["学生认证","审核并管理学生的学信网验证申请。"],
     "/intelligence":["AERTEX Intelligence","管理服务商、模型和用户 AI 访问权限；此模块直接属于 admin.qsseda.com 管理控制面。"],
     "/system":["系统","查看管理控制面的健康状态与部署信息。"]
   };
