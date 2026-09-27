@@ -1,4 +1,4 @@
-const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/billing", "/intelligence", "/logs", "/system"];
+const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/billing", "/student-verification", "/intelligence", "/logs", "/system"];
 
 const EN = [
   ["AERTEX 管理控制台","AERTEX Administration"],
@@ -17,6 +17,11 @@ const EN = [
   ["跨账户管理摘要与私有链接；与用户产品保持隔离。","Cross-account summaries and private-link administration, isolated from user products."],
   ["查看跨账户 R2 用户文件，并执行管理操作。","Cross-account R2 user-file inventory and administrative file operations."],
   ["订阅与权益","Billing & Entitlements"],
+  ["学生认证","Student Verification"],
+  ["通过学信网官方验证目标审核学生资格；二维码原图不会进入管理控制面。","Review student eligibility through official CHSI verification targets; original QR images never enter the admin control plane."],
+  ["打开学信网官方验证 ↗","Open official CHSI verification ↗"],
+  ["认证通过","Verify"],
+  ["拒绝","Reject"],
   ["管理套餐、有效期与用户产品权益。","Manage plans, validity periods, and user product entitlements."],
   ["当前套餐","Current plan"],
   ["云盘配额","Drive quota"],
