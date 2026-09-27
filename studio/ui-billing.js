@@ -10,7 +10,7 @@ export function billingSettingsContent(zh) {
     localOnly:"二维码图片只在你的浏览器本地解析，不会上传到 AERTEX。服务器只接收用于人工核验的 16 位在线验证码或学信网官方验证地址。",
     consent:"我确认所选图片仅包含用于认证的二维码，不包含其他敏感个人信息。",
     chooseQr:"选择二维码图片", chooseQrHint:"可从照片图库、文件或系统相机选择", pasteLink:"粘贴 16 位在线验证码或学信网官方验证链接", submitStudent:"提交学生认证",
-    previewTitle:"已选择的二维码图片", replaceQr:"重新选择", manualLink:"无法识别？手动输入验证码 / 链接", hideManualLink:"收起手动输入", localPreview:"图片仅在本机预览和识别，不会上传到 AERTEX。",
+    previewTitle:"已选择的二维码图片", replaceQr:"重新选择", manualLink:"无法识别？手动输入验证码 / 链接", hideManualLink:"收起手动输入", localPreview:"图片只在本机预览和识别，不上传服务器",
     cancelStudent:"取消待审核申请", pending:"待审核", verified:"已认证", rejected:"未通过", expired:"已过期",
     notSubmitted:"尚未认证", unsupportedQr:"当前浏览器无法本地识别二维码，请使用系统相机扫码后粘贴官方验证链接。",
     invalidQr:"未识别到学信网二维码中的 16 位在线验证码或受支持的官方验证链接。", tooLarge:"图片过大，请选择 5 MB 以内的二维码截图。",
@@ -35,7 +35,7 @@ export function billingSettingsContent(zh) {
     localOnly:"The QR image is decoded locally in your browser and is never uploaded to AERTEX. The server receives only a 16-character online verification code or an official CHSI verification URL for manual review.",
     consent:"I confirm the selected image contains only the verification QR code and no other sensitive personal information.",
     chooseQr:"Choose QR image", chooseQrHint:"Choose from Photos, Files, or the system camera", pasteLink:"Paste the 16-character online verification code or official CHSI verification URL", submitStudent:"Submit verification",
-    previewTitle:"Selected QR image", replaceQr:"Choose another image", manualLink:"Can't decode it? Enter the code / URL manually", hideManualLink:"Hide manual entry", localPreview:"The image is previewed and decoded only on this device and is never uploaded to AERTEX.",
+    previewTitle:"Selected QR image", replaceQr:"Choose another image", manualLink:"Can't decode it? Enter the code / URL manually", hideManualLink:"Hide manual entry", localPreview:"The image stays on this device for preview and recognition and is not uploaded",
     cancelStudent:"Cancel pending request", pending:"Pending review", verified:"Verified", rejected:"Rejected", expired:"Expired",
     notSubmitted:"Not verified", unsupportedQr:"This browser cannot decode QR codes locally. Scan it with the system camera and paste the official verification URL instead.",
     invalidQr:"No CHSI 16-character online verification code or supported official verification URL was found in the QR code.", tooLarge:"Image is too large. Use a QR crop under 5 MB.",
@@ -66,7 +66,7 @@ export function billingSettingsContent(zh) {
       .student-file-preview{display:none;gap:12px;align-items:center;width:100%;padding:12px;border-radius:14px;background:var(--card);box-shadow:inset 0 0 0 1px var(--border);text-align:left}
       .student-file-preview.is-visible{display:grid;grid-template-columns:76px minmax(0,1fr) auto}
       .student-file-preview img{display:block;width:76px;height:76px;object-fit:contain;border-radius:10px;background:#fff}
-      .student-file-preview-copy{min-width:0}.student-file-preview-copy strong,.student-file-preview-copy span{display:block;overflow:hidden;text-overflow:ellipsis}.student-file-preview-copy span{margin-top:4px;color:var(--muted);font-size:12px;white-space:nowrap}
+      .student-file-preview-copy{min-width:0}.student-file-preview-copy strong{display:block}.student-file-preview-name{display:block;margin-top:4px;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.student-file-preview-note{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.45;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word}
       .student-file-replace{width:auto!important;min-width:0!important;min-height:38px!important;margin:0!important;padding:0 12px!important;border-radius:10px!important;background:var(--fill)!important;color:var(--text)!important;font-size:12px!important}
       .student-manual-toggle{width:auto!important;justify-self:start;min-height:40px!important;margin:2px 0 0!important;padding:0 12px!important;background:transparent!important;color:var(--primary)!important}
       #student-manual-wrap[hidden]{display:none!important}
@@ -150,8 +150,8 @@ export function billingSettingsContent(zh) {
               <img id="student-file-preview-image" alt="">
               <div class="student-file-preview-copy">
                 <strong>${text.previewTitle}</strong>
-                <span id="student-file-preview-name"></span>
-                <span>${text.localPreview}</span>
+                <span id="student-file-preview-name" class="student-file-preview-name"></span>
+                <span class="student-file-preview-note">${text.localPreview}</span>
               </div>
               <button id="student-file-replace" class="student-file-replace" type="button">${text.replaceQr}</button>
             </div>
