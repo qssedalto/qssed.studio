@@ -332,6 +332,73 @@ $$;
 revoke all on function public.submit_student_verification_target(text) from public, anon;
 grant execute on function public.submit_student_verification_target(text) to authenticated, service_role;
 
+create or replace function aertex_private.cancel_my_student_verification()
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_user uuid := auth.uid();
+  v_id uuid;
+begin
+  if v_user is null then
+    raise exception 'authenticated user required' using errcode = '42501';
+  end if;
+
+  select id into v_id
+  from public.student_verifications
+  where user_id = v_user
+    and status = 'pending'
+  order by submitted_at desc
+  limit 1
+  for update;
+
+  if v_id is null then
+    return aertex_private.student_eligibility_for_user(v_user);
+  end if;
+
+  update public.student_verifications
+  set status = 'rejected',
+      review_note = 'Canceled by user.',
+      reviewed_at = now(),
+      updated_at = now()
+  where id = v_id;
+
+  delete from aertex_private.student_verification_targets
+  where verification_id = v_id;
+
+  perform public.write_audit_log(
+    'student.verification.cancel',
+    'student_verification',
+    v_id::text,
+    'canceled',
+    'User canceled a pending student verification request.',
+    'info',
+    null,
+    null,
+    jsonb_build_object('provider', 'chsi')
+  );
+
+  return aertex_private.student_eligibility_for_user(v_user);
+end;
+$;
+
+revoke all on function aertex_private.cancel_my_student_verification() from public, anon;
+grant execute on function aertex_private.cancel_my_student_verification() to authenticated, service_role;
+
+create or replace function public.cancel_my_student_verification()
+returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $
+  select aertex_private.cancel_my_student_verification();
+$;
+
+revoke all on function public.cancel_my_student_verification() from public, anon;
+grant execute on function public.cancel_my_student_verification() to authenticated, service_role;
+
 create or replace function aertex_private.admin_get_student_verifications()
 returns jsonb
 language plpgsql
