@@ -75,6 +75,14 @@ contains(billingUi, 'id="student-file-picker"', "Student QR selection must use t
 contains(billingUi, 'class="student-file-button"', "Student QR picker must expose a centered custom trigger.");
 contains(billingUi, 'chooseQrHint:"可从照片图库、文件或系统相机选择"', "Student QR picker must explain the available mobile sources.");
 contains(billingUi, '.student-file-picker{display:grid;place-items:center', "Student QR picker controls must be visually centered.");
+contains(billingUi, 'id="student-file-preview"', "Student QR selection must show a local preview after choosing an image.");
+contains(billingUi, 'URL.createObjectURL(file)', "Student QR preview must use a local object URL rather than uploading the image.");
+contains(billingUi, 'URL.revokeObjectURL(studentPreviewUrl)', "Student QR preview object URLs must be released.");
+contains(billingUi, 'jsqr@1.4.0/+esm', "Safari/iOS QR decoding must have a local-browser fallback when BarcodeDetector is unavailable.");
+contains(billingUi, 'id="student-manual-wrap" hidden', "Manual verification URL entry should stay collapsed until explicitly requested or needed.");
+contains(billingUi, '#student-target{font-size:16px!important', "Student verification URL input must avoid iOS Safari focus zoom.");
+contains(billingUi, 'body.os-shell:has(#student-verification){height:auto!important', "Student verification mobile layout must avoid the nested fixed-height scroller that causes keyboard scroll jumps.");
+
 
 
 contains(legacyApi, '"/api/student-verification"', "Student verification must use the hardened cookie API boundary.");
