@@ -103,7 +103,7 @@ export function billingSettingsContent(zh) {
           try{
             const url=new URL(String(value||"").trim());
             const host=url.hostname.toLowerCase();
-            return url.protocol==="https:"&&!url.username&&!url.password&&!url.port&&(host==="chsi.com.cn"||host==="www.chsi.com.cn")&&/^\/xlcx\//i.test(url.pathname)?url.toString():"";
+            return url.protocol==="https:"&&!url.username&&!url.password&&!url.port&&(host==="chsi.com.cn"||host==="www.chsi.com.cn")&&/^\\/xlcx\\//i.test(url.pathname)?url.toString():"";
           }catch{return ""}
         };
         const studentStatusLabel=value=>({pending:copy.pending,verified:copy.verified,rejected:copy.rejected,expired:copy.expired,not_submitted:copy.notSubmitted}[String(value)]||copy.notSubmitted);
