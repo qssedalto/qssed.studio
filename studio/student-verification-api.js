@@ -1,7 +1,7 @@
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
 
-const ALLOWED_HOST = /(^|\.)chsi\.com\.cn$/i;
+const ALLOWED_HOSTS = new Set(["chsi.com.cn", "www.chsi.com.cn"]);
 const ALLOWED_PATH = /^\/xlcx\//i;
 
 export async function handleStudentVerification(request) {
