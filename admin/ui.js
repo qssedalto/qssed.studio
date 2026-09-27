@@ -506,7 +506,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       try{
         const url=new URL(String(value||""));
         const host=url.hostname.toLowerCase();
-        return url.protocol==="https:"&&!url.username&&!url.password&&!url.port&&(host==="chsi.com.cn"||host==="www.chsi.com.cn")&&/^\/xlcx\//i.test(url.pathname)?url.toString():"";
+        return url.protocol==="https:"&&!url.username&&!url.password&&!url.port&&(host==="chsi.com.cn"||host==="www.chsi.com.cn")&&/^\\/xlcx\\//i.test(url.pathname)?url.toString():"";
       }catch{return ""}
     };
     const statusLabel=value=>({pending:"待审核",verified:"已认证",expired:"已过期",rejected:"未通过"}[String(value)]||String(value||"—"));
