@@ -59,7 +59,7 @@ returns integer
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $purge$
 declare
   v_count integer := 0;
 begin
@@ -80,7 +80,7 @@ begin
   get diagnostics v_count = row_count;
   return v_count;
 end;
-$;
+$purge$;
 
 revoke all on function aertex_private.purge_expired_student_verification_targets() from public, anon;
 grant execute on function aertex_private.purge_expired_student_verification_targets() to authenticated, service_role;
@@ -368,7 +368,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $cancel$
 declare
   v_user uuid := auth.uid();
   v_id uuid;
@@ -413,7 +413,7 @@ begin
 
   return aertex_private.student_eligibility_for_user(v_user);
 end;
-$;
+$cancel$;
 
 revoke all on function aertex_private.cancel_my_student_verification() from public, anon;
 grant execute on function aertex_private.cancel_my_student_verification() to authenticated, service_role;
@@ -423,9 +423,9 @@ returns jsonb
 language sql
 security invoker
 set search_path = ''
-as $
+as $cancel_public$
   select aertex_private.cancel_my_student_verification();
-$;
+$cancel_public$;
 
 revoke all on function public.cancel_my_student_verification() from public, anon;
 grant execute on function public.cancel_my_student_verification() to authenticated, service_role;
