@@ -209,6 +209,24 @@ begin
       using errcode = '22023';
   end if;
 
+  update public.student_verifications
+  set status = 'expired',
+      updated_at = now()
+  where user_id = v_user
+    and status = 'verified'
+    and (report_expires_at is null or report_expires_at <= now());
+
+  if exists (
+    select 1
+    from public.student_verifications sv
+    where sv.user_id = v_user
+      and sv.status = 'verified'
+      and sv.report_expires_at > now()
+  ) then
+    raise exception 'student verification is already active'
+      using errcode = '23505';
+  end if;
+
   if exists (
     select 1
     from public.student_verifications sv
