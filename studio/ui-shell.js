@@ -9,6 +9,7 @@ import { knowledgePageMeta } from "./ui-knowledge.js";
 import { workspaceContent } from "./ui-workspace.js";
 import { appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsFallbackContent, settingsGeneralContent, settingsHubContent } from "./ui-settings.js";
 import { storageClientScript, storageSettingsContent } from "./ui-storage.js";
+import { billingSettingsContent } from "./ui-billing.js";
 import { html } from "./routing.js";
 import { statusContent } from "./ui-primitives.js";
 import { auditClientScript } from "./ui-audit.js";
@@ -406,6 +407,7 @@ export function buildOsCopy(zh) {
           ["通知", `${prefix}/settings/notifications`],
           ["AI 设置", `${prefix}/settings/ai`],
           ["第三方集成", `${prefix}/settings/integrations`],
+          ["订阅与权益", `${prefix}/settings/subscription`],
           ["AERTEX Drive", `${prefix}/settings/storage`]
         ] }
       ],
@@ -449,6 +451,7 @@ export function buildOsCopy(zh) {
         ["Notifications", `${prefix}/settings/notifications`],
         ["AI", `${prefix}/settings/ai`],
         ["Integrations", `${prefix}/settings/integrations`],
+        ["Subscription", `${prefix}/settings/subscription`],
         ["AERTEX Drive", `${prefix}/settings/storage`]
       ] }
     ],
@@ -482,6 +485,7 @@ export function buildOsPages(zh) {
     notifications: ["通知", "管理提醒、站内消息与其他通知偏好。"],
     ai: ["AI 设置", "当前没有浏览器端 API Key 配置功能；敏感密钥不应保存在前端。"],
     integrations: ["第三方集成", "当前站点运行依赖 Cloudflare 与 Supabase；此页尚无用户级集成配置。"],
+    subscription: ["订阅与权益", "查看当前套餐、有效期和 AERTEX 产品权益。"],
     storage: ["AERTEX Drive", "管理仅属于当前账号的私人云盘文件，并查看可用容量。"]
   };
   const e = {
@@ -509,6 +513,7 @@ export function buildOsPages(zh) {
     notifications: ["Notifications", "Manage reminders, in-app messages, and other notification preferences."],
     ai: ["AI Settings", "There is no browser-side API-key configuration. Sensitive keys should not be stored in frontend code."],
     integrations: ["Integrations", "The site currently depends on Cloudflare and Supabase; user-configurable integrations are not implemented."],
+    subscription: ["Subscription & Entitlements", "View your current plan, validity period, and AERTEX product entitlements."],
     storage: ["AERTEX Drive", "Manage private cloud-drive files and view available capacity for your account."]
   };
   const s = zh ? z : e;
@@ -538,6 +543,7 @@ export function buildOsPages(zh) {
     "/settings/notifications": { section: "settings", title: s.notifications[0], description: s.notifications[1] },
     "/settings/ai": { section: "settings", title: s.ai[0], description: s.ai[1] },
     "/settings/integrations": { section: "settings", title: s.integrations[0], description: s.integrations[1] },
+    "/settings/subscription": { section: "settings", title: s.subscription[0], description: s.subscription[1] },
     "/settings/storage": { section: "settings", title: s.storage[0], description: s.storage[1] }
   };
 }
@@ -570,6 +576,7 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
     if (value.includes("/workspace/tasks")) return "tasks";
     if (value.includes("/workspace/workbench")) return "workbench";
     if (value.includes("/settings/storage")) return "storage";
+    if (value.includes("/settings/subscription")) return "account";
     if (value.includes("/settings/security")) return "security";
     if (value.includes("/settings/appearance")) return "appearance";
     if (value.includes("/settings/language")) return "language";
@@ -640,6 +647,7 @@ export function settingsContent(path, zh) {
   if (path.endsWith("/notifications")) return statusContent(zh, "通知", "通知方式、提醒和站内消息偏好将在这里统一管理。当前尚未接入通知服务。", "Notifications", "Notification methods, reminders, and in-app message preferences will be managed here. Notification delivery is not connected yet.");
   if (path.endsWith("/ai")) return statusContent(zh, "AI 设置", "这里将用于管理 AI Provider、模型与个人 AI 偏好。当前尚未开放用户级 AI 配置。", "AI Settings", "Manage AI providers, models, and personal AI preferences here. User-level AI configuration is not available yet.");
   if (path.endsWith("/integrations")) return statusContent(zh, "第三方集成", "这里将用于管理可连接的第三方服务与账号授权。当前尚未开放用户级集成配置。", "Integrations", "Manage connected third-party services and account authorizations here. User-level integrations are not available yet.");
+  if (path.endsWith("/subscription")) return billingSettingsContent(zh);
   if (path.endsWith("/storage")) return storageSettingsContent(zh);
 
   return settingsFallbackContent(zh);
