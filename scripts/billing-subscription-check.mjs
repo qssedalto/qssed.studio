@@ -56,6 +56,11 @@ contains(studentApi, '"cancel_my_student_verification"', "Student verification A
 contains(billingUi, "BarcodeDetector", "Student verification UI must decode QR images locally where supported.");
 contains(billingUi, "5*1024*1024", "Student verification UI must cap local QR image size.");
 contains(billingUi, "图片只在你的浏览器本地解析", "Student verification UI must disclose local-only QR processing.");
+contains(billingUi, 'id="student-tutorial"', "Student verification UI must show a tutorial before the upload flow.");
+contains(billingUi, 'id="student-verification-form" hidden', "Student verification form must stay hidden until the tutorial is acknowledged.");
+contains(billingUi, 'id="student-tutorial-ready"', "Student verification tutorial must require an explicit continue action.");
+contains(billingUi, "tutorialStep4", "Tutorial must explain QR-only cropping and sensitive-data minimization.");
+contains(billingUi, "studentTutorialAcknowledged", "Student verification controls must be gated on tutorial acknowledgement.");
 contains(legacyApi, '"/api/student-verification"', "Student verification must use the hardened cookie API boundary.");
 contains(adminApi, '"student-verification-review"', "Admin API must expose controlled student review.");
 contains(adminUi, '"/student-verification"', "Admin UI must expose student verification.");
