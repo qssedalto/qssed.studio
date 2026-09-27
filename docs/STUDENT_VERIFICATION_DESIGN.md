@@ -4,7 +4,7 @@
 
 Student status is an eligibility signal, not a subscription plan.
 
-- Subscription selects the product plan: Free, Plus, Pro.
+- Subscription selects the product plan: Free, Mini, Plus, Pro, Max, Ultra, Studio, or Vault.
 - Entitlements come from the selected plan.
 - Student eligibility only controls access to future student-priced billing prices.
 
