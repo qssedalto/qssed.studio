@@ -6,6 +6,7 @@ const contains = (source, needle, message) => assert(source.includes(needle), me
 
 const migration = read("supabase/migrations/202609271530_billing_subscriptions_foundation.sql");
 const studentMigration = read("supabase/migrations/202609271700_student_verification_qr_privacy.sql");
+const studentReadonlyFix = read("supabase/migrations/202609272035_fix_admin_student_verification_readonly.sql");
 const billingApi = read("studio/billing-api.js");
 const studentApi = read("studio/student-verification-api.js");
 const billingUi = read("studio/ui-billing.js");
@@ -48,6 +49,7 @@ contains(studentMigration, "purge_expired_student_verification_targets", "Expire
 contains(studentMigration, "submit_student_verification_target", "Student verification target submission RPC is missing.");
 contains(studentMigration, "cancel_my_student_verification", "Users must be able to cancel pending student verification.");
 contains(studentMigration, "admin_review_student_verification", "Admin student review RPC is missing.");
+contains(studentReadonlyFix, "alter function public.get_admin_student_verifications() volatile;", "Admin student verification getter must stay VOLATILE because it performs expiry cleanup writes.");
 contains(studentMigration, "eligibility_key text", "Billing prices must support eligibility-qualified pricing.");
 contains(studentApi, 'new Set(["chsi.com.cn", "www.chsi.com.cn"])', "Student verification API must use the exact CHSI host allow-list.");
 contains(studentApi, 'url.protocol !== "https:"', "Student verification API must require HTTPS.");
