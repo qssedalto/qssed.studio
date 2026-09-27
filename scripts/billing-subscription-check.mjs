@@ -90,6 +90,13 @@ contains(billingUi, 'body.os-shell:has(#student-verification){height:auto!import
 contains(legacyApi, '"/api/student-verification"', "Student verification must use the hardened cookie API boundary.");
 contains(adminApi, '"student-verification-review"', "Admin API must expose controlled student review.");
 contains(adminUi, '"/student-verification"', "Admin UI must expose student verification.");
+contains(adminUi, 'class="studentSummary"', "Student verification admin must use the compact responsive summary layout.");
+contains(adminUi, 'class="studentInfo"', "Student verification admin must show a dedicated review-guidance panel.");
+contains(adminUi, 'class="studentRequestCard"', "Student verification admin must render requests as responsive cards instead of the wide table.");
+contains(adminUi, 'class="studentActions"', "Student verification admin must expose mobile-safe action layout.");
+contains(adminUi, '.studentActions{display:grid;grid-template-columns:1fr 1fr', "Student verification action buttons must stay horizontally readable.");
+contains(adminUi, '.studentActions .btn{height:44px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;white-space:nowrap}', "Student verification action labels must not wrap vertically.");
+
 assert(!billingApi.includes("SUPABASE_SERVICE_ROLE_KEY"), "User billing API must not carry a service-role key.");
 
 contains(legacyApi, '"/api/billing/state"', "Billing state must use the hardened cookie API boundary.");
