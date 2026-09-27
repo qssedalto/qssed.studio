@@ -108,8 +108,8 @@ export function billingSettingsContent(zh) {
           <span>${text.consent}</span>
         </label>
         <div style="display:grid;gap:10px;margin-top:14px">
-          <input id="student-qr-file" type="file" accept="image/png,image/jpeg,image/webp" capture="environment" disabled>
-          <input id="student-target" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="${text.pasteLink}" disabled>
+          <input id="student-qr-file" type="file" accept="image/png,image/jpeg,image/webp" capture="environment">
+          <input id="student-target" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="${text.pasteLink}">
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button id="student-submit" class="btn primary" type="button" disabled>${text.submitStudent}</button>
           </div>
@@ -180,8 +180,8 @@ export function billingSettingsContent(zh) {
         function syncStudentControls(){
           const canUseForm=studentTutorialAcknowledged&&!studentLocked&&!studentVerificationForm.hidden&&studentVerificationForm.style.display!=="none";
           studentConsent.disabled=!canUseForm;
-          studentQrFile.disabled=!canUseForm||!studentConsent.checked;
-          studentTarget.disabled=!canUseForm||!studentConsent.checked;
+          studentQrFile.disabled=!canUseForm;
+          studentTarget.disabled=!canUseForm;
           studentSubmit.disabled=!canUseForm||!studentConsent.checked||!allowedStudentTarget(studentTarget.value);
         }
         async function loadStudent(){
@@ -263,11 +263,10 @@ export function billingSettingsContent(zh) {
           syncStudentControls();
         });
         studentConsent?.addEventListener("change",()=>{
-          const enabled=studentConsent.checked;
-          if(!enabled){
-            studentTarget.value="";
-            studentQrFile.value="";
-            studentFeedback.textContent="";
+          if(studentConsent.checked){
+            studentFeedback.textContent=zh?"已确认隐私提示。选择二维码或粘贴官方验证链接后即可提交。":"Privacy notice confirmed. Choose a QR image or paste the official verification URL to continue.";
+          }else{
+            studentFeedback.textContent=zh?"提交前需要勾选隐私确认；二维码图片仍只在本地解析。":"You must confirm the privacy notice before submitting; QR images are still decoded locally.";
           }
           syncStudentControls();
         });
