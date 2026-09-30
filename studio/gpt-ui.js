@@ -328,6 +328,7 @@ ${intelligenceWatchClientScript()}
   async function send(){
     const message=$("composer").value.trim();if(!message||state.busy)return;
     persistComposerDraft(message);state.busy=true;$("sendButton").disabled=true;$("composer").value="";resizeComposerInput();
+    if(isTinyWatch()&&$("watchComposerInput"))$("watchComposerInput").value="";
     append("user",message);
     const assistant=append("assistant",""),status=document.createElement("div");
     status.className="status";status.textContent=text.thinking;assistant.parentElement.appendChild(status);
@@ -373,9 +374,10 @@ ${intelligenceWatchClientScript()}
       void loadConversations();
     }catch(e){
       assistant.textContent=e.message||text.error;assistant.classList.add("error");status.textContent="";
-      if(!$("composer").value.trim())$("composer").value=message;persistComposerDraft(message);resizeComposerInput();
+      if(!$("composer").value.trim())$("composer").value=message;persistComposerDraft(message);resizeComposerInput();syncWatchComposerInput();
     }finally{
-      state.busy=false;$("sendButton").disabled=false;syncWatchViewport();$("composer").focus();
+      state.busy=false;$("sendButton").disabled=false;syncWatchViewport();
+      if(!isTinyWatch())$("composer").focus();
     }
   }
   $("conversationList").addEventListener("click",async event=>{
