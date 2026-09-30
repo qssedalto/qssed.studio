@@ -2,6 +2,7 @@ import { FAVICON_LINKS } from "./favicon.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
 import { intelligenceThemeAttr, intelligenceThemeBootScript } from "./intelligence-theme.js";
 import { richMessageClientScript, richMessageStyles } from "./gpt-rich-renderer.js";
+import { intelligenceWatchClientScript, intelligenceWatchMarkup, intelligenceWatchStyles } from "./gpt-watch-ui.js";
 
 export function renderGptApp(locale, bootstrap = {}) {
   const zh = locale === "zh-cn";
@@ -102,7 +103,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   .aertex-account-button{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important}
 }
 @media(prefers-reduced-motion:reduce){.app,.sidebar,.composerWrap,.sidebarBackdrop,.iconButton{transition:none!important}}
-</style>\n<style>${richMessageStyles()}</style>\n<style>${accountMenuStyles()}</style>
+</style>\n<style>${richMessageStyles()}</style>\n<style>${accountMenuStyles()}</style>\n<style>${intelligenceWatchStyles()}</style>
 </head>
 <body>
 <div class="app">
@@ -124,6 +125,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
     <svg class="sidebarToggleGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.25 8.25h13.5"/><path d="M5.25 15.75h9"/></svg>
   </button>
   <select class="model" id="modelSelect" disabled><option>${t.loadingModels}</option></select>
+  ${intelligenceWatchMarkup(zh)}
   <select id="effortSelect" aria-label="${t.reasoning}" disabled><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="xhigh">Extra High</option></select>
   <div class="topbarSpacer"></div>
   <div class="account" id="accountLabel">${t.checking}</div>
@@ -148,7 +150,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   </div>
   <div class="messages hidden" id="messages"><div class="empty" id="emptyState"><div><h1>${t.empty}</h1><p>${t.emptyHint}</p></div></div></div>
 </section>
-<div class="composerWrap hidden" id="composerWrap"><div class="composer"><textarea id="composer" placeholder="${t.placeholder}" rows="1"></textarea><div class="composerFoot"><button class="primary" id="sendButton">${t.send}</button></div></div></div>
+<div class="composerWrap hidden" id="composerWrap"><div class="composer"><textarea id="composer" placeholder="${t.placeholder}" rows="1"></textarea><div class="composerFoot"><button class="primary" id="sendButton" aria-label="${t.send}"><span class="sendLabel">${t.send}</span><svg class="sendGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19V5"/><path d="m6.5 10.5 5.5-5.5 5.5 5.5"/></svg></button></div></div></div>
 </main>
 </div>
 <div class="shareChoice" id="shareChoice" role="dialog" aria-modal="true" aria-labelledby="shareChoiceTitle" hidden><div class="shareChoiceBackdrop" id="shareChoiceBackdrop"></div><section class="shareChoiceCard"><h2 id="shareChoiceTitle">${t.shareIdentityTitle}</h2><p>${t.shareIdentityText}</p><div class="shareChoiceActions"><button class="shareChoiceAction primaryChoice" id="shareWithName" type="button">${t.shareWithName}</button><button class="shareChoiceAction" id="shareAnonymous" type="button">${t.shareAnonymous}</button><button class="shareChoiceAction cancelChoice" id="shareCancel" type="button">${t.shareCancel}</button></div></section></div>
@@ -277,6 +279,7 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
       renderConversationList();
     }catch{}
   }
+${intelligenceWatchClientScript()}
   function hydrateConfig(cfg){
     state.config=cfg;
     const select=$("modelSelect");select.textContent="";
@@ -311,7 +314,7 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
     }else{
       setStatus(false,text.noAvailableRegion);$("accountLabel").textContent=text.noAvailableRegion;
     }
-    showChat();renderCurrent();
+    showChat();renderCurrent();syncWatchModelButton();restoreComposerDraft();syncWatchViewport();
   }
   async function checkStatus(force=false){
     try{
@@ -323,7 +326,7 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
   }
   async function send(){
     const message=$("composer").value.trim();if(!message||state.busy)return;
-    state.busy=true;$("sendButton").disabled=true;$("composer").value="";
+    persistComposerDraft(message);state.busy=true;$("sendButton").disabled=true;$("composer").value="";resizeComposerInput();
     append("user",message);
     const assistant=append("assistant",""),status=document.createElement("div");
     status.className="status";status.textContent=text.thinking;assistant.parentElement.appendChild(status);
@@ -342,6 +345,7 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
         if(d?.code==="RATE_LIMITED"){const wait=Number(d?.diagnostic?.retry_after_seconds);throw new Error(text.rateLimited+(Number.isFinite(wait)&&wait>0?" "+text.rateRetry+" "+wait+"s":""))}
         throw new Error(d?.error||("HTTP "+r.status));
       }
+      $("composer").value="";clearComposerDraft();resizeComposerInput();
       const reader=r.body.getReader(),decoder=new TextDecoder();let buffer="",streamed="";
       while(true){
         const x=await reader.read();if(x.done)break;buffer+=decoder.decode(x.value,{stream:true});
@@ -368,8 +372,9 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
       void loadConversations();
     }catch(e){
       assistant.textContent=e.message||text.error;assistant.classList.add("error");status.textContent="";
+      if(!$("composer").value.trim())$("composer").value=message;persistComposerDraft(message);resizeComposerInput();
     }finally{
-      state.busy=false;$("sendButton").disabled=false;$("composer").focus();
+      state.busy=false;$("sendButton").disabled=false;syncWatchViewport();$("composer").focus();
     }
   }
   $("conversationList").addEventListener("click",async event=>{
@@ -397,8 +402,8 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
   });
   $("retry").addEventListener("click",()=>void checkStatus(true));
   function startNewChat(){
-    state.conversationId="";state.current=null;history.pushState({},"",localeBase);
-    $("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden");renderConversationList();closeMobileSidebar();$("composer").focus();
+    persistComposerDraft();state.conversationId="";state.current=null;history.pushState({},"",localeBase);
+    $("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden");renderConversationList();closeMobileSidebar();restoreComposerDraft();syncWatchModelButton();syncWatchViewport();$("composer").focus();
   }
   $("newChat").addEventListener("click",startNewChat);
   $("topNewChat").addEventListener("click",startNewChat);
@@ -409,14 +414,15 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
   else if(typeof mobileSidebar.addListener==="function")mobileSidebar.addListener(applySidebarMode);
   applySidebarMode();
   $("modelSelect").addEventListener("change",()=>{
+    syncWatchModelButton();
     if(state.conversationId)return;
     const selected=$("modelSelect").selectedOptions[0];
     if(selected&&!selected.disabled)saveModelPreference(selected.dataset.providerId||"",selected.value||"");
   });
   $("sendButton").addEventListener("click",send);
   $("composer").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void send()}});
-  $("composer").addEventListener("input",e=>{e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,180)+"px"});
-  renderConversationList();
+  $("composer").addEventListener("input",()=>{persistComposerDraft();resizeComposerInput();syncWatchViewport()});
+  renderConversationList();restoreComposerDraft();syncWatchViewport();syncWatchModelButton();
   if(state.config)hydrateConfig(state.config);else void checkStatus();
 })();
 </script>
