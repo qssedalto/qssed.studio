@@ -50,8 +50,8 @@ for (const locale of ["zh-cn", "en"]) {
     'id="watchModelButton"',
     'id="watchModelPortal"',
     'id="watchModelList"',
-    'id="watchComposerTrigger"',
-    'id="watchComposerTriggerText"',
+    'id="watchComposerForm"',
+    'id="watchComposerInput"',
     'class="sendGlyph"',
     'aertex-intelligence-draft-v2:',
     'window.visualViewport',
@@ -87,14 +87,17 @@ for (const locale of ["zh-cn", "en"]) {
   if (!html.includes('addEventListener("change",event=>') || !html.includes('addEventListener("compositionend",event=>')) {
     throw new Error("Watch composer must capture system-input completion events in addition to ordinary input events");
   }
-  if (!html.includes('input.readOnly=true') || !html.includes('window.prompt(text.placeholder,current)') || !html.includes('openWatchComposerPrompt()')) {
-    throw new Error("Tiny-watch composer must use the native prompt bridge instead of direct textarea editing");
+  if (!html.includes('type="text"') || !html.includes('enterkeyhint="send"') || !html.includes('class="watchComposerInput"')) {
+    throw new Error("Tiny-watch composer must use a real editable single-line input so watchOS can present its native Send control");
   }
-  if (!html.includes('textarea{display:none!important}') || !html.includes('"watchComposerTrigger")?.addEventListener("click"')) {
-    throw new Error("Tiny-watch composer must expose a real button tap target instead of relying on clicks against a readonly textarea");
+  if (!html.includes('textarea{display:none!important}') || !html.includes('"watchComposerForm")?.addEventListener("submit"')) {
+    throw new Error("Tiny-watch composer must submit the native Watch input through the existing chat send pipeline");
   }
-  if (!html.includes('syncWatchComposerTrigger()') || !html.includes('trigger.classList.toggle("hasText"')) {
-    throw new Error("Watch composer button must mirror the current draft text");
+  if (!html.includes('syncWatchInputToComposer()') || !html.includes('watchInput.placeholder=localeBase.startsWith("/zh")?"发消息…":"Message…"')) {
+    throw new Error("Watch composer must synchronize native text entry into the existing composer buffer and use a compact placeholder");
+  }
+  if (html.includes('window.prompt(text.placeholder,current)') || html.includes('watchComposerPromptOpen')) {
+    throw new Error("Watch composer must not use JavaScript prompt as its text-entry mechanism");
   }
   if (!html.includes('.app.sidebar-collapsed .composerWrap{left:0}')) {
     throw new Error("Intelligence composer must follow desktop sidebar collapse state");

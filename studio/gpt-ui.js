@@ -150,7 +150,7 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   </div>
   <div class="messages hidden" id="messages"><div class="empty" id="emptyState"><div><h1>${t.empty}</h1><p>${t.emptyHint}</p></div></div></div>
 </section>
-<div class="composerWrap hidden" id="composerWrap"><div class="composer"><textarea id="composer" placeholder="${t.placeholder}" rows="1"></textarea><button class="watchComposerTrigger" id="watchComposerTrigger" type="button" aria-label="${t.placeholder}"><span id="watchComposerTriggerText">${t.placeholder}</span></button><div class="composerFoot"><button class="primary" id="sendButton" aria-label="${t.send}"><span class="sendLabel">${t.send}</span><svg class="sendGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19V5"/><path d="m6.5 10.5 5.5-5.5 5.5 5.5"/></svg></button></div></div></div>
+<div class="composerWrap hidden" id="composerWrap"><div class="composer"><textarea id="composer" placeholder="${t.placeholder}" rows="1"></textarea><form class="watchComposerForm" id="watchComposerForm" autocomplete="off"><input class="watchComposerInput" id="watchComposerInput" type="text" placeholder="${t.placeholder}" enterkeyhint="send" autocapitalize="sentences" autocomplete="off" spellcheck="true" aria-label="${t.placeholder}"></form><div class="composerFoot"><button class="primary" id="sendButton" aria-label="${t.send}"><span class="sendLabel">${t.send}</span><svg class="sendGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19V5"/><path d="m6.5 10.5 5.5-5.5 5.5 5.5"/></svg></button></div></div></div>
 </main>
 </div>
 ${intelligenceWatchPortalMarkup(zh)}
@@ -328,6 +328,7 @@ ${intelligenceWatchClientScript()}
   async function send(){
     const message=$("composer").value.trim();if(!message||state.busy)return;
     persistComposerDraft(message);state.busy=true;$("sendButton").disabled=true;$("composer").value="";resizeComposerInput();
+    if(isTinyWatch()&&$("watchComposerInput"))$("watchComposerInput").value="";
     append("user",message);
     const assistant=append("assistant",""),status=document.createElement("div");
     status.className="status";status.textContent=text.thinking;assistant.parentElement.appendChild(status);
@@ -373,9 +374,10 @@ ${intelligenceWatchClientScript()}
       void loadConversations();
     }catch(e){
       assistant.textContent=e.message||text.error;assistant.classList.add("error");status.textContent="";
-      if(!$("composer").value.trim())$("composer").value=message;persistComposerDraft(message);resizeComposerInput();
+      if(!$("composer").value.trim())$("composer").value=message;persistComposerDraft(message);resizeComposerInput();syncWatchComposerInput();
     }finally{
-      state.busy=false;$("sendButton").disabled=false;syncWatchViewport();$("composer").focus();
+      state.busy=false;$("sendButton").disabled=false;syncWatchViewport();
+      if(!isTinyWatch())$("composer").focus();
     }
   }
   $("conversationList").addEventListener("click",async event=>{
