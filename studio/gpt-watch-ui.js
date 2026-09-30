@@ -1,6 +1,6 @@
 export function intelligenceWatchStyles() {
   return String.raw`
-.watchModelButton,.watchModelSheet,.sendGlyph{display:none}
+.watchModelButton,.watchModelPortal,.sendGlyph{display:none}
 @media (max-width:320px) and (max-height:520px),(max-width:260px){
   :root{--aertex-watch-topbar:44px;--aertex-watch-composer:48px}
   html,body{width:100%;max-width:100%;overflow:hidden}
@@ -12,6 +12,7 @@ export function intelligenceWatchStyles() {
   .topbarSpacer,.model,.account,.aertex-account-root{display:none!important}
   .watchModelButton{min-width:0;flex:1;display:flex;align-items:center;justify-content:center;height:34px;padding:0 9px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font:inherit;font-size:11px;font-weight:680;letter-spacing:-.01em;cursor:pointer}
   .watchModelButton:active{transform:scale(.97)}
+  .watchModelButton:disabled{opacity:.5}
   .watchModelLabel{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .content{min-height:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
   .messages{width:calc(100% - 12px);padding:10px 0 62px}
@@ -36,28 +37,34 @@ export function intelligenceWatchStyles() {
   .chatLink{font-size:11px;padding:7px 6px}
   .chatAction{font-size:11px;padding:4px}
   .shareChoice{padding:6px}.shareChoiceCard{width:calc(100vw - 12px);max-height:calc(var(--aertex-visual-height,100dvh) - 12px);overflow:auto;padding:14px;border-radius:17px}.shareChoiceCard h2{font-size:16px}.shareChoiceCard p{font-size:11px;margin:6px 0 12px}.shareChoiceAction{min-height:36px;font-size:11px}
-  .watchModelSheet{position:fixed;z-index:520;inset:0;display:flex;flex-direction:column;background:var(--bg);color:var(--text);padding:max(4px,env(safe-area-inset-top)) 5px max(4px,env(safe-area-inset-bottom))}
-  .watchModelSheet[hidden]{display:none!important}
-  .watchModelHeader{height:38px;display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;gap:3px}
+
+  .watchModelPortal{position:fixed;z-index:720;inset:0;width:100vw;height:var(--aertex-visual-height,100dvh);display:grid;grid-template-rows:42px minmax(0,1fr);overflow:hidden;background:var(--bg);color:var(--text);padding:max(3px,env(safe-area-inset-top)) 5px max(4px,env(safe-area-inset-bottom))}
+  .watchModelPortal[hidden]{display:none!important}
+  .watchModelHeader{min-height:42px;display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;gap:3px;border-bottom:1px solid var(--line)}
   .watchModelClose{width:34px;height:34px;border:0;border-radius:50%;background:var(--panel2);color:var(--text);font:inherit;font-size:20px;line-height:1;cursor:pointer}
   .watchModelTitle{min-width:0;text-align:center;font-size:12px;font-weight:720;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .watchModelList{min-height:0;overflow:auto;display:grid;align-content:start;gap:4px;padding:4px 1px 2px;-webkit-overflow-scrolling:touch}
+  .watchModelList{min-height:0;overflow-y:auto;overflow-x:hidden;display:grid;align-content:start;gap:4px;padding:6px 1px 8px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
   .watchModelGroup{padding:7px 7px 2px;color:var(--muted);font-size:8px;font-weight:750;text-transform:uppercase;letter-spacing:.045em}
-  .watchModelOption{position:relative;width:100%;min-height:39px;display:grid;gap:1px;align-content:center;padding:6px 24px 6px 9px;border:0;border-radius:12px;background:var(--panel);color:var(--text);text-align:left;font:inherit;cursor:pointer}
+  .watchModelOption{position:relative;width:100%;min-height:42px;display:grid;gap:1px;align-content:center;padding:7px 27px 7px 10px;border:1px solid color-mix(in srgb,var(--line) 72%,transparent);border-radius:12px;background:var(--panel);color:var(--text);text-align:left;font:inherit;cursor:pointer}
   .watchModelOption strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700}
   .watchModelOption small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:8px}
-  .watchModelOption[aria-checked="true"]::after{content:"✓";position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:800}
+  .watchModelOption[aria-selected="true"]{background:var(--panel2)}
+  .watchModelOption[aria-selected="true"]::after{content:"✓";position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:800}
   .watchModelOption:disabled{opacity:.42}
+  .watchModelEmpty{display:grid;place-items:center;min-height:92px;padding:14px;text-align:center;color:var(--muted);font-size:10px;line-height:1.45}
 }
 @media (prefers-reduced-motion:reduce){.watchModelButton{transition:none!important}}
 `;
 }
 
-export function intelligenceWatchMarkup(zh) {
+export function intelligenceWatchMarkup() {
+  return `<button class="watchModelButton" id="watchModelButton" type="button" aria-haspopup="dialog" aria-controls="watchModelPortal"><span class="watchModelLabel" id="watchModelLabel">—</span></button>`;
+}
+
+export function intelligenceWatchPortalMarkup(zh) {
   const title = zh ? "选择模型" : "Choose model";
   const close = zh ? "关闭模型选择" : "Close model picker";
-  return `<button class="watchModelButton" id="watchModelButton" type="button" aria-haspopup="dialog" aria-controls="watchModelSheet"><span class="watchModelLabel" id="watchModelLabel">—</span></button>
-<div class="watchModelSheet" id="watchModelSheet" role="dialog" aria-modal="true" aria-labelledby="watchModelTitle" hidden>
+  return `<div class="watchModelPortal" id="watchModelPortal" role="dialog" aria-modal="true" aria-labelledby="watchModelTitle" hidden>
   <div class="watchModelHeader">
     <button class="watchModelClose" id="watchModelClose" type="button" aria-label="${close}">‹</button>
     <div class="watchModelTitle" id="watchModelTitle">${title}</div>
@@ -107,55 +114,96 @@ export function intelligenceWatchClientScript() {
     const height=Math.max(1,Math.round(Number(viewport?.height)||window.innerHeight||1));
     document.documentElement.style.setProperty("--aertex-visual-height",height+"px");
   }
+  function selectedWatchModel(){
+    const selected=$("modelSelect")?.selectedOptions?.[0];
+    if(!selected)return null;
+    return {providerId:selected.dataset.providerId||"",model:selected.value||""};
+  }
   function syncWatchModelButton(){
-    const label=$("watchModelLabel"),select=$("modelSelect");if(!label||!select)return;
-    const selected=select.selectedOptions?.[0];
-    label.textContent=selected?.value||text.noModels;
-    $("watchModelButton")?.toggleAttribute("disabled",!selected||selected.disabled);
+    const label=$("watchModelLabel"),selected=selectedWatchModel();if(!label)return;
+    label.textContent=selected?.model||text.noModels;
+    $("watchModelButton")?.toggleAttribute("disabled",!selected?.model);
+  }
+  function watchProviderLabel(provider){
+    if(!provider)return "";
+    const name=String(provider.name||"").trim();
+    if(name)return name;
+    if(provider.provider==="zhipu")return "智谱 GLM";
+    if(provider.provider==="bailian")return "阿里云百炼";
+    if(provider.provider==="openai")return "OpenAI";
+    return String(provider.provider||"");
   }
   function renderWatchModels(){
-    const list=$("watchModelList"),select=$("modelSelect");if(!list||!select)return;
+    const list=$("watchModelList");if(!list)return;
     list.replaceChildren();
-    let currentGroup="";
-    for(const option of [...select.options]){
-      if(!option.value&&!option.dataset.providerId)continue;
-      const group=option.parentElement?.tagName==="OPTGROUP"?(option.parentElement.label||""):"";
-      if(group&&group!==currentGroup){
-        currentGroup=group;
+    const models=Array.isArray(state.config?.models)?state.config.models:[];
+    const providers=Array.isArray(state.config?.providers)?state.config.providers:[];
+    const selected=selectedWatchModel();
+    const providerById=new Map(providers.map(provider=>[String(provider.id||""),provider]));
+    const ordered=[];
+    const seen=new Set();
+    for(const provider of providers){
+      for(const item of models.filter(model=>String(model.provider_id||"")===String(provider.id||""))){
+        ordered.push(item);seen.add(String(item.provider_id||"")+"\u0000"+String(item.model||""));
+      }
+    }
+    for(const item of models){
+      const key=String(item.provider_id||"")+"\u0000"+String(item.model||"");
+      if(!seen.has(key))ordered.push(item);
+    }
+    let lastProviderId=null,count=0;
+    for(const item of ordered){
+      const model=String(item.model||"").trim();if(!model)continue;
+      const providerId=String(item.provider_id||"");
+      const provider=providerById.get(providerId)||null;
+      const group=watchProviderLabel(provider);
+      if(providerId!==lastProviderId&&group){
+        lastProviderId=providerId;
         const heading=document.createElement("div");heading.className="watchModelGroup";heading.textContent=group;list.appendChild(heading);
+      }else if(providerId!==lastProviderId){
+        lastProviderId=providerId;
       }
       const button=document.createElement("button");
       button.className="watchModelOption";button.type="button";button.role="option";
-      button.dataset.model=option.value||"";button.dataset.providerId=option.dataset.providerId||"";
-      button.disabled=option.disabled;button.setAttribute("aria-checked",option.selected?"true":"false");
-      const name=document.createElement("strong");name.textContent=option.value||option.textContent||text.noModels;
-      const meta=document.createElement("small");meta.textContent=group;
-      button.append(name,meta);list.appendChild(button);
+      button.dataset.model=model;button.dataset.providerId=providerId;
+      button.disabled=item.available===false;
+      button.setAttribute("aria-selected",selected?.model===model&&selected?.providerId===providerId?"true":"false");
+      const name=document.createElement("strong");name.textContent=model;
+      const meta=document.createElement("small");
+      meta.textContent=item.available===false?(group?group+" · "+text.regionBlocked:text.regionBlocked):group;
+      button.append(name,meta);list.appendChild(button);count++;
+    }
+    if(!count){
+      const empty=document.createElement("div");empty.className="watchModelEmpty";empty.textContent=text.noModels;list.appendChild(empty);
     }
   }
-  function openWatchModelSheet(){
+  function openWatchModelPortal(){
     if(!isTinyWatch())return;
     renderWatchModels();
-    const sheet=$("watchModelSheet");if(!sheet)return;
-    sheet.hidden=false;document.body.classList.add("watch-model-open");
-    syncWatchViewport();$("watchModelClose")?.focus();
+    const portal=$("watchModelPortal");if(!portal)return;
+    portal.hidden=false;document.body.classList.add("watch-model-open");syncWatchViewport();
+    requestAnimationFrame(()=>{
+      const current=$("watchModelList")?.querySelector('.watchModelOption[aria-selected="true"]');
+      try{current?.scrollIntoView({block:"center"})}catch{}
+    });
   }
-  function closeWatchModelSheet(){
-    const sheet=$("watchModelSheet");if(!sheet)return;
-    sheet.hidden=true;document.body.classList.remove("watch-model-open");$("watchModelButton")?.focus();
+  function closeWatchModelPortal(){
+    const portal=$("watchModelPortal");if(!portal)return;
+    portal.hidden=true;document.body.classList.remove("watch-model-open");
   }
-  $("watchModelButton")?.addEventListener("click",openWatchModelSheet);
-  $("watchModelClose")?.addEventListener("click",closeWatchModelSheet);
+  $("watchModelButton")?.addEventListener("click",openWatchModelPortal);
+  $("watchModelClose")?.addEventListener("click",closeWatchModelPortal);
   $("watchModelList")?.addEventListener("click",event=>{
     const button=event.target.closest(".watchModelOption");if(!button||button.disabled)return;
-    const select=$("modelSelect");
-    const option=[...select.options].find(item=>item.value===button.dataset.model&&(item.dataset.providerId||"")===(button.dataset.providerId||""));
+    const select=$("modelSelect");if(!select)return;
+    const option=[...select.options].find(item=>String(item.value||"")===String(button.dataset.model||"")&&String(item.dataset.providerId||"")===String(button.dataset.providerId||""));
     if(!option)return;
-    option.selected=true;select.dispatchEvent(new Event("change",{bubbles:true}));
-    syncWatchModelButton();closeWatchModelSheet();
+    for(const item of select.options)item.selected=item===option;
+    select.dispatchEvent(new Event("change",{bubbles:true}));
+    syncWatchModelButton();closeWatchModelPortal();
   });
-  document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("watchModelSheet")?.hidden)closeWatchModelSheet()});
-  tinyWatchMedia.addEventListener?.("change",()=>{syncWatchViewport();syncWatchModelButton();if(!isTinyWatch())closeWatchModelSheet()});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("watchModelPortal")?.hidden)closeWatchModelPortal()});
+  tinyWatchMedia.addEventListener?.("change",()=>{syncWatchViewport();syncWatchModelButton();if(!isTinyWatch())closeWatchModelPortal()});
   window.visualViewport?.addEventListener("resize",syncWatchViewport);
   window.visualViewport?.addEventListener("scroll",syncWatchViewport);
   window.addEventListener("pagehide",()=>persistComposerDraft());

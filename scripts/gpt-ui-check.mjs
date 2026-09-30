@@ -48,7 +48,7 @@ for (const locale of ["zh-cn", "en"]) {
     'qssed_theme',
     'data-theme="dark"',
     'id="watchModelButton"',
-    'id="watchModelSheet"',
+    'id="watchModelPortal"',
     'id="watchModelList"',
     'class="sendGlyph"',
     'aertex-intelligence-draft-v1:',
@@ -61,13 +61,19 @@ for (const locale of ["zh-cn", "en"]) {
   if (!html.includes('@media(max-width:760px)') || !html.includes('.app.sidebar-open .sidebar')) {
     throw new Error("Intelligence must provide mobile overlay sidebar behavior");
   }
-  if (!html.includes('(max-width:320px) and (max-height:520px)') || !html.includes('.watchModelOption[aria-checked="true"]')) {
+  if (!html.includes('(max-width:320px) and (max-height:520px)') || !html.includes('.watchModelOption[aria-selected="true"]')) {
     throw new Error("Intelligence must provide a dedicated tiny-watch layout and model picker");
   }
   if (!html.includes('.topbarSpacer,.model,.account,.aertex-account-root{display:none!important}')) {
     throw new Error("Tiny-watch layout must hide the native model select and nonessential account chrome");
   }
-  if (!html.includes('button.dataset.model=option.value||""') || !html.includes('select.dispatchEvent(new Event("change",{bubbles:true}))')) {
+  if (!html.includes('class="watchModelPortal"') || !html.includes('grid-template-rows:42px minmax(0,1fr)')) {
+    throw new Error("Watch model picker must render as a root-level portal with a scrollable list row");
+  }
+  if (!html.includes('const models=Array.isArray(state.config?.models)?state.config.models:[]')) {
+    throw new Error("Watch model picker must render from Intelligence config instead of relying on hidden native select layout");
+  }
+  if (!html.includes('button.dataset.model=model') || !html.includes('select.dispatchEvent(new Event("change",{bubbles:true}))')) {
     throw new Error("Watch model selection must use exact model/provider matching instead of the native select hit target");
   }
   if (!html.includes('window.addEventListener("pagehide",()=>persistComposerDraft())') || !html.includes('document.addEventListener("visibilitychange"')) {
