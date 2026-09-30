@@ -64,6 +64,9 @@ for (const locale of ["zh-cn", "en"]) {
   if (!html.includes('(max-width:320px) and (max-height:520px)') || !html.includes('.watchModelOption[aria-checked="true"]')) {
     throw new Error("Intelligence must provide a dedicated tiny-watch layout and model picker");
   }
+  if (!html.includes('.topbarSpacer,.model,.account,.aertex-account-root{display:none!important}')) {
+    throw new Error("Tiny-watch layout must hide the native model select and nonessential account chrome");
+  }
   if (!html.includes('button.dataset.model=option.value||""') || !html.includes('select.dispatchEvent(new Event("change",{bubbles:true}))')) {
     throw new Error("Watch model selection must use exact model/provider matching instead of the native select hit target");
   }
