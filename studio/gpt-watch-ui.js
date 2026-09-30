@@ -15,25 +15,31 @@ export function intelligenceWatchStyles() {
   .watchModelButton:disabled{opacity:.5}
   .watchModelLabel{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .content{min-height:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-  .messages{width:calc(100% - 12px);padding:10px 0 62px}
+  .messages{width:100%;padding:9px 6px 68px}
   .empty{min-height:calc(var(--aertex-visual-height,100dvh) - 110px);padding:10px 6px}
-  .empty h1{font-size:17px;line-height:1.15;letter-spacing:-.025em;margin-bottom:5px}
-  .empty p{max-width:180px;font-size:10px;line-height:1.35}
-  .msg{margin:0 0 14px;font-size:12px}
-  .msg.user .bubble{max-width:88%;padding:8px 10px;border-radius:14px;line-height:1.4}
-  .msg.assistant .bubble{line-height:1.52}
-  .status{font-size:10px;margin-top:4px}
-  .composerWrap,.app.sidebar-collapsed .composerWrap{left:0;padding:4px max(4px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left));background:linear-gradient(to top,var(--bg) 82%,transparent)}
-  .composer{width:100%;margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px;padding:4px 4px 4px 7px;border-radius:15px;box-shadow:0 5px 20px rgba(0,0,0,.12)}
+  .empty h1{font-size:18px;line-height:1.15;letter-spacing:-.025em;margin-bottom:6px}
+  .empty p{max-width:190px;font-size:12px;line-height:1.4}
+  .msg{display:flex;flex-direction:column;margin:0 0 10px;font-size:14px}
+  .msg.user{align-items:flex-end}
+  .msg.assistant{align-items:flex-start}
+  .msg .bubble{max-width:92%;overflow-wrap:anywhere;word-break:break-word}
+  .msg.user .bubble{padding:9px 11px;border-radius:18px 18px 6px 18px;background:#0a84ff;color:#fff;font-size:13px;line-height:1.42;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  .msg.assistant .bubble{padding:10px 11px;border:1px solid color-mix(in srgb,var(--line) 78%,transparent);border-radius:18px 18px 18px 6px;background:var(--panel2);color:var(--text);font-size:14px;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+  .msg.assistant .bubble :where(p,ul,ol,pre,blockquote,table){margin-top:.45em;margin-bottom:.45em}
+  .msg.assistant .bubble :where(pre,code){font-size:11px}
+  .status{font-size:10px;margin:4px 0 0 5px;color:var(--muted)}
+  .composerWrap,.app.sidebar-collapsed .composerWrap{left:0;padding:5px max(5px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));background:linear-gradient(to top,var(--bg) 76%,transparent)}
+  .composer{width:100%;margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:5px;padding:0;border:0;background:transparent;box-shadow:none}
   textarea{display:none!important}
-  .watchComposerForm{display:block;min-width:0;width:100%;margin:0}
-  .watchComposerInput{display:block;width:100%;min-width:0;height:34px;padding:0 4px;border:0;outline:0;background:transparent;color:var(--text);font:inherit;font-size:11px;line-height:34px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-appearance:none;appearance:none}
+  .watchComposerForm{display:block;min-width:0;width:100%;margin:0;padding:0}
+  .watchComposerInput{display:block;width:100%;min-width:0;height:38px;padding:0 12px;border:1px solid color-mix(in srgb,var(--line) 88%,transparent);border-radius:999px;outline:0;background:var(--panel2);color:var(--text);font:inherit;font-size:14px;line-height:38px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-appearance:none;appearance:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
   .watchComposerInput::placeholder{color:var(--muted);opacity:1}
-  .watchComposerInput:focus{outline:none}
+  .watchComposerInput:focus{outline:none;border-color:color-mix(in srgb,#0a84ff 58%,var(--line))}
   .composerFoot{margin:0;align-self:center}
-  #sendButton{width:34px;height:34px;min-width:34px;min-height:34px;padding:0;border-radius:50%}
+  #sendButton{width:38px;height:38px;min-width:38px;min-height:38px;padding:0;border:0;border-radius:50%;background:#0a84ff;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.16)}
+  #sendButton:disabled{opacity:.42}
   .sendLabel{display:none}
-  .sendGlyph{display:block;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .sendGlyph{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round}
   .sidebar{width:min(90vw,230px);padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom));gap:8px}
   .sidebar .brand{font-size:16px;padding:5px 3px}.sidebar .brand small{font-size:9px;margin-top:2px}
   .sidebar .statusRow{font-size:10px;gap:6px}.sidebar .dot{width:7px;height:7px}
@@ -84,6 +90,9 @@ export function intelligenceWatchClientScript() {
   const draftStoragePrefix="aertex-intelligence-draft-v2:";
   let composerDraftShadow="";
   let composerDraftTouched=false;
+  let watchInputSessionActive=false;
+  let watchInputSessionStartValue="";
+  let watchAutoSendTimer=0;
   function isTinyWatch(){return tinyWatchMedia.matches}
   function composerDraftKey(){return draftStoragePrefix+(state.conversationId||"new")}
   function readComposerDraft(){
@@ -189,6 +198,22 @@ export function intelligenceWatchClientScript() {
     if(persist)writeComposerDraft(value);
     resizeComposerInput();
     return value;
+  }
+  function queueWatchAutoSend(){
+    if(!isTinyWatch()||!watchInputSessionActive||state.busy||document.visibilityState==="hidden")return;
+    const value=syncWatchInputToComposer().trim();
+    const start=String(watchInputSessionStartValue||"").trim();
+    if(!value||value===start)return;
+    if(watchAutoSendTimer)clearTimeout(watchAutoSendTimer);
+    watchAutoSendTimer=window.setTimeout(()=>{
+      watchAutoSendTimer=0;
+      if(state.busy||document.visibilityState==="hidden")return;
+      const current=syncWatchInputToComposer().trim();
+      if(!current||current===String(watchInputSessionStartValue||"").trim())return;
+      watchInputSessionActive=false;
+      watchInputSessionStartValue=current;
+      void send();
+    },160);
   }
   function syncWatchViewport(){
     if(!isTinyWatch()){document.documentElement.style.removeProperty("--aertex-visual-height");return}
@@ -300,13 +325,30 @@ export function intelligenceWatchClientScript() {
   $("composer")?.addEventListener("compositionend",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""));syncWatchComposerInput()});
   $("composer")?.addEventListener("blur",()=>captureComposerDraft({allowTouchedEmpty:true}));
   $("composer")?.addEventListener("focus",()=>{if(!isTinyWatch())reconcileComposerDraft()});
-  $("watchComposerInput")?.addEventListener("input",()=>{syncWatchInputToComposer();syncWatchViewport()});
-  $("watchComposerInput")?.addEventListener("change",()=>syncWatchInputToComposer());
-  $("watchComposerInput")?.addEventListener("blur",()=>{syncWatchInputToComposer();captureComposerDraft({allowTouchedEmpty:true})});
+  $("watchComposerInput")?.addEventListener("focus",event=>{
+    watchInputSessionActive=true;
+    watchInputSessionStartValue=String(event.currentTarget.value||"");
+  });
+  $("watchComposerInput")?.addEventListener("input",()=>{
+    syncWatchInputToComposer();
+    syncWatchViewport();
+    queueWatchAutoSend();
+  });
+  $("watchComposerInput")?.addEventListener("change",()=>{
+    syncWatchInputToComposer();
+    queueWatchAutoSend();
+  });
+  $("watchComposerInput")?.addEventListener("blur",()=>{
+    syncWatchInputToComposer();
+    captureComposerDraft({allowTouchedEmpty:true});
+    queueWatchAutoSend();
+  });
   $("watchComposerForm")?.addEventListener("submit",event=>{
     event.preventDefault();
     const value=syncWatchInputToComposer().trim();
     if(!value)return;
+    watchInputSessionActive=false;
+    if(watchAutoSendTimer){clearTimeout(watchAutoSendTimer);watchAutoSendTimer=0}
     $("watchComposerInput")?.blur();
     void send();
   });
