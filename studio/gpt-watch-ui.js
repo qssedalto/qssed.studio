@@ -1,6 +1,6 @@
 export function intelligenceWatchStyles() {
   return String.raw`
-.watchModelButton,.watchModelPortal,.sendGlyph{display:none}
+.watchModelButton,.watchModelPortal,.watchComposerTrigger,.sendGlyph{display:none}
 @media (max-width:320px) and (max-height:520px),(max-width:260px){
   :root{--aertex-watch-topbar:44px;--aertex-watch-composer:48px}
   html,body{width:100%;max-width:100%;overflow:hidden}
@@ -25,7 +25,10 @@ export function intelligenceWatchStyles() {
   .status{font-size:10px;margin-top:4px}
   .composerWrap,.app.sidebar-collapsed .composerWrap{left:0;padding:4px max(4px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left));background:linear-gradient(to top,var(--bg) 82%,transparent)}
   .composer{width:100%;margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:4px;padding:4px 4px 4px 8px;border-radius:15px;box-shadow:0 5px 20px rgba(0,0,0,.12)}
-  textarea{min-height:34px;max-height:76px;padding:8px 4px 7px;font-size:12px;line-height:1.35;cursor:pointer}
+  textarea{display:none!important}
+  .watchComposerTrigger{display:flex;min-width:0;min-height:34px;max-height:76px;align-items:center;width:100%;padding:8px 4px 7px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;line-height:1.35;text-align:left;cursor:pointer}
+  .watchComposerTrigger.hasText{color:var(--text)}
+  .watchComposerTrigger span{display:-webkit-box;min-width:0;overflow:hidden;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word}
   .composerFoot{margin:0;align-self:end}
   #sendButton{width:34px;height:34px;min-width:34px;min-height:34px;padding:0;border-radius:50%}
   .sendLabel{display:none}
@@ -124,12 +127,20 @@ export function intelligenceWatchClientScript() {
     composerDraftTouched=false;
     try{sessionStorage.removeItem(key)}catch{}
     try{localStorage.removeItem(key)}catch{}
+    syncWatchComposerTrigger();
   }
   function resizeComposerInput(){
     const input=$("composer");if(!input)return;
     input.style.height="auto";
     const max=isTinyWatch()?76:180;
     input.style.height=Math.min(input.scrollHeight,max)+"px";
+  }
+  function syncWatchComposerTrigger(){
+    const trigger=$("watchComposerTrigger"),label=$("watchComposerTriggerText"),input=$("composer");
+    if(!trigger||!label||!input)return;
+    const value=String(input.value||composerDraftShadow||readComposerDraft()||"");
+    label.textContent=value||text.placeholder;
+    trigger.classList.toggle("hasText",Boolean(value));
   }
   function reconcileComposerDraft(){
     const input=$("composer");if(!input)return;
@@ -138,6 +149,7 @@ export function intelligenceWatchClientScript() {
       composerDraftShadow=current;
       writeComposerDraft(current);
       resizeComposerInput();
+      syncWatchComposerTrigger();
       return;
     }
     const stored=readComposerDraft();
@@ -148,20 +160,26 @@ export function intelligenceWatchClientScript() {
       input.value=composerDraftShadow;
     }
     resizeComposerInput();
+    syncWatchComposerTrigger();
   }
   function restoreComposerDraft(){reconcileComposerDraft()}
   let watchComposerPromptOpen=false;
   function syncWatchComposerMode(){
-    const input=$("composer");if(!input)return;
-    if(isTinyWatch()){
+    const input=$("composer"),trigger=$("watchComposerTrigger");if(!input||!trigger)return;
+    const watch=isTinyWatch();
+    trigger.hidden=!watch;
+    if(watch){
       input.readOnly=true;
       input.setAttribute("inputmode","none");
-      input.setAttribute("aria-haspopup","dialog");
+      input.setAttribute("aria-hidden","true");
+      input.tabIndex=-1;
     }else{
       input.readOnly=false;
       input.removeAttribute("inputmode");
-      input.removeAttribute("aria-haspopup");
+      input.removeAttribute("aria-hidden");
+      input.removeAttribute("tabindex");
     }
+    syncWatchComposerTrigger();
   }
   function openWatchComposerPrompt(){
     if(!isTinyWatch()||watchComposerPromptOpen)return false;
@@ -175,6 +193,7 @@ export function intelligenceWatchClientScript() {
       composerDraftTouched=true;
       writeComposerDraft(input.value);
       resizeComposerInput();
+      syncWatchComposerTrigger();
       syncWatchViewport();
       return true;
     }finally{
@@ -286,20 +305,12 @@ export function intelligenceWatchClientScript() {
     else{reconcileComposerDraft();syncWatchViewport();syncWatchModelButton()}
   });
   $("composer")?.addEventListener("beforeinput",()=>{composerDraftTouched=true});
-  $("composer")?.addEventListener("input",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
-  $("composer")?.addEventListener("change",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
-  $("composer")?.addEventListener("compositionend",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
+  $("composer")?.addEventListener("input",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""));syncWatchComposerTrigger()});
+  $("composer")?.addEventListener("change",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""));syncWatchComposerTrigger()});
+  $("composer")?.addEventListener("compositionend",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""));syncWatchComposerTrigger()});
   $("composer")?.addEventListener("blur",()=>captureComposerDraft({allowTouchedEmpty:true}));
-  $("composer")?.addEventListener("focus",event=>{
-    if(isTinyWatch()){
-      event.currentTarget.blur();
-      openWatchComposerPrompt();
-      return;
-    }
-    reconcileComposerDraft();
-  });
-  $("composer")?.addEventListener("click",event=>{
-    if(!isTinyWatch())return;
+  $("composer")?.addEventListener("focus",()=>{if(!isTinyWatch())reconcileComposerDraft()});
+  $("watchComposerTrigger")?.addEventListener("click",event=>{
     event.preventDefault();
     openWatchComposerPrompt();
   });
