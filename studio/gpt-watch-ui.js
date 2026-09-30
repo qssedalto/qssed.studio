@@ -25,7 +25,7 @@ export function intelligenceWatchStyles() {
   .status{font-size:10px;margin-top:4px}
   .composerWrap,.app.sidebar-collapsed .composerWrap{left:0;padding:4px max(4px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left));background:linear-gradient(to top,var(--bg) 82%,transparent)}
   .composer{width:100%;margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:4px;padding:4px 4px 4px 8px;border-radius:15px;box-shadow:0 5px 20px rgba(0,0,0,.12)}
-  textarea{min-height:34px;max-height:76px;padding:8px 4px 7px;font-size:12px;line-height:1.35}
+  textarea{min-height:34px;max-height:76px;padding:8px 4px 7px;font-size:12px;line-height:1.35;cursor:pointer}
   .composerFoot{margin:0;align-self:end}
   #sendButton{width:34px;height:34px;min-width:34px;min-height:34px;padding:0;border-radius:50%}
   .sendLabel{display:none}
@@ -150,6 +150,37 @@ export function intelligenceWatchClientScript() {
     resizeComposerInput();
   }
   function restoreComposerDraft(){reconcileComposerDraft()}
+  let watchComposerPromptOpen=false;
+  function syncWatchComposerMode(){
+    const input=$("composer");if(!input)return;
+    if(isTinyWatch()){
+      input.readOnly=true;
+      input.setAttribute("inputmode","none");
+      input.setAttribute("aria-haspopup","dialog");
+    }else{
+      input.readOnly=false;
+      input.removeAttribute("inputmode");
+      input.removeAttribute("aria-haspopup");
+    }
+  }
+  function openWatchComposerPrompt(){
+    if(!isTinyWatch()||watchComposerPromptOpen)return false;
+    const input=$("composer");if(!input)return false;
+    watchComposerPromptOpen=true;
+    try{
+      const current=String(input.value||readComposerDraft()||composerDraftShadow||"");
+      const value=window.prompt(text.placeholder,current);
+      if(value===null)return true;
+      input.value=String(value);
+      composerDraftTouched=true;
+      writeComposerDraft(input.value);
+      resizeComposerInput();
+      syncWatchViewport();
+      return true;
+    }finally{
+      watchComposerPromptOpen=false;
+    }
+  }
   function syncWatchViewport(){
     if(!isTinyWatch()){document.documentElement.style.removeProperty("--aertex-visual-height");return}
     const viewport=window.visualViewport;
@@ -245,7 +276,7 @@ export function intelligenceWatchClientScript() {
     syncWatchModelButton();closeWatchModelPortal();
   });
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("watchModelPortal")?.hidden)closeWatchModelPortal()});
-  tinyWatchMedia.addEventListener?.("change",()=>{syncWatchViewport();syncWatchModelButton();if(!isTinyWatch())closeWatchModelPortal()});
+  tinyWatchMedia.addEventListener?.("change",()=>{syncWatchViewport();syncWatchModelButton();syncWatchComposerMode();if(!isTinyWatch())closeWatchModelPortal()});
   window.visualViewport?.addEventListener("resize",syncWatchViewport);
   window.visualViewport?.addEventListener("scroll",syncWatchViewport);
   window.addEventListener("pagehide",()=>captureComposerDraft());
@@ -259,6 +290,19 @@ export function intelligenceWatchClientScript() {
   $("composer")?.addEventListener("change",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
   $("composer")?.addEventListener("compositionend",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
   $("composer")?.addEventListener("blur",()=>captureComposerDraft({allowTouchedEmpty:true}));
-  $("composer")?.addEventListener("focus",()=>reconcileComposerDraft());
+  $("composer")?.addEventListener("focus",event=>{
+    if(isTinyWatch()){
+      event.currentTarget.blur();
+      openWatchComposerPrompt();
+      return;
+    }
+    reconcileComposerDraft();
+  });
+  $("composer")?.addEventListener("click",event=>{
+    if(!isTinyWatch())return;
+    event.preventDefault();
+    openWatchComposerPrompt();
+  });
+  syncWatchComposerMode();
 `;
 }
