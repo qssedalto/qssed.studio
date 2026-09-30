@@ -24,7 +24,7 @@ export function intelligenceWatchStyles() {
   .msg.assistant{align-items:flex-start}
   .msg .bubble{max-width:92%;overflow-wrap:anywhere;word-break:break-word}
   .msg.user .bubble{padding:9px 11px;border-radius:18px 18px 6px 18px;background:#0a84ff;color:#fff;font-size:13px;line-height:1.42;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-  .msg.assistant .bubble{padding:10px 11px;border:1px solid color-mix(in srgb,var(--line) 78%,transparent);border-radius:18px 18px 18px 6px;background:var(--panel2);color:var(--text);font-size:14px;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+  .msg.assistant .bubble{padding:10px 11px;border:1px solid color-mix(in srgb,var(--line) 78%,transparent);border-radius:18px 18px 18px 6px;background:var(--panel2);color:var(--text);font-size:15px;line-height:1.48;box-shadow:0 2px 8px rgba(0,0,0,.1)}
   .msg.assistant .bubble :where(p,ul,ol,pre,blockquote,table){margin-top:.45em;margin-bottom:.45em}
   .msg.assistant .bubble :where(pre,code){font-size:11px}
   .status{font-size:10px;margin:4px 0 0 5px;color:var(--muted)}
@@ -314,10 +314,16 @@ export function intelligenceWatchClientScript() {
   window.visualViewport?.addEventListener("resize",syncWatchViewport);
   window.visualViewport?.addEventListener("scroll",syncWatchViewport);
   window.addEventListener("pagehide",()=>captureComposerDraft());
-  window.addEventListener("pageshow",()=>{reconcileComposerDraft();syncWatchViewport();syncWatchModelButton()});
+  window.addEventListener("pageshow",()=>{
+    reconcileComposerDraft();syncWatchViewport();syncWatchModelButton();
+    queueWatchAutoSend();
+  });
   document.addEventListener("visibilitychange",()=>{
     if(document.visibilityState==="hidden")captureComposerDraft();
-    else{reconcileComposerDraft();syncWatchViewport();syncWatchModelButton()}
+    else{
+      reconcileComposerDraft();syncWatchViewport();syncWatchModelButton();
+      queueWatchAutoSend();
+    }
   });
   $("composer")?.addEventListener("beforeinput",()=>{composerDraftTouched=true});
   $("composer")?.addEventListener("input",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""));syncWatchComposerInput()});
@@ -332,7 +338,6 @@ export function intelligenceWatchClientScript() {
   $("watchComposerInput")?.addEventListener("input",()=>{
     syncWatchInputToComposer();
     syncWatchViewport();
-    queueWatchAutoSend();
   });
   $("watchComposerInput")?.addEventListener("change",()=>{
     syncWatchInputToComposer();
