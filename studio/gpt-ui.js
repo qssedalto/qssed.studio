@@ -326,7 +326,7 @@ ${intelligenceWatchClientScript()}
   }
   async function send(){
     const message=$("composer").value.trim();if(!message||state.busy)return;
-    persistComposerDraft(message);state.busy=true;$("sendButton").disabled=true;
+    persistComposerDraft(message);state.busy=true;$("sendButton").disabled=true;$("composer").value="";resizeComposerInput();
     append("user",message);
     const assistant=append("assistant",""),status=document.createElement("div");
     status.className="status";status.textContent=text.thinking;assistant.parentElement.appendChild(status);
