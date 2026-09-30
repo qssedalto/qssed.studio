@@ -50,6 +50,8 @@ for (const locale of ["zh-cn", "en"]) {
     'id="watchModelButton"',
     'id="watchModelPortal"',
     'id="watchModelList"',
+    'id="watchComposerTrigger"',
+    'id="watchComposerTriggerText"',
     'class="sendGlyph"',
     'aertex-intelligence-draft-v2:',
     'window.visualViewport',
@@ -87,6 +89,12 @@ for (const locale of ["zh-cn", "en"]) {
   }
   if (!html.includes('input.readOnly=true') || !html.includes('window.prompt(text.placeholder,current)') || !html.includes('openWatchComposerPrompt()')) {
     throw new Error("Tiny-watch composer must use the native prompt bridge instead of direct textarea editing");
+  }
+  if (!html.includes('textarea{display:none!important}') || !html.includes('"watchComposerTrigger")?.addEventListener("click"')) {
+    throw new Error("Tiny-watch composer must expose a real button tap target instead of relying on clicks against a readonly textarea");
+  }
+  if (!html.includes('syncWatchComposerTrigger()') || !html.includes('trigger.classList.toggle("hasText"')) {
+    throw new Error("Watch composer button must mirror the current draft text");
   }
   if (!html.includes('.app.sidebar-collapsed .composerWrap{left:0}')) {
     throw new Error("Intelligence composer must follow desktop sidebar collapse state");
