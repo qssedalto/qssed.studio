@@ -25,7 +25,7 @@ export function intelligenceWatchStyles() {
   .status{font-size:10px;margin-top:4px}
   .composerWrap,.app.sidebar-collapsed .composerWrap{left:0;padding:4px max(4px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left));background:linear-gradient(to top,var(--bg) 82%,transparent)}
   .composer{width:100%;margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:4px;padding:4px 4px 4px 8px;border-radius:15px;box-shadow:0 5px 20px rgba(0,0,0,.12)}
-  textarea{min-height:34px;max-height:76px;padding:8px 4px 7px;font-size:12px;line-height:1.35}
+  textarea{min-height:34px;max-height:76px;padding:8px 4px 7px;font-size:12px;line-height:1.35;cursor:pointer}
   .composerFoot{margin:0;align-self:end}
   #sendButton{width:34px;height:34px;min-width:34px;min-height:34px;padding:0;border-radius:50%}
   .sendLabel{display:none}
@@ -77,22 +77,51 @@ export function intelligenceWatchPortalMarkup(zh) {
 export function intelligenceWatchClientScript() {
   return String.raw`
   const tinyWatchMedia=window.matchMedia("(max-width:320px) and (max-height:520px), (max-width:260px)");
-  const draftStoragePrefix="aertex-intelligence-draft-v1:";
+  const draftStoragePrefix="aertex-intelligence-draft-v2:";
+  let composerDraftShadow="";
+  let composerDraftTouched=false;
   function isTinyWatch(){return tinyWatchMedia.matches}
   function composerDraftKey(){return draftStoragePrefix+(state.conversationId||"new")}
   function readComposerDraft(){
     const key=composerDraftKey();
-    try{const value=sessionStorage.getItem(key);if(value!==null)return value}catch{}
-    try{const value=localStorage.getItem(key);if(value!==null)return value}catch{}
+    let sessionValue=null,localValue=null;
+    try{sessionValue=sessionStorage.getItem(key)}catch{}
+    try{localValue=localStorage.getItem(key)}catch{}
+    if(sessionValue&&sessionValue.length)return sessionValue;
+    if(localValue&&localValue.length)return localValue;
+    if(sessionValue==="")return "";
+    if(localValue==="")return "";
     return "";
   }
-  function persistComposerDraft(value){
-    const key=composerDraftKey(),draft=String(value??$("composer")?.value??"");
+  function writeComposerDraft(value){
+    const key=composerDraftKey(),draft=String(value??"");
+    composerDraftShadow=draft;
     try{sessionStorage.setItem(key,draft)}catch{}
     try{localStorage.setItem(key,draft)}catch{}
   }
+  function persistComposerDraft(value,{allowEmpty=false}={}){
+    const input=$("composer");
+    const draft=String(value??input?.value??composerDraftShadow??"");
+    if(!draft.length&&!allowEmpty)return;
+    writeComposerDraft(draft);
+  }
+  function captureComposerDraft({allowTouchedEmpty=false}={}){
+    const input=$("composer");if(!input)return;
+    const current=String(input.value??"");
+    if(current.length){
+      writeComposerDraft(current);
+      return;
+    }
+    if(allowTouchedEmpty&&composerDraftTouched){
+      writeComposerDraft("");
+      return;
+    }
+    if(composerDraftShadow.length)writeComposerDraft(composerDraftShadow);
+  }
   function clearComposerDraft(){
     const key=composerDraftKey();
+    composerDraftShadow="";
+    composerDraftTouched=false;
     try{sessionStorage.removeItem(key)}catch{}
     try{localStorage.removeItem(key)}catch{}
   }
@@ -102,11 +131,55 @@ export function intelligenceWatchClientScript() {
     const max=isTinyWatch()?76:180;
     input.style.height=Math.min(input.scrollHeight,max)+"px";
   }
-  function restoreComposerDraft(){
+  function reconcileComposerDraft(){
     const input=$("composer");if(!input)return;
-    const draft=readComposerDraft();
-    if(draft!==input.value)input.value=draft;
+    const current=String(input.value??"");
+    if(current.length){
+      composerDraftShadow=current;
+      writeComposerDraft(current);
+      resizeComposerInput();
+      return;
+    }
+    const stored=readComposerDraft();
+    if(stored.length){
+      input.value=stored;
+      composerDraftShadow=stored;
+    }else if(composerDraftShadow.length){
+      input.value=composerDraftShadow;
+    }
     resizeComposerInput();
+  }
+  function restoreComposerDraft(){reconcileComposerDraft()}
+  let watchComposerPromptOpen=false;
+  function syncWatchComposerMode(){
+    const input=$("composer");if(!input)return;
+    if(isTinyWatch()){
+      input.readOnly=true;
+      input.setAttribute("inputmode","none");
+      input.setAttribute("aria-haspopup","dialog");
+    }else{
+      input.readOnly=false;
+      input.removeAttribute("inputmode");
+      input.removeAttribute("aria-haspopup");
+    }
+  }
+  function openWatchComposerPrompt(){
+    if(!isTinyWatch()||watchComposerPromptOpen)return false;
+    const input=$("composer");if(!input)return false;
+    watchComposerPromptOpen=true;
+    try{
+      const current=String(input.value||readComposerDraft()||composerDraftShadow||"");
+      const value=window.prompt(text.placeholder,current);
+      if(value===null)return true;
+      input.value=String(value);
+      composerDraftTouched=true;
+      writeComposerDraft(input.value);
+      resizeComposerInput();
+      syncWatchViewport();
+      return true;
+    }finally{
+      watchComposerPromptOpen=false;
+    }
   }
   function syncWatchViewport(){
     if(!isTinyWatch()){document.documentElement.style.removeProperty("--aertex-visual-height");return}
@@ -203,14 +276,33 @@ export function intelligenceWatchClientScript() {
     syncWatchModelButton();closeWatchModelPortal();
   });
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!$("watchModelPortal")?.hidden)closeWatchModelPortal()});
-  tinyWatchMedia.addEventListener?.("change",()=>{syncWatchViewport();syncWatchModelButton();if(!isTinyWatch())closeWatchModelPortal()});
+  tinyWatchMedia.addEventListener?.("change",()=>{syncWatchViewport();syncWatchModelButton();syncWatchComposerMode();if(!isTinyWatch())closeWatchModelPortal()});
   window.visualViewport?.addEventListener("resize",syncWatchViewport);
   window.visualViewport?.addEventListener("scroll",syncWatchViewport);
-  window.addEventListener("pagehide",()=>persistComposerDraft());
-  window.addEventListener("pageshow",()=>{restoreComposerDraft();syncWatchViewport();syncWatchModelButton()});
+  window.addEventListener("pagehide",()=>captureComposerDraft());
+  window.addEventListener("pageshow",()=>{reconcileComposerDraft();syncWatchViewport();syncWatchModelButton()});
   document.addEventListener("visibilitychange",()=>{
-    if(document.visibilityState==="hidden")persistComposerDraft();
-    else{restoreComposerDraft();syncWatchViewport();syncWatchModelButton()}
+    if(document.visibilityState==="hidden")captureComposerDraft();
+    else{reconcileComposerDraft();syncWatchViewport();syncWatchModelButton()}
   });
+  $("composer")?.addEventListener("beforeinput",()=>{composerDraftTouched=true});
+  $("composer")?.addEventListener("input",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
+  $("composer")?.addEventListener("change",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
+  $("composer")?.addEventListener("compositionend",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
+  $("composer")?.addEventListener("blur",()=>captureComposerDraft({allowTouchedEmpty:true}));
+  $("composer")?.addEventListener("focus",event=>{
+    if(isTinyWatch()){
+      event.currentTarget.blur();
+      openWatchComposerPrompt();
+      return;
+    }
+    reconcileComposerDraft();
+  });
+  $("composer")?.addEventListener("click",event=>{
+    if(!isTinyWatch())return;
+    event.preventDefault();
+    openWatchComposerPrompt();
+  });
+  syncWatchComposerMode();
 `;
 }
