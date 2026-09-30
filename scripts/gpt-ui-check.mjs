@@ -47,11 +47,28 @@ for (const locale of ["zh-cn", "en"]) {
     'history.replaceState({conversationId:state.conversationId}',
     'qssed_theme',
     'data-theme="dark"',
+    'id="watchModelButton"',
+    'id="watchModelSheet"',
+    'id="watchModelList"',
+    'class="sendGlyph"',
+    'aertex-intelligence-draft-v1:',
+    'window.visualViewport',
+    'persistComposerDraft(message)',
+    'clearComposerDraft()',
   ]) {
     if (!html.includes(required)) throw new Error(`GPT UI ${locale} missing multi-provider invariant: ${required}`);
   }
   if (!html.includes('@media(max-width:760px)') || !html.includes('.app.sidebar-open .sidebar')) {
     throw new Error("Intelligence must provide mobile overlay sidebar behavior");
+  }
+  if (!html.includes('(max-width:320px) and (max-height:520px)') || !html.includes('.watchModelOption[aria-checked="true"]')) {
+    throw new Error("Intelligence must provide a dedicated tiny-watch layout and model picker");
+  }
+  if (!html.includes('button.dataset.model=option.value||""') || !html.includes('select.dispatchEvent(new Event("change",{bubbles:true}))')) {
+    throw new Error("Watch model selection must use exact model/provider matching instead of the native select hit target");
+  }
+  if (!html.includes('window.addEventListener("pagehide",()=>persistComposerDraft())') || !html.includes('document.addEventListener("visibilitychange"')) {
+    throw new Error("Intelligence must preserve drafts across watch input suspension and page restoration");
   }
   if (!html.includes('.app.sidebar-collapsed .composerWrap{left:0}')) {
     throw new Error("Intelligence composer must follow desktop sidebar collapse state");
