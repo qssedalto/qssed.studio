@@ -51,7 +51,7 @@ for (const locale of ["zh-cn", "en"]) {
     'id="watchModelPortal"',
     'id="watchModelList"',
     'class="sendGlyph"',
-    'aertex-intelligence-draft-v1:',
+    'aertex-intelligence-draft-v2:',
     'window.visualViewport',
     'persistComposerDraft(message)',
     'clearComposerDraft()',
@@ -76,8 +76,14 @@ for (const locale of ["zh-cn", "en"]) {
   if (!html.includes('button.dataset.model=model') || !html.includes('select.dispatchEvent(new Event("change",{bubbles:true}))')) {
     throw new Error("Watch model selection must use exact model/provider matching instead of the native select hit target");
   }
-  if (!html.includes('window.addEventListener("pagehide",()=>persistComposerDraft())') || !html.includes('document.addEventListener("visibilitychange"')) {
+  if (!html.includes('window.addEventListener("pagehide",()=>captureComposerDraft())') || !html.includes('document.addEventListener("visibilitychange"')) {
     throw new Error("Intelligence must preserve drafts across watch input suspension and page restoration");
+  }
+  if (!html.includes('if(current.length){') || !html.includes('input.value=stored') || !html.includes('composerDraftShadow')) {
+    throw new Error("Watch draft restoration must reconcile non-destructively with text returned by the system input UI");
+  }
+  if (!html.includes('addEventListener("change",event=>') || !html.includes('addEventListener("compositionend",event=>')) {
+    throw new Error("Watch composer must capture system-input completion events in addition to ordinary input events");
   }
   if (!html.includes('.app.sidebar-collapsed .composerWrap{left:0}')) {
     throw new Error("Intelligence composer must follow desktop sidebar collapse state");
