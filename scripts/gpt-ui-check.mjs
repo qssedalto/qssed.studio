@@ -99,11 +99,14 @@ for (const locale of ["zh-cn", "en"]) {
   if (html.includes('window.prompt(text.placeholder,current)') || html.includes('watchComposerPromptOpen')) {
     throw new Error("Watch composer must not use JavaScript prompt as its text-entry mechanism");
   }
-  if (!html.includes('.msg.user .bubble{padding:9px 11px;border-radius:18px 18px 6px 18px;background:#0a84ff') || !html.includes('.msg.assistant .bubble{padding:10px 11px') || !html.includes('font-size:15px')) {
-    throw new Error("Tiny-watch chat must render readable iMessage-style user and assistant bubbles");
+  if (!html.includes('.msg.user .bubble{max-width:88%;padding:10px 12px') || !html.includes('font-size:18px') || !html.includes('.msg.assistant .bubble{max-width:96%;padding:11px 12px') || !html.includes('font-size:20px')) {
+    throw new Error("Tiny-watch chat must use native-scale Messages-like typography for user and assistant bubbles");
   }
-  if (!html.includes('.watchComposerInput{display:block') || !html.includes('border-radius:999px') || !html.includes('#sendButton{width:38px;height:38px')) {
-    throw new Error("Tiny-watch composer must use an iMessage-style pill with a compact circular send affordance");
+  if (!html.includes('.msg.assistant .bubble .richMarkdown{font-size:inherit;line-height:1.42}')) {
+    throw new Error("Rich assistant content must inherit the enlarged Watch bubble typography instead of reverting to desktop line-height");
+  }
+  if (!html.includes('.watchComposerInput{display:block') || !html.includes('font-size:17px') || !html.includes('border-radius:999px') || !html.includes('#sendButton{width:42px;height:42px')) {
+    throw new Error("Tiny-watch composer must use a large native-scale iMessage-style pill and circular send affordance");
   }
   if (!html.includes('watchInputSessionActive=true') || !html.includes('queueWatchAutoSend()') || !html.includes('watchAutoSendTimer=window.setTimeout')) {
     throw new Error("Watch text confirmation must be able to auto-send after the native watchOS input session returns");
