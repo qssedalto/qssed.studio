@@ -10,36 +10,38 @@ export function intelligenceWatchStyles() {
   .topbar .iconButton{width:34px;height:34px;min-width:34px;min-height:34px;border-radius:50%}
   .topbar .sidebarToggleGlyph,.topbar .composeGlyph{width:19px!important;height:19px!important}
   .topbarSpacer,.model,.account,.aertex-account-root{display:none!important}
-  .watchModelButton{min-width:0;flex:1;display:flex;align-items:center;justify-content:center;height:34px;padding:0 9px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font:inherit;font-size:11px;font-weight:680;letter-spacing:-.01em;cursor:pointer}
+  .watchModelButton{min-width:0;flex:1;display:flex;align-items:center;justify-content:center;height:34px;padding:0 9px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font:inherit;font-size:12px;font-weight:700;letter-spacing:-.01em;cursor:pointer}
   .watchModelButton:active{transform:scale(.97)}
   .watchModelButton:disabled{opacity:.5}
   .watchModelLabel{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .content{min-height:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-  .messages{width:100%;padding:9px 6px 68px}
-  .empty{min-height:calc(var(--aertex-visual-height,100dvh) - 110px);padding:10px 6px}
-  .empty h1{font-size:18px;line-height:1.15;letter-spacing:-.025em;margin-bottom:6px}
-  .empty p{max-width:190px;font-size:12px;line-height:1.4}
-  .msg{display:flex;flex-direction:column;margin:0 0 10px;font-size:14px}
+  .messages{width:100%;padding:8px 5px 74px}
+  .empty{min-height:calc(var(--aertex-visual-height,100dvh) - 112px);padding:10px 6px}
+  .empty h1{font-size:20px;line-height:1.12;letter-spacing:-.025em;margin-bottom:7px}
+  .empty p{max-width:194px;font-size:14px;line-height:1.4}
+  .msg{display:flex;flex-direction:column;margin:0 0 12px}
   .msg.user{align-items:flex-end}
   .msg.assistant{align-items:flex-start}
-  .msg .bubble{max-width:92%;overflow-wrap:anywhere;word-break:break-word}
-  .msg.user .bubble{padding:9px 11px;border-radius:18px 18px 6px 18px;background:#0a84ff;color:#fff;font-size:13px;line-height:1.42;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-  .msg.assistant .bubble{padding:10px 11px;border:1px solid color-mix(in srgb,var(--line) 78%,transparent);border-radius:18px 18px 18px 6px;background:var(--panel2);color:var(--text);font-size:15px;line-height:1.48;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-  .msg.assistant .bubble :where(p,ul,ol,pre,blockquote,table){margin-top:.45em;margin-bottom:.45em}
-  .msg.assistant .bubble :where(pre,code){font-size:11px}
-  .status{font-size:10px;margin:4px 0 0 5px;color:var(--muted)}
+  .msg .bubble{overflow-wrap:anywhere;word-break:break-word}
+  .msg.user .bubble{max-width:88%;padding:10px 12px;border-radius:20px 20px 7px 20px;background:#0a84ff;color:#fff;font-size:18px;line-height:1.38;letter-spacing:-.01em;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  .msg.assistant .bubble{max-width:96%;padding:11px 12px;border:1px solid color-mix(in srgb,var(--line) 78%,transparent);border-radius:20px 20px 20px 7px;background:var(--panel2);color:var(--text);font-size:20px;line-height:1.42;letter-spacing:-.012em;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+  .msg.assistant .bubble .richMarkdown{font-size:inherit;line-height:1.42}
+  .msg.assistant .bubble .richMarkdown p{margin:0 0 .55em}
+  .msg.assistant .bubble :where(p,ul,ol,pre,blockquote,table){margin-top:.42em;margin-bottom:.42em}
+  .msg.assistant .bubble :where(pre,code){font-size:12px}
+  .status{font-size:12px;margin:4px 0 0 6px;color:var(--muted)}
   .composerWrap,.app.sidebar-collapsed .composerWrap{left:0;padding:5px max(5px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));background:linear-gradient(to top,var(--bg) 76%,transparent)}
   .composer{width:100%;margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:5px;padding:0;border:0;background:transparent;box-shadow:none}
   textarea{display:none!important}
   .watchComposerForm{display:block;min-width:0;width:100%;margin:0;padding:0}
-  .watchComposerInput{display:block;width:100%;min-width:0;height:38px;padding:0 12px;border:1px solid color-mix(in srgb,var(--line) 88%,transparent);border-radius:999px;outline:0;background:var(--panel2);color:var(--text);font:inherit;font-size:14px;line-height:38px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-appearance:none;appearance:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+  .watchComposerInput{display:block;width:100%;min-width:0;height:42px;padding:0 14px;border:1px solid color-mix(in srgb,var(--line) 88%,transparent);border-radius:999px;outline:0;background:var(--panel2);color:var(--text);font:inherit;font-size:17px;line-height:42px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-appearance:none;appearance:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
   .watchComposerInput::placeholder{color:var(--muted);opacity:1}
   .watchComposerInput:focus{outline:none;border-color:color-mix(in srgb,#0a84ff 58%,var(--line))}
   .composerFoot{margin:0;align-self:center}
-  #sendButton{width:38px;height:38px;min-width:38px;min-height:38px;padding:0;border:0;border-radius:50%;background:#0a84ff;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.16)}
+  #sendButton{width:42px;height:42px;min-width:42px;min-height:42px;padding:0;border:0;border-radius:50%;background:#0a84ff;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.16)}
   #sendButton:disabled{opacity:.42}
   .sendLabel{display:none}
-  .sendGlyph{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round}
+  .sendGlyph{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round}
   .sidebar{width:min(90vw,230px);padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom));gap:8px}
   .sidebar .brand{font-size:16px;padding:5px 3px}.sidebar .brand small{font-size:9px;margin-top:2px}
   .sidebar .statusRow{font-size:10px;gap:6px}.sidebar .dot{width:7px;height:7px}
