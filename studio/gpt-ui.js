@@ -327,6 +327,10 @@ ${intelligenceWatchClientScript()}
   }
   async function send(){
     const message=$("composer").value.trim();if(!message||state.busy)return;
+    if(isTinyWatch()){
+      watchInputSessionActive=false;
+      if(watchAutoSendTimer){clearTimeout(watchAutoSendTimer);watchAutoSendTimer=0}
+    }
     persistComposerDraft(message);state.busy=true;$("sendButton").disabled=true;$("composer").value="";resizeComposerInput();
     if(isTinyWatch()&&$("watchComposerInput"))$("watchComposerInput").value="";
     append("user",message);
@@ -406,7 +410,7 @@ ${intelligenceWatchClientScript()}
   $("retry").addEventListener("click",()=>void checkStatus(true));
   function startNewChat(){
     persistComposerDraft();state.conversationId="";state.current=null;history.pushState({},"",localeBase);
-    $("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden");renderConversationList();closeMobileSidebar();restoreComposerDraft();syncWatchModelButton();syncWatchViewport();$("composer").focus();
+    $("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden");renderConversationList();closeMobileSidebar();restoreComposerDraft();syncWatchModelButton();syncWatchViewport();if(!isTinyWatch())$("composer").focus();
   }
   $("newChat").addEventListener("click",startNewChat);
   $("topNewChat").addEventListener("click",startNewChat);
