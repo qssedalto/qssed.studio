@@ -77,22 +77,51 @@ export function intelligenceWatchPortalMarkup(zh) {
 export function intelligenceWatchClientScript() {
   return String.raw`
   const tinyWatchMedia=window.matchMedia("(max-width:320px) and (max-height:520px), (max-width:260px)");
-  const draftStoragePrefix="aertex-intelligence-draft-v1:";
+  const draftStoragePrefix="aertex-intelligence-draft-v2:";
+  let composerDraftShadow="";
+  let composerDraftTouched=false;
   function isTinyWatch(){return tinyWatchMedia.matches}
   function composerDraftKey(){return draftStoragePrefix+(state.conversationId||"new")}
   function readComposerDraft(){
     const key=composerDraftKey();
-    try{const value=sessionStorage.getItem(key);if(value!==null)return value}catch{}
-    try{const value=localStorage.getItem(key);if(value!==null)return value}catch{}
+    let sessionValue=null,localValue=null;
+    try{sessionValue=sessionStorage.getItem(key)}catch{}
+    try{localValue=localStorage.getItem(key)}catch{}
+    if(sessionValue&&sessionValue.length)return sessionValue;
+    if(localValue&&localValue.length)return localValue;
+    if(sessionValue==="")return "";
+    if(localValue==="")return "";
     return "";
   }
-  function persistComposerDraft(value){
-    const key=composerDraftKey(),draft=String(value??$("composer")?.value??"");
+  function writeComposerDraft(value){
+    const key=composerDraftKey(),draft=String(value??"");
+    composerDraftShadow=draft;
     try{sessionStorage.setItem(key,draft)}catch{}
     try{localStorage.setItem(key,draft)}catch{}
   }
+  function persistComposerDraft(value,{allowEmpty=false}={}){
+    const input=$("composer");
+    const draft=String(value??input?.value??composerDraftShadow??"");
+    if(!draft.length&&!allowEmpty)return;
+    writeComposerDraft(draft);
+  }
+  function captureComposerDraft({allowTouchedEmpty=false}={}){
+    const input=$("composer");if(!input)return;
+    const current=String(input.value??"");
+    if(current.length){
+      writeComposerDraft(current);
+      return;
+    }
+    if(allowTouchedEmpty&&composerDraftTouched){
+      writeComposerDraft("");
+      return;
+    }
+    if(composerDraftShadow.length)writeComposerDraft(composerDraftShadow);
+  }
   function clearComposerDraft(){
     const key=composerDraftKey();
+    composerDraftShadow="";
+    composerDraftTouched=false;
     try{sessionStorage.removeItem(key)}catch{}
     try{localStorage.removeItem(key)}catch{}
   }
@@ -102,12 +131,25 @@ export function intelligenceWatchClientScript() {
     const max=isTinyWatch()?76:180;
     input.style.height=Math.min(input.scrollHeight,max)+"px";
   }
-  function restoreComposerDraft(){
+  function reconcileComposerDraft(){
     const input=$("composer");if(!input)return;
-    const draft=readComposerDraft();
-    if(draft!==input.value)input.value=draft;
+    const current=String(input.value??"");
+    if(current.length){
+      composerDraftShadow=current;
+      writeComposerDraft(current);
+      resizeComposerInput();
+      return;
+    }
+    const stored=readComposerDraft();
+    if(stored.length){
+      input.value=stored;
+      composerDraftShadow=stored;
+    }else if(composerDraftShadow.length){
+      input.value=composerDraftShadow;
+    }
     resizeComposerInput();
   }
+  function restoreComposerDraft(){reconcileComposerDraft()}
   function syncWatchViewport(){
     if(!isTinyWatch()){document.documentElement.style.removeProperty("--aertex-visual-height");return}
     const viewport=window.visualViewport;
@@ -206,11 +248,17 @@ export function intelligenceWatchClientScript() {
   tinyWatchMedia.addEventListener?.("change",()=>{syncWatchViewport();syncWatchModelButton();if(!isTinyWatch())closeWatchModelPortal()});
   window.visualViewport?.addEventListener("resize",syncWatchViewport);
   window.visualViewport?.addEventListener("scroll",syncWatchViewport);
-  window.addEventListener("pagehide",()=>persistComposerDraft());
-  window.addEventListener("pageshow",()=>{restoreComposerDraft();syncWatchViewport();syncWatchModelButton()});
+  window.addEventListener("pagehide",()=>captureComposerDraft());
+  window.addEventListener("pageshow",()=>{reconcileComposerDraft();syncWatchViewport();syncWatchModelButton()});
   document.addEventListener("visibilitychange",()=>{
-    if(document.visibilityState==="hidden")persistComposerDraft();
-    else{restoreComposerDraft();syncWatchViewport();syncWatchModelButton()}
+    if(document.visibilityState==="hidden")captureComposerDraft();
+    else{reconcileComposerDraft();syncWatchViewport();syncWatchModelButton()}
   });
+  $("composer")?.addEventListener("beforeinput",()=>{composerDraftTouched=true});
+  $("composer")?.addEventListener("input",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
+  $("composer")?.addEventListener("change",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
+  $("composer")?.addEventListener("compositionend",event=>{composerDraftTouched=true;writeComposerDraft(String(event.currentTarget.value??""))});
+  $("composer")?.addEventListener("blur",()=>captureComposerDraft({allowTouchedEmpty:true}));
+  $("composer")?.addEventListener("focus",()=>reconcileComposerDraft());
 `;
 }
