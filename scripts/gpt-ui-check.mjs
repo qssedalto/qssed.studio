@@ -85,6 +85,9 @@ for (const locale of ["zh-cn", "en"]) {
   if (!html.includes('addEventListener("change",event=>') || !html.includes('addEventListener("compositionend",event=>')) {
     throw new Error("Watch composer must capture system-input completion events in addition to ordinary input events");
   }
+  if (!html.includes('input.readOnly=true') || !html.includes('window.prompt(text.placeholder,current)') || !html.includes('openWatchComposerPrompt()')) {
+    throw new Error("Tiny-watch composer must use the native prompt bridge instead of direct textarea editing");
+  }
   if (!html.includes('.app.sidebar-collapsed .composerWrap{left:0}')) {
     throw new Error("Intelligence composer must follow desktop sidebar collapse state");
   }
