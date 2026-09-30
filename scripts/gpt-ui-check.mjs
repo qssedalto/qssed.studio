@@ -99,6 +99,19 @@ for (const locale of ["zh-cn", "en"]) {
   if (html.includes('window.prompt(text.placeholder,current)') || html.includes('watchComposerPromptOpen')) {
     throw new Error("Watch composer must not use JavaScript prompt as its text-entry mechanism");
   }
+  if (!html.includes('.msg.user .bubble{padding:9px 11px;border-radius:18px 18px 6px 18px;background:#0a84ff') || !html.includes('.msg.assistant .bubble{padding:10px 11px') || !html.includes('font-size:15px')) {
+    throw new Error("Tiny-watch chat must render readable iMessage-style user and assistant bubbles");
+  }
+  if (!html.includes('.watchComposerInput{display:block') || !html.includes('border-radius:999px') || !html.includes('#sendButton{width:38px;height:38px')) {
+    throw new Error("Tiny-watch composer must use an iMessage-style pill with a compact circular send affordance");
+  }
+  if (!html.includes('watchInputSessionActive=true') || !html.includes('queueWatchAutoSend()') || !html.includes('watchAutoSendTimer=window.setTimeout')) {
+    throw new Error("Watch text confirmation must be able to auto-send after the native watchOS input session returns");
+  }
+  const watchInputBinding = html.match(/\$\("watchComposerInput"\)\?\.addEventListener\("input",[\s\S]*?\}\);/);
+  if (!watchInputBinding || watchInputBinding[0].includes('queueWatchAutoSend()')) {
+    throw new Error("Watch must not auto-send on every input event while the user is still editing");
+  }
   if (!html.includes('.app.sidebar-collapsed .composerWrap{left:0}')) {
     throw new Error("Intelligence composer must follow desktop sidebar collapse state");
   }
