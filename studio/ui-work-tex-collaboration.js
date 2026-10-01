@@ -92,25 +92,62 @@ export function enhanceWorkTexCollaboration(markup, zh) {
   let output = String(markup || "");
 
   output = output.replace(
-    "button.type='button';button.className='tex-document-item'+(item.id===activeId?' is-active':'');",
-    "button.type='button';button.dataset.texDocumentId=item.id;button.className='tex-document-item'+(item.id===activeId?' is-active':'');"
+    "let documents=[];let runs=[];let activeId='';let activeDocument=null;let dirty=false;let saveTimer=null;let saveSequence=0;let compilerAvailable=false;",
+    "let documents=[];let runs=[];let activeId='';let activeDocument=null;let dirty=false;let saveTimer=null;let saveSequence=0;let compilerAvailable=false;"+
+    "const workLocale=location.pathname.startsWith('/en/')?'en':'zh-cn';"+
+    "const routeDocumentId=()=>{const match=location.pathname.match(/^\\/(?:zh-cn|en)\\/d\\/(?:huawei-exempt\\/)?([0-9a-f-]{36})$/i);return match?match[1]:''};"+
+    "const documentRoute=id=>'/'+workLocale+'/d/'+(location.pathname.includes('/huawei-exempt/')?'huawei-exempt/':'')+encodeURIComponent(id);"+
+    "const workRootRoute=()=>'/'+workLocale+'/tex';"+
+    "const syncDocumentRoute=(id,replace=false)=>{if(!id)return;const next=documentRoute(id);if(location.pathname===next)return;history[replace?'replaceState':'pushState']({texDocumentId:id},'',next)};"
+  );
+  output = output.replace(
+    "const button=document.createElement('button');button.type='button';button.className='tex-document-item'+(item.id===activeId?' is-active':'');",
+    "const button=document.createElement('a');button.href=documentRoute(item.id);button.dataset.texDocumentId=item.id;button.className='tex-document-item'+(item.id===activeId?' is-active':'');"
+  );
+  output = output.replace(
+    "button.addEventListener('click',()=>void openDocument(item.id));",
+    "button.addEventListener('click',event=>{if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();void openDocument(item.id,'push')});"
+  );
+  output = output.replace(
+    "async function openDocument(id){",
+    "async function openDocument(id,routeMode='push'){"
   );
   output = output.replace(
     "activeId=id;activeDocument=data.document||null;renderEditor();",
     "activeId=id;root.dataset.texCollaborationDocumentId=id;activeDocument=data.document||null;renderEditor();"
   );
   output = output.replace(
+    "activeId=id;root.dataset.texCollaborationDocumentId=id;activeDocument=data.document||null;renderEditor();renderDocuments();await loadRuns();",
+    "activeId=id;root.dataset.texCollaborationDocumentId=id;activeDocument=data.document||null;renderEditor();renderDocuments();await loadRuns();if(routeMode)syncDocumentRoute(id,routeMode==='replace');"
+  );
+  output = output.replace(
     "activeId=data.document.id;activeDocument=data.document;updateLocal(activeDocument);",
     "activeId=data.document.id;root.dataset.texCollaborationDocumentId=activeId;activeDocument=data.document;updateLocal(activeDocument);"
+  );
+  output = output.replace(
+    "activeId=data.document.id;root.dataset.texCollaborationDocumentId=activeId;activeDocument=data.document;updateLocal(activeDocument);renderEditor();await loadRuns();source.focus();",
+    "activeId=data.document.id;root.dataset.texCollaborationDocumentId=activeId;activeDocument=data.document;updateLocal(activeDocument);renderEditor();await loadRuns();syncDocumentRoute(activeId,false);source.focus();"
   );
   output = output.replace(
     "activeId='';activeDocument=null;dirty=false;runs=[];",
     "activeId='';root.dataset.texCollaborationDocumentId='';activeDocument=null;dirty=false;runs=[];"
   );
+  output = output.replace(
+    "renderDocuments();renderEditor();renderRuns();showMessage(copy.deleteDone);if(documents[0])await openDocument(documents[0].id);",
+    "renderDocuments();renderEditor();renderRuns();showMessage(copy.deleteDone);if(documents[0])await openDocument(documents[0].id,'replace');else history.replaceState({},'',workRootRoute());"
+  );
+  output = output.replace(
+    "async function initialize(){try{const [statusData,documentData]=await Promise.all([api('/api/tex/status'),api('/api/tex/documents')]);applyCompilerStatus(statusData);documents=Array.isArray(documentData.documents)?documentData.documents:[];renderDocuments();if(documents[0])await openDocument(documents[0].id);else renderEditor();}",
+    "async function initialize(){try{const [statusData,documentData]=await Promise.all([api('/api/tex/status'),api('/api/tex/documents')]);applyCompilerStatus(statusData);documents=Array.isArray(documentData.documents)?documentData.documents:[];renderDocuments();const requested=routeDocumentId();if(requested)await openDocument(requested,'replace');else if(documents[0])await openDocument(documents[0].id,'replace');else renderEditor();}"
+  );
+  output = output.replace(
+    "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());void initialize();",
+    "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());window.addEventListener('popstate',()=>{const id=routeDocumentId();if(id&&id!==activeId)void openDocument(id,false)});void initialize();"
+  );
 
   output += `
     <style id="qsseda-work-tex-collaboration-style">
-      .tex-work-app .tex-editor-toolbar{align-items:end!important}
+      .tex-work-app .tex-editor-toolbar{align-items:end!important}\n      .tex-work-app .tex-document-item{text-decoration:none!important;cursor:pointer!important}
       .tex-work-app .tex-collaboration-button{
         appearance:none!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;
         flex:0 0 auto!important;width:auto!important;min-width:94px!important;height:40px!important;min-height:40px!important;margin:0!important;padding:0 14px!important;
