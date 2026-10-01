@@ -250,12 +250,14 @@ export function dashboardContent(zh, options = {}) {
           if (week) week.textContent = zh ? ("第 " + isoWeek(now) + " 周") : ("Week " + isoWeek(now));
           if (theme) {
             const current = document.documentElement.dataset.theme || "light";
-            theme.textContent = current === "dark" ? (zh ? "深色" : "Dark") : (zh ? "浅色" : "Light");
+            const mode = window.AERTEXTheme?.getMode?.() || document.documentElement.dataset.themeMode || current;
+            const resolved = current === "dark" ? (zh ? "深色" : "Dark") : (zh ? "浅色" : "Light");
+            theme.textContent = mode === "system" ? ((zh ? "系统 · " : "System · ") + resolved) : resolved;
           }
         };
         paint();
         window.setInterval(paint, 30000);
-        new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+        new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme","data-theme-mode","data-accent"]});
       })();
     </script>
   `;
