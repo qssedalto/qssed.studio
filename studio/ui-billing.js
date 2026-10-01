@@ -5,12 +5,13 @@ export function billingSettingsContent(zh) {
     unavailableDetail:"当前阶段用于验证套餐、权益和管理员授权。支付宝与微信支付接入后会在这里启用购买。",
     error:"暂时无法读取订阅信息。", active:"有效", grace:"宽限期", manual:"管理员授权",
     system:"系统", autoRenew:"自动续费", off:"关闭", on:"开启", quota:"云盘容量",
-    student:"学生资格", studentIntro:"先选择你就读的学校或教育机构所在地，再使用对应的官方渠道验证学生身份。此分类与国籍、居住地无关。",
-    regionTitle:"你的学校或教育机构位于哪里？", regionHint:"请选择学校所在地，而不是你的国籍、户籍或当前居住地。",
-    regionMainlandHigher:"中国大陆高等教育院校", regionMainlandHigherHint:"大学、学院及其他可通过学信网学籍报告验证的高等教育院校",
+    student:"学生资格", studentIntro:"先选择你的在读资格来源，再使用对应的官方渠道验证学生身份。分类依据是学籍或在读关系由谁出具，与国籍、户籍和当前居住地无关。",
+    regionTitle:"你的在读资格由哪一地区的学校或教育机构出具？", regionHint:"请按学籍或在读关系的出具机构选择，而不是按国籍、户籍、当前居住地或实际上课地点选择。",
+    regionMainlandHigher:"中国大陆高等教育 · 可通过学信网验证", regionMainlandHigherHint:"你的在读学籍可生成学信网《教育部学籍在线验证报告》",
     regionMainlandOther:"中国大陆其他学校 / 教育机构", regionMainlandOtherHint:"中学、中职或其他无法使用学信网学籍报告的在读情况",
     regionHmt:"中国香港、澳门或台湾地区院校", regionHmtHint:"在香港、澳门或台湾地区注册并就读的学校或院校",
-    regionInternational:"其他国家或地区院校", regionInternationalHint:"除中国大陆及港澳台地区以外的学校或高等教育机构",
+    regionInternational:"其他国家或地区院校", regionInternationalHint:"在读关系由中国大陆及港澳台地区以外的学校或教育机构出具",
+    regionOther:"不确定 / 其他情况", regionOtherHint:"例如跨境办学、联合培养、境外分校，或你不确定应该选择哪一项",
     methodTitle:"选择学生身份验证方式", methodHint:"AERTEX 只要求验证在读状态，不要求你提交国籍证明或政府身份证件。",
     changeRegion:"更改就读地区", supportedNow:"当前可用", comingSoon:"即将开放",
     methodChsi:"学信网学籍在线验证", methodChsiHint:"使用《教育部学籍在线验证报告》的官方二维码或 16 位在线验证码。",
@@ -41,12 +42,13 @@ export function billingSettingsContent(zh) {
     unavailableDetail:"This phase validates plans, entitlements, and administrator grants. Alipay and WeChat Pay checkout will be enabled here later.",
     error:"Subscription information is temporarily unavailable.", active:"Active", grace:"Grace period", manual:"Admin grant",
     system:"System", autoRenew:"Auto-renew", off:"Off", on:"On", quota:"Drive quota",
-    student:"Student eligibility", studentIntro:"First choose where your school or educational institution is located, then verify student status through the appropriate official channel. This classification is not about nationality or residence.",
-    regionTitle:"Where is your school or educational institution located?", regionHint:"Choose the school location, not your nationality, permanent residence, or current location.",
-    regionMainlandHigher:"Mainland China · Higher education", regionMainlandHigherHint:"Universities, colleges, and other higher-education institutions that can be verified through CHSI student-record reports",
+    student:"Student eligibility", studentIntro:"First choose the source of your enrollment status, then verify it through the appropriate official channel. Classification follows the institution that issues your enrollment record, not nationality or residence.",
+    regionTitle:"Which education system issues your current enrollment status?", regionHint:"Choose the institution that issues your enrollment record—not your nationality, residence, current location, or where classes physically take place.",
+    regionMainlandHigher:"Mainland China · CHSI-verifiable higher education", regionMainlandHigherHint:"Your enrollment can produce an official CHSI Online Verification Report of Student Record",
     regionMainlandOther:"Mainland China · Other education", regionMainlandOtherHint:"Secondary, vocational, or other study situations that cannot use a CHSI student-record report",
     regionHmt:"Hong Kong, Macao, or Taiwan institutions", regionHmtHint:"Schools or institutions registered in Hong Kong, Macao, or Taiwan",
-    regionInternational:"Institutions in other countries or regions", regionInternationalHint:"Schools and higher-education institutions outside Mainland China, Hong Kong, Macao, and Taiwan",
+    regionInternational:"Institutions in other countries or regions", regionInternationalHint:"Your enrollment status is issued outside Mainland China, Hong Kong, Macao, and Taiwan",
+    regionOther:"Not sure / another situation", regionOtherHint:"For example, cross-border programs, joint programs, overseas campuses, or cases that do not clearly fit above",
     methodTitle:"Choose a student-status verification method", methodHint:"AERTEX verifies enrollment status only. You do not need to provide nationality documents or government-issued identity documents.",
     changeRegion:"Change school location", supportedNow:"Available now", comingSoon:"Coming soon",
     methodChsi:"CHSI student-record verification", methodChsiHint:"Use the official QR code or 16-character online verification code from the Online Verification Report of Student Record.",
@@ -183,38 +185,41 @@ export function billingSettingsContent(zh) {
       <section id="student-region-step" class="student-path">
         <div class="student-step-head">
           <div>
-            <h3>undefined</h3>
-            <p>undefined</p>
+            <h3>${text.regionTitle}</h3>
+            <p>${text.regionHint}</p>
           </div>
         </div>
-        <div class="student-region-grid" role="radiogroup" aria-label="undefined">
+        <div class="student-region-grid" role="radiogroup" aria-label="${text.regionTitle}">
           <button class="student-region-card" type="button" data-student-region="mainland_higher" aria-pressed="false">
-            <span><strong>undefined</strong><span>undefined</span></span><b aria-hidden="true">›</b>
+            <span><strong>${text.regionMainlandHigher}</strong><span>${text.regionMainlandHigherHint}</span></span><b aria-hidden="true">›</b>
           </button>
           <button class="student-region-card" type="button" data-student-region="mainland_other" aria-pressed="false">
-            <span><strong>undefined</strong><span>undefined</span></span><b aria-hidden="true">›</b>
+            <span><strong>${text.regionMainlandOther}</strong><span>${text.regionMainlandOtherHint}</span></span><b aria-hidden="true">›</b>
           </button>
           <button class="student-region-card" type="button" data-student-region="hmt" aria-pressed="false">
-            <span><strong>undefined</strong><span>undefined</span></span><b aria-hidden="true">›</b>
+            <span><strong>${text.regionHmt}</strong><span>${text.regionHmtHint}</span></span><b aria-hidden="true">›</b>
           </button>
           <button class="student-region-card" type="button" data-student-region="international" aria-pressed="false">
-            <span><strong>undefined</strong><span>undefined</span></span><b aria-hidden="true">›</b>
+            <span><strong>${text.regionInternational}</strong><span>${text.regionInternationalHint}</span></span><b aria-hidden="true">›</b>
+          </button>
+          <button class="student-region-card" type="button" data-student-region="other" aria-pressed="false">
+            <span><strong>${text.regionOther}</strong><span>${text.regionOtherHint}</span></span><b aria-hidden="true">›</b>
           </button>
         </div>
       </section>
       <section id="student-method-step" class="student-path" hidden>
         <div class="student-step-head">
           <div>
-            <h3>undefined</h3>
-            <p>undefined</p>
+            <h3>${text.methodTitle}</h3>
+            <p>${text.methodHint}</p>
           </div>
         </div>
         <div class="student-path-summary">
           <strong id="student-region-summary"></strong>
-          <button id="student-change-region" type="button">undefined</button>
+          <button id="student-change-region" type="button">${text.changeRegion}</button>
         </div>
         <div id="student-method-list" class="student-method-list"></div>
-        <p id="student-method-note" class="student-method-note" hidden>undefined</p>
+        <p id="student-method-note" class="student-method-note" hidden>${text.methodUnavailable}</p>
       </section>
       <div id="student-tutorial" hidden style="margin-top:18px;padding:18px;border:1px solid var(--border);border-radius:16px">
         <div>
@@ -325,7 +330,7 @@ export function billingSettingsContent(zh) {
         let studentTutorialAcknowledged=false;
         let studentLocked=false;
         const studentRegionKey="aertex-student-school-region-v1";
-        const validStudentRegions=new Set(["mainland_higher","mainland_other","hmt","international"]);
+        const validStudentRegions=new Set(["mainland_higher","mainland_other","hmt","international","other"]);
         let studentRegion="";
         let studentMethod="";
         let studentPreviewUrl="";
@@ -333,7 +338,8 @@ export function billingSettingsContent(zh) {
           mainland_higher:copy.regionMainlandHigher,
           mainland_other:copy.regionMainlandOther,
           hmt:copy.regionHmt,
-          international:copy.regionInternational
+          international:copy.regionInternational,
+          other:copy.regionOther
         }[String(value)]||"");
         function loadStudentRegionPreference(){
           try{
