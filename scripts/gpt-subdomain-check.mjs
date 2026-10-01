@@ -81,8 +81,8 @@ for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online"
   assert(gptWrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
 }
 assert(!gpt.includes("canonicalGptAlias"), "GPT .online/.studio hosts must stay on their own domains");
-assert(gpt.includes('conversationRoute = pathname.match'), "GPT Worker must support per-conversation routes.");
-assert(gpt.includes('(?:huawei-exempt\\/)?'), "GPT Worker must accept Huawei-exempt conversation aliases.");
+assert(gpt.includes('const localizedRest = routeLocale ? routeParts.slice(1) : routeParts;') && gpt.includes('if (routeLocale && localizedRest[0] === "c")'), "GPT Worker must support localized per-conversation routes.");
+assert(gpt.includes('const exempt = localizedRest[1] === "huawei-exempt"'), "GPT Worker must accept Huawei-exempt conversation aliases.");
 assert(gpt.includes("await huaweiHarmonyGate(request)"), "GPT Worker must await Huawei exemption verification.");
 assert(huaweiGate.includes("handleHuaweiExemptionRoute(request)"), "Huawei exemption routes must require first-use confirmation.");
 assert(huaweiGate.includes('name="device_confirm" value="yes"'), "Huawei exemption challenge must require explicit device confirmation.");
@@ -120,7 +120,7 @@ assert(gpt.includes("script-src 'unsafe-inline' https://cdn.jsdelivr.net"), "Int
 assert(gpt.includes("style-src 'unsafe-inline' https://cdn.jsdelivr.net"), "Intelligence CSP must allow the pinned KaTeX stylesheet origin.");
 assert(gpt.includes("font-src https://cdn.jsdelivr.net data:"), "Intelligence CSP must allow KaTeX web fonts while keeping other font origins blocked.");
 assert(gpt.includes('pathname.startsWith("/api/ai/admin/")'), "GPT Worker must explicitly hide legacy administrator API paths.");
-assert(gpt.includes('pathname === "/zh-cn/admin"'), "GPT Worker must explicitly hide legacy administrator page paths.");
+assert(gpt.includes('if (localizedRest[0] === "admin")'), "GPT Worker must hide administrator page paths under every supported locale.");
 for (const required of [
   'const ZHIPU_BASE = "https://open.bigmodel.cn/api/paas/v4"',
   'providerAvailability(p.provider, country)',
