@@ -1,23 +1,36 @@
-export function midAutumnPage(locale = "zh") {
-  const zh = locale === "zh";
-  const lang = zh ? "zh-CN" : "en";
-  const title = zh ? "中秋快乐 · AERTEX" : "Happy Mid-Autumn Festival · AERTEX";
-  const blessing = zh ? "祝你中秋快乐" : "Happy Mid-Autumn Festival";
-  const lead = zh
-    ? "愿今夜月光所至，都是平安、团圆与好心情。"
-    : "May tonight bring you peace, reunion, and a little more joy.";
-  const action = zh ? "点亮今夜" : "Light up the night";
-  const stageTitle = zh ? "中秋快乐" : "Happy Mid-Autumn";
-  const stageCopy = zh ? "月满 · 人安 · 事事圆满" : "Full moon · Peace · Everything comes together";
-  const openingTitle = zh ? "有一封中秋祝福" : "A Mid-Autumn wish for you";
-  const openingCopy = zh ? "来自 AERTEX 的一封月光来信" : "A moonlit note from AERTEX";
-  const openingAction = zh ? "打开祝福" : "Open the wish";
-  const openingLoading = zh ? "正在展开月光…" : "Unfolding the moonlight…";
-  const otherHref = zh ? "/en/mid-autumn" : "/zh-cn/mid-autumn";
-  const otherLabel = zh ? "ZH" : "EN";
+import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
+
+const MID_AUTUMN_COPY = {
+  "en-us":{title:"Happy Mid-Autumn Festival · AERTEX",blessing:"Happy Mid-Autumn Festival",lead:"May tonight bring you peace, reunion, and a little more joy.",action:"Light up the night",stageTitle:"Happy Mid-Autumn",stageCopy:"Full moon · Peace · Everything comes together",openingTitle:"A Mid-Autumn wish for you",openingCopy:"A moonlit note from AERTEX",openingAction:"Open the wish",openingLoading:"Unfolding the moonlight…",openingArrival:"Moonlight, wishes, and tonight’s fireworks are arriving.",words:["Stay close","Happy Mid-Autumn","Moonlit night","Reunion","Peace","Full moon","Good things align","One moon above us","May wishes come true","Together under one moon","Autumn fragrance","A night of reunion"],person:n=>n+",",stageName:n=>n+", wishing you a peaceful moonlit night"},
+  "zh-cn":{title:"中秋快乐 · AERTEX",blessing:"祝你中秋快乐",lead:"愿今夜月光所至，都是平安、团圆与好心情。",action:"点亮今夜",stageTitle:"中秋快乐",stageCopy:"月满 · 人安 · 事事圆满",openingTitle:"有一封中秋祝福",openingCopy:"来自 AERTEX 的一封月光来信",openingAction:"打开祝福",openingLoading:"正在展开月光…",openingArrival:"月光、祝福和今夜的烟花正在抵达。",words:["愿人长久","中秋快乐","今夜月明","团圆","平安","月满人安","好事圆满","共赏一轮月","所愿皆如意","千里共婵娟","桂香入梦","人间团圆"],person:n=>n+"，",stageName:n=>n+"，愿你今夜月圆人安"},
+  "zh-tw":{title:"中秋快樂 · AERTEX",blessing:"祝你中秋快樂",lead:"願今夜月光所至，都是平安、團圓與好心情。",action:"點亮今夜",stageTitle:"中秋快樂",stageCopy:"月滿 · 人安 · 事事圓滿",openingTitle:"有一封中秋祝福",openingCopy:"來自 AERTEX 的一封月光來信",openingAction:"打開祝福",openingLoading:"正在展開月光…",openingArrival:"月光、祝福與今夜的煙火正在抵達。",words:["願人長久","中秋快樂","今夜月明","團圓","平安","月滿人安","好事圓滿","共賞一輪月","所願皆如意","千里共嬋娟","桂香入夢","人間團圓"],person:n=>n+"，",stageName:n=>n+"，願你今夜月圓人安"},
+  "ja-jp":{title:"中秋節おめでとう · AERTEX",blessing:"中秋節おめでとう",lead:"今夜の月明かりが、平穏と団らん、そして少し多くの喜びを届けますように。",action:"今夜を照らす",stageTitle:"中秋の夜",stageCopy:"満月 · 平穏 · 団らん",openingTitle:"中秋のメッセージがあります",openingCopy:"AERTEX から届いた月明かりの便り",openingAction:"メッセージを開く",openingLoading:"月明かりを広げています…",openingArrival:"月明かりと祝福、今夜の花火が届いています。",words:["いつまでも近くに","中秋節おめでとう","月明かりの夜","団らん","平穏","満月と安らぎ","願いが実りますように","同じ月を見上げて","すべてがうまくいきますように","離れていても同じ月の下","秋の香り","団らんの夜"],person:n=>n+"さん、",stageName:n=>n+"さん、穏やかな月夜になりますように"},
+  "ko-kr":{title:"즐거운 중추절 · AERTEX",blessing:"즐거운 중추절 보내세요",lead:"오늘 밤 달빛이 평안과 만남, 그리고 조금 더 많은 기쁨을 가져다주길 바랍니다.",action:"오늘 밤 밝히기",stageTitle:"즐거운 중추절",stageCopy:"보름달 · 평안 · 모든 일이 원만하게",openingTitle:"중추절 축하가 도착했습니다",openingCopy:"AERTEX가 보내는 달빛 편지",openingAction:"축하 열기",openingLoading:"달빛을 펼치는 중…",openingArrival:"달빛과 축하, 오늘 밤의 불꽃놀이가 도착하고 있습니다.",words:["오래 함께하길","즐거운 중추절","달빛 가득한 밤","만남","평안","보름달과 평안","좋은 일이 가득하길","같은 달 아래","소원이 이루어지길","멀리 있어도 함께","가을 향기","함께하는 밤"],person:n=>n+"님,",stageName:n=>n+"님, 오늘 밤 달처럼 평안하길 바랍니다"},
+  "fr-fr":{title:"Bonne fête de la mi-automne · AERTEX",blessing:"Bonne fête de la mi-automne",lead:"Que la lumière de la lune vous apporte ce soir paix, retrouvailles et un peu plus de joie.",action:"Illuminer la nuit",stageTitle:"Bonne fête de la mi-automne",stageCopy:"Pleine lune · Paix · Retrouvailles",openingTitle:"Un vœu de mi-automne pour vous",openingCopy:"Une lettre au clair de lune signée AERTEX",openingAction:"Ouvrir le vœu",openingLoading:"La lumière de la lune se déploie…",openingArrival:"Le clair de lune, les vœux et les feux d’artifice de ce soir arrivent.",words:["Toujours proches","Bonne fête","Nuit au clair de lune","Retrouvailles","Paix","Pleine lune","Que tout s’aligne","Sous la même lune","Que vos vœux se réalisent","Ensemble malgré la distance","Parfum d’automne","Une nuit de retrouvailles"],person:n=>n+",",stageName:n=>n+", que cette nuit de lune soit paisible"},
+  "es-es":{title:"Feliz Festival del Medio Otoño · AERTEX",blessing:"Feliz Festival del Medio Otoño",lead:"Que la luz de la luna te traiga esta noche paz, reencuentro y un poco más de alegría.",action:"Iluminar la noche",stageTitle:"Feliz Medio Otoño",stageCopy:"Luna llena · Paz · Reencuentro",openingTitle:"Un deseo de Medio Otoño para ti",openingCopy:"Una carta a la luz de la luna de AERTEX",openingAction:"Abrir el deseo",openingLoading:"Desplegando la luz de la luna…",openingArrival:"La luz de la luna, los buenos deseos y los fuegos artificiales de esta noche están llegando.",words:["Siempre cerca","Feliz Medio Otoño","Noche de luna","Reencuentro","Paz","Luna llena","Que todo salga bien","Bajo la misma luna","Que se cumplan tus deseos","Juntos bajo una luna","Aroma de otoño","Una noche de reencuentro"],person:n=>n+",",stageName:n=>n+", que tengas una noche de luna tranquila"},
+  "el-gr":{title:"Χαρούμενη Γιορτή του Μεσοφθινοπώρου · AERTEX",blessing:"Χαρούμενη Γιορτή του Μεσοφθινοπώρου",lead:"Εύχομαι το αποψινό φως του φεγγαριού να φέρει γαλήνη, επανένωση και λίγη περισσότερη χαρά.",action:"Φώτισε τη νύχτα",stageTitle:"Χαρούμενο Μεσοφθινόπωρο",stageCopy:"Πανσέληνος · Γαλήνη · Επανένωση",openingTitle:"Μια ευχή Μεσοφθινοπώρου για εσάς",openingCopy:"Ένα σεληνόφωτο μήνυμα από το AERTEX",openingAction:"Άνοιγμα ευχής",openingLoading:"Ξεδιπλώνεται το σεληνόφως…",openingArrival:"Το σεληνόφως, οι ευχές και τα αποψινά πυροτεχνήματα φτάνουν.",words:["Πάντα κοντά","Χαρούμενη γιορτή","Νύχτα με φεγγάρι","Επανένωση","Γαλήνη","Πανσέληνος","Όλα να πάνε καλά","Κάτω από το ίδιο φεγγάρι","Οι ευχές να γίνουν αληθινές","Μαζί από μακριά","Άρωμα φθινοπώρου","Νύχτα επανένωσης"],person:n=>n+",",stageName:n=>n+", εύχομαι μια γαλήνια φεγγαρόλουστη νύχτα"},
+  "ar-sa":{title:"مهرجان منتصف الخريف السعيد · AERTEX",blessing:"مهرجان منتصف الخريف السعيد",lead:"أتمنى أن يحمل ضوء القمر الليلة السلام واللقاء ومزيدًا من الفرح.",action:"أضئ الليلة",stageTitle:"منتصف خريف سعيد",stageCopy:"قمر مكتمل · سلام · لقاء",openingTitle:"تهنئة بمنتصف الخريف لك",openingCopy:"رسالة مضيئة بضوء القمر من AERTEX",openingAction:"افتح التهنئة",openingLoading:"جارٍ نشر ضوء القمر…",openingArrival:"ضوء القمر والتهاني وألعاب الليلة النارية في طريقها إليك.",words:["دام القرب","منتصف خريف سعيد","ليلة مقمرة","لقاء","سلام","قمر مكتمل","لتكتمل الأمور الجميلة","تحت القمر نفسه","لتتحقق الأمنيات","معًا تحت قمر واحد","عبير الخريف","ليلة لقاء"],person:n=>n+"،",stageName:n=>n+"، أتمنى لك ليلة قمرية هادئة"}
+};
+MID_AUTUMN_COPY["en-gb"]=MID_AUTUMN_COPY["en-us"]; MID_AUTUMN_COPY["en-au"]=MID_AUTUMN_COPY["en-us"];
+
+export function midAutumnPage(locale = "en-us") {
+  const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
+  const copy = MID_AUTUMN_COPY[code] || MID_AUTUMN_COPY["en-us"];
+  const lang = code;
+  const title = copy.title;
+  const blessing = copy.blessing;
+  const lead = copy.lead;
+  const action = copy.action;
+  const stageTitle = copy.stageTitle;
+  const stageCopy = copy.stageCopy;
+  const openingTitle = copy.openingTitle;
+  const openingCopy = copy.openingCopy;
+  const openingAction = copy.openingAction;
+  const openingLoading = copy.openingLoading;
+  const languageOptions = SUPPORTED_LOCALES.map(item => `<option value="${item}"${item===code?" selected":""}>${LOCALE_META[item]?.nativeName || item}</option>`).join("");
 
   return `<!doctype html>
-<html lang="${lang}">
+<html lang="${lang}" dir="${localeDirection(code)}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -635,7 +648,7 @@ export function midAutumnPage(locale = "zh") {
 <body>
   <main class="shell">
     <header class="topbar">
-      <a class="brand" href="${zh ? "/zh-cn" : "/en"}" aria-label="AERTEX">
+      <a class="brand" href="/${code}" aria-label="AERTEX">
         <img class="brand-logo" src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true">
         <span class="brand-stack">
           <span class="brand-word">AERTEX</span>
@@ -698,18 +711,18 @@ export function midAutumnPage(locale = "zh") {
     </div>
 
     <div class="blessing-field" aria-hidden="true">
-      <span class="blessing-word" style="--x:14%;--y:19%;--r:-8deg;--size:19px;--dur:10.5s;--delay:-.8s">${zh ? "愿人长久" : "Stay close"}</span>
-      <span class="blessing-word" style="--x:79%;--y:17%;--r:6deg;--size:17px;--dur:12s;--delay:-3.4s">${zh ? "中秋快乐" : "Happy Mid-Autumn"}</span>
-      <span class="blessing-word" style="--x:24%;--y:35%;--r:3deg;--size:23px;--dur:11.6s;--delay:-6.8s">${zh ? "今夜月明" : "Moonlit night"}</span>
-      <span class="blessing-word" style="--x:86%;--y:39%;--r:-5deg;--size:18px;--dur:13s;--delay:-1.7s">${zh ? "团圆" : "Reunion"}</span>
-      <span class="blessing-word" style="--x:12%;--y:57%;--r:5deg;--size:17px;--dur:12.4s;--delay:-8.2s">${zh ? "平安" : "Peace"}</span>
-      <span class="blessing-word" style="--x:76%;--y:61%;--r:-4deg;--size:24px;--dur:10.8s;--delay:-4.6s">${zh ? "月满人安" : "Full moon"}</span>
-      <span class="blessing-word" style="--x:34%;--y:72%;--r:2deg;--size:16px;--dur:13.4s;--delay:-9.1s">${zh ? "好事圆满" : "Good things align"}</span>
-      <span class="blessing-word" style="--x:88%;--y:77%;--r:7deg;--size:18px;--dur:11.9s;--delay:-5.4s">${zh ? "共赏一轮月" : "One moon above us"}</span>
-      <span class="blessing-word" style="--x:18%;--y:86%;--r:-3deg;--size:17px;--dur:12.7s;--delay:-2.5s">${zh ? "所愿皆如意" : "May wishes come true"}</span>
-      <span class="blessing-word" style="--x:61%;--y:28%;--r:-2deg;--size:15px;--dur:13.6s;--delay:-10.1s">${zh ? "千里共婵娟" : "Together under one moon"}</span>
-      <span class="blessing-word" style="--x:48%;--y:83%;--r:4deg;--size:16px;--dur:11.3s;--delay:-7.3s">${zh ? "桂香入梦" : "Autumn fragrance"}</span>
-      <span class="blessing-word" style="--x:66%;--y:49%;--r:-6deg;--size:18px;--dur:12.9s;--delay:-11.4s">${zh ? "人间团圆" : "A night of reunion"}</span>
+      <span class="blessing-word" style="--x:14%;--y:19%;--r:-8deg;--size:19px;--dur:10.5s;--delay:-.8s">${copy.words[0]}</span>
+      <span class="blessing-word" style="--x:79%;--y:17%;--r:6deg;--size:17px;--dur:12s;--delay:-3.4s">${copy.words[1]}</span>
+      <span class="blessing-word" style="--x:24%;--y:35%;--r:3deg;--size:23px;--dur:11.6s;--delay:-6.8s">${copy.words[2]}</span>
+      <span class="blessing-word" style="--x:86%;--y:39%;--r:-5deg;--size:18px;--dur:13s;--delay:-1.7s">${copy.words[3]}</span>
+      <span class="blessing-word" style="--x:12%;--y:57%;--r:5deg;--size:17px;--dur:12.4s;--delay:-8.2s">${copy.words[4]}</span>
+      <span class="blessing-word" style="--x:76%;--y:61%;--r:-4deg;--size:24px;--dur:10.8s;--delay:-4.6s">${copy.words[5]}</span>
+      <span class="blessing-word" style="--x:34%;--y:72%;--r:2deg;--size:16px;--dur:13.4s;--delay:-9.1s">${copy.words[6]}</span>
+      <span class="blessing-word" style="--x:88%;--y:77%;--r:7deg;--size:18px;--dur:11.9s;--delay:-5.4s">${copy.words[7]}</span>
+      <span class="blessing-word" style="--x:18%;--y:86%;--r:-3deg;--size:17px;--dur:12.7s;--delay:-2.5s">${copy.words[8]}</span>
+      <span class="blessing-word" style="--x:61%;--y:28%;--r:-2deg;--size:15px;--dur:13.6s;--delay:-10.1s">${copy.words[9]}</span>
+      <span class="blessing-word" style="--x:48%;--y:83%;--r:4deg;--size:16px;--dur:11.3s;--delay:-7.3s">${copy.words[10]}</span>
+      <span class="blessing-word" style="--x:66%;--y:49%;--r:-6deg;--size:18px;--dur:12.9s;--delay:-11.4s">${copy.words[11]}</span>
     </div>
 
     <i class="lantern l1" aria-hidden="true"></i>
@@ -742,12 +755,14 @@ export function midAutumnPage(locale = "zh") {
     document.getElementById("footer-year").textContent = "© " + new Date().getFullYear();
 
     if(name){
-      person.textContent = zh ? name + "，" : name + ",";
+      person.textContent = (${copy.person.toString()})(name);
       person.hidden = false;
-      stageName.textContent = zh ? name + "，愿你今夜月圆人安" : name + ", wishing you a peaceful moonlit night";
+      stageName.textContent = (${copy.stageName.toString()})(name);
       stageName.hidden = false;
       document.title = name + " · " + ${JSON.stringify(title)};
     }
+
+    document.getElementById("mid-autumn-language")?.addEventListener("change",function(){ var next="/"+this.value+"/mid-autumn"; var q=new URLSearchParams(location.search); if(q.toString()) next+="?"+q.toString(); location.href=next; });
 
     var canvas = document.getElementById("festival-canvas");
     var ctx = canvas.getContext("2d");
@@ -909,7 +924,7 @@ export function midAutumnPage(locale = "zh") {
       stage.classList.add("opening");
       openingActionButton.disabled = true;
       openingActionButton.textContent = ${JSON.stringify(openingLoading)};
-      openingCopyNode.textContent = ${JSON.stringify(zh ? "月光、祝福和今夜的烟花正在抵达。" : "Moonlight, wishes, and tonight’s fireworks are arriving.")};
+      openingCopyNode.textContent = ${JSON.stringify(copy.openingArrival)};
       openingTimer = setTimeout(startScene,760);
     }
 
