@@ -78,6 +78,16 @@ const APPEARANCE_COPY = {
   "ar-sa":{title:"السمة والمظهر",intro:"اضبط AERTEX بالشكل الذي تفضله. تتم معاينة تغييرات الوضع ولون التمييز فورًا وتُحفظ في هذا المتصفح.",modeTitle:"وضع المظهر",modeHint:"اتبع إعداد الجهاز أو ثبّت المظهر الفاتح / الداكن.",system:"النظام",systemHint:"الافتراضي · اتبع مظهر الجهاز",light:"فاتح",lightHint:"استخدم الفاتح دائمًا",dark:"داكن",darkHint:"استخدم الداكن دائمًا",accentTitle:"لون التمييز",accentHint:"يُستخدم للتركيز وحالات التحديد ولمسات العلامة التجارية المحدودة.",preview:"معاينة مباشرة",previewSubtitle:"مساحة العمل الشخصية",previewCard:"عمل اليوم",previewMeta:"3 مشروعات قيد التنفيذ",previewButton:"فتح منضدة العمل",current:"لون التمييز الحالي",saved:"تم الحفظ في هذا المتصفح"}
 };
 
+const APPEARANCE_COLORS = {
+  "zh-tw":{sapphire:"寶石藍",aqua:"青色",jade:"玉綠",lime:"萊姆綠",amber:"琥珀黃",coral:"珊瑚橙",rose:"莓果粉",magenta:"洋紅",violet:"紫羅蘭",graphite:"石墨"},
+  "ja-jp":{sapphire:"サファイア",aqua:"アクア",jade:"ジェイド",lime:"ライム",amber:"アンバー",coral:"コーラル",rose:"ローズ",magenta:"マゼンタ",violet:"バイオレット",graphite:"グラファイト"},
+  "ko-kr":{sapphire:"사파이어",aqua:"아쿠아",jade:"제이드",lime:"라임",amber:"앰버",coral:"코랄",rose:"로즈",magenta:"마젠타",violet:"바이올렛",graphite:"그래파이트"},
+  "fr-fr":{sapphire:"Saphir",aqua:"Aqua",jade:"Jade",lime:"Citron vert",amber:"Ambre",coral:"Corail",rose:"Rose",magenta:"Magenta",violet:"Violet",graphite:"Graphite"},
+  "es-es":{sapphire:"Zafiro",aqua:"Aguamarina",jade:"Jade",lime:"Lima",amber:"Ámbar",coral:"Coral",rose:"Rosa",magenta:"Magenta",violet:"Violeta",graphite:"Grafito"},
+  "el-gr":{sapphire:"Ζαφείρι",aqua:"Άκουα",jade:"Νεφρίτης",lime:"Λάιμ",amber:"Κεχριμπάρι",coral:"Κοραλλί",rose:"Ροζ",magenta:"Ματζέντα",violet:"Βιολετί",graphite:"Γραφίτης"},
+  "ar-sa":{sapphire:"ياقوتي",aqua:"مائي",jade:"يشمي",lime:"ليموني",amber:"كهرماني",coral:"مرجاني",rose:"وردي",magenta:"أرجواني",violet:"بنفسجي",graphite:"غرافيت"}
+};
+
 export function settingsGeneralContent(zh, locale = "") {
   const activeLocale=locale||(zh?"zh-cn":"en-us");
   const prefix="/"+activeLocale;
@@ -192,6 +202,7 @@ export function appearanceSettingsContent(zh, locale = "") {
     }
   };
   if (APPEARANCE_COPY[locale]) copy = { ...copy, ...APPEARANCE_COPY[locale] };
+  if (APPEARANCE_COLORS[locale]) copy.colors = APPEARANCE_COLORS[locale];
   const colors = [
     ["sapphire","#4964d8"],["aqua","#2a9d8f"],["jade","#3a9d72"],["lime","#86a93b"],["amber","#d49a2a"],
     ["coral","#e26d5a"],["rose","#d95686"],["magenta","#b755c7"],["violet","#7559d9"],["graphite","#5a5d64"]
