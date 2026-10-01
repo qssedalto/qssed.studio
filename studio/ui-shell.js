@@ -26,7 +26,8 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
   const copy = buildOsCopy(zh, activeLocale);
   const page = copy.pages[path] || knowledgePageMeta(path, zh, activeLocale) || copy.pages["/dashboard"];
   const activeSection = page.section;
-  const dashboardPath = path === "/" || path === "/dashboard";
+  const rootMenuPath = path === "/";
+  const dashboardPath = path === "/dashboard";
   const knowledgePath = path.startsWith("/info/knowledge");
   const compactBackUrl = compactBackHref(path, zh);
 
@@ -52,7 +53,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
     })();
   </script>
 </head>
-<body class="os-shell">
+<body class="os-shell${rootMenuPath ? " os-root-menu" : ""}">
   ${topControls(links, t)}
   <div id="compact-back-zone" class="compact-back-zone">
     <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${ui.backLevel}" data-fallback-href="${compactBackUrl}">
@@ -110,7 +111,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
     </script>
 
     <main class="os-main">
-      <section class="os-hero">
+      ${rootMenuPath ? "" : `<section class="os-hero">
         <div>
           ${dashboardPath ? `<p class="os-kicker">${copy.kicker}</p>` : ""}
           <h1>${page.title}</h1>
@@ -120,10 +121,10 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
           <span>${copy.aiLabel}</span>
           <strong>${copy.aiTitle}</strong>
         </a>` : ""}
-      </section>
+      </section>`}
 
       <section id="os-content">
-        ${renderOsContent(path, copy, productLinks)}
+        ${rootMenuPath ? `<div class="desktop-main-menu">${renderCompactMainMenu(copy, productLinks)}</div>` : renderOsContent(path, copy, productLinks)}
       </section>
     </main>
   </div>
