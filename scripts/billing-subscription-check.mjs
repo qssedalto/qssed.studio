@@ -14,6 +14,7 @@ const billingUi = read("studio/ui-billing.js");
 const storageApi = read("studio/storage-api.js");
 const legacyApi = read("studio/legacy-cookie-api.js");
 const shell = read("studio/ui-shell.js");
+const config = read("studio/config.js");
 const settings = read("studio/ui-settings.js");
 const adminApi = read("admin/admin-api.js");
 const adminUi = read("admin/ui.js");
@@ -130,6 +131,15 @@ contains(storageApi, "max_file_bytes: maxFileBytes", "Drive must expose the reso
 assert(!storageApi.includes('plan_name: "AERTEX Drive Free"'), "Drive plan identity must no longer be hard-coded.");
 
 contains(shell, '"/settings/subscription"', "Subscription settings route must be registered in the shell.");
+contains(config, '"/settings/student"', "Student Eligibility must be a registered Studio route.");
+contains(shell, '"/settings/student"', "Student Eligibility must be exposed through the Settings shell.");
+contains(shell, 'billingSettingsContent(zh, "student")', "Student Eligibility must render as a dedicated billing/student mode.");
+contains(settings, 'prefix+"/settings/student"', "Settings home must expose Student Eligibility as a first-class item.");
+contains(billingUi, 'const studentOnly = view === "student";', "Billing UI must separate subscription and student surfaces.");
+contains(billingUi, 'class="student-eligibility-page"', "Student Eligibility must own a dedicated page surface.");
+contains(billingUi, 'class="student-progress"', "Student Eligibility must expose a staged verification progress UI.");
+contains(billingUi, 'studentBenefitAction:"管理学生资格"', "Subscription page must link student pricing to the dedicated eligibility flow.");
+contains(billingUi, 'if(isStudentView){', "Student verification API loading must run only on the dedicated student surface.");
 contains(settings, "订阅与权益", "Settings must expose subscription management.");
 
 contains(adminApi, '"subscription-grant"', "Admin API must expose manual subscription grants.");
