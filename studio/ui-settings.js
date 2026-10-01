@@ -416,6 +416,7 @@ export function settingsHubContent(zh) {
     security:["账户与安全","设备、登录历史与提醒"],
     ai:["AI 设置","Provider、模型与额度"],
     subscription:["订阅与权益","套餐、有效期与产品权益"],
+    student:["学生资格","认证状态与学生价格资格"],
     storage:["AERTEX Drive","私人云盘与容量"],
     notifications:["通知","提醒与站内消息"],
     integrations:["第三方集成","外部服务与授权"]
@@ -434,13 +435,14 @@ export function settingsHubContent(zh) {
     security:["Account & Security","Devices, sign-ins, and alerts"],
     ai:["AI Settings","Providers, models, and limits"],
     subscription:["Subscription","Plans, validity, and entitlements"],
+    student:["Student Eligibility","Verification status and student pricing"],
     storage:["AERTEX Drive","Private files and capacity"],
     notifications:["Notifications","Alerts and in-app messages"],
     integrations:["Integrations","External services and authorization"]
   };
   const availability = zh
-    ? { ai:{meta:"可用"}, storage:{meta:"可用"}, subscription:{meta:"测试中"} }
-    : { ai:{meta:"Available"}, storage:{meta:"Available"}, subscription:{meta:"Testing"} };
+    ? { ai:{meta:"可用"}, storage:{meta:"可用"}, subscription:{meta:"测试中"}, student:{meta:"可用"} }
+    : { ai:{meta:"Available"}, storage:{meta:"Available"}, subscription:{meta:"Testing"}, student:{meta:"Available"} };
   const row = (item, href, icon, status = "") => `
     <a class="settings-stage-row" href="${href}">
       <span class="settings-stage-row-icon">${osHubIcon(icon)}</span>
@@ -513,6 +515,7 @@ export function settingsHubContent(zh) {
         <section class="settings-stage-group">
           <div class="settings-stage-group-head">${copy.services}</div>
           ${row(copy.subscription, prefix+"/settings/subscription", "account", availability.subscription.meta)}
+          ${row(copy.student, prefix+"/settings/student", "users", availability.student.meta)}
           ${row(copy.storage, prefix+"/settings/storage", "storage", availability.storage.meta)}
           ${row(copy.notifications, prefix+"/settings/notifications", "notifications", zh ? "未开放" : "Soon")}
           ${row(copy.integrations, prefix+"/settings/integrations", "integrations", zh ? "未开放" : "Soon")}
@@ -533,6 +536,7 @@ export function settingsFallbackContent(zh) {
         ["AI", "可用", "Provider、模型、额度和默认模型。", `${prefix}/settings/ai`],
         ["第三方集成", "未开放", "外部服务和授权。", `${prefix}/settings/integrations`],
         ["订阅与权益", "测试中", "套餐、有效期和产品权益。", `${prefix}/settings/subscription`],
+        ["学生资格", "可用", "学生身份认证、状态和学生价格资格。", `${prefix}/settings/student`],
         ["存储", "可用", "AERTEX Drive 私人云盘。", `${prefix}/settings/storage`]
       ]
     : [
@@ -543,6 +547,7 @@ export function settingsFallbackContent(zh) {
         ["AI", "Available", "Providers, models, quotas, and default model.", `${prefix}/settings/ai`],
         ["Integrations", "Unavailable", "External services and authorization.", `${prefix}/settings/integrations`],
         ["Subscription", "Testing", "Plans, validity, and product entitlements.", `${prefix}/settings/subscription`],
+        ["Student Eligibility", "Available", "Student-status verification and student-pricing eligibility.", `${prefix}/settings/student`],
         ["Storage", "Available", "Private files in AERTEX Drive.", `${prefix}/settings/storage`]
       ];
   return `<section class="os-grid settings-grid">${items.map(item => `<a class="os-card settings-card-link" href="${item[3]}"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p><span class="settings-card-arrow" aria-hidden="true">›</span></a>`).join("")}</section>`;
