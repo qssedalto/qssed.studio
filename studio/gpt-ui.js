@@ -3,6 +3,8 @@ import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from ".
 import { intelligenceThemeAttr, intelligenceThemeBootScript } from "./intelligence-theme.js";
 import { richMessageClientScript, richMessageStyles } from "./gpt-rich-renderer.js";
 import { intelligenceWatchClientScript, intelligenceWatchMarkup, intelligenceWatchPortalMarkup, intelligenceWatchStyles } from "./gpt-watch-ui.js";
+import { localeDirection } from "./locale.js";
+import { gptNotFoundCopy, gptSharedCopy, gptUiCopy } from "./gpt-i18n.js";
 
 export function renderGptApp(locale, bootstrap = {}) {
   const zh = locale === "zh-cn";
@@ -13,34 +15,10 @@ export function renderGptApp(locale, bootstrap = {}) {
     conversations: Array.isArray(bootstrap?.conversations) ? bootstrap.conversations : [],
     current: bootstrap?.current || null
   }).replace(/</g, "\\u003c");
-  const t = zh ? {
-    title:"AERTEX Intelligence", subtitle:"Cloud Intelligence", online:"Intelligence 在线", offline:"Intelligence 不可用",
-    offlineTitle:"AERTEX Intelligence 暂不可用", offlineText:"当前账号尚未获得 AI 使用权限，或管理员尚未完成 API 配置。",
-    checking:"正在加载 Intelligence…", retry:"重新检测", signedOut:"当前账号尚未获得 Intelligence 权限",
-    connectHint:"请联系管理员为此账号分配 API Provider、模型和使用额度。",
-    connect:"连接 ChatGPT / Codex", connecting:"正在连接…", openLogin:"打开 OpenAI 登录页",
-    codeLabel:"设备代码", codeHint:"在 OpenAI 页面输入设备代码完成授权。完成后这里会自动识别登录状态。",
-    newChat:"新对话", conversations:"对话", toggleSidebar:"切换侧栏", closeSidebar:"关闭侧栏", rename:"重命名", delete:"删除", share:"分享", shareCopied:"分享链接已复制", shareFailed:"无法创建分享链接", shareIdentityTitle:"共享这个对话", shareIdentityText:"是否在公开共享页面显示你的姓名？你可以匿名共享，也可以明确选择显示姓名。", shareAnonymous:"匿名共享", shareWithName:"显示姓名并共享", shareCancel:"取消", confirmDelete:"删除这个对话？", untitled:"未命名对话", send:"发送", placeholder:"给 AERTEX Intelligence 发消息…", loadingModels:"正在读取模型…",
-    noModels:"没有读取到可用模型", regionBlocked:"当前网络区域不可用", noAvailableRegion:"当前网络区域没有可用的已授权模型", rateLimited:"当前 Provider 返回速率限制，请稍后重试", rateRetry:"建议等待", reasoning:"推理", thinking:"Intelligence 正在思考…",
-    empty:"开始一个新的对话", emptyHint:"选择模型后直接开始聊天", copyCode:"复制", copiedCode:"已复制", codeBlock:"代码",
-    error:"发生错误",
-    bridgeAuth:"本机 Bridge 的安全凭据配置不一致"
-  } : {
-    title:"AERTEX Intelligence", subtitle:"Cloud Intelligence", online:"Intelligence online", offline:"Intelligence unavailable",
-    offlineTitle:"AERTEX Intelligence is unavailable", offlineText:"AI access has not been enabled for this account, or the administrator has not completed API configuration.",
-    checking:"Loading Intelligence…", retry:"Check again", signedOut:"Intelligence access is not enabled for this account",
-    connectHint:"Ask an administrator to assign an API provider, models, and usage quota to this account.",
-    connect:"Connect ChatGPT / Codex", connecting:"Connecting…", openLogin:"Open OpenAI sign-in",
-    codeLabel:"Device code", codeHint:"Enter the device code on the OpenAI page. This page will detect completion automatically.",
-    newChat:"New chat", conversations:"Chats", toggleSidebar:"Toggle sidebar", closeSidebar:"Close sidebar", rename:"Rename", delete:"Delete", share:"Share", shareCopied:"Share link copied", shareFailed:"Unable to create share link", shareIdentityTitle:"Share this conversation", shareIdentityText:"Choose whether your name appears on the public share page. You can share anonymously or explicitly include your name.", shareAnonymous:"Share anonymously", shareWithName:"Share with my name", shareCancel:"Cancel", confirmDelete:"Delete this conversation?", untitled:"Untitled chat", send:"Send", placeholder:"Message AERTEX Intelligence…", loadingModels:"Loading models…",
-    noModels:"No available models were returned", regionBlocked:"Unavailable on current network", noAvailableRegion:"No authorized model is available on the current network", rateLimited:"The provider is rate-limiting requests right now. Try again shortly.", rateRetry:"Retry after", reasoning:"Reasoning", thinking:"Intelligence is thinking…",
-    empty:"Start a new conversation", emptyHint:"Choose a model and start chatting", copyCode:"Copy", copiedCode:"Copied", codeBlock:"Code",
-    error:"Error",
-    bridgeAuth:"The local Bridge security credentials do not match"
-  };
+  const t = gptUiCopy(locale);
 
   return `<!doctype html>
-<html lang="${zh ? "zh-CN" : "en"}"${themeAttr}>
+<html lang="${locale}" dir="${localeDirection(locale)}"${themeAttr}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -126,13 +104,13 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
   </button>
   <select class="model" id="modelSelect" disabled><option>${t.loadingModels}</option></select>
   ${intelligenceWatchMarkup()}
-  <select id="effortSelect" aria-label="${t.reasoning}" disabled><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="xhigh">Extra High</option></select>
+  <select id="effortSelect" aria-label="${t.reasoning}" disabled><option value="low">${t.effortLow}</option><option value="medium" selected>${t.effortMedium}</option><option value="high">${t.effortHigh}</option><option value="xhigh">${t.effortXHigh}</option></select>
   <div class="topbarSpacer"></div>
   <div class="account" id="accountLabel">${t.checking}</div>
   <button class="iconButton topbarNewChat" id="topNewChat" type="button" aria-label="${t.newChat}" title="${t.newChat}">
     <svg class="composeGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13 4.5H7.25A2.75 2.75 0 0 0 4.5 7.25v9.5a2.75 2.75 0 0 0 2.75 2.75h9.5a2.75 2.75 0 0 0 2.75-2.75V11"/><path d="M9 15l1.15-4.1 6.95-6.95a2.15 2.15 0 0 1 3.05 3.05l-6.95 6.95L9 15Z"/><path d="m16.2 4.85 3 3"/></svg>
   </button>
-  ${accountMenuMarkup(zh ? "zh-cn" : "en")}
+  ${accountMenuMarkup(locale)}
 </header>
 <section class="content" id="content">
   <div class="gate" id="gate">
@@ -159,7 +137,7 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
 <script>
 (() => {
   const text=${JSON.stringify(t)}, boot=${bootstrapJson}, $=id=>document.getElementById(id);
-  const localeBase=location.pathname.startsWith("/en")?"/en":"/zh-cn";
+  const localeBase=${JSON.stringify("/"+locale)};
   const state={
     config:boot.config||null,
     conversations:Array.isArray(boot.conversations)?boot.conversations:[],
@@ -441,28 +419,28 @@ ${intelligenceWatchClientScript()}
   if(state.config)hydrateConfig(state.config);else void checkStatus();
 })();
 </script>
-${accountMenuClientScript({ locale: zh ? "zh-cn" : "en" })}
+${accountMenuClientScript({ locale })}
 </body></html>`;
 }
 
 
 export function renderSharedConversation(locale, payload, theme = "") {
-  const zh = locale === "zh-cn";
   const themeAttr = intelligenceThemeAttr(theme);
   const themeBoot = intelligenceThemeBootScript();
+  const text = gptSharedCopy(locale);
   const conversation = payload?.conversation || {};
   const messages = Array.isArray(payload?.messages) ? payload.messages : [];
   const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
-  const title = esc(conversation.title || (zh ? "共享对话" : "Shared conversation"));
+  const title = esc(conversation.title || text.title);
   const authorName = esc(conversation.author_name || "");
-  const sharedMeta = authorName ? (zh ? ("由 " + authorName + " 分享 · AERTEX Intelligence 共享对话 · 只读") : ("Shared by " + authorName + " · AERTEX Intelligence shared conversation · Read only")) : (zh ? "AERTEX Intelligence 共享对话 · 只读" : "AERTEX Intelligence shared conversation · Read only");
+  const sharedMeta = authorName ? text.by(authorName) : text.meta;
   const richStyles = richMessageStyles();
-  const richScript = richMessageClientScript({ copy: zh ? "复制" : "Copy", copied: zh ? "已复制" : "Copied", code: zh ? "代码" : "Code" });
+  const richScript = richMessageClientScript({ copy:text.copy, copied:text.copied, code:text.code });
   const body = messages.map(item => {
-    const role = item?.role === "user" ? (zh ? "用户" : "User") : "AERTEX";
+    const role = item?.role === "user" ? text.user : "AERTEX";
     return '<article class="msg '+(item?.role === "user" ? "user" : "assistant")+'"><div class="role">'+role+'</div><div class="bubble"'+(item?.role === "user" ? "" : ' data-rich-message="true"')+'>'+esc(item?.content || "")+'</div></article>';
   }).join("");
-  return '<!doctype html><html lang="'+(zh ? "zh-CN" : "en")+'"'+themeAttr+'> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>'+title+' · AERTEX Intelligence</title>'+FAVICON_LINKS+themeBoot+'<style>:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}}:root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}:root[data-theme="light"]{color-scheme:light;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(860px,calc(100% - 32px));margin:0 auto;padding:38px 0 80px}header{padding-bottom:24px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:30px;letter-spacing:-.04em}.meta{margin-top:8px;color:var(--muted);font-size:13px}.msg{padding:24px 0;border-bottom:1px solid var(--line)}.role{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px}.bubble{white-space:pre-wrap;line-height:1.72}.user .bubble{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:16px}.footer{margin-top:28px;color:var(--muted);font-size:12px}</style><style>'+richStyles+'</style></head><body><main><header><h1>'+title+'</h1><div class="meta">'+sharedMeta+'</div></header>'+body+'<div class="footer">'+(zh ? "此链接由对话所有者主动分享" : "This link was explicitly shared by the conversation owner")+'</div></main>'+richScript+'<script>window.AERTEXRich&&window.AERTEXRich.enhance(document)</script></body></html>';
+  return '<!doctype html><html lang="'+locale+'" dir="'+localeDirection(locale)+'"'+themeAttr+'> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>'+title+' · AERTEX Intelligence</title>'+FAVICON_LINKS+themeBoot+'<style>:root{color-scheme:light;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}}:root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--panel:#181818;--panel2:#202020;--text:#f4f4f4;--muted:#9b9b9b;--line:rgba(255,255,255,.09)}:root[data-theme="light"]{color-scheme:light;--bg:#f7f7f5;--panel:#fff;--panel2:#f0f0ee;--text:#171717;--muted:#777;--line:rgba(0,0,0,.09)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(860px,calc(100% - 32px));margin:0 auto;padding:38px 0 80px}header{padding-bottom:24px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:30px;letter-spacing:-.04em}.meta{margin-top:8px;color:var(--muted);font-size:13px}.msg{padding:24px 0;border-bottom:1px solid var(--line)}.role{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px}.bubble{white-space:pre-wrap;line-height:1.72}.user .bubble{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:16px}.footer{margin-top:28px;color:var(--muted);font-size:12px}</style><style>'+richStyles+'</style></head><body><main><header><h1>'+title+'</h1><div class="meta">'+sharedMeta+'</div></header>'+body+'<div class="footer">'+text.footer+'</div></main>'+richScript+'<script>window.AERTEXRich&&window.AERTEXRich.enhance(document)</script></body></html>';
 }
 
 
@@ -471,18 +449,9 @@ export function renderIntelligenceNotFound(locale, options = {}) {
   const themeAttr = intelligenceThemeAttr(options.theme || "");
   const themeBoot = intelligenceThemeBootScript();
   const kind = options.kind || "page";
-  const copy = zh ? {
-    conversation: { title: "找不到这个对话", detail: "这个对话可能已被删除，或者当前账号没有访问权限", action: "返回 Intelligence" },
-    shared: { title: "共享对话不可用", detail: "分享链接可能已失效，或者对话所有者已停止分享", action: "返回 Intelligence" },
-    page: { title: "找不到这个页面", detail: "你访问的 Intelligence 页面不存在或已经移动", action: "返回 Intelligence" }
-  } : {
-    conversation: { title: "Conversation not found", detail: "This chat may have been deleted, or this account does not have access to it", action: "Back to Intelligence" },
-    shared: { title: "Shared conversation unavailable", detail: "This share link may have expired, or the owner stopped sharing the conversation", action: "Back to Intelligence" },
-    page: { title: "Page not found", detail: "This Intelligence page does not exist or has moved", action: "Back to Intelligence" }
-  };
-  const text = copy[kind] || copy.page;
-  const href = "/" + (zh ? "zh-cn" : "en");
-  return `<!doctype html><html lang="${zh ? "zh-CN" : "en"}"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><meta name="robots" content="noindex,nofollow,noarchive"><title>${text.title} · AERTEX Intelligence</title>${FAVICON_LINKS}${themeBoot}<style>
+  const copy = gptNotFoundCopy(locale);\n  const text = copy[kind] || copy.page;
+  const href = "/" + locale;
+  return `<!doctype html><html lang="${locale}" dir="${localeDirection(locale)}"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><meta name="robots" content="noindex,nofollow,noarchive"><title>${text.title} · AERTEX Intelligence</title>${FAVICON_LINKS}${themeBoot}<style>
 :root{color-scheme:light;--bg:#f5f5f7;--fg:#1d1d1f;--muted:#6e6e73;--quiet:#8e8e93;--line:#424245;--icon-fill:#fff;--icon-soft:#e8e8ed;--shadow:rgba(0,0,0,.16);--chip:#fff;--chip-line:rgba(60,60,67,.14);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",system-ui,sans-serif}
 @media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--bg:#101010;--fg:#f5f5f7;--muted:#a1a1a6;--quiet:#747477;--line:#d2d2d7;--icon-fill:#1c1c1e;--icon-soft:#2c2c2e;--shadow:rgba(0,0,0,.45);--chip:#181818;--chip-line:rgba(255,255,255,.1)}}
 :root[data-theme="dark"]{color-scheme:dark;--bg:#101010;--fg:#f5f5f7;--muted:#a1a1a6;--quiet:#747477;--line:#d2d2d7;--icon-fill:#1c1c1e;--icon-soft:#2c2c2e;--shadow:rgba(0,0,0,.45);--chip:#181818;--chip-line:rgba(255,255,255,.1)}
