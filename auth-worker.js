@@ -120,7 +120,7 @@ async function handleLogin(request) {
 
   if (!upstream.ok || !payload?.access_token || !payload?.refresh_token || !payload?.user) {
     return json({
-      error: friendlyAuthError(payload),
+      error: friendlyAuthError(payload, preferredAuthLocale(request)),
       code: payload?.error_code || payload?.code || "invalid_credentials"
     }, upstream.status === 400 ? 401 : upstream.status);
   }
@@ -235,7 +235,7 @@ async function handleContinue(request, env) {
   headers.set("content-security-policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${handoff.origin}; base-uri 'none'; frame-ancestors 'none'`);
   if (rotated) for (const value of sessionCookies(rotated)) headers.append("set-cookie", value);
 
-  return new Response(injectBrandLogoRuntime(handoffPage(handoff.origin, accessToken, refreshToken, handoff.next, intelligenceThemeFromRequest(request))), { status: 200, headers });
+  const handoffLocale = localeFromPath(handoff.next) || preferredAuthLocale(request);\n  return new Response(injectBrandLogoRuntime(handoffPage(handoff.origin, accessToken, refreshToken, handoff.next, intelligenceThemeFromRequest(request), handoffLocale)), { status: 200, headers });
 }
 
 function validatedNextPath(value) {
@@ -251,10 +251,14 @@ function resolveHandoffTarget(request, next, mainSite) {
   const root = rootDomainForRequest(request) || "qsseda.com";
   try {
     const parsed = new URL(next, "https://handoff.invalid");
-    const match = parsed.pathname.match(/^\/(?:zh-cn|en)\/(gpt|work)\/handoff$/);
-    const nested = match ? validatedNextPath(parsed.searchParams.get("next")) : "";
-    if (match && nested) {
-      return { origin: serviceOrigin(root, match[1]), next: nested };
+    const locale = localeFromPath(parsed.pathname);
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    const offset = locale ? 1 : 0;
+    const service = parts[offset];
+    const action = parts[offset + 1];
+    const nested = service && action === "handoff" ? validatedNextPath(parsed.searchParams.get("next")) : "";
+    if ((service === "gpt" || service === "work") && nested) {
+      return { origin: serviceOrigin(root, service), next: nested };
     }
   } catch {}
   return { origin: mainSite, next };
@@ -279,10 +283,20 @@ function htmlEscape(value) {
   return String(value || "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "\'": "&#39;" }[character]));
 }
 
-function handoffPage(targetOrigin, accessToken, refreshToken, next, theme = "") {
+function handoffPage(targetOrigin, accessToken, refreshToken, next, theme = "", locale = "en-us") {
   const themeAttr = intelligenceThemeAttr(theme);
   const themeBoot = intelligenceThemeBootScript();
-  return `<!doctype html><html lang="zh-CN"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><title>AERTEX ID</title>${FAVICON_LINKS}${themeBoot}<style>:root{color-scheme:dark;--bg:#0b0b0d;--text:#f5f5f7;--muted:#a1a1a6;--ring:#3a3a3c;--accent:#0a84ff}@media(prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}}:root[data-theme="light"]{color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}html,body{height:100%;margin:0;background:var(--bg);color:var(--text)}body{display:grid;place-items:center;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid var(--ring);border-top-color:var(--accent);border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:var(--muted)}</style></head><body><div class="box"><div class="spin"></div><strong>正在进入 AERTEX</strong><p>正在安全同步登录状态…</p></div><form id="handoff" method="post" action="${htmlEscape(targetOrigin)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  const handoffCopy = {
+    "zh-cn":["正在进入 AERTEX","正在安全同步登录状态…"],
+    "zh-tw":["正在進入 AERTEX","正在安全同步登入狀態…"],
+    "ja-jp":["AERTEX に移動しています","サインイン状態を安全に同期しています…"],
+    "ko-kr":["AERTEX로 이동 중","로그인 상태를 안전하게 동기화하는 중…"],
+    "fr-fr":["Ouverture d’AERTEX","Synchronisation sécurisée de la connexion…"],
+    "es-es":["Entrando en AERTEX","Sincronizando de forma segura el inicio de sesión…"],
+    "el-gr":["Μετάβαση στο AERTEX","Ασφαλής συγχρονισμός της κατάστασης σύνδεσης…"],
+    "ar-sa":["جارٍ الدخول إلى AERTEX","جارٍ مزامنة حالة تسجيل الدخول بأمان…"]
+  }[locale] || ["Entering AERTEX","Securely syncing your sign-in state…"];
+  return `<!doctype html><html lang="${locale}" dir="${localeDirection(locale)}"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><title>AERTEX ID</title>${FAVICON_LINKS}${themeBoot}<style>:root{color-scheme:dark;--bg:#0b0b0d;--text:#f5f5f7;--muted:#a1a1a6;--ring:#3a3a3c;--accent:#0a84ff}@media(prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}}:root[data-theme="light"]{color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}html,body{height:100%;margin:0;background:var(--bg);color:var(--text)}body{display:grid;place-items:center;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid var(--ring);border-top-color:var(--accent);border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:var(--muted)}</style></head><body><div class="box"><div class="spin"></div><strong>${handoffCopy[0]}</strong><p>${handoffCopy[1]}</p></div><form id="handoff" method="post" action="${htmlEscape(targetOrigin)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
 }
 
 async function fetchUser(accessToken) {
@@ -385,12 +399,22 @@ function cleanText(value, maxLength) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
-function friendlyAuthError(payload) {
+function friendlyAuthError(payload, locale = "en-us") {
   const message = String(payload?.msg || payload?.message || payload?.error_description || "").toLowerCase();
-  if (message.includes("invalid login") || message.includes("invalid credentials")) return "邮箱或密码不正确";
-  if (message.includes("email not confirmed")) return "邮箱尚未验证";
-  if (message.includes("too many")) return "尝试次数过多，请稍后再试";
-  return "无法登录，请检查账号信息后重试";
+  const errors = {
+    "zh-cn":["邮箱或密码不正确","邮箱尚未验证","尝试次数过多，请稍后再试","无法登录，请检查账号信息后重试"],
+    "zh-tw":["電子郵件或密碼不正確","電子郵件尚未驗證","嘗試次數過多，請稍後再試","無法登入，請檢查帳號資訊後重試"],
+    "ja-jp":["メールまたはパスワードが正しくありません","メールがまだ確認されていません","試行回数が多すぎます。しばらくしてから再試行してください","サインインできません。アカウント情報を確認して再試行してください"],
+    "ko-kr":["이메일 또는 비밀번호가 올바르지 않습니다","이메일이 아직 확인되지 않았습니다","시도 횟수가 너무 많습니다. 잠시 후 다시 시도하세요","로그인할 수 없습니다. 계정 정보를 확인한 후 다시 시도하세요"],
+    "fr-fr":["E-mail ou mot de passe incorrect","L’adresse e-mail n’est pas encore confirmée","Trop de tentatives. Réessayez plus tard","Connexion impossible. Vérifiez les informations du compte et réessayez"],
+    "es-es":["El correo o la contraseña no son correctos","El correo electrónico aún no está verificado","Demasiados intentos. Inténtalo de nuevo más tarde","No se pudo iniciar sesión. Revisa los datos de la cuenta e inténtalo de nuevo"],
+    "el-gr":["Το email ή ο κωδικός πρόσβασης δεν είναι σωστός","Το email δεν έχει ακόμη επιβεβαιωθεί","Πάρα πολλές προσπάθειες. Δοκιμάστε ξανά αργότερα","Δεν ήταν δυνατή η σύνδεση. Ελέγξτε τα στοιχεία του λογαριασμού και δοκιμάστε ξανά"],
+    "ar-sa":["البريد الإلكتروني أو كلمة المرور غير صحيحة","لم يتم تأكيد البريد الإلكتروني بعد","عدد المحاولات كبير جدًا. حاول مرة أخرى لاحقًا","تعذر تسجيل الدخول. تحقق من معلومات الحساب وحاول مرة أخرى"]
+  }[locale] || ["Email or password is incorrect","Email is not confirmed yet","Too many attempts. Please try again later","Unable to sign in. Check your account information and try again"];
+  if (message.includes("invalid login") || message.includes("invalid credentials")) return errors[0];
+  if (message.includes("email not confirmed")) return errors[1];
+  if (message.includes("too many")) return errors[2];
+  return errors[3];
 }
 
 function sessionCookies(payload) {
