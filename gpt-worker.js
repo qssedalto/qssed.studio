@@ -11,6 +11,7 @@ import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
 import { intelligenceThemeAttr, intelligenceThemeBootScript, intelligenceThemeFromRequest } from "./studio/intelligence-theme.js";
+import { preferredLocaleFromRequest } from "./studio/locale.js";
 
 
 export default {
@@ -204,8 +205,7 @@ async function loadSharedConversation(token) {
 }
 
 function preferredLocale(request) {
-  const language = (request.headers.get("Accept-Language") || "").toLowerCase();
-  return language.includes("zh") ? "zh-cn" : "en";
+  return preferredLocaleFromRequest(request);
 }
 
 function normalizePath(pathname) {
