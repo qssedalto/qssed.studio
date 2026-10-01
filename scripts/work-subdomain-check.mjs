@@ -6,6 +6,7 @@ const work = fs.readFileSync(new URL("../studio/work-subdomain.js", import.meta.
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
 const shell = fs.readFileSync(new URL("../studio/ui-shell.js", import.meta.url), "utf8");
 const uiPage = fs.readFileSync(new URL("../studio/ui-page.js", import.meta.url), "utf8");
+const accountMenu = fs.readFileSync(new URL("../studio/account-menu.js", import.meta.url), "utf8");
 const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta.url), "utf8");
 const sessionGate = fs.readFileSync(new URL("../studio/session-gate.js", import.meta.url), "utf8");
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
@@ -23,6 +24,14 @@ assert(worker.includes("suppressWorkClientSessionBounce"), "Authenticated Work H
 assert(worker.includes('markup.replace(\n    "    hydrateOsUser();"'), "Work suppression must target the inherited main-site hydrateOsUser call only");
 assert(worker.includes("server-side host-only session gate"), "Work session suppression must document that the server-side gate remains authoritative");
 assert(workAuditWrapper.includes('isServiceHost(url.hostname, "work")'), "Huawei exemption aliases must normalize on the Work custom domain.");
+assert(worker.includes("workDocumentId") && worker.includes('handleTexApi(validationRequest, env, "documents")'), "Work document deep links must be server-validated through the existing TeX ACL path before rendering.");
+assert(worker.includes("workDocumentNotFound(workPublicRequest)"), "Missing or inaccessible Work document deep links must render the branded 404 page.");
+assert(work.includes("WORK_DOCUMENT_ID_RE"), "Work must constrain document routes to UUID-shaped identifiers.");
+assert(work.includes("parseWorkDocumentPath") && work.includes("parseShortWorkDocumentPath"), "Work must support localized and short document deep-link forms.");
+assert(work.includes("/d/"), "Work canonical document routes must use the /d/<uuid> namespace.");
+assert(work.includes("huawei-exempt/"), "Work document deep links must accept the existing Huawei exemption alias marker.");
+assert(handoff.includes("/d/huawei-exempt/") && handoff.includes("/d/"), "Auth handoff must preserve ordinary and Huawei-exempt Work document targets.");
+assert(accountMenu.includes('new RegExp("^/(?:zh-cn|en)/d/') && accountMenu.includes("/work/handoff?next="), "Work account switching must preserve the active document deep link.");
 
 for (const required of [
   'workOriginForRequest(request)',

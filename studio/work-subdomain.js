@@ -1,10 +1,14 @@
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 import { authOriginForRequest, isServiceHost, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 import { FAVICON_LINKS } from "./favicon.js";
+import { TEXT } from "./config.js";
+import { buildLinks, getRouteInfo, html } from "./routing.js";
+import { notFoundPage } from "./auth-pages.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
 import { preferredLocaleFromRequest } from "./locale.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
+const WORK_DOCUMENT_ID_RE = /^[0-9a-f-]{36}$/i;
 
 export function isWorkSubdomainRequest(request) {
   try { return isServiceHost(new URL(request.url).hostname, "work"); }
@@ -18,6 +22,12 @@ export function isMainWorkHandoffPath(pathname) {
 export function mainWorkRedirect(request, pathname) {
   const clean = normalizePath(pathname);
   const workOrigin = workOriginForRequest(request);
+  const localizedDocument = clean.match(/^\/(zh-cn|en)\/work\/d\/(?:huawei-exempt\/)?([0-9a-f-]{36})$/i);
+  if (localizedDocument) {
+    const locale = localizedDocument[1].toLowerCase() === "en" ? "en" : "zh-cn";
+    const exempt = /\/huawei-exempt\//i.test(clean) ? "huawei-exempt/" : "";
+    return `${workOrigin}/${locale}/d/${exempt}${localizedDocument[2]}`;
+  }
 
   if (clean === "/zh-cn/work/tex" || clean === "/zh-cn/workspace/experiments/tex") {
     return `${workOrigin}/zh-cn/tex`;
@@ -44,6 +54,36 @@ export function rewriteWorkSubdomainRequest(request) {
 
   const locale = preferredLocale(request, pathname);
   const canonicalPath = `/${locale}/tex`;
+  const localizedDocument = parseWorkDocumentPath(pathname);
+  if (localizedDocument?.localized) {
+    const internalUrl = new URL(url.toString());
+    internalUrl.pathname = localizedDocument.locale === "en" ? "/en/work/tex" : "/zh-cn/work/tex";
+    internalUrl.searchParams.set("document", localizedDocument.id);
+    return {
+      request: new Request(internalUrl.toString(), request),
+      pageNext: pathname,
+      redirect: "",
+      canonical: "",
+      documentId: localizedDocument.id
+    };
+  }
+
+  const shortDocument = parseShortWorkDocumentPath(pathname);
+  if (shortDocument) {
+    const exempt = shortDocument.exempt ? "huawei-exempt/" : "";
+    return {
+      request,
+      pageNext: "",
+      redirect: "",
+      canonical: `${workOrigin}/${locale}/d/${exempt}${shortDocument.id}${url.search}`,
+      documentId: "",
+      notFound: false
+    };
+  }
+
+  if (/^\/(?:zh-cn|en)\/d(?:\/|$)/i.test(pathname) || /^\/d(?:\/|$)/i.test(pathname)) {
+    return { request, pageNext: "", redirect: "", canonical: "", documentId: "", notFound: true };
+  }
 
   if (pathname === "/zh-cn/tex" || pathname === "/en/tex") {
     const internalUrl = new URL(url.toString());
@@ -52,7 +92,8 @@ export function rewriteWorkSubdomainRequest(request) {
       request: new Request(internalUrl.toString(), request),
       pageNext: pathname,
       redirect: "",
-      canonical: ""
+      canonical: "",
+      documentId: ""
     };
   }
 
@@ -68,11 +109,12 @@ export function rewriteWorkSubdomainRequest(request) {
       request,
       pageNext: "",
       redirect: "",
-      canonical: `${workOrigin}${canonicalPath}${url.search}`
+      canonical: `${workOrigin}${canonicalPath}${url.search}`,
+      documentId: ""
     };
   }
 
-  return { request, pageNext: "", redirect: `${mainOrigin}${url.pathname}${url.search}`, canonical: "" };
+  return { request, pageNext: "", redirect: `${mainOrigin}${url.pathname}${url.search}`, canonical: "", documentId: "" };
 }
 
 export function workSessionRedirect(request, next = "/tex") {
@@ -140,9 +182,38 @@ function safeWorkPath(value) {
   return path;
 }
 
-function canonicalWorkPath(_path, locale) {
+function canonicalWorkPath(path, locale) {
   const normalizedLocale = locale === "en" ? "en" : "zh-cn";
+  const candidate = safeWorkPath(path);
+  const document = candidate.match(/^\/(?:zh-cn|en)\/d\/(huawei-exempt\/)?([0-9a-f-]{36})$/i)
+    || candidate.match(/^\/d\/(huawei-exempt\/)?([0-9a-f-]{36})$/i);
+  if (document && WORK_DOCUMENT_ID_RE.test(document[2])) {
+    return `/${normalizedLocale}/d/${document[1] || ""}${document[2]}`;
+  }
   return `/${normalizedLocale}/tex`;
+}
+
+function parseWorkDocumentPath(pathname) {
+  const match = String(pathname || "").match(/^\/(zh-cn|en)\/d\/(huawei-exempt\/)?([0-9a-f-]{36})$/i);
+  if (!match || !WORK_DOCUMENT_ID_RE.test(match[3])) return null;
+  return {
+    localized: true,
+    locale: match[1].toLowerCase() === "en" ? "en" : "zh-cn",
+    exempt: Boolean(match[2]),
+    id: match[3]
+  };
+}
+
+function parseShortWorkDocumentPath(pathname) {
+  const match = String(pathname || "").match(/^\/d\/(huawei-exempt\/)?([0-9a-f-]{36})$/i);
+  if (!match || !WORK_DOCUMENT_ID_RE.test(match[2])) return null;
+  return { exempt: Boolean(match[1]), id: match[2] };
+}
+
+export function workDocumentNotFound(request) {
+  const { pathname, locale } = getRouteInfo(request);
+  const t = TEXT[locale] || TEXT.en;
+  return html(notFoundPage(t, buildLinks(locale, pathname)), 404);
 }
 
 function requestCookie(request, name) {
