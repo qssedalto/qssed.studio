@@ -3,6 +3,7 @@ import { SUPABASE_URL, SUPABASE_KEY, TEXT } from "./config.js";
 import { buildLinks, getRouteInfo, html } from "./routing.js";
 import { notFoundPage } from "./auth-pages.js";
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
+import { localeFromPath, preferredLocaleFromRequest } from "./locale.js";
 
 const DETECTION_RE = /(HarmonyOS|OpenHarmony|HuaweiBrowser|HUAWEI)/i;
 const DEVICE_ROUTE_MARKER = "huawei-exempt";
@@ -177,12 +178,7 @@ function shouldAutoApplyExemptionRoute(request) {
       pathname === "/health" ||
       pathname === "/robots.txt" ||
       pathname === "/auth/handoff" ||
-      pathname === "/gpt/handoff" ||
-      pathname === "/zh-cn/gpt/handoff" ||
-      pathname === "/en/gpt/handoff" ||
-      pathname === "/control/handoff" ||
-      pathname === "/zh-cn/control/handoff" ||
-      pathname === "/en/control/handoff" ||
+      isExemptionVerificationTransport(request) ||
       pathname.startsWith("/api/") ||
       pathname.startsWith("/.well-known/") ||
       pathname.startsWith("/favicon")
@@ -482,12 +478,10 @@ function isExemptionVerificationTransport(request) {
     const url = new URL(request.url);
     if (isServiceHost(url.hostname, "auth")) return true;
     if (url.pathname === "/auth/handoff") return true;
-    return url.pathname === "/gpt/handoff"
-      || url.pathname === "/zh-cn/gpt/handoff"
-      || url.pathname === "/en/gpt/handoff"
-      || url.pathname === "/control/handoff"
-      || url.pathname === "/zh-cn/control/handoff"
-      || url.pathname === "/en/control/handoff";
+    const locale = localeFromPath(url.pathname);
+    const parts = url.pathname.split("/").filter(Boolean);
+    const rest = locale ? parts.slice(1) : parts;
+    return rest.length === 2 && rest[1] === "handoff" && (rest[0] === "gpt" || rest[0] === "work" || rest[0] === "control");
   } catch {
     return false;
   }
@@ -522,7 +516,7 @@ function exemptionVerificationUrl(request, forceAccountSwitch = false) {
   try {
     const current = new URL(request.url);
     const currentPath = current.pathname + current.search;
-    const locale = current.pathname === "/en" || current.pathname.startsWith("/en/") ? "en" : "zh-cn";
+    const locale = localeFromPath(current.pathname) || preferredLocaleFromRequest(request);
 
     let returnPath = currentPath;
     if (isServiceHost(current.hostname, "gpt")) {
