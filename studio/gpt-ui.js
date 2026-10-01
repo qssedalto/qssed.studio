@@ -244,13 +244,21 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
   function setStatus(ok,label){$("sideDot").className="dot "+(ok?"online":"offline");$("sideStatus").textContent=label;$("accountLabel").textContent=label}
   function gate(title,message){$("gate").classList.remove("hidden");$("messages").classList.add("hidden");$("composerWrap").classList.add("hidden");$("gateTitle").textContent=title;$("gateText").textContent=message;$("startLogin").classList.add("hidden");$("devicePanel").classList.add("hidden")}
   function showChat(){$("gate").classList.add("hidden");$("messages").classList.remove("hidden");$("composerWrap").classList.remove("hidden")}
+  function scrollChatToBottom(){
+    if(isTinyWatch()){
+      const root=document.scrollingElement||document.documentElement;
+      root.scrollTop=root.scrollHeight;
+      return;
+    }
+    scrollChatToBottom();
+  }
   function append(role,content,scroll=true){
     $("emptyState").classList.add("hidden");
     const root=document.createElement("div");root.className="msg "+role;
     const bubble=document.createElement("div");bubble.className="bubble";
     if(role==="assistant"&&window.AERTEXRich)window.AERTEXRich.render(bubble,content,{final:true});else bubble.textContent=content;
     root.appendChild(bubble);$("messages").appendChild(root);
-    if(scroll)$("content").scrollTop=$("content").scrollHeight;
+    if(scroll)scrollChatToBottom();
     return bubble;
   }
   function renderCurrent(){
@@ -367,7 +375,7 @@ ${intelligenceWatchClientScript()}
             state.conversationId=payload.conversation_id;
             history.replaceState({conversationId:state.conversationId},"",routeFor(state.conversationId));
           }
-          if(event==="delta"&&payload?.delta){streamed+=payload.delta;if(window.AERTEXRich)window.AERTEXRich.stream(assistant,streamed);else assistant.textContent=streamed;$("content").scrollTop=$("content").scrollHeight}
+          if(event==="delta"&&payload?.delta){streamed+=payload.delta;if(window.AERTEXRich)window.AERTEXRich.stream(assistant,streamed);else assistant.textContent=streamed;scrollChatToBottom()}
           if(event==="done")status.textContent="";
           if(event==="error")throw new Error(payload?.error||text.error);
         }

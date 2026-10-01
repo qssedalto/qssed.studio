@@ -3,10 +3,11 @@ export function intelligenceWatchStyles() {
 .watchModelButton,.watchModelPortal,.watchComposerForm,.sendGlyph{display:none}
 @media (max-width:320px) and (max-height:520px),(max-width:260px){
   :root{--aertex-watch-topbar:44px;--aertex-watch-composer:48px}
-  html,body{width:100%;max-width:100%;overflow:hidden}
-  body{overscroll-behavior:none}
-  .main{height:var(--aertex-visual-height,100dvh);min-height:0;overflow:hidden}
-  .topbar{height:var(--aertex-watch-topbar);min-height:var(--aertex-watch-topbar);padding:4px 5px;gap:4px;border-bottom-color:color-mix(in srgb,var(--line) 72%,transparent)}
+  html,body{width:100%;max-width:100%;min-height:100%;overflow-x:hidden;overflow-y:auto}
+  html{scroll-behavior:auto}
+  body{overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+  .main{height:auto;min-height:var(--aertex-visual-height,100dvh);overflow:visible;padding-top:var(--aertex-watch-topbar);padding-bottom:58px}
+  .topbar{position:fixed;z-index:180;top:0;left:0;right:0;height:var(--aertex-watch-topbar);min-height:var(--aertex-watch-topbar);padding:4px 5px;gap:4px;border-bottom-color:color-mix(in srgb,var(--line) 72%,transparent)}
   .topbar .iconButton{width:34px;height:34px;min-width:34px;min-height:34px;border-radius:50%}
   .topbar .sidebarToggleGlyph,.topbar .composeGlyph{width:19px!important;height:19px!important}
   .topbarSpacer,.model,.account,.aertex-account-root{display:none!important}
@@ -14,7 +15,7 @@ export function intelligenceWatchStyles() {
   .watchModelButton:active{transform:scale(.97)}
   .watchModelButton:disabled{opacity:.5}
   .watchModelLabel{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .content{min-height:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .content{min-height:calc(var(--aertex-visual-height,100dvh) - var(--aertex-watch-topbar) - 58px);overflow:visible!important;overscroll-behavior:contain}
   .messages{width:100%;padding:8px 5px 74px}
   .empty{min-height:calc(var(--aertex-visual-height,100dvh) - 112px);padding:10px 6px}
   .empty h1{font-size:20px;line-height:1.12;letter-spacing:-.025em;margin-bottom:7px}
@@ -30,7 +31,7 @@ export function intelligenceWatchStyles() {
   .msg.assistant .bubble :where(p,ul,ol,pre,blockquote,table){margin-top:.42em;margin-bottom:.42em}
   .msg.assistant .bubble :where(pre,code){font-size:12px}
   .status{font-size:12px;margin:4px 0 0 6px;color:var(--muted)}
-  .composerWrap,.app.sidebar-collapsed .composerWrap{left:0;padding:5px max(5px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));background:linear-gradient(to top,var(--bg) 76%,transparent)}
+  .composerWrap,.app.sidebar-collapsed .composerWrap{position:fixed;z-index:185;left:0;right:0;bottom:0;padding:5px max(5px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));background:linear-gradient(to top,var(--bg) 76%,transparent)}
   .composer{width:100%;margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:5px;padding:0;border:0;background:transparent;box-shadow:none}
   textarea{display:none!important}
   .watchComposerForm{display:block;min-width:0;width:100%;margin:0;padding:0}
