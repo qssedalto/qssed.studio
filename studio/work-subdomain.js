@@ -75,8 +75,13 @@ export function rewriteWorkSubdomainRequest(request) {
       pageNext: "",
       redirect: "",
       canonical: `${workOrigin}/${locale}/d/${exempt}${shortDocument.id}${url.search}`,
-      documentId: ""
+      documentId: "",
+      notFound: false
     };
+  }
+
+  if (/^\/(?:zh-cn|en)\/d(?:\/|$)/i.test(pathname) || /^\/d(?:\/|$)/i.test(pathname)) {
+    return { request, pageNext: "", redirect: "", canonical: "", documentId: "", notFound: true };
   }
 
   if (pathname === "/zh-cn/tex" || pathname === "/en/tex") {
