@@ -1,13 +1,27 @@
-export function curatedLinksFavoritesEnhancer(zh) {
-  const favoriteLabel = zh ? "星标" : "Favorites";
-  const emptyLabel = zh ? "还没有星标" : "No favorites yet";
-  const emptyHint = zh ? "点击链接上的星标即可添加。" : "Use the star on a link to add it here.";
-  const addLabel = zh ? "添加星标" : "Add favorite";
-  const removeLabel = zh ? "取消星标" : "Remove favorite";
-  const localLabel = zh ? "仅此设备" : "This device only";
-  const syncingLabel = zh ? "正在同步…" : "Syncing…";
-  const cloudLabel = zh ? "已同步" : "Synced";
-  const errorLabel = zh ? "同步失败 · 已保留本地" : "Sync failed · saved locally";
+const FAVORITES_UI = {
+  "en-us":{favorite:"Favorites",empty:"No favorites yet",hint:"Use the star on a link to add it here.",add:"Add favorite",remove:"Remove favorite",local:"This device only",syncing:"Syncing…",cloud:"Synced",error:"Sync failed · saved locally",count:n=>n+" favorites"},
+  "zh-cn":{favorite:"星标",empty:"还没有星标",hint:"点击链接上的星标即可添加。",add:"添加星标",remove:"取消星标",local:"仅此设备",syncing:"正在同步…",cloud:"已同步",error:"同步失败 · 已保留本地",count:n=>n+" 个星标"},
+  "zh-tw":{favorite:"星號收藏",empty:"尚無收藏",hint:"點擊連結上的星號即可加入。",add:"加入收藏",remove:"取消收藏",local:"僅此裝置",syncing:"正在同步…",cloud:"已同步",error:"同步失敗 · 已保留在本機",count:n=>n+" 個收藏"},
+  "ja-jp":{favorite:"お気に入り",empty:"お気に入りはまだありません",hint:"リンクの星を押すと追加できます。",add:"お気に入りに追加",remove:"お気に入りから削除",local:"このデバイスのみ",syncing:"同期中…",cloud:"同期済み",error:"同期に失敗 · ローカル保存済み",count:n=>n+" 件"},
+  "ko-kr":{favorite:"즐겨찾기",empty:"즐겨찾기가 없습니다",hint:"링크의 별을 눌러 추가하세요.",add:"즐겨찾기에 추가",remove:"즐겨찾기에서 제거",local:"이 기기에서만",syncing:"동기화 중…",cloud:"동기화됨",error:"동기화 실패 · 로컬에 저장됨",count:n=>n+"개"},
+  "fr-fr":{favorite:"Favoris",empty:"Aucun favori",hint:"Utilisez l’étoile d’un lien pour l’ajouter.",add:"Ajouter aux favoris",remove:"Retirer des favoris",local:"Cet appareil uniquement",syncing:"Synchronisation…",cloud:"Synchronisé",error:"Échec de la synchronisation · conservé localement",count:n=>n+" favoris"},
+  "es-es":{favorite:"Favoritos",empty:"Todavía no hay favoritos",hint:"Usa la estrella de un enlace para añadirlo.",add:"Añadir a favoritos",remove:"Quitar de favoritos",local:"Solo en este dispositivo",syncing:"Sincronizando…",cloud:"Sincronizado",error:"Error de sincronización · guardado localmente",count:n=>n+" favoritos"},
+  "el-gr":{favorite:"Αγαπημένα",empty:"Δεν υπάρχουν αγαπημένα ακόμη",hint:"Χρησιμοποιήστε το αστέρι σε έναν σύνδεσμο για να τον προσθέσετε.",add:"Προσθήκη στα αγαπημένα",remove:"Αφαίρεση από τα αγαπημένα",local:"Μόνο σε αυτή τη συσκευή",syncing:"Συγχρονισμός…",cloud:"Συγχρονίστηκε",error:"Αποτυχία συγχρονισμού · αποθηκεύτηκε τοπικά",count:n=>n+" αγαπημένα"},
+  "ar-sa":{favorite:"المفضلة",empty:"لا توجد عناصر مفضلة بعد",hint:"استخدم النجمة على الرابط لإضافته.",add:"إضافة إلى المفضلة",remove:"إزالة من المفضلة",local:"على هذا الجهاز فقط",syncing:"جارٍ المزامنة…",cloud:"تمت المزامنة",error:"فشلت المزامنة · تم الحفظ محليًا",count:n=>n+" مفضلة"}
+};
+FAVORITES_UI["en-gb"]=FAVORITES_UI["en-us"]; FAVORITES_UI["en-au"]=FAVORITES_UI["en-us"];
+
+export function curatedLinksFavoritesEnhancer(zh, locale = "") {
+  const c=FAVORITES_UI[locale]||FAVORITES_UI[zh?"zh-cn":"en-us"];
+  const favoriteLabel=c.favorite;
+  const emptyLabel=c.empty;
+  const emptyHint=c.hint;
+  const addLabel=c.add;
+  const removeLabel=c.remove;
+  const localLabel=c.local;
+  const syncingLabel=c.syncing;
+  const cloudLabel=c.cloud;
+  const errorLabel=c.error;
 
   return `<style>
     .curated-link-card-wrap{position:relative;min-width:0}.curated-link-card-wrap>.curated-link-card{height:100%}
@@ -117,7 +131,7 @@ export function curatedLinksFavoritesEnhancer(zh) {
       localSection.classList.toggle('is-visible',favoriteMode||favorites.size>0&&noOtherFilters);
       if(favoriteMode){
         groups.forEach(group=>group.hidden=true);if(featured)featured.hidden=true;
-        if(resultCount)resultCount.textContent=String(matched);if(resultLabel)resultLabel.textContent=${zh ? "' 个星标'" : "' favorites'"};if(empty)empty.classList.remove('is-visible');
+        if(resultCount)resultCount.textContent=String(matched);if(resultLabel)resultLabel.textContent=${JSON.stringify(c.count(0))}.replace('0',String(matched));if(empty)empty.classList.remove('is-visible');
       }
     }
     function refresh(){syncButtons();applyFavoriteMode();}
