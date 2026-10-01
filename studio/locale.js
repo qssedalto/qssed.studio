@@ -21,17 +21,17 @@ export const SUPPORTED_LOCALES = Object.freeze([
 const SUPPORTED = new Set(SUPPORTED_LOCALES);
 
 export const LOCALE_META = Object.freeze({
-  "en-us": { label: "English (US)", nativeName: "English (US)", dir: "ltr" },
-  "en-gb": { label: "English (UK)", nativeName: "English (UK)", dir: "ltr" },
-  "en-au": { label: "English (Australia)", nativeName: "English (Australia)", dir: "ltr" },
-  "zh-cn": { label: "简体中文", nativeName: "简体中文", dir: "ltr" },
-  "zh-tw": { label: "繁體中文", nativeName: "繁體中文", dir: "ltr" },
-  "ja-jp": { label: "日本語", nativeName: "日本語", dir: "ltr" },
-  "ko-kr": { label: "한국어", nativeName: "한국어", dir: "ltr" },
-  "fr-fr": { label: "Français", nativeName: "Français", dir: "ltr" },
-  "es-es": { label: "Español", nativeName: "Español", dir: "ltr" },
-  "el-gr": { label: "Ελληνικά", nativeName: "Ελληνικά", dir: "ltr" },
-  "ar-sa": { label: "العربية", nativeName: "العربية", dir: "rtl" }
+  "en-us": { label: "English (US)", nativeName: "English (US)", shortName: "EN", dir: "ltr" },
+  "en-gb": { label: "English (UK)", nativeName: "English (UK)", shortName: "EN", dir: "ltr" },
+  "en-au": { label: "English (Australia)", nativeName: "English (Australia)", shortName: "EN", dir: "ltr" },
+  "zh-cn": { label: "简体中文", nativeName: "简体中文", shortName: "中", dir: "ltr" },
+  "zh-tw": { label: "繁體中文", nativeName: "繁體中文", shortName: "繁", dir: "ltr" },
+  "ja-jp": { label: "日本語", nativeName: "日本語", shortName: "日", dir: "ltr" },
+  "ko-kr": { label: "한국어", nativeName: "한국어", shortName: "한", dir: "ltr" },
+  "fr-fr": { label: "Français", nativeName: "Français", shortName: "FR", dir: "ltr" },
+  "es-es": { label: "Español", nativeName: "Español", shortName: "ES", dir: "ltr" },
+  "el-gr": { label: "Ελληνικά", nativeName: "Ελληνικά", shortName: "ΕΛ", dir: "ltr" },
+  "ar-sa": { label: "العربية", nativeName: "العربية", shortName: "ع", dir: "rtl" }
 });
 
 export function normalizeSupportedLocale(value) {
