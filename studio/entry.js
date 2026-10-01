@@ -320,6 +320,7 @@ export default {
       const workOrigin = workOriginForRequest(request);
       const gptOrigin = gptOriginForRequest(request);
       const shellProductLinks = {
+        workHref: `${workOrigin}/${zh ? "zh-cn/tex" : "en/tex"}`,
         gptHref: `${gptOrigin}/${zh ? "zh-cn" : "en"}`,
         adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : ""
       };
