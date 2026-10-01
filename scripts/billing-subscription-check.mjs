@@ -133,7 +133,7 @@ assert(!storageApi.includes('plan_name: "AERTEX Drive Free"'), "Drive plan ident
 contains(shell, '"/settings/subscription"', "Subscription settings route must be registered in the shell.");
 contains(config, '"/settings/student"', "Student Eligibility must be a registered Studio route.");
 contains(shell, '"/settings/student"', "Student Eligibility must be exposed through the Settings shell.");
-contains(shell, 'billingSettingsContent(zh, "student")', "Student Eligibility must render as a dedicated billing/student mode.");
+contains(shell, 'billingSettingsContent(zh, "student", activeLocale)', "Student Eligibility must render as a dedicated billing/student mode with the active locale.");
 contains(settings, 'prefix+"/settings/student"', "Settings home must expose Student Eligibility as a first-class item.");
 contains(billingUi, 'const studentOnly = view === "student";', "Billing UI must separate subscription and student surfaces.");
 contains(billingUi, 'class="student-eligibility-page"', "Student Eligibility must own a dedicated page surface.");
