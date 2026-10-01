@@ -439,15 +439,16 @@ export function settingsHubContent(zh) {
     integrations:["Integrations","External services and authorization"]
   };
   const row = (item, href, icon, status = "") => `
-    <a class="settings-stage-row" href="\${href}">
-      <span class="settings-stage-row-icon">\${osHubIcon(icon)}</span>
-      <span class="settings-stage-row-copy"><strong>\${item[0]}</strong><small>\${item[1]}</small></span>
-      \${status ? `<em>\${status}</em>` : ""}
+    <a class="settings-stage-row" href="${href}">
+      <span class="settings-stage-row-icon">${osHubIcon(icon)}</span>
+      <span class="settings-stage-row-copy"><strong>${item[0]}</strong><small>${item[1]}</small></span>
+      ${status ? `<em>${status}</em>` : ""}
       <b aria-hidden="true">›</b>
     </a>`;
   return `
     <style>
-      body.os-shell:has(.settings-stage) .os-hero{display:none!important}\n      .settings-stage{display:grid;gap:18px}
+      body.os-shell:has(.settings-stage) .os-hero{display:none!important}
+      .settings-stage{display:grid;gap:18px}
       .settings-stage-hero{
         position:relative;isolation:isolate;overflow:hidden;
         display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:clamp(24px,4vw,56px);align-items:end;
@@ -488,30 +489,30 @@ export function settingsHubContent(zh) {
     <section class="settings-stage">
       <section class="settings-stage-hero">
         <div class="settings-stage-hero-copy">
-          <small>\${copy.eyebrow}</small>
-          <h2>\${copy.title}</h2>
-          <p>\${copy.intro}</p>
+          <small>${copy.eyebrow}</small>
+          <h2>${copy.title}</h2>
+          <p>${copy.intro}</p>
         </div>
-        <a class="settings-theme-feature" href="\${prefix}/settings/appearance">
-          <div class="settings-theme-feature-top"><small>\${copy.themeMeta}</small><span class="settings-theme-arrow" aria-hidden="true">↗</span></div>
+        <a class="settings-theme-feature" href="${prefix}/settings/appearance">
+          <div class="settings-theme-feature-top"><small>${copy.themeMeta}</small><span class="settings-theme-arrow" aria-hidden="true">↗</span></div>
           <div class="settings-theme-swatches" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-          <div><h3>\${copy.theme}</h3><p>\${copy.themeDetail}</p></div>
-          <div class="settings-theme-feature-bottom"><strong>\${copy.openTheme}</strong><span>→</span></div>
+          <div><h3>${copy.theme}</h3><p>${copy.themeDetail}</p></div>
+          <div class="settings-theme-feature-bottom"><strong>${copy.openTheme}</strong><span>→</span></div>
         </a>
       </section>
       <div class="settings-stage-columns">
         <section class="settings-stage-group">
-          <div class="settings-stage-group-head">\${copy.essentials}</div>
-          \${row(copy.language, prefix+"/settings/language", "language")}
-          \${row(copy.security, prefix+"/settings/security", "shield")}
-          \${row(copy.ai, prefix+"/settings/ai", "ai")}
+          <div class="settings-stage-group-head">${copy.essentials}</div>
+          ${row(copy.language, prefix+"/settings/language", "language")}
+          ${row(copy.security, prefix+"/settings/security", "shield")}
+          ${row(copy.ai, prefix+"/settings/ai", "ai")}
         </section>
         <section class="settings-stage-group">
-          <div class="settings-stage-group-head">\${copy.services}</div>
-          \${row(copy.subscription, prefix+"/settings/subscription", "account")}
-          \${row(copy.storage, prefix+"/settings/storage", "storage")}
-          \${row(copy.notifications, prefix+"/settings/notifications", "notifications", zh ? "未开放" : "Soon")}
-          \${row(copy.integrations, prefix+"/settings/integrations", "integrations", zh ? "未开放" : "Soon")}
+          <div class="settings-stage-group-head">${copy.services}</div>
+          ${row(copy.subscription, prefix+"/settings/subscription", "account")}
+          ${row(copy.storage, prefix+"/settings/storage", "storage")}
+          ${row(copy.notifications, prefix+"/settings/notifications", "notifications", zh ? "未开放" : "Soon")}
+          ${row(copy.integrations, prefix+"/settings/integrations", "integrations", zh ? "未开放" : "Soon")}
         </section>
       </div>
     </section>
