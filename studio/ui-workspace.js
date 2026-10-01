@@ -1,10 +1,24 @@
 import { statusContent } from "./ui-primitives.js";
 
-export function workspaceContent(path, zh) {
-  if (path.endsWith("/workbench")) return statusContent(zh, "工作台尚未开放", "工作台数据模型还没接入。", "Workbench isn’t available yet", "Workbench data is not connected yet.");
-  if (path.endsWith("/projects")) return statusContent(zh, "项目尚未开放", "项目数据表还没接入。", "Projects aren’t available yet", "Project data is not connected yet.");
-  if (path.endsWith("/experiments")) return statusContent(zh, "实验室尚未开放", "实验数据和工具接口还没接入。", "Lab isn’t available yet", "Experiment data and tool APIs are not connected yet.");
-  if (path.endsWith("/drafts")) return statusContent(zh, "草稿尚未开放", "草稿保存接口还没接入。", "Drafts aren’t available yet", "Draft storage is not connected yet.");
-  if (path.endsWith("/tasks")) return statusContent(zh, "任务尚未开放", "任务数据表还没接入。", "Tasks aren’t available yet", "Task data is not connected yet.");
-  return statusContent(zh, "工作区尚未开放", "项目、实验、草稿和任务的数据模型还没接入。", "Workspace isn’t available yet", "Projects, experiments, drafts, and tasks are not connected yet.");
+const COPY = {
+  "zh-cn": {
+    workbench:["工作台尚未开放","工作台数据模型还没接入。"], projects:["项目尚未开放","项目数据表还没接入。"], experiments:["实验室尚未开放","实验数据和工具接口还没接入。"], drafts:["草稿尚未开放","草稿保存接口还没接入。"], tasks:["任务尚未开放","任务数据表还没接入。"], workspace:["工作区尚未开放","项目、实验、草稿和任务的数据模型还没接入。"]
+  },
+  "zh-tw": {
+    workbench:["工作台尚未開放","工作台資料模型尚未接入。"], projects:["專案尚未開放","專案資料表尚未接入。"], experiments:["實驗室尚未開放","實驗資料與工具介面尚未接入。"], drafts:["草稿尚未開放","草稿儲存介面尚未接入。"], tasks:["任務尚未開放","任務資料表尚未接入。"], workspace:["工作區尚未開放","專案、實驗、草稿與任務的資料模型尚未接入。"]
+  },
+  "ja-jp": {workbench:["ワークベンチはまだ利用できません","ワークベンチのデータモデルはまだ接続されていません。"],projects:["プロジェクトはまだ利用できません","プロジェクトデータはまだ接続されていません。"],experiments:["実験機能はまだ利用できません","実験データとツール API はまだ接続されていません。"],drafts:["下書きはまだ利用できません","下書き保存はまだ接続されていません。"],tasks:["タスクはまだ利用できません","タスクデータはまだ接続されていません。"],workspace:["ワークスペースはまだ利用できません","プロジェクト、実験、下書き、タスクのデータモデルはまだ接続されていません。"]},
+  "ko-kr": {workbench:["워크벤치는 아직 사용할 수 없습니다","워크벤치 데이터 모델이 아직 연결되지 않았습니다."],projects:["프로젝트는 아직 사용할 수 없습니다","프로젝트 데이터가 아직 연결되지 않았습니다."],experiments:["실험실은 아직 사용할 수 없습니다","실험 데이터와 도구 API가 아직 연결되지 않았습니다."],drafts:["초안은 아직 사용할 수 없습니다","초안 저장 기능이 아직 연결되지 않았습니다."],tasks:["작업은 아직 사용할 수 없습니다","작업 데이터가 아직 연결되지 않았습니다."],workspace:["작업 공간은 아직 사용할 수 없습니다","프로젝트, 실험, 초안 및 작업 데이터 모델이 아직 연결되지 않았습니다."]},
+  "fr-fr": {workbench:["L’atelier n’est pas encore disponible","Le modèle de données de l’atelier n’est pas encore connecté."],projects:["Les projets ne sont pas encore disponibles","Les données des projets ne sont pas encore connectées."],experiments:["Les expériences ne sont pas encore disponibles","Les données expérimentales et les API d’outils ne sont pas encore connectées."],drafts:["Les brouillons ne sont pas encore disponibles","Le stockage des brouillons n’est pas encore connecté."],tasks:["Les tâches ne sont pas encore disponibles","Les données des tâches ne sont pas encore connectées."],workspace:["L’espace de travail n’est pas encore disponible","Les modèles de données des projets, expériences, brouillons et tâches ne sont pas encore connectés."]},
+  "es-es": {workbench:["La mesa de trabajo aún no está disponible","El modelo de datos de la mesa de trabajo aún no está conectado."],projects:["Los proyectos aún no están disponibles","Los datos de proyectos aún no están conectados."],experiments:["Los experimentos aún no están disponibles","Los datos experimentales y las API de herramientas aún no están conectados."],drafts:["Los borradores aún no están disponibles","El almacenamiento de borradores aún no está conectado."],tasks:["Las tareas aún no están disponibles","Los datos de tareas aún no están conectados."],workspace:["El espacio de trabajo aún no está disponible","Los modelos de datos de proyectos, experimentos, borradores y tareas aún no están conectados."]},
+  "el-gr": {workbench:["Ο πάγκος εργασίας δεν είναι ακόμη διαθέσιμος","Το μοντέλο δεδομένων του πάγκου εργασίας δεν έχει ακόμη συνδεθεί."],projects:["Τα έργα δεν είναι ακόμη διαθέσιμα","Τα δεδομένα έργων δεν έχουν ακόμη συνδεθεί."],experiments:["Τα πειράματα δεν είναι ακόμη διαθέσιμα","Τα δεδομένα πειραμάτων και τα API εργαλείων δεν έχουν ακόμη συνδεθεί."],drafts:["Τα πρόχειρα δεν είναι ακόμη διαθέσιμα","Η αποθήκευση προχείρων δεν έχει ακόμη συνδεθεί."],tasks:["Οι εργασίες δεν είναι ακόμη διαθέσιμες","Τα δεδομένα εργασιών δεν έχουν ακόμη συνδεθεί."],workspace:["Ο χώρος εργασίας δεν είναι ακόμη διαθέσιμος","Τα μοντέλα δεδομένων για έργα, πειράματα, πρόχειρα και εργασίες δεν έχουν ακόμη συνδεθεί."]},
+  "ar-sa": {workbench:["منضدة العمل غير متاحة بعد","لم يتم ربط نموذج بيانات منضدة العمل بعد."],projects:["المشروعات غير متاحة بعد","لم يتم ربط بيانات المشروعات بعد."],experiments:["التجارب غير متاحة بعد","لم يتم ربط بيانات التجارب وواجهات أدوات API بعد."],drafts:["المسودات غير متاحة بعد","لم يتم ربط تخزين المسودات بعد."],tasks:["المهام غير متاحة بعد","لم يتم ربط بيانات المهام بعد."],workspace:["مساحة العمل غير متاحة بعد","لم يتم ربط نماذج بيانات المشروعات والتجارب والمسودات والمهام بعد."]}
+};
+const EN={workbench:["Workbench isn’t available yet","Workbench data is not connected yet."],projects:["Projects aren’t available yet","Project data is not connected yet."],experiments:["Lab isn’t available yet","Experiment data and tool APIs are not connected yet."],drafts:["Drafts aren’t available yet","Draft storage is not connected yet."],tasks:["Tasks aren’t available yet","Task data is not connected yet."],workspace:["Workspace isn’t available yet","Projects, experiments, drafts, and tasks are not connected yet."]};
+
+export function workspaceContent(path, zh, locale = "") {
+  const c=COPY[locale]||EN;
+  const key=path.endsWith("/workbench")?"workbench":path.endsWith("/projects")?"projects":path.endsWith("/experiments")?"experiments":path.endsWith("/drafts")?"drafts":path.endsWith("/tasks")?"tasks":"workspace";
+  const value=c[key]||EN[key];
+  return '<section class="os-card is-large status-card"><h2>'+value[0]+'</h2><p>'+value[1]+'</p></section>';
 }
