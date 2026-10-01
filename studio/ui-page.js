@@ -373,6 +373,8 @@ export function baseHead(title) {
       }
       body.os-shell .os-brand small{display:none!important}
       body.os-shell .os-brand-mark{border-radius:0!important;box-shadow:none!important;background:transparent!important;overflow:visible!important} body.os-shell .os-brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
+      :root[data-theme="dark"] body.os-shell .os-brand-mark img{filter:brightness(0) invert(1)!important}
+      :root[data-theme="light"] body.os-shell .os-brand-mark img{filter:none!important}
       body.os-shell .os-user{background:var(--fill)!important;border:0!important;box-shadow:none!important}
       body.os-shell .os-nav-group{border:0!important;box-shadow:none!important;background:transparent!important}
       body.os-shell .os-nav-group.is-active{background:transparent!important}
