@@ -484,7 +484,7 @@ export function aiSettingsContent(zh) {
               '<div class="ai-settings-panel"><small>'+esc(copy.models)+'</small><strong>'+esc(chosen?.model||"—")+'</strong>'+
                 '<select id="ai-default-model" class="ai-model-select" '+(available.length?"":"disabled")+'>'+
                   available.map(item=>'<option value="'+esc(item.provider_id+"|"+item.model)+'" '+(chosen&&item.provider_id===chosen.provider_id&&item.model===chosen.model?"selected":"")+'>'+esc(providerLabel(providers.find(p=>p.id===item.provider_id)))+' · '+esc(item.model)+'</option>').join("")+
-                '</select><div class="ai-settings-actions"><a class="btn primary" href="'+esc((location.pathname.startsWith("/en")?"/en":"/zh-cn")+"/gpt/handoff?next="+encodeURIComponent(location.pathname.startsWith("/en")?"/en":"/zh-cn"))+'">'+esc(copy.open)+'</a><span id="ai-settings-feedback" class="ai-settings-feedback"></span></div></div>'+
+                '</select><div class="ai-settings-actions"><a class="btn primary" href="'+esc(("/"+(location.pathname.split("/").filter(Boolean)[0]||"en-us"))+"/gpt/handoff?next="+encodeURIComponent("/"+(location.pathname.split("/").filter(Boolean)[0]||"en-us")))+'">'+esc(copy.open)+'</a><span id="ai-settings-feedback" class="ai-settings-feedback"></span></div></div>'+
               '<div class="ai-settings-panel"><small>'+esc(copy.usage)+'</small>'+
                 '<div class="ai-usage-line"><span>'+esc(copy.today+" · "+copy.tokens)+'</span><strong>'+esc(limit(cfg.usage?.today_tokens,cfg.limits?.daily_tokens,"tokens"))+'</strong></div>'+
                 '<div class="ai-usage-line"><span>'+esc(copy.month+" · "+copy.tokens)+'</span><strong>'+esc(limit(cfg.usage?.month_tokens,cfg.limits?.monthly_tokens,"tokens"))+'</strong></div>'+
@@ -648,8 +648,8 @@ export function settingsHubContent(zh, locale = "") {
   `;
 }
 
-export function settingsFallbackContent(zh) {
-  const prefix = zh ? "/zh-cn" : "/en";
+export function settingsFallbackContent(zh, locale = "") {
+  const prefix = "/" + (locale || (zh ? "zh-cn" : "en-us"));
   const items = zh
     ? [
         ["主题与外观", "可用", "系统、浅色、深色与强调色。", `${prefix}/settings/appearance`],
