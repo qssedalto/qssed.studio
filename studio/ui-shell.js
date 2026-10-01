@@ -130,7 +130,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
 
   ${supabaseScript()}
   ${knowledgePath ? knowledgeSearchClientScript(zh) : ""}
-  ${path === "/settings/storage" ? storageClientScript(zh, links.login) : ""}
+  ${path === "/settings/storage" ? storageClientScript(zh, links.login, activeLocale) : ""}
   ${auditClientScript(ipInfo)}
   ${profileClientScript()}
   <script>
@@ -757,7 +757,7 @@ export function settingsContent(path, zh, activeLocale = "") {
   if (path.endsWith("/integrations")) return settingsStatusContent(activeLocale, "integrations");
   if (path.endsWith("/subscription")) return billingSettingsContent(zh, "billing", activeLocale);
   if (path.endsWith("/student")) return billingSettingsContent(zh, "student", activeLocale);
-  if (path.endsWith("/storage")) return storageSettingsContent(zh);
+  if (path.endsWith("/storage")) return storageSettingsContent(zh, activeLocale);
 
   return settingsFallbackContent(zh, activeLocale);
 }
