@@ -1,4 +1,6 @@
 import fs from "node:fs";
+import { normalizeHandoffNext } from "../studio/auth-handoff.js";
+import { SUPPORTED_LOCALES } from "../studio/locale.js";
 
 const read = path => fs.readFileSync(path, "utf8");
 const assert = (condition, message) => {
@@ -58,8 +60,22 @@ assert(session.includes('isServiceHost(hostname, "gpt")'), "Session gate must re
 assert(session.includes("isolatedAppHost && !accountId"), "Isolated GPT session must require the domain-wide account marker");
 assert(authHandoff.includes('isServiceHost(hostname, "gpt")'), "Auth handoff must recognize GPT on every domain family");
 assert(authHandoff.includes('gptTarget ? "AERTEX Intelligence"'), "Auth handoff must render the AERTEX Intelligence product handoff");
-assert(authHandoff.includes('/c/huawei-exempt/'), "Auth handoff must preserve Huawei-exempt GPT conversation targets.");
-assert(authHandoff.includes('return candidateLocale === "zh" ? "/zh-cn" : "/en"'), "GPT handoff must constrain ordinary return paths to GPT locale roots");
+const TEST_CONVERSATION_ID = "123e4567-e89b-12d3-a456-426614174000";
+for (const locale of SUPPORTED_LOCALES) {
+  assert(
+    normalizeHandoffNext(`/${locale}/c/${TEST_CONVERSATION_ID}`, locale, false, true) === `/${locale}/c/${TEST_CONVERSATION_ID}`,
+    `Auth handoff must preserve GPT conversation targets for ${locale}.`
+  );
+  assert(
+    normalizeHandoffNext(`/${locale}/c/huawei-exempt/${TEST_CONVERSATION_ID}`, locale, false, true) === `/${locale}/c/huawei-exempt/${TEST_CONVERSATION_ID}`,
+    `Auth handoff must preserve Huawei-exempt GPT conversation targets for ${locale}.`
+  );
+  assert(
+    normalizeHandoffNext("/not-a-conversation", locale, false, true) === `/${locale}`,
+    `GPT handoff must constrain ordinary return paths to the locale root for ${locale}.`
+  );
+}
+assert(normalizeHandoffNext("/en", "ja-jp", false, true) === "/en-us", "Legacy /en GPT links must normalize to en-us.");
 for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online","qsseda.online"],["gpt.qsseda.studio","qsseda.studio"]]) {
   assert(gptWrangler.routes?.some(route => route.pattern === `${host}/*` && route.zone_name === zone), `${host} exact Worker route must outrank the main-site wildcard route`);
   assert(gptWrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
@@ -86,8 +102,7 @@ assert(adminApi.includes('"device-exemption"'), "Admin API must expose device ex
 assert(deviceExemptionMigration.includes("enable row level security"), "Device exemption records must remain protected by RLS.");
 assert(deviceExemptionMigration.includes("device exemption own or admin read"), "Users may only read their own device exemption record unless they are administrators.");
 assert(gpt.includes("normalizeHuaweiExemptPath"), "Auto-applied Huawei exemption routes must normalize back to Intelligence routes internally.");
-assert(huaweiGate.includes('url.pathname === "/gpt/handoff"'), "Huawei gate must allow the GPT handoff transport.");
-assert(huaweiGate.includes('url.pathname === "/zh-cn/gpt/handoff"'), "Huawei gate must allow the localized GPT handoff transport.");
+assert(huaweiGate.includes("localeFromPath(url.pathname)") && huaweiGate.includes('rest[1] === "handoff"'), "Huawei gate must allow handoff transports for every supported locale.");
 assert(gpt.includes('loadGptBootstrap(request, env, gate, conversationId)'), "GPT Worker must bootstrap Intelligence data before first paint.");
 assert(gpt.includes('pathname.match(/^\\/share\\/'), "GPT Worker must expose explicit read-only share routes.");
 assert(gpt.includes("get_shared_ai_conversation"), "GPT Worker must load explicitly shared conversations through the public RPC.");
@@ -156,7 +171,7 @@ assert(uiSettings.includes('systemHint:"默认 · 跟随设备外观"'), "Theme 
 assert(uiSettings.includes('.theme-mode[data-mode="system"] .theme-mode-visual:after{right:10px;background:#5a5d64'), "System preview must render dark controls on its dark half instead of inheriting light controls.");
 assert(uiShell.includes('fetch("/api/account/security/summary"'), "Authenticated UI must trust the server session before redirecting back to Auth.");
 assert(uiShell.includes("serverOnly: true"), "Authenticated UI must support a server-session-only recovery path.");
-assert(uiShell.includes("aiSettingsContent(zh)"), "Studio /settings/ai must render the live AI settings UI.");
+assert(uiShell.includes("aiSettingsContent(zh, activeLocale)"), "Studio /settings/ai must render the live AI settings UI with the active locale.");
 assert(!uiShell.includes("当前尚未开放用户级 AI 配置"), "Studio AI settings must not regress to the old unavailable placeholder.");
 assert(uiSettings.includes('fetch("/api/ai/config"'), "AI settings must load the authenticated runtime configuration.");
 assert(uiSettings.includes('meta:"可用"'), "Settings Hub must mark AI as available.");
