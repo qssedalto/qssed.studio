@@ -11,7 +11,7 @@ const dashboardStyle = read("studio/ui-style-dashboard.js");
 const uiStyles = read("studio/ui-styles.js");
 
 for (const required of [
-  'if (pathname === "/wishes") return localizedPage(wishesPage(locale), locale);',
+  'if (pathname === "/wishes") return localizedPage(wishesPage(fullLocale), locale);',
   '/^\\/wish\\/(birthday|mid-autumn)$/',
   'if (kind === "birthday") return "/birthday";',
   'if (kind === "mid-autumn") return "/mid-autumn";',
@@ -25,10 +25,10 @@ for (const required of [
 assert(birthday.includes('params.get("name")'), "Birthday page must support ?name=.");
 assert(midAutumn.includes('params.get("name")'), "Mid-Autumn page must support ?name=.");
 
-const zh = dashboardContent(true, { gptHref: "https://gpt.qsseda.com/zh-cn", adminHref: "" });
-const en = dashboardContent(false, { gptHref: "https://gpt.qsseda.com/en", adminHref: "" });
+const zh = dashboardContent(true, { gptHref: "https://gpt.qsseda.com/zh-cn", adminHref: "", activeLocale: "zh-cn" }, "zh-cn");
+const en = dashboardContent(false, { gptHref: "https://gpt.qsseda.com/en-us", adminHref: "", activeLocale: "en-us" }, "en-us");
 assert(zh.includes("祝福链接") && zh.includes("/zh-cn/wishes"), "Chinese dashboard must expose Wish Links.");
-assert(en.includes("Wish Links") && en.includes("/en/wishes"), "English dashboard must expose Wish Links.");
+assert(en.includes("Wish Links") && en.includes("/en-us/wishes"), "English dashboard must expose Wish Links on the canonical en-us route.");
 assert(zh.includes('data-home-wish-builder'), "Chinese Home must render the wish builder directly.");
 assert(en.includes('data-home-wish-builder'), "English Home must render the wish builder directly.");
 assert(zh.includes('data-home-wish-kind="birthday"') && zh.includes('data-home-wish-kind="mid-autumn"'), "Home wish builder must expose both greeting types.");
