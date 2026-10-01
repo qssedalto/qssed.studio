@@ -22,6 +22,11 @@ export function baseHead(title) {
           const host = String(location.hostname || "").toLowerCase();
           return ["qsseda.com","qsseda.online","qsseda.studio"].find(domain => host === domain || host.endsWith("." + domain)) || "";
         }
+        function isRootPreferenceHost() {
+          const host = String(location.hostname || "").toLowerCase();
+          const domain = preferenceDomain();
+          return Boolean(domain && host === domain);
+        }
         function readCookieTheme() {
           const match = document.cookie.match(/(?:^|;\\s*)qssed_theme=(light|dark)(?:;|$)/);
           return match ? match[1] : "";
@@ -50,20 +55,28 @@ export function baseHead(title) {
           } catch {}
         }
         function readMode() {
+          const sharedMode = readCookieMode();
+          if (VALID_MODES.has(sharedMode)) return sharedMode;
           try {
             const savedMode = localStorage.getItem(MODE_KEY);
-            if (VALID_MODES.has(savedMode)) return savedMode;
+            if (VALID_MODES.has(savedMode)) {
+              if (isRootPreferenceHost()) persistMode(savedMode);
+              return savedMode;
+            }
           } catch {}
-          const sharedMode = readCookieMode();
-          return VALID_MODES.has(sharedMode) ? sharedMode : "system";
+          return "system";
         }
         function readAccent() {
+          const sharedAccent = readCookieAccent();
+          if (VALID_ACCENTS.has(sharedAccent)) return sharedAccent;
           try {
             const saved = localStorage.getItem(ACCENT_KEY);
-            if (VALID_ACCENTS.has(saved)) return saved;
+            if (VALID_ACCENTS.has(saved)) {
+              if (isRootPreferenceHost()) persistAccent(saved);
+              return saved;
+            }
           } catch {}
-          const sharedAccent = readCookieAccent();
-          return VALID_ACCENTS.has(sharedAccent) ? sharedAccent : "sapphire";
+          return "sapphire";
         }
         function setMode(mode, options = {}) {
           const nextMode = VALID_MODES.has(mode) ? mode : "system";
