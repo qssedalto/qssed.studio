@@ -759,5 +759,5 @@ export function settingsContent(path, zh, activeLocale = "") {
   if (path.endsWith("/student")) return billingSettingsContent(zh, "student");
   if (path.endsWith("/storage")) return storageSettingsContent(zh);
 
-  return settingsFallbackContent(zh);
+  return settingsFallbackContent(zh, activeLocale);
 }
