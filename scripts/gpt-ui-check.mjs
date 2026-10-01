@@ -130,6 +130,18 @@ for (const locale of ["zh-cn", "en"]) {
   if (!html.includes('window.AERTEXRich.stream(assistant,streamed)') || !html.includes('window.AERTEXRich.finalize(assistant,streamed)')) {
     throw new Error("Assistant output must use the rich streaming render path");
   }
+  if (!html.includes('function findBareMathToken(source)') || !html.includes('function appendRecoveredPlain(parent, value)') || !html.includes('function prettyMathFallback(expression)')) {
+    throw new Error("Rich renderer must recover bare LaTeX and keep a readable local math fallback");
+  }
+  if (!html.includes('{ type: "mathDisplay", re: /\\$\\$([\\s\\S]+?)\\$\\$/ }') || !html.includes('{ type: "mathBracket", re: /\\\\\\[([\\s\\S]+?)\\\\\\]/ }')) {
+    throw new Error("Rich renderer must support multiline display math with both $...$ and \\[...\\] delimiters");
+  }
+  if (!html.includes('if (isRecoverableMathOnlyLine(trimmed))') || !html.includes('addMath(fragment, trimmed, true)')) {
+    throw new Error("Standalone bare LaTeX equations must be recovered as display math");
+  }
+  if (!html.includes('.msg.assistant .bubble .mathBlock{max-width:100%') || !html.includes('.msg.assistant .bubble .mathFallback{font-family:ui-serif')) {
+    throw new Error("Apple Watch assistant bubbles must keep recovered equations readable and horizontally contained");
+  }
   if (html.includes('bubble.className="bubble";bubble.textContent=content')) {
     throw new Error("Assistant history rendering must not use the legacy unconditional plain-text path");
   }
