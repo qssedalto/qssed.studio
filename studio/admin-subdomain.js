@@ -1,7 +1,7 @@
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 import { adminOriginForRequest, authOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 import { adminCanonicalPath as localizedAdminPath, adminLocaleFromPath } from "../admin/i18n.js";
-import { preferredLocaleFromRequest } from "./locale.js";
+import { localeFromPath as sharedLocaleFromPath, normalizeSupportedLocale, preferredLocaleFromRequest, SUPPORTED_LOCALES } from "./locale.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const ADMIN_PATHS = new Set(["/", "/overview", "/users", "/roles", "/logs", "/system", "/access", "/content", "/storage", "/intelligence"]);
@@ -61,9 +61,7 @@ export function canonicalAdminPath(value) {
 }
 
 function preferredLocale(request, pathname) {
-  if (pathname.startsWith("/en/") || pathname === "/en") return "en";
-  if (pathname.startsWith("/zh-cn/") || pathname === "/zh-cn") return "zh-cn";
-  return preferredLocaleFromRequest(request);
+  return sharedLocaleFromPath(pathname) || preferredLocaleFromRequest(request);
 }
 
 function escapeHtml(value) {
