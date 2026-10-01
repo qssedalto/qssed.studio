@@ -2,6 +2,7 @@ import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gat
 import { authOriginForRequest, isServiceHost, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 import { FAVICON_LINKS } from "./favicon.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
+import { preferredLocaleFromRequest } from "./locale.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 
@@ -118,8 +119,7 @@ export async function handleMainWorkHandoff(request) {
 function preferredLocale(request, pathname) {
   if (pathname.startsWith("/en/") || pathname === "/en") return "en";
   if (pathname.startsWith("/zh-cn/") || pathname === "/zh-cn") return "zh-cn";
-  const language = (request.headers.get("Accept-Language") || "").toLowerCase();
-  return language.includes("zh") ? "zh-cn" : "en";
+  return preferredLocaleFromRequest(request);
 }
 
 function localeFromPath(pathname) {
