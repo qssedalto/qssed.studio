@@ -24,9 +24,16 @@ equal(localeFromAcceptLanguage(""), "en", "empty header fallback");
 
 equal(localeFromPath("/zh-cn/settings"), "zh-cn", "Chinese route override");
 equal(localeFromPath("/en/settings"), "en", "English route override");
-equal(localeFromPath("/settings"), "", "unlocalized route");
+equal(localeFromPath("/settings"), "", "unlocalized route follows device at request time");
 
 const request = new Request("https://qsseda.com/", {headers:{"Accept-Language":"en-US,en;q=0.9,zh-CN;q=0.8"}});
 equal(preferredLocaleFromRequest(request), "en", "request header preference");
+
+// Manual language switching is URL-scoped only. The shared locale module must
+// not read language cookies, localStorage, account metadata, IP country, or ?lang.
+const localeSource = await (await import("node:fs/promises")).readFile(new URL("../studio/locale.js", import.meta.url), "utf8");
+for (const forbidden of ["CF-IPCountry", "request.cf", "localStorage", "document.cookie", "searchParams.get(\\\"lang\\\")"]) {
+  if (localeSource.includes(forbidden)) throw new Error("Locale detector must not persist or geo-detect language: " + forbidden);
+}
 
 console.log("Locale routing checks passed.");
