@@ -26,8 +26,8 @@ const SUMMARY_COPY = {
   "ar-sa": {eyebrow:"مساحة الملخصات",title:"ابدأ ملخصًا",intro:"ترتبط الملخصات بالحساب الحالي وتُحفظ في تخزين نظام محمي.",titleLabel:"عنوان الملخص",sourceLabel:"المصدر / المادة الأصلية",purposeLabel:"السياق والهدف",summaryLabel:"الملخص الأساسي",pointsLabel:"النقاط الرئيسية",evidenceLabel:"البيانات والأدلة والأمثلة المهمة",limitsLabel:"القيود والخلافات وعدم اليقين",actionLabel:"الخلاصة والخطوات التالية",tagsLabel:"الوسوم",guideTitle:"البنية المقترحة",guideIntro:"ينبغي أن يجيب الملخص المفيد عن هذه النقاط الخمس على الأقل:",save:"حفظ في الحساب",clear:"مسح",saved:"تم الحفظ في الحساب",saving:"جارٍ الحفظ…",loading:"جارٍ تحميل الملخص…",autosaved:"تم الحفظ تلقائيًا",empty:"لا يوجد محتوى بعد",chars:"حرفًا",unavailable:"خدمة الملخصات غير متاحة مؤقتًا",migration:"تم نقل المسودة القديمة في هذا المتصفح إلى الحساب"}
 };
 
-export function linksContent(zh) {
-  return curatedLinksContent(zh) + curatedLinksFavoritesEnhancer(zh);
+export function linksContent(zh, locale = "") {
+  return curatedLinksContent(zh, locale) + curatedLinksFavoritesEnhancer(zh, locale);
 }
 
 export function notesContent(zh, locale = "") {
@@ -236,7 +236,7 @@ export function informationContent(path, zh, locale = "") {
   const copy=INFO_COPY[locale]||INFO_COPY[zh?"zh-cn":"en-us"];
   if (path === "/info") return '<section class="os-card is-large status-card"><h2>'+copy.info[0]+'</h2><p>'+copy.info[1]+'</p></section>';
   if (path === "/info/knowledge" || path.startsWith("/info/knowledge/")) return knowledgeContent(path, zh, locale);
-  if (path === "/info/links") return linksContent(zh);
+  if (path === "/info/links") return linksContent(zh, locale);
   if (path === "/info/notes") return notesContent(zh, locale);
   if (path === "/info/summaries") return summariesContent(zh, locale);
   if (path === "/info/search") return searchContent(zh, locale);
