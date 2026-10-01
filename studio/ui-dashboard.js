@@ -30,6 +30,7 @@ export function dashboardIcon(name) {
     computer: '<rect x="3" y="4" width="18" height="13" rx="2.5"/><path d="M8 21h8M12 17v4"/>',
     tex: '<path d="M5 5h14M8 5l3.8 7L8 19M13 9h6M13 15h6"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    activitywatch: '<circle cx="12" cy="12" r="8.5"/><path d="M7 12h2.2l1.5-3.2 2.1 6.4 1.6-3.2H17"/>',
     intelligence: '<path d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3v-3.2A2.5 2.5 0 0 1 5 13.5z"/><path d="M9 9.5h6M9 12.5h4"/>',
     admin: '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 13h5M16 13h.01"/>',
     wishes: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M12 7v6M9.5 10h5"/>',
