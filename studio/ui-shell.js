@@ -694,15 +694,15 @@ export function renderOsContent(path, copy, productLinks = {}) {
   if (path === "/profile") return profileHubContent(zh);
   if (path.startsWith("/profile/")) return profileContent(path, zh);
   if (path.startsWith("/workspace")) return workspaceContent(path, zh);
-  if (path.startsWith("/settings")) return settingsContent(path, zh);
+  if (path.startsWith("/settings")) return settingsContent(path, zh, productLinks.activeLocale || "");
   throw new Error("Unhandled OS path: " + path);
 }
 
-export function settingsContent(path, zh) {
+export function settingsContent(path, zh, activeLocale = "") {
   if (path === "/settings") return settingsHubContent(zh);
   if (path.endsWith("/general")) return settingsGeneralContent(zh);
   if (path.endsWith("/appearance")) return appearanceSettingsContent(zh);
-  if (path.endsWith("/language")) return languageSettingsContent(zh);
+  if (path.endsWith("/language")) return languageSettingsContent(zh, activeLocale || (zh ? "zh-cn" : "en-us"));
   if (path.endsWith("/security")) return securityAuditContent(zh);
   if (path.endsWith("/notifications")) return statusContent(zh, "通知", "通知方式、提醒和站内消息偏好将在这里统一管理。当前尚未接入通知服务。", "Notifications", "Notification methods, reminders, and in-app message preferences will be managed here. Notification delivery is not connected yet.");
   if (path.endsWith("/ai")) return aiSettingsContent(zh);
