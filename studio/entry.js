@@ -296,6 +296,7 @@ export default {
       const gptOrigin = gptOriginForRequest(request);
       const shellProductLinks = {
         workHref: `${workOrigin}/${fullLocale}/tex`,
+        awHref: "https://aw.qsseda.studio",
         gptHref: `${gptOrigin}/${fullLocale}`,
         adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : "",
         activeLocale: fullLocale
