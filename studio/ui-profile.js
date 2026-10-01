@@ -158,7 +158,8 @@ export function accountAuditContent(zh, locale = "") {
   `;
 }
 
-export function profileClientScript() {
+export function profileClientScript(locale = "en-us") {
+  const activeLocale = locale || "en-us";
   return `<script>
       /* PROFILE_HOME_V3 */
       const PROFILE_HOME_CACHE_PREFIX = "qssed-profile-home-v3:";
