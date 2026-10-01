@@ -234,6 +234,11 @@ export function enhanceWorkTexEditorTools(markup, zh) {
 
         const snapshot = () => ({ title: title.value, engine: engine.value, source: source.value });
         const safeName = value => String(value || 'qsseda-tex').replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'qsseda-tex';
+        const workDocumentRoute = id => {
+          const locale = location.pathname.startsWith('/en/') ? 'en' : 'zh-cn';
+          const exempt = location.pathname.includes('/huawei-exempt/') ? 'huawei-exempt/' : '';
+          return '/' + locale + '/d/' + exempt + encodeURIComponent(id);
+        };
 
         function createButton(name, svg, className = '') {
           const button = document.createElement('button');
@@ -310,8 +315,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           try {
             const data = await api('/api/tex/documents', { method: 'POST', body: JSON.stringify({ ...snapshot(), title: nextTitle }) });
             if (data?.document?.id) {
-              try { window.sessionStorage.setItem('qsseda.tex.open-after-reload', data.document.id); } catch {}
-              location.reload();
+              location.assign(workDocumentRoute(data.document.id));
             }
           } catch (error) {
             showMessage(error?.message || labels.saveFailed, true);
