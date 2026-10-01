@@ -214,7 +214,7 @@ export function dashboardContent(zh, options = {}, locale = "") {
         const wishTypeButtons = [...document.querySelectorAll("[data-home-wish-kind]")];
         let wishKind = "birthday";
         const zh = ${zh ? "true" : "false"};
-        const locale = ${JSON.stringify("PLACEHOLDER")};
+        const locale = ${JSON.stringify(activeLocale)};
         const isoWeek = value => {
           const d = new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
           const day = d.getUTCDay() || 7;
