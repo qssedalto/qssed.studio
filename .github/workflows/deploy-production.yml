@@ -30,6 +30,9 @@ on:
       - scripts/r2-storage-audit-check.mjs
       - scripts/brand-check.mjs
       - scripts/codex-bridge-check.mjs
+      - scripts/billing-subscription-check.mjs
+      - scripts/wishes-check.mjs
+      - scripts/locale-routing-check.mjs
       - auth-entry.js
       - auth-sso.js
       - auth-worker.js
@@ -114,6 +117,12 @@ jobs:
           node scripts/codex-bridge-check.mjs
           node --check scripts/brand-check.mjs
           node scripts/brand-check.mjs
+          node --check scripts/billing-subscription-check.mjs
+          node scripts/billing-subscription-check.mjs
+          node --check scripts/wishes-check.mjs
+          node scripts/wishes-check.mjs
+          node --check scripts/locale-routing-check.mjs
+          node scripts/locale-routing-check.mjs
           node --check auth-entry.js
           node --check auth-sso.js
           node --check auth-worker.js
