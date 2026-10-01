@@ -3,7 +3,7 @@ import { buildLinks } from "../studio/routing.js";
 import { osPage } from "../studio/ui-shell.js";
 import { decorateWorkNavigation } from "../studio/ui-work.js";
 import { polishWorkTexNavigation } from "../studio/ui-work-tex.js";
-import { SUPPORTED_LOCALES, localeContentLanguage } from "../studio/locale.js";
+import { LOCALE_META, SUPPORTED_LOCALES, localeContentLanguage } from "../studio/locale.js";
 import { QSS_DOMAIN_ROOTS, awOriginForRequest } from "../studio/domain-family.js";
 
 const ipInfo = { ip:"127.0.0.1", country:"US", region:"", city:"", locale:"en-us" };
@@ -43,11 +43,21 @@ for (const root of QSS_DOMAIN_ROOTS) {
       throw error;
     }
 
-    if (typeof markup !== "string" || !markup.includes('<body class="os-shell">')) {
-      throw new Error(`Root SSR did not produce the Studio shell for ${root} / ${fullLocale}`);
+    if (typeof markup !== "string" || !markup.includes('<body class="os-shell os-root-menu">')) {
+      throw new Error(`Root SSR did not produce the desktop root-menu shell for ${root} / ${fullLocale}`);
+    }
+    if (!markup.includes('class="desktop-main-menu"') || !markup.includes('class="compact-main-menu"')) {
+      throw new Error(`Desktop root did not reuse the compact/mobile menu for ${root} / ${fullLocale}`);
     }
     if (!markup.includes(`lang="${fullLocale}"`)) {
       throw new Error(`Root SSR lost locale ${root} / ${fullLocale}`);
+    }
+    const shortLabel = LOCALE_META[fullLocale]?.shortName;
+    if (!shortLabel || !markup.includes(`>${shortLabel}</summary>`)) {
+      throw new Error(`Circular language control lost compact label for ${root} / ${fullLocale}`);
+    }
+    if (!markup.includes(':root[data-theme="dark"] body.os-shell .os-brand-mark img{filter:brightness(0) invert(1)!important}')) {
+      throw new Error(`Dark-mode white logo rule missing for ${root} / ${fullLocale}`);
     }
     if (!markup.includes(`href="${expectedAwOrigin}"`) || !markup.includes("ActivityWatch")) {
       throw new Error(`Root SSR lost the matching ActivityWatch product for ${root} / ${fullLocale}`);
