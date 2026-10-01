@@ -289,7 +289,7 @@ function replaceOsContent(markup, content) {
 
 export default {
   async fetch(request, env) {
-    const { pathname, locale, ipInfo } = getRouteInfo(request);
+    const { pathname, locale, fullLocale, ipInfo } = getRouteInfo(request);
     if (pathname === "/api/auth/signup") { if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } }); return handleRegistrationSignup(request, env, ipInfo); }
     if (pathname === "/api/auth/login") { if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } }); return handleIdentifierPasswordLogin(request, env, ipInfo); }
     if (pathname === "/api/auth/bootstrap") { if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } }); return handleStudioSessionBootstrap(request); }
@@ -303,7 +303,7 @@ export default {
     if (wishRoute) return wishRoute;
 
     const t = TEXT[locale];
-    const links = buildLinks(locale, pathname);
+    const links = buildLinks(locale, pathname, fullLocale);
     const linksSubroute = pathname === "/info/links/mine" || pathname === "/info/links/community" || pathname === "/info/links/curated";
     const labSubroute = pathname === "/workspace/experiments/tex";
     const workRoute = pathname === "/work" || pathname === "/work/local" || pathname === "/work/tex";
@@ -320,8 +320,8 @@ export default {
       const workOrigin = workOriginForRequest(request);
       const gptOrigin = gptOriginForRequest(request);
       const shellProductLinks = {
-        workHref: `${workOrigin}/${zh ? "zh-cn/tex" : "en/tex"}`,
-        gptHref: `${gptOrigin}/${zh ? "zh-cn" : "en"}`,
+        workHref: `${workOrigin}/${fullLocale}/tex`,
+        gptHref: `${gptOrigin}/${fullLocale}`,
         adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : ""
       };
       const shellPath = pathname === "/" ? "/" : linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
@@ -355,7 +355,7 @@ export default {
     if (pathname === "/login") {
       const authUrl = new URL("/login", authOriginForRequest(request));
       const requestedNext = new URL(request.url).searchParams.get("next");
-      const fallbackNext = locale === "zh" ? "/zh-cn" : "/en";
+      const fallbackNext = `/${fullLocale}`;
       authUrl.searchParams.set("next", safeLocalNext(requestedNext) || fallbackNext);
       return Response.redirect(authUrl.toString(), 302);
     }
