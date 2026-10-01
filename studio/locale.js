@@ -1,22 +1,80 @@
 // Centralized UI locale detection.
-// UI language comes from explicit locale routes/query choices and the browser/device
+// UI language comes from explicit locale routes and the browser/device
 // Accept-Language preference. Network geography must never choose interface language.
 
-const DEFAULT_LOCALE = "en";
+export const DEFAULT_LOCALE = "en-us";
+
+export const SUPPORTED_LOCALES = Object.freeze([
+  "en-us",
+  "en-gb",
+  "en-au",
+  "zh-cn",
+  "zh-tw",
+  "ja-jp",
+  "ko-kr",
+  "fr-fr",
+  "es-es",
+  "el-gr",
+  "ar-sa"
+]);
+
+const SUPPORTED = new Set(SUPPORTED_LOCALES);
+
+export const LOCALE_META = Object.freeze({
+  "en-us": { label: "English (US)", nativeName: "English (US)", dir: "ltr" },
+  "en-gb": { label: "English (UK)", nativeName: "English (UK)", dir: "ltr" },
+  "en-au": { label: "English (Australia)", nativeName: "English (Australia)", dir: "ltr" },
+  "zh-cn": { label: "简体中文", nativeName: "简体中文", dir: "ltr" },
+  "zh-tw": { label: "繁體中文", nativeName: "繁體中文", dir: "ltr" },
+  "ja-jp": { label: "日本語", nativeName: "日本語", dir: "ltr" },
+  "ko-kr": { label: "한국어", nativeName: "한국어", dir: "ltr" },
+  "fr-fr": { label: "Français", nativeName: "Français", dir: "ltr" },
+  "es-es": { label: "Español", nativeName: "Español", dir: "ltr" },
+  "el-gr": { label: "Ελληνικά", nativeName: "Ελληνικά", dir: "ltr" },
+  "ar-sa": { label: "العربية", nativeName: "العربية", dir: "rtl" }
+});
 
 export function normalizeSupportedLocale(value) {
   const tag = String(value || "").trim().toLowerCase().replaceAll("_", "-");
   if (!tag) return "";
-  if (tag === "en" || tag.startsWith("en-")) return "en";
-  if (tag === "zh" || tag.startsWith("zh-")) return "zh-cn";
+
+  if (SUPPORTED.has(tag)) return tag;
+
+  if (tag === "en" || tag === "en-us") return "en-us";
+  if (tag === "en-gb" || tag === "en-uk") return "en-gb";
+  if (tag === "en-au") return "en-au";
+  if (tag.startsWith("en-")) return "en-us";
+
+  if (tag === "zh-tw" || tag === "zh-hk" || tag === "zh-mo" || tag.startsWith("zh-hant")) return "zh-tw";
+  if (tag === "zh" || tag === "zh-cn" || tag === "zh-sg" || tag.startsWith("zh-hans")) return "zh-cn";
+
+  if (tag === "ja" || tag.startsWith("ja-")) return "ja-jp";
+  if (tag === "ko" || tag.startsWith("ko-")) return "ko-kr";
+  if (tag === "fr" || tag.startsWith("fr-")) return "fr-fr";
+  if (tag === "es" || tag.startsWith("es-")) return "es-es";
+  if (tag === "el" || tag.startsWith("el-")) return "el-gr";
+  if (tag === "ar" || tag.startsWith("ar-")) return "ar-sa";
+
   return "";
 }
 
 export function localeFromPath(pathname) {
   const path = typeof pathname === "string" ? pathname.trim().toLowerCase() : "";
-  if (path === "/en" || path.startsWith("/en/")) return "en";
-  if (path === "/zh-cn" || path.startsWith("/zh-cn/")) return "zh-cn";
-  return "";
+  const first = path.split("/").filter(Boolean)[0] || "";
+  if (first === "en") return "en-us";
+  return SUPPORTED.has(first) ? first : "";
+}
+
+export function localeContentLanguage(locale) {
+  return normalizeSupportedLocale(locale) === "zh-cn" ? "zh" : "en";
+}
+
+export function localePrefix(locale) {
+  return "/" + (normalizeSupportedLocale(locale) || DEFAULT_LOCALE);
+}
+
+export function localeDirection(locale) {
+  return LOCALE_META[normalizeSupportedLocale(locale) || DEFAULT_LOCALE]?.dir || "ltr";
 }
 
 export function localeFromAcceptLanguage(header, fallback = DEFAULT_LOCALE) {
