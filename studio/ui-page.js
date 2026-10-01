@@ -12,6 +12,8 @@ export function baseHead(title) {
         const MODE_KEY = "qssed-theme-mode";
         const RESOLVED_KEY = "qssed-theme";
         const ACCENT_KEY = "qssed-accent";
+        const MODE_COOKIE = "qssed_theme_mode";
+        const ACCENT_COOKIE = "qssed_accent";
         const VALID_MODES = new Set(["system","light","dark"]);
         const VALID_ACCENTS = new Set(["sapphire","aqua","jade","lime","amber","coral","rose","magenta","violet","graphite"]);
         const media = window.matchMedia("(prefers-color-scheme: light)");
@@ -35,19 +37,33 @@ export function baseHead(title) {
             document.cookie = "qssed_theme=" + theme + "; Path=/; Max-Age=31536000; SameSite=Lax" + (domain ? "; Domain=." + domain : "");
           } catch {}
         }
+        function persistMode(mode) {
+          try {
+            const domain = preferenceDomain();
+            document.cookie = MODE_COOKIE + "=" + mode + "; Path=/; Max-Age=31536000; SameSite=Lax" + (domain ? "; Domain=." + domain : "");
+          } catch {}
+        }
+        function persistAccent(accent) {
+          try {
+            const domain = preferenceDomain();
+            document.cookie = ACCENT_COOKIE + "=" + accent + "; Path=/; Max-Age=31536000; SameSite=Lax" + (domain ? "; Domain=." + domain : "");
+          } catch {}
+        }
         function readMode() {
           try {
             const savedMode = localStorage.getItem(MODE_KEY);
             if (VALID_MODES.has(savedMode)) return savedMode;
           } catch {}
-          return "system";
+          const sharedMode = readCookieMode();
+          return VALID_MODES.has(sharedMode) ? sharedMode : "system";
         }
         function readAccent() {
           try {
             const saved = localStorage.getItem(ACCENT_KEY);
             if (VALID_ACCENTS.has(saved)) return saved;
           } catch {}
-          return "sapphire";
+          const sharedAccent = readCookieAccent();
+          return VALID_ACCENTS.has(sharedAccent) ? sharedAccent : "sapphire";
         }
         function setMode(mode, options = {}) {
           const nextMode = VALID_MODES.has(mode) ? mode : "system";
@@ -56,6 +72,7 @@ export function baseHead(title) {
           document.documentElement.dataset.theme = nextTheme;
           if (options.persist !== false) {
             try { localStorage.setItem(MODE_KEY, nextMode); } catch {}
+            persistMode(nextMode);
           }
           persistResolved(nextTheme);
           if (options.announce !== false) {
@@ -68,6 +85,7 @@ export function baseHead(title) {
           document.documentElement.dataset.accent = next;
           if (options.persist !== false) {
             try { localStorage.setItem(ACCENT_KEY, next); } catch {}
+            persistAccent(next);
           }
           if (options.announce !== false) {
             window.dispatchEvent(new CustomEvent("aertex-themechange",{detail:{mode:readMode(),theme:document.documentElement.dataset.theme || resolvedTheme(readMode()),accent:next}}));
