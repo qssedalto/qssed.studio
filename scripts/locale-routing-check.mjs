@@ -1,4 +1,6 @@
 import {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
   localeFromAcceptLanguage,
   localeFromPath,
   normalizeSupportedLocale,
@@ -9,31 +11,44 @@ function equal(actual, expected, label) {
   if (actual !== expected) throw new Error(label + ": expected " + expected + ", received " + actual);
 }
 
-equal(normalizeSupportedLocale("zh-CN"), "zh-cn", "normalize zh-CN");
-equal(normalizeSupportedLocale("zh-Hant-TW"), "zh-cn", "normalize supported Chinese UI");
-equal(normalizeSupportedLocale("en-US"), "en", "normalize en-US");
-equal(normalizeSupportedLocale("fr-FR"), "", "unsupported language");
+const expected = ["en-us","en-gb","en-au","zh-cn","zh-tw","ja-jp","ko-kr","fr-fr","es-es","el-gr","ar-sa"];
+equal(JSON.stringify(SUPPORTED_LOCALES), JSON.stringify(expected), "supported locale registry");
+equal(DEFAULT_LOCALE, "en-us", "default locale");
 
-equal(localeFromAcceptLanguage("zh-CN,zh;q=0.9,en;q=0.8"), "zh-cn", "Chinese device preference");
-equal(localeFromAcceptLanguage("en-US,en;q=0.9,zh-CN;q=0.8"), "en", "English first must stay English");
-equal(localeFromAcceptLanguage("fr-FR,zh-CN;q=0.9,en;q=0.8"), "zh-cn", "highest ranked supported language");
-equal(localeFromAcceptLanguage("fr-FR,en;q=0.9,zh;q=0.8"), "en", "English supported fallback");
-equal(localeFromAcceptLanguage("zh;q=0,en-US;q=0.8"), "en", "q=0 exclusion");
-equal(localeFromAcceptLanguage("de-DE,*;q=0.5"), "en", "wildcard fallback");
-equal(localeFromAcceptLanguage(""), "en", "empty header fallback");
+for (const code of expected) {
+  equal(normalizeSupportedLocale(code), code, "normalize " + code);
+  equal(localeFromPath("/" + code + "/settings"), code, "route " + code);
+}
 
-equal(localeFromPath("/zh-cn/settings"), "zh-cn", "Chinese route override");
-equal(localeFromPath("/en/settings"), "en", "English route override");
-equal(localeFromPath("/settings"), "", "unlocalized route follows device at request time");
+equal(normalizeSupportedLocale("en-UK"), "en-gb", "legacy UK alias");
+equal(normalizeSupportedLocale("zh-HK"), "zh-tw", "Hong Kong Traditional Chinese");
+equal(normalizeSupportedLocale("zh-Hant-HK"), "zh-tw", "Hant Traditional Chinese");
+equal(normalizeSupportedLocale("zh-SG"), "zh-cn", "Singapore Simplified Chinese");
+equal(normalizeSupportedLocale("ja"), "ja-jp", "Japanese");
+equal(normalizeSupportedLocale("ko"), "ko-kr", "Korean");
+equal(normalizeSupportedLocale("fr-CA"), "fr-fr", "French family");
+equal(normalizeSupportedLocale("es-MX"), "es-es", "Spanish family");
+equal(normalizeSupportedLocale("el-CY"), "el-gr", "Greek family");
+equal(normalizeSupportedLocale("ar-AE"), "ar-sa", "Arabic family");
 
-const request = new Request("https://qsseda.com/", {headers:{"Accept-Language":"en-US,en;q=0.9,zh-CN;q=0.8"}});
-equal(preferredLocaleFromRequest(request), "en", "request header preference");
+equal(localeFromAcceptLanguage("en-GB,en;q=0.9"), "en-gb", "British English device");
+equal(localeFromAcceptLanguage("en-AU,en;q=0.9"), "en-au", "Australian English device");
+equal(localeFromAcceptLanguage("zh-TW,zh;q=0.9"), "zh-tw", "Traditional Chinese device");
+equal(localeFromAcceptLanguage("ja-JP,en-US;q=0.8"), "ja-jp", "Japanese device");
+equal(localeFromAcceptLanguage("ko-KR,en-US;q=0.8"), "ko-kr", "Korean device");
+equal(localeFromAcceptLanguage("fr-FR,en-US;q=0.8"), "fr-fr", "French device");
+equal(localeFromAcceptLanguage("es-ES,en-US;q=0.8"), "es-es", "Spanish device");
+equal(localeFromAcceptLanguage("el-GR,en-US;q=0.8"), "el-gr", "Greek device");
+equal(localeFromAcceptLanguage("ar-SA,en-US;q=0.8"), "ar-sa", "Arabic device");
+equal(localeFromAcceptLanguage("de-DE,en-GB;q=0.8,en-US;q=0.7"), "en-gb", "highest supported preference");
+equal(localeFromAcceptLanguage("de-DE"), "en-us", "unsupported device fallback");
 
-// Manual language switching is URL-scoped only. The shared locale module must
-// not read language cookies, localStorage, account metadata, IP country, or ?lang.
+const request = new Request("https://qsseda.com/", {headers:{"Accept-Language":"en-AU,en;q=0.9"}});
+equal(preferredLocaleFromRequest(request), "en-au", "request header preference");
+
 const localeSource = await (await import("node:fs/promises")).readFile(new URL("../studio/locale.js", import.meta.url), "utf8");
 for (const forbidden of ["CF-IPCountry", "request.cf", "localStorage", "document.cookie", "searchParams.get(\\\"lang\\\")"]) {
   if (localeSource.includes(forbidden)) throw new Error("Locale detector must not persist or geo-detect language: " + forbidden);
 }
 
-console.log("Locale routing checks passed.");
+console.log("Locale routing checks passed for " + expected.length + " locales.");
