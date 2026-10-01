@@ -1,4 +1,4 @@
-export function billingSettingsContent(zh) {
+export function billingSettingsContent(zh, view = "billing") {
   const text = zh ? {
     loading:"正在读取订阅…", current:"当前套餐", drive:"AERTEX Drive", renew:"有效期",
     free:"长期有效", source:"来源", plans:"可用套餐", unavailable:"支付接口尚未开放",
@@ -35,7 +35,10 @@ export function billingSettingsContent(zh) {
     tutorialStep4:"只截取二维码区域，不要把整份报告、姓名、身份证号、学号、照片等内容截进去。",
     tutorialStep5:"返回 AERTEX，点击下方“我已准备好二维码”，再选择二维码图片完成认证。",
     tutorialReady:"我已准备好二维码，开始认证", tutorialOfficial:"前往学信网申请报告 ↗",
-    tutorialTip:"提示：新版学信二维码可能编码的是“学信网报告在线验证”提示和 16 位在线验证码，不一定是网址；AERTEX 会自动提取验证码。"
+    tutorialTip:"提示：新版学信二维码可能编码的是“学信网报告在线验证”提示和 16 位在线验证码，不一定是网址；AERTEX 会自动提取验证码。",
+    stepSource:"在读资格来源", stepMethod:"验证方式", stepVerify:"提交验证", currentStatus:"认证状态",
+    studentBenefitTitle:"学生价格", studentBenefitIntro:"认证学生资格后，可在支持的套餐中使用学生价格。容量与产品权益不变。", studentBenefitAction:"管理学生资格",
+    verificationPrivacy:"只验证在读状态", verificationPrivacyDetail:"AERTEX 不以国籍划分资格，也不会要求政府身份证件。"
   } : {
     loading:"Loading subscription…", current:"Current plan", drive:"AERTEX Drive", renew:"Valid through",
     free:"No expiry", source:"Source", plans:"Available plans", unavailable:"Checkout is not available yet",
@@ -72,90 +75,15 @@ export function billingSettingsContent(zh) {
     tutorialStep4:"Crop only the QR-code area. Do not include the full report, name, ID number, student number, portrait, or other personal information.",
     tutorialStep5:"Return to AERTEX, choose “My QR code is ready”, then select the cropped QR image to continue.",
     tutorialReady:"My QR code is ready — start verification", tutorialOfficial:"Open CHSI report application ↗",
-    tutorialTip:"Tip: newer CHSI QR codes can contain a CHSI verification instruction plus a 16-character online verification code rather than a URL. AERTEX extracts that code automatically."
+    tutorialTip:"Tip: newer CHSI QR codes can contain a CHSI verification instruction plus a 16-character online verification code rather than a URL. AERTEX extracts that code automatically.",
+    stepSource:"Enrollment source", stepMethod:"Verification method", stepVerify:"Submit verification", currentStatus:"Verification status",
+    studentBenefitTitle:"Student pricing", studentBenefitIntro:"Verify student eligibility to use student pricing on supported plans. Capacity and product entitlements stay unchanged.", studentBenefitAction:"Manage student eligibility",
+    verificationPrivacy:"Enrollment status only", verificationPrivacyDetail:"AERTEX does not classify eligibility by nationality and does not require government-issued identity documents."
   };
 
-  return `
-    <style>
-      #student-verification [hidden]{display:none!important}
-      #student-consent{width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;flex:0 0 22px;margin:2px 0 0!important;padding:0!important}
-      #student-pending-actions{margin-top:14px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--surface-soft)}
-      #student-pending-actions p{margin:0 0 12px}
-      .student-path{display:grid;gap:14px;margin-top:18px}
-      .student-step-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
-      .student-step-head h3{margin:0;font-size:18px;letter-spacing:-.03em}
-      .student-step-head p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.55}
-      .student-region-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-      .student-region-card,.student-method-card{
-        appearance:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;
-        min-height:116px;margin:0;padding:17px;text-align:left;border:1px solid var(--border);border-radius:18px;
-        background:var(--surface-soft);color:var(--text);box-shadow:none;cursor:pointer;
-        transition:transform .2s ease,border-color .18s ease,background .18s ease,box-shadow .2s ease
-      }
-      .student-region-card strong,.student-method-card strong{display:block;font-size:15px;line-height:1.3;letter-spacing:-.02em}
-      .student-region-card span,.student-method-card span{display:block;margin-top:7px;color:var(--muted);font-size:12px;line-height:1.48}
-      .student-region-card b,.student-method-card b{color:var(--quiet);font-size:18px;font-weight:500}
-      .student-region-card.is-selected{border-color:color-mix(in srgb,var(--primary) 50%,var(--border));background:color-mix(in srgb,var(--primary) 8%,var(--surface-soft));box-shadow:0 10px 24px color-mix(in srgb,var(--primary) 8%,transparent)}
-      .student-path-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-radius:15px;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border)}
-      .student-path-summary strong{font-size:13px}.student-path-summary button{width:auto!important;min-width:0!important;min-height:36px!important;margin:0!important;padding:0 11px!important;border-radius:10px!important;background:var(--card)!important;color:var(--text)!important;font-size:11px!important;box-shadow:inset 0 0 0 1px var(--border)!important}
-      .student-method-list{display:grid;gap:10px}
-      .student-method-card{min-height:96px;background:var(--card)}
-      .student-method-card.is-supported{border-color:color-mix(in srgb,var(--primary) 28%,var(--border))}
-      .student-method-card[disabled]{cursor:not-allowed;opacity:.64}
-      .student-method-badge{display:inline-flex!important;align-items:center;min-height:24px;margin:0!important;padding:0 8px;border-radius:999px;background:var(--fill);color:var(--muted)!important;font-size:10px!important;font-weight:760!important;white-space:nowrap}
-      .student-method-card.is-supported .student-method-badge{background:color-mix(in srgb,var(--primary) 11%,var(--fill));color:var(--primary)!important}
-      .student-method-note{margin:0;padding:13px 14px;border-radius:14px;background:var(--fill);color:var(--muted);font-size:12px;line-height:1.55}
-      @media(hover:hover) and (pointer:fine){.student-region-card:hover,.student-method-card:not([disabled]):hover{transform:translateY(-2px);border-color:var(--border-strong);box-shadow:0 10px 24px rgba(0,0,0,.055)}}
-      .student-file-picker{display:grid;place-items:center;gap:7px;min-height:116px;padding:18px;border:1px solid var(--border);border-radius:18px;background:var(--surface-soft);text-align:center}
-      .student-file-picker input[type="file"]{position:absolute!important;width:1px!important;height:1px!important;min-width:1px!important;min-height:1px!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important}
-      .student-file-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:13px;background:var(--primary);color:var(--primary-ink);font-weight:800;cursor:pointer;user-select:none}
-      .student-file-button:active{transform:scale(.98)}
-      .student-file-button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-      .student-file-picker small{display:block;color:var(--muted);font-size:12px;line-height:1.45}
-      .student-file-preview{display:none;gap:12px;align-items:center;width:100%;padding:12px;border-radius:14px;background:var(--card);box-shadow:inset 0 0 0 1px var(--border);text-align:left}
-      .student-file-preview.is-visible{display:grid;grid-template-columns:76px minmax(0,1fr) auto}
-      .student-file-preview img{display:block;width:76px;height:76px;object-fit:contain;border-radius:10px;background:#fff}
-      .student-file-preview-copy{min-width:0}.student-file-preview-copy strong{display:block}.student-file-preview-name{display:block;margin-top:4px;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.student-file-preview-note{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.45;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word}
-      .student-file-replace{width:auto!important;min-width:0!important;min-height:38px!important;margin:0!important;padding:0 12px!important;border-radius:10px!important;background:var(--fill)!important;color:var(--text)!important;font-size:12px!important}
-      .student-manual-toggle{width:auto!important;justify-self:start;min-height:40px!important;margin:2px 0 0!important;padding:0 12px!important;background:transparent!important;color:var(--primary)!important}
-      #student-manual-wrap[hidden]{display:none!important}
-      #student-target{font-size:16px!important;scroll-margin-top:120px}
-      .student-file-picker.is-disabled{opacity:.48}
-      .student-file-picker.is-disabled .student-file-button{cursor:not-allowed;pointer-events:none}
-      .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px}
-      .pricing-card{position:relative;min-width:0;padding:18px;border:1px solid var(--border);border-radius:20px;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.025);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
-      .pricing-card:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.055)}
-      .pricing-card.is-selected{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
-      .pricing-card.is-featured{background:linear-gradient(180deg,var(--card),var(--surface-soft))}
-      .pricing-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
-      .pricing-name{font-size:18px;line-height:1.2;font-weight:800;letter-spacing:-.02em}
-      .pricing-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border-radius:999px;background:var(--fill);color:var(--text);font-size:11px;font-weight:750;white-space:nowrap}
-      .pricing-capacity{margin-top:18px;font-size:30px;line-height:1;font-weight:850;letter-spacing:-.045em}
-      .pricing-price-row{display:flex;align-items:baseline;gap:5px;margin-top:14px}
-      .pricing-price{font-size:24px;line-height:1;font-weight:820;letter-spacing:-.035em}
-      .pricing-period{color:var(--muted);font-size:12px}
-      .pricing-student{display:inline-flex;align-items:baseline;gap:4px;margin-top:10px;padding:7px 10px;border-radius:999px;background:var(--surface-soft);font-size:13px;font-weight:760}
-      .pricing-student strong{font-size:15px}
-      .pricing-desc{margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
-      .pricing-footnote{margin:12px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
-      @media (max-width:620px){
-        .student-region-grid{grid-template-columns:1fr}
-        .student-region-card{min-height:104px;padding:15px}
-        .student-path-summary{align-items:flex-start;flex-direction:column}
-        .student-file-picker{min-height:104px;padding:16px 14px}
-        .student-file-button{width:min(100%,320px)}
-        .student-file-preview.is-visible{grid-template-columns:64px minmax(0,1fr)}
-        .student-file-preview img{width:64px;height:64px}
-        .student-file-replace{grid-column:1/-1;width:100%!important}
-        #student-target{font-size:16px!important}
-      }
-      @media (max-width:1050px) and (hover:none) and (pointer:coarse){
-        body.os-shell:has(#student-verification){height:auto!important;min-height:100dvh!important;overflow-y:auto!important;overscroll-behavior-y:none!important}
-        body.os-shell:has(#student-verification) .os-layout{height:auto!important;min-height:calc(100dvh - 20px)!important}
-        body.os-shell:has(#student-verification) .os-main{height:auto!important;min-height:calc(100dvh - 20px)!important;overflow:visible!important;overscroll-behavior-y:none!important}
-      }
-    </style>
-    <section id="billing-settings" class="os-card is-large settings-detail-card">
+  const studentOnly = view === "student";
+  const prefix = zh ? "/zh-cn" : "/en";
+  const billingMarkup = studentOnly ? "" : `    <section id="billing-settings" class="os-card is-large settings-detail-card">
       <div class="settings-general-heading">
         <div>
           <small>AERTEX</small>
@@ -167,17 +95,39 @@ export function billingSettingsContent(zh) {
         <div class="settings-choice"><strong>${text.loading}</strong><span>—</span></div>
       </div>
     </section>
-    <section id="student-verification" class="os-card is-large settings-detail-card">
-      <div class="settings-general-heading">
-        <div>
+    <a class="student-benefit-card" href="${prefix}/settings/student">
+      <span class="student-benefit-eyebrow">AERTEX STUDENT</span>
+      <div>
+        <strong>${text.studentBenefitTitle}</strong>
+        <p>${text.studentBenefitIntro}</p>
+      </div>
+      <span class="student-benefit-action">${text.studentBenefitAction} <b aria-hidden="true">↗</b></span>
+    </a>
+`;
+  const studentMarkup = studentOnly ? `    <section id="student-verification" class="student-eligibility-page">
+      <header class="student-eligibility-hero">
+        <div class="student-eligibility-copy">
           <small>AERTEX STUDENT</small>
           <h2>${text.student}</h2>
           <p>${text.studentIntro}</p>
+          <div class="student-privacy-chip"><strong>${text.verificationPrivacy}</strong><span>${text.verificationPrivacyDetail}</span></div>
         </div>
-      </div>
-      <div id="student-state" class="settings-choice-grid">
-        <div class="settings-choice"><strong>${text.notSubmitted}</strong><span>—</span></div>
-      </div>
+        <aside class="student-status-card">
+          <small>${text.currentStatus}</small>
+          <div id="student-state" class="settings-choice-grid">
+            <div class="settings-choice"><strong>${text.notSubmitted}</strong><span>—</span></div>
+          </div>
+        </aside>
+      </header>
+      <nav class="student-progress" aria-label="${zh ? "学生认证进度" : "Student verification progress"}">
+        <div class="student-progress-track" aria-hidden="true"><i id="student-progress-fill"></i></div>
+        <ol>
+          <li data-student-progress="1"><span>1</span><strong>${text.stepSource}</strong></li>
+          <li data-student-progress="2"><span>2</span><strong>${text.stepMethod}</strong></li>
+          <li data-student-progress="3"><span>3</span><strong>${text.stepVerify}</strong></li>
+        </ol>
+      </nav>
+      <div class="student-flow-panel">
       <div id="student-pending-actions" hidden>
         <p>${zh ? "你已经提交过学生认证，当前正在等待审核。审核期间不能重复上传二维码；如需重新提交，请先取消当前申请。" : "You already have a student verification request pending. You cannot submit another QR code while it is under review. Cancel the current request first if you need to resubmit."}</p>
         <button id="student-cancel" class="btn" type="button">${text.cancelStudent}</button>
@@ -273,17 +223,138 @@ export function billingSettingsContent(zh) {
           <p id="student-feedback" style="margin:0"></p>
         </div>
       </div>
+      </div>
     </section>
-    <section class="os-card settings-general-note">
+` : "";
+  const planMarkup = studentOnly ? "" : `    <section class="os-card settings-general-note">
       <strong>${text.plans}</strong>
       <div id="billing-plan-list" class="pricing-grid"></div>
       <p class="pricing-footnote">${zh ? "学生认证通过后可使用学生价格；学生资格只影响价格，不改变套餐容量与权益。" : "Verified students can use student pricing. Student eligibility changes price only, not plan capacity or entitlements."}</p>
       <p id="billing-status" style="margin-top:12px">${text.unavailableDetail}</p>
     </section>
+`;
+
+  return `
+    <style>
+      body.os-shell:has(.student-eligibility-page) .os-hero{display:none!important}
+      .student-eligibility-page{display:grid;gap:18px}
+      .student-eligibility-hero{
+        position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);
+        gap:clamp(22px,4vw,52px);align-items:end;min-height:270px;padding:clamp(26px,3.7vw,46px);
+        border:1px solid var(--border);border-radius:30px;
+        background:radial-gradient(560px 340px at 100% 0%,color-mix(in srgb,var(--primary) 15%,transparent),transparent 72%),linear-gradient(145deg,var(--card),color-mix(in srgb,var(--surface-soft) 96%,var(--primary) 4%));
+        box-shadow:0 22px 64px rgba(0,0,0,.075),inset 0 1px 0 color-mix(in srgb,#fff 18%,transparent)
+      }
+      .student-eligibility-copy>small{display:block;color:var(--primary);font-size:11px;font-weight:800;letter-spacing:.16em}
+      .student-eligibility-copy h2{max-width:10ch;margin:10px 0 12px;font-size:clamp(42px,5vw,68px);line-height:.94;letter-spacing:-.062em}
+      .student-eligibility-copy>p{max-width:62ch;margin:0;color:var(--muted);font-size:14px;line-height:1.65}
+      .student-privacy-chip{display:flex;gap:10px;align-items:center;max-width:640px;margin-top:18px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--fill) 88%,transparent);box-shadow:inset 0 0 0 1px var(--border)}
+      .student-privacy-chip strong{font-size:11px;white-space:nowrap}.student-privacy-chip span{color:var(--muted);font-size:10.5px;line-height:1.4}
+      .student-status-card{min-width:0;padding:18px;border:1px solid var(--border);border-radius:22px;background:color-mix(in srgb,var(--glass-heavy) 91%,transparent);box-shadow:0 14px 36px rgba(0,0,0,.07)}
+      .student-status-card>small{display:block;margin-bottom:10px;color:var(--muted);font-size:10px;font-weight:760;letter-spacing:.11em;text-transform:uppercase}
+      .student-status-card .settings-choice-grid{display:grid;grid-template-columns:1fr!important;gap:0!important}
+      .student-status-card .settings-choice{min-height:90px;padding:16px;border:0!important;border-radius:15px;background:var(--fill)}
+      .student-status-card .settings-choice strong{font-size:20px;letter-spacing:-.035em}.student-status-card .settings-choice span{margin-top:7px;font-size:11px}
+      .student-progress{position:relative;padding:18px 22px;border:1px solid var(--border);border-radius:22px;background:var(--card);box-shadow:0 10px 30px rgba(0,0,0,.045)}
+      .student-progress ol{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0;padding:0;list-style:none}
+      .student-progress li{display:flex;align-items:center;gap:9px;color:var(--quiet)}
+      .student-progress li>span{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border);font-size:11px;font-weight:800}
+      .student-progress li>strong{font-size:11px;line-height:1.25}
+      .student-progress li.is-active{color:var(--text)}.student-progress li.is-active>span{background:var(--primary);color:var(--primary-ink);box-shadow:0 7px 18px color-mix(in srgb,var(--primary) 18%,transparent)}
+      .student-progress li.is-complete{color:var(--text)}.student-progress li.is-complete>span{background:color-mix(in srgb,var(--primary) 12%,var(--fill));color:var(--primary);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 28%,var(--border))}
+      .student-progress-track{position:absolute;left:37px;right:37px;top:33px;height:2px;background:var(--border);z-index:1}
+      .student-progress-track i{display:block;width:0;height:100%;background:var(--primary);transition:width .28s ease}
+      .student-flow-panel{padding:clamp(18px,2.6vw,28px);border:1px solid var(--border);border-radius:26px;background:var(--card);box-shadow:0 14px 42px rgba(0,0,0,.055)}
+      .student-benefit-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end;margin-top:16px;padding:22px;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:22px;background:radial-gradient(380px 220px at 100% 0%,color-mix(in srgb,var(--primary) 13%,transparent),transparent 74%),var(--card);color:var(--text);text-decoration:none;box-shadow:0 12px 34px rgba(0,0,0,.05);transition:transform .24s ease,border-color .2s ease}
+      .student-benefit-eyebrow{grid-column:1/-1;color:var(--primary);font-size:10px;font-weight:800;letter-spacing:.13em}.student-benefit-card strong{font-size:22px;letter-spacing:-.04em}.student-benefit-card p{max-width:58ch;margin:6px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.student-benefit-action{align-self:end;color:var(--primary);font-size:12px;font-weight:760;white-space:nowrap}
+      @media(hover:hover) and (pointer:fine){.student-benefit-card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--primary) 44%,var(--border))}}
+      @media(max-width:760px){.student-eligibility-hero{grid-template-columns:1fr;min-height:0;padding:22px 18px;border-radius:22px}.student-eligibility-copy h2{font-size:clamp(40px,13vw,56px)}.student-privacy-chip{align-items:flex-start;flex-direction:column}.student-progress{padding:16px 13px}.student-progress-track{left:27px;right:27px;top:31px}.student-progress li{gap:6px}.student-progress li>strong{font-size:9.5px}.student-flow-panel{padding:16px 13px;border-radius:20px}.student-benefit-card{grid-template-columns:1fr}.student-benefit-action{justify-self:start}}
+      #student-verification [hidden]{display:none!important}
+      #student-consent{width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;flex:0 0 22px;margin:2px 0 0!important;padding:0!important}
+      #student-pending-actions{margin-top:14px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--surface-soft)}
+      #student-pending-actions p{margin:0 0 12px}
+      .student-path{display:grid;gap:14px;margin-top:18px}
+      .student-step-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+      .student-step-head h3{margin:0;font-size:18px;letter-spacing:-.03em}
+      .student-step-head p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.55}
+      .student-region-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .student-region-card,.student-method-card{
+        appearance:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;
+        min-height:116px;margin:0;padding:17px;text-align:left;border:1px solid var(--border);border-radius:18px;
+        background:var(--surface-soft);color:var(--text);box-shadow:none;cursor:pointer;
+        transition:transform .2s ease,border-color .18s ease,background .18s ease,box-shadow .2s ease
+      }
+      .student-region-card strong,.student-method-card strong{display:block;font-size:15px;line-height:1.3;letter-spacing:-.02em}
+      .student-region-card span,.student-method-card span{display:block;margin-top:7px;color:var(--muted);font-size:12px;line-height:1.48}
+      .student-region-card b,.student-method-card b{color:var(--quiet);font-size:18px;font-weight:500}
+      .student-region-card.is-selected{border-color:color-mix(in srgb,var(--primary) 50%,var(--border));background:color-mix(in srgb,var(--primary) 8%,var(--surface-soft));box-shadow:0 10px 24px color-mix(in srgb,var(--primary) 8%,transparent)}
+      .student-path-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-radius:15px;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border)}
+      .student-path-summary strong{font-size:13px}.student-path-summary button{width:auto!important;min-width:0!important;min-height:36px!important;margin:0!important;padding:0 11px!important;border-radius:10px!important;background:var(--card)!important;color:var(--text)!important;font-size:11px!important;box-shadow:inset 0 0 0 1px var(--border)!important}
+      .student-method-list{display:grid;gap:10px}
+      .student-method-card{min-height:96px;background:var(--card)}
+      .student-method-card.is-supported{border-color:color-mix(in srgb,var(--primary) 28%,var(--border))}
+      .student-method-card[disabled]{cursor:not-allowed;opacity:.64}
+      .student-method-badge{display:inline-flex!important;align-items:center;min-height:24px;margin:0!important;padding:0 8px;border-radius:999px;background:var(--fill);color:var(--muted)!important;font-size:10px!important;font-weight:760!important;white-space:nowrap}
+      .student-method-card.is-supported .student-method-badge{background:color-mix(in srgb,var(--primary) 11%,var(--fill));color:var(--primary)!important}
+      .student-method-note{margin:0;padding:13px 14px;border-radius:14px;background:var(--fill);color:var(--muted);font-size:12px;line-height:1.55}
+      @media(hover:hover) and (pointer:fine){.student-region-card:hover,.student-method-card:not([disabled]):hover{transform:translateY(-2px);border-color:var(--border-strong);box-shadow:0 10px 24px rgba(0,0,0,.055)}}
+      .student-file-picker{display:grid;place-items:center;gap:7px;min-height:116px;padding:18px;border:1px solid var(--border);border-radius:18px;background:var(--surface-soft);text-align:center}
+      .student-file-picker input[type="file"]{position:absolute!important;width:1px!important;height:1px!important;min-width:1px!important;min-height:1px!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important}
+      .student-file-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:13px;background:var(--primary);color:var(--primary-ink);font-weight:800;cursor:pointer;user-select:none}
+      .student-file-button:active{transform:scale(.98)}
+      .student-file-button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+      .student-file-picker small{display:block;color:var(--muted);font-size:12px;line-height:1.45}
+      .student-file-preview{display:none;gap:12px;align-items:center;width:100%;padding:12px;border-radius:14px;background:var(--card);box-shadow:inset 0 0 0 1px var(--border);text-align:left}
+      .student-file-preview.is-visible{display:grid;grid-template-columns:76px minmax(0,1fr) auto}
+      .student-file-preview img{display:block;width:76px;height:76px;object-fit:contain;border-radius:10px;background:#fff}
+      .student-file-preview-copy{min-width:0}.student-file-preview-copy strong{display:block}.student-file-preview-name{display:block;margin-top:4px;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.student-file-preview-note{display:block;margin-top:4px;color:var(--muted);font-size:12px;line-height:1.45;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word}
+      .student-file-replace{width:auto!important;min-width:0!important;min-height:38px!important;margin:0!important;padding:0 12px!important;border-radius:10px!important;background:var(--fill)!important;color:var(--text)!important;font-size:12px!important}
+      .student-manual-toggle{width:auto!important;justify-self:start;min-height:40px!important;margin:2px 0 0!important;padding:0 12px!important;background:transparent!important;color:var(--primary)!important}
+      #student-manual-wrap[hidden]{display:none!important}
+      #student-target{font-size:16px!important;scroll-margin-top:120px}
+      .student-file-picker.is-disabled{opacity:.48}
+      .student-file-picker.is-disabled .student-file-button{cursor:not-allowed;pointer-events:none}
+      .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px}
+      .pricing-card{position:relative;min-width:0;padding:18px;border:1px solid var(--border);border-radius:20px;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.025);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+      .pricing-card:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.055)}
+      .pricing-card.is-selected{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+      .pricing-card.is-featured{background:linear-gradient(180deg,var(--card),var(--surface-soft))}
+      .pricing-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .pricing-name{font-size:18px;line-height:1.2;font-weight:800;letter-spacing:-.02em}
+      .pricing-badge{display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border-radius:999px;background:var(--fill);color:var(--text);font-size:11px;font-weight:750;white-space:nowrap}
+      .pricing-capacity{margin-top:18px;font-size:30px;line-height:1;font-weight:850;letter-spacing:-.045em}
+      .pricing-price-row{display:flex;align-items:baseline;gap:5px;margin-top:14px}
+      .pricing-price{font-size:24px;line-height:1;font-weight:820;letter-spacing:-.035em}
+      .pricing-period{color:var(--muted);font-size:12px}
+      .pricing-student{display:inline-flex;align-items:baseline;gap:4px;margin-top:10px;padding:7px 10px;border-radius:999px;background:var(--surface-soft);font-size:13px;font-weight:760}
+      .pricing-student strong{font-size:15px}
+      .pricing-desc{margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+      .pricing-footnote{margin:12px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+      @media (max-width:620px){
+        .student-region-grid{grid-template-columns:1fr}
+        .student-region-card{min-height:104px;padding:15px}
+        .student-path-summary{align-items:flex-start;flex-direction:column}
+        .student-file-picker{min-height:104px;padding:16px 14px}
+        .student-file-button{width:min(100%,320px)}
+        .student-file-preview.is-visible{grid-template-columns:64px minmax(0,1fr)}
+        .student-file-preview img{width:64px;height:64px}
+        .student-file-replace{grid-column:1/-1;width:100%!important}
+        #student-target{font-size:16px!important}
+      }
+      @media (max-width:1050px) and (hover:none) and (pointer:coarse){
+        body.os-shell:has(#student-verification){height:auto!important;min-height:100dvh!important;overflow-y:auto!important;overscroll-behavior-y:none!important}
+        body.os-shell:has(#student-verification) .os-layout{height:auto!important;min-height:calc(100dvh - 20px)!important}
+        body.os-shell:has(#student-verification) .os-main{height:auto!important;min-height:calc(100dvh - 20px)!important;overflow:visible!important;overscroll-behavior-y:none!important}
+      }
+    </style>
+    ${billingMarkup}
+    ${studentMarkup}
+    ${planMarkup}
     <script>
       (() => {
         const copy=${JSON.stringify(text)};
         const isZh=${zh ? "true" : "false"};
+        const isStudentView=${studentOnly ? "true" : "false"};
         const current=document.getElementById("billing-current");
         const planList=document.getElementById("billing-plan-list");
         const status=document.getElementById("billing-status");
@@ -313,6 +384,8 @@ export function billingSettingsContent(zh) {
         const studentSubmit=document.getElementById("student-submit");
         const studentCancel=document.getElementById("student-cancel");
         const studentFeedback=document.getElementById("student-feedback");
+        const studentProgressItems=[...document.querySelectorAll("[data-student-progress]")];
+        const studentProgressFill=document.getElementById("student-progress-fill");
         const bytes=value=>{let n=Number(value)||0;const units=["B","KB","MB","GB","TB"];let i=0;while(n>=1024&&i<units.length-1){n/=1024;i++}return n.toLocaleString(undefined,{maximumFractionDigits:i?1:0})+" "+units[i]};
         const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
         const date=value=>{if(!value)return copy.free;const d=new Date(value);return Number.isNaN(d.getTime())?copy.free:d.toLocaleString()};
@@ -329,6 +402,7 @@ export function billingSettingsContent(zh) {
         ];
         let studentTutorialAcknowledged=false;
         let studentLocked=false;
+        let studentServerStatus="not_submitted";
         const studentRegionKey="aertex-student-school-region-v1";
         const validStudentRegions=new Set(["mainland_higher","mainland_other","hmt","international","other"]);
         let studentRegion="";
@@ -386,7 +460,21 @@ export function billingSettingsContent(zh) {
             syncStudentControls();
           }));
         }
+        function paintStudentProgress(){
+          if(!isStudentView)return;
+          const hasRegion=validStudentRegions.has(studentRegion);
+          const hasMethod=Boolean(studentMethod)||studentLocked;
+          let stage=!hasRegion?1:!hasMethod?2:3;
+          const verified=studentServerStatus==="verified";
+          studentProgressItems.forEach(item=>{
+            const index=Number(item.dataset.studentProgress||0);
+            item.classList.toggle("is-complete",verified||index<stage);
+            item.classList.toggle("is-active",!verified&&index===stage);
+          });
+          if(studentProgressFill)studentProgressFill.style.width=verified||stage===3?"100%":stage===2?"50%":"0%";
+        }
         function paintStudentPath(){
+          paintStudentProgress();
           if(studentLocked){
             studentRegionStep.hidden=true;
             studentMethodStep.hidden=true;
@@ -456,6 +544,7 @@ export function billingSettingsContent(zh) {
         const studentStatusLabel=value=>({pending:copy.pending,verified:copy.verified,rejected:copy.rejected,expired:copy.expired,not_submitted:copy.notSubmitted}[String(value)]||copy.notSubmitted);
         function renderStudent(data){
           const state=data&&typeof data==="object"?data:{status:"not_submitted",eligible:false};
+          studentServerStatus=String(state.status||"not_submitted");
           let detail="—";
           if(state.status==="verified"&&state.report_expires_at)detail=copy.verifyingUntil+" "+date(state.report_expires_at);
           else if(state.status==="pending")detail=isZh?"正在等待管理员通过学信网官方渠道核验。":"Waiting for administrator review through the official CHSI verification service.";
@@ -465,6 +554,7 @@ export function billingSettingsContent(zh) {
           const pending=state.status==="pending";
           studentPendingActions.hidden=!pending;
           studentLocked=pending||state.eligible;
+          paintStudentProgress();
           studentTutorialReady.disabled=studentLocked;
           paintStudentPath();
           if(!studentLocked&&studentMethod==="chsi"&&studentTutorialAcknowledged){
@@ -683,10 +773,13 @@ export function billingSettingsContent(zh) {
           }catch(error){studentFeedback.textContent=String(error?.message||copy.error)}
           finally{studentCancel.disabled=false}
         });
-        loadStudentRegionPreference();
-        paintStudentPath();
-        void load();
-        void loadStudent();
+        if(isStudentView){
+          loadStudentRegionPreference();
+          paintStudentPath();
+          void loadStudent();
+        }else{
+          void load();
+        }
       })();
     </script>
   `;
