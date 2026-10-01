@@ -66,6 +66,10 @@ export function normalizeHandoffNext(value, locale, workTarget = false, gptTarge
   const candidate = typeof value === "string" ? value.trim() : "";
   if (workTarget) {
     const candidateLocale = candidate === "/en" || candidate.startsWith("/en/") ? "en" : candidate === "/zh-cn" || candidate.startsWith("/zh-cn/") ? "zh" : locale;
+    const exemptDocument = candidate.match(/^\/(?:zh-cn|en)\/d\/huawei-exempt\/([0-9a-f-]{36})$/i);
+    if (exemptDocument) return (candidateLocale === "zh" ? "/zh-cn/d/huawei-exempt/" : "/en/d/huawei-exempt/") + exemptDocument[1];
+    const document = candidate.match(/^\/(?:zh-cn|en)\/d\/([0-9a-f-]{36})$/i);
+    if (document) return (candidateLocale === "zh" ? "/zh-cn/d/" : "/en/d/") + document[1];
     return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/tex";
   }
   if (gptTarget) {
