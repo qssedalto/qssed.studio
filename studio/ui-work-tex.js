@@ -337,3 +337,395 @@ export function polishWorkHubTexRoute(markup, workOrigin = "https://work.qsseda.
     .replaceAll("/workspace/experiments/tex", workTexUrl)
     .replaceAll("/work/tex", workTexUrl);
 }
+
+
+const WORK_TEX_VISUAL_STYLE = `
+  <style id="qsseda-work-tex-visual-system-v2">
+    :root[data-accent="sapphire"] body.os-shell:has(.tex-work-app){--primary:#4964d8;--primary-ink:#fff}
+    :root[data-accent="aqua"] body.os-shell:has(.tex-work-app){--primary:#2a9d8f;--primary-ink:#fff}
+    :root[data-accent="jade"] body.os-shell:has(.tex-work-app){--primary:#3a9d72;--primary-ink:#fff}
+    :root[data-accent="lime"] body.os-shell:has(.tex-work-app){--primary:#86a93b;--primary-ink:#151515}
+    :root[data-accent="amber"] body.os-shell:has(.tex-work-app){--primary:#d49a2a;--primary-ink:#151515}
+    :root[data-accent="coral"] body.os-shell:has(.tex-work-app){--primary:#e26d5a;--primary-ink:#fff}
+    :root[data-accent="rose"] body.os-shell:has(.tex-work-app){--primary:#d95686;--primary-ink:#fff}
+    :root[data-accent="magenta"] body.os-shell:has(.tex-work-app){--primary:#b755c7;--primary-ink:#fff}
+    :root[data-accent="violet"] body.os-shell:has(.tex-work-app){--primary:#7559d9;--primary-ink:#fff}
+    :root[data-accent="graphite"] body.os-shell:has(.tex-work-app){--primary:#5a5d64;--primary-ink:#fff}
+
+    body.os-shell:has(.tex-work-app){
+      --work-panel:color-mix(in srgb,var(--surface) 97%,var(--primary) 3%);
+      --work-panel-soft:color-mix(in srgb,var(--surface-soft) 96%,var(--primary) 4%);
+      --work-card:color-mix(in srgb,var(--card) 98%,var(--primary) 2%);
+      --work-line:color-mix(in srgb,var(--border) 86%,transparent);
+      --work-shadow:0 22px 64px rgba(0,0,0,.12);
+      --work-shadow-soft:0 10px 30px rgba(0,0,0,.065);
+      --work-ease:cubic-bezier(.16,1,.3,1);
+      background:
+        radial-gradient(920px 560px at 8% -8%,color-mix(in srgb,var(--primary) 13%,transparent),transparent 68%),
+        radial-gradient(760px 520px at 105% 104%,color-mix(in srgb,var(--primary) 7%,transparent),transparent 72%),
+        var(--bg)!important;
+    }
+    :root[data-theme="light"] body.os-shell:has(.tex-work-app){
+      --work-shadow:0 22px 64px rgba(24,26,31,.10);
+      --work-shadow-soft:0 10px 28px rgba(24,26,31,.055);
+    }
+
+    body.os-shell:has(.tex-work-app) .tex-shell{
+      border:1px solid var(--work-line)!important;
+      border-radius:28px!important;
+      background:var(--work-panel)!important;
+      box-shadow:var(--work-shadow)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-documents-panel,
+    body.os-shell:has(.tex-work-app) .tex-runs-panel{
+      background:color-mix(in srgb,var(--work-panel-soft) 94%,transparent)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-editor-panel{background:var(--work-panel)!important}
+    body.os-shell:has(.tex-work-app) .tex-documents-panel{border-right:1px solid var(--work-line)!important}
+    body.os-shell:has(.tex-work-app) .tex-runs-panel{border-left:1px solid var(--work-line)!important}
+
+    body.os-shell:has(.tex-work-app) .tex-start-surface{
+      position:relative!important;
+      isolation:isolate;
+      overflow:auto!important;
+      background:
+        radial-gradient(640px 400px at 92% 4%,color-mix(in srgb,var(--primary) 17%,transparent),transparent 70%),
+        radial-gradient(520px 340px at -6% 104%,color-mix(in srgb,var(--primary) 7%,transparent),transparent 72%),
+        var(--work-panel)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-surface::before{
+      content:"";
+      position:absolute;
+      width:min(52vw,560px);
+      aspect-ratio:1;
+      right:-24%;
+      top:-44%;
+      border-radius:50%;
+      background:radial-gradient(circle,color-mix(in srgb,var(--primary) 11%,transparent),transparent 66%);
+      pointer-events:none;
+      z-index:-1;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-mark{
+      width:64px!important;
+      height:64px!important;
+      border-radius:20px!important;
+      background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 18%,var(--fill)),color-mix(in srgb,var(--primary) 8%,var(--fill)))!important;
+      color:var(--text)!important;
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 34%,var(--border)),0 14px 32px color-mix(in srgb,var(--primary) 10%,transparent)!important;
+      font-size:15px!important;
+      letter-spacing:-.04em!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-copy{gap:9px!important}
+    body.os-shell:has(.tex-work-app) .tex-start-copy strong{
+      font-size:clamp(30px,4vw,46px)!important;
+      line-height:1!important;
+      letter-spacing:-.055em!important;
+      font-weight:760!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-copy span{
+      max-width:56ch!important;
+      font-size:14px!important;
+      line-height:1.62!important;
+      color:var(--muted)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-grid{
+      gap:14px!important;
+      width:min(100%,900px)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-card{
+      position:relative!important;
+      overflow:hidden!important;
+      min-height:132px!important;
+      padding:22px 22px 20px!important;
+      border:1px solid var(--work-line)!important;
+      border-radius:22px!important;
+      background:linear-gradient(155deg,color-mix(in srgb,var(--work-card) 99%,#fff 1%),var(--work-card))!important;
+      box-shadow:var(--work-shadow-soft)!important;
+      transition:transform .30s var(--work-ease),border-color .2s ease,box-shadow .30s var(--work-ease),background .2s ease!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-card::after{
+      content:"↗";
+      position:absolute;
+      right:18px;
+      top:17px;
+      display:grid;
+      place-items:center;
+      width:30px;
+      height:30px;
+      border-radius:50%;
+      background:var(--fill);
+      color:var(--quiet);
+      font-size:14px;
+      font-weight:500;
+      transition:transform .28s var(--work-ease),background .2s ease,color .2s ease;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-card b{
+      max-width:calc(100% - 42px);
+      font-size:17px!important;
+      line-height:1.25!important;
+      letter-spacing:-.03em!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-card span{
+      max-width:34ch;
+      margin-top:8px!important;
+      font-size:12px!important;
+      line-height:1.5!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-card:focus-visible{
+      outline:none!important;
+      border-color:color-mix(in srgb,var(--primary) 62%,var(--border))!important;
+      box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 13%,transparent),var(--work-shadow-soft)!important;
+    }
+    @media(hover:hover) and (pointer:fine){
+      body.os-shell:has(.tex-work-app) .tex-start-card:hover{
+        transform:translateY(-4px)!important;
+        border-color:color-mix(in srgb,var(--primary) 38%,var(--border))!important;
+        background:linear-gradient(155deg,color-mix(in srgb,var(--primary) 5%,var(--work-card)),var(--work-card))!important;
+        box-shadow:0 22px 46px rgba(0,0,0,.10)!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-start-card:hover::after{
+        transform:rotate(8deg) scale(1.06);
+        background:color-mix(in srgb,var(--primary) 11%,var(--fill));
+        color:var(--primary);
+      }
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-features{gap:8px!important}
+    body.os-shell:has(.tex-work-app) .tex-start-features span{
+      display:inline-flex!important;
+      align-items:center;
+      min-height:30px;
+      padding:0 10px;
+      border-radius:999px;
+      background:color-mix(in srgb,var(--fill) 82%,transparent);
+      color:var(--muted)!important;
+      box-shadow:inset 0 0 0 1px var(--work-line);
+      font-size:10px!important;
+      line-height:1!important;
+    }
+
+    body.os-shell:has(.tex-work-app) .tex-panel-head,
+    body.os-shell:has(.tex-work-app) .tex-runs-head{
+      border-bottom:1px solid color-mix(in srgb,var(--work-line) 82%,transparent);
+    }
+    body.os-shell:has(.tex-work-app) .tex-create-row select,
+    body.os-shell:has(.tex-work-app) .tex-editor-toolbar select,
+    body.os-shell:has(.tex-work-app) .tex-search{
+      background:var(--work-card)!important;
+      box-shadow:inset 0 0 0 1px var(--work-line)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-create-row select:focus,
+    body.os-shell:has(.tex-work-app) .tex-editor-toolbar select:focus,
+    body.os-shell:has(.tex-work-app) .tex-search:focus-within{
+      outline:none!important;
+      box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 11%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--primary) 62%,var(--border))!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-create-row button,
+    body.os-shell:has(.tex-work-app) .tex-runs-head button,
+    body.os-shell:has(.tex-work-app) .tex-side-toggle,
+    body.os-shell:has(.tex-work-app) .tex-preview-expand,
+    body.os-shell:has(.tex-work-app) .tex-connection-check{
+      background:var(--work-card)!important;
+      color:var(--text)!important;
+      box-shadow:inset 0 0 0 1px var(--work-line)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-document-list{gap:7px!important}
+    body.os-shell:has(.tex-work-app) .tex-document-item{
+      border:1px solid transparent!important;
+      border-radius:15px!important;
+      background:transparent!important;
+      transition:transform .2s var(--work-ease),background .18s ease,border-color .18s ease!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-document-item.is-active{
+      background:color-mix(in srgb,var(--primary) 8%,var(--work-card))!important;
+      border-color:color-mix(in srgb,var(--primary) 30%,var(--border))!important;
+    }
+    @media(hover:hover) and (pointer:fine){
+      body.os-shell:has(.tex-work-app) .tex-document-item:hover{
+        transform:translateX(2px);
+        background:var(--work-card)!important;
+        border-color:var(--work-line)!important;
+      }
+    }
+
+    body.os-shell:has(.tex-work-app) .tex-editor-toolbar{
+      background:color-mix(in srgb,var(--glass-heavy) 90%,transparent)!important;
+      -webkit-backdrop-filter:blur(24px) saturate(155%);
+      backdrop-filter:blur(24px) saturate(155%);
+      border-bottom:1px solid var(--work-line)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-editor-toolbar>input{
+      font-weight:740!important;
+      letter-spacing:-.035em!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-source-label{
+      border-bottom:1px solid color-mix(in srgb,var(--work-line) 68%,transparent);
+    }
+    body.os-shell:has(.tex-work-app) #tex-source{
+      background:linear-gradient(180deg,color-mix(in srgb,var(--work-panel) 99%,#fff 1%),var(--work-panel))!important;
+      caret-color:var(--primary)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-editor-footer{
+      background:color-mix(in srgb,var(--glass-heavy) 91%,transparent)!important;
+      -webkit-backdrop-filter:blur(22px) saturate(150%);
+      backdrop-filter:blur(22px) saturate(150%);
+      border-top:1px solid var(--work-line)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-primary{
+      background:var(--primary)!important;
+      color:var(--primary-ink)!important;
+      box-shadow:0 8px 18px color-mix(in srgb,var(--primary) 18%,transparent)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-secondary{
+      background:var(--fill)!important;
+      box-shadow:inset 0 0 0 1px var(--work-line)!important;
+    }
+
+    body.os-shell:has(.tex-work-app) .tex-live-preview-card,
+    body.os-shell:has(.tex-work-app) .tex-compiler-card{
+      border:1px solid var(--work-line)!important;
+      background:var(--work-card)!important;
+      box-shadow:var(--work-shadow-soft)!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-live-preview-card{border-radius:20px!important}
+    body.os-shell:has(.tex-work-app) .tex-compiler-card{border-radius:18px!important}
+    body.os-shell:has(.tex-work-app) .tex-compiler-state.is-ready{color:var(--primary)!important}
+    body.os-shell:has(.tex-work-app) .tex-compiler-state.is-ready i{
+      background:var(--primary)!important;
+      box-shadow:0 0 0 5px color-mix(in srgb,var(--primary) 12%,transparent);
+    }
+    body.os-shell:has(.tex-work-app) .tex-live-preview-viewport{
+      border:1px solid var(--work-line)!important;
+      background:color-mix(in srgb,var(--fill) 80%,var(--surface))!important;
+      box-shadow:none!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-run-item{
+      border:1px solid var(--work-line)!important;
+      border-radius:14px!important;
+      background:var(--work-card)!important;
+    }
+
+    @media(max-width:760px), (max-width:950px) and (pointer:coarse){
+      :root{--tex-mobile-tabs-h:calc(64px + env(safe-area-inset-bottom,0px))}
+      body.os-shell:has(.tex-work-app){
+        background:radial-gradient(620px 360px at 92% -4%,color-mix(in srgb,var(--primary) 12%,transparent),transparent 72%),var(--bg)!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-workbench .tex-shell{
+        border:0!important;
+        border-radius:0!important;
+        box-shadow:none!important;
+        background:var(--work-panel)!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-start-surface{
+        padding:calc(30px + env(safe-area-inset-top,0px)) 18px 34px!important;
+        background:radial-gradient(460px 300px at 92% 0%,color-mix(in srgb,var(--primary) 15%,transparent),transparent 72%),var(--work-panel)!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-mark{
+        width:56px!important;
+        height:56px!important;
+        margin-bottom:24px!important;
+        border-radius:18px!important;
+        font-size:14px!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-start-copy strong{
+        font-size:clamp(30px,9.5vw,40px)!important;
+        line-height:1.02!important;
+        letter-spacing:-.055em!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-start-copy span{
+        margin-top:3px!important;
+        font-size:14px!important;
+        line-height:1.58!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-grid{
+        gap:12px!important;
+        margin-top:26px!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-grid>.tex-start-card{
+        min-height:104px!important;
+        padding:18px!important;
+        border:1px solid var(--work-line)!important;
+        border-radius:20px!important;
+        background:var(--work-card)!important;
+        box-shadow:0 10px 26px rgba(0,0,0,.045)!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-grid>.tex-start-card::after{right:16px;top:15px}
+      body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-grid>.tex-start-card>b{
+        font-size:18px!important;
+        letter-spacing:-.03em!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-grid>.tex-start-card>span{
+        max-width:30ch!important;
+        margin-top:7px!important;
+        font-size:12.5px!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-features{gap:8px!important;margin-top:20px!important}
+
+      body.os-shell:has(.tex-work-app) .tex-panel-head{
+        background:color-mix(in srgb,var(--glass-heavy) 92%,transparent)!important;
+        border-bottom:1px solid var(--work-line)!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-document-item{
+        background:var(--work-card)!important;
+        border-color:var(--work-line)!important;
+        box-shadow:0 6px 18px rgba(0,0,0,.035)!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-document-item.is-active{
+        background:color-mix(in srgb,var(--primary) 8%,var(--work-card))!important;
+        border-color:color-mix(in srgb,var(--primary) 36%,var(--border))!important;
+      }
+
+      body.os-shell:has(.tex-work-app) .tex-mobile-tabs{
+        height:var(--tex-mobile-tabs-h)!important;
+        padding:6px 10px env(safe-area-inset-bottom,0px)!important;
+        border-top:1px solid var(--work-line)!important;
+        background:color-mix(in srgb,var(--glass-heavy) 90%,transparent)!important;
+        -webkit-backdrop-filter:blur(30px) saturate(170%)!important;
+        backdrop-filter:blur(30px) saturate(170%)!important;
+        box-shadow:0 -10px 30px rgba(0,0,0,.06)!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-mobile-tab{
+        gap:3px!important;
+        min-height:50px!important;
+        border-radius:15px!important;
+        color:var(--quiet)!important;
+        transition:background .18s ease,color .18s ease,transform .16s ease!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-mobile-tab[aria-selected="true"]{
+        background:color-mix(in srgb,var(--primary) 10%,var(--fill))!important;
+        color:var(--primary)!important;
+        box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 20%,transparent)!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-mobile-tab:active{
+        transform:scale(.97)!important;
+        background:color-mix(in srgb,var(--primary) 8%,var(--fill))!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-mobile-tab svg{width:22px!important;height:22px!important}
+
+      body.os-shell:has(.tex-work-app) .tex-live-preview-card{
+        margin:12px!important;
+        padding:14px!important;
+        border-radius:20px!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-compiler-card{
+        margin:0 12px 12px!important;
+        padding:14px!important;
+        border-radius:18px!important;
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce){
+      body.os-shell:has(.tex-work-app) .tex-start-card,
+      body.os-shell:has(.tex-work-app) .tex-document-item,
+      body.os-shell:has(.tex-work-app) .tex-mobile-tab,
+      body.os-shell:has(.tex-work-app) .tex-start-card::after{
+        transition:none!important;
+        transform:none!important;
+      }
+    }
+  </style>
+`;
+
+export function polishWorkTexVisualTheme(markup) {
+  const source = String(markup || "");
+  return source.replace("</body>", WORK_TEX_VISUAL_STYLE + "</body>");
+}

@@ -5,6 +5,7 @@ const workAuditWrapper = fs.readFileSync(new URL("../studio/worker-audit.js", im
 const work = fs.readFileSync(new URL("../studio/work-subdomain.js", import.meta.url), "utf8");
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
 const shell = fs.readFileSync(new URL("../studio/ui-shell.js", import.meta.url), "utf8");
+const uiPage = fs.readFileSync(new URL("../studio/ui-page.js", import.meta.url), "utf8");
 const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta.url), "utf8");
 const sessionGate = fs.readFileSync(new URL("../studio/session-gate.js", import.meta.url), "utf8");
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
@@ -69,6 +70,16 @@ assert(workTexUi.includes('tex-connection-check'), "Work TeX must expose a manua
 assert(workTexUi.includes("targetAddressSpace: 'loopback'"), "Manual Work TeX connection checks must remain scoped to loopback");
 assert(workTexUi.includes("loopbackFetch(base, '/tex/status')"), "Manual Work TeX connection checks must verify TeX availability after Bridge health");
 assert(workTexUi.includes("fetch('/api/tex/status'"), "Manual Work TeX connection checks must also verify cloud compiler availability");
+assert(workTexUi.includes('id="qsseda-work-tex-visual-system-v2"'), "Standalone Work TeX must include the final shared visual-system layer.");
+assert(workTexUi.includes(':root[data-accent="sapphire"] body.os-shell:has(.tex-work-app)'), "Work TeX must map Studio accent tokens into the standalone product.");
+assert(workTexUi.includes('.tex-mobile-tab[aria-selected="true"]'), "Work mobile navigation must expose an accent-aware selected state.");
+assert(workTexUi.includes('.tex-start-card::after'), "Work start templates must use the upgraded product-card treatment.");
+assert(entry.includes("polishWorkTexVisualTheme(markup)"), "Work visual theme must be applied only after existing TeX behavior enhancements.");
+assert(uiPage.includes('const ACCENT_COOKIE = "qssed_accent"'), "Shared appearance runtime must publish the accent across the active AERTEX domain family.");
+assert(uiPage.includes('const MODE_COOKIE = "qssed_theme_mode"'), "Shared appearance runtime must publish theme mode across the active AERTEX domain family.");
+assert(uiPage.includes("readCookieAccent()"), "Shared appearance runtime must read the cross-subdomain accent preference.");
+assert(uiPage.includes("readCookieMode()"), "Shared appearance runtime must read the cross-subdomain theme-mode preference.");
+assert(uiPage.includes("isRootPreferenceHost()"), "Main-site appearance preferences must migrate into the shared domain cookie without changing app logic.");
 
 assert(workWrangler.name === "qsseda-work", "Work Worker must use a dedicated script name");
 assert(workWrangler.main === "studio/worker-audit.js", "Work Worker must enter through the audited main-site facade");
