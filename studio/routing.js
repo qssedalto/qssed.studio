@@ -78,14 +78,9 @@ export function getRouteInfo(request) {
   }
 
   if (!locale) {
-    const lang = (url.searchParams.get("lang") || "").toLowerCase();
-    if (lang === "zh" || lang === "zh-cn") {
-      locale = "zh";
-    } else if (lang === "en") {
-      locale = "en";
-    } else {
-      locale = preferredLocaleFromRequest(request) === "zh-cn" ? "zh" : "en";
-    }
+    // No locale in the URL means "follow this device". Do not persist or infer
+    // interface language from query parameters, cookies, accounts, or IP region.
+    locale = preferredLocaleFromRequest(request) === "zh-cn" ? "zh" : "en";
   }
 
   return {
