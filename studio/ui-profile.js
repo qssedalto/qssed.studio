@@ -12,6 +12,18 @@ const PROFILE_COPY = {
   "ar-sa": {preferences:"التفضيلات",preferencesLead:"يمكن تغيير السمة واللغة من عناصر التحكم أعلى اليمين. وستُجمع تفضيلات الاتصال والإشعارات الأخرى هنا.",change:"تغيير",name:"الاسم",username:"اسم المستخدم",email:"البريد الإلكتروني",birth:"تاريخ الميلاد",gender:"الجنس",visibility:"إظهار الجنس",security:"تسجيل الدخول والأمان",communication:"الاتصال والتفضيلات",note:"يأتي الاسم وتاريخ الميلاد والجنس من معلومات الحساب المقدمة عند التسجيل. ويمكنك تغيير صورة الملف الشخصي هنا.",badImage:"اختر صورة JPG أو PNG أو WebP لا يزيد حجمها عن 5 MB.",updating:"جارٍ التحديث…",updateFailed:"تعذر تحديث صورة الملف الشخصي.",accountInfo:"معلومات الحساب",registered:"تاريخ التسجيل",accountId:"معرّف الحساب",lastSignIn:"آخر تسجيل دخول",auditStats:"إحصاءات التدقيق الأخيرة",events:"أحداث حديثة",devices:"أجهزة حديثة",risks:"مخاطر حديثة",loginRecords:"سجلات تسجيل الدخول"}
 };
 PROFILE_COPY["en-gb"]=PROFILE_COPY["en-us"]; PROFILE_COPY["en-au"]=PROFILE_COPY["en-us"];
+const PROFILE_STATUS_COPY = {
+  "en-us":{online:"Online",focus:"Focus",busy:"Busy",away:"Away",offline:"Offline"},
+  "zh-cn":{online:"在线",focus:"专注中",busy:"忙碌",away:"离开",offline:"隐身"},
+  "zh-tw":{online:"線上",focus:"專注中",busy:"忙碌",away:"離開",offline:"隱身"},
+  "ja-jp":{online:"オンライン",focus:"集中中",busy:"取り込み中",away:"離席中",offline:"オフライン"},
+  "ko-kr":{online:"온라인",focus:"집중 중",busy:"바쁨",away:"자리 비움",offline:"오프라인"},
+  "fr-fr":{online:"En ligne",focus:"Concentration",busy:"Occupé",away:"Absent",offline:"Hors ligne"},
+  "es-es":{online:"En línea",focus:"Concentrado",busy:"Ocupado",away:"Ausente",offline:"Desconectado"},
+  "el-gr":{online:"Σε σύνδεση",focus:"Συγκέντρωση",busy:"Απασχολημένος",away:"Απουσία",offline:"Εκτός σύνδεσης"},
+  "ar-sa":{online:"متصل",focus:"وضع التركيز",busy:"مشغول",away:"بعيد",offline:"غير متصل"}
+};
+PROFILE_STATUS_COPY["en-gb"]=PROFILE_STATUS_COPY["en-us"]; PROFILE_STATUS_COPY["en-au"]=PROFILE_STATUS_COPY["en-us"];
 
 export function profileContent(path, zh, locale = "") {
   const activeLocale=locale||(zh?"zh-cn":"en-us");
@@ -156,8 +168,7 @@ export function profileClientScript() {
       function profileHomeEscape(value) { return auditEscape(value == null ? "" : String(value)); }
       function profileHomeCacheKey(userId) { return PROFILE_HOME_CACHE_PREFIX + String(userId || ""); }
       function profileHomeStatusLabel(kind) {
-        const zh = profileHomeIsZh();
-        const labels = zh ? { online:"在线", focus:"专注中", busy:"忙碌", away:"离开", offline:"隐身" } : { online:"Online", focus:"Focus", busy:"Busy", away:"Away", offline:"Offline" };
+        const labels = ${JSON.stringify(PROFILE_STATUS_COPY[activeLocale] || PROFILE_STATUS_COPY["en-us"])};
         return labels[kind] || labels.online;
       }
       function readProfileHomeCache(userId) {
