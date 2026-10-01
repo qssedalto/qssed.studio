@@ -2,7 +2,7 @@ import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gat
 import { authOriginForRequest, gptOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 import { FAVICON_LINKS } from "./favicon.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
-import { preferredLocaleFromRequest } from "./locale.js";
+import { localeFromPath as sharedLocaleFromPath, normalizeSupportedLocale, preferredLocaleFromRequest, SUPPORTED_LOCALES } from "./locale.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 
@@ -60,16 +60,11 @@ export async function handleMainGptHandoff(request) {
 }
 
 function preferredLocale(request, pathname) {
-  if (pathname.startsWith("/en/") || pathname === "/en") return "en";
-  if (pathname.startsWith("/zh-cn/") || pathname === "/zh-cn") return "zh-cn";
-  return preferredLocaleFromRequest(request);
+  return sharedLocaleFromPath(pathname) || preferredLocaleFromRequest(request);
 }
 
 function localeFromPath(pathname) {
-  const path = typeof pathname === "string" ? pathname.trim() : "";
-  if (path === "/en" || path.startsWith("/en/")) return "en";
-  if (path === "/zh-cn" || path.startsWith("/zh-cn/")) return "zh-cn";
-  return "";
+  return sharedLocaleFromPath(pathname);
 }
 
 function safeGptPath(value) {
@@ -79,12 +74,17 @@ function safeGptPath(value) {
 }
 
 function canonicalGptPath(path, locale) {
-  const normalizedLocale = locale === "en" ? "en" : "zh-cn";
+  const normalizedLocale = normalizeSupportedLocale(locale) || "en-us";
   const candidate = safeGptPath(path);
-  const exemptConversation = candidate.match(/^\/(?:zh-cn|en)\/c\/huawei-exempt\/([0-9a-f-]{36})$/i);
-  if (exemptConversation) return `/${normalizedLocale}/c/huawei-exempt/${exemptConversation[1]}`;
-  const conversation = candidate.match(/^\/(?:zh-cn|en)\/c\/([0-9a-f-]{36})$/i);
-  if (conversation) return `/${normalizedLocale}/c/${conversation[1]}`;
+  const parts = candidate.split("/").filter(Boolean);
+  const candidateLocale = normalizeSupportedLocale(parts[0]);
+  const rest = candidateLocale ? parts.slice(1) : parts;
+  if (rest[0] === "c" && rest[1] === "huawei-exempt" && /^[0-9a-f-]{36}$/i.test(rest[2] || "")) {
+    return `/${normalizedLocale}/c/huawei-exempt/${rest[2]}`;
+  }
+  if (rest[0] === "c" && /^[0-9a-f-]{36}$/i.test(rest[1] || "")) {
+    return `/${normalizedLocale}/c/${rest[1]}`;
+  }
   return `/${normalizedLocale}`;
 }
 
