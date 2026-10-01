@@ -1,25 +1,100 @@
 import { osHubGrid, osHubIcon } from "./ui-primitives.js";
 import { dashboardIcon } from "./ui-dashboard.js";
 
-export function settingsGeneralContent(zh) {
-  const prefix = zh ? "/zh-cn" : "/en";
-  const rows = zh ? [
-    ["主题与外观", "系统、浅色、深色与强调色", `${prefix}/settings/appearance`, "appearance"],
-    ["语言", "中文或 English", `${prefix}/settings/language`, "language"],
-    ["账户与安全", "设备和登录记录", `${prefix}/settings/security`, "shield"]
-  ] : [
-    ["Theme & Appearance", "System, light, dark, and accent", `${prefix}/settings/appearance`, "appearance"],
-    ["Language", "Chinese or English", `${prefix}/settings/language`, "language"],
-    ["Account & Security", "Devices and sign-ins", `${prefix}/settings/security`, "shield"]
+const SETTINGS_COMMON = {
+  "en-us": {
+    general:"General", common:"Common Settings", commonLead:"Appearance, language, and account security.", more:"More Settings", moreLead:"More controls will appear as their services become available.",
+    appearance:["Theme & Appearance","System, light, dark, and accent"], language:["Language","11 display languages"], security:["Account & Security","Devices and sign-ins"],
+    securitySections:["Current Device","Signed-in Devices","Sign-in History","Security Alerts"],
+    notifications:["Notifications","Notification methods, reminders, and in-app message preferences will be managed here. Notification delivery is not connected yet."],
+    integrations:["Integrations","Manage connected third-party services and account authorizations here. User-level integrations are not available yet."]
+  },
+  "zh-cn": {
+    general:"通用", common:"常用设置", commonLead:"外观、语言和账户安全。", more:"更多设置", moreLead:"对应服务接入后会显示在这里。",
+    appearance:["主题与外观","系统、浅色、深色与强调色"], language:["语言","11 种显示语言"], security:["账户与安全","设备和登录记录"],
+    securitySections:["当前设备","登录设备","登录历史","安全提醒"],
+    notifications:["通知","通知方式、提醒和站内消息偏好将在这里统一管理。当前尚未接入通知服务。"],
+    integrations:["第三方集成","这里将用于管理可连接的第三方服务与账号授权。当前尚未开放用户级集成配置。"]
+  },
+  "zh-tw": {
+    general:"一般", common:"常用設定", commonLead:"外觀、語言與帳號安全性。", more:"更多設定", moreLead:"相關服務接入後會顯示在這裡。",
+    appearance:["主題與外觀","系統、淺色、深色與強調色"], language:["語言","11 種顯示語言"], security:["帳號與安全性","裝置與登入記錄"],
+    securitySections:["目前裝置","已登入裝置","登入記錄","安全性提醒"],
+    notifications:["通知","通知方式、提醒與站內訊息偏好將集中在這裡管理。目前尚未接入通知服務。"],
+    integrations:["第三方整合","在這裡管理可連接的第三方服務與帳號授權。目前尚未提供使用者層級的整合設定。"]
+  },
+  "ja-jp": {
+    general:"一般", common:"よく使う設定", commonLead:"外観、言語、アカウントセキュリティ。", more:"その他の設定", moreLead:"対応するサービスが利用可能になると、ここに追加されます。",
+    appearance:["テーマと外観","システム、ライト、ダーク、アクセント"], language:["言語","11 の表示言語"], security:["アカウントとセキュリティ","デバイスとサインイン履歴"],
+    securitySections:["現在のデバイス","サインイン中のデバイス","サインイン履歴","セキュリティ通知"],
+    notifications:["通知","通知方法、リマインダー、アプリ内メッセージの設定をここで管理します。通知配信はまだ接続されていません。"],
+    integrations:["連携","接続する外部サービスとアカウント認証を管理します。ユーザー向け連携設定はまだ利用できません。"]
+  },
+  "ko-kr": {
+    general:"일반", common:"주요 설정", commonLead:"모양, 언어 및 계정 보안.", more:"추가 설정", moreLead:"관련 서비스가 연결되면 여기에 표시됩니다.",
+    appearance:["테마 및 모양","시스템, 라이트, 다크 및 강조 색상"], language:["언어","11개 표시 언어"], security:["계정 및 보안","기기 및 로그인 기록"],
+    securitySections:["현재 기기","로그인된 기기","로그인 기록","보안 알림"],
+    notifications:["알림","알림 방식, 미리 알림 및 앱 내 메시지 환경설정을 여기에서 관리합니다. 알림 전송 서비스는 아직 연결되지 않았습니다."],
+    integrations:["연동","연결 가능한 외부 서비스와 계정 권한을 관리합니다. 사용자 수준 연동 설정은 아직 사용할 수 없습니다."]
+  },
+  "fr-fr": {
+    general:"Général", common:"Réglages courants", commonLead:"Apparence, langue et sécurité du compte.", more:"Autres réglages", moreLead:"D’autres contrôles apparaîtront à mesure que les services seront disponibles.",
+    appearance:["Thème et apparence","Système, clair, sombre et accent"], language:["Langue","11 langues d’affichage"], security:["Compte et sécurité","Appareils et connexions"],
+    securitySections:["Appareil actuel","Appareils connectés","Historique des connexions","Alertes de sécurité"],
+    notifications:["Notifications","Les modes de notification, rappels et messages intégrés seront gérés ici. Le service de notification n’est pas encore connecté."],
+    integrations:["Intégrations","Gérez ici les services tiers connectés et les autorisations de compte. Les intégrations utilisateur ne sont pas encore disponibles."]
+  },
+  "es-es": {
+    general:"General", common:"Ajustes habituales", commonLead:"Apariencia, idioma y seguridad de la cuenta.", more:"Más ajustes", moreLead:"Aparecerán más controles a medida que estén disponibles sus servicios.",
+    appearance:["Tema y apariencia","Sistema, claro, oscuro y acento"], language:["Idioma","11 idiomas de visualización"], security:["Cuenta y seguridad","Dispositivos e inicios de sesión"],
+    securitySections:["Dispositivo actual","Dispositivos con sesión iniciada","Historial de inicio de sesión","Alertas de seguridad"],
+    notifications:["Notificaciones","Aquí se gestionarán los métodos de notificación, recordatorios y mensajes internos. El servicio de notificaciones aún no está conectado."],
+    integrations:["Integraciones","Gestiona servicios externos conectados y autorizaciones de cuenta. Las integraciones a nivel de usuario aún no están disponibles."]
+  },
+  "el-gr": {
+    general:"Γενικά", common:"Συχνές ρυθμίσεις", commonLead:"Εμφάνιση, γλώσσα και ασφάλεια λογαριασμού.", more:"Περισσότερες ρυθμίσεις", moreLead:"Περισσότερα στοιχεία ελέγχου θα εμφανιστούν καθώς γίνονται διαθέσιμες οι αντίστοιχες υπηρεσίες.",
+    appearance:["Θέμα και εμφάνιση","Σύστημα, φωτεινό, σκοτεινό και έμφαση"], language:["Γλώσσα","11 γλώσσες εμφάνισης"], security:["Λογαριασμός και ασφάλεια","Συσκευές και συνδέσεις"],
+    securitySections:["Τρέχουσα συσκευή","Συνδεδεμένες συσκευές","Ιστορικό σύνδεσης","Ειδοποιήσεις ασφαλείας"],
+    notifications:["Ειδοποιήσεις","Οι μέθοδοι ειδοποιήσεων, οι υπενθυμίσεις και τα μηνύματα εφαρμογής θα διαχειρίζονται εδώ. Η αποστολή ειδοποιήσεων δεν έχει ακόμη συνδεθεί."],
+    integrations:["Ενσωματώσεις","Διαχειριστείτε συνδεδεμένες εξωτερικές υπηρεσίες και εξουσιοδοτήσεις λογαριασμού. Οι ενσωματώσεις χρήστη δεν είναι ακόμη διαθέσιμες."]
+  },
+  "ar-sa": {
+    general:"عام", common:"الإعدادات الشائعة", commonLead:"المظهر واللغة وأمان الحساب.", more:"إعدادات إضافية", moreLead:"ستظهر عناصر تحكم إضافية عند توفر الخدمات المرتبطة بها.",
+    appearance:["السمة والمظهر","النظام والفاتح والداكن ولون التمييز"], language:["اللغة","11 لغة عرض"], security:["الحساب والأمان","الأجهزة وعمليات تسجيل الدخول"],
+    securitySections:["الجهاز الحالي","الأجهزة المسجّل دخولها","سجل تسجيل الدخول","تنبيهات الأمان"],
+    notifications:["الإشعارات","ستتم إدارة طرق الإشعارات والتذكيرات والرسائل داخل التطبيق هنا. خدمة إرسال الإشعارات غير متصلة بعد."],
+    integrations:["عمليات التكامل","أدِر الخدمات الخارجية المتصلة وتفويضات الحساب هنا. إعدادات التكامل على مستوى المستخدم غير متاحة بعد."]
+  }
+};
+SETTINGS_COMMON["en-gb"]=SETTINGS_COMMON["en-us"]; SETTINGS_COMMON["en-au"]=SETTINGS_COMMON["en-us"];
+
+const APPEARANCE_COPY = {
+  "zh-tw":{title:"主題與外觀",intro:"把 AERTEX 調整成你喜歡的樣子。模式與強調色會即時預覽，並儲存在目前瀏覽器。",modeTitle:"外觀模式",modeHint:"選擇跟隨裝置，或固定使用淺色 / 深色。",system:"系統",systemHint:"預設 · 跟隨裝置外觀",light:"淺色",lightHint:"永遠使用淺色",dark:"深色",darkHint:"永遠使用深色",accentTitle:"強調色",accentHint:"用於互動焦點、選取狀態與品牌點綴，不會將整個介面染色。",preview:"即時預覽",previewSubtitle:"個人工作空間",previewCard:"今日工作",previewMeta:"3 個專案進行中",previewButton:"開啟工作台",current:"目前強調色",saved:"已儲存在目前瀏覽器"},
+  "ja-jp":{title:"テーマと外観",intro:"AERTEX の見た目を好みに合わせて調整できます。モードとアクセントカラーはすぐにプレビューされ、このブラウザに保存されます。",modeTitle:"外観モード",modeHint:"デバイスに合わせるか、ライト / ダークを固定します。",system:"システム",systemHint:"デフォルト · デバイスの外観に従う",light:"ライト",lightHint:"常にライトを使用",dark:"ダーク",darkHint:"常にダークを使用",accentTitle:"アクセントカラー",accentHint:"フォーカス、選択状態、控えめなブランドアクセントに使用します。",preview:"ライブプレビュー",previewSubtitle:"パーソナルワークスペース",previewCard:"今日の作業",previewMeta:"3 件のプロジェクトが進行中",previewButton:"ワークベンチを開く",current:"現在のアクセント",saved:"このブラウザに保存済み"},
+  "ko-kr":{title:"테마 및 모양",intro:"AERTEX를 원하는 모습으로 조정하세요. 모드와 강조 색상은 즉시 미리보기되며 현재 브라우저에 저장됩니다.",modeTitle:"모양 모드",modeHint:"기기를 따르거나 라이트 / 다크 모드를 고정하세요.",system:"시스템",systemHint:"기본값 · 기기 모양 따르기",light:"라이트",lightHint:"항상 라이트 사용",dark:"다크",darkHint:"항상 다크 사용",accentTitle:"강조 색상",accentHint:"상호작용 포커스, 선택 상태 및 절제된 브랜드 강조에 사용됩니다.",preview:"실시간 미리보기",previewSubtitle:"개인 작업 공간",previewCard:"오늘의 작업",previewMeta:"3개 프로젝트 진행 중",previewButton:"워크벤치 열기",current:"현재 강조 색상",saved:"현재 브라우저에 저장됨"},
+  "fr-fr":{title:"Thème et apparence",intro:"Adaptez AERTEX à vos préférences. Les changements de mode et de couleur d’accent sont prévisualisés immédiatement et enregistrés dans ce navigateur.",modeTitle:"Mode d’apparence",modeHint:"Suivez l’appareil ou choisissez un mode clair / sombre fixe.",system:"Système",systemHint:"Par défaut · suit l’apparence de l’appareil",light:"Clair",lightHint:"Toujours utiliser le mode clair",dark:"Sombre",darkHint:"Toujours utiliser le mode sombre",accentTitle:"Couleur d’accent",accentHint:"Utilisée pour le focus, les états sélectionnés et des touches de marque discrètes.",preview:"Aperçu en direct",previewSubtitle:"Espace personnel",previewCard:"Travail du jour",previewMeta:"3 projets en cours",previewButton:"Ouvrir l’atelier",current:"Accent actuel",saved:"Enregistré dans ce navigateur"},
+  "es-es":{title:"Tema y apariencia",intro:"Haz que AERTEX tenga el aspecto que prefieras. Los cambios de modo y color de acento se previsualizan al instante y se guardan en este navegador.",modeTitle:"Modo de apariencia",modeHint:"Sigue el dispositivo o fija el modo claro / oscuro.",system:"Sistema",systemHint:"Predeterminado · seguir apariencia del dispositivo",light:"Claro",lightHint:"Usar siempre claro",dark:"Oscuro",darkHint:"Usar siempre oscuro",accentTitle:"Color de acento",accentHint:"Se usa para el foco, estados seleccionados y detalles de marca discretos.",preview:"Vista previa en vivo",previewSubtitle:"Espacio personal",previewCard:"Trabajo de hoy",previewMeta:"3 proyectos en curso",previewButton:"Abrir mesa de trabajo",current:"Acento actual",saved:"Guardado en este navegador"},
+  "el-gr":{title:"Θέμα και εμφάνιση",intro:"Προσαρμόστε το AERTEX στις προτιμήσεις σας. Οι αλλαγές λειτουργίας και χρώματος έμφασης προβάλλονται άμεσα και αποθηκεύονται σε αυτό το πρόγραμμα περιήγησης.",modeTitle:"Λειτουργία εμφάνισης",modeHint:"Ακολουθήστε τη συσκευή ή επιλέξτε σταθερό φωτεινό / σκοτεινό.",system:"Σύστημα",systemHint:"Προεπιλογή · ακολουθεί την εμφάνιση της συσκευής",light:"Φωτεινό",lightHint:"Πάντα φωτεινό",dark:"Σκοτεινό",darkHint:"Πάντα σκοτεινό",accentTitle:"Χρώμα έμφασης",accentHint:"Χρησιμοποιείται για εστίαση, επιλεγμένες καταστάσεις και διακριτικές πινελιές επωνυμίας.",preview:"Ζωντανή προεπισκόπηση",previewSubtitle:"Προσωπικός χώρος",previewCard:"Σημερινή εργασία",previewMeta:"3 έργα σε εξέλιξη",previewButton:"Άνοιγμα πάγκου εργασίας",current:"Τρέχουσα έμφαση",saved:"Αποθηκεύτηκε σε αυτό το πρόγραμμα περιήγησης"},
+  "ar-sa":{title:"السمة والمظهر",intro:"اضبط AERTEX بالشكل الذي تفضله. تتم معاينة تغييرات الوضع ولون التمييز فورًا وتُحفظ في هذا المتصفح.",modeTitle:"وضع المظهر",modeHint:"اتبع إعداد الجهاز أو ثبّت المظهر الفاتح / الداكن.",system:"النظام",systemHint:"الافتراضي · اتبع مظهر الجهاز",light:"فاتح",lightHint:"استخدم الفاتح دائمًا",dark:"داكن",darkHint:"استخدم الداكن دائمًا",accentTitle:"لون التمييز",accentHint:"يُستخدم للتركيز وحالات التحديد ولمسات العلامة التجارية المحدودة.",preview:"معاينة مباشرة",previewSubtitle:"مساحة العمل الشخصية",previewCard:"عمل اليوم",previewMeta:"3 مشروعات قيد التنفيذ",previewButton:"فتح منضدة العمل",current:"لون التمييز الحالي",saved:"تم الحفظ في هذا المتصفح"}
+};
+
+export function settingsGeneralContent(zh, locale = "") {
+  const activeLocale=locale||(zh?"zh-cn":"en-us");
+  const prefix="/"+activeLocale;
+  const lc=SETTINGS_COMMON[activeLocale]||SETTINGS_COMMON["en-us"];
+  const rows = [
+    [lc.appearance[0],lc.appearance[1],`${prefix}/settings/appearance`,"appearance"],
+    [lc.language[0],lc.language[1],`${prefix}/settings/language`,"language"],
+    [lc.security[0],lc.security[1],`${prefix}/settings/security`,"shield"]
   ];
   return `
     <section class="os-card settings-general-card">
       <div class="settings-general-heading">
         ${osHubIcon("general")}
         <div>
-          <small>${zh ? "通用" : "General"}</small>
-          <h2>${zh ? "常用设置" : "Common Settings"}</h2>
-          <p>${zh ? "外观、语言和账户安全。" : "Appearance, language, and account security."}</p>
+          <small>${lc.general}</small>
+          <h2>${lc.common}</h2>
+          <p>${lc.commonLead}</p>
         </div>
       </div>
       <div class="settings-general-list">
@@ -27,35 +102,37 @@ export function settingsGeneralContent(zh) {
       </div>
     </section>
     <section class="os-card settings-general-note">
-      <strong>${zh ? "更多设置" : "More Settings"}</strong>
-      <p>${zh ? "对应服务接入后会显示在这里。" : "More controls will appear as their services become available."}</p>
+      <strong>${lc.more}</strong>
+      <p>${lc.moreLead}</p>
     </section>
   `;
 }
 
-export function securityAuditContent(zh) {
+export function securityAuditContent(zh, locale = "") {
+  const lc=SETTINGS_COMMON[locale]||SETTINGS_COMMON[zh?"zh-cn":"en-us"];
+  const sec=lc.securitySections;
   return `
     <section class="os-card audit-section">
-      <h2>${zh ? "当前设备" : "Current Device"}</h2>
+      <h2>${sec[0]}</h2>
       <div id="audit-current-device" class="audit-current">...</div>
     </section>
     <section class="os-card audit-section">
-      <h2>${zh ? "登录设备" : "Signed-in Devices"}</h2>
+      <h2>${sec[1]}</h2>
       <div id="audit-device-list" class="audit-devices"></div>
     </section>
     <section class="os-card audit-section">
-      <h2>${zh ? "登录历史" : "Sign-in History"}</h2>
+      <h2>${sec[2]}</h2>
       <div id="audit-login-timeline" class="audit-timeline"></div>
     </section>
     <section class="os-card audit-section">
-      <h2>${zh ? "安全提醒" : "Security Alerts"}</h2>
+      <h2>${sec[3]}</h2>
       <div id="audit-risk-alerts" class="audit-alerts"></div>
     </section>
   `;
 }
 
-export function appearanceSettingsContent(zh) {
-  const copy = zh ? {
+export function appearanceSettingsContent(zh, locale = "") {
+  let copy = zh ? {
     eyebrow:"THEME STUDIO",
     title:"主题与外观",
     intro:"把 AERTEX 调成你喜欢的样子。模式与强调色会即时预览并保存在当前浏览器。",
@@ -108,6 +185,7 @@ export function appearanceSettingsContent(zh) {
       coral:"Coral",rose:"Rose",magenta:"Magenta",violet:"Violet",graphite:"Graphite"
     }
   };
+  if (APPEARANCE_COPY[locale]) copy = { ...copy, ...APPEARANCE_COPY[locale] };
   const colors = [
     ["sapphire","#4964d8"],["aqua","#2a9d8f"],["jade","#3a9d72"],["lime","#86a93b"],["amber","#d49a2a"],
     ["coral","#e26d5a"],["rose","#d95686"],["magenta","#b755c7"],["violet","#7559d9"],["graphite","#5a5d64"]
