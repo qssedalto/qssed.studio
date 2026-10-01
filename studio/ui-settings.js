@@ -62,7 +62,7 @@ export function appearanceSettingsContent(zh) {
     modeTitle:"外观模式",
     modeHint:"选择跟随设备，或固定使用浅色 / 深色。",
     system:"系统",
-    systemHint:"跟随设备外观",
+    systemHint:"默认 · 跟随设备外观",
     light:"浅色",
     lightHint:"始终使用浅色",
     dark:"深色",
@@ -88,7 +88,7 @@ export function appearanceSettingsContent(zh) {
     modeTitle:"Appearance mode",
     modeHint:"Follow your device, or keep a fixed light / dark appearance.",
     system:"System",
-    systemHint:"Follow device appearance",
+    systemHint:"Default · Follow device appearance",
     light:"Light",
     lightHint:"Always use light",
     dark:"Dark",
@@ -145,7 +145,7 @@ export function appearanceSettingsContent(zh) {
       .theme-mode-visual:before{content:"";position:absolute;inset:10px 42% 10px 9px;border-radius:9px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
       .theme-mode-visual:after{content:"";position:absolute;right:10px;top:11px;width:28%;height:10px;border-radius:5px;background:#d7d8dc;box-shadow:0 18px 0 #e1e2e5,0 36px 0 #e1e2e5}
       .theme-mode[data-mode="dark"] .theme-mode-visual{background:#111316}.theme-mode[data-mode="dark"] .theme-mode-visual:before{background:#202327;box-shadow:0 0 0 1px rgba(255,255,255,.08)}.theme-mode[data-mode="dark"] .theme-mode-visual:after{background:#5a5d64;box-shadow:0 18px 0 #34373b,0 36px 0 #34373b}
-      .theme-mode[data-mode="system"] .theme-mode-visual{background:linear-gradient(90deg,#f1f2f4 0 50%,#111316 50%)}.theme-mode[data-mode="system"] .theme-mode-visual:before{background:linear-gradient(90deg,#fff 0 50%,#202327 50%);box-shadow:none}
+      .theme-mode[data-mode="system"] .theme-mode-visual{background:linear-gradient(90deg,#f1f2f4 0 50%,#111316 50%)}.theme-mode[data-mode="system"] .theme-mode-visual:before{left:9px;right:auto;top:10px;bottom:10px;width:calc(50% - 13px);border-radius:9px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)}.theme-mode[data-mode="system"] .theme-mode-visual:after{right:10px;background:#5a5d64;box-shadow:0 18px 0 #34373b,0 36px 0 #34373b}
       .theme-mode-copy{display:grid;gap:3px}.theme-mode-copy strong{font-size:14px}.theme-mode-copy span{color:var(--muted);font-size:11px;line-height:1.4}
       .theme-mode.is-selected{border-color:color-mix(in srgb,var(--primary) 52%,var(--border));background:color-mix(in srgb,var(--primary) 8%,var(--surface-soft));box-shadow:0 10px 24px color-mix(in srgb,var(--primary) 10%,transparent)}
       .theme-mode.is-selected .theme-mode-copy strong{color:var(--primary)}

@@ -150,6 +150,10 @@ assert(chatSource.includes("input_tokens: null"), "User ai_messages rows must ex
 assert(chatSource.includes("output_tokens: null"), "User ai_messages rows must explicitly include nullable token fields.");
 assert(uiPage.includes('storageKey: AERTEX_SUPABASE_STORAGE_KEY'), "Browser Supabase auth must use the versioned AERTEX storage key.");
 assert(uiPage.includes('sessionStorage.setItem(key, value)'), "Browser Supabase auth must fall back when localStorage persistence is unavailable.");
+assert(uiPage.includes('return "system";'), "Shared theme runtime must default to System mode.");
+assert(!uiPage.includes('if (legacy === "light" || legacy === "dark") return legacy;'), "Legacy resolved light/dark values must not override the default System mode.");
+assert(uiSettings.includes('systemHint:"默认 · 跟随设备外观"'), "Theme Studio must label System as the default appearance mode.");
+assert(uiSettings.includes('.theme-mode[data-mode="system"] .theme-mode-visual:after{right:10px;background:#5a5d64'), "System preview must render dark controls on its dark half instead of inheriting light controls.");
 assert(uiShell.includes('fetch("/api/account/security/summary"'), "Authenticated UI must trust the server session before redirecting back to Auth.");
 assert(uiShell.includes("serverOnly: true"), "Authenticated UI must support a server-session-only recovery path.");
 assert(uiShell.includes("aiSettingsContent(zh)"), "Studio /settings/ai must render the live AI settings UI.");

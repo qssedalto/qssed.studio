@@ -39,8 +39,6 @@ export function baseHead(title) {
           try {
             const savedMode = localStorage.getItem(MODE_KEY);
             if (VALID_MODES.has(savedMode)) return savedMode;
-            const legacy = localStorage.getItem(RESOLVED_KEY) || readCookieTheme();
-            if (legacy === "light" || legacy === "dark") return legacy;
           } catch {}
           return "system";
         }
