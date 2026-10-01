@@ -114,7 +114,7 @@ export function appearanceSettingsContent(zh) {
   const accentButtons = colors.map(([key,value]) =>
     '<button class="theme-accent" type="button" data-accent="'+key+'" style="--swatch:'+value+'"><span class="theme-accent-dot"></span><span>'+copy.colors[key]+'</span></button>'
   ).join("");
-  return \`
+  return `
     <style>
       body.os-shell:has(.theme-studio){
         background:
@@ -122,7 +122,7 @@ export function appearanceSettingsContent(zh) {
           radial-gradient(760px 520px at 4% 104%,color-mix(in srgb,var(--primary) 7%,transparent),transparent 72%),
           var(--bg)!important;
       }
-      body.os-shell:has(.theme-studio) .os-hero{margin-bottom:18px!important}
+      body.os-shell:has(.theme-studio) .os-hero{display:none!important}
       body.os-shell:has(.theme-studio) .os-hero h1{font-size:clamp(42px,5vw,66px)!important}
       .theme-studio{display:grid;gap:18px}
       .theme-studio-intro{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:22px;align-items:end;min-height:190px;padding:clamp(24px,3.2vw,38px);border:1px solid var(--border);border-radius:28px;background:linear-gradient(145deg,color-mix(in srgb,var(--card) 98%,#fff 2%),color-mix(in srgb,var(--surface) 93%,var(--primary) 4%));box-shadow:0 18px 50px rgba(0,0,0,.07),inset 0 1px 0 color-mix(in srgb,#fff 20%,transparent)}
@@ -221,7 +221,7 @@ export function appearanceSettingsContent(zh) {
         window.addEventListener("aertex-themechange",refresh);refresh();
       })();
     </script>
-  \`;
+  `;
 }
 
 export function languageSettingsContent(zh) {
@@ -438,16 +438,16 @@ export function settingsHubContent(zh) {
     notifications:["Notifications","Alerts and in-app messages"],
     integrations:["Integrations","External services and authorization"]
   };
-  const row = (item, href, icon, status = "") => \`
+  const row = (item, href, icon, status = "") => `
     <a class="settings-stage-row" href="\${href}">
       <span class="settings-stage-row-icon">\${osHubIcon(icon)}</span>
       <span class="settings-stage-row-copy"><strong>\${item[0]}</strong><small>\${item[1]}</small></span>
-      \${status ? \`<em>\${status}</em>\` : ""}
+      \${status ? `<em>\${status}</em>` : ""}
       <b aria-hidden="true">›</b>
-    </a>\`;
-  return \`
+    </a>`;
+  return `
     <style>
-      .settings-stage{display:grid;gap:18px}
+      body.os-shell:has(.settings-stage) .os-hero{display:none!important}\n      .settings-stage{display:grid;gap:18px}
       .settings-stage-hero{
         position:relative;isolation:isolate;overflow:hidden;
         display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:clamp(24px,4vw,56px);align-items:end;
@@ -515,7 +515,7 @@ export function settingsHubContent(zh) {
         </section>
       </div>
     </section>
-  \`;
+  `;
 }
 
 export function settingsFallbackContent(zh) {
