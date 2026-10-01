@@ -582,7 +582,7 @@ function renderCompactMainMenu(copy, productLinks = {}) {
     '<span class="compact-menu-card-copy"><strong>' + item.title + '</strong><small>' + item.description + '</small></span>' +
     '<b aria-hidden="true">↗</b></a>';
 
-  return \`
+  return `
     <section class="compact-main-menu" aria-label="${zh ? "主菜单" : "Main menu"}">
       <header class="compact-menu-hero">
         <small>AERTEX · MENU</small>
@@ -590,13 +590,13 @@ function renderCompactMainMenu(copy, productLinks = {}) {
         <p>${zh ? "先选择要去的区域，进入后再处理具体内容。" : "Choose a destination first, then work with the details inside it."}</p>
       </header>
       <div class="compact-menu-grid">${mainItems.map(card).join("")}</div>
-      ${products.length ? \`
+      ${products.length ? `
         <section class="compact-menu-products">
           <div class="compact-menu-section-label">${zh ? "独立产品" : "Products"}</div>
           <div class="compact-menu-product-grid">${products.map(card).join("")}</div>
-        </section>\` : ""}
+        </section>` : ""}
     </section>
-  \`;
+  `;
 }
 
 export function renderOsNav(copy, activeSection, currentPath = "", productLinks = {}) {
