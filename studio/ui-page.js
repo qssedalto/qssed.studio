@@ -330,7 +330,7 @@ export function baseHead(title) {
         line-height:1;
         transition:background .12s ease,transform 100ms ease-out;
       }
-      .language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}.language-menu{position:relative}.language-menu summary{list-style:none;cursor:pointer;width:auto;min-width:44px;padding:0 10px}.language-menu summary::-webkit-details-marker{display:none}.language-menu-popover{position:absolute;top:calc(100% + 8px);right:0;width:230px;max-height:min(70vh,480px);overflow:auto;padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--surface-strong);box-shadow:0 18px 48px rgba(0,0,0,.18);z-index:2147483001}.language-menu-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;border-radius:10px;color:var(--text);text-decoration:none;font-size:13px}.language-menu-item:hover,.language-menu-item[aria-current="true"]{background:var(--glass-heavy)}.language-menu-item small{color:var(--muted);font-size:10px;text-transform:uppercase}
+      .language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}.language-menu{position:relative}.language-menu summary{list-style:none;cursor:pointer;width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;padding:0!important;border-radius:50%!important;display:inline-flex!important;align-items:center;justify-content:center}.language-menu summary::-webkit-details-marker{display:none}.language-menu-popover{position:absolute;top:calc(100% + 8px);right:0;width:230px;max-height:min(70vh,480px);overflow:auto;padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--surface-strong);box-shadow:0 18px 48px rgba(0,0,0,.18);z-index:2147483001}.language-menu-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;border-radius:10px;color:var(--text);text-decoration:none;font-size:13px}.language-menu-item:hover,.language-menu-item[aria-current="true"]{background:var(--glass-heavy)}.language-menu-item small{color:var(--muted);font-size:10px;text-transform:uppercase}
       .theme-toggle:hover,.language-toggle:hover{background:color-mix(in srgb,var(--glass-heavy) 82%,var(--surface-strong) 18%);filter:none;transform:none}
       .theme-toggle:active,.language-toggle:active{transform:scale(.92)}
       .theme-toggle .theme-sun,:root[data-theme="light"] .theme-toggle .theme-moon{display:none}
@@ -710,7 +710,8 @@ export function themeToggle() {
 
 export function languageToggle(links, t) {
   const activeLocale = links.activeLocale || (t === TEXT.zh ? "zh-cn" : "en-us");
-  const label = LOCALE_META[activeLocale]?.nativeName || activeLocale;
+  const meta = LOCALE_META[activeLocale] || {};
+  const label = meta.shortName || meta.nativeName || activeLocale;
   const items = Object.entries(links.localeLinks || {}).map(([code, href]) => {
     const meta = LOCALE_META[code];
     if (!meta) return "";
