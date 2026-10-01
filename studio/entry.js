@@ -33,6 +33,7 @@ import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
 import { adminOriginForRequest, authOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
+import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
 
 function safeLocalNext(value) {
   const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
@@ -112,7 +113,8 @@ function wishRedirect(request, locale, pathname) {
   if (!destination) return null;
   const source = new URL(request.url);
   const target = new URL(request.url);
-  target.pathname = `${locale === "zh" ? "/zh-cn" : "/en"}${destination}`;
+  const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
+  target.pathname = `/${code}${destination}`;
   const name = String(source.searchParams.get("name") || "")
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
@@ -123,56 +125,29 @@ function wishRedirect(request, locale, pathname) {
   return Response.redirect(target.toString(), 302);
 }
 
-function wishesPage(locale = "zh") {
-  const zh = locale === "zh";
-  const lang = zh ? "zh-CN" : "en";
-  const prefix = zh ? "/zh-cn" : "/en";
-  const text = zh ? {
-    title: "祝福链接 · AERTEX",
-    eyebrow: "AERTEX · WISHES",
-    heading: "把祝福发给想祝福的人。",
-    lead: "选择一个祝福页面。名字可以填写，也可以留空；AERTEX 会生成一条简洁的分享路由，再自动导向对应的祝福。",
-    choose: "选择祝福",
-    birthday: "生日快乐",
-    birthdayNote: "适合生日当天发送。",
-    midAutumn: "中秋快乐",
-    midAutumnNote: "适合中秋节发送。",
-    recipient: "要祝福谁？",
-    optional: "可选",
-    placeholder: "输入名字，也可以留空",
-    share: "分享路由",
-    destination: "实际导向",
-    open: "打开祝福",
-    copy: "复制链接",
-    copied: "已复制",
-    failed: "复制失败，请长按链接复制。",
-    note: "留空时会生成不带 ?name= 的通用祝福链接；填写名字后会自动附加 ?name=xxx。",
-    lang: "EN"
-  } : {
-    title: "Wish Links · AERTEX",
-    eyebrow: "AERTEX · WISHES",
-    heading: "Send a wish to someone.",
-    lead: "Choose a greeting page. A name is optional; AERTEX creates a clean share route and redirects it to the selected greeting.",
-    choose: "Choose a wish",
-    birthday: "Happy Birthday",
-    birthdayNote: "For birthdays.",
-    midAutumn: "Happy Mid-Autumn Festival",
-    midAutumnNote: "For the Mid-Autumn Festival.",
-    recipient: "Who is this for?",
-    optional: "Optional",
-    placeholder: "Enter a name or leave it blank",
-    share: "Share route",
-    destination: "Destination",
-    open: "Open wish",
-    copy: "Copy link",
-    copied: "Copied",
-    failed: "Copy failed. Press and hold the link to copy it.",
-    note: "Leave the name blank for a generic link. Adding a name automatically appends ?name=xxx.",
-    lang: "ZH"
-  };
+const WISHES_COPY = {
+  "en-us":{title:"Wish Links · AERTEX",heading:"Send a wish to someone.",lead:"Choose a greeting page. A name is optional; AERTEX creates a clean share route and redirects it to the selected greeting.",choose:"Choose a wish",birthday:"Happy Birthday",birthdayNote:"For birthdays.",midAutumn:"Happy Mid-Autumn Festival",midAutumnNote:"For the Mid-Autumn Festival.",recipient:"Who is this for?",optional:"Optional",placeholder:"Enter a name or leave it blank",share:"Share route",destination:"Destination",open:"Open wish",copy:"Copy link",copied:"Copied",failed:"Copy failed. Press and hold the link to copy it.",note:"Leave the name blank for a generic link. Adding a name automatically appends ?name=xxx."},
+  "zh-cn":{title:"祝福链接 · AERTEX",heading:"把祝福发给想祝福的人。",lead:"选择一个祝福页面。名字可以填写，也可以留空；AERTEX 会生成一条简洁的分享路由，再自动导向对应的祝福。",choose:"选择祝福",birthday:"生日快乐",birthdayNote:"适合生日当天发送。",midAutumn:"中秋快乐",midAutumnNote:"适合中秋节发送。",recipient:"要祝福谁？",optional:"可选",placeholder:"输入名字，也可以留空",share:"分享路由",destination:"实际导向",open:"打开祝福",copy:"复制链接",copied:"已复制",failed:"复制失败，请长按链接复制。",note:"留空时会生成不带 ?name= 的通用祝福链接；填写名字后会自动附加 ?name=xxx。"},
+  "zh-tw":{title:"祝福連結 · AERTEX",heading:"把祝福送給想祝福的人。",lead:"選擇一個祝福頁面。姓名可填也可留空；AERTEX 會產生簡潔的分享路由，再導向對應的祝福。",choose:"選擇祝福",birthday:"生日快樂",birthdayNote:"適合生日當天傳送。",midAutumn:"中秋快樂",midAutumnNote:"適合中秋節傳送。",recipient:"要祝福誰？",optional:"選填",placeholder:"輸入名字，也可以留空",share:"分享路由",destination:"實際導向",open:"開啟祝福",copy:"複製連結",copied:"已複製",failed:"複製失敗，請長按連結複製。",note:"留空時會產生不含 ?name= 的通用祝福連結；填寫姓名後會自動加入 ?name=xxx。"},
+  "ja-jp":{title:"グリーティングリンク · AERTEX",heading:"大切な人にメッセージを贈りましょう。",lead:"グリーティングページを選びます。名前は任意です。AERTEX がシンプルな共有ルートを作成し、選んだページへ案内します。",choose:"グリーティングを選択",birthday:"お誕生日おめでとう",birthdayNote:"誕生日に送るメッセージ。",midAutumn:"中秋節おめでとう",midAutumnNote:"中秋節に送るメッセージ。",recipient:"誰に贈りますか？",optional:"任意",placeholder:"名前を入力するか空欄のままにします",share:"共有ルート",destination:"移動先",open:"グリーティングを開く",copy:"リンクをコピー",copied:"コピーしました",failed:"コピーできませんでした。リンクを長押ししてコピーしてください。",note:"名前を空欄にすると汎用リンクになります。名前を入れると ?name=xxx が自動で追加されます。"},
+  "ko-kr":{title:"축하 링크 · AERTEX",heading:"축하하고 싶은 사람에게 마음을 보내세요.",lead:"축하 페이지를 선택하세요. 이름은 선택 사항이며 AERTEX가 간단한 공유 경로를 만들어 해당 축하 페이지로 연결합니다.",choose:"축하 선택",birthday:"생일 축하합니다",birthdayNote:"생일에 보내기 좋습니다.",midAutumn:"즐거운 중추절",midAutumnNote:"중추절에 보내기 좋습니다.",recipient:"누구에게 보낼까요?",optional:"선택",placeholder:"이름을 입력하거나 비워 두세요",share:"공유 경로",destination:"이동 대상",open:"축하 열기",copy:"링크 복사",copied:"복사됨",failed:"복사하지 못했습니다. 링크를 길게 눌러 복사하세요.",note:"이름을 비워 두면 일반 링크를 만들고, 이름을 입력하면 ?name=xxx가 자동으로 추가됩니다."},
+  "fr-fr":{title:"Liens de vœux · AERTEX",heading:"Envoyez un vœu à quelqu’un.",lead:"Choisissez une page de vœux. Le nom est facultatif ; AERTEX crée un lien de partage simple puis redirige vers la page choisie.",choose:"Choisir un vœu",birthday:"Joyeux anniversaire",birthdayNote:"À envoyer pour un anniversaire.",midAutumn:"Bonne fête de la mi-automne",midAutumnNote:"À envoyer pour la fête de la mi-automne.",recipient:"Pour qui ?",optional:"Facultatif",placeholder:"Saisissez un nom ou laissez vide",share:"Lien de partage",destination:"Destination",open:"Ouvrir le vœu",copy:"Copier le lien",copied:"Copié",failed:"Échec de la copie. Maintenez le lien pour le copier.",note:"Laissez le nom vide pour un lien générique. Ajouter un nom ajoute automatiquement ?name=xxx."},
+  "es-es":{title:"Enlaces de felicitación · AERTEX",heading:"Envía una felicitación a alguien.",lead:"Elige una página de felicitación. El nombre es opcional; AERTEX crea una ruta sencilla para compartir y redirige a la felicitación seleccionada.",choose:"Elegir felicitación",birthday:"Feliz cumpleaños",birthdayNote:"Para cumpleaños.",midAutumn:"Feliz Festival del Medio Otoño",midAutumnNote:"Para el Festival del Medio Otoño.",recipient:"¿Para quién es?",optional:"Opcional",placeholder:"Escribe un nombre o déjalo vacío",share:"Ruta para compartir",destination:"Destino",open:"Abrir felicitación",copy:"Copiar enlace",copied:"Copiado",failed:"No se pudo copiar. Mantén pulsado el enlace para copiarlo.",note:"Deja el nombre vacío para un enlace genérico. Añadir un nombre agrega automáticamente ?name=xxx."},
+  "el-gr":{title:"Σύνδεσμοι ευχών · AERTEX",heading:"Στείλτε μια ευχή σε κάποιον.",lead:"Επιλέξτε μια σελίδα ευχών. Το όνομα είναι προαιρετικό· το AERTEX δημιουργεί έναν καθαρό σύνδεσμο κοινοποίησης και οδηγεί στην επιλεγμένη ευχή.",choose:"Επιλέξτε ευχή",birthday:"Χρόνια πολλά",birthdayNote:"Για γενέθλια.",midAutumn:"Χαρούμενη Γιορτή του Μεσοφθινοπώρου",midAutumnNote:"Για τη Γιορτή του Μεσοφθινοπώρου.",recipient:"Για ποιον είναι;",optional:"Προαιρετικό",placeholder:"Γράψτε όνομα ή αφήστε κενό",share:"Σύνδεσμος κοινοποίησης",destination:"Προορισμός",open:"Άνοιγμα ευχής",copy:"Αντιγραφή συνδέσμου",copied:"Αντιγράφηκε",failed:"Η αντιγραφή απέτυχε. Πατήστε παρατεταμένα τον σύνδεσμο.",note:"Αφήστε το όνομα κενό για γενικό σύνδεσμο. Με όνομα προστίθεται αυτόματα ?name=xxx."},
+  "ar-sa":{title:"روابط التهاني · AERTEX",heading:"أرسل تهنئة إلى من تريد.",lead:"اختر صفحة تهنئة. الاسم اختياري؛ ينشئ AERTEX رابط مشاركة بسيطًا ثم يوجّه إلى التهنئة المختارة.",choose:"اختر تهنئة",birthday:"عيد ميلاد سعيد",birthdayNote:"مناسبة لأعياد الميلاد.",midAutumn:"مهرجان منتصف الخريف السعيد",midAutumnNote:"مناسبة لمهرجان منتصف الخريف.",recipient:"لمن هذه التهنئة؟",optional:"اختياري",placeholder:"أدخل اسمًا أو اتركه فارغًا",share:"رابط المشاركة",destination:"الوجهة",open:"فتح التهنئة",copy:"نسخ الرابط",copied:"تم النسخ",failed:"تعذر النسخ. اضغط مطولًا على الرابط لنسخه.",note:"اترك الاسم فارغًا لإنشاء رابط عام. عند إضافة اسم يُلحق ?name=xxx تلقائيًا."}
+};
+WISHES_COPY["en-gb"]=WISHES_COPY["en-us"]; WISHES_COPY["en-au"]=WISHES_COPY["en-us"];
+
+function wishesPage(locale = "en-us") {
+  const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
+  const lang = code;
+  const prefix = "/" + code;
+  const text = WISHES_COPY[code] || WISHES_COPY["en-us"];
+  text.eyebrow = "AERTEX · WISHES";
+  const languageOptions = SUPPORTED_LOCALES.map(item => `<option value="${item}"${item===code?" selected":""}>${LOCALE_META[item]?.nativeName || item}</option>`).join("");
 
   return `<!doctype html>
-<html lang="${lang}">
+<html lang="${lang}" dir="${localeDirection(code)}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -199,7 +174,7 @@ function wishesPage(locale = "zh") {
   <main class="shell">
     <div class="topbar">
       <a class="brand" href="${prefix}/dashboard">AERTEX</a>
-      <a class="language-toggle" href="${zh ? "/en/wishes" : "/zh-cn/wishes"}">${text.lang}</a>
+      <select class="language-toggle" id="wishes-language" aria-label="Language">${languageOptions}</select>
     </div>
     <section class="hero">
       <div class="eyebrow">${text.eyebrow}</div>
@@ -299,7 +274,7 @@ export default {
     const legacyTarget = LEGACY_REDIRECTS.get(pathname);
     if (legacyTarget) return localizedRedirect(request, locale, legacyTarget);
 
-    const wishRoute = wishRedirect(request, locale, pathname);
+    const wishRoute = wishRedirect(request, fullLocale, pathname);
     if (wishRoute) return wishRoute;
 
     const t = TEXT[locale];
@@ -349,9 +324,9 @@ export default {
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }
 
-    if (pathname === "/wishes") return localizedPage(wishesPage(locale), locale);
-    if (pathname === "/birthday") return localizedPage(birthdayPage(locale), locale);
-    if (pathname === "/mid-autumn") return localizedPage(midAutumnPage(locale), locale);
+    if (pathname === "/wishes") return localizedPage(wishesPage(fullLocale), locale);
+    if (pathname === "/birthday") return localizedPage(birthdayPage(fullLocale), locale);
+    if (pathname === "/mid-autumn") return localizedPage(midAutumnPage(fullLocale), locale);
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
     if (pathname === "/login") {
       const authUrl = new URL("/login", authOriginForRequest(request));
