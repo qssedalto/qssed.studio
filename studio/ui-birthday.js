@@ -1,45 +1,42 @@
-export function birthdayPage(locale = "zh") {
-  const zh = locale === "zh";
-  const lang = zh ? "zh-CN" : "en";
-  const title = zh ? "生日快乐 · AERTEX" : "Happy Birthday · AERTEX";
-  const headline = zh ? "生日快乐" : "Happy Birthday";
-  const eyebrow = zh ? "AERTEX · BIRTHDAY" : "AERTEX · BIRTHDAY";
-  const subline = zh
-    ? "今天只说一件事：生日快乐。希望接下来这一年，想做的事能慢慢做成，想见的人都有机会见到。"
-     : "Happy birthday. I hope the year ahead gives you more time for the people and things you actually care about.";
-  const action = zh ? "庆祝一下" : "Celebrate";
-  const explore = zh ? "看看后面" : "Keep going";
-  const sectionTitle = zh ? "又长大一岁。" : "One year older.";
-  const sectionCopy = zh
-    ? "没什么大道理。照顾好自己，继续做喜欢的事，也别把所有事情都想得太重。"
-     : "No big speech. Take care of yourself, keep doing what you like, and do not take every little thing too seriously.";
-  const cards = zh
-    ? [
-        ["01", "多一点开心", "能吃好吃的，能睡个好觉，也能常碰上顺心的事。"],
-        ["02", "多一点运气", "重要的时候刚好有答案，想争取的事情也能多一点好结果。"],
-        ["03", "多一点时间", "留给朋友，留给兴趣，也留给什么都不做的时候。"]
-      ]
-    : [
-        ["01", "More good days", "Good food, good sleep, and more ordinary days that simply go your way."],
-        ["02", "More luck", "The right answer at the right time, and a few more things working out in your favor."],
-        ["03", "More time", "For friends, for hobbies, and for doing absolutely nothing when you need it."]
-      ];
-  const momentTitle = zh ? "今天就是你的日子。" : "Today is yours.";
-  const momentCopy = zh
-    ? "这一页没有什么特别任务。记住今天，收下祝福，然后去好好过生日。"
-     : "Nothing complicated here. Remember the date, take the good wishes, and go enjoy your birthday.";
-  const wishTitle = zh ? "许个愿吧。" : "Make a wish.";
-  const wishCopy = zh
-    ? "想什么都行，别告诉我。"
-     : "Anything you want. No need to tell me.";
-  const wishButton = zh ? "吹灭蜡烛" : "Blow out the candles";
-  const wishDone = zh ? "好，替你保密 ✦" : "Got it. Secret kept ✦";
-  const closing = zh ? "生日快乐。希望明年再看到这句话的时候，你会觉得这一年过得还不错。" : "Happy birthday. I hope when you see this again next year, you can say this year turned out pretty well.";
-  const otherHref = zh ? "/en/birthday" : "/zh-cn/birthday";
-  const otherLabel = zh ? "ZH" : "EN";
+import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
+
+const BIRTHDAY_COPY = {
+  "en-us":{title:"Happy Birthday · AERTEX",headline:"Happy Birthday",subline:"Happy birthday. I hope the year ahead gives you more time for the people and things you actually care about.",action:"Celebrate",explore:"Keep going",sectionTitle:"One year older.",sectionCopy:"No big speech. Take care of yourself, keep doing what you like, and do not take every little thing too seriously.",cards:[["01","More good days","Good food, good sleep, and more ordinary days that simply go your way."],["02","More luck","The right answer at the right time, and a few more things working out in your favor."],["03","More time","For friends, for hobbies, and for doing absolutely nothing when you need it."]],momentTitle:"Today is yours.",momentCopy:"Nothing complicated here. Remember the date, take the good wishes, and go enjoy your birthday.",wishTitle:"Make a wish.",wishCopy:"Anything you want. No need to tell me.",wishButton:"Blow out the candles",wishDone:"Got it. Secret kept ✦",closing:"Happy birthday. I hope when you see this again next year, you can say this year turned out pretty well.",named:n=>n+", happy birthday.",celebrated:"Celebrated ✦"},
+  "zh-cn":{title:"生日快乐 · AERTEX",headline:"生日快乐",subline:"今天只说一件事：生日快乐。希望接下来这一年，想做的事能慢慢做成，想见的人都有机会见到。",action:"庆祝一下",explore:"看看后面",sectionTitle:"又长大一岁。",sectionCopy:"没什么大道理。照顾好自己，继续做喜欢的事，也别把所有事情都想得太重。",cards:[["01","多一点开心","能吃好吃的，能睡个好觉，也能常碰上顺心的事。"],["02","多一点运气","重要的时候刚好有答案，想争取的事情也能多一点好结果。"],["03","多一点时间","留给朋友，留给兴趣，也留给什么都不做的时候。"]],momentTitle:"今天就是你的日子。",momentCopy:"这一页没有什么特别任务。记住今天，收下祝福，然后去好好过生日。",wishTitle:"许个愿吧。",wishCopy:"想什么都行，别告诉我。",wishButton:"吹灭蜡烛",wishDone:"好，替你保密 ✦",closing:"生日快乐。希望明年再看到这句话的时候，你会觉得这一年过得还不错。",named:n=>n+"，生日快乐。",celebrated:"好，庆祝过了 ✦"},
+  "zh-tw":{title:"生日快樂 · AERTEX",headline:"生日快樂",subline:"今天只說一件事：生日快樂。希望接下來這一年，想做的事能慢慢完成，想見的人都有機會見到。",action:"慶祝一下",explore:"繼續看看",sectionTitle:"又長大一歲。",sectionCopy:"不用講太多大道理。照顧好自己，繼續做喜歡的事，也別把每件事都看得太重。",cards:[["01","多一點開心","吃得到喜歡的東西、睡得好，也常遇到順心的日子。"],["02","多一點運氣","重要時刻剛好有答案，想爭取的事情也多一些好結果。"],["03","多一點時間","留給朋友、興趣，也留給什麼都不做的時候。"]],momentTitle:"今天就是你的日子。",momentCopy:"這一頁沒有特別任務。記住今天，收下祝福，然後好好過生日。",wishTitle:"許個願吧。",wishCopy:"想什麼都可以，不用告訴我。",wishButton:"吹熄蠟燭",wishDone:"好，替你保密 ✦",closing:"生日快樂。希望明年再看到這句話時，你會覺得這一年過得還不錯。",named:n=>n+"，生日快樂。",celebrated:"好，慶祝過了 ✦"},
+  "ja-jp":{title:"お誕生日おめでとう · AERTEX",headline:"お誕生日おめでとう",subline:"今日はただ一つ。お誕生日おめでとう。これからの一年、大切な人や本当にやりたいことのための時間が増えますように。",action:"お祝いする",explore:"続きを見る",sectionTitle:"また一つ歳を重ねました。",sectionCopy:"難しい話はなし。自分を大切にして、好きなことを続けて、小さなことを抱え込みすぎませんように。",cards:[["01","楽しい日をもっと","おいしいもの、よく眠れる夜、そして自然とうまくいく普通の日を。"],["02","運をもう少し","必要なときに答えが見つかり、挑戦したことが少し多く実りますように。"],["03","時間をもっと","友達や趣味、何もしない時間のために。"]],momentTitle:"今日はあなたの日。",momentCopy:"難しいことはありません。今日を覚えて、祝福を受け取って、誕生日を楽しんでください。",wishTitle:"願いごとを。",wishCopy:"何でも大丈夫。秘密にしておきます。",wishButton:"ろうそくを吹き消す",wishDone:"了解。秘密にします ✦",closing:"お誕生日おめでとう。来年またこの言葉を見るとき、この一年は悪くなかったと思えますように。",named:n=>n+"さん、お誕生日おめでとう。",celebrated:"お祝いしました ✦"},
+  "ko-kr":{title:"생일 축하합니다 · AERTEX",headline:"생일 축하합니다",subline:"오늘은 한 가지만 말할게요. 생일 축하합니다. 앞으로의 한 해가 소중한 사람과 정말 하고 싶은 일을 위한 시간으로 채워지길 바랍니다.",action:"축하하기",explore:"계속 보기",sectionTitle:"한 살 더.",sectionCopy:"거창한 말은 필요 없어요. 자신을 잘 돌보고, 좋아하는 일을 계속하고, 모든 일을 너무 무겁게 생각하지 않기를 바랍니다.",cards:[["01","더 많은 좋은 날","맛있는 음식, 푹 자는 밤, 그리고 자연스럽게 잘 풀리는 평범한 날들."],["02","조금 더 많은 행운","필요할 때 답을 만나고, 바라는 일이 조금 더 좋은 결과로 이어지길."],["03","더 많은 시간","친구와 취미, 그리고 아무것도 하지 않는 시간을 위해."]],momentTitle:"오늘은 당신의 날입니다.",momentCopy:"복잡한 건 없어요. 오늘을 기억하고, 축하를 받고, 생일을 즐기세요.",wishTitle:"소원을 빌어 보세요.",wishCopy:"무엇이든 괜찮아요. 말하지 않아도 됩니다.",wishButton:"촛불 끄기",wishDone:"좋아요. 비밀로 할게요 ✦",closing:"생일 축하합니다. 내년 이 문장을 다시 볼 때, 지난 한 해가 꽤 괜찮았다고 말할 수 있기를 바랍니다.",named:n=>n+"님, 생일 축하합니다.",celebrated:"축하 완료 ✦"},
+  "fr-fr":{title:"Joyeux anniversaire · AERTEX",headline:"Joyeux anniversaire",subline:"Aujourd’hui, une seule chose à dire : joyeux anniversaire. Que l’année qui vient vous laisse davantage de temps pour les personnes et les choses qui comptent vraiment.",action:"Célébrer",explore:"Continuer",sectionTitle:"Une année de plus.",sectionCopy:"Pas de grand discours. Prenez soin de vous, continuez à faire ce que vous aimez et ne donnez pas trop de poids aux petites choses.",cards:[["01","Plus de beaux jours","De bons repas, de bonnes nuits et davantage de journées ordinaires qui se passent simplement bien."],["02","Plus de chance","La bonne réponse au bon moment et un peu plus de choses qui tournent en votre faveur."],["03","Plus de temps","Pour les amis, les passions et aussi pour ne rien faire quand vous en avez besoin."]],momentTitle:"Cette journée est à vous.",momentCopy:"Rien de compliqué. Gardez cette date, acceptez les vœux et profitez de votre anniversaire.",wishTitle:"Faites un vœu.",wishCopy:"Ce que vous voulez. Pas besoin de me le dire.",wishButton:"Souffler les bougies",wishDone:"C’est noté. Secret gardé ✦",closing:"Joyeux anniversaire. J’espère que lorsque vous relirez ceci l’an prochain, vous trouverez que cette année s’est plutôt bien passée.",named:n=>n+", joyeux anniversaire.",celebrated:"Célébré ✦"},
+  "es-es":{title:"Feliz cumpleaños · AERTEX",headline:"Feliz cumpleaños",subline:"Hoy solo hay una cosa que decir: feliz cumpleaños. Ojalá el próximo año te deje más tiempo para las personas y las cosas que de verdad te importan.",action:"Celebrar",explore:"Seguir",sectionTitle:"Un año más.",sectionCopy:"Sin grandes discursos. Cuídate, sigue haciendo lo que te gusta y no cargues demasiado cada pequeña cosa.",cards:[["01","Más días buenos","Buena comida, buen descanso y más días normales que simplemente salen bien."],["02","Más suerte","La respuesta correcta en el momento adecuado y algunas cosas más saliendo a tu favor."],["03","Más tiempo","Para amigos, aficiones y también para no hacer nada cuando lo necesites."]],momentTitle:"Hoy es tu día.",momentCopy:"Nada complicado. Recuerda la fecha, recibe los buenos deseos y disfruta de tu cumpleaños.",wishTitle:"Pide un deseo.",wishCopy:"El que quieras. No tienes que contármelo.",wishButton:"Apagar las velas",wishDone:"Entendido. Se queda en secreto ✦",closing:"Feliz cumpleaños. Espero que cuando vuelvas a leer esto el año que viene puedas decir que este año salió bastante bien.",named:n=>n+", feliz cumpleaños.",celebrated:"Celebrado ✦"},
+  "el-gr":{title:"Χρόνια πολλά · AERTEX",headline:"Χρόνια πολλά",subline:"Σήμερα μόνο ένα πράγμα: χρόνια πολλά. Εύχομαι η χρονιά που έρχεται να σας δώσει περισσότερο χρόνο για τους ανθρώπους και τα πράγματα που έχουν πραγματικά σημασία.",action:"Γιορτάστε",explore:"Συνέχεια",sectionTitle:"Άλλη μία χρονιά.",sectionCopy:"Χωρίς μεγάλα λόγια. Φροντίστε τον εαυτό σας, συνεχίστε ό,τι αγαπάτε και μην παίρνετε κάθε μικρό πράγμα τόσο βαριά.",cards:[["01","Περισσότερες καλές μέρες","Καλό φαγητό, καλός ύπνος και περισσότερες απλές μέρες που πηγαίνουν καλά."],["02","Περισσότερη τύχη","Η σωστή απάντηση τη σωστή στιγμή και λίγο περισσότερα πράγματα να εξελίσσονται υπέρ σας."],["03","Περισσότερος χρόνος","Για φίλους, ενδιαφέροντα και για να μην κάνετε απολύτως τίποτα όταν το χρειάζεστε."]],momentTitle:"Η σημερινή μέρα είναι δική σας.",momentCopy:"Τίποτα περίπλοκο. Θυμηθείτε τη μέρα, δεχτείτε τις ευχές και απολαύστε τα γενέθλιά σας.",wishTitle:"Κάντε μια ευχή.",wishCopy:"Ό,τι θέλετε. Δεν χρειάζεται να μου το πείτε.",wishButton:"Σβήστε τα κεριά",wishDone:"Έγινε. Το κρατάμε μυστικό ✦",closing:"Χρόνια πολλά. Εύχομαι όταν το ξαναδείτε του χρόνου να μπορείτε να πείτε ότι αυτή η χρονιά πήγε αρκετά καλά.",named:n=>n+", χρόνια πολλά.",celebrated:"Το γιορτάσαμε ✦"},
+  "ar-sa":{title:"عيد ميلاد سعيد · AERTEX",headline:"عيد ميلاد سعيد",subline:"اليوم هناك شيء واحد فقط: عيد ميلاد سعيد. أتمنى أن تمنحك السنة القادمة وقتًا أكبر للأشخاص والأشياء التي تهمك فعلًا.",action:"احتفل",explore:"تابع",sectionTitle:"عام آخر.",sectionCopy:"لا حاجة لكلام كبير. اعتنِ بنفسك، وواصل ما تحب، ولا تحمل كل التفاصيل الصغيرة أكثر مما تستحق.",cards:[["01","أيام جميلة أكثر","طعام جيد ونوم هادئ والمزيد من الأيام العادية التي تسير ببساطة كما تريد."],["02","حظ أكثر","الإجابة المناسبة في الوقت المناسب، والمزيد من الأمور التي تنتهي لصالحك."],["03","وقت أكثر","للأصدقاء والهوايات وحتى لعدم فعل أي شيء حين تحتاج ذلك."]],momentTitle:"هذا يومك.",momentCopy:"لا شيء معقد هنا. تذكّر هذا اليوم، خذ التهاني واستمتع بعيد ميلادك.",wishTitle:"تمنَّ أمنية.",wishCopy:"أي شيء تريده. لا حاجة لأن تخبرني.",wishButton:"أطفئ الشموع",wishDone:"حسنًا. سيبقى سرًا ✦",closing:"عيد ميلاد سعيد. أتمنى عندما ترى هذه العبارة العام القادم أن تشعر بأن هذه السنة كانت جيدة.",named:n=>n+"، عيد ميلاد سعيد.",celebrated:"تم الاحتفال ✦"}
+};
+BIRTHDAY_COPY["en-gb"]=BIRTHDAY_COPY["en-us"]; BIRTHDAY_COPY["en-au"]=BIRTHDAY_COPY["en-us"];
+
+export function birthdayPage(locale = "en-us") {
+  const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
+  const copy = BIRTHDAY_COPY[code] || BIRTHDAY_COPY["en-us"];
+  const lang = code;
+  const title = copy.title;
+  const headline = copy.headline;
+  const eyebrow = "AERTEX · BIRTHDAY";
+  const subline = copy.subline;
+  const action = copy.action;
+  const explore = copy.explore;
+  const sectionTitle = copy.sectionTitle;
+  const sectionCopy = copy.sectionCopy;
+  const cards = copy.cards;
+  const momentTitle = copy.momentTitle;
+  const momentCopy = copy.momentCopy;
+  const wishTitle = copy.wishTitle;
+  const wishCopy = copy.wishCopy;
+  const wishButton = copy.wishButton;
+  const wishDone = copy.wishDone;
+  const closing = copy.closing;
+  const languageOptions = SUPPORTED_LOCALES.map(item => `<option value="${item}"${item===code?" selected":""}>${LOCALE_META[item]?.nativeName || item}</option>`).join("");
 
   return `<!doctype html>
-<html lang="${lang}">
+<html lang="${lang}" dir="${localeDirection(code)}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -531,11 +528,11 @@ export function birthdayPage(locale = "zh") {
 
   <div class="nav-wrap">
     <header class="nav">
-      <a class="brand" href="${zh ? "/zh-cn" : "/en"}" aria-label="AERTEX">
+      <a class="brand" href="/${code}" aria-label="AERTEX">
         <span class="brand-mark" aria-hidden="true">A</span>
         <span>AERTEX</span>
       </a>
-      <a class="chip" href="${otherHref}">${otherLabel}</a>
+      <select class="chip" id="birthday-language" aria-label="Language">${languageOptions}</select>
     </header>
   </div>
 
@@ -651,9 +648,11 @@ export function birthdayPage(locale = "zh") {
       if(name){
         person.textContent = name;
         person.hidden = false;
-        closingTitle.textContent = name + (zh ? "，生日快乐。" : ", happy birthday.");
+        closingTitle.textContent = (${copy.named.toString()})(name);
         document.title = name + " · " + ${JSON.stringify(title)};
       }
+
+      document.getElementById("birthday-language")?.addEventListener("change",function(){ var next="/"+this.value+"/birthday"; var q=new URLSearchParams(location.search); if(q.toString()) next+="?"+q.toString(); location.href=next; });
 
       var now = new Date();
       document.getElementById("year").textContent = String(now.getFullYear());
@@ -736,7 +735,7 @@ export function birthdayPage(locale = "zh") {
 
       document.getElementById("celebrate").addEventListener("click",function(){
         burst(innerHeight*.62);
-        this.textContent = ${JSON.stringify(zh ? "好，庆祝过了 ✦" : "Celebrated ✦")};
+        this.textContent = ${JSON.stringify(copy.celebrated)};
       });
 
       document.getElementById("wish-button").addEventListener("click",function(){
