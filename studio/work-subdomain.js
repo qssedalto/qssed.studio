@@ -5,7 +5,7 @@ import { TEXT } from "./config.js";
 import { buildLinks, getRouteInfo, html } from "./routing.js";
 import { notFoundPage } from "./auth-pages.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
-import { preferredLocaleFromRequest } from "./locale.js";
+import { localeFromPath as sharedLocaleFromPath, normalizeSupportedLocale, preferredLocaleFromRequest } from "./locale.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const WORK_DOCUMENT_ID_RE = /^[0-9a-f-]{36}$/i;
@@ -159,16 +159,11 @@ export async function handleMainWorkHandoff(request) {
 }
 
 function preferredLocale(request, pathname) {
-  if (pathname.startsWith("/en/") || pathname === "/en") return "en";
-  if (pathname.startsWith("/zh-cn/") || pathname === "/zh-cn") return "zh-cn";
-  return preferredLocaleFromRequest(request);
+  return sharedLocaleFromPath(pathname) || preferredLocaleFromRequest(request);
 }
 
 function localeFromPath(pathname) {
-  const path = typeof pathname === "string" ? pathname.trim() : "";
-  if (path === "/en" || path.startsWith("/en/")) return "en";
-  if (path === "/zh-cn" || path.startsWith("/zh-cn/")) return "zh-cn";
-  return "";
+  return sharedLocaleFromPath(pathname);
 }
 
 function normalizePath(pathname) {
@@ -183,12 +178,15 @@ function safeWorkPath(value) {
 }
 
 function canonicalWorkPath(path, locale) {
-  const normalizedLocale = locale === "en" ? "en" : "zh-cn";
+  const normalizedLocale = normalizeSupportedLocale(locale) || "en-us";
   const candidate = safeWorkPath(path);
-  const document = candidate.match(/^\/(?:zh-cn|en)\/d\/(huawei-exempt\/)?([0-9a-f-]{36})$/i)
-    || candidate.match(/^\/d\/(huawei-exempt\/)?([0-9a-f-]{36})$/i);
-  if (document && WORK_DOCUMENT_ID_RE.test(document[2])) {
-    return `/${normalizedLocale}/d/${document[1] || ""}${document[2]}`;
+  const parts = candidate.split("/").filter(Boolean);
+  const candidateLocale = normalizeSupportedLocale(parts[0]);
+  const rest = candidateLocale ? parts.slice(1) : parts;
+  if (rest[0] === "d") {
+    const exempt = rest[1] === "huawei-exempt";
+    const id = exempt ? rest[2] : rest[1];
+    if (WORK_DOCUMENT_ID_RE.test(id || "")) return `/${normalizedLocale}/d/${exempt ? "huawei-exempt/" : ""}${id}`;
   }
   return `/${normalizedLocale}/tex`;
 }
