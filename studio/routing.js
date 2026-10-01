@@ -111,13 +111,6 @@ export function html(content, status = 200, options = {}) {
   });
 }
 
-export function localizedRedirect(request, locale, pathname) {
-  const url = new URL(request.url);
-  const prefix = locale === "zh" ? "/zh-cn" : "/en";
-  url.pathname = `${prefix}${pathname}`;
-  return Response.redirect(url.toString(), 302);
-}
-
 export function json(data, status = 200) {
   const headers = securityHeaders("application/json;charset=UTF-8");
   headers.set("cache-control", "no-store");
