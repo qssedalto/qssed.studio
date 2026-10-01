@@ -1,5 +1,5 @@
 import { handleOAuthRequest } from "./auth-oauth.js";
-import { preferredLocaleFromRequest } from "./studio/locale.js";
+import { localeDirection, localeFromPath, preferredLocaleFromRequest } from "./studio/locale.js";
 import { mainOriginForRequest, rootDomainForRequest, serviceOrigin } from "./studio/domain-family.js";
 import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
@@ -463,82 +463,13 @@ function authPage(pathname, request) {
   const themeBoot = intelligenceThemeBootScript();
   const authHost = new URL(request.url).hostname;
   const mainOrigin = mainOriginForRequest(request);
-  const language = preferredLanguage(request);
-  const zh = language === "zh";
-  const copy = zh ? {
-    checking: "正在检查登录状态…",
-    loginTitle: "登录 AERTEX",
-    loginLead: `使用你的 AERTEX 账号继续。认证状态由 ${authHost} 独立维护。`,
-    email: "邮箱",
-    password: "密码",
-    continue: "继续",
-    create: "创建账号",
-    signedTitle: "你已登录",
-    signedLead: "AERTEX ID 已识别当前会话。",
-    openStudio: "继续前往 AERTEX",
-    account: "账号状态",
-    signOut: "退出登录",
-    authorizeTitle: "授权应用",
-    authorizeLead: "确认要使用哪个 AERTEX 账号继续。",
-    accountTitle: "账号状态",
-    accountLead: "查看当前账号、会话与授权状态。",
-    usernameLabel: "用户名",
-    roleLabel: "角色",
-    sessionLabel: "认证会话",
-    sessionProtected: "受 AERTEX ID 保护",
-    securityNote: "登录凭据保存在仅服务器可读取的安全 Cookie 中。其他 AERTEX 应用通过授权或安全会话交接使用此身份。",
-    backAuth: "返回认证中心",
-    active: "账号已启用",
-    suspended: "账号已暂停",
-    banned: "账号已封禁",
-    unavailable: "当前账号不可用于应用授权。",
-    appRequest: "一个应用请求访问你的账号",
-    p1: "读取基础账号身份",
-    p2: "确认账号当前是否已登录",
-    allowLater: "允许（下一阶段启用）",
-    later: "当前版本先完成认证中心与会话识别；授权码与 PKCE 将在下一阶段接入。",
-    signInFirst: "请先登录，再继续应用授权。",
-    loggingIn: "正在登录…",
-    connectError: "暂时无法连接认证服务，请稍后重试。"
-  } : {
-    checking: "Checking sign-in status…",
-    loginTitle: "Sign in to AERTEX",
-    loginLead: `Continue with your AERTEX account. Authentication is maintained by ${authHost}.`,
-    email: "Email",
-    password: "Password",
-    continue: "Continue",
-    create: "Create account",
-    signedTitle: "You're signed in",
-    signedLead: "AERTEX ID recognized your current session.",
-    openStudio: "Continue to AERTEX",
-    account: "Account status",
-    signOut: "Sign out",
-    authorizeTitle: "Authorize application",
-    authorizeLead: "Confirm which AERTEX account you want to use.",
-    accountTitle: "Account status",
-    accountLead: "Review the current account, session and authorization state.",
-    usernameLabel: "Username",
-    roleLabel: "Role",
-    sessionLabel: "Auth session",
-    sessionProtected: "Protected by AERTEX ID",
-    securityNote: "Credentials remain in secure server-only cookies. Other AERTEX apps use authorization or a secure session handoff to consume this identity.",
-    backAuth: "Back to Auth",
-    active: "Account active",
-    suspended: "Account suspended",
-    banned: "Account banned",
-    unavailable: "This account cannot authorize applications.",
-    appRequest: "An application is requesting access to your account",
-    p1: "Read basic account identity",
-    p2: "Confirm current sign-in status",
-    allowLater: "Allow (coming next)",
-    later: "This version establishes the identity/session center. Authorization codes and PKCE come next.",
-    signInFirst: "Sign in first to continue authorization.",
-    loggingIn: "Signing in…",
-    connectError: "Authentication service is temporarily unavailable. Please try again."
-  };
+  const locale = preferredAuthLocale(request);
+  const zh = locale === "zh-cn";
+  const copy = authCopy(locale, authHost);
+
 
   return `<!doctype html>
-<html lang="${zh ? "zh-CN" : "en"}"${themeAttr}>
+<html lang="${locale}" dir="${localeDirection(locale)}"${themeAttr}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -566,7 +497,7 @@ function authPage(pathname, request) {
   </style>
 </head>
 <body data-page="${page}">
-  <div class="auth-account-zone">${accountMenuMarkup(zh ? "zh-cn" : "en")}</div>
+  <div class="auth-account-zone">${accountMenuMarkup(locale)}</div>
   <main class="shell">
     <div class="brand"><img class="mark" src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true"><div class="brand-copy"><strong>AERTEX ID</strong><span>AERTEX Account</span></div></div>
     <section class="card">
@@ -578,15 +509,15 @@ function authPage(pathname, request) {
           <div class="field"><label for="password">${copy.password}</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
           <button id="loginButton" type="submit">${copy.continue}</button><div id="loginMessage" class="message" role="status" aria-live="polite"></div>
         </form>
-        <a class="button secondary" href="${mainOrigin}/sign-up">${copy.create}</a>
+        <a class="button secondary" href="${mainOrigin}/${locale}/sign-up">${copy.create}</a>
       </div>
       <div id="signedIn" class="hidden">
         <h1 id="signedInTitle">${copy.signedTitle}</h1><p class="lead" id="signedInLead">${copy.signedLead}</p>
         <div class="account"><div id="avatar" class="avatar">Q</div><div class="identity"><strong id="displayName">AERTEX User</strong><span id="emailText"></span><div class="badge"><span id="statusDot" class="dot"></span><span id="statusText">${copy.active}</span></div></div></div>
         <div id="blockedMessage" class="message error hidden">${copy.unavailable}</div>
         <div id="accountDetails" class="hidden"><div class="details"><div class="detail"><span>${copy.usernameLabel}</span><strong id="usernameText">—</strong></div><div class="detail"><span>${copy.roleLabel}</span><strong id="roleText">—</strong></div><div class="detail"><span>${copy.sessionLabel}</span><strong>${copy.sessionProtected}</strong></div></div><p class="security-note">${copy.securityNote}</p></div>
-        <div id="homeActions"><a id="studioButton" class="button" href="/continue">${copy.openStudio}</a><a class="button secondary" href="/account">${copy.account}</a><button id="homeLogoutButton" class="secondary" type="button">${copy.signOut}</button></div>
-        <div id="accountActions" class="hidden"><a id="accountStudioButton" class="button" href="/continue">${copy.openStudio}</a><a class="button secondary" href="/">${copy.backAuth}</a><button id="logoutButton" class="secondary" type="button">${copy.signOut}</button></div>
+        <div id="homeActions"><a id="studioButton" class="button" href="/continue">${copy.openStudio}</a><a class="button secondary" href="/account?next=${encodeURIComponent("/"+locale)}">${copy.account}</a><button id="homeLogoutButton" class="secondary" type="button">${copy.signOut}</button></div>
+        <div id="accountActions" class="hidden"><a id="accountStudioButton" class="button" href="/continue">${copy.openStudio}</a><a class="button secondary" href="/?next=${encodeURIComponent("/"+locale)}">${copy.backAuth}</a><button id="logoutButton" class="secondary" type="button">${copy.signOut}</button></div>
         <div id="authorizePanel" class="hidden"><div class="divider"></div><div class="app-box"><div class="app-name" id="clientName">${copy.appRequest}</div><div class="app-id" id="clientId"></div></div><ul class="permissions"><li><span class="tick">✓</span><span>${copy.p1}</span></li><li><span class="tick">✓</span><span>${copy.p2}</span></li></ul><button id="allowButton" type="button" disabled>${copy.allowLater}</button><p class="message">${copy.later}</p></div>
       </div>
     </section>
@@ -617,13 +548,57 @@ function authPage(pathname, request) {
   checkSession();
 })();
 </script>
-${accountMenuClientScript({ summaryUrl: "/api/session", logoutUrl: "/api/logout", authMode: true, locale: zh ? "zh-cn" : "en" })}
+${accountMenuClientScript({ summaryUrl: "/api/session", logoutUrl: "/api/logout", authMode: true, locale })}
 </body>
 </html>`;
 }
 
-function preferredLanguage(request) {
-  return preferredLocaleFromRequest(request) === "zh-cn" ? "zh" : "en";
+function preferredAuthLocale(request) {
+  try {
+    const url = new URL(request.url);
+    const next = validatedNextPath(url.searchParams.get("next"));
+    const fromNext = localeFromPath(next);
+    if (fromNext) return fromNext;
+  } catch {}
+  return preferredLocaleFromRequest(request);
+}
+
+const AUTH_EN = {
+  checking:"Checking sign-in status…", loginTitle:"Sign in to AERTEX", email:"Email", password:"Password", continue:"Continue", create:"Create account",
+  signedTitle:"You're signed in", signedLead:"AERTEX ID recognized your current session.", openStudio:"Continue to AERTEX", account:"Account status", signOut:"Sign out",
+  authorizeTitle:"Authorize application", authorizeLead:"Confirm which AERTEX account you want to use.", accountTitle:"Account status", accountLead:"Review the current account, session and authorization state.",
+  usernameLabel:"Username", roleLabel:"Role", sessionLabel:"Auth session", sessionProtected:"Protected by AERTEX ID",
+  securityNote:"Credentials remain in secure server-only cookies. Other AERTEX apps use authorization or a secure session handoff to consume this identity.",
+  backAuth:"Back to Auth", active:"Account active", suspended:"Account suspended", banned:"Account banned", unavailable:"This account cannot authorize applications.",
+  appRequest:"An application is requesting access to your account", p1:"Read basic account identity", p2:"Confirm current sign-in status", allowLater:"Allow (coming next)",
+  later:"This version establishes the identity/session center. Authorization codes and PKCE come next.", signInFirst:"Sign in first to continue authorization.", loggingIn:"Signing in…",
+  connectError:"Authentication service is temporarily unavailable. Please try again."
+};
+
+const AUTH_COPY = {
+  "en-us": AUTH_EN, "en-gb": AUTH_EN, "en-au": AUTH_EN,
+  "zh-cn": {...AUTH_EN,checking:"正在检查登录状态…",loginTitle:"登录 AERTEX",email:"邮箱",password:"密码",continue:"继续",create:"创建账号",signedTitle:"你已登录",signedLead:"AERTEX ID 已识别当前会话。",openStudio:"继续前往 AERTEX",account:"账号状态",signOut:"退出登录",authorizeTitle:"授权应用",authorizeLead:"确认要使用哪个 AERTEX 账号继续。",accountTitle:"账号状态",accountLead:"查看当前账号、会话与授权状态。",usernameLabel:"用户名",roleLabel:"角色",sessionLabel:"认证会话",sessionProtected:"受 AERTEX ID 保护",securityNote:"登录凭据保存在仅服务器可读取的安全 Cookie 中。其他 AERTEX 应用通过授权或安全会话交接使用此身份。",backAuth:"返回认证中心",active:"账号已启用",suspended:"账号已暂停",banned:"账号已封禁",unavailable:"当前账号不可用于应用授权。",appRequest:"一个应用请求访问你的账号",p1:"读取基础账号身份",p2:"确认账号当前是否已登录",allowLater:"允许（下一阶段启用）",later:"当前版本先完成认证中心与会话识别；授权码与 PKCE 将在下一阶段接入。",signInFirst:"请先登录，再继续应用授权。",loggingIn:"正在登录…",connectError:"暂时无法连接认证服务，请稍后重试。"},
+  "zh-tw": {...AUTH_EN,checking:"正在檢查登入狀態…",loginTitle:"登入 AERTEX",email:"電子郵件",password:"密碼",continue:"繼續",create:"建立帳號",signedTitle:"你已登入",signedLead:"AERTEX ID 已識別目前工作階段。",openStudio:"繼續前往 AERTEX",account:"帳號狀態",signOut:"登出",authorizeTitle:"授權應用程式",authorizeLead:"確認要使用哪個 AERTEX 帳號繼續。",accountTitle:"帳號狀態",accountLead:"查看目前帳號、工作階段與授權狀態。",usernameLabel:"使用者名稱",roleLabel:"角色",sessionLabel:"驗證工作階段",sessionProtected:"受 AERTEX ID 保護",securityNote:"登入憑證保存在僅伺服器可讀取的安全 Cookie 中。其他 AERTEX 應用程式透過授權或安全工作階段交接使用此身分。",backAuth:"返回驗證中心",active:"帳號已啟用",suspended:"帳號已暫停",banned:"帳號已封鎖",unavailable:"目前帳號無法授權應用程式。",appRequest:"有應用程式要求存取你的帳號",p1:"讀取基本帳號身分",p2:"確認目前登入狀態",allowLater:"允許（即將推出）",later:"此版本先建立身分與工作階段中心；授權碼與 PKCE 將於下一階段加入。",signInFirst:"請先登入以繼續授權。",loggingIn:"正在登入…",connectError:"驗證服務暫時無法使用，請稍後再試。"},
+  "ja-jp": {...AUTH_EN,checking:"サインイン状態を確認中…",loginTitle:"AERTEX にサインイン",email:"メール",password:"パスワード",continue:"続ける",create:"アカウントを作成",signedTitle:"サインイン済みです",signedLead:"AERTEX ID が現在のセッションを確認しました。",openStudio:"AERTEX に進む",account:"アカウントの状態",signOut:"サインアウト",authorizeTitle:"アプリを承認",authorizeLead:"使用する AERTEX アカウントを確認してください。",accountTitle:"アカウントの状態",accountLead:"現在のアカウント、セッション、承認状態を確認します。",usernameLabel:"ユーザー名",roleLabel:"ロール",sessionLabel:"認証セッション",sessionProtected:"AERTEX ID で保護",securityNote:"認証情報はサーバーのみが読み取れる安全な Cookie に保存されます。",backAuth:"認証センターに戻る",active:"アカウントは有効です",suspended:"アカウントは停止中です",banned:"アカウントはブロックされています",unavailable:"このアカウントではアプリを承認できません。",appRequest:"アプリがアカウントへのアクセスを要求しています",p1:"基本的なアカウント情報を読み取る",p2:"現在のサインイン状態を確認する",allowLater:"許可（近日対応）",later:"このバージョンでは ID とセッションセンターを構築します。認可コードと PKCE は次の段階で追加されます。",signInFirst:"承認を続けるには先にサインインしてください。",loggingIn:"サインイン中…",connectError:"認証サービスは一時的に利用できません。後でもう一度お試しください。"},
+  "ko-kr": {...AUTH_EN,checking:"로그인 상태 확인 중…",loginTitle:"AERTEX에 로그인",email:"이메일",password:"비밀번호",continue:"계속",create:"계정 만들기",signedTitle:"로그인되어 있습니다",signedLead:"AERTEX ID가 현재 세션을 확인했습니다.",openStudio:"AERTEX로 계속",account:"계정 상태",signOut:"로그아웃",authorizeTitle:"앱 권한 승인",authorizeLead:"계속 사용할 AERTEX 계정을 확인하세요.",accountTitle:"계정 상태",accountLead:"현재 계정, 세션 및 권한 상태를 확인합니다.",usernameLabel:"사용자 이름",roleLabel:"역할",sessionLabel:"인증 세션",sessionProtected:"AERTEX ID로 보호됨",securityNote:"로그인 자격 증명은 서버만 읽을 수 있는 보안 Cookie에 저장됩니다.",backAuth:"인증 센터로 돌아가기",active:"계정 활성화됨",suspended:"계정 일시 중지됨",banned:"계정 차단됨",unavailable:"이 계정은 앱 권한을 승인할 수 없습니다.",appRequest:"앱이 계정 접근 권한을 요청하고 있습니다",p1:"기본 계정 정보 읽기",p2:"현재 로그인 상태 확인",allowLater:"허용(추후 제공)",later:"이 버전에서는 ID/세션 센터를 구축합니다. 인증 코드와 PKCE는 다음 단계에서 추가됩니다.",signInFirst:"권한 승인을 계속하려면 먼저 로그인하세요.",loggingIn:"로그인 중…",connectError:"인증 서비스를 일시적으로 사용할 수 없습니다. 나중에 다시 시도하세요."},
+  "fr-fr": {...AUTH_EN,checking:"Vérification de la connexion…",loginTitle:"Se connecter à AERTEX",email:"E-mail",password:"Mot de passe",continue:"Continuer",create:"Créer un compte",signedTitle:"Vous êtes connecté",signedLead:"AERTEX ID a reconnu votre session actuelle.",openStudio:"Continuer vers AERTEX",account:"État du compte",signOut:"Se déconnecter",authorizeTitle:"Autoriser l’application",authorizeLead:"Confirmez le compte AERTEX à utiliser.",accountTitle:"État du compte",accountLead:"Consultez l’état du compte, de la session et des autorisations.",usernameLabel:"Nom d’utilisateur",roleLabel:"Rôle",sessionLabel:"Session d’authentification",sessionProtected:"Protégée par AERTEX ID",securityNote:"Les identifiants restent dans des cookies sécurisés lisibles uniquement par le serveur.",backAuth:"Retour à l’authentification",active:"Compte actif",suspended:"Compte suspendu",banned:"Compte bloqué",unavailable:"Ce compte ne peut pas autoriser d’applications.",appRequest:"Une application demande l’accès à votre compte",p1:"Lire l’identité de base du compte",p2:"Confirmer l’état de connexion actuel",allowLater:"Autoriser (bientôt)",later:"Cette version établit le centre d’identité et de session. Les codes d’autorisation et PKCE arrivent ensuite.",signInFirst:"Connectez-vous d’abord pour continuer l’autorisation.",loggingIn:"Connexion…",connectError:"Le service d’authentification est temporairement indisponible. Réessayez plus tard."},
+  "es-es": {...AUTH_EN,checking:"Comprobando el inicio de sesión…",loginTitle:"Iniciar sesión en AERTEX",email:"Correo electrónico",password:"Contraseña",continue:"Continuar",create:"Crear cuenta",signedTitle:"Has iniciado sesión",signedLead:"AERTEX ID ha reconocido la sesión actual.",openStudio:"Continuar a AERTEX",account:"Estado de la cuenta",signOut:"Cerrar sesión",authorizeTitle:"Autorizar aplicación",authorizeLead:"Confirma qué cuenta AERTEX quieres usar.",accountTitle:"Estado de la cuenta",accountLead:"Revisa el estado de la cuenta, la sesión y las autorizaciones.",usernameLabel:"Usuario",roleLabel:"Rol",sessionLabel:"Sesión de autenticación",sessionProtected:"Protegida por AERTEX ID",securityNote:"Las credenciales permanecen en cookies seguras que solo puede leer el servidor.",backAuth:"Volver a autenticación",active:"Cuenta activa",suspended:"Cuenta suspendida",banned:"Cuenta bloqueada",unavailable:"Esta cuenta no puede autorizar aplicaciones.",appRequest:"Una aplicación solicita acceso a tu cuenta",p1:"Leer la identidad básica de la cuenta",p2:"Confirmar el estado de inicio de sesión",allowLater:"Permitir (próximamente)",later:"Esta versión establece el centro de identidad y sesión. Los códigos de autorización y PKCE llegarán después.",signInFirst:"Inicia sesión primero para continuar con la autorización.",loggingIn:"Iniciando sesión…",connectError:"El servicio de autenticación no está disponible temporalmente. Inténtalo de nuevo más tarde."},
+  "el-gr": {...AUTH_EN,checking:"Έλεγχος κατάστασης σύνδεσης…",loginTitle:"Σύνδεση στο AERTEX",email:"Email",password:"Κωδικός πρόσβασης",continue:"Συνέχεια",create:"Δημιουργία λογαριασμού",signedTitle:"Έχετε συνδεθεί",signedLead:"Το AERTEX ID αναγνώρισε την τρέχουσα συνεδρία.",openStudio:"Συνέχεια στο AERTEX",account:"Κατάσταση λογαριασμού",signOut:"Αποσύνδεση",authorizeTitle:"Εξουσιοδότηση εφαρμογής",authorizeLead:"Επιβεβαιώστε ποιον λογαριασμό AERTEX θέλετε να χρησιμοποιήσετε.",accountTitle:"Κατάσταση λογαριασμού",accountLead:"Ελέγξτε την τρέχουσα κατάσταση λογαριασμού, συνεδρίας και εξουσιοδότησης.",usernameLabel:"Όνομα χρήστη",roleLabel:"Ρόλος",sessionLabel:"Συνεδρία ελέγχου ταυτότητας",sessionProtected:"Προστατεύεται από AERTEX ID",securityNote:"Τα διαπιστευτήρια παραμένουν σε ασφαλή cookie που διαβάζονται μόνο από τον διακομιστή.",backAuth:"Επιστροφή στο Auth",active:"Ο λογαριασμός είναι ενεργός",suspended:"Ο λογαριασμός έχει ανασταλεί",banned:"Ο λογαριασμός έχει αποκλειστεί",unavailable:"Αυτός ο λογαριασμός δεν μπορεί να εξουσιοδοτήσει εφαρμογές.",appRequest:"Μια εφαρμογή ζητά πρόσβαση στον λογαριασμό σας",p1:"Ανάγνωση βασικής ταυτότητας λογαριασμού",p2:"Επιβεβαίωση τρέχουσας κατάστασης σύνδεσης",allowLater:"Να επιτραπεί (προσεχώς)",later:"Αυτή η έκδοση δημιουργεί το κέντρο ταυτότητας και συνεδρίας. Οι κωδικοί εξουσιοδότησης και το PKCE ακολουθούν.",signInFirst:"Συνδεθείτε πρώτα για να συνεχίσετε την εξουσιοδότηση.",loggingIn:"Σύνδεση…",connectError:"Η υπηρεσία ελέγχου ταυτότητας δεν είναι προσωρινά διαθέσιμη. Δοκιμάστε ξανά αργότερα."},
+  "ar-sa": {...AUTH_EN,checking:"جارٍ التحقق من حالة تسجيل الدخول…",loginTitle:"تسجيل الدخول إلى AERTEX",email:"البريد الإلكتروني",password:"كلمة المرور",continue:"متابعة",create:"إنشاء حساب",signedTitle:"تم تسجيل دخولك",signedLead:"تعرّف AERTEX ID على جلستك الحالية.",openStudio:"المتابعة إلى AERTEX",account:"حالة الحساب",signOut:"تسجيل الخروج",authorizeTitle:"تفويض التطبيق",authorizeLead:"أكد حساب AERTEX الذي تريد استخدامه.",accountTitle:"حالة الحساب",accountLead:"راجع حالة الحساب والجلسة والتفويض الحالية.",usernameLabel:"اسم المستخدم",roleLabel:"الدور",sessionLabel:"جلسة المصادقة",sessionProtected:"محمي بواسطة AERTEX ID",securityNote:"تبقى بيانات الاعتماد في ملفات Cookie آمنة لا يمكن قراءتها إلا من الخادم.",backAuth:"العودة إلى المصادقة",active:"الحساب نشط",suspended:"الحساب موقوف مؤقتًا",banned:"الحساب محظور",unavailable:"لا يمكن لهذا الحساب تفويض التطبيقات.",appRequest:"يطلب تطبيق الوصول إلى حسابك",p1:"قراءة هوية الحساب الأساسية",p2:"تأكيد حالة تسجيل الدخول الحالية",allowLater:"السماح (قريبًا)",later:"ينشئ هذا الإصدار مركز الهوية والجلسة. ستأتي رموز التفويض وPKCE في المرحلة التالية.",signInFirst:"سجّل الدخول أولاً لمتابعة التفويض.",loggingIn:"جارٍ تسجيل الدخول…",connectError:"خدمة المصادقة غير متاحة مؤقتًا. حاول مرة أخرى لاحقًا."}
+};
+
+function authCopy(locale, authHost) {
+  const base = AUTH_COPY[locale] || AUTH_EN;
+  const loginLead = locale==="zh-cn" ? `使用你的 AERTEX 账号继续。认证状态由 ${authHost} 独立维护。`
+    : locale==="zh-tw" ? `使用你的 AERTEX 帳號繼續。驗證狀態由 ${authHost} 獨立維護。`
+    : locale==="ja-jp" ? `AERTEX アカウントで続けます。認証状態は ${authHost} が独立して管理します。`
+    : locale==="ko-kr" ? `AERTEX 계정으로 계속하세요. 인증 상태는 ${authHost}에서 독립적으로 관리합니다.`
+    : locale==="fr-fr" ? `Continuez avec votre compte AERTEX. L’authentification est gérée séparément par ${authHost}.`
+    : locale==="es-es" ? `Continúa con tu cuenta AERTEX. La autenticación se gestiona de forma independiente en ${authHost}.`
+    : locale==="el-gr" ? `Συνεχίστε με τον λογαριασμό AERTEX. Η πιστοποίηση διατηρείται ανεξάρτητα από το ${authHost}.`
+    : locale==="ar-sa" ? `تابع باستخدام حساب AERTEX. تتم إدارة حالة المصادقة بشكل مستقل بواسطة ${authHost}.`
+    : `Continue with your AERTEX account. Authentication is maintained by ${authHost}.`;
+  return { ...base, loginLead };
 }
 
 function notFoundPage() {
