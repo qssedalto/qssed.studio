@@ -438,6 +438,9 @@ export function settingsHubContent(zh) {
     notifications:["Notifications","Alerts and in-app messages"],
     integrations:["Integrations","External services and authorization"]
   };
+  const availability = zh
+    ? { ai:{meta:"可用"}, storage:{meta:"可用"}, subscription:{meta:"测试中"} }
+    : { ai:{meta:"Available"}, storage:{meta:"Available"}, subscription:{meta:"Testing"} };
   const row = (item, href, icon, status = "") => `
     <a class="settings-stage-row" href="${href}">
       <span class="settings-stage-row-icon">${osHubIcon(icon)}</span>
@@ -505,12 +508,12 @@ export function settingsHubContent(zh) {
           <div class="settings-stage-group-head">${copy.essentials}</div>
           ${row(copy.language, prefix+"/settings/language", "language")}
           ${row(copy.security, prefix+"/settings/security", "shield")}
-          ${row(copy.ai, prefix+"/settings/ai", "ai")}
+          ${row(copy.ai, prefix+"/settings/ai", "ai", availability.ai.meta)}
         </section>
         <section class="settings-stage-group">
           <div class="settings-stage-group-head">${copy.services}</div>
-          ${row(copy.subscription, prefix+"/settings/subscription", "account")}
-          ${row(copy.storage, prefix+"/settings/storage", "storage")}
+          ${row(copy.subscription, prefix+"/settings/subscription", "account", availability.subscription.meta)}
+          ${row(copy.storage, prefix+"/settings/storage", "storage", availability.storage.meta)}
           ${row(copy.notifications, prefix+"/settings/notifications", "notifications", zh ? "未开放" : "Soon")}
           ${row(copy.integrations, prefix+"/settings/integrations", "integrations", zh ? "未开放" : "Soon")}
         </section>
