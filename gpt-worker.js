@@ -40,7 +40,7 @@ export default {
 
     const sharedMatch = pathname.match(/^\/share\/([0-9a-f-]{36})$/i);
     if (sharedMatch) {
-      const locale = preferredLocale(request) === "en" ? "en" : "zh-cn";
+      const locale = preferredLocale(request);
       const payload = await loadSharedConversation(sharedMatch[1]);
       if (!payload?.conversation) return html(renderIntelligenceNotFound(locale, { kind: "shared", theme: intelligenceTheme }), 404);
       return html(renderSharedConversation(locale, payload, intelligenceTheme));
@@ -48,7 +48,7 @@ export default {
 
     if (pathname === "/auth/handoff") {
       if (request.method !== "POST") return text("Method not allowed", 405);
-      const locale = preferredLocale(request) === "en" ? "en" : "zh";
+      const locale = preferredLocale(request);
       return handleAuthHandoff(request, env, locale);
     }
 
