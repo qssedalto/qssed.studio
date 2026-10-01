@@ -1,3 +1,4 @@
+import { shellText } from "./i18n-ui.js";
 export function dashboardIcon(name) {
   const icons = {
     home: '<path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M5.5 10.3V20h13v-9.7M9.5 20v-6h5v6"/>',
@@ -39,8 +40,11 @@ export function dashboardIcon(name) {
   return '<span class="dashboard-icon dashboard-icon-' + key + '" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">' + icons[key] + '</svg></span>';
 }
 
-export function dashboardContent(zh, options = {}) {
-  const prefix = zh ? "/zh-cn" : "/en";
+export function dashboardContent(zh, options = {}, locale = "") {
+  const activeLocale = locale || options?.activeLocale || (zh ? "zh-cn" : "en-us");
+  const prefix = "/" + activeLocale;
+  const ui = shellText(activeLocale);
+  const nonEnglishLocale = !["en-us","en-gb","en-au","zh-cn"].includes(activeLocale);
   const productLinks = options && typeof options === "object" ? options : {};
   const gptHref = String(productLinks.gptHref || "");
   const adminHref = String(productLinks.adminHref || "");
@@ -77,11 +81,11 @@ export function dashboardContent(zh, options = {}) {
     <section class="dashboard-welcome">
       <div class="dashboard-welcome-copy">
         <span class="dashboard-eyebrow">AERTEX</span>
-        <h2>${zh ? "欢迎回来" : "Welcome back"}</h2>
-        <p>${zh ? "继续上次的工作，或者直接打开常用功能。" : "Pick up where you left off or open a common tool."}</p>
+        <h2>${activeLocale === "zh-cn" ? "欢迎回来" : activeLocale === "zh-tw" ? "歡迎回來" : activeLocale === "ja-jp" ? "おかえりなさい" : activeLocale === "ko-kr" ? "다시 오신 것을 환영합니다" : activeLocale === "fr-fr" ? "Bon retour" : activeLocale === "es-es" ? "Te damos la bienvenida" : activeLocale === "el-gr" ? "Καλώς ήρθατε ξανά" : activeLocale === "ar-sa" ? "مرحبًا بعودتك" : "Welcome back"}</h2>
+        <p>${activeLocale === "zh-cn" ? "继续上次的工作，或者直接打开常用功能。" : activeLocale === "zh-tw" ? "繼續上次的工作，或直接開啟常用功能。" : activeLocale === "ja-jp" ? "前回の作業を続けるか、よく使う機能を開きます。" : activeLocale === "ko-kr" ? "이전 작업을 계속하거나 자주 사용하는 기능을 여세요." : activeLocale === "fr-fr" ? "Reprenez votre travail ou ouvrez un outil courant." : activeLocale === "es-es" ? "Continúa donde lo dejaste o abre una herramienta habitual." : activeLocale === "el-gr" ? "Συνεχίστε από εκεί που σταματήσατε ή ανοίξτε ένα συχνό εργαλείο." : activeLocale === "ar-sa" ? "تابع عملك السابق أو افتح إحدى الأدوات الشائعة." : "Pick up where you left off or open a common tool."}</p>
         <div class="dashboard-welcome-actions">
-          <a class="dashboard-primary-action" href="${prefix}/workspace/workbench">${dashboardIcon("workbench")}<span class="dashboard-action-label">${zh ? "打开工作台" : "Open Workbench"}</span><span class="dashboard-action-arrow">›</span></a>
-          <a class="dashboard-secondary-action" href="${prefix}/profile">${dashboardIcon("profile")}<span class="dashboard-action-label">${zh ? "AERTEX 账户" : "AERTEX Account"}</span><span class="dashboard-action-arrow">›</span></a>
+          <a class="dashboard-primary-action" href="${prefix}/workspace/workbench">${dashboardIcon("workbench")}<span class="dashboard-action-label">${ui.nav.workbench}</span><span class="dashboard-action-arrow">›</span></a>
+          <a class="dashboard-secondary-action" href="${prefix}/profile">${dashboardIcon("profile")}<span class="dashboard-action-label">${ui.nav.profile}</span><span class="dashboard-action-arrow">›</span></a>
         </div>
       </div>
       <div class="dashboard-today-card" aria-label="${zh ? "当前时间" : "Current time"}">
@@ -178,10 +182,10 @@ export function dashboardContent(zh, options = {}) {
         </div>
         <div class="dashboard-session-facts">
           <div>${dashboardIcon("appearance")}<span><small>${zh ? "外观" : "Appearance"}</small><strong id="dashboard-theme-label">—</strong></span></div>
-          <div>${dashboardIcon("language")}<span><small>${zh ? "语言" : "Language"}</small><strong>${zh ? "简体中文" : "English"}</strong></span></div>
+          <div>${dashboardIcon("language")}<span><small>${ui.nav.language}</small><strong>${ui.langName}</strong></span></div>
           <div>${dashboardIcon("storage")}<span><small>${zh ? "存储" : "Storage"}</small><strong>AERTEX Drive</strong></span></div>
         </div>
-        <a class="dashboard-session-settings" href="${prefix}/settings">${dashboardIcon("settings")}<span class="dashboard-action-label">${zh ? "设置" : "Settings"}</span><span class="dashboard-action-arrow">›</span></a>
+        <a class="dashboard-session-settings" href="${prefix}/settings">${dashboardIcon("settings")}<span class="dashboard-action-label">${ui.nav.settings}</span><span class="dashboard-action-arrow">›</span></a>
       </article>
     </section>
 
@@ -210,6 +214,7 @@ export function dashboardContent(zh, options = {}) {
         const wishTypeButtons = [...document.querySelectorAll("[data-home-wish-kind]")];
         let wishKind = "birthday";
         const zh = ${zh ? "true" : "false"};
+        const locale = ${JSON.stringify("PLACEHOLDER")};
         const isoWeek = value => {
           const d = new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
           const day = d.getUTCDay() || 7;
@@ -244,8 +249,8 @@ export function dashboardContent(zh, options = {}) {
 
         const paint = () => {
           const now = new Date();
-          if (time) time.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { hour:"2-digit", minute:"2-digit", hour12:false }).format(now);
-          if (date) date.textContent = new Intl.DateTimeFormat(zh ? "zh-CN" : "en", { year:"numeric", month:"long", day:"numeric", weekday:"short" }).format(now);
+          if (time) time.textContent = new Intl.DateTimeFormat(locale, { hour:"2-digit", minute:"2-digit", hour12:false }).format(now);
+          if (date) date.textContent = new Intl.DateTimeFormat(locale, { year:"numeric", month:"long", day:"numeric", weekday:"short" }).format(now);
           if (zone) zone.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || "Local";
           if (week) week.textContent = zh ? ("第 " + isoWeek(now) + " 周") : ("Week " + isoWeek(now));
           if (theme) {
