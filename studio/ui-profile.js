@@ -1,65 +1,80 @@
 import { osHubIcon } from "./ui-primitives.js";
 
-export function profileContent(path, zh) {
-  if (path.endsWith("/account")) return accountAuditContent(zh);
+const PROFILE_COPY = {
+  "en-us": {preferences:"Preferences",preferencesLead:"Theme and language can be switched from the top-right controls. Additional communication and notification preferences will live here.",change:"Change",name:"Name",username:"Username",email:"Email",birth:"Date of Birth",gender:"Gender",visibility:"Gender Visibility",security:"Sign-In & Security",communication:"Communication & Preferences",note:"Name, date of birth, and gender come from the account information submitted during registration. You can change your profile photo here.",badImage:"Choose a JPG, PNG, or WebP image no larger than 5 MB.",updating:"Updating…",updateFailed:"Could not update the profile photo.",accountInfo:"Account Information",registered:"Registered at",accountId:"Account ID",lastSignIn:"Last sign-in",auditStats:"Recent Audit Stats",events:"recent events",devices:"recent devices",risks:"recent risks",loginRecords:"Login Records"},
+  "zh-cn": {preferences:"偏好设置",preferencesLead:"主题和语言可通过页面右上角按钮切换。其他通信与通知偏好会逐步集中到这里。",change:"更改",name:"姓名",username:"用户名",email:"电子邮件",birth:"出生日期",gender:"性别",visibility:"性别展示",security:"登录与安全",communication:"通信与偏好设置",note:"姓名、出生日期与性别来自注册时提交的账户资料。头像可在这里更改。",badImage:"请选择不超过 5 MB 的 JPG、PNG 或 WebP 图片。",updating:"正在更新…",updateFailed:"头像更新失败，请稍后再试。",accountInfo:"账号基本信息",registered:"注册时间",accountId:"账号 ID",lastSignIn:"最近登录",auditStats:"最近审计统计",events:"最近登录记录",devices:"最近设备",risks:"最近风险",loginRecords:"登录记录"},
+  "zh-tw": {preferences:"偏好設定",preferencesLead:"主題與語言可透過頁面右上角控制項切換。其他通訊與通知偏好會逐步集中到這裡。",change:"更改",name:"姓名",username:"使用者名稱",email:"電子郵件",birth:"出生日期",gender:"性別",visibility:"性別顯示",security:"登入與安全性",communication:"通訊與偏好設定",note:"姓名、出生日期與性別來自註冊時提交的帳號資料。你可以在這裡更改個人照片。",badImage:"請選擇不超過 5 MB 的 JPG、PNG 或 WebP 圖片。",updating:"正在更新…",updateFailed:"無法更新個人照片，請稍後再試。",accountInfo:"帳號資訊",registered:"註冊時間",accountId:"帳號 ID",lastSignIn:"最近登入",auditStats:"最近稽核統計",events:"最近登入記錄",devices:"最近裝置",risks:"最近風險",loginRecords:"登入記錄"},
+  "ja-jp": {preferences:"環境設定",preferencesLead:"テーマと言語は右上のコントロールから切り替えられます。その他の通信・通知設定も順次ここに追加されます。",change:"変更",name:"氏名",username:"ユーザー名",email:"メール",birth:"生年月日",gender:"性別",visibility:"性別の表示",security:"サインインとセキュリティ",communication:"通信と環境設定",note:"氏名、生年月日、性別は登録時のアカウント情報から取得されます。プロフィール写真はここで変更できます。",badImage:"5 MB 以下の JPG、PNG、WebP 画像を選択してください。",updating:"更新中…",updateFailed:"プロフィール写真を更新できませんでした。",accountInfo:"アカウント情報",registered:"登録日時",accountId:"アカウント ID",lastSignIn:"最終サインイン",auditStats:"最近の監査統計",events:"最近のイベント",devices:"最近のデバイス",risks:"最近のリスク",loginRecords:"サインイン履歴"},
+  "ko-kr": {preferences:"환경설정",preferencesLead:"테마와 언어는 오른쪽 위 컨트롤에서 변경할 수 있습니다. 추가 통신 및 알림 환경설정도 여기에 모입니다.",change:"변경",name:"이름",username:"사용자 이름",email:"이메일",birth:"생년월일",gender:"성별",visibility:"성별 표시",security:"로그인 및 보안",communication:"통신 및 환경설정",note:"이름, 생년월일 및 성별은 가입 시 제출한 계정 정보에서 가져옵니다. 프로필 사진은 여기에서 변경할 수 있습니다.",badImage:"5 MB 이하의 JPG, PNG 또는 WebP 이미지를 선택하세요.",updating:"업데이트 중…",updateFailed:"프로필 사진을 업데이트할 수 없습니다.",accountInfo:"계정 정보",registered:"가입일",accountId:"계정 ID",lastSignIn:"최근 로그인",auditStats:"최근 감사 통계",events:"최근 이벤트",devices:"최근 기기",risks:"최근 위험",loginRecords:"로그인 기록"},
+  "fr-fr": {preferences:"Préférences",preferencesLead:"Le thème et la langue peuvent être modifiés depuis les contrôles en haut à droite. Les autres préférences de communication et de notification seront regroupées ici.",change:"Modifier",name:"Nom",username:"Nom d’utilisateur",email:"E-mail",birth:"Date de naissance",gender:"Genre",visibility:"Visibilité du genre",security:"Connexion et sécurité",communication:"Communication et préférences",note:"Le nom, la date de naissance et le genre proviennent des informations fournies lors de l’inscription. Vous pouvez modifier la photo de profil ici.",badImage:"Choisissez une image JPG, PNG ou WebP de 5 Mo maximum.",updating:"Mise à jour…",updateFailed:"Impossible de mettre à jour la photo de profil.",accountInfo:"Informations du compte",registered:"Inscrit le",accountId:"ID du compte",lastSignIn:"Dernière connexion",auditStats:"Statistiques d’audit récentes",events:"événements récents",devices:"appareils récents",risks:"risques récents",loginRecords:"Historique des connexions"},
+  "es-es": {preferences:"Preferencias",preferencesLead:"El tema y el idioma se pueden cambiar desde los controles de la esquina superior derecha. Otras preferencias de comunicación y notificaciones se reunirán aquí.",change:"Cambiar",name:"Nombre",username:"Usuario",email:"Correo electrónico",birth:"Fecha de nacimiento",gender:"Género",visibility:"Visibilidad del género",security:"Inicio de sesión y seguridad",communication:"Comunicación y preferencias",note:"El nombre, la fecha de nacimiento y el género proceden de la información enviada al registrarse. Puedes cambiar la foto de perfil aquí.",badImage:"Elige una imagen JPG, PNG o WebP de no más de 5 MB.",updating:"Actualizando…",updateFailed:"No se pudo actualizar la foto de perfil.",accountInfo:"Información de la cuenta",registered:"Registro",accountId:"ID de cuenta",lastSignIn:"Último inicio de sesión",auditStats:"Estadísticas de auditoría recientes",events:"eventos recientes",devices:"dispositivos recientes",risks:"riesgos recientes",loginRecords:"Registros de inicio de sesión"},
+  "el-gr": {preferences:"Προτιμήσεις",preferencesLead:"Το θέμα και η γλώσσα αλλάζουν από τα στοιχεία ελέγχου επάνω δεξιά. Πρόσθετες προτιμήσεις επικοινωνίας και ειδοποιήσεων θα συγκεντρωθούν εδώ.",change:"Αλλαγή",name:"Όνομα",username:"Όνομα χρήστη",email:"Email",birth:"Ημερομηνία γέννησης",gender:"Φύλο",visibility:"Ορατότητα φύλου",security:"Σύνδεση και ασφάλεια",communication:"Επικοινωνία και προτιμήσεις",note:"Το όνομα, η ημερομηνία γέννησης και το φύλο προέρχονται από τα στοιχεία που υποβλήθηκαν κατά την εγγραφή. Μπορείτε να αλλάξετε τη φωτογραφία προφίλ εδώ.",badImage:"Επιλέξτε εικόνα JPG, PNG ή WebP έως 5 MB.",updating:"Ενημέρωση…",updateFailed:"Δεν ήταν δυνατή η ενημέρωση της φωτογραφίας προφίλ.",accountInfo:"Στοιχεία λογαριασμού",registered:"Εγγραφή",accountId:"ID λογαριασμού",lastSignIn:"Τελευταία σύνδεση",auditStats:"Πρόσφατα στατιστικά ελέγχου",events:"πρόσφατα συμβάντα",devices:"πρόσφατες συσκευές",risks:"πρόσφατοι κίνδυνοι",loginRecords:"Καταγραφές σύνδεσης"},
+  "ar-sa": {preferences:"التفضيلات",preferencesLead:"يمكن تغيير السمة واللغة من عناصر التحكم أعلى اليمين. وستُجمع تفضيلات الاتصال والإشعارات الأخرى هنا.",change:"تغيير",name:"الاسم",username:"اسم المستخدم",email:"البريد الإلكتروني",birth:"تاريخ الميلاد",gender:"الجنس",visibility:"إظهار الجنس",security:"تسجيل الدخول والأمان",communication:"الاتصال والتفضيلات",note:"يأتي الاسم وتاريخ الميلاد والجنس من معلومات الحساب المقدمة عند التسجيل. ويمكنك تغيير صورة الملف الشخصي هنا.",badImage:"اختر صورة JPG أو PNG أو WebP لا يزيد حجمها عن 5 MB.",updating:"جارٍ التحديث…",updateFailed:"تعذر تحديث صورة الملف الشخصي.",accountInfo:"معلومات الحساب",registered:"تاريخ التسجيل",accountId:"معرّف الحساب",lastSignIn:"آخر تسجيل دخول",auditStats:"إحصاءات التدقيق الأخيرة",events:"أحداث حديثة",devices:"أجهزة حديثة",risks:"مخاطر حديثة",loginRecords:"سجلات تسجيل الدخول"}
+};
+PROFILE_COPY["en-gb"]=PROFILE_COPY["en-us"]; PROFILE_COPY["en-au"]=PROFILE_COPY["en-us"];
 
-  if (path.endsWith("/preferences")) return `<section class="os-card is-large"><h2>${zh ? "偏好设置" : "Preferences"}</h2><p>${zh ? "主题和语言可通过页面右上角按钮切换。其他通信与通知偏好会逐步集中到这里。" : "Theme and language can be switched from the top-right controls. Additional communication and notification preferences will live here."}</p></section>`;
+export function profileContent(path, zh, locale = "") {
+  const activeLocale=locale||(zh?"zh-cn":"en-us");
+  const pc=PROFILE_COPY[activeLocale]||PROFILE_COPY["en-us"];
+  if (path.endsWith("/account")) return accountAuditContent(zh, activeLocale);
 
-  const prefix = zh ? "/zh-cn" : "/en";
+  if (path.endsWith("/preferences")) return `<section class="os-card is-large"><h2>${pc.preferences}</h2><p>${pc.preferencesLead}</p></section>`;
+
+  const prefix = "/" + activeLocale;
   return `
     <section id="profile-summary" class="profile-personal-info" data-profile-personal-info>
       <div class="profile-personal-avatar-block">
         <div id="profile-avatar" class="profile-personal-avatar">A</div>
-        <button id="profile-avatar-change" class="profile-personal-change" type="button">${zh ? "更改" : "Change"}</button>
+        <button id="profile-avatar-change" class="profile-personal-change" type="button">${pc.change}</button>
         <input id="profile-avatar-file-simple" type="file" accept="image/jpeg,image/png,image/webp" hidden>
         <span id="profile-avatar-status-simple" class="profile-personal-avatar-status" aria-live="polite"></span>
       </div>
 
       <section class="profile-personal-group">
         <div class="profile-personal-row">
-          <span>${zh ? "姓名" : "Name"}</span>
+          <span>${pc.name}</span>
           <strong id="profile-real-name-value">—</strong>
         </div>
       </section>
 
       <section class="profile-personal-group">
         <div class="profile-personal-row">
-          <span>${zh ? "用户名" : "Username"}</span>
+          <span>${pc.username}</span>
           <strong id="profile-username-value">—</strong>
         </div>
         <div class="profile-personal-row">
-          <span>${zh ? "电子邮件" : "Email"}</span>
+          <span>${pc.email}</span>
           <strong id="profile-email-value">—</strong>
         </div>
       </section>
 
       <section class="profile-personal-group">
         <div class="profile-personal-row">
-          <span>${zh ? "出生日期" : "Date of Birth"}</span>
+          <span>${pc.birth}</span>
           <strong id="profile-birth-date-value">—</strong>
         </div>
         <div class="profile-personal-row">
-          <span>${zh ? "性别" : "Gender"}</span>
+          <span>${pc.gender}</span>
           <strong id="profile-gender-value">—</strong>
         </div>
         <div class="profile-personal-row">
-          <span>${zh ? "性别展示" : "Gender Visibility"}</span>
+          <span>${pc.visibility}</span>
           <strong id="profile-gender-privacy-value">—</strong>
         </div>
       </section>
 
       <section class="profile-personal-group">
         <a class="profile-personal-row is-link" href="${prefix}/settings/security">
-          <span>${zh ? "登录与安全" : "Sign-In & Security"}</span>
+          <span>${pc.security}</span>
           <span class="profile-personal-chevron" aria-hidden="true">›</span>
         </a>
         <a class="profile-personal-row is-link" href="${prefix}/profile/preferences">
-          <span>${zh ? "通信与偏好设置" : "Communication & Preferences"}</span>
+          <span>${pc.communication}</span>
           <span class="profile-personal-chevron" aria-hidden="true">›</span>
         </a>
       </section>
 
-      <p class="profile-personal-note">${zh ? "姓名、出生日期与性别来自注册时提交的账户资料。头像可在这里更改。" : "Name, date of birth, and gender come from the account information submitted during registration. You can change your profile photo here."}</p>
+      <p class="profile-personal-note">${pc.note}</p>
     </section>
 
     <script>
@@ -74,11 +89,11 @@ export function profileContent(path, zh) {
           event.target.value = "";
           if (!file) return;
           if (!["image/jpeg","image/png","image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
-            if (status) status.textContent = ${JSON.stringify(zh ? "请选择不超过 5 MB 的 JPG、PNG 或 WebP 图片。" : "Choose a JPG, PNG, or WebP image no larger than 5 MB.")};
+            if (status) status.textContent = ${JSON.stringify(pc.badImage)};
             return;
           }
           button.disabled = true;
-          if (status) status.textContent = ${JSON.stringify(zh ? "正在更新…" : "Updating…")};
+          if (status) status.textContent = ${JSON.stringify(pc.updating)};
           try {
             const form = new FormData();
             form.append("kind", "avatar");
@@ -92,7 +107,7 @@ export function profileContent(path, zh) {
             if (status) status.textContent = "";
           } catch (error) {
             console.error("Profile photo update failed", error);
-            if (status) status.textContent = ${JSON.stringify(zh ? "头像更新失败，请稍后再试。" : "Could not update the profile photo.")};
+            if (status) status.textContent = ${JSON.stringify(pc.updateFailed)};
           } finally {
             button.disabled = false;
           }
@@ -102,29 +117,30 @@ export function profileContent(path, zh) {
   `;
 }
 
-export function accountAuditContent(zh) {
+export function accountAuditContent(zh, locale = "") {
+  const pc=PROFILE_COPY[locale]||PROFILE_COPY[zh?"zh-cn":"en-us"];
   return `
     <section class="audit-grid">
       <article class="os-card is-large">
-        <h2>${zh ? "账号基本信息" : "Account Information"}</h2>
+        <h2>${pc.accountInfo}</h2>
         <dl class="audit-facts">
-          <div><dt>${zh ? "注册时间" : "Registered at"}</dt><dd id="audit-created-at">...</dd></div>
-          <div><dt>${zh ? "账号 ID" : "Account ID"}</dt><dd id="audit-user-id">...</dd></div>
-          <div><dt>${zh ? "邮箱" : "Email"}</dt><dd id="audit-email">...</dd></div>
-          <div><dt>${zh ? "最近登录" : "Last sign-in"}</dt><dd id="audit-last-sign-in">...</dd></div>
+          <div><dt>${pc.registered}</dt><dd id="audit-created-at">...</dd></div>
+          <div><dt>${pc.accountId}</dt><dd id="audit-user-id">...</dd></div>
+          <div><dt>${pc.email}</dt><dd id="audit-email">...</dd></div>
+          <div><dt>${pc.lastSignIn}</dt><dd id="audit-last-sign-in">...</dd></div>
         </dl>
       </article>
       <article class="os-card">
-        <h2>${zh ? "最近审计统计" : "Recent Audit Stats"}</h2>
+        <h2>${pc.auditStats}</h2>
         <div class="audit-stats">
-          <span><strong id="audit-login-count">0</strong>${zh ? "最近登录记录" : "recent events"}</span>
-          <span><strong id="audit-device-count">0</strong>${zh ? "最近设备" : "recent devices"}</span>
-          <span><strong id="audit-risk-count">0</strong>${zh ? "最近风险" : "recent risks"}</span>
+          <span><strong id="audit-login-count">0</strong>${pc.events}</span>
+          <span><strong id="audit-device-count">0</strong>${pc.devices}</span>
+          <span><strong id="audit-risk-count">0</strong>${pc.risks}</span>
         </div>
       </article>
     </section>
     <section class="os-card audit-section">
-      <h2>${zh ? "登录记录" : "Login Records"}</h2>
+      <h2>${pc.loginRecords}</h2>
       <div id="audit-login-table" class="audit-table"></div>
     </section>
   `;
