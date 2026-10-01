@@ -302,7 +302,7 @@ export default {
       };
       const shellPath = pathname === "/" ? "/" : linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
       let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel, shellProductLinks);
-      markup = decorateWorkNavigation(markup, zh, pathname, mainOrigin, workOrigin);
+      markup = decorateWorkNavigation(markup, zh, pathname, mainOrigin, workOrigin, fullLocale);
       markup = polishWorkTexNavigation(markup, zh, pathname, workOrigin);
       markup = hardenSessionClientMarkup(markup);
       if (pathname === "/info/links") { const baseContent = polishLinksContent(linksHubContent(zh, fullLocale), pathname, zh); markup = replaceOsContent(markup, enhanceLinksHubWithCommunity(baseContent, zh)); }
@@ -317,8 +317,8 @@ export default {
       if (pathname === "/workspace/drafts") markup = replaceOsContent(markup, draftsWorkspaceContent(zh));
       if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh));
       if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh));
-      if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin), workOrigin));
-      if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh), zh));
+      if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin, fullLocale), workOrigin));
+      if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, fullLocale), zh));
       if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); }
       const pageOptions = pathname === "/work/local" || pathname === "/work/tex" || pathname === "/workspace/experiments/tex" ? { allowLoopback: true } : {};
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
