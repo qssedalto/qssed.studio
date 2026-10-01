@@ -24,7 +24,8 @@ import {
   isWorkSubdomainRequest,
   mainWorkRedirect,
   rewriteWorkSubdomainRequest,
-  workSessionRedirect
+  workSessionRedirect,
+  workDocumentNotFound
 } from "./studio/work-subdomain.js";
 import {
   handleMainGptHandoff,
@@ -72,12 +73,15 @@ async function routeStudioRequest(request, env, ctx) {
   }
 
   let workPageNext = "";
+  let workDocumentId = "";
+  let workPublicRequest = request;
   if (workHost) {
     const mapped = rewriteWorkSubdomainRequest(request);
     if (mapped.redirect) return redirect(mapped.redirect);
     if (mapped.canonical) return redirect(mapped.canonical);
     request = mapped.request;
     workPageNext = mapped.pageNext;
+    workDocumentId = mapped.documentId || "";
     url = new URL(request.url);
     pathname = url.pathname;
   }
@@ -116,6 +120,19 @@ async function routeStudioRequest(request, env, ctx) {
     return handleProfileApi(request, action);
   }
   if (isLegacyCookieApiPath(pathname)) return handleLegacyCookieApi(request, env, pathname);
+
+  if (workHost && workDocumentId) {
+    const validationUrl = new URL("/api/tex/documents", request.url);
+    validationUrl.searchParams.set("id", workDocumentId);
+    const validationRequest = new Request(validationUrl.toString(), {
+      method: "GET",
+      headers: request.headers
+    });
+    const validation = await handleTexApi(validationRequest, env, "documents");
+    if (validation.status === 401) return workSessionRedirect(workPublicRequest, workPageNext);
+    if (validation.status === 404) return workDocumentNotFound(workPublicRequest);
+    if (!validation.ok) return validation;
+  }
 
   let response = await studio.fetch(request, env, ctx);
   if (workHost && workPageNext && response.status === 401) return workSessionRedirect(request, workPageNext);
