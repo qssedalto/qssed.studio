@@ -24,7 +24,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
   const activeLocale = productLinks.activeLocale || (zh ? "zh-cn" : "en-us");
   const ui = shellText(activeLocale);
   const copy = buildOsCopy(zh, activeLocale);
-  const page = copy.pages[path] || knowledgePageMeta(path, zh) || copy.pages["/dashboard"];
+  const page = copy.pages[path] || knowledgePageMeta(path, zh, activeLocale) || copy.pages["/dashboard"];
   const activeSection = page.section;
   const dashboardPath = path === "/" || path === "/dashboard";
   const knowledgePath = path.startsWith("/info/knowledge");
