@@ -1,4 +1,5 @@
 import { osHubGrid, osHubIcon } from "./ui-primitives.js";
+import { dashboardIcon } from "./ui-dashboard.js";
 
 export function settingsGeneralContent(zh) {
   const prefix = zh ? "/zh-cn" : "/en";
@@ -443,7 +444,7 @@ export function settingsHubContent(zh) {
     : { ai:{meta:"Available"}, storage:{meta:"Available"}, subscription:{meta:"Testing"} };
   const row = (item, href, icon, status = "") => `
     <a class="settings-stage-row" href="${href}">
-      <span class="settings-stage-row-icon">${osHubIcon(icon)}</span>
+      <span class="settings-stage-row-icon">${dashboardIcon(icon)}</span>
       <span class="settings-stage-row-copy"><strong>${item[0]}</strong><small>${item[1]}</small></span>
       ${status ? `<em>${status}</em>` : ""}
       <b aria-hidden="true">›</b>
@@ -482,7 +483,7 @@ export function settingsHubContent(zh) {
       .settings-stage-group-head{padding:18px 18px 10px;color:var(--muted);font-size:11px;font-weight:750;letter-spacing:.12em;text-transform:uppercase}
       .settings-stage-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;min-height:74px;padding:12px 16px;color:var(--text);text-decoration:none;border-top:1px solid var(--hairline);transition:background .18s ease,transform .2s cubic-bezier(.16,1,.3,1)}
       .settings-stage-row:first-of-type{border-top:0}.settings-stage-row-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:var(--fill);color:var(--primary);box-shadow:inset 0 0 0 1px var(--border)}
-      .settings-stage-row-icon .os-hub-icon{width:20px;height:20px}.settings-stage-row-copy{min-width:0}.settings-stage-row-copy strong,.settings-stage-row-copy small{display:block}.settings-stage-row-copy strong{font-size:14px;letter-spacing:-.02em}.settings-stage-row-copy small{margin-top:4px;color:var(--muted);font-size:11px;line-height:1.35}
+      .settings-stage-row-icon .dashboard-icon{width:22px;height:22px;border-radius:0;background:transparent;box-shadow:none;color:currentColor;line-height:0}.settings-stage-row-icon .dashboard-icon svg{display:block;width:22px;height:22px;flex:0 0 22px;overflow:visible}.settings-stage-row-copy{min-width:0}.settings-stage-row-copy strong,.settings-stage-row-copy small{display:block}.settings-stage-row-copy strong{font-size:14px;letter-spacing:-.02em}.settings-stage-row-copy small{margin-top:4px;color:var(--muted);font-size:11px;line-height:1.35}
       .settings-stage-row em{font-style:normal;color:var(--quiet);font-size:10px}.settings-stage-row>b{color:var(--quiet);font-size:20px;font-weight:500}
       @media(hover:hover) and (pointer:fine){.settings-theme-feature:hover{transform:translateY(-3px);border-color:var(--border-strong);box-shadow:0 24px 56px rgba(0,0,0,.10)}.settings-stage-row:hover{background:var(--fill);transform:translateX(2px)}}
       @media(max-width:900px){.settings-stage-hero{grid-template-columns:1fr;min-height:0}.settings-stage-columns{grid-template-columns:1fr}}
@@ -507,7 +508,7 @@ export function settingsHubContent(zh) {
         <section class="settings-stage-group">
           <div class="settings-stage-group-head">${copy.essentials}</div>
           ${row(copy.language, prefix+"/settings/language", "language")}
-          ${row(copy.security, prefix+"/settings/security", "shield")}
+          ${row(copy.security, prefix+"/settings/security", "security")}
           ${row(copy.ai, prefix+"/settings/ai", "ai", availability.ai.meta)}
         </section>
         <section class="settings-stage-group">
