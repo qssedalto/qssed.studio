@@ -9,28 +9,91 @@ export function baseHead(title) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <script>
       (function () {
+        const MODE_KEY = "qssed-theme-mode";
+        const RESOLVED_KEY = "qssed-theme";
+        const ACCENT_KEY = "qssed-accent";
+        const VALID_MODES = new Set(["system","light","dark"]);
+        const VALID_ACCENTS = new Set(["sapphire","aqua","jade","lime","amber","coral","rose","magenta","violet","graphite"]);
+        const media = window.matchMedia("(prefers-color-scheme: light)");
+
+        function preferenceDomain() {
+          const host = String(location.hostname || "").toLowerCase();
+          return ["qsseda.com","qsseda.online","qsseda.studio"].find(domain => host === domain || host.endsWith("." + domain)) || "";
+        }
         function readCookieTheme() {
           const match = document.cookie.match(/(?:^|;\\s*)qssed_theme=(light|dark)(?:;|$)/);
           return match ? match[1] : "";
         }
-        function persistTheme(theme) {
-          try { localStorage.setItem("qssed-theme", theme); } catch {}
+        function resolvedTheme(mode) {
+          if (mode === "light" || mode === "dark") return mode;
+          return media.matches ? "light" : "dark";
+        }
+        function persistResolved(theme) {
+          try { localStorage.setItem(RESOLVED_KEY, theme); } catch {}
           try {
-            const host = location.hostname.toLowerCase();
-            const domain = host === "qsseda.com" || host.endsWith(".qsseda.com") ? "; Domain=.qsseda.com" : "";
-            document.cookie = "qssed_theme=" + theme + "; Path=/; Max-Age=31536000; SameSite=Lax" + domain;
+            const domain = preferenceDomain();
+            document.cookie = "qssed_theme=" + theme + "; Path=/; Max-Age=31536000; SameSite=Lax" + (domain ? "; Domain=." + domain : "");
           } catch {}
         }
-        try {
-          const cookieTheme = readCookieTheme();
-          const savedTheme = localStorage.getItem("qssed-theme");
-          const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
-          const theme = cookieTheme || savedTheme || (prefersLight ? "light" : "dark");
-          document.documentElement.dataset.theme = theme;
-          persistTheme(theme);
-        } catch {
-          document.documentElement.dataset.theme = "dark";
+        function readMode() {
+          try {
+            const savedMode = localStorage.getItem(MODE_KEY);
+            if (VALID_MODES.has(savedMode)) return savedMode;
+            const legacy = localStorage.getItem(RESOLVED_KEY) || readCookieTheme();
+            if (legacy === "light" || legacy === "dark") return legacy;
+          } catch {}
+          return "system";
         }
+        function readAccent() {
+          try {
+            const saved = localStorage.getItem(ACCENT_KEY);
+            if (VALID_ACCENTS.has(saved)) return saved;
+          } catch {}
+          return "sapphire";
+        }
+        function setMode(mode, options = {}) {
+          const nextMode = VALID_MODES.has(mode) ? mode : "system";
+          const nextTheme = resolvedTheme(nextMode);
+          document.documentElement.dataset.themeMode = nextMode;
+          document.documentElement.dataset.theme = nextTheme;
+          if (options.persist !== false) {
+            try { localStorage.setItem(MODE_KEY, nextMode); } catch {}
+          }
+          persistResolved(nextTheme);
+          if (options.announce !== false) {
+            window.dispatchEvent(new CustomEvent("aertex-themechange",{detail:{mode:nextMode,theme:nextTheme,accent:readAccent()}}));
+          }
+          return nextTheme;
+        }
+        function setAccent(accent, options = {}) {
+          const next = VALID_ACCENTS.has(accent) ? accent : "sapphire";
+          document.documentElement.dataset.accent = next;
+          if (options.persist !== false) {
+            try { localStorage.setItem(ACCENT_KEY, next); } catch {}
+          }
+          if (options.announce !== false) {
+            window.dispatchEvent(new CustomEvent("aertex-themechange",{detail:{mode:readMode(),theme:document.documentElement.dataset.theme || resolvedTheme(readMode()),accent:next}}));
+          }
+          return next;
+        }
+
+        const initialMode = readMode();
+        const initialAccent = readAccent();
+        setMode(initialMode,{persist:false,announce:false});
+        setAccent(initialAccent,{persist:false,announce:false});
+
+        media.addEventListener?.("change", () => {
+          if (readMode() === "system") setMode("system",{persist:false});
+        });
+
+        window.AERTEXTheme = {
+          setMode,
+          setAccent,
+          getMode: readMode,
+          getAccent: readAccent,
+          getResolvedTheme: () => document.documentElement.dataset.theme || resolvedTheme(readMode()),
+          palette: Array.from(VALID_ACCENTS)
+        };
       })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -429,7 +492,19 @@ export function baseHead(title) {
         --ease-standard:cubic-bezier(.2,.8,.2,1);
       }
 
+      :root[data-accent="sapphire"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#4964d8}
+      :root[data-accent="aqua"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#2a9d8f}
+      :root[data-accent="jade"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#3a9d72}
+      :root[data-accent="lime"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#86a93b;--primary-ink:#151515}
+      :root[data-accent="amber"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#d49a2a;--primary-ink:#151515}
+      :root[data-accent="coral"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#e26d5a}
+      :root[data-accent="rose"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#d95686}
+      :root[data-accent="magenta"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#b755c7}
+      :root[data-accent="violet"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#7559d9}
+      :root[data-accent="graphite"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#5a5d64}
+
       body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){
+        --primary-hover:color-mix(in srgb,var(--primary) 82%,#fff 18%);
         padding:clamp(12px,1.55vw,24px)!important;
         background:
           radial-gradient(1200px 760px at 4% -18%,color-mix(in srgb,var(--primary) 11%,transparent),transparent 66%),
@@ -629,24 +704,24 @@ export function themeScript() {
     <script>
       (function () {
         const button = document.getElementById("theme-toggle");
-        if (!button) return;
+        if (!button || !window.AERTEXTheme) return;
 
-        function setTheme(theme) {
-          document.documentElement.classList.add("theme-switching");
-          document.documentElement.dataset.theme = theme;
-          try { localStorage.setItem("qssed-theme", theme); } catch {}
-          try {
-            const host = location.hostname.toLowerCase();
-            const domain = host === "qsseda.com" || host.endsWith(".qsseda.com") ? "; Domain=.qsseda.com" : "";
-            document.cookie = "qssed_theme=" + theme + "; Path=/; Max-Age=31536000; SameSite=Lax" + domain;
-          } catch {}
-          window.setTimeout(() => document.documentElement.classList.remove("theme-switching"), 220);
-        }
+        const syncButton = () => {
+          const resolved = window.AERTEXTheme.getResolvedTheme();
+          const mode = window.AERTEXTheme.getMode();
+          button.dataset.themeMode = mode;
+          button.setAttribute("aria-label", resolved === "light" ? "Switch to dark mode" : "Switch to light mode");
+          button.title = mode === "system" ? "System appearance" : (resolved === "light" ? "Light appearance" : "Dark appearance");
+        };
 
         button.addEventListener("click", () => {
-          const currentTheme = document.documentElement.dataset.theme === "light" ? "light" : "dark";
-          setTheme(currentTheme === "light" ? "dark" : "light");
+          const current = window.AERTEXTheme.getResolvedTheme();
+          document.documentElement.classList.add("theme-switching");
+          window.AERTEXTheme.setMode(current === "light" ? "dark" : "light");
+          window.setTimeout(() => document.documentElement.classList.remove("theme-switching"), 260);
         });
+        window.addEventListener("aertex-themechange", syncButton);
+        syncButton();
       })();
     </script>
   `;

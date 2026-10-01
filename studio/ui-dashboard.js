@@ -50,21 +50,15 @@ export function dashboardContent(zh, options = {}) {
     ...(adminHref ? [["管理员控制台","进入独立管理控制面","admin",adminHref]] : []),
     ["祝福链接","生日、中秋与专属姓名分享链接","wishes",`${prefix}/wishes`],
     ["AERTEX 账户","个人信息、登录与安全和账户服务","profile",`${prefix}/profile`],
-    ["工作台","打开工作区","workbench",`${prefix}/workspace/workbench`],
-    ["AERTEX Drive","管理私人云盘","storage",`${prefix}/settings/storage`],
     ["收藏链接","常用链接和收藏","links",`${prefix}/info/links`],
     ["账户与安全","设备和登录记录","security",`${prefix}/settings/security`],
-    ["设置","外观、语言和其他设置","settings",`${prefix}/settings`]
   ] : [
     ...(gptHref ? [["AERTEX Intelligence","Open GPT workspace","intelligence",gptHref]] : []),
     ...(adminHref ? [["Administration","Open isolated control plane","admin",adminHref]] : []),
     ["Wish Links","Birthday, Mid-Autumn, and named greeting links","wishes",`${prefix}/wishes`],
     ["AERTEX Account","Personal information, sign-in & security, and account services","profile",`${prefix}/profile`],
-    ["Workbench","Open Workspace","workbench",`${prefix}/workspace/workbench`],
-    ["AERTEX Drive","Manage private cloud files","storage",`${prefix}/settings/storage`],
     ["Saved Links","Links and bookmarks","links",`${prefix}/info/links`],
-    ["Account & Security","Devices and sign-in history","security",`${prefix}/settings/security`],
-    ["Settings","Appearance, language, and more","settings",`${prefix}/settings`]
+    ["Account & Security","Devices and sign-in history","security",`${prefix}/settings/security`]
   ];
 
   const moduleRows = zh ? [
@@ -103,6 +97,29 @@ export function dashboardContent(zh, options = {}) {
           <div><small>${zh ? "时区" : "Time zone"}</small><strong id="dashboard-live-zone">—</strong></div>
           <div><small>${zh ? "日历" : "Calendar"}</small><strong id="dashboard-live-week">—</strong></div>
         </div>
+      </div>
+    </section>
+
+    <section class="dashboard-focus" aria-label="${zh ? "主要入口" : "Primary destinations"}">
+      <a class="dashboard-focus-primary" href="${prefix}/workspace/workbench">
+        <span class="dashboard-focus-kicker">${zh ? "WORKSPACE" : "WORKSPACE"}</span>
+        <span class="dashboard-focus-icon">${dashboardIcon("workbench")}</span>
+        <div>
+          <h3>${zh ? "进入工作台" : "Open Workbench"}</h3>
+          <p>${zh ? "把项目、草稿、实验和任务集中到一个工作流里。" : "Bring projects, drafts, experiments, and tasks into one working flow."}</p>
+        </div>
+        <span class="dashboard-focus-arrow" aria-hidden="true">↗</span>
+      </a>
+      <div class="dashboard-focus-side">
+        <a class="dashboard-focus-card" href="${prefix}/settings/storage">
+          <span class="dashboard-focus-card-top">${dashboardIcon("storage")}<b aria-hidden="true">↗</b></span>
+          <div><small>AERTEX DRIVE</small><h3>${zh ? "私人云盘" : "Private Drive"}</h3><p>${zh ? "文件、容量与私人存储。" : "Files, capacity, and private storage."}</p></div>
+        </a>
+        <a class="dashboard-focus-card is-theme" href="${prefix}/settings/appearance">
+          <span class="dashboard-focus-card-top">${dashboardIcon("appearance")}<b aria-hidden="true">↗</b></span>
+          <div class="dashboard-focus-swatches" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+          <div><small>THEME STUDIO</small><h3>${zh ? "调整主题" : "Customize Theme"}</h3><p>${zh ? "模式、强调色与实时预览。" : "Mode, accent color, and live preview."}</p></div>
+        </a>
       </div>
     </section>
 
@@ -233,12 +250,14 @@ export function dashboardContent(zh, options = {}) {
           if (week) week.textContent = zh ? ("第 " + isoWeek(now) + " 周") : ("Week " + isoWeek(now));
           if (theme) {
             const current = document.documentElement.dataset.theme || "light";
-            theme.textContent = current === "dark" ? (zh ? "深色" : "Dark") : (zh ? "浅色" : "Light");
+            const mode = window.AERTEXTheme?.getMode?.() || document.documentElement.dataset.themeMode || current;
+            const resolved = current === "dark" ? (zh ? "深色" : "Dark") : (zh ? "浅色" : "Light");
+            theme.textContent = mode === "system" ? ((zh ? "系统 · " : "System · ") + resolved) : resolved;
           }
         };
         paint();
         window.setInterval(paint, 30000);
-        new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+        new MutationObserver(paint).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme","data-theme-mode","data-accent"]});
       })();
     </script>
   `;
