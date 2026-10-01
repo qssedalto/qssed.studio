@@ -76,6 +76,89 @@ function richMessageRuntime(copy) {
     });
   }
 
+  const BARE_MATH_COMMAND = /\\(?:frac|dfrac|tfrac|binom|sqrt|sum|prod|int|iint|iiint|oint|lim|log|ln|sin|cos|tan|arcsin|arccos|arctan|exp|cdot|times|div|pm|mp|leq|geq|neq|approx|sim|equiv|propto|infty|partial|nabla|alpha|beta|gamma|delta|epsilon|varepsilon|zeta|eta|theta|vartheta|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|phi|varphi|chi|psi|omega|mid|cap|cup|subset|supset|subseteq|supseteq|in|notin|to|mapsto|rightarrow|leftarrow|leftrightarrow|Rightarrow|Leftarrow|Leftrightarrow|overline|underline|vec|hat|bar|mathbf|mathrm|mathbb|mathcal|operatorname|text|begin|end|left|right|displaystyle)\b/;
+  const MATH_SAFE_PUNCT = "\\\\{}[]_^=+-*/().,:<>|!%'";
+
+  function isMathSafeChar(ch) {
+    return /[A-Za-z0-9]/.test(ch) || /\s/.test(ch) || MATH_SAFE_PUNCT.includes(ch);
+  }
+
+  function isMathPrefixChar(ch) {
+    return /[0-9]/.test(ch) || /\s/.test(ch) || "\\\\{}[]_^=+-*/().,".includes(ch);
+  }
+
+  function hasBareLatexMath(value) {
+    return BARE_MATH_COMMAND.test(String(value || ""));
+  }
+
+  function isRecoverableMathOnlyLine(value) {
+    const text = String(value || "").trim();
+    if (!text || !hasBareLatexMath(text)) return false;
+    if (/[^\x00-\x7F]/.test(text)) return false;
+    if (![...text].some(ch => "\\\\{}[]_^=+-*/()".includes(ch))) return false;
+    const proseProbe = text
+      .replace(/\\[A-Za-z]+/g, " ")
+      .replace(/\{[^{}]*\}/g, " ")
+      .replace(/[A-Za-z](?:_[A-Za-z0-9{}]+)?/g, " ")
+      .replace(/[0-9\s_=+\-*\/().,:<>|!%'\[\]{}]/g, "");
+    return !/[A-Za-z]/.test(proseProbe);
+  }
+
+  function findBareMathToken(source) {
+    const text = String(source || "");
+    const command = text.match(BARE_MATH_COMMAND);
+    if (!command) return null;
+    const markerStart = command.index || 0;
+    let start = markerStart;
+    let end = markerStart + command[0].length;
+    while (start > 0 && isMathSafeChar(text[start - 1])) start--;
+
+    const before = text.slice(start, markerStart);
+    const equalIndex = before.lastIndexOf("=");
+    if (equalIndex >= 0) {
+      const lhs = before.slice(0, equalIndex);
+      const lhsMatch = lhs.match(/([A-Za-z][A-Za-z0-9_{}^]*(?:\s*\([^)]*\))?)\s*$/);
+      if (lhsMatch) start += lhs.length - lhsMatch[0].length;
+    } else {
+      start = markerStart;
+      while (start > 0 && isMathPrefixChar(text[start - 1])) start--;
+    }
+
+    let depth = 0;
+    let sawBrace = false;
+    let cursor = markerStart;
+    while (cursor < text.length) {
+      const ch = text[cursor];
+      if (!isMathSafeChar(ch)) break;
+      if (ch === "{") { depth++; sawBrace = true; }
+      if (ch === "}" && depth > 0) depth--;
+      if (depth === 0 && sawBrace && /\s/.test(ch)) {
+        const tail = text.slice(cursor).match(/^\s+([A-Za-z]{3,})\b/);
+        const previous = text.slice(start, cursor).trim().slice(-1);
+        if (tail && previous && !/[=+\-*\/^(,_\\]/.test(previous)) break;
+      }
+      cursor++;
+    }
+    end = cursor;
+
+    let expression = text.slice(start, end).trim();
+    expression = expression.replace(/[,:;]+$/, "").trim();
+    if (!expression || !hasBareLatexMath(expression)) return null;
+    if (expression.length > 600) return null;
+    return { index: start, full: text.slice(start, end), expression };
+  }
+
+  function appendRecoveredPlain(parent, value) {
+    let rest = String(value || "");
+    while (rest) {
+      const token = findBareMathToken(rest);
+      if (!token) { appendPlain(parent, rest); break; }
+      if (token.index > 0) appendPlain(parent, rest.slice(0, token.index));
+      addMath(parent, token.expression, false);
+      rest = rest.slice(token.index + token.full.length);
+    }
+  }
+
   function safeHref(value) {
     const raw = String(value || "").trim();
     if (!raw) return "";
@@ -91,8 +174,9 @@ function richMessageRuntime(copy) {
   function findToken(source) {
     const rules = [
       { type: "code", re: /\x60([^\x60\n]+)\x60/ },
-      { type: "mathDisplay", re: /\$\$([^$\n]+?)\$\$/ },
-      { type: "mathParen", re: /\\\((.+?)\\\)/ },
+      { type: "mathDisplay", re: /\$\$([\s\S]+?)\$\$/ },
+      { type: "mathBracket", re: /\\\[([\s\S]+?)\\\]/ },
+      { type: "mathParen", re: /\\\(([\s\S]+?)\\\)/ },
       { type: "math", re: /\$([^$\n]+?)\$/ },
       { type: "strong", re: /\*\*([\s\S]+?)\*\*/ },
       { type: "strong", re: /__([\s\S]+?)__/ },
@@ -112,12 +196,56 @@ function richMessageRuntime(copy) {
     return best;
   }
 
+  function prettyMathFallback(expression) {
+    let value = String(expression || "").trim();
+    const simple = part => /^[A-Za-z0-9_.+-]+$/.test(part) ? part : "(" + part + ")";
+    for (let pass = 0; pass < 5; pass++) {
+      const next = value.replace(/\\(?:dfrac|tfrac|frac)\{([^{}]+)\}\{([^{}]+)\}/g, (_, numerator, denominator) => simple(numerator) + "⁄" + simple(denominator));
+      if (next === value) break;
+      value = next;
+    }
+    value = value
+      .replace(/\\sqrt\{([^{}]+)\}/g, "√($1)")
+      .replace(/\\(?:cdot|times)\b/g, match => match.includes("times") ? "×" : "·")
+      .replace(/\\div\b/g, "÷")
+      .replace(/\\pm\b/g, "±")
+      .replace(/\\mp\b/g, "∓")
+      .replace(/\\leq\b/g, "≤")
+      .replace(/\\geq\b/g, "≥")
+      .replace(/\\neq\b/g, "≠")
+      .replace(/\\approx\b/g, "≈")
+      .replace(/\\equiv\b/g, "≡")
+      .replace(/\\infty\b/g, "∞")
+      .replace(/\\partial\b/g, "∂")
+      .replace(/\\nabla\b/g, "∇")
+      .replace(/\\sum\b/g, "∑")
+      .replace(/\\prod\b/g, "∏")
+      .replace(/\\(?:iiint|iint|int)\b/g, match => match.includes("iiint") ? "∭" : match.includes("iint") ? "∬" : "∫")
+      .replace(/\\to\b|\\rightarrow\b/g, "→")
+      .replace(/\\leftarrow\b/g, "←")
+      .replace(/\\leftrightarrow\b/g, "↔")
+      .replace(/\\Rightarrow\b/g, "⇒")
+      .replace(/\\Leftarrow\b/g, "⇐")
+      .replace(/\\Leftrightarrow\b/g, "⇔")
+      .replace(/\\alpha\b/g, "α").replace(/\\beta\b/g, "β").replace(/\\gamma\b/g, "γ")
+      .replace(/\\delta\b/g, "δ").replace(/\\epsilon\b|\\varepsilon\b/g, "ε")
+      .replace(/\\theta\b|\\vartheta\b/g, "θ").replace(/\\lambda\b/g, "λ").replace(/\\mu\b/g, "μ")
+      .replace(/\\pi\b/g, "π").replace(/\\rho\b/g, "ρ").replace(/\\sigma\b/g, "σ")
+      .replace(/\\phi\b|\\varphi\b/g, "φ").replace(/\\psi\b/g, "ψ").replace(/\\omega\b/g, "ω");
+    const subs = { "0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉","+":"₊","-":"₋" };
+    const sups = { "0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","+":"⁺","-":"⁻" };
+    value = value
+      .replace(/_\{?([0-9+-]+)\}?/g, (_, digits) => [...digits].map(ch => subs[ch] || ch).join(""))
+      .replace(/\^\{?([0-9+-]+)\}?/g, (_, digits) => [...digits].map(ch => sups[ch] || ch).join(""));
+    return value.replace(/\\(?:left|right|displaystyle)\b/g, "").replace(/[{}]/g, "");
+  }
+
   function addMath(parent, expression, display) {
     const node = document.createElement(display ? "div" : "span");
     node.className = (display ? "mathBlock " : "mathInline ") + "mathFallback";
     node.dataset.math = expression;
     node.dataset.display = display ? "1" : "0";
-    node.textContent = expression;
+    node.textContent = prettyMathFallback(expression);
     parent.appendChild(node);
   }
 
@@ -125,9 +253,9 @@ function richMessageRuntime(copy) {
     let rest = String(source || "");
     while (rest) {
       const token = findToken(rest);
-      if (!token) { appendPlain(parent, rest); break; }
+      if (!token) { appendRecoveredPlain(parent, rest); break; }
       const index = token.match.index || 0;
-      if (index) appendPlain(parent, rest.slice(0, index));
+      if (index) appendRecoveredPlain(parent, rest.slice(0, index));
       const full = token.match[0];
       const type = token.rule.type;
       if (type === "code") {
@@ -135,8 +263,8 @@ function richMessageRuntime(copy) {
         code.className = "inlineCode";
         code.textContent = token.match[1];
         parent.appendChild(code);
-      } else if (type === "math" || type === "mathParen" || type === "mathDisplay") {
-        addMath(parent, token.match[1], type === "mathDisplay");
+      } else if (type === "math" || type === "mathParen" || type === "mathBracket" || type === "mathDisplay") {
+        addMath(parent, token.match[1], type === "mathDisplay" || type === "mathBracket");
       } else if (type === "strong" || type === "em" || type === "strike") {
         const el = document.createElement(type === "strong" ? "strong" : type === "em" ? "em" : "s");
         appendInline(el, token.match[1]);
@@ -151,7 +279,7 @@ function richMessageRuntime(copy) {
           appendInline(link, token.match[1]);
           parent.appendChild(link);
         } else {
-          appendPlain(parent, full);
+          appendRecoveredPlain(parent, full);
         }
       } else if (type === "url") {
         const href = safeHref(full);
@@ -162,7 +290,7 @@ function richMessageRuntime(copy) {
           link.rel = "noopener noreferrer nofollow";
           link.textContent = full;
           parent.appendChild(link);
-        } else appendPlain(parent, full);
+        } else appendRecoveredPlain(parent, full);
       }
       rest = rest.slice(index + full.length);
     }
@@ -263,8 +391,8 @@ function richMessageRuntime(copy) {
         continue;
       }
 
-      if (trimmed.startsWith("$$") || trimmed.startsWith("\\[")) {
-        const dollar = trimmed.startsWith("$$");
+      if (trimmed.startsWith("$") || trimmed.startsWith("\\[")) {
+        const dollar = trimmed.startsWith("$");
         const opener = dollar ? "$$" : "\\[";
         const closer = dollar ? "$$" : "\\]";
         let expr = trimmed.slice(opener.length);
@@ -282,6 +410,12 @@ function richMessageRuntime(copy) {
           expr = rows.join("\n");
         }
         addMath(fragment, expr.trim(), true);
+        continue;
+      }
+
+      if (isRecoverableMathOnlyLine(trimmed)) {
+        addMath(fragment, trimmed, true);
+        i++;
         continue;
       }
 

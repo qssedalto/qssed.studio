@@ -233,7 +233,7 @@ function securityHeaders(contentType) {
     "x-frame-options": "DENY",
     "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
     "strict-transport-security": "max-age=31536000; includeSubDomains",
-    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net data:; img-src 'self' data: https:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
   });
 }
 

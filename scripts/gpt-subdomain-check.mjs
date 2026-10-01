@@ -101,6 +101,9 @@ assert(gpt.includes('pathname.startsWith("/_internal/admin-ai/")'), "GPT Worker 
 assert(gpt.includes("X-AERTEX-Control-Secret"), "Private AI admin bridge must require a server-side secret.");
 assert(gpt.includes("handleAiAdminApi(proxied, env"), "AI admin handler may only be reached through the private bridge.");
 assert(!gpt.includes("renderAdminDenied"), "GPT Worker must not carry legacy administrator pages.");
+assert(gpt.includes("script-src 'unsafe-inline' https://cdn.jsdelivr.net"), "Intelligence CSP must allow the pinned KaTeX/highlight script origin.");
+assert(gpt.includes("style-src 'unsafe-inline' https://cdn.jsdelivr.net"), "Intelligence CSP must allow the pinned KaTeX stylesheet origin.");
+assert(gpt.includes("font-src https://cdn.jsdelivr.net data:"), "Intelligence CSP must allow KaTeX web fonts while keeping other font origins blocked.");
 assert(gpt.includes('pathname.startsWith("/api/ai/admin/")'), "GPT Worker must explicitly hide legacy administrator API paths.");
 assert(gpt.includes('pathname === "/zh-cn/admin"'), "GPT Worker must explicitly hide legacy administrator page paths.");
 for (const required of [
@@ -126,7 +129,8 @@ for (const required of [
   'share_author_name',
   'Conversation not found.',
   'RICH_FORMAT_SYSTEM',
-  'Use $...$ for inline LaTeX math',
+  'For every mathematical expression, always wrap inline LaTeX in $...$ and display LaTeX in $...$',
+  'Never emit bare LaTeX commands such as \\\\frac',
   '{ role: "system", content: RICH_FORMAT_SYSTEM }'
 ]) {
   assert(aiGateway.includes(required), `AI gateway is missing multi-provider invariant: ${required}`);
