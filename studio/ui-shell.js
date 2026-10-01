@@ -132,7 +132,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
   ${knowledgePath ? knowledgeSearchClientScript(zh) : ""}
   ${path === "/settings/storage" ? storageClientScript(zh, links.login, activeLocale) : ""}
   ${auditClientScript(ipInfo)}
-  ${profileClientScript()}
+  ${profileClientScript(activeLocale)}
   <script>
     const loginUrl = ${JSON.stringify(links.login)};
     const compactViewKey = "qssed-compact-view-v2";
