@@ -1,4 +1,5 @@
-import { ZH_COUNTRIES, SUPABASE_URL } from "./config.js";
+import { SUPABASE_URL } from "./config.js";
+import { preferredLocaleFromRequest } from "./locale.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
 
 const SUPABASE_ORIGIN = new URL(SUPABASE_URL).origin;
@@ -83,7 +84,7 @@ export function getRouteInfo(request) {
     } else if (lang === "en") {
       locale = "en";
     } else {
-      locale = ZH_COUNTRIES.includes(country) ? "zh" : "en";
+      locale = preferredLocaleFromRequest(request) === "zh-cn" ? "zh" : "en";
     }
   }
 
