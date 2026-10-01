@@ -69,6 +69,16 @@ contains(studentApi, 'new Set(["chsi.com.cn", "www.chsi.com.cn"])', "Student ver
 contains(studentApi, 'url.protocol !== "https:"', "Student verification API must require HTTPS.");
 contains(studentApi, '"submit_student_verification_target"', "Student verification API must submit validated official targets only.");
 contains(studentApi, '"cancel_my_student_verification"', "Student verification API must support cancellation.");
+contains(billingUi, 'id="student-region-step"', "Student verification must classify enrollment source before choosing a verification method.");
+contains(billingUi, 'data-student-region="mainland_higher"', "Student verification must expose the CHSI-verifiable Mainland higher-education path.");
+contains(billingUi, 'data-student-region="hmt"', "Student verification must distinguish Hong Kong, Macao, and Taiwan institutions.");
+contains(billingUi, 'data-student-region="international"', "Student verification must expose institutions in other countries or regions.");
+contains(billingUi, 'data-student-region="other"', "Student verification must provide an uncertainty/other fallback instead of forcing a wrong region.");
+contains(billingUi, 'id="student-method-step"', "Student verification must choose a method only after enrollment-source classification.");
+contains(billingUi, 'data-student-method="chsi"', "CHSI must remain the only currently actionable student-verification method.");
+contains(billingUi, 'methodSchoolEmail:"学校官方邮箱"', "Future non-CHSI verification must identify official school email as a planned method.");
+contains(billingUi, 'methodEnrollment:"官方在读证明"', "Future non-CHSI verification must identify official enrollment evidence as a planned method.");
+contains(billingUi, 'studentRegion==="mainland_higher"&&studentMethod==="chsi"', "The CHSI form must remain gated to the CHSI-verifiable Mainland higher-education path.");
 contains(billingUi, "BarcodeDetector", "Student verification UI must decode QR images locally where supported.");
 contains(billingUi, "5*1024*1024", "Student verification UI must cap local QR image size.");
 contains(billingUi, "图片只在你的浏览器本地解析", "Student verification UI must disclose local-only QR processing.");
