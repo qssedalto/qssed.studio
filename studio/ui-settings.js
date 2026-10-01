@@ -225,15 +225,29 @@ export function appearanceSettingsContent(zh) {
   `;
 }
 
-export function languageSettingsContent(zh) {
+export function languageSettingsContent(zh, activeLocale = "en-us") {
+  const locales = [
+    ["en-us", "English (US)", "English · United States"],
+    ["en-gb", "English (UK)", "English · United Kingdom"],
+    ["en-au", "English (Australia)", "English · Australia"],
+    ["zh-cn", "简体中文", "中文 · 简体"],
+    ["zh-tw", "繁體中文", "中文 · 繁體"],
+    ["ja-jp", "日本語", "日本語"],
+    ["ko-kr", "한국어", "한국어"],
+    ["fr-fr", "Français", "Français"],
+    ["es-es", "Español", "Español"],
+    ["el-gr", "Ελληνικά", "Ελληνικά"],
+    ["ar-sa", "العربية", "العربية"]
+  ];
+  const choices = locales.map(([code, name, detail]) => `
+    <a class="settings-choice ${activeLocale === code ? "is-selected" : ""}" href="/${code}/settings/language" lang="${code}"${code === "ar-sa" ? ' dir="rtl"' : ""}>
+      <strong>${name}</strong><span>${detail}</span>
+    </a>`).join("");
   return `
     <section class="os-card is-large settings-detail-card">
       <h2>${zh ? "显示语言" : "Language"}</h2>
-      <p>${zh ? "AERTEX 默认跟随当前设备语言。你可以临时切换界面语言；重新从网站入口打开或下次登录时，会再次跟随设备语言。" : "AERTEX follows the current device language by default. You can switch the interface language for the current visit; opening the site again from its default entry point or signing in next time will follow the device language again."}</p>
-      <div class="settings-choice-grid">
-        <a class="settings-choice ${zh ? "is-selected" : ""}" href="/zh-cn/settings/language"><strong>中文</strong><span>简体中文</span></a>
-        <a class="settings-choice ${zh ? "" : "is-selected"}" href="/en/settings/language"><strong>English</strong><span>English</span></a>
-      </div>
+      <p>${zh ? "AERTEX 默认跟随当前设备语言。你可以临时切换界面语言；重新从网站入口打开或下次登录时，会再次跟随设备语言。" : "AERTEX follows the current device language by default. You can switch languages for the current visit; opening the default site entry again or signing in next time follows the device language again."}</p>
+      <div class="settings-choice-grid">${choices}</div>
     </section>
   `;
 }
