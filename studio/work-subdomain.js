@@ -5,6 +5,7 @@ import { TEXT } from "./config.js";
 import { buildLinks, getRouteInfo, html } from "./routing.js";
 import { notFoundPage } from "./auth-pages.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
+import { preferredLocaleFromRequest } from "./locale.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const WORK_DOCUMENT_ID_RE = /^[0-9a-f-]{36}$/i;
@@ -160,8 +161,7 @@ export async function handleMainWorkHandoff(request) {
 function preferredLocale(request, pathname) {
   if (pathname.startsWith("/en/") || pathname === "/en") return "en";
   if (pathname.startsWith("/zh-cn/") || pathname === "/zh-cn") return "zh-cn";
-  const language = (request.headers.get("Accept-Language") || "").toLowerCase();
-  return language.includes("zh") ? "zh-cn" : "en";
+  return preferredLocaleFromRequest(request);
 }
 
 function localeFromPath(pathname) {
