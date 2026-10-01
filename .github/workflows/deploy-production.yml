@@ -33,6 +33,7 @@ on:
       - scripts/billing-subscription-check.mjs
       - scripts/wishes-check.mjs
       - scripts/locale-routing-check.mjs
+      - scripts/root-render-check.mjs
       - auth-entry.js
       - auth-sso.js
       - auth-worker.js
@@ -123,6 +124,8 @@ jobs:
           node scripts/wishes-check.mjs
           node --check scripts/locale-routing-check.mjs
           node scripts/locale-routing-check.mjs
+          node --check scripts/root-render-check.mjs
+          node scripts/root-render-check.mjs
           node --check auth-entry.js
           node --check auth-sso.js
           node --check auth-worker.js
