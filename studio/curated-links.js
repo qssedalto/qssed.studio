@@ -17,6 +17,20 @@ const LINKS_UI = {
 };
 LINKS_UI["en-gb"]=LINKS_UI["en-us"]; LINKS_UI["en-au"]=LINKS_UI["en-us"];
 
+const CATEGORY_UI = {
+  "ja-jp":{projects:"プロジェクトとリポジトリ",design:"デザインとUI",ai:"AIとメディア",development:"開発ツール",cloud:"クラウドとプロトコル",apple:"Apple エコシステム",services:"セキュリティとサービス",research:"研究とメディア"},
+  "ko-kr":{projects:"프로젝트 및 저장소",design:"디자인 및 인터페이스",ai:"AI 및 미디어",development:"개발 도구",cloud:"클라우드 및 프로토콜",apple:"Apple 생태계",services:"보안 및 서비스",research:"연구 및 미디어"},
+  "fr-fr":{projects:"Projets et dépôts",design:"Design et interface",ai:"IA et médias",development:"Développement",cloud:"Cloud et protocoles",apple:"Écosystème Apple",services:"Sécurité et services",research:"Recherche et médias"},
+  "es-es":{projects:"Proyectos y repositorios",design:"Diseño e interfaz",ai:"IA y medios",development:"Desarrollo",cloud:"Nube y protocolos",apple:"Ecosistema Apple",services:"Seguridad y servicios",research:"Investigación y medios"},
+  "el-gr":{projects:"Έργα και αποθετήρια",design:"Σχεδίαση και διεπαφή",ai:"AI και πολυμέσα",development:"Ανάπτυξη",cloud:"Cloud και πρωτόκολλα",apple:"Οικοσύστημα Apple",services:"Ασφάλεια και υπηρεσίες",research:"Έρευνα και μέσα"},
+  "ar-sa":{projects:"المشروعات والمستودعات",design:"التصميم والواجهة",ai:"الذكاء الاصطناعي والوسائط",development:"أدوات التطوير",cloud:"السحابة والبروتوكولات",apple:"منظومة Apple",services:"الأمان والخدمات",research:"البحث والوسائط"},
+  "zh-tw":{projects:"專案與儲存庫",design:"設計與介面",ai:"AI 與媒體",development:"開發工具",cloud:"雲端與協定",apple:"Apple 生態系",services:"安全性與服務",research:"研究與媒體"}
+};
+function categoryLabel(category, locale, zh) {
+  if (CATEGORY_UI[locale]?.[category]) return CATEGORY_UI[locale][category];
+  return CURATED_LINK_CATEGORIES[category]?.[locale === "zh-cn" || zh ? "zh" : "en"] || category;
+}
+
 
 function safeUrl(value) {
   const text = String(value || "").trim();
@@ -50,7 +64,7 @@ function renderLink(link, zh, locale = "") {
 function renderCategory(category, zh, locale = "") {
   const links = CURATED_LINKS.filter(link => link.category === category);
   if (!links.length) return "";
-  const label = CURATED_LINK_CATEGORIES[category]?.[zh ? "zh" : "en"] || category;
+  const label = categoryLabel(category, locale, zh);
   return `<section class="curated-link-group" id="links-${escapeHtmlText(category)}" data-curated-group data-curated-category="${escapeHtmlText(category)}">
     <div class="curated-link-group-head"><h2>${escapeHtmlText(label)}</h2><span data-curated-group-count>${links.length}</span></div>
     <div class="curated-link-grid">${links.map(link => renderLink(link, zh, locale)).join("")}</div>
