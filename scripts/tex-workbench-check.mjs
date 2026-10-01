@@ -50,6 +50,10 @@ for (const zh of [true, false]) {
   assert(workMarkup.includes("pointer:coarse"), "Phone landscape layouts must use the mobile workspace on touch devices");
   assert(workMarkup.includes('id="qsseda-work-tex-mobile-tools"'), "Mobile Work TeX must include the quick-input toolbar styles");
   assert(workMarkup.includes("tex-mobile-inputbar"), "Mobile Work TeX must expose the TeX quick-input toolbar");
+assert(workMarkup.includes(".cm-content:focus-visible") && workMarkup.includes("box-shadow:none!important"), "CodeMirror mobile focus must not inherit the global accent halo.");
+assert(workMarkup.includes("viewportTop + viewportHeight"), "Mobile Work TeX must size to the actual iOS visual viewport bottom while the keyboard is open.");
+assert(workMarkup.includes("height:calc(var(--tex-mobile-vh,100dvh) - 12px)"), "Mobile collaboration drawer must have a definite viewport-constrained height.");
+assert(workMarkup.includes("touch-action:pan-y!important"), "Mobile collaboration pages must retain vertical touch scrolling.");
   assert(workMarkup.includes("setRangeText"), "Mobile TeX quick input must insert at the current selection");
   assert(workMarkup.includes("pointerdown") && workMarkup.includes("preventDefault"), "Mobile TeX quick input must preserve textarea focus while tapping toolbar buttons");
   assert(workMarkup.includes('id="qsseda-work-tex-version-history-runtime"'), "Work TeX must install cloud source version history");

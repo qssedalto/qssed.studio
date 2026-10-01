@@ -84,6 +84,15 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         padding:11px 0 24px!important;
         caret-color:var(--primary)!important;
       }
+      .tex-work-app .tex-codemirror-host .cm-content:focus,
+      .tex-work-app .tex-codemirror-host .cm-content:focus-visible{
+        outline:none!important;
+        box-shadow:none!important;
+      }
+      .tex-work-app .tex-codemirror-host>.cm-editor.cm-focused{
+        outline:none!important;
+        box-shadow:none!important;
+      }
       .tex-work-app .tex-codemirror-host .cm-line{padding:0 16px!important}
       .tex-work-app .tex-codemirror-host .cm-gutters{
         border-right:1px solid var(--hairline)!important;

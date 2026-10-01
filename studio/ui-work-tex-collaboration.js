@@ -186,8 +186,11 @@ export function enhanceWorkTexCollaboration(markup, zh) {
       @media(max-width:760px), (max-width:950px) and (pointer:coarse){
         .tex-work-app .tex-editor-toolbar{align-items:stretch!important}
         .tex-work-app .tex-collaboration-button{width:100%!important;min-width:0!important}
-        .tex-collaboration-drawer{top:auto;left:6px;right:6px;bottom:6px;width:auto;max-height:calc(100dvh - 12px);border-radius:24px;transform:translateY(calc(100% + 14px))}.tex-collaboration-drawer.is-open{transform:translateY(0)}
+        .tex-collaboration-drawer{top:auto;left:6px;right:6px;bottom:6px;width:auto;height:calc(var(--tex-mobile-vh,100dvh) - 12px);max-height:calc(100dvh - 12px);min-height:0;border-radius:24px;transform:translateY(calc(100% + 14px))}.tex-collaboration-drawer.is-open{transform:translateY(0)}
         .tex-collaboration-drawer-head{padding:20px 18px 14px}.tex-collaboration-heading strong{font-size:22px}.tex-collaboration-heading span{font-size:13px}
+        .tex-collaboration-drawer-head,.tex-collaboration-stepper,.tex-collaboration-footer{flex:0 0 auto!important}
+        .tex-collaboration-pages{flex:1 1 0!important;min-height:0!important;overflow:hidden!important}
+        .tex-collaboration-page{height:100%!important;min-height:0!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-y:contain!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important}
         .tex-collaboration-stepper{gap:5px;padding:10px}.tex-collaboration-step{height:40px;gap:5px;padding:0 6px;font-size:10px}.tex-collaboration-step-index{width:20px;height:20px;min-width:20px;font-size:9px}
         .tex-collaboration-page{padding:16px 14px 22px}.tex-collaboration-section{padding:17px}
         .tex-collaboration-invite{gap:7px!important}

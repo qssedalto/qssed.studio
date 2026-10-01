@@ -480,8 +480,10 @@ export function enhanceWorkTexMobile(markup, zh) {
             return;
           }
           const viewport = window.visualViewport;
-          const height = Math.max(320, Math.round(viewport?.height || window.innerHeight));
-          document.documentElement.style.setProperty('--tex-mobile-vh', height + 'px');
+          const viewportHeight = Math.max(320, Math.round(viewport?.height || window.innerHeight));
+          const viewportTop = Math.max(0, Math.round(viewport?.offsetTop || 0));
+          const visibleBottom = viewport ? viewportTop + viewportHeight : viewportHeight;
+          document.documentElement.style.setProperty('--tex-mobile-vh', visibleBottom + 'px');
           const keyboardOpen = Boolean(viewport && window.innerHeight - viewport.height > 140);
           document.body.classList.toggle('tex-mobile-keyboard-open', keyboardOpen);
         }
