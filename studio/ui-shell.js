@@ -39,7 +39,8 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
         if (!compactMedia.matches) return;
         const state = sessionStorage.getItem("qssed-compact-view-v2");
         const currentPath = ${JSON.stringify(path)};
-        const showContent = state !== "menu";
+        const rootEntry = currentPath === "/";
+        const showContent = rootEntry ? false : state !== "menu";
         document.documentElement.classList.toggle("compact-content-view", showContent);
         document.documentElement.classList.toggle("compact-menu-view", !showContent);
       } catch {}
@@ -76,6 +77,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
           <span id="os-signout-label">${zh ? "退出登录" : "Sign Out"}</span>
         </button>
       </div>
+      ${renderCompactMainMenu(copy, productLinks)}
       ${renderOsNav(copy, activeSection, path, productLinks)}
     </aside>
     <script>
@@ -138,7 +140,8 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
       }
       let state = null;
       try { state = sessionStorage.getItem(compactViewKey); } catch {}
-      const showContent = state !== "menu";
+      const rootEntry = ${JSON.stringify(path === "/")};
+      const showContent = rootEntry ? false : state !== "menu";
       document.documentElement.classList.toggle("compact-content-view", showContent);
       document.documentElement.classList.toggle("compact-menu-view", !showContent);
     }
@@ -548,6 +551,54 @@ export function buildOsPages(zh) {
   };
 }
 
+
+function renderCompactMainMenu(copy, productLinks = {}) {
+  const zh = copy.platform.includes("个人");
+  const prefix = zh ? "/zh-cn" : "/en";
+  const gptHref = String(productLinks?.gptHref || "");
+  const adminHref = String(productLinks?.adminHref || "");
+  const mainItems = zh ? [
+    { title:"首页", description:"概览、最近入口与当前状态", href:prefix + "/dashboard", icon:"home", tone:"primary" },
+    { title:"工作区", description:"工作台、项目、草稿与任务", href:prefix + "/workspace", icon:"workspace", tone:"primary" },
+    { title:"信息中心", description:"知识、收藏、笔记与搜索", href:prefix + "/info", icon:"info" },
+    { title:"AERTEX 账户", description:"个人资料、账户与安全", href:prefix + "/profile", icon:"profile" },
+    { title:"设置", description:"主题、语言、订阅与存储", href:prefix + "/settings", icon:"settings" },
+    { title:"祝福中心", description:"生日与节日分享链接", href:prefix + "/wishes", icon:"wishes" }
+  ] : [
+    { title:"Home", description:"Overview, recent destinations, and status", href:prefix + "/dashboard", icon:"home", tone:"primary" },
+    { title:"Workspace", description:"Workbench, projects, drafts, and tasks", href:prefix + "/workspace", icon:"workspace", tone:"primary" },
+    { title:"Information", description:"Knowledge, links, notes, and search", href:prefix + "/info", icon:"info" },
+    { title:"AERTEX Account", description:"Profile, account, and security", href:prefix + "/profile", icon:"profile" },
+    { title:"Settings", description:"Theme, language, subscription, and storage", href:prefix + "/settings", icon:"settings" },
+    { title:"Wish Center", description:"Birthday and seasonal greeting links", href:prefix + "/wishes", icon:"wishes" }
+  ];
+  const products = [
+    ...(gptHref ? [{ title:"AERTEX Intelligence", description:zh ? "AI 对话与工作空间" : "AI conversations and workspace", href:gptHref, icon:"intelligence" }] : []),
+    ...(adminHref ? [{ title:zh ? "管理员控制台" : "Administration", description:zh ? "独立管理控制面" : "Isolated control plane", href:adminHref, icon:"admin" }] : [])
+  ];
+
+  const card = item => '<a class="compact-menu-card' + (item.tone === "primary" ? ' is-primary' : '') + '" href="' + item.href + '">' +
+    '<span class="compact-menu-card-icon">' + dashboardIcon(item.icon) + '</span>' +
+    '<span class="compact-menu-card-copy"><strong>' + item.title + '</strong><small>' + item.description + '</small></span>' +
+    '<b aria-hidden="true">↗</b></a>';
+
+  return \`
+    <section class="compact-main-menu" aria-label="${zh ? "主菜单" : "Main menu"}">
+      <header class="compact-menu-hero">
+        <small>AERTEX · MENU</small>
+        <h1>${zh ? "主菜单" : "Main menu"}</h1>
+        <p>${zh ? "先选择要去的区域，进入后再处理具体内容。" : "Choose a destination first, then work with the details inside it."}</p>
+      </header>
+      <div class="compact-menu-grid">${mainItems.map(card).join("")}</div>
+      ${products.length ? \`
+        <section class="compact-menu-products">
+          <div class="compact-menu-section-label">${zh ? "独立产品" : "Products"}</div>
+          <div class="compact-menu-product-grid">${products.map(card).join("")}</div>
+        </section>\` : ""}
+    </section>
+  \`;
+}
+
 export function renderOsNav(copy, activeSection, currentPath = "", productLinks = {}) {
   const zh = copy.platform.includes("个人");
   const gptHref = String(productLinks?.gptHref || "");
@@ -612,7 +663,7 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
               <span>${group.label}</span>
               <b aria-hidden="true">›</b>
             </a>
-            ${group.items.length ? `<div class="os-nav-items">
+            ${group.items.length && active ? `<div class="os-nav-items">
               ${group.items.map(item => `
                 <a href="${item[1]}"${item[1].endsWith(currentPath) ? ` aria-current="page"` : ""}>
                   ${dashboardIcon(iconForItem(item[1]))}
