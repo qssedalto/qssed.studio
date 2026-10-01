@@ -131,7 +131,7 @@ export function accountMenuClientScript(options = {}) {
       return "/"+locale+"/gpt/handoff?next="+encodeURIComponent(current);
     }
     if(host.startsWith("work.")){
-      const deep=location.pathname.match(/^\/(?:zh-cn|en)\/d\/(?:huawei-exempt\/)?[0-9a-f-]{36}$/i);
+      const deep=new RegExp("^/(?:zh-cn|en)/d/(?:huawei-exempt/)?[0-9a-f-]{36}$","i").test(location.pathname);
       const next=deep?location.pathname+location.search:"/"+locale+"/tex";
       return "/"+locale+"/work/handoff?next="+encodeURIComponent(next);
     }
