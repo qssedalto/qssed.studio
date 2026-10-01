@@ -8,7 +8,7 @@ const ZHIPU_MODELS = ["glm-4.7-flash"];
 const BAILIAN_BASE = "https://ws-v0ogv72bnj1vwnsv.cn-beijing.maas.aliyuncs.com/compatible-mode/v1";
 const BAILIAN_MODELS_ENDPOINT = "https://ws-v0ogv72bnj1vwnsv.cn-beijing.maas.aliyuncs.com/api/v1/models";
 const BAILIAN_PREFERRED_MODELS = ["qwen3.7-plus", "glm-5", "qwen-max", "qwen-plus-2025-07-28"];
-const RICH_FORMAT_SYSTEM = "Format responses for a rich chat UI when it improves readability. Use Markdown headings, bold, lists, blockquotes, links, tables, and fenced code blocks with a language tag when appropriate. Use $...$ for inline LaTeX math and $$...$$ for display math. Do not use raw HTML. Do not put ordinary prose inside code fences.";
+const RICH_FORMAT_SYSTEM = "Format responses for a rich chat UI when it improves readability. Use Markdown headings, bold, lists, blockquotes, links, tables, and fenced code blocks with a language tag when appropriate. For every mathematical expression, always wrap inline LaTeX in $...$ and display LaTeX in $...$. Never emit bare LaTeX commands such as \\frac, \\sqrt, \\sum, or \\int outside math delimiters. Prefer display math for multi-step equations. Do not use raw HTML. Do not put ordinary prose inside code fences.";
 const KNOWN_PRICES = {
   "gpt-5.6": { input: 4, output: 20 },
   "gpt-5.6-sol": { input: 4, output: 20 },
