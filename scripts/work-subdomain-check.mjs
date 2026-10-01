@@ -31,7 +31,7 @@ assert(work.includes("parseWorkDocumentPath") && work.includes("parseShortWorkDo
 assert(work.includes("/d/"), "Work canonical document routes must use the /d/<uuid> namespace.");
 assert(work.includes("huawei-exempt/"), "Work document deep links must accept the existing Huawei exemption alias marker.");
 assert(handoff.includes("/d/huawei-exempt/") && handoff.includes("/d/"), "Auth handoff must preserve ordinary and Huawei-exempt Work document targets.");
-assert(accountMenu.includes("location.pathname.match") && accountMenu.includes("/work/handoff?next="), "Work account switching must preserve the active document deep link.");
+assert(accountMenu.includes('new RegExp("^/(?:zh-cn|en)/d/') && accountMenu.includes("/work/handoff?next="), "Work account switching must preserve the active document deep link.");
 
 for (const required of [
   'workOriginForRequest(request)',
