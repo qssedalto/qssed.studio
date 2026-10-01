@@ -15,11 +15,15 @@ import { statusContent } from "./ui-primitives.js";
 import { auditClientScript } from "./ui-audit.js";
 import { baseHead, supabaseScript, themeScript, topControls } from "./ui-page.js";
 import { osStyles } from "./ui-styles.js";
+import { shellText } from "./i18n-ui.js";
+import { localeDirection } from "./locale.js";
 
 export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", productLinks = {}) {
   const path = pathname;
   const zh = t === TEXT.zh;
-  const copy = buildOsCopy(zh);
+  const activeLocale = productLinks.activeLocale || (zh ? "zh-cn" : "en-us");
+  const ui = shellText(activeLocale);
+  const copy = buildOsCopy(zh, activeLocale);
   const page = copy.pages[path] || knowledgePageMeta(path, zh) || copy.pages["/dashboard"];
   const activeSection = page.section;
   const dashboardPath = path === "/" || path === "/dashboard";
@@ -28,7 +32,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
 
   return `
 <!DOCTYPE html>
-<html>
+<html lang="${activeLocale}" dir="${localeDirection(activeLocale)}">
 <head>
   ${baseHead(page.title + " · " + t.studioName)}
   ${osStyles()}
@@ -50,11 +54,11 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
 <body class="os-shell">
   ${topControls(links, t)}
   <div id="compact-back-zone" class="compact-back-zone">
-    <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${zh ? "返回上一级" : "Back"}" data-fallback-href="${compactBackUrl}">
+    <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${ui.backLevel}" data-fallback-href="${compactBackUrl}">
       <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
         <path d="M15 5.5 8.5 12 15 18.5"/>
       </svg>
-      <span>${zh ? "返回" : "Back"}</span>
+      <span>${ui.back}</span>
     </button>
   </div>
   <div class="os-layout">
@@ -74,7 +78,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
             <path d="M10 5H6.8A1.8 1.8 0 0 0 5 6.8v10.4A1.8 1.8 0 0 0 6.8 19H10"/>
             <path d="M14.5 8.5 18 12l-3.5 3.5M18 12H9"/>
           </svg>
-          <span id="os-signout-label">${zh ? "退出登录" : "Sign Out"}</span>
+          <span id="os-signout-label">${ui.signOut}</span>
         </button>
       </div>
       ${renderCompactMainMenu(copy, productLinks)}
@@ -154,16 +158,16 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
     async function signOutCurrentSession() {
       if (!signOutButton || signOutButton.disabled) return;
 
-      const idleLabel = ${JSON.stringify(zh ? "退出登录" : "Sign Out")};
+      const idleLabel = ${JSON.stringify(ui.signOut)};
       signOutButton.disabled = true;
-      if (signOutLabel) signOutLabel.textContent = ${JSON.stringify(zh ? "正在退出…" : "Signing out…")};
+      if (signOutLabel) signOutLabel.textContent = ${JSON.stringify(ui.signingOut)};
 
       try {
         const { error } = await supabaseClient.auth.signOut({ scope: "local" });
         if (error) throw error;
       } catch (error) {
         console.error("Sign out failed", error);
-        if (signOutLabel) signOutLabel.textContent = ${JSON.stringify(zh ? "退出失败" : "Sign out failed")};
+        if (signOutLabel) signOutLabel.textContent = ${JSON.stringify(ui.signOutFailed)};
         window.setTimeout(() => {
           signOutButton.disabled = false;
           if (signOutLabel) signOutLabel.textContent = idleLabel;
@@ -370,8 +374,14 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
 `;
 }
 
-export function buildOsCopy(zh) {
-  const prefix = zh ? "/zh-cn" : "/en";
+export function buildOsCopy(zh, activeLocale = "") {
+  const locale = activeLocale || (zh ? "zh-cn" : "en-us");
+  const prefix = "/" + locale;
+  const ui = shellText(locale);
+
+  if (locale !== "zh-cn" && locale !== "en-us" && locale !== "en-gb" && locale !== "en-au") {
+    return buildLocalizedOsCopy(ui, prefix, locale);
+  }
 
   if (zh) {
     return {
@@ -461,6 +471,39 @@ export function buildOsCopy(zh) {
       ] }
     ],
     pages: buildOsPages(false)
+  };
+}
+
+function buildLocalizedOsCopy(ui, prefix, locale) {
+  const n = ui.nav;
+  return {
+    platform: ui.platform,
+    kicker: ui.kicker,
+    aiLabel: ui.workflow,
+    aiTitle: ui.tools,
+    aiHref: prefix + "/workspace/experiments",
+    locale,
+    nav: [
+      { id:"dashboard", label:n.home, href:prefix, items:[] },
+      { id:"wishes", label:n.wishes, href:prefix + "/wishes", items:[] },
+      { id:"info", label:n.info, href:prefix + "/info", items:[[n.knowledge,prefix+"/info/knowledge"],[n.links,prefix+"/info/links"],[n.notes,prefix+"/info/notes"],[n.summaries,prefix+"/info/summaries"],[n.search,prefix+"/info/search"]] },
+      { id:"profile", label:n.profile, href:prefix + "/profile", items:[[n.personal,prefix+"/profile/details"],[n.account,prefix+"/profile/account"],[n.preferences,prefix+"/profile/preferences"]] },
+      { id:"workspace", label:n.workspace, href:prefix + "/workspace", items:[[n.workbench,prefix+"/workspace/workbench"],[n.projects,prefix+"/workspace/projects"],[n.experiments,prefix+"/workspace/experiments"],[n.drafts,prefix+"/workspace/drafts"],[n.tasks,prefix+"/workspace/tasks"]] },
+      { id:"settings", label:n.settings, href:prefix + "/settings", items:[[n.general,prefix+"/settings/general"],[n.appearance,prefix+"/settings/appearance"],[n.language,prefix+"/settings/language"],[n.security,prefix+"/settings/security"],[n.notifications,prefix+"/settings/notifications"],[n.ai,prefix+"/settings/ai"],[n.integrations,prefix+"/settings/integrations"],[n.subscription,prefix+"/settings/subscription"],[n.student,prefix+"/settings/student"],[n.drive,prefix+"/settings/storage"]] }
+    ],
+    pages: buildLocalizedOsPages(ui)
+  };
+}
+
+function buildLocalizedOsPages(ui) {
+  const n=ui.nav,p=ui.pages;
+  const page=(section,title,description="")=>({section,title,description});
+  return {
+    "/dashboard":page("dashboard",p.dashboard[0],p.dashboard[1]),
+    "/info":page("info",p.info[0],p.info[1]), "/info/knowledge":page("info",n.knowledge), "/info/links":page("info",n.links), "/info/notes":page("info",n.notes), "/info/summaries":page("info",n.summaries), "/info/search":page("info",n.search),
+    "/profile":page("profile",p.profile[0],p.profile[1]), "/profile/details":page("profile",n.personal), "/profile/account":page("profile",n.account), "/profile/preferences":page("profile",n.preferences),
+    "/workspace":page("workspace",p.workspace[0],p.workspace[1]), "/workspace/workbench":page("workspace",n.workbench), "/workspace/projects":page("workspace",n.projects), "/workspace/experiments":page("workspace",n.experiments), "/workspace/drafts":page("workspace",n.drafts), "/workspace/tasks":page("workspace",n.tasks),
+    "/settings":page("settings",p.settings[0],p.settings[1]), "/settings/general":page("settings",n.general), "/settings/appearance":page("settings",n.appearance), "/settings/language":page("settings",p.language[0],p.language[1]), "/settings/security":page("settings",n.security), "/settings/notifications":page("settings",n.notifications), "/settings/ai":page("settings",n.ai), "/settings/integrations":page("settings",n.integrations), "/settings/subscription":page("settings",n.subscription), "/settings/student":page("settings",n.student), "/settings/storage":page("settings",n.drive)
   };
 }
 
