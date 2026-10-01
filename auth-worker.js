@@ -235,7 +235,8 @@ async function handleContinue(request, env) {
   headers.set("content-security-policy", `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action ${handoff.origin}; base-uri 'none'; frame-ancestors 'none'`);
   if (rotated) for (const value of sessionCookies(rotated)) headers.append("set-cookie", value);
 
-  const handoffLocale = localeFromPath(handoff.next) || preferredAuthLocale(request);\n  return new Response(injectBrandLogoRuntime(handoffPage(handoff.origin, accessToken, refreshToken, handoff.next, intelligenceThemeFromRequest(request), handoffLocale)), { status: 200, headers });
+  const handoffLocale = localeFromPath(handoff.next) || preferredAuthLocale(request);
+  return new Response(injectBrandLogoRuntime(handoffPage(handoff.origin, accessToken, refreshToken, handoff.next, intelligenceThemeFromRequest(request), handoffLocale)), { status: 200, headers });
 }
 
 function validatedNextPath(value) {
