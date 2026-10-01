@@ -560,6 +560,7 @@ export function buildOsPages(zh) {
 function renderCompactMainMenu(copy, productLinks = {}) {
   const zh = copy.platform.includes("个人");
   const prefix = zh ? "/zh-cn" : "/en";
+  const workHref = String(productLinks?.workHref || "");
   const gptHref = String(productLinks?.gptHref || "");
   const adminHref = String(productLinks?.adminHref || "");
   const mainItems = zh ? [
@@ -578,6 +579,7 @@ function renderCompactMainMenu(copy, productLinks = {}) {
     { title:"Wish Center", description:"Birthday and seasonal greeting links", href:prefix + "/wishes", icon:"wishes" }
   ];
   const products = [
+    ...(workHref ? [{ title:"AERTEX Work", description:zh ? "独立工作产品 · TeX 与本机能力" : "Independent work product · TeX and local capabilities", href:workHref, icon:"workbench" }] : []),
     ...(gptHref ? [{ title:"AERTEX Intelligence", description:zh ? "AI 对话与工作空间" : "AI conversations and workspace", href:gptHref, icon:"intelligence" }] : []),
     ...(adminHref ? [{ title:zh ? "管理员控制台" : "Administration", description:zh ? "独立管理控制面" : "Isolated control plane", href:adminHref, icon:"admin" }] : [])
   ];
@@ -606,6 +608,7 @@ function renderCompactMainMenu(copy, productLinks = {}) {
 
 export function renderOsNav(copy, activeSection, currentPath = "", productLinks = {}) {
   const zh = copy.platform.includes("个人");
+  const workHref = String(productLinks?.workHref || "");
   const gptHref = String(productLinks?.gptHref || "");
   const adminHref = String(productLinks?.adminHref || "");
   const iconBySection = {
@@ -644,6 +647,7 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
     return "info";
   };
   const productGroups = [
+    ...(workHref ? [{ id: "work", label: "AERTEX Work", href: workHref, icon: "workbench" }] : []),
     ...(gptHref ? [{ id: "intelligence", label: "AERTEX Intelligence", href: gptHref, icon: "intelligence" }] : []),
     ...(adminHref ? [{ id: "admin-console", label: zh ? "管理员控制台" : "Admin Console", href: adminHref, icon: "admin" }] : [])
   ];

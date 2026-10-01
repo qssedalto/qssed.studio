@@ -3,6 +3,8 @@ import fs from "node:fs";
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
 const workAuditWrapper = fs.readFileSync(new URL("../studio/worker-audit.js", import.meta.url), "utf8");
 const work = fs.readFileSync(new URL("../studio/work-subdomain.js", import.meta.url), "utf8");
+const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
+const shell = fs.readFileSync(new URL("../studio/ui-shell.js", import.meta.url), "utf8");
 const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta.url), "utf8");
 const sessionGate = fs.readFileSync(new URL("../studio/session-gate.js", import.meta.url), "utf8");
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
@@ -77,6 +79,10 @@ for (const [host, zone] of [["work.qsseda.com","qsseda.com"],["work.qsseda.onlin
   assert(workWrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
 }
 assert(!workAuditWrapper.includes("canonicalQssedaAlias"), "Work .online/.studio hosts must stay on their own domains");
+assert(entry.includes('workHref: `${workOrigin}/${zh ? "zh-cn/tex" : "en/tex"}`'), "Studio shell must receive the canonical localized AERTEX Work product URL.");
+assert(shell.includes('title:"AERTEX Work"'), "Compact main menu must list AERTEX Work as an independent product.");
+assert(shell.includes('id: "work", label: "AERTEX Work"'), "Desktop product navigation must list AERTEX Work as an independent product.");
+assert(shell.indexOf('title:"AERTEX Work"') < shell.indexOf('title:"AERTEX Intelligence"'), "Compact independent products must order AERTEX Work before Intelligence.");
 assert(workWrangler.r2_buckets?.some(bucket => bucket.binding === "STORAGE" && bucket.bucket_name === "qsseda-studio-storage"), "Work Worker must share the protected main-site storage binding");
 
 for (const host of ["work.qsseda.com","work.qsseda.online","work.qsseda.studio"]) {
