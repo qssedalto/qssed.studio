@@ -27,7 +27,7 @@ assert(midAutumn.includes('params.get("name")'), "Mid-Autumn page must support ?
 
 const zh = dashboardContent(true, { gptHref: "https://gpt.qsseda.com/zh-cn", adminHref: "", activeLocale: "zh-cn" }, "zh-cn");
 const en = dashboardContent(false, { gptHref: "https://gpt.qsseda.com/en-us", adminHref: "", activeLocale: "en-us" }, "en-us");
-assert(zh.includes("祝福链接") && zh.includes("/zh-cn/wishes"), "Chinese dashboard must expose Wish Links.");
+assert(zh.includes("送一份祝福") && zh.includes("打开祝福中心") && zh.includes("/zh-cn/wishes"), "Chinese dashboard must expose the localized Wish Center.");
 assert(en.includes("Wish Links") && en.includes("/en-us/wishes"), "English dashboard must expose Wish Links on the canonical en-us route.");
 assert(zh.includes('data-home-wish-builder'), "Chinese Home must render the wish builder directly.");
 assert(en.includes('data-home-wish-builder'), "English Home must render the wish builder directly.");
