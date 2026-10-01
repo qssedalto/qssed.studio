@@ -39,6 +39,10 @@ export function workOriginForRequest(request) {
   return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "work");
 }
 
+export function awOriginForRequest(request) {
+  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "aw");
+}
+
 export function gptOriginForRequest(request) {
   return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "gpt");
 }
