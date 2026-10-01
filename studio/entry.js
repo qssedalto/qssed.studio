@@ -322,7 +322,8 @@ export default {
       const shellProductLinks = {
         workHref: `${workOrigin}/${fullLocale}/tex`,
         gptHref: `${gptOrigin}/${fullLocale}`,
-        adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : ""
+        adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : "",
+        activeLocale: fullLocale
       };
       const shellPath = pathname === "/" ? "/" : linksSubroute ? "/info/links" : labSubroute ? "/workspace/experiments" : workRoute ? "/workspace" : pathname;
       let markup = osPage(t, links, shellPath, ipInfo, cachedOsUserLabel, shellProductLinks);
