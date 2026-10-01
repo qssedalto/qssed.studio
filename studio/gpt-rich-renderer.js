@@ -77,7 +77,15 @@ function richMessageRuntime(copy) {
   }
 
   const BARE_MATH_COMMAND = /\\(?:frac|dfrac|tfrac|sqrt|sum|prod|int|oint|lim|log|ln|sin|cos|tan|exp|cdot|times|div|pm|mp|leq|geq|neq|approx|sim|equiv|infty|alpha|beta|gamma|delta|epsilon|varepsilon|theta|lambda|mu|pi|rho|sigma|phi|varphi|psi|omega|mid|cap|cup|to|rightarrow|leftarrow|leftrightarrow|overline|underline|vec|hat|bar|mathbf|mathrm|mathbb|mathcal|operatorname|text|begin|end|left|right)\b/;
-  const MATH_SAFE_CHAR = /[A-Za-z0-9\\{}_[\]^=+\-*/().,:<>|!%'\s]/;
+  const MATH_SAFE_PUNCT = "\\\\{}[]_^=+-*/().,:<>|!%'";
+
+  function isMathSafeChar(ch) {
+    return /[A-Za-z0-9]/.test(ch) || /\s/.test(ch) || MATH_SAFE_PUNCT.includes(ch);
+  }
+
+  function isMathPrefixChar(ch) {
+    return /[0-9]/.test(ch) || /\s/.test(ch) || "\\\\{}[]_^=+-*/().,".includes(ch);
+  }
 
   function hasBareLatexMath(value) {
     return BARE_MATH_COMMAND.test(String(value || ""));
@@ -87,12 +95,12 @@ function richMessageRuntime(copy) {
     const text = String(value || "").trim();
     if (!text || !hasBareLatexMath(text)) return false;
     if (/[^\x00-\x7F]/.test(text)) return false;
-    if (!/[_^={}+\-*/()\[\]\\]/.test(text)) return false;
+    if (![...text].some(ch => "\\\\{}[]_^=+-*/()".includes(ch))) return false;
     const proseProbe = text
       .replace(/\\[A-Za-z]+/g, " ")
       .replace(/\{[^{}]*\}/g, " ")
       .replace(/[A-Za-z](?:_[A-Za-z0-9{}]+)?/g, " ")
-      .replace(/[0-9\s_=+\-*/().,:<>|!%'\[\]{}]/g, "");
+      .replace(/[0-9\s_=+\-*\/().,:<>|!%'\[\]{}]/g, "");
     return !/[A-Za-z]/.test(proseProbe);
   }
 
@@ -103,7 +111,7 @@ function richMessageRuntime(copy) {
     const markerStart = command.index || 0;
     let start = markerStart;
     let end = markerStart + command[0].length;
-    while (start > 0 && MATH_SAFE_CHAR.test(text[start - 1])) start--;
+    while (start > 0 && isMathSafeChar(text[start - 1])) start--;
 
     const before = text.slice(start, markerStart);
     const equalIndex = before.lastIndexOf("=");
@@ -113,7 +121,7 @@ function richMessageRuntime(copy) {
       if (lhsMatch) start += lhs.length - lhsMatch[0].length;
     } else {
       start = markerStart;
-      while (start > 0 && /[0-9_{}^=+\-*/().,\s]/.test(text[start - 1])) start--;
+      while (start > 0 && isMathPrefixChar(text[start - 1])) start--;
     }
 
     let depth = 0;
@@ -121,13 +129,13 @@ function richMessageRuntime(copy) {
     let cursor = markerStart;
     while (cursor < text.length) {
       const ch = text[cursor];
-      if (!MATH_SAFE_CHAR.test(ch)) break;
+      if (!isMathSafeChar(ch)) break;
       if (ch === "{") { depth++; sawBrace = true; }
       if (ch === "}" && depth > 0) depth--;
       if (depth === 0 && sawBrace && /\s/.test(ch)) {
         const tail = text.slice(cursor).match(/^\s+([A-Za-z]{3,})\b/);
         const previous = text.slice(start, cursor).trim().slice(-1);
-        if (tail && previous && !/[=+\-*/^(,_\\]/.test(previous)) break;
+        if (tail && previous && !/[=+\-*\/^(,_\\]/.test(previous)) break;
       }
       cursor++;
     }
