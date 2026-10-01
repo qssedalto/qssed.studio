@@ -7,7 +7,7 @@ import { knowledgeSearchClientScript } from "./knowledge-search.js";
 import { compactBackHref, compactBackScript } from "./ui-navigation.js";
 import { knowledgePageMeta } from "./ui-knowledge.js";
 import { workspaceContent } from "./ui-workspace.js";
-import { aiSettingsContent, appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsFallbackContent, settingsGeneralContent, settingsHubContent } from "./ui-settings.js";
+import { aiSettingsContent, appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsFallbackContent, settingsGeneralContent, settingsHubContent, settingsStatusContent } from "./ui-settings.js";
 import { storageClientScript, storageSettingsContent } from "./ui-storage.js";
 import { billingSettingsContent } from "./ui-billing.js";
 import { html } from "./routing.js";
@@ -749,12 +749,12 @@ export function renderOsContent(path, copy, productLinks = {}) {
 export function settingsContent(path, zh, activeLocale = "") {
   if (path === "/settings") return settingsHubContent(zh, activeLocale);
   if (path.endsWith("/general")) return settingsGeneralContent(zh, activeLocale);
-  if (path.endsWith("/appearance")) return appearanceSettingsContent(zh);
+  if (path.endsWith("/appearance")) return appearanceSettingsContent(zh, activeLocale);
   if (path.endsWith("/language")) return languageSettingsContent(zh, activeLocale || (zh ? "zh-cn" : "en-us"));
-  if (path.endsWith("/security")) return securityAuditContent(zh);
-  if (path.endsWith("/notifications")) return statusContent(zh, "通知", "通知方式、提醒和站内消息偏好将在这里统一管理。当前尚未接入通知服务。", "Notifications", "Notification methods, reminders, and in-app message preferences will be managed here. Notification delivery is not connected yet.");
+  if (path.endsWith("/security")) return securityAuditContent(zh, activeLocale);
+  if (path.endsWith("/notifications")) return settingsStatusContent(activeLocale, "notifications");
   if (path.endsWith("/ai")) return aiSettingsContent(zh);
-  if (path.endsWith("/integrations")) return statusContent(zh, "第三方集成", "这里将用于管理可连接的第三方服务与账号授权。当前尚未开放用户级集成配置。", "Integrations", "Manage connected third-party services and account authorizations here. User-level integrations are not available yet.");
+  if (path.endsWith("/integrations")) return settingsStatusContent(activeLocale, "integrations");
   if (path.endsWith("/subscription")) return billingSettingsContent(zh, "billing");
   if (path.endsWith("/student")) return billingSettingsContent(zh, "student");
   if (path.endsWith("/storage")) return storageSettingsContent(zh);
