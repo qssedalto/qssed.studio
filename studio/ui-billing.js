@@ -76,6 +76,19 @@ const BILLING_FLOW_PATCH = {
 };
 for (const [locale, values] of Object.entries(BILLING_FLOW_PATCH)) Object.assign(BILLING_CORE[locale], values);
 
+const BILLING_RUNTIME = {
+  "en-us":{pendingReview:"Waiting for administrator review through the official CHSI verification service.",expiredResubmit:"Submit a new valid student verification.",recognizedCode:"CHSI 16-character online verification code recognized. The image remains only as a local preview on this page and is never uploaded.",recognizedUrl:"Official CHSI verification URL recognized. The image remains only as a local preview on this page and is never uploaded.",currentPlan:"Current",popular:"Popular",free:"Free",perMonth:"/ month",studentPerMonth:"/ month · Student",guideDone:"Guide completed ✓",privacyConfirmed:"Privacy notice confirmed. Choose a QR image, or enter the 16-character code / official verification URL to continue.",privacyRequired:"You must confirm the privacy notice before submitting; QR images are still decoded locally."},
+  "zh-cn":{pendingReview:"正在等待管理员通过学信网官方渠道核验。",expiredResubmit:"请重新提交有效的学生认证。",recognizedCode:"已识别学信网 16 位在线验证码。图片仅保留在当前页面本地预览，不会上传。",recognizedUrl:"已识别学信网官方验证链接。图片仅保留在当前页面本地预览，不会上传。",currentPlan:"当前套餐",popular:"推荐",free:"免费",perMonth:"/ 月",studentPerMonth:"/月 · 学生",guideDone:"教程已阅读 ✓",privacyConfirmed:"已确认隐私提示。选择二维码，或输入 16 位在线验证码 / 官方验证链接后即可提交。",privacyRequired:"提交前需要勾选隐私确认；二维码图片仍只在本地解析。"},
+  "zh-tw":{pendingReview:"正在等待管理員透過學信網官方管道核驗。",expiredResubmit:"請重新提交有效的學生驗證。",recognizedCode:"已辨識學信網 16 位線上驗證碼。圖片只保留在目前頁面本機預覽，不會上傳。",recognizedUrl:"已辨識學信網官方驗證網址。圖片只保留在目前頁面本機預覽，不會上傳。",currentPlan:"目前方案",popular:"推薦",free:"免費",perMonth:"/ 月",studentPerMonth:"/ 月 · 學生",guideDone:"已閱讀教學 ✓",privacyConfirmed:"已確認隱私提示。選擇 QR Code，或輸入 16 位驗證碼 / 官方驗證網址後即可提交。",privacyRequired:"提交前需要勾選隱私確認；QR Code 圖片仍只在本機解析。"},
+  "ja-jp":{pendingReview:"CHSI の公式確認サービスを通じた管理者レビューを待っています。",expiredResubmit:"有効な学生資格確認を再提出してください。",recognizedCode:"CHSI の 16 文字オンライン確認コードを認識しました。画像はこのページ上のローカルプレビューにのみ保持され、アップロードされません。",recognizedUrl:"CHSI の公式確認 URL を認識しました。画像はこのページ上のローカルプレビューにのみ保持され、アップロードされません。",currentPlan:"現在のプラン",popular:"おすすめ",free:"無料",perMonth:"/ 月",studentPerMonth:"/ 月 · 学生",guideDone:"ガイド確認済み ✓",privacyConfirmed:"プライバシー通知を確認しました。QR 画像を選択するか、16 文字コード / 公式 URL を入力して続行できます。",privacyRequired:"送信前にプライバシー確認が必要です。QR 画像は引き続きローカルでのみ解析されます。"},
+  "ko-kr":{pendingReview:"CHSI 공식 확인 서비스를 통한 관리자 검토를 기다리고 있습니다.",expiredResubmit:"유효한 학생 인증을 다시 제출하세요.",recognizedCode:"CHSI 16자리 온라인 확인 코드를 인식했습니다. 이미지는 이 페이지의 로컬 미리보기에만 유지되며 업로드되지 않습니다.",recognizedUrl:"CHSI 공식 확인 URL을 인식했습니다. 이미지는 이 페이지의 로컬 미리보기에만 유지되며 업로드되지 않습니다.",currentPlan:"현재 요금제",popular:"추천",free:"무료",perMonth:"/월",studentPerMonth:"/월 · 학생",guideDone:"안내 확인 완료 ✓",privacyConfirmed:"개인정보 안내를 확인했습니다. QR 이미지를 선택하거나 16자리 코드 / 공식 URL을 입력해 계속하세요.",privacyRequired:"제출하기 전에 개인정보 확인이 필요합니다. QR 이미지는 계속 로컬에서만 해석됩니다."},
+  "fr-fr":{pendingReview:"En attente d’un examen administratif via le service officiel de vérification CHSI.",expiredResubmit:"Soumettez une nouvelle vérification étudiante valide.",recognizedCode:"Code de vérification CHSI à 16 caractères reconnu. L’image reste uniquement en aperçu local et n’est jamais téléversée.",recognizedUrl:"URL officielle de vérification CHSI reconnue. L’image reste uniquement en aperçu local et n’est jamais téléversée.",currentPlan:"Offre actuelle",popular:"Populaire",free:"Gratuit",perMonth:"/ mois",studentPerMonth:"/ mois · Étudiant",guideDone:"Guide terminé ✓",privacyConfirmed:"Avis de confidentialité confirmé. Choisissez une image QR ou saisissez le code à 16 caractères / l’URL officielle pour continuer.",privacyRequired:"Vous devez confirmer l’avis de confidentialité avant l’envoi ; les images QR restent analysées localement."},
+  "es-es":{pendingReview:"Esperando la revisión del administrador mediante el servicio oficial de verificación de CHSI.",expiredResubmit:"Envía una nueva verificación de estudiante válida.",recognizedCode:"Se reconoció el código de verificación de CHSI de 16 caracteres. La imagen permanece solo como vista previa local y no se sube.",recognizedUrl:"Se reconoció la URL oficial de verificación de CHSI. La imagen permanece solo como vista previa local y no se sube.",currentPlan:"Plan actual",popular:"Popular",free:"Gratis",perMonth:"/ mes",studentPerMonth:"/ mes · Estudiante",guideDone:"Guía completada ✓",privacyConfirmed:"Aviso de privacidad confirmado. Elige una imagen QR o introduce el código de 16 caracteres / URL oficial para continuar.",privacyRequired:"Debes confirmar el aviso de privacidad antes de enviar; las imágenes QR siguen procesándose localmente."},
+  "el-gr":{pendingReview:"Αναμονή ελέγχου διαχειριστή μέσω της επίσημης υπηρεσίας επαλήθευσης CHSI.",expiredResubmit:"Υποβάλετε νέα έγκυρη φοιτητική επαλήθευση.",recognizedCode:"Αναγνωρίστηκε ο 16-ψήφιος κωδικός επαλήθευσης CHSI. Η εικόνα παραμένει μόνο ως τοπική προεπισκόπηση και δεν μεταφορτώνεται.",recognizedUrl:"Αναγνωρίστηκε επίσημο URL επαλήθευσης CHSI. Η εικόνα παραμένει μόνο ως τοπική προεπισκόπηση και δεν μεταφορτώνεται.",currentPlan:"Τρέχον πρόγραμμα",popular:"Δημοφιλές",free:"Δωρεάν",perMonth:"/ μήνα",studentPerMonth:"/ μήνα · Φοιτητής",guideDone:"Ο οδηγός ολοκληρώθηκε ✓",privacyConfirmed:"Επιβεβαιώθηκε η ειδοποίηση απορρήτου. Επιλέξτε εικόνα QR ή εισαγάγετε τον 16-ψήφιο κωδικό / επίσημο URL.",privacyRequired:"Πρέπει να επιβεβαιώσετε την ειδοποίηση απορρήτου πριν την υποβολή· οι εικόνες QR συνεχίζουν να αναλύονται τοπικά."},
+  "ar-sa":{pendingReview:"بانتظار مراجعة المسؤول عبر خدمة التحقق الرسمية من CHSI.",expiredResubmit:"أرسل تحققًا جديدًا وصالحًا لأهلية الطالب.",recognizedCode:"تم التعرف على رمز التحقق المكوّن من 16 حرفًا من CHSI. تبقى الصورة للمعاينة المحلية فقط ولا يتم رفعها.",recognizedUrl:"تم التعرف على رابط التحقق الرسمي من CHSI. تبقى الصورة للمعاينة المحلية فقط ولا يتم رفعها.",currentPlan:"الخطة الحالية",popular:"شائع",free:"مجاني",perMonth:"/ شهر",studentPerMonth:"/ شهر · طالب",guideDone:"اكتمل الدليل ✓",privacyConfirmed:"تم تأكيد تنبيه الخصوصية. اختر صورة QR أو أدخل الرمز المكوّن من 16 حرفًا / الرابط الرسمي للمتابعة.",privacyRequired:"يجب تأكيد تنبيه الخصوصية قبل الإرسال؛ وتظل صور QR تُحلل محليًا فقط."}
+};
+BILLING_RUNTIME["en-gb"]=BILLING_RUNTIME["en-us"]; BILLING_RUNTIME["en-au"]=BILLING_RUNTIME["en-us"];
+
 export function billingSettingsContent(zh, view = "billing", locale = "") {
   const activeLocale=locale||(zh?"zh-cn":"en-us");
   let text = zh ? {
@@ -434,7 +447,9 @@ export function billingSettingsContent(zh, view = "billing", locale = "") {
     <script>
       (() => {
         const copy=${JSON.stringify(text)};
-        const isZh=${zh ? "true" : "false"};
+        const runtime=${JSON.stringify(BILLING_RUNTIME[activeLocale] || BILLING_RUNTIME["en-us"])};
+        const locale=${JSON.stringify(activeLocale)};
+        const isZh=${JSON.stringify(activeLocale === "zh-cn" || activeLocale === "zh-tw")};
         const isStudentView=${studentOnly ? "true" : "false"};
         const current=document.getElementById("billing-current");
         const planList=document.getElementById("billing-plan-list");
@@ -467,9 +482,9 @@ export function billingSettingsContent(zh, view = "billing", locale = "") {
         const studentFeedback=document.getElementById("student-feedback");
         const studentProgressItems=[...document.querySelectorAll("[data-student-progress]")];
         const studentProgressFill=document.getElementById("student-progress-fill");
-        const bytes=value=>{let n=Number(value)||0;const units=["B","KB","MB","GB","TB"];let i=0;while(n>=1024&&i<units.length-1){n/=1024;i++}return n.toLocaleString(undefined,{maximumFractionDigits:i?1:0})+" "+units[i]};
+        const bytes=value=>{let n=Number(value)||0;const units=["B","KB","MB","GB","TB"];let i=0;while(n>=1024&&i<units.length-1){n/=1024;i++}return n.toLocaleString(locale,{maximumFractionDigits:i?1:0})+" "+units[i]};
         const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
-        const date=value=>{if(!value)return copy.free;const d=new Date(value);return Number.isNaN(d.getTime())?copy.free:d.toLocaleString()};
+        const date=value=>{if(!value)return copy.free;const d=new Date(value);return Number.isNaN(d.getTime())?copy.free:d.toLocaleString(locale)};
         const source=value=>value==="admin_grant"?copy.manual:value==="system"?copy.system:String(value||copy.system);
         const pricingCatalog=[
           {id:"aertex_free",name:"Free",capacity:"10GB",price:"免费",student:"免费",descZh:"基础使用",descEn:"Core storage"},
@@ -631,9 +646,9 @@ export function billingSettingsContent(zh, view = "billing", locale = "") {
           studentServerStatus=String(state.status||"not_submitted");
           let detail="—";
           if(state.status==="verified"&&state.report_expires_at)detail=copy.verifyingUntil+" "+date(state.report_expires_at);
-          else if(state.status==="pending")detail=isZh?"正在等待管理员通过学信网官方渠道核验。":"Waiting for administrator review through the official CHSI verification service.";
+          else if(state.status==="pending")detail=runtime.pendingReview;
           else if(state.status==="rejected"&&state.review_note)detail=String(state.review_note);
-          else if(state.status==="expired")detail=isZh?"请重新提交有效的学生认证。":"Submit a new valid student verification.";
+          else if(state.status==="expired")detail=runtime.expiredResubmit;
           studentState.innerHTML='<div class="settings-choice '+(state.eligible?'is-selected':'')+'"><strong>'+esc(studentStatusLabel(state.status))+'</strong><span>'+esc(detail)+'</span></div>';
           const pending=state.status==="pending";
           studentPendingActions.hidden=!pending;
@@ -723,8 +738,8 @@ export function billingSettingsContent(zh, view = "billing", locale = "") {
             studentManualWrap.hidden=true;
             studentManualToggle.textContent=copy.manualLink;
             studentFeedback.textContent=evidence.kind==="code"
-              ?(isZh?"已识别学信网 16 位在线验证码。图片仅保留在当前页面本地预览，不会上传。":"CHSI 16-character online verification code recognized. The image remains only as a local preview on this page and is never uploaded.")
-              :(isZh?"已识别学信网官方验证链接。图片仅保留在当前页面本地预览，不会上传。":"Official CHSI verification URL recognized. The image remains only as a local preview on this page and is never uploaded.");
+              ?runtime.recognizedCode
+              :runtime.recognizedUrl;
           }catch(error){
             console.error("Local QR decode failed",error);
             studentFeedback.textContent=copy.invalidQr;
@@ -751,14 +766,14 @@ export function billingSettingsContent(zh, view = "billing", locale = "") {
             planList.innerHTML=pricingCatalog.map(item=>{
               const selected=item.id===plan.id;
               const description=isZh?item.descZh:item.descEn;
-              const badge=selected?(isZh?"当前套餐":"Current"):item.featured?(isZh?"推荐":"Popular"):"";
-              const ordinary=item.price==="免费"?(isZh?"免费":"Free"):item.price;
-              const student=item.student==="免费"?(isZh?"免费":"Free"):item.student;
+              const badge=selected?runtime.currentPlan:item.featured?runtime.popular:"";
+              const ordinary=item.price==="免费"?runtime.free:item.price;
+              const student=item.student==="免费"?runtime.free:item.student;
               return '<article class="pricing-card '+(selected?'is-selected ':'')+(item.featured?'is-featured':'')+'">'+
                 '<div class="pricing-head"><strong class="pricing-name">'+esc(item.name)+'</strong>'+(badge?'<span class="pricing-badge">'+esc(badge)+'</span>':'')+'</div>'+
                 '<div class="pricing-capacity">'+esc(item.capacity)+'</div>'+
-                '<div class="pricing-price-row"><span class="pricing-price">'+esc(ordinary)+'</span>'+(ordinary===(isZh?"免费":"Free")?'':'<span class="pricing-period">'+(isZh?"/ 月":"/ month")+'</span>')+'</div>'+
-                '<div class="pricing-student"><strong>'+esc(student)+'</strong>'+(student===(isZh?"免费":"Free")?'':'<span>'+(isZh?"/月 · 学生":"/ month · Student")+'</span>')+'</div>'+
+                '<div class="pricing-price-row"><span class="pricing-price">'+esc(ordinary)+'</span>'+(ordinary===runtime.free?'':'<span class="pricing-period">'+runtime.perMonth+'</span>')+'</div>'+
+                '<div class="pricing-student"><strong>'+esc(student)+'</strong>'+(student===runtime.free?'':'<span>'+runtime.studentPerMonth+'</span>')+'</div>'+
                 '<p class="pricing-desc">'+esc(description)+'</p>'+
               '</article>';
             }).join("");
@@ -806,15 +821,15 @@ export function billingSettingsContent(zh, view = "billing", locale = "") {
           studentTutorialAcknowledged=true;
           studentVerificationForm.hidden=false;
           studentVerificationForm.style.display="";
-          studentTutorialReady.textContent=isZh?"教程已阅读 ✓":"Guide completed ✓";
+          studentTutorialReady.textContent=runtime.guideDone;
           studentVerificationForm.scrollIntoView({behavior:"smooth",block:"nearest"});
           syncStudentControls();
         });
         studentConsent?.addEventListener("change",()=>{
           if(studentConsent.checked){
-            studentFeedback.textContent=isZh?"已确认隐私提示。选择二维码，或输入 16 位在线验证码 / 官方验证链接后即可提交。":"Privacy notice confirmed. Choose a QR image, or enter the 16-character code / official verification URL to continue.";
+            studentFeedback.textContent=runtime.privacyConfirmed;
           }else{
-            studentFeedback.textContent=isZh?"提交前需要勾选隐私确认；二维码图片仍只在本地解析。":"You must confirm the privacy notice before submitting; QR images are still decoded locally.";
+            studentFeedback.textContent=runtime.privacyRequired;
           }
           syncStudentControls();
         });
