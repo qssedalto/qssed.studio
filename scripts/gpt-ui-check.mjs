@@ -108,6 +108,15 @@ for (const locale of ["zh-cn", "en"]) {
   if (!html.includes('.watchComposerInput{display:block') || !html.includes('font-size:17px') || !html.includes('border-radius:999px') || !html.includes('#sendButton{width:42px;height:42px')) {
     throw new Error("Tiny-watch composer must use a large native-scale iMessage-style pill and circular send affordance");
   }
+  if (!html.includes('html,body{width:100%;max-width:100%;min-height:100%;overflow-x:hidden;overflow-y:auto}') || !html.includes('.content{min-height:calc(var(--aertex-visual-height,100dvh) - var(--aertex-watch-topbar) - 58px);overflow:visible!important')) {
+    throw new Error("Tiny-watch conversation must scroll at the document level so the Digital Crown can move the middle content");
+  }
+  if (!html.includes('.topbar{position:fixed') || !html.includes('.composerWrap,.app.sidebar-collapsed .composerWrap{position:fixed')) {
+    throw new Error("Tiny-watch header and composer must stay fixed while the document conversation scrolls between them");
+  }
+  if (!html.includes('function scrollChatToBottom(){') || !html.includes('const root=document.scrollingElement||document.documentElement')) {
+    throw new Error("Tiny-watch auto-scroll must target the document scroller instead of the non-scrolling middle content container");
+  }
   if (!html.includes('watchInputSessionActive=true') || !html.includes('queueWatchAutoSend()') || !html.includes('watchAutoSendTimer=window.setTimeout')) {
     throw new Error("Watch text confirmation must be able to auto-send after the native watchOS input session returns");
   }
