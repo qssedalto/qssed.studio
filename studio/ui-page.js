@@ -384,24 +384,11 @@ export function baseHead(title) {
         }
       }
 
-      /* AWARD_QUALITY_SYSTEM_2026 — shared visual system */
-      :root{
-        --ease-emphasized:cubic-bezier(.16,1,.3,1);
-        --ease-standard:cubic-bezier(.2,.8,.2,1);
-        --space-1:6px;
-        --space-2:10px;
-        --space-3:14px;
-        --space-4:18px;
-        --space-5:24px;
-        --space-6:32px;
-        --space-7:44px;
-        --radius-control:14px;
-        --radius-panel:22px;
-        --radius-shell:30px;
-        --shadow-lift:0 24px 70px rgba(0,0,0,.14);
-        --shadow-float:0 12px 34px rgba(0,0,0,.10);
-      }
-      :root[data-theme="light"]{
+      /* AWARD_QUALITY_SYSTEM_2026 — Studio shell only.
+         Protected product surfaces keep their dedicated layout contracts:
+         Intelligence/Watch are standalone; Work TeX and Student Verification
+         are explicitly excluded from this shared visual pass. */
+      :root[data-theme="light"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){
         --bg:#f4f4f2;
         --bg-soft:#ebece9;
         --surface:#fbfbfa;
@@ -418,8 +405,10 @@ export function baseHead(title) {
         --glass-heavy:rgba(250,250,248,.88);
         --shadow:0 36px 90px rgba(22,24,29,.12);
         --shadow-soft:0 12px 36px rgba(22,24,29,.075);
+        --ease-emphasized:cubic-bezier(.16,1,.3,1);
+        --ease-standard:cubic-bezier(.2,.8,.2,1);
       }
-      :root:not([data-theme="light"]){
+      :root:not([data-theme="light"]) body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){
         --bg:#08090b;
         --bg-soft:#101114;
         --surface:#15171a;
@@ -436,143 +425,25 @@ export function baseHead(title) {
         --glass-heavy:rgba(14,16,19,.88);
         --shadow:0 36px 100px rgba(0,0,0,.42);
         --shadow-soft:0 14px 40px rgba(0,0,0,.24);
+        --ease-emphasized:cubic-bezier(.16,1,.3,1);
+        --ease-standard:cubic-bezier(.2,.8,.2,1);
       }
 
-      html{
-        font-feature-settings:"kern" 1,"liga" 1,"calt" 1;
-        -webkit-font-smoothing:antialiased;
-        -moz-osx-font-smoothing:grayscale;
-      }
-      body{
-        background:
-          radial-gradient(1100px 700px at 8% -14%,color-mix(in srgb,var(--primary) 10%,transparent),transparent 67%),
-          radial-gradient(900px 680px at 108% 108%,color-mix(in srgb,#af52de 7%,transparent),transparent 72%),
-          linear-gradient(180deg,color-mix(in srgb,var(--bg) 96%,#fff 4%),var(--bg) 30%,var(--bg));
-        background-attachment:fixed;
-      }
-      body:not(.os-shell)::after{
-        content:"";
-        position:fixed;
-        inset:auto -12vw -26vh auto;
-        width:min(58vw,760px);
-        aspect-ratio:1;
-        border-radius:50%;
-        pointer-events:none;
-        z-index:-1;
-        background:radial-gradient(circle,color-mix(in srgb,var(--primary) 8%,transparent),transparent 66%);
-        filter:blur(10px);
-      }
-
-      .card{
-        max-width:600px;
-        padding:clamp(26px,4.2vw,42px);
-        border-radius:var(--radius-shell);
-        border-color:color-mix(in srgb,var(--border) 82%,transparent);
-        background:
-          linear-gradient(180deg,color-mix(in srgb,var(--glass) 92%,#fff 8%),var(--glass));
-        box-shadow:
-          0 1px 0 color-mix(in srgb,#fff 22%,transparent) inset,
-          var(--shadow);
-        transition:
-          transform .45s var(--ease-emphasized),
-          box-shadow .45s var(--ease-emphasized),
-          border-color .25s ease;
-      }
-      @media (hover:hover) and (pointer:fine){
-        .card:hover{
-          transform:translateY(-2px);
-          border-color:color-mix(in srgb,var(--border-strong) 72%,transparent);
-          box-shadow:
-            0 1px 0 color-mix(in srgb,#fff 25%,transparent) inset,
-            0 42px 110px rgba(0,0,0,.17);
-        }
-      }
-
-      h1,.brand-title{
-        max-width:14ch;
-        font-size:clamp(38px,6vw,64px);
-        line-height:.98;
-        letter-spacing:-.055em;
-        font-weight:760;
-      }
-      h2{font-weight:720;letter-spacing:-.035em}
-      p{line-height:1.64}
-      input,select,textarea{
-        min-height:52px;
-        border-radius:var(--radius-control);
-        padding-inline:16px;
-        background:color-mix(in srgb,var(--fill) 88%,transparent);
-        box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--border) 90%,transparent);
-        transition:
-          background .22s ease,
-          box-shadow .22s ease,
-          transform .22s var(--ease-standard);
-      }
-      input:focus,select:focus,textarea:focus{
-        transform:translateY(-1px);
-        box-shadow:
-          0 0 0 4px color-mix(in srgb,var(--primary) 12%,transparent),
-          inset 0 0 0 1px color-mix(in srgb,var(--primary) 82%,#fff 18%);
-      }
-      button,a.button{
-        min-height:52px;
-        border-radius:var(--radius-control);
-        font-weight:690;
-        letter-spacing:-.01em;
-        transition:
-          transform .24s var(--ease-standard),
-          box-shadow .24s var(--ease-standard),
-          filter .16s ease,
-          background .2s ease,
-          opacity .16s ease;
-      }
-      @media (hover:hover) and (pointer:fine){
-        button:hover,a.button:hover{
-          transform:translateY(-1px);
-          box-shadow:0 10px 24px color-mix(in srgb,var(--primary) 16%,transparent);
-        }
-        .secondary:hover{box-shadow:0 10px 24px rgba(0,0,0,.08)!important}
-      }
-      button:active,a.button:active{transform:scale(.975) translateY(0)}
-      .choice-row{
-        min-height:54px;
-        border-radius:15px;
-        transition:
-          transform .22s var(--ease-standard),
-          background .18s ease,
-          box-shadow .18s ease;
-      }
-      @media (hover:hover) and (pointer:fine){
-        .choice-row:hover{
-          transform:translateY(-1px);
-          box-shadow:inset 0 0 0 1px var(--border),0 8px 22px rgba(0,0,0,.065);
-        }
-      }
-      .top-controls{
-        gap:9px;
-        transition:opacity .22s ease,transform .28s var(--ease-emphasized);
-      }
-      .theme-toggle,.language-toggle{
-        width:46px;height:46px;min-width:46px;min-height:46px;
-        border-radius:15px;
-        box-shadow:
-          0 10px 28px rgba(0,0,0,.10),
-          inset 0 1px 0 color-mix(in srgb,#fff 24%,transparent);
-      }
-
-      body.os-shell{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){
         padding:clamp(12px,1.55vw,24px)!important;
         background:
           radial-gradient(1200px 760px at 4% -18%,color-mix(in srgb,var(--primary) 11%,transparent),transparent 66%),
           radial-gradient(940px 720px at 104% 104%,color-mix(in srgb,#af52de 7%,transparent),transparent 71%),
           var(--bg)!important;
+        -webkit-font-smoothing:antialiased;
+        -moz-osx-font-smoothing:grayscale;
       }
-      body.os-shell .os-layout{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-layout{
         max-width:1760px!important;
         grid-template-columns:286px minmax(0,1fr)!important;
         gap:18px!important;
       }
-      body.os-shell .os-sidebar{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-sidebar{
         padding:16px!important;
         border-radius:30px!important;
         background:color-mix(in srgb,var(--glass-heavy) 94%,transparent)!important;
@@ -581,102 +452,88 @@ export function baseHead(title) {
           0 1px 0 color-mix(in srgb,#fff 22%,transparent) inset,
           0 26px 80px rgba(0,0,0,.13)!important;
       }
-      body.os-shell .os-main{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-main{
         padding:clamp(28px,3.5vw,54px)!important;
         border-radius:30px!important;
-        background:
-          linear-gradient(180deg,color-mix(in srgb,var(--surface) 97%,#fff 3%),var(--surface))!important;
+        background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 97%,#fff 3%),var(--surface))!important;
         border-color:color-mix(in srgb,var(--border) 88%,transparent)!important;
         box-shadow:
           0 1px 0 color-mix(in srgb,#fff 19%,transparent) inset,
           0 28px 88px rgba(0,0,0,.11)!important;
       }
-      body.os-shell .os-hero{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-hero{
         margin-bottom:34px!important;
         gap:24px!important;
       }
-      body.os-shell .os-hero h1{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-hero h1{
         max-width:12ch;
         font-size:clamp(42px,5vw,68px)!important;
         line-height:.96!important;
         letter-spacing:-.058em!important;
         font-weight:760!important;
       }
-      body.os-shell .os-nav-title{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-nav-title{
         min-height:42px;
         display:flex;
         align-items:center;
         padding:10px 11px!important;
         border-radius:13px!important;
       }
-      body.os-shell .os-nav-items a{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-nav-items a{
         min-height:40px;
         border-radius:11px!important;
       }
-      body.os-shell .os-card,
-      body.os-shell .os-profile-card,
-      body.os-shell .os-lock,
-      body.os-shell .os-hub-card,
-      body.os-shell .storage-overview-panel,
-      body.os-shell .storage-browser{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) :is(.os-card,.os-profile-card,.os-lock,.os-hub-card,.storage-overview-panel,.storage-browser){
         border-radius:22px!important;
         border-color:color-mix(in srgb,var(--border) 88%,transparent)!important;
-        background:
-          linear-gradient(180deg,color-mix(in srgb,var(--card) 97%,#fff 3%),var(--card))!important;
+        background:linear-gradient(180deg,color-mix(in srgb,var(--card) 97%,#fff 3%),var(--card))!important;
         box-shadow:
           0 1px 0 color-mix(in srgb,#fff 18%,transparent) inset,
           0 10px 30px rgba(0,0,0,.055)!important;
       }
-      body.os-shell .os-card{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-card{
         padding:clamp(20px,2vw,28px)!important;
       }
-      body.os-shell .os-card h2{
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-card h2{
         font-size:clamp(19px,2vw,24px);
         letter-spacing:-.035em!important;
       }
       @media (hover:hover) and (pointer:fine){
-        body.os-shell .os-hub-card,
-        body.os-shell .settings-card-link,
-        body.os-shell .settings-choice,
-        body.os-shell .storage-action-button{
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) :is(.os-hub-card,.settings-card-link){
           transition:
             transform .3s var(--ease-emphasized),
             background .22s ease,
             border-color .22s ease,
             box-shadow .3s var(--ease-emphasized)!important;
         }
-        body.os-shell .os-hub-card:hover,
-        body.os-shell .settings-card-link:hover{
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) :is(.os-hub-card,.settings-card-link):hover{
           transform:translateY(-2px)!important;
           border-color:var(--border-strong)!important;
           box-shadow:0 18px 42px rgba(0,0,0,.08)!important;
         }
       }
       @media (max-width:1180px){
-        body.os-shell .os-layout{grid-template-columns:264px minmax(0,1fr)!important;gap:14px!important}
-        body.os-shell .os-main{padding:30px!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-layout{
+          grid-template-columns:264px minmax(0,1fr)!important;
+          gap:14px!important;
+        }
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-main{padding:30px!important}
       }
       @media (max-width:1050px){
-        body.os-shell{padding:10px!important}
-        body.os-shell .os-layout{height:calc(100dvh - 20px)!important}
-        body.os-shell .os-main,
-        body.os-shell .os-sidebar{border-radius:24px!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){padding:10px!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-layout{height:calc(100dvh - 20px)!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) :is(.os-main,.os-sidebar){border-radius:24px!important}
       }
       @media (max-width:560px){
-        body{padding:12px}
-        .card{padding:28px 20px;border-radius:26px}
-        h1,.brand-title{font-size:clamp(36px,12vw,50px)}
-        body.os-shell{padding:8px!important}
-        body.os-shell .os-layout{height:calc(100dvh - 16px)!important}
-        body.os-shell .os-main{padding:22px 17px!important;border-radius:22px!important}
-        html.compact-content-view body.os-shell .os-main{padding-top:68px!important}
-        body.os-shell .os-hero{margin-bottom:24px!important}
-        body.os-shell .os-hero h1{font-size:clamp(38px,12vw,52px)!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){padding:8px!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-layout{height:calc(100dvh - 16px)!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-main{padding:22px 17px!important;border-radius:22px!important}
+        html.compact-content-view body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-main{padding-top:68px!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-hero{margin-bottom:24px!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-hero h1{font-size:clamp(38px,12vw,52px)!important}
       }
       @media (prefers-reduced-motion:reduce){
-        .card,input,select,textarea,button,a.button,.choice-row,
-        body.os-shell .os-hub-card,body.os-shell .settings-card-link,
-        body.os-shell .settings-choice,body.os-shell .storage-action-button{
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) :is(.os-hub-card,.settings-card-link){
           transform:none!important;
           transition-duration:.01ms!important;
         }
