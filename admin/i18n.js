@@ -1,3 +1,5 @@
+import { preferredLocaleFromRequest } from "../studio/locale.js";
+
 const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/billing", "/student-verification", "/intelligence", "/logs", "/system"];
 
 const EN = [
@@ -289,8 +291,7 @@ export function adminCanonicalPath(locale, path) {
 }
 
 export function preferredAdminLocale(request) {
-  const language = (request.headers.get("Accept-Language") || "").toLowerCase();
-  return language.includes("zh") ? "zh-cn" : "en";
+  return preferredLocaleFromRequest(request);
 }
 
 export function localizeAdminHtml(markup, locale, currentPath) {
