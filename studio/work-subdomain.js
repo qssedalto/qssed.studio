@@ -16,28 +16,32 @@ export function isWorkSubdomainRequest(request) {
 }
 
 export function isMainWorkHandoffPath(pathname) {
-  return pathname === "/work/handoff" || pathname === "/zh-cn/work/handoff" || pathname === "/en/work/handoff";
+  const clean = normalizePath(pathname);
+  if (clean === "/work/handoff") return true;
+  const locale = sharedLocaleFromPath(clean);
+  if (!locale) return false;
+  const parts = clean.split("/").filter(Boolean);
+  return parts.length === 3 && parts[1] === "work" && parts[2] === "handoff";
 }
 
 export function mainWorkRedirect(request, pathname) {
   const clean = normalizePath(pathname);
   const workOrigin = workOriginForRequest(request);
-  const localizedDocument = clean.match(/^\/(zh-cn|en)\/work\/d\/(?:huawei-exempt\/)?([0-9a-f-]{36})$/i);
-  if (localizedDocument) {
-    const locale = localizedDocument[1].toLowerCase() === "en" ? "en" : "zh-cn";
-    const exempt = /\/huawei-exempt\//i.test(clean) ? "huawei-exempt/" : "";
-    return `${workOrigin}/${locale}/d/${exempt}${localizedDocument[2]}`;
+  const routeLocale = sharedLocaleFromPath(clean);
+  const parts = clean.split("/").filter(Boolean);
+  const rest = routeLocale ? parts.slice(1) : parts;
+
+  if (rest[0] === "work" && rest[1] === "d") {
+    const exempt = rest[2] === "huawei-exempt";
+    const id = exempt ? rest[3] : rest[2];
+    if (WORK_DOCUMENT_ID_RE.test(id || "")) {
+      const prefix = routeLocale ? "/" + routeLocale : "";
+      return `${workOrigin}${prefix}/d/${exempt ? "huawei-exempt/" : ""}${id}`;
+    }
   }
 
-  if (clean === "/zh-cn/work/tex" || clean === "/zh-cn/workspace/experiments/tex") {
-    return `${workOrigin}/zh-cn/tex`;
-  }
-  if (clean === "/en/work/tex" || clean === "/en/workspace/experiments/tex") {
-    return `${workOrigin}/en/tex`;
-  }
-  if (clean === "/work/tex" || clean === "/workspace/experiments/tex") {
-    return `${workOrigin}/tex`;
-  }
+  const isTex = rest.join("/") === "work/tex" || rest.join("/") === "workspace/experiments/tex";
+  if (isTex) return routeLocale ? `${workOrigin}/${routeLocale}/tex` : `${workOrigin}/tex`;
 
   return "";
 }
@@ -53,11 +57,12 @@ export function rewriteWorkSubdomainRequest(request) {
   }
 
   const locale = preferredLocale(request, pathname);
+  const routeLocale = localeFromPath(pathname);
   const canonicalPath = `/${locale}/tex`;
   const localizedDocument = parseWorkDocumentPath(pathname);
   if (localizedDocument?.localized) {
     const internalUrl = new URL(url.toString());
-    internalUrl.pathname = localizedDocument.locale === "en" ? "/en/work/tex" : "/zh-cn/work/tex";
+    internalUrl.pathname = `/${localizedDocument.locale}/work/tex`;
     internalUrl.searchParams.set("document", localizedDocument.id);
     return {
       request: new Request(internalUrl.toString(), request),
@@ -81,13 +86,15 @@ export function rewriteWorkSubdomainRequest(request) {
     };
   }
 
-  if (/^\/(?:zh-cn|en)\/d(?:\/|$)/i.test(pathname) || /^\/d(?:\/|$)/i.test(pathname)) {
+  const parts = pathname.split("/").filter(Boolean);
+  const rest = routeLocale ? parts.slice(1) : parts;
+  if (rest[0] === "d") {
     return { request, pageNext: "", redirect: "", canonical: "", documentId: "", notFound: true };
   }
 
-  if (pathname === "/zh-cn/tex" || pathname === "/en/tex") {
+  if (routeLocale && rest.length === 1 && rest[0] === "tex") {
     const internalUrl = new URL(url.toString());
-    internalUrl.pathname = pathname.startsWith("/en/") ? "/en/work/tex" : "/zh-cn/work/tex";
+    internalUrl.pathname = `/${routeLocale}/work/tex`;
     return {
       request: new Request(internalUrl.toString(), request),
       pageNext: pathname,
@@ -97,14 +104,9 @@ export function rewriteWorkSubdomainRequest(request) {
     };
   }
 
-  if ([
-    "/", "/tex", "/local",
-    "/zh-cn", "/en",
-    "/zh-cn/local", "/en/local",
-    "/zh-cn/work", "/en/work",
-    "/zh-cn/work/local", "/en/work/local",
-    "/zh-cn/work/tex", "/en/work/tex"
-  ].includes(pathname)) {
+  const routeKey = rest.join("/");
+  const canonicalAliases = new Set(["", "tex", "local", "work", "work/local", "work/tex"]);
+  if (canonicalAliases.has(routeKey)) {
     return {
       request,
       pageNext: "",
@@ -192,14 +194,15 @@ function canonicalWorkPath(path, locale) {
 }
 
 function parseWorkDocumentPath(pathname) {
-  const match = String(pathname || "").match(/^\/(zh-cn|en)\/d\/(huawei-exempt\/)?([0-9a-f-]{36})$/i);
-  if (!match || !WORK_DOCUMENT_ID_RE.test(match[3])) return null;
-  return {
-    localized: true,
-    locale: match[1].toLowerCase() === "en" ? "en" : "zh-cn",
-    exempt: Boolean(match[2]),
-    id: match[3]
-  };
+  const path = String(pathname || "");
+  const locale = sharedLocaleFromPath(path);
+  if (!locale) return null;
+  const parts = path.split("/").filter(Boolean).slice(1);
+  if (parts[0] !== "d") return null;
+  const exempt = parts[1] === "huawei-exempt";
+  const id = exempt ? parts[2] : parts[1];
+  if (!WORK_DOCUMENT_ID_RE.test(id || "") || parts.length !== (exempt ? 3 : 2)) return null;
+  return { localized: true, locale, exempt, id };
 }
 
 function parseShortWorkDocumentPath(pathname) {
