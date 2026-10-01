@@ -294,7 +294,7 @@ export default {
     if (pathname === "/api/auth/login") { if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } }); return handleIdentifierPasswordLogin(request, env, ipInfo); }
     if (pathname === "/api/auth/bootstrap") { if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } }); return handleStudioSessionBootstrap(request); }
     if (pathname === "/api/auth/logout") { if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } }); return handleStudioSessionLogout(request); }
-    if (pathname === "/auth/handoff") { if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } }); return handleAuthHandoff(request, env, locale); }
+    if (pathname === "/auth/handoff") { if (request.method !== "POST") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store" } }); return handleAuthHandoff(request, env, fullLocale); }
 
     const legacyTarget = LEGACY_REDIRECTS.get(pathname);
     if (legacyTarget) return localizedRedirect(request, locale, legacyTarget);
