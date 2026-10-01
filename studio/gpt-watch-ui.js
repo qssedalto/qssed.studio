@@ -28,6 +28,10 @@ export function intelligenceWatchStyles() {
   .msg.assistant .bubble{max-width:96%;padding:11px 12px;border:1px solid color-mix(in srgb,var(--line) 78%,transparent);border-radius:20px 20px 20px 7px;background:var(--panel2);color:var(--text);font-size:20px;line-height:1.42;letter-spacing:-.012em;box-shadow:0 2px 8px rgba(0,0,0,.1)}
   .msg.assistant .bubble .richMarkdown{font-size:inherit;line-height:1.42}
   .msg.assistant .bubble .richMarkdown p{margin:0 0 .55em}
+  .msg.assistant .bubble .mathInline{max-width:100%;font-size:.96em;vertical-align:-.06em}
+  .msg.assistant .bubble .mathBlock{max-width:100%;margin:.55em 0;padding:.08em 0;overflow-x:auto;overflow-y:hidden;font-size:.92em;white-space:nowrap;text-align:center;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .msg.assistant .bubble .mathBlock::-webkit-scrollbar{display:none}
+  .msg.assistant .bubble .mathFallback{font-family:ui-serif,Georgia,serif;letter-spacing:0}
   .msg.assistant .bubble :where(p,ul,ol,pre,blockquote,table){margin-top:.42em;margin-bottom:.42em}
   .msg.assistant .bubble :where(pre,code){font-size:12px}
   .status{font-size:12px;margin:4px 0 0 6px;color:var(--muted)}
