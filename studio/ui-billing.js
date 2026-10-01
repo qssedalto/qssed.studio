@@ -257,7 +257,8 @@ export function billingSettingsContent(zh, view = "billing") {
       .student-status-card .settings-choice strong{font-size:20px;letter-spacing:-.035em}.student-status-card .settings-choice span{margin-top:7px;font-size:11px}
       .student-progress{position:relative;padding:18px 22px;border:1px solid var(--border);border-radius:22px;background:var(--card);box-shadow:0 10px 30px rgba(0,0,0,.045)}
       .student-progress ol{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0;padding:0;list-style:none}
-      .student-progress li{display:grid;justify-items:center;gap:7px;color:var(--quiet);text-align:center}\n      .student-progress li:first-child{justify-items:start;text-align:left}.student-progress li:last-child{justify-items:end;text-align:right}
+      .student-progress li{display:grid;justify-items:center;gap:7px;color:var(--quiet);text-align:center}
+      .student-progress li:first-child{justify-items:start;text-align:left}.student-progress li:last-child{justify-items:end;text-align:right}
       .student-progress li>span{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border);font-size:11px;font-weight:800}
       .student-progress li>strong{font-size:11px;line-height:1.25}
       .student-progress li.is-active{color:var(--text)}.student-progress li.is-active>span{background:var(--primary);color:var(--primary-ink);box-shadow:0 7px 18px color-mix(in srgb,var(--primary) 18%,transparent)}
@@ -469,7 +470,9 @@ export function billingSettingsContent(zh, view = "billing") {
           studentProgressItems.forEach(item=>{
             const index=Number(item.dataset.studentProgress||0);
             item.classList.toggle("is-complete",verified||index<stage);
-            const active=!verified&&index===stage;\n            item.classList.toggle("is-active",active);\n            if(active)item.setAttribute("aria-current","step");else item.removeAttribute("aria-current");
+            const active=!verified&&index===stage;
+            item.classList.toggle("is-active",active);
+            if(active)item.setAttribute("aria-current","step");else item.removeAttribute("aria-current");
           });
           if(studentProgressFill)studentProgressFill.style.width=verified||stage===3?"100%":stage===2?"50%":"0%";
         }
@@ -507,7 +510,8 @@ export function billingSettingsContent(zh, view = "billing") {
           studentTutorial.hidden=!showTutorial;
           studentTutorial.style.display=showTutorial?"":"none";
           if(!showTutorial){
-            studentTutorialAcknowledged=false;\n            if(studentTutorialReady)studentTutorialReady.textContent=copy.tutorialReady;
+            studentTutorialAcknowledged=false;
+            if(studentTutorialReady)studentTutorialReady.textContent=copy.tutorialReady;
             studentVerificationForm.hidden=true;
             studentVerificationForm.style.display="none";
           }
@@ -691,7 +695,9 @@ export function billingSettingsContent(zh, view = "billing") {
           if(!validStudentRegions.has(next))return;
           studentRegion=next;
           studentMethod="";
-          studentTutorialAcknowledged=false;\n          if(studentTutorialReady)studentTutorialReady.textContent=copy.tutorialReady;\n          saveStudentRegionPreference();
+          studentTutorialAcknowledged=false;
+          if(studentTutorialReady)studentTutorialReady.textContent=copy.tutorialReady;
+          saveStudentRegionPreference();
           clearStudentPreview();
           studentQrFile.value="";
           studentTarget.value="";
@@ -704,7 +710,10 @@ export function billingSettingsContent(zh, view = "billing") {
           if(studentLocked)return;
           studentRegion="";
           studentMethod="";
-          studentTutorialAcknowledged=false;\n          if(studentTutorialReady)studentTutorialReady.textContent=copy.tutorialReady;\n          saveStudentRegionPreference();\n          clearStudentPreview();
+          studentTutorialAcknowledged=false;
+          if(studentTutorialReady)studentTutorialReady.textContent=copy.tutorialReady;
+          saveStudentRegionPreference();
+          clearStudentPreview();
           studentQrFile.value="";
           studentTarget.value="";
           studentConsent.checked=false;
