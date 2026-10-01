@@ -449,7 +449,8 @@ export function renderIntelligenceNotFound(locale, options = {}) {
   const themeAttr = intelligenceThemeAttr(options.theme || "");
   const themeBoot = intelligenceThemeBootScript();
   const kind = options.kind || "page";
-  const copy = gptNotFoundCopy(locale);\n  const text = copy[kind] || copy.page;
+  const copy = gptNotFoundCopy(locale);
+  const text = copy[kind] || copy.page;
   const href = "/" + locale;
   return `<!doctype html><html lang="${locale}" dir="${localeDirection(locale)}"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><meta name="robots" content="noindex,nofollow,noarchive"><title>${text.title} · AERTEX Intelligence</title>${FAVICON_LINKS}${themeBoot}<style>
 :root{color-scheme:light;--bg:#f5f5f7;--fg:#1d1d1f;--muted:#6e6e73;--quiet:#8e8e93;--line:#424245;--icon-fill:#fff;--icon-soft:#e8e8ed;--shadow:rgba(0,0,0,.16);--chip:#fff;--chip-line:rgba(60,60,67,.14);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",system-ui,sans-serif}
