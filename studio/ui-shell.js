@@ -753,7 +753,7 @@ export function settingsContent(path, zh, activeLocale = "") {
   if (path.endsWith("/language")) return languageSettingsContent(zh, activeLocale || (zh ? "zh-cn" : "en-us"));
   if (path.endsWith("/security")) return securityAuditContent(zh, activeLocale);
   if (path.endsWith("/notifications")) return settingsStatusContent(activeLocale, "notifications");
-  if (path.endsWith("/ai")) return aiSettingsContent(zh);
+  if (path.endsWith("/ai")) return aiSettingsContent(zh, activeLocale);
   if (path.endsWith("/integrations")) return settingsStatusContent(activeLocale, "integrations");
   if (path.endsWith("/subscription")) return billingSettingsContent(zh, "billing", activeLocale);
   if (path.endsWith("/student")) return billingSettingsContent(zh, "student", activeLocale);
