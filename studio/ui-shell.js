@@ -755,8 +755,8 @@ export function settingsContent(path, zh, activeLocale = "") {
   if (path.endsWith("/notifications")) return settingsStatusContent(activeLocale, "notifications");
   if (path.endsWith("/ai")) return aiSettingsContent(zh);
   if (path.endsWith("/integrations")) return settingsStatusContent(activeLocale, "integrations");
-  if (path.endsWith("/subscription")) return billingSettingsContent(zh, "billing");
-  if (path.endsWith("/student")) return billingSettingsContent(zh, "student");
+  if (path.endsWith("/subscription")) return billingSettingsContent(zh, "billing", activeLocale);
+  if (path.endsWith("/student")) return billingSettingsContent(zh, "student", activeLocale);
   if (path.endsWith("/storage")) return storageSettingsContent(zh);
 
   return settingsFallbackContent(zh, activeLocale);
