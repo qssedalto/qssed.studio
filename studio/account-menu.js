@@ -1,3 +1,5 @@
+import { normalizeSupportedLocale, SUPPORTED_LOCALES } from "./locale.js";
+
 const DOMAIN_ROOTS = ["qsseda.com","qsseda.online","qsseda.studio"];
 
 export function accountMenuStyles() {
@@ -62,13 +64,11 @@ export function accountMenuStyles() {
 `;
 }
 
-export function accountMenuMarkup(locale = "zh") {
-  const zh = locale !== "en";
-  const copy = zh ? {
-    aria:"账号菜单",manage:"管理 AERTEX ID",switchAccount:"切换账号 / 重新登录",signOut:"退出登录",fallback:"AERTEX 用户"
-  } : {
-    aria:"Account menu",manage:"Manage AERTEX ID",switchAccount:"Switch account / sign in again",signOut:"Sign out",fallback:"AERTEX User"
-  };
+const ACCOUNT_MENU_COPY = {"en-us":{"aria":"Account menu","manage":"Manage AERTEX ID","switchAccount":"Switch account / sign in again","signOut":"Sign out","fallback":"AERTEX User"},"en-gb":{"aria":"Account menu","manage":"Manage AERTEX ID","switchAccount":"Switch account / sign in again","signOut":"Sign out","fallback":"AERTEX User"},"en-au":{"aria":"Account menu","manage":"Manage AERTEX ID","switchAccount":"Switch account / sign in again","signOut":"Sign out","fallback":"AERTEX User"},"zh-cn":{"aria":"账号菜单","manage":"管理 AERTEX ID","switchAccount":"切换账号 / 重新登录","signOut":"退出登录","fallback":"AERTEX 用户"},"zh-tw":{"aria":"帳號選單","manage":"管理 AERTEX ID","switchAccount":"切換帳號 / 重新登入","signOut":"登出","fallback":"AERTEX 使用者"},"ja-jp":{"aria":"アカウントメニュー","manage":"AERTEX ID を管理","switchAccount":"アカウントを切り替える / 再サインイン","signOut":"サインアウト","fallback":"AERTEX ユーザー"},"ko-kr":{"aria":"계정 메뉴","manage":"AERTEX ID 관리","switchAccount":"계정 전환 / 다시 로그인","signOut":"로그아웃","fallback":"AERTEX 사용자"},"fr-fr":{"aria":"Menu du compte","manage":"Gérer AERTEX ID","switchAccount":"Changer de compte / se reconnecter","signOut":"Se déconnecter","fallback":"Utilisateur AERTEX"},"es-es":{"aria":"Menú de cuenta","manage":"Gestionar AERTEX ID","switchAccount":"Cambiar de cuenta / volver a iniciar sesión","signOut":"Cerrar sesión","fallback":"Usuario de AERTEX"},"el-gr":{"aria":"Μενού λογαριασμού","manage":"Διαχείριση AERTEX ID","switchAccount":"Αλλαγή λογαριασμού / νέα σύνδεση","signOut":"Αποσύνδεση","fallback":"Χρήστης AERTEX"},"ar-sa":{"aria":"قائمة الحساب","manage":"إدارة AERTEX ID","switchAccount":"تبديل الحساب / تسجيل الدخول مجددًا","signOut":"تسجيل الخروج","fallback":"مستخدم AERTEX"}};
+
+export function accountMenuMarkup(locale = "en-us") {
+  const activeLocale = normalizeSupportedLocale(locale) || "en-us";
+  const copy = ACCOUNT_MENU_COPY[activeLocale] || ACCOUNT_MENU_COPY["en-us"];
   return `
 <div class="aertex-account-root" id="aertex-account-root" hidden>
   <button class="aertex-account-button" id="aertex-account-button" type="button" aria-label="${copy.aria}" title="${copy.aria}" aria-haspopup="menu" aria-expanded="false">
@@ -105,7 +105,8 @@ export function accountMenuClientScript(options = {}) {
     summaryUrl: options.summaryUrl || "/api/account/security/summary",
     logoutUrl: options.logoutUrl || "/api/auth/logout",
     authMode: options.authMode === true,
-    locale: options.locale === "en" ? "en" : "zh-cn"
+    locale: normalizeSupportedLocale(options.locale) || "en-us",
+    supportedLocales: SUPPORTED_LOCALES
   };
   return `<script>
 (() => {
@@ -116,7 +117,8 @@ export function accountMenuClientScript(options = {}) {
   if(!root||!button||!menu)return;
   const byId=id=>document.getElementById(id);
   const roots=${scriptLiteral(DOMAIN_ROOTS)};
-  const locale=config.locale==="en"?"en":"zh-cn";
+  const locale=config.locale||"en-us";
+  const localePattern=(config.supportedLocales||[]).join("|");
   const host=location.hostname.toLowerCase();
 
   function domainRoot(){
@@ -131,7 +133,7 @@ export function accountMenuClientScript(options = {}) {
       return "/"+locale+"/gpt/handoff?next="+encodeURIComponent(current);
     }
     if(host.startsWith("work.")){
-      const deep=new RegExp("^/(?:zh-cn|en)/d/(?:huawei-exempt/)?[0-9a-f-]{36}$","i").test(location.pathname);
+      const deep=new RegExp("^/(?:("+localePattern+"))/d/(?:huawei-exempt/)?[0-9a-f-]{36}$","i").test(location.pathname);
       const next=deep?location.pathname+location.search:"/"+locale+"/tex";
       return "/"+locale+"/work/handoff?next="+encodeURIComponent(next);
     }
@@ -238,8 +240,9 @@ export function accountMenuClientScript(options = {}) {
 export function injectAccountMenuRuntime(markup, options = {}) {
   const source = String(markup || "");
   if (!source || source.includes('id="aertex-account-root"')) return source;
-  const inferredLocale = /<html[^>]*lang=["']en(?:["'-]|\b)/i.test(source) ? "en" : "zh-cn";
-  const locale = options.locale === "en" ? "en" : options.locale === "zh-cn" ? "zh-cn" : inferredLocale;
+  const langMatch = source.match(/<html[^>]*lang=["']([^"']+)["']/i);
+  const inferredLocale = normalizeSupportedLocale(langMatch?.[1]) || "en-us";
+  const locale = normalizeSupportedLocale(options.locale) || inferredLocale;
   const styles = `<style id="aertex-account-runtime-style">${accountMenuStyles()}.aertex-account-global-zone{position:fixed;top:14px;right:14px;z-index:2147483000}@media(max-width:560px){.aertex-account-global-zone{top:12px;right:12px}}</style>`;
   const block = `<div class="aertex-account-global-zone">${accountMenuMarkup(locale)}</div>${accountMenuClientScript({
     summaryUrl: options.summaryUrl || "/api/account/security/summary",
