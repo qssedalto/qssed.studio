@@ -39,6 +39,7 @@ export const OS_PATHS = new Set([
   "/settings/ai",
   "/settings/integrations",
   "/settings/subscription",
+  "/settings/student",
   "/settings/storage"
 ]);
 export const LEGACY_REDIRECTS = new Map([
