@@ -1,77 +1,22 @@
 import { MAX_STORAGE_FILE_BYTES } from "./config.js";
 
-export function storageSettingsContent(zh) {
-  const copy = zh ? {
-    connected: "已连接",
-    checking: "检查中",
-    files: "文件",
-    used: "云盘空间",
-    refreshed: "最近更新",
-    select: "选择文件",
-    refresh: "刷新",
-    search: "搜索文件名",
-    name: "文件名",
-    type: "类型",
-    size: "大小",
-    uploaded: "上传时间",
-    actions: "操作",
-    download: "下载",
-    remove: "删除",
-    loading: "正在读取你的私人文件…",
-    empty: "还没有文件。选择文件后即可上传到你的私人存储空间。",
-    partial: "文件数量较多，当前统计仅包含前 10,000 个对象。",
-    uploadIdle: "每个文件最大 50 MB，文件会逐个上传。",
-    storage: "AERTEX Drive",
-    unavailable: "存储服务暂时不可用。",
-    notAuthorized: "当前账号不可使用私人存储。",
-    signInAgain: "登录状态已失效，请重新登录。",
-    login: "前往登录",
-    deleteConfirm: "确定要删除“{name}”吗？此操作无法撤销。",
-    uploadComplete: "已上传 {count} 个文件。",
-    uploadFailed: "上传失败：{message}",
-    uploading: "正在上传 {current}/{total} · {name}",
-    deleting: "正在删除 {name}…",
-    downloadFailed: "下载失败：{message}",
-    deleteFailed: "删除失败：{message}",
-    refreshedNow: "刚刚",
-    tooLarge: "“{name}”超过 50 MB，未上传。",
-    connectionDescription: "AERTEX Drive 是你的私人云盘。文件仅对当前账号可见，并通过登录状态安全存取。"
-  } : {
-    connected: "Connected",
-    checking: "Checking",
-    files: "Files",
-    used: "Cloud storage",
-    refreshed: "Updated",
-    select: "Choose Files",
-    refresh: "Refresh",
-    search: "Search files",
-    name: "File name",
-    type: "Type",
-    size: "Size",
-    uploaded: "Uploaded",
-    actions: "Actions",
-    download: "Download",
-    remove: "Delete",
-    loading: "Loading your private files…",
-    empty: "No files yet. Choose files to upload them to your private storage.",
-    partial: "There are many files; this statistic includes only the first 10,000 objects.",
-    uploadIdle: "50 MB maximum per file. Files upload one at a time.",
-    storage: "AERTEX Drive",
-    unavailable: "Storage service is temporarily unavailable.",
-    notAuthorized: "This account is not allowed to use private storage.",
-    signInAgain: "Your session has expired. Please sign in again.",
-    login: "Sign in",
-    deleteConfirm: "Delete “{name}”? This cannot be undone.",
-    uploadComplete: "Uploaded {count} files.",
-    uploadFailed: "Upload failed: {message}",
-    uploading: "Uploading {current}/{total} · {name}",
-    deleting: "Deleting {name}…",
-    downloadFailed: "Download failed: {message}",
-    deleteFailed: "Delete failed: {message}",
-    refreshedNow: "Just now",
-    tooLarge: "“{name}” exceeds 50 MB and was not uploaded.",
-    connectionDescription: "AERTEX Drive is your private cloud drive. Files are visible only to the current signed-in account."
-  };
+const STORAGE_EN = {
+  connected:"Connected",checking:"Checking",files:"Files",used:"Cloud storage",refreshed:"Updated",select:"Choose Files",refresh:"Refresh",search:"Search files",name:"File name",type:"Type",size:"Size",uploaded:"Uploaded",actions:"Actions",download:"Download",remove:"Delete",loading:"Loading your private files…",empty:"No files yet. Choose files to upload them to your private storage.",emptyTitle:"No files yet",emptyHint:"Choose files to upload them to your private storage.",noMatches:"No matching files or owners.",partial:"There are many files; this statistic includes only the first 10,000 objects.",uploadIdle:"50 MB maximum per file. Files upload one at a time.",storage:"AERTEX Drive",unavailable:"Storage service is temporarily unavailable.",notAuthorized:"This account is not allowed to use private storage.",signInAgain:"Your session has expired. Please sign in again.",login:"Sign in",deleteConfirm:"Delete “{name}”? This cannot be undone.",uploadComplete:"Uploaded {count} files.",uploadCompleteWithSkipped:"Uploaded {count} files and skipped {skipped} files larger than 50 MB.",uploadFailed:"Upload failed: {message}",uploading:"Uploading {current}/{total} · {name}",deleting:"Deleting {name}…",downloadFailed:"Download failed: {message}",deleteFailed:"Delete failed: {message}",refreshedNow:"Just now",tooLarge:"“{name}” exceeds 50 MB and was not uploaded.",connectionDescription:"AERTEX Drive is your private cloud drive. Files are visible only to the current signed-in account.",userDescription:"AERTEX Drive is your private cloud drive. Files are visible only to the current signed-in account.",quotaExceeded:"Your cloud drive is full. Delete some files before uploading more."
+};
+const STORAGE_COPY = {
+  "en-us":STORAGE_EN,"en-gb":STORAGE_EN,"en-au":STORAGE_EN,
+  "zh-cn":{...STORAGE_EN,connected:"已连接",checking:"检查中",files:"文件",used:"云盘空间",refreshed:"最近更新",select:"选择文件",refresh:"刷新",search:"搜索文件名",name:"文件名",type:"类型",size:"大小",uploaded:"上传时间",actions:"操作",download:"下载",remove:"删除",loading:"正在读取你的私人文件…",empty:"还没有文件。选择文件后即可上传到你的私人存储空间。",emptyTitle:"还没有文件",emptyHint:"选择文件后即可上传到你的私人存储空间。",noMatches:"没有匹配的文件或所属账号。",partial:"文件数量较多，当前统计仅包含前 10,000 个对象。",uploadIdle:"每个文件最大 50 MB，文件会逐个上传。",unavailable:"存储服务暂时不可用。",notAuthorized:"当前账号不可使用私人存储。",signInAgain:"登录状态已失效，请重新登录。",login:"前往登录",deleteConfirm:"确定要删除“{name}”吗？此操作无法撤销。",uploadComplete:"已上传 {count} 个文件。",uploadCompleteWithSkipped:"已上传 {count} 个文件，跳过 {skipped} 个超过 50 MB 的文件。",uploadFailed:"上传失败：{message}",uploading:"正在上传 {current}/{total} · {name}",deleting:"正在删除 {name}…",downloadFailed:"下载失败：{message}",deleteFailed:"删除失败：{message}",refreshedNow:"刚刚",tooLarge:"“{name}”超过 50 MB，未上传。",connectionDescription:"AERTEX Drive 是你的私人云盘。文件仅对当前账号可见，并通过登录状态安全存取。",userDescription:"AERTEX Drive 是你的私人云盘。文件仅对当前账号可见，并通过登录状态安全存取。",quotaExceeded:"云盘空间已满，请删除部分文件后再上传。"},
+  "zh-tw":{...STORAGE_EN,connected:"已連線",checking:"檢查中",files:"檔案",used:"雲端空間",refreshed:"最近更新",select:"選擇檔案",refresh:"重新整理",search:"搜尋檔案",name:"檔案名稱",type:"類型",size:"大小",uploaded:"上傳時間",actions:"操作",download:"下載",remove:"刪除",loading:"正在讀取你的私人檔案…",empty:"尚無檔案。選擇檔案後即可上傳到私人儲存空間。",emptyTitle:"尚無檔案",emptyHint:"選擇檔案後即可上傳到私人儲存空間。",noMatches:"沒有符合的檔案。",uploadIdle:"每個檔案上限 50 MB，會逐一上傳。",unavailable:"儲存服務暫時無法使用。",notAuthorized:"目前帳號無法使用私人儲存空間。",signInAgain:"登入狀態已失效，請重新登入。",login:"前往登入",deleteConfirm:"確定要刪除「{name}」嗎？此操作無法復原。",uploadComplete:"已上傳 {count} 個檔案。",uploadFailed:"上傳失敗：{message}",uploading:"正在上傳 {current}/{total} · {name}",deleting:"正在刪除 {name}…",downloadFailed:"下載失敗：{message}",deleteFailed:"刪除失敗：{message}",refreshedNow:"剛剛",tooLarge:"「{name}」超過 50 MB，未上傳。",connectionDescription:"AERTEX Drive 是你的私人雲端硬碟，檔案僅目前帳號可見。",userDescription:"AERTEX Drive 是你的私人雲端硬碟，檔案僅目前帳號可見。",quotaExceeded:"雲端硬碟空間已滿，請先刪除部分檔案。"},
+  "ja-jp":{...STORAGE_EN,connected:"接続済み",checking:"確認中",files:"ファイル",used:"クラウド使用量",refreshed:"更新",select:"ファイルを選択",refresh:"更新",search:"ファイルを検索",name:"ファイル名",type:"種類",size:"サイズ",uploaded:"アップロード日時",actions:"操作",download:"ダウンロード",remove:"削除",loading:"プライベートファイルを読み込み中…",empty:"まだファイルがありません。ファイルを選択してアップロードできます。",emptyTitle:"ファイルはまだありません",emptyHint:"ファイルを選択してプライベートストレージへアップロードします。",noMatches:"一致するファイルがありません。",uploadIdle:"1 ファイル最大 50 MB。順番にアップロードします。",unavailable:"ストレージサービスは一時的に利用できません。",notAuthorized:"このアカウントではプライベートストレージを利用できません。",signInAgain:"セッションの有効期限が切れました。再度サインインしてください。",login:"サインイン",deleteConfirm:"「{name}」を削除しますか？元に戻せません。",uploadComplete:"{count} 件のファイルをアップロードしました。",uploadFailed:"アップロード失敗: {message}",uploading:"アップロード中 {current}/{total} · {name}",deleting:"{name} を削除中…",downloadFailed:"ダウンロード失敗: {message}",deleteFailed:"削除失敗: {message}",refreshedNow:"たった今",tooLarge:"「{name}」は 50 MB を超えているためアップロードされませんでした。",connectionDescription:"AERTEX Drive はあなた専用のクラウドドライブです。ファイルは現在のアカウントだけに表示されます。",userDescription:"AERTEX Drive はあなた専用のクラウドドライブです。",quotaExceeded:"クラウドドライブがいっぱいです。不要なファイルを削除してください。"},
+  "ko-kr":{...STORAGE_EN,connected:"연결됨",checking:"확인 중",files:"파일",used:"클라우드 저장 공간",refreshed:"업데이트",select:"파일 선택",refresh:"새로 고침",search:"파일 검색",name:"파일 이름",type:"유형",size:"크기",uploaded:"업로드 시간",actions:"작업",download:"다운로드",remove:"삭제",loading:"개인 파일을 불러오는 중…",empty:"아직 파일이 없습니다. 파일을 선택해 개인 저장 공간에 업로드하세요.",emptyTitle:"아직 파일 없음",emptyHint:"파일을 선택해 개인 저장 공간에 업로드하세요.",noMatches:"일치하는 파일이 없습니다.",uploadIdle:"파일당 최대 50 MB이며 하나씩 업로드됩니다.",unavailable:"저장 서비스가 일시적으로 unavailable합니다.",notAuthorized:"이 계정은 개인 저장 공간을 사용할 수 없습니다.",signInAgain:"세션이 만료되었습니다. 다시 로그인하세요.",login:"로그인",deleteConfirm:"“{name}”을 삭제할까요? 되돌릴 수 없습니다.",uploadComplete:"{count}개 파일을 업로드했습니다.",uploadFailed:"업로드 실패: {message}",uploading:"업로드 중 {current}/{total} · {name}",deleting:"{name} 삭제 중…",downloadFailed:"다운로드 실패: {message}",deleteFailed:"삭제 실패: {message}",refreshedNow:"방금",tooLarge:"“{name}”이 50 MB를 초과해 업로드되지 않았습니다.",connectionDescription:"AERTEX Drive는 개인 클라우드 드라이브입니다. 파일은 현재 계정에만 표시됩니다.",userDescription:"AERTEX Drive는 개인 클라우드 드라이브입니다.",quotaExceeded:"클라우드 드라이브가 가득 찼습니다. 일부 파일을 삭제하세요."},
+  "fr-fr":{...STORAGE_EN,connected:"Connecté",checking:"Vérification",files:"Fichiers",used:"Stockage cloud",refreshed:"Mis à jour",select:"Choisir des fichiers",refresh:"Actualiser",search:"Rechercher des fichiers",name:"Nom du fichier",type:"Type",size:"Taille",uploaded:"Téléversé",actions:"Actions",download:"Télécharger",remove:"Supprimer",loading:"Chargement de vos fichiers privés…",empty:"Aucun fichier. Choisissez des fichiers à téléverser.",emptyTitle:"Aucun fichier",emptyHint:"Choisissez des fichiers à téléverser dans votre espace privé.",noMatches:"Aucun fichier correspondant.",uploadIdle:"50 Mo maximum par fichier. Les fichiers sont téléversés un par un.",unavailable:"Le service de stockage est temporairement indisponible.",notAuthorized:"Ce compte ne peut pas utiliser le stockage privé.",signInAgain:"Votre session a expiré. Reconnectez-vous.",login:"Se connecter",deleteConfirm:"Supprimer « {name} » ? Cette action est irréversible.",uploadComplete:"{count} fichiers téléversés.",uploadFailed:"Échec du téléversement : {message}",uploading:"Téléversement {current}/{total} · {name}",deleting:"Suppression de {name}…",downloadFailed:"Échec du téléchargement : {message}",deleteFailed:"Échec de la suppression : {message}",refreshedNow:"À l’instant",tooLarge:"« {name} » dépasse 50 Mo et n’a pas été téléversé.",connectionDescription:"AERTEX Drive est votre espace cloud privé. Les fichiers ne sont visibles que par le compte actuel.",userDescription:"AERTEX Drive est votre espace cloud privé.",quotaExceeded:"Votre espace cloud est plein. Supprimez des fichiers avant d’en ajouter."},
+  "es-es":{...STORAGE_EN,connected:"Conectado",checking:"Comprobando",files:"Archivos",used:"Almacenamiento en la nube",refreshed:"Actualizado",select:"Elegir archivos",refresh:"Actualizar",search:"Buscar archivos",name:"Nombre del archivo",type:"Tipo",size:"Tamaño",uploaded:"Subido",actions:"Acciones",download:"Descargar",remove:"Eliminar",loading:"Cargando tus archivos privados…",empty:"Todavía no hay archivos. Elige archivos para subirlos.",emptyTitle:"Todavía no hay archivos",emptyHint:"Elige archivos para subirlos a tu almacenamiento privado.",noMatches:"No hay archivos coincidentes.",uploadIdle:"Máximo 50 MB por archivo. Se suben uno a uno.",unavailable:"El servicio de almacenamiento no está disponible temporalmente.",notAuthorized:"Esta cuenta no puede usar almacenamiento privado.",signInAgain:"La sesión ha caducado. Inicia sesión de nuevo.",login:"Iniciar sesión",deleteConfirm:"¿Eliminar «{name}»? Esta acción no se puede deshacer.",uploadComplete:"Se subieron {count} archivos.",uploadFailed:"Error de subida: {message}",uploading:"Subiendo {current}/{total} · {name}",deleting:"Eliminando {name}…",downloadFailed:"Error de descarga: {message}",deleteFailed:"Error al eliminar: {message}",refreshedNow:"Ahora mismo",tooLarge:"«{name}» supera los 50 MB y no se subió.",connectionDescription:"AERTEX Drive es tu nube privada. Los archivos solo son visibles para la cuenta actual.",userDescription:"AERTEX Drive es tu nube privada.",quotaExceeded:"Tu unidad está llena. Elimina algunos archivos antes de subir más."},
+  "el-gr":{...STORAGE_EN,connected:"Συνδεδεμένο",checking:"Έλεγχος",files:"Αρχεία",used:"Χώρος cloud",refreshed:"Ενημερώθηκε",select:"Επιλογή αρχείων",refresh:"Ανανέωση",search:"Αναζήτηση αρχείων",name:"Όνομα αρχείου",type:"Τύπος",size:"Μέγεθος",uploaded:"Μεταφορτώθηκε",actions:"Ενέργειες",download:"Λήψη",remove:"Διαγραφή",loading:"Φόρτωση ιδιωτικών αρχείων…",empty:"Δεν υπάρχουν ακόμη αρχεία. Επιλέξτε αρχεία για μεταφόρτωση.",emptyTitle:"Δεν υπάρχουν αρχεία",emptyHint:"Επιλέξτε αρχεία για μεταφόρτωση στον ιδιωτικό χώρο.",noMatches:"Δεν βρέθηκαν αρχεία.",uploadIdle:"Μέγιστο 50 MB ανά αρχείο. Τα αρχεία μεταφορτώνονται διαδοχικά.",unavailable:"Η υπηρεσία αποθήκευσης δεν είναι προσωρινά διαθέσιμη.",notAuthorized:"Αυτός ο λογαριασμός δεν μπορεί να χρησιμοποιήσει ιδιωτικό χώρο.",signInAgain:"Η συνεδρία έληξε. Συνδεθείτε ξανά.",login:"Σύνδεση",deleteConfirm:"Διαγραφή του «{name}»; Δεν είναι δυνατή η αναίρεση.",uploadComplete:"Μεταφορτώθηκαν {count} αρχεία.",uploadFailed:"Αποτυχία μεταφόρτωσης: {message}",uploading:"Μεταφόρτωση {current}/{total} · {name}",deleting:"Διαγραφή {name}…",downloadFailed:"Αποτυχία λήψης: {message}",deleteFailed:"Αποτυχία διαγραφής: {message}",refreshedNow:"Μόλις τώρα",tooLarge:"Το «{name}» υπερβαίνει τα 50 MB και δεν μεταφορτώθηκε.",connectionDescription:"Το AERTEX Drive είναι ο ιδιωτικός σας χώρος cloud. Τα αρχεία είναι ορατά μόνο στον τρέχοντα λογαριασμό.",userDescription:"Το AERTEX Drive είναι ο ιδιωτικός σας χώρος cloud.",quotaExceeded:"Ο χώρος cloud είναι πλήρης. Διαγράψτε αρχεία πριν προσθέσετε άλλα."},
+  "ar-sa":{...STORAGE_EN,connected:"متصل",checking:"جارٍ التحقق",files:"الملفات",used:"التخزين السحابي",refreshed:"آخر تحديث",select:"اختيار ملفات",refresh:"تحديث",search:"البحث في الملفات",name:"اسم الملف",type:"النوع",size:"الحجم",uploaded:"وقت الرفع",actions:"الإجراءات",download:"تنزيل",remove:"حذف",loading:"جارٍ تحميل ملفاتك الخاصة…",empty:"لا توجد ملفات بعد. اختر ملفات لرفعها إلى مساحة التخزين الخاصة.",emptyTitle:"لا توجد ملفات بعد",emptyHint:"اختر ملفات لرفعها إلى مساحة التخزين الخاصة.",noMatches:"لا توجد ملفات مطابقة.",uploadIdle:"الحد الأقصى 50 MB لكل ملف، ويتم الرفع واحدًا تلو الآخر.",unavailable:"خدمة التخزين غير متاحة مؤقتًا.",notAuthorized:"هذا الحساب غير مخول لاستخدام التخزين الخاص.",signInAgain:"انتهت صلاحية الجلسة. سجّل الدخول مرة أخرى.",login:"تسجيل الدخول",deleteConfirm:"هل تريد حذف «{name}»؟ لا يمكن التراجع عن ذلك.",uploadComplete:"تم رفع {count} ملف.",uploadFailed:"فشل الرفع: {message}",uploading:"جارٍ الرفع {current}/{total} · {name}",deleting:"جارٍ حذف {name}…",downloadFailed:"فشل التنزيل: {message}",deleteFailed:"فشل الحذف: {message}",refreshedNow:"الآن",tooLarge:"يتجاوز «{name}» حجم 50 MB ولم يتم رفعه.",connectionDescription:"AERTEX Drive هو محركك السحابي الخاص. الملفات مرئية للحساب الحالي فقط.",userDescription:"AERTEX Drive هو محركك السحابي الخاص.",quotaExceeded:"مساحة التخزين ممتلئة. احذف بعض الملفات قبل رفع المزيد."}
+};
+
+export function storageSettingsContent(zh, locale = "") {
+  const copy = STORAGE_COPY[locale] || STORAGE_COPY[zh ? "zh-cn" : "en-us"];
 
   return `
     <style>
@@ -144,64 +89,8 @@ export function storageSettingsContent(zh) {
     </section>
   `;
 }
-export function storageClientScript(zh, loginUrl) {
-  const copy = zh ? {
-    connected: "已连接",
-    checking: "检查中",
-    loading: "正在读取你的私人文件…",
-    emptyTitle: "还没有文件",
-    emptyHint: "选择文件后即可上传到你的私人存储空间。",
-    noMatches: "没有匹配的文件或所属账号。",
-    unavailable: "存储服务暂时不可用。",
-    notAuthorized: "当前账号不可使用私人存储。",
-    signInAgain: "登录状态已失效，请重新登录。",
-    login: "前往登录",
-    download: "下载",
-    remove: "删除",
-    select: "选择文件",
-    uploadIdle: "每个文件最大 50 MB，文件会逐个上传。",
-    partial: "文件数量较多，当前统计仅包含前 10,000 个对象。",
-    uploadComplete: "已上传 {count} 个文件。",
-    uploadCompleteWithSkipped: "已上传 {count} 个文件，跳过 {skipped} 个超过 50 MB 的文件。",
-    uploadFailed: "上传失败：{message}",
-    uploading: "正在上传 {current}/{total} · {name}",
-    deleting: "正在删除 {name}…",
-    downloadFailed: "下载失败：{message}",
-    deleteFailed: "删除失败：{message}",
-    deleteConfirm: "确定要删除“{name}”吗？此操作无法撤销。",
-    tooLarge: "“{name}”超过 50 MB，未上传。",
-    refreshedNow: "刚刚",
-    userDescription: "AERTEX Drive 是你的私人云盘。文件仅对当前账号可见，并通过登录状态安全存取。",
-    quotaExceeded: "云盘空间已满，请删除部分文件后再上传。"
-  } : {
-    connected: "Connected",
-    checking: "Checking",
-    loading: "Loading your private files…",
-    emptyTitle: "No files yet",
-    emptyHint: "Choose files to upload them to your private storage.",
-    noMatches: "No matching files or owners.",
-    unavailable: "Storage service is temporarily unavailable.",
-    notAuthorized: "This account is not allowed to use private storage.",
-    signInAgain: "Your session has expired. Please sign in again.",
-    login: "Sign in",
-    download: "Download",
-    remove: "Delete",
-    select: "Choose Files",
-    uploadIdle: "50 MB maximum per file. Files upload one at a time.",
-    partial: "There are many files; this statistic includes only the first 10,000 objects.",
-    uploadComplete: "Uploaded {count} files.",
-    uploadCompleteWithSkipped: "Uploaded {count} files and skipped {skipped} files larger than 50 MB.",
-    uploadFailed: "Upload failed: {message}",
-    uploading: "Uploading {current}/{total} · {name}",
-    deleting: "Deleting {name}…",
-    downloadFailed: "Download failed: {message}",
-    deleteFailed: "Delete failed: {message}",
-    deleteConfirm: "Delete “{name}”? This cannot be undone.",
-    tooLarge: "“{name}” exceeds 50 MB and was not uploaded.",
-    refreshedNow: "Just now",
-    userDescription: "AERTEX Drive is your private cloud drive. Files are visible only to the current signed-in account.",
-    quotaExceeded: "Your cloud drive is full. Delete some files before uploading more."
-  };
+export function storageClientScript(zh, loginUrl, locale = "") {
+  const copy = STORAGE_COPY[locale] || STORAGE_COPY[zh ? "zh-cn" : "en-us"];
 
   return `
     <script>
