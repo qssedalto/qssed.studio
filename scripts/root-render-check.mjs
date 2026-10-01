@@ -1,6 +1,8 @@
 import { TEXT } from "../studio/config.js";
 import { buildLinks } from "../studio/routing.js";
 import { osPage } from "../studio/ui-shell.js";
+import { decorateWorkNavigation } from "../studio/ui-work.js";
+import { polishWorkTexNavigation } from "../studio/ui-work-tex.js";
 import { SUPPORTED_LOCALES, localeContentLanguage } from "../studio/locale.js";
 
 const ipInfo = { ip:"127.0.0.1", country:"US", region:"", city:"", locale:"en-us" };
@@ -21,8 +23,10 @@ for (const fullLocale of SUPPORTED_LOCALES) {
   let markup;
   try {
     markup = osPage(t, links, "/", { ...ipInfo, locale: fullLocale }, "", productLinks);
+    markup = decorateWorkNavigation(markup, contentLanguage === "zh", "/", "https://qsseda.com", "https://work.qsseda.com", fullLocale);
+    markup = polishWorkTexNavigation(markup, contentLanguage === "zh", "/", "https://work.qsseda.com");
   } catch (error) {
-    console.error(`Root SSR failed for locale ${fullLocale}`);
+    console.error(`Authenticated home render chain failed for locale ${fullLocale}`);
     throw error;
   }
 
