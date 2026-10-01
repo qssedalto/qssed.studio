@@ -552,6 +552,7 @@ export function settingsHubContent(zh, locale = "") {
   if (localeCopy) Object.assign(copy, localeCopy);
   const statusCopy = activeLocale === "zh-cn" ? ["可用","测试中"] : activeLocale === "zh-tw" ? ["可用","測試中"] : activeLocale === "ja-jp" ? ["利用可能","テスト中"] : activeLocale === "ko-kr" ? ["사용 가능","테스트 중"] : activeLocale === "fr-fr" ? ["Disponible","En test"] : activeLocale === "es-es" ? ["Disponible","En pruebas"] : activeLocale === "el-gr" ? ["Διαθέσιμο","Σε δοκιμή"] : activeLocale === "ar-sa" ? ["متاح","قيد الاختبار"] : ["Available","Testing"];
   const availability = { ai:{meta:statusCopy[0]}, storage:{meta:statusCopy[0]}, subscription:{meta:statusCopy[1]}, student:{meta:statusCopy[0]} };
+  const soonLabel = activeLocale === "zh-cn" ? "未开放" : activeLocale === "zh-tw" ? "尚未開放" : activeLocale === "ja-jp" ? "近日対応" : activeLocale === "ko-kr" ? "준비 중" : activeLocale === "fr-fr" ? "Bientôt" : activeLocale === "es-es" ? "Próximamente" : activeLocale === "el-gr" ? "Σύντομα" : activeLocale === "ar-sa" ? "قريبًا" : "Soon";
   const row = (item, href, icon, status = "") => `
     <a class="settings-stage-row" href="${href}">
       <span class="settings-stage-row-icon">${dashboardIcon(icon)}</span>
@@ -626,8 +627,8 @@ export function settingsHubContent(zh, locale = "") {
           ${row(copy.subscription, prefix+"/settings/subscription", "account", availability.subscription.meta)}
           ${row(copy.student, prefix+"/settings/student", "users", availability.student.meta)}
           ${row(copy.storage, prefix+"/settings/storage", "storage", availability.storage.meta)}
-          ${row(copy.notifications, prefix+"/settings/notifications", "notifications", zh ? "未开放" : "Soon")}
-          ${row(copy.integrations, prefix+"/settings/integrations", "integrations", zh ? "未开放" : "Soon")}
+          ${row(copy.notifications, prefix+"/settings/notifications", "notifications", soonLabel)}
+          ${row(copy.integrations, prefix+"/settings/integrations", "integrations", soonLabel)}
         </section>
       </div>
     </section>
@@ -635,29 +636,5 @@ export function settingsHubContent(zh, locale = "") {
 }
 
 export function settingsFallbackContent(zh, locale = "") {
-  const prefix = "/" + (locale || (zh ? "zh-cn" : "en-us"));
-  const items = zh
-    ? [
-        ["主题与外观", "可用", "系统、浅色、深色与强调色。", `${prefix}/settings/appearance`],
-        ["语言", "可用", "中文或 English。", `${prefix}/settings/language`],
-        ["账户与安全", "可用", "设备、登录历史和安全提醒。", `${prefix}/settings/security`],
-        ["通知", "未开放", "提醒和站内消息。", `${prefix}/settings/notifications`],
-        ["AI", "可用", "Provider、模型、额度和默认模型。", `${prefix}/settings/ai`],
-        ["第三方集成", "未开放", "外部服务和授权。", `${prefix}/settings/integrations`],
-        ["订阅与权益", "测试中", "套餐、有效期和产品权益。", `${prefix}/settings/subscription`],
-        ["学生资格", "可用", "学生身份认证、状态和学生价格资格。", `${prefix}/settings/student`],
-        ["存储", "可用", "AERTEX Drive 私人云盘。", `${prefix}/settings/storage`]
-      ]
-    : [
-        ["Theme & Appearance", "Available", "System, light, dark, and accent color.", `${prefix}/settings/appearance`],
-        ["Language", "Available", "Chinese or English.", `${prefix}/settings/language`],
-        ["Account & Security", "Available", "Devices, sign-in history, and alerts.", `${prefix}/settings/security`],
-        ["Notifications", "Unavailable", "Alerts and in-app messages.", `${prefix}/settings/notifications`],
-        ["AI", "Available", "Providers, models, quotas, and default model.", `${prefix}/settings/ai`],
-        ["Integrations", "Unavailable", "External services and authorization.", `${prefix}/settings/integrations`],
-        ["Subscription", "Testing", "Plans, validity, and product entitlements.", `${prefix}/settings/subscription`],
-        ["Student Eligibility", "Available", "Student-status verification and student-pricing eligibility.", `${prefix}/settings/student`],
-        ["Storage", "Available", "Private files in AERTEX Drive.", `${prefix}/settings/storage`]
-      ];
-  return `<section class="os-grid settings-grid">${items.map(item => `<a class="os-card settings-card-link" href="${item[3]}"><small>${item[1]}</small><h2>${item[0]}</h2><p>${item[2]}</p><span class="settings-card-arrow" aria-hidden="true">›</span></a>`).join("")}</section>`;
+  return settingsHubContent(zh, locale);
 }
