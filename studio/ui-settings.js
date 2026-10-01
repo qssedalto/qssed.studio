@@ -108,6 +108,12 @@ export function settingsGeneralContent(zh, locale = "") {
   `;
 }
 
+export function settingsStatusContent(locale = "", kind = "notifications") {
+  const lc=SETTINGS_COMMON[locale]||SETTINGS_COMMON["en-us"];
+  const value=kind==="integrations"?lc.integrations:lc.notifications;
+  return '<section class="os-card is-large status-card"><h2>'+value[0]+'</h2><p>'+value[1]+'</p></section>';
+}
+
 export function securityAuditContent(zh, locale = "") {
   const lc=SETTINGS_COMMON[locale]||SETTINGS_COMMON[zh?"zh-cn":"en-us"];
   const sec=lc.securitySections;
