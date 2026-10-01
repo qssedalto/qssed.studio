@@ -174,7 +174,7 @@ assert(uiShell.includes("serverOnly: true"), "Authenticated UI must support a se
 assert(uiShell.includes("aiSettingsContent(zh, activeLocale)"), "Studio /settings/ai must render the live AI settings UI with the active locale.");
 assert(!uiShell.includes("当前尚未开放用户级 AI 配置"), "Studio AI settings must not regress to the old unavailable placeholder.");
 assert(uiSettings.includes('fetch("/api/ai/config"'), "AI settings must load the authenticated runtime configuration.");
-assert(uiSettings.includes('meta:"可用"'), "Settings Hub must mark AI as available.");
+assert(uiSettings.includes("const availability = { ai:{meta:statusCopy[0]}") && uiSettings.includes('activeLocale === "ar-sa" ? ["متاح","قيد الاختبار"]'), "Settings Hub must mark AI as available through the locale-aware status map.");
 assert(uiSettings.includes("aertex-ai-default-model-v1"), "AI settings must persist the browser default model.");
 assert(uiSettings.includes("document.cookie=preferenceKey"), "AI model preference must be shared across product subdomains.");
 assert(legacyApi.includes('"/api/ai/config"'), "Main-site cookie API must expose the authenticated AI config route.");
