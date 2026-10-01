@@ -32,7 +32,7 @@ import { osPage } from "./ui-shell.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
-import { adminOriginForRequest, authOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
+import { adminOriginForRequest, authOriginForRequest, awOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
 
 function safeLocalNext(value) {
@@ -296,7 +296,7 @@ export default {
       const gptOrigin = gptOriginForRequest(request);
       const shellProductLinks = {
         workHref: `${workOrigin}/${fullLocale}/tex`,
-        awHref: "https://aw.qsseda.studio",
+        awHref: awOriginForRequest(request),
         gptHref: `${gptOrigin}/${fullLocale}`,
         adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : "",
         activeLocale: fullLocale
