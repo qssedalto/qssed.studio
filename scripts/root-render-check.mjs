@@ -15,6 +15,7 @@ for (const fullLocale of SUPPORTED_LOCALES) {
   const links = buildLinks(contentLanguage, "/", fullLocale);
   const productLinks = {
     workHref: `https://work.qsseda.com/${fullLocale}/tex`,
+    awHref: "https://aw.qsseda.studio",
     gptHref: `https://gpt.qsseda.com/${fullLocale}`,
     adminHref: "",
     activeLocale: fullLocale
@@ -35,6 +36,15 @@ for (const fullLocale of SUPPORTED_LOCALES) {
   }
   if (!markup.includes(`lang="${fullLocale}"`)) {
     throw new Error(`Root SSR lost locale ${fullLocale}`);
+  }
+  if (!markup.includes('href="https://aw.qsseda.studio"') || !markup.includes('ActivityWatch')) {
+    throw new Error(`Root SSR lost the ActivityWatch independent product for ${fullLocale}`);
+  }
+  const workIndex = markup.indexOf("AERTEX Work");
+  const awIndex = markup.indexOf("ActivityWatch");
+  const intelligenceIndex = markup.indexOf("AERTEX Intelligence");
+  if (!(workIndex >= 0 && awIndex > workIndex && intelligenceIndex > awIndex)) {
+    throw new Error(`Independent product order is wrong for ${fullLocale}`);
   }
 }
 
