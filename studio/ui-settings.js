@@ -226,6 +226,20 @@ export function appearanceSettingsContent(zh) {
 }
 
 export function languageSettingsContent(zh, activeLocale = "en-us") {
+  const localeCopy = {
+    "zh-cn":["显示语言","AERTEX 默认跟随当前设备语言。你可以临时切换界面语言；重新从网站入口打开或下次登录时，会再次跟随设备语言。"],
+    "zh-tw":["顯示語言","AERTEX 預設跟隨目前裝置語言。你可以暫時切換介面語言；重新從網站入口開啟或下次登入時，會再次跟隨裝置語言。"],
+    "ja-jp":["表示言語","AERTEX はデフォルトで現在のデバイス言語に従います。表示言語は一時的に切り替えられ、次回サイトを開くかサインインすると再びデバイス言語に従います。"],
+    "ko-kr":["표시 언어","AERTEX는 기본적으로 현재 기기 언어를 따릅니다. 현재 방문 중에는 언어를 변경할 수 있으며, 다음에 사이트를 열거나 로그인하면 다시 기기 언어를 따릅니다."],
+    "fr-fr":["Langue d’affichage","AERTEX suit par défaut la langue de l’appareil. Vous pouvez changer temporairement la langue ; lors de la prochaine ouverture ou connexion, la langue de l’appareil sera de nouveau utilisée."],
+    "es-es":["Idioma de visualización","AERTEX sigue de forma predeterminada el idioma del dispositivo. Puedes cambiarlo temporalmente; al volver a abrir el sitio o iniciar sesión, se usará de nuevo el idioma del dispositivo."],
+    "el-gr":["Γλώσσα εμφάνισης","Το AERTEX ακολουθεί από προεπιλογή τη γλώσσα της συσκευής. Μπορείτε να την αλλάξετε προσωρινά· στην επόμενη επίσκεψη ή σύνδεση θα χρησιμοποιηθεί ξανά η γλώσσα της συσκευής."],
+    "ar-sa":["لغة العرض","يتبع AERTEX لغة جهازك افتراضيًا. يمكنك تغيير اللغة مؤقتًا أثناء الزيارة الحالية، وعند فتح الموقع أو تسجيل الدخول لاحقًا سيعود إلى لغة الجهاز."],
+    "en-us":["Language","AERTEX follows the current device language by default. You can switch languages for the current visit; opening the site again or signing in next time follows the device language again."],
+    "en-gb":["Language","AERTEX follows the current device language by default. You can switch languages for the current visit; opening the site again or signing in next time follows the device language again."],
+    "en-au":["Language","AERTEX follows the current device language by default. You can switch languages for the current visit; opening the site again or signing in next time follows the device language again."]
+  };
+  const localized = localeCopy[activeLocale] || localeCopy["en-us"];
   const locales = [
     ["en-us", "English (US)", "English · United States"],
     ["en-gb", "English (UK)", "English · United Kingdom"],
@@ -245,8 +259,8 @@ export function languageSettingsContent(zh, activeLocale = "en-us") {
     </a>`).join("");
   return `
     <section class="os-card is-large settings-detail-card">
-      <h2>${zh ? "显示语言" : "Language"}</h2>
-      <p>${zh ? "AERTEX 默认跟随当前设备语言。你可以临时切换界面语言；重新从网站入口打开或下次登录时，会再次跟随设备语言。" : "AERTEX follows the current device language by default. You can switch languages for the current visit; opening the default site entry again or signing in next time follows the device language again."}</p>
+      <h2>${localized[0]}</h2>
+      <p>${localized[1]}</p>
       <div class="settings-choice-grid">${choices}</div>
     </section>
   `;
