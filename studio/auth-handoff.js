@@ -4,6 +4,7 @@ import { baseHead, supabaseScript } from "./ui-page.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
 import { studioSessionCookies, withStudioSessionCookies } from "./session-gate.js";
 import { isServiceHost, rootDomainForHost, serviceOrigin } from "./domain-family.js";
+import { localeDirection, localeFromPath, normalizeSupportedLocale } from "./locale.js";
 
 export async function handleAuthHandoff(request, env, locale) {
   const requestUrl = new URL(request.url);
@@ -64,31 +65,42 @@ export async function handleAuthHandoff(request, env, locale) {
 
 export function normalizeHandoffNext(value, locale, workTarget = false, gptTarget = false) {
   const candidate = typeof value === "string" ? value.trim() : "";
+  const baseLocale = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
+  const candidateLocale = localeFromPath(candidate) || baseLocale;
+  const prefix = "/" + candidateLocale;
+
   if (workTarget) {
-    const candidateLocale = candidate === "/en" || candidate.startsWith("/en/") ? "en" : candidate === "/zh-cn" || candidate.startsWith("/zh-cn/") ? "zh" : locale;
-    const exemptDocument = candidate.match(/^\/(?:zh-cn|en)\/d\/huawei-exempt\/([0-9a-f-]{36})$/i);
-    if (exemptDocument) return (candidateLocale === "zh" ? "/zh-cn/d/huawei-exempt/" : "/en/d/huawei-exempt/") + exemptDocument[1];
-    const document = candidate.match(/^\/(?:zh-cn|en)\/d\/([0-9a-f-]{36})$/i);
-    if (document) return (candidateLocale === "zh" ? "/zh-cn/d/" : "/en/d/") + document[1];
-    return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/tex";
+    const parts = candidate.split("/").filter(Boolean);
+    const hasLocale = Boolean(localeFromPath(candidate));
+    const rest = hasLocale ? parts.slice(1) : parts;
+    if (rest[0] === "d") {
+      const exempt = rest[1] === "huawei-exempt";
+      const id = exempt ? rest[2] : rest[1];
+      if (/^[0-9a-f-]{36}$/i.test(id || "")) return prefix + "/d/" + (exempt ? "huawei-exempt/" : "") + id;
+    }
+    return prefix + "/tex";
   }
+
   if (gptTarget) {
-    const candidateLocale = candidate === "/en" || candidate.startsWith("/en/") ? "en" : candidate === "/zh-cn" || candidate.startsWith("/zh-cn/") ? "zh" : locale;
-    const exemptConversation = candidate.match(/^\/(?:zh-cn|en)\/c\/huawei-exempt\/([0-9a-f-]{36})$/i);
-    if (exemptConversation) return (candidateLocale === "zh" ? "/zh-cn/c/huawei-exempt/" : "/en/c/huawei-exempt/") + exemptConversation[1];
-    const conversation = candidate.match(/^\/(?:zh-cn|en)\/c\/([0-9a-f-]{36})$/i);
-    if (conversation) return (candidateLocale === "zh" ? "/zh-cn/c/" : "/en/c/") + conversation[1];
-    return candidateLocale === "zh" ? "/zh-cn" : "/en";
+    const parts = candidate.split("/").filter(Boolean);
+    const hasLocale = Boolean(localeFromPath(candidate));
+    const rest = hasLocale ? parts.slice(1) : parts;
+    if (rest[0] === "c") {
+      const exempt = rest[1] === "huawei-exempt";
+      const id = exempt ? rest[2] : rest[1];
+      if (/^[0-9a-f-]{36}$/i.test(id || "")) return prefix + "/c/" + (exempt ? "huawei-exempt/" : "") + id;
+    }
+    return prefix;
   }
-  const fallback = locale === "zh" ? "/zh-cn" : "/en";
-  if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\u0000")) return fallback;
-  if (candidate === "/zh-cn" || candidate === "/en" || candidate.startsWith("/zh-cn/") || candidate.startsWith("/en/")) return candidate;
-  const prefix = locale === "zh" ? "/zh-cn" : "/en";
-  return candidate === "/" ? "/" : `${prefix}${candidate}`;
+
+  if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\u0000")) return prefix;
+  if (localeFromPath(candidate)) return candidate;
+  return candidate === "/" ? prefix : prefix + candidate;
 }
 
 export function authRetryPath(next, locale, workTarget = false, gptTarget = false) {
-  const prefix = locale === "zh" ? "/zh-cn" : "/en";
+  const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
+  const prefix = "/" + code;
   if (workTarget) return `${prefix}/work/handoff?next=${encodeURIComponent(next)}`;
   if (gptTarget) return `${prefix}/gpt/handoff?next=${encodeURIComponent(next)}`;
   return next;
@@ -100,8 +112,15 @@ export function scriptLiteral(value) {
 
 export function authHandoffHtml(accessToken, refreshToken, next, workTarget = false, gptTarget = false, authOrigin = "https://auth.qsseda.com", retryNext = next) {
   const product = workTarget ? "AERTEX Work" : gptTarget ? "AERTEX Intelligence" : "AERTEX";
+  const locale = localeFromPath(next) || "en-us";
+  const copy = {
+    "zh-cn":["正在完成登录…","重新登录"], "zh-tw":["正在完成登入…","重新登入"],
+    "ja-jp":["サインインを完了しています…","もう一度サインイン"], "ko-kr":["로그인을 완료하는 중…","다시 로그인"],
+    "fr-fr":["Finalisation de la connexion…","Se reconnecter"], "es-es":["Finalizando el inicio de sesión…","Volver a iniciar sesión"],
+    "el-gr":["Ολοκλήρωση σύνδεσης…","Νέα σύνδεση"], "ar-sa":["جارٍ إكمال تسجيل الدخول…","تسجيل الدخول مجددًا"]
+  }[locale] || ["Finishing sign-in…","Sign in again"];
   const login = new URL("/login", authOrigin);
   login.searchParams.set("next", retryNext);
-  const page = `<!DOCTYPE html><html><head>${baseHead(product)}</head><body><main style="min-height:100vh;display:grid;place-items:center;padding:24px"><section style="text-align:center"><h1 style="font-size:24px;margin:0 0 8px">${product}</h1><p id="handoff-status" style="color:var(--muted,#8e8e93)">正在完成登录…</p><a id="handoff-retry" href="${login.toString()}" hidden style="display:inline-flex;margin-top:14px;text-decoration:none;font-weight:650">重新登录</a></section></main>${supabaseScript()}<script>(async()=>{const status=document.getElementById("handoff-status");let result=null;try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}})}catch{}if(result?.error){try{aertexAuthStorage.removeItem(AERTEX_SUPABASE_STORAGE_KEY)}catch{}try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}})}catch{}}if(result?.error){console.warn("Browser auth persistence failed; continuing with validated server session",result.error)}location.replace(${scriptLiteral(next)})})().catch(()=>{location.replace(${scriptLiteral(next)})})</script></body></html>`;
+  const page = `<!DOCTYPE html><html lang="${locale}" dir="${localeDirection(locale)}"><head>${baseHead(product)}</head><body><main style="min-height:100vh;display:grid;place-items:center;padding:24px"><section style="text-align:center"><h1 style="font-size:24px;margin:0 0 8px">${product}</h1><p id="handoff-status" style="color:var(--muted,#8e8e93)">${copy[0]}</p><a id="handoff-retry" href="${login.toString()}" hidden style="display:inline-flex;margin-top:14px;text-decoration:none;font-weight:650">${copy[1]}</a></section></main>${supabaseScript()}<script>(async()=>{const status=document.getElementById("handoff-status");let result=null;try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}})}catch{}if(result?.error){try{aertexAuthStorage.removeItem(AERTEX_SUPABASE_STORAGE_KEY)}catch{}try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}})}catch{}}if(result?.error){console.warn("Browser auth persistence failed; continuing with validated server session",result.error)}location.replace(${scriptLiteral(next)})})().catch(()=>{location.replace(${scriptLiteral(next)})})</script></body></html>`;
   return new Response(injectBrandLogoRuntime(page), { status: 200, headers: { "content-type": "text/html;charset=UTF-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" } });
 }
