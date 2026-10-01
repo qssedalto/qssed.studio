@@ -1,4 +1,5 @@
 import { handleOAuthRequest } from "./auth-oauth.js";
+import { preferredLocaleFromRequest } from "./studio/locale.js";
 import { mainOriginForRequest, rootDomainForRequest, serviceOrigin } from "./studio/domain-family.js";
 import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
@@ -622,8 +623,7 @@ ${accountMenuClientScript({ summaryUrl: "/api/session", logoutUrl: "/api/logout"
 }
 
 function preferredLanguage(request) {
-  const header = (request.headers.get("Accept-Language") || "").toLowerCase();
-  return header.startsWith("zh") || header.includes(",zh") ? "zh" : "en";
+  return preferredLocaleFromRequest(request) === "zh-cn" ? "zh" : "en";
 }
 
 function notFoundPage() {
