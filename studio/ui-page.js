@@ -495,8 +495,8 @@ export function baseHead(title) {
       :root[data-accent="sapphire"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#4964d8}
       :root[data-accent="aqua"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#2a9d8f}
       :root[data-accent="jade"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#3a9d72}
-      :root[data-accent="lime"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#86a93b}
-      :root[data-accent="amber"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#d49a2a}
+      :root[data-accent="lime"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#86a93b;--primary-ink:#151515}
+      :root[data-accent="amber"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#d49a2a;--primary-ink:#151515}
       :root[data-accent="coral"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#e26d5a}
       :root[data-accent="rose"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#d95686}
       :root[data-accent="magenta"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#b755c7}
