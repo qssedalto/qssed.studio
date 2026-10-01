@@ -79,6 +79,7 @@ async function routeStudioRequest(request, env, ctx) {
     const mapped = rewriteWorkSubdomainRequest(request);
     if (mapped.redirect) return redirect(mapped.redirect);
     if (mapped.canonical) return redirect(mapped.canonical);
+    if (mapped.notFound) return workDocumentNotFound(workPublicRequest);
     request = mapped.request;
     workPageNext = mapped.pageNext;
     workDocumentId = mapped.documentId || "";
