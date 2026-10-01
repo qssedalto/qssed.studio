@@ -4,6 +4,20 @@ import { escapeHtmlText } from "./html-utils.js";
 
 const CURATED_LINKS = [...CURATED_LINKS_CORE, ...CURATED_LINKS_EXTRA];
 
+const LINKS_UI = {
+  "en-us":{library:"Link Library",title:"Projects and sites",lead:"A collection of useful projects, tools, services, and official references.",links:"links",archived:"archived",categories:"categories",filter:"Filter links",search:"Search links",category:"Category",all:"All",source:"Source",archivedLabel:"Archived",official:"Official / curated",priority:"Priority",reset:"Reset",of:n=>"of "+n,categoryNav:"Link categories",common:"Common entries",noResults:"No results",tryAnother:"Try another keyword or filter.",sources:"Sources: ",sourceNote:"“Archived” marks useful projects and references kept over time. “Official / curated” contains related primary references. Search runs locally on this page."},
+  "zh-cn":{library:"链接库",title:"常用项目和网站",lead:"收录常用项目、工具、服务和官方资料。",links:"链接",archived:"历史收录",categories:"分类",filter:"筛选链接",search:"搜索链接",category:"分类",all:"全部",source:"来源",archivedLabel:"历史收录",official:"官方 / 精选",priority:"优先",reset:"重置",of:n=>" / "+n,categoryNav:"链接分类",common:"常用入口",noResults:"没有结果",tryAnother:"换个关键词或筛选条件。",sources:"来源：",sourceNote:"“历史收录”表示长期保留的常用项目与资料；“官方 / 精选”表示相关官方文档或补充入口。搜索在当前页面本地完成。"},
+  "zh-tw":{library:"連結庫",title:"常用專案與網站",lead:"收錄常用專案、工具、服務與官方資料。",links:"連結",archived:"歷史收錄",categories:"分類",filter:"篩選連結",search:"搜尋連結",category:"分類",all:"全部",source:"來源",archivedLabel:"歷史收錄",official:"官方 / 精選",priority:"優先",reset:"重設",of:n=>" / "+n,categoryNav:"連結分類",common:"常用入口",noResults:"沒有結果",tryAnother:"請更換關鍵字或篩選條件。",sources:"來源：",sourceNote:"「歷史收錄」表示長期保留的常用專案與資料；「官方 / 精選」表示相關官方文件或補充入口。搜尋只在目前頁面本機執行。"},
+  "ja-jp":{library:"リンクライブラリ",title:"プロジェクトとサイト",lead:"よく使うプロジェクト、ツール、サービス、公式資料をまとめています。",links:"リンク",archived:"アーカイブ",categories:"カテゴリ",filter:"リンクを絞り込む",search:"リンクを検索",category:"カテゴリ",all:"すべて",source:"出典",archivedLabel:"アーカイブ",official:"公式 / 厳選",priority:"優先",reset:"リセット",of:n=>"全 "+n+" 件",categoryNav:"リンクカテゴリ",common:"よく使う項目",noResults:"結果がありません",tryAnother:"別のキーワードや条件を試してください。",sources:"出典: ",sourceNote:"「アーカイブ」は長期保存した有用な項目、「公式 / 厳選」は関連する一次資料です。検索はこのページ内で行われます。"},
+  "ko-kr":{library:"링크 라이브러리",title:"프로젝트와 사이트",lead:"자주 사용하는 프로젝트, 도구, 서비스 및 공식 자료를 모았습니다.",links:"링크",archived:"보관됨",categories:"범주",filter:"링크 필터",search:"링크 검색",category:"범주",all:"전체",source:"출처",archivedLabel:"보관됨",official:"공식 / 선별",priority:"우선",reset:"초기화",of:n=>"전체 "+n+"개",categoryNav:"링크 범주",common:"자주 사용하는 항목",noResults:"결과 없음",tryAnother:"다른 검색어나 필터를 사용해 보세요.",sources:"출처: ",sourceNote:"‘보관됨’은 장기간 유지한 유용한 항목을, ‘공식 / 선별’은 관련 공식 자료를 뜻합니다. 검색은 이 페이지에서 로컬로 수행됩니다."},
+  "fr-fr":{library:"Bibliothèque de liens",title:"Projets et sites",lead:"Une sélection de projets, outils, services et références officielles utiles.",links:"liens",archived:"archivés",categories:"catégories",filter:"Filtrer les liens",search:"Rechercher des liens",category:"Catégorie",all:"Tous",source:"Source",archivedLabel:"Archivés",official:"Officiel / sélection",priority:"Priorité",reset:"Réinitialiser",of:n=>"sur "+n,categoryNav:"Catégories de liens",common:"Accès fréquents",noResults:"Aucun résultat",tryAnother:"Essayez un autre mot-clé ou filtre.",sources:"Sources : ",sourceNote:"« Archivés » désigne les projets et références conservés dans le temps. « Officiel / sélection » contient les références principales associées. La recherche s’effectue localement sur cette page."},
+  "es-es":{library:"Biblioteca de enlaces",title:"Proyectos y sitios",lead:"Una colección de proyectos, herramientas, servicios y referencias oficiales útiles.",links:"enlaces",archived:"archivados",categories:"categorías",filter:"Filtrar enlaces",search:"Buscar enlaces",category:"Categoría",all:"Todos",source:"Fuente",archivedLabel:"Archivados",official:"Oficial / seleccionado",priority:"Prioridad",reset:"Restablecer",of:n=>"de "+n,categoryNav:"Categorías de enlaces",common:"Accesos frecuentes",noResults:"Sin resultados",tryAnother:"Prueba otra palabra clave o filtro.",sources:"Fuentes: ",sourceNote:"«Archivados» identifica proyectos y referencias conservados a largo plazo. «Oficial / seleccionado» contiene referencias principales relacionadas. La búsqueda se realiza localmente en esta página."},
+  "el-gr":{library:"Βιβλιοθήκη συνδέσμων",title:"Έργα και ιστότοποι",lead:"Συλλογή χρήσιμων έργων, εργαλείων, υπηρεσιών και επίσημων αναφορών.",links:"σύνδεσμοι",archived:"αρχειοθετημένα",categories:"κατηγορίες",filter:"Φιλτράρισμα συνδέσμων",search:"Αναζήτηση συνδέσμων",category:"Κατηγορία",all:"Όλα",source:"Πηγή",archivedLabel:"Αρχειοθετημένα",official:"Επίσημα / επιλεγμένα",priority:"Προτεραιότητα",reset:"Επαναφορά",of:n=>"από "+n,categoryNav:"Κατηγορίες συνδέσμων",common:"Συχνές επιλογές",noResults:"Δεν βρέθηκαν αποτελέσματα",tryAnother:"Δοκιμάστε άλλη λέξη ή φίλτρο.",sources:"Πηγές: ",sourceNote:"Τα «Αρχειοθετημένα» είναι χρήσιμα έργα και αναφορές που διατηρούνται στον χρόνο. Τα «Επίσημα / επιλεγμένα» περιέχουν σχετικές κύριες πηγές. Η αναζήτηση εκτελείται τοπικά στη σελίδα."},
+  "ar-sa":{library:"مكتبة الروابط",title:"المشروعات والمواقع",lead:"مجموعة من المشروعات والأدوات والخدمات والمراجع الرسمية المفيدة.",links:"روابط",archived:"مؤرشفة",categories:"فئات",filter:"تصفية الروابط",search:"البحث في الروابط",category:"الفئة",all:"الكل",source:"المصدر",archivedLabel:"مؤرشفة",official:"رسمي / مختار",priority:"الأولوية",reset:"إعادة تعيين",of:n=>"من "+n,categoryNav:"فئات الروابط",common:"مداخل شائعة",noResults:"لا توجد نتائج",tryAnother:"جرّب كلمة مفتاحية أو عامل تصفية آخر.",sources:"المصادر: ",sourceNote:"تشير «مؤرشفة» إلى المشروعات والمراجع المفيدة المحتفظ بها مع الوقت، بينما تضم «رسمي / مختار» المراجع الأساسية ذات الصلة. يتم البحث محليًا داخل هذه الصفحة."}
+};
+LINKS_UI["en-gb"]=LINKS_UI["en-us"]; LINKS_UI["en-au"]=LINKS_UI["en-us"];
+
+
 function safeUrl(value) {
   const text = String(value || "").trim();
   return /^https:\/\//i.test(text) ? text : "#";
@@ -17,33 +31,34 @@ function safeHost(value) {
   }
 }
 
-function originLabel(origin, zh) {
-  if (origin === "chat") return zh ? "历史收录" : "Archived";
-  return zh ? "官方 / 精选" : "Official / curated";
+function originLabel(origin, locale, zh) {
+  const c=LINKS_UI[locale]||LINKS_UI[zh?"zh-cn":"en-us"];
+  return origin === "chat" ? c.archivedLabel : c.official;
 }
 
-function renderLink(link, zh) {
-  const description = zh ? link.zh : link.en;
+function renderLink(link, zh, locale = "") {
+  const description = locale === "zh-cn" ? link.zh : link.en;
   const host = safeHost(link.url);
   const searchText = [link.title, description, host, link.category].join(" ").toLocaleLowerCase();
   return `<a class="curated-link-card${link.featured ? " is-featured" : ""}" href="${escapeHtmlText(safeUrl(link.url))}" target="_blank" rel="noopener noreferrer" data-curated-card data-curated-category="${escapeHtmlText(link.category)}" data-curated-origin="${escapeHtmlText(link.origin || "related")}" data-curated-featured="${link.featured ? "1" : "0"}" data-curated-search="${escapeHtmlText(searchText)}">
     <div class="curated-link-card-top"><strong>${escapeHtmlText(link.title)}</strong><span aria-hidden="true">↗</span></div>
     <p>${escapeHtmlText(description)}</p>
-    <div class="curated-link-meta"><span>${escapeHtmlText(originLabel(link.origin, zh))}</span><code>${escapeHtmlText(host)}</code></div>
+    <div class="curated-link-meta"><span>${escapeHtmlText(originLabel(link.origin, locale, zh))}</span><code>${escapeHtmlText(host)}</code></div>
   </a>`;
 }
 
-function renderCategory(category, zh) {
+function renderCategory(category, zh, locale = "") {
   const links = CURATED_LINKS.filter(link => link.category === category);
   if (!links.length) return "";
   const label = CURATED_LINK_CATEGORIES[category]?.[zh ? "zh" : "en"] || category;
   return `<section class="curated-link-group" id="links-${escapeHtmlText(category)}" data-curated-group data-curated-category="${escapeHtmlText(category)}">
     <div class="curated-link-group-head"><h2>${escapeHtmlText(label)}</h2><span data-curated-group-count>${links.length}</span></div>
-    <div class="curated-link-grid">${links.map(link => renderLink(link, zh)).join("")}</div>
+    <div class="curated-link-grid">${links.map(link => renderLink(link, zh, locale)).join("")}</div>
   </section>`;
 }
 
-export function curatedLinksContent(zh) {
+export function curatedLinksContent(zh, locale = "") {
+  const c=LINKS_UI[locale]||LINKS_UI[zh?"zh-cn":"en-us"];
   const categories = Object.keys(CURATED_LINK_CATEGORIES).filter(category => CURATED_LINKS.some(link => link.category === category));
   const archivedCount = CURATED_LINKS.filter(link => link.origin === "chat").length;
   const featured = CURATED_LINKS.filter(link => link.featured).slice(0, 12);
@@ -79,23 +94,23 @@ export function curatedLinksContent(zh) {
   </style>
   <div class="curated-links-shell" data-curated-links-root>
     <section class="curated-links-overview">
-      <div><small>${zh ? "链接库" : "Link Library"}</small><h2>${zh ? "常用项目和网站" : "Projects and sites"}</h2><p>${zh ? "收录常用项目、工具、服务和官方资料。" : "A collection of useful projects, tools, services, and official references."}</p></div>
-      <div class="curated-links-stats"><div class="curated-links-stat"><strong>${CURATED_LINKS.length}</strong><span>${zh ? "链接" : "links"}</span></div><div class="curated-links-stat"><strong>${archivedCount}</strong><span>${zh ? "历史收录" : "archived"}</span></div><div class="curated-links-stat"><strong>${categories.length}</strong><span>${zh ? "分类" : "categories"}</span></div></div>
+      <div><small>${c.library}</small><h2>${c.title}</h2><p>${c.lead}</p></div>
+      <div class="curated-links-stats"><div class="curated-links-stat"><strong>${CURATED_LINKS.length}</strong><span>${c.links}</span></div><div class="curated-links-stat"><strong>${archivedCount}</strong><span>${c.archived}</span></div><div class="curated-links-stat"><strong>${categories.length}</strong><span>${c.categories}</span></div></div>
     </section>
-    <section class="curated-filter-panel" aria-label="${zh ? "筛选链接" : "Filter links"}">
-      <div class="curated-search-shell"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input class="curated-search-input" id="curated-link-search" type="search" autocomplete="off" spellcheck="false" placeholder="${zh ? "搜索链接" : "Search links"}" aria-label="${zh ? "搜索链接" : "Search links"}"><kbd aria-hidden="true">/</kbd></div>
+    <section class="curated-filter-panel" aria-label="${c.filter}">
+      <div class="curated-search-shell"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input class="curated-search-input" id="curated-link-search" type="search" autocomplete="off" spellcheck="false" placeholder="${c.search}" aria-label="${c.search}"><kbd aria-hidden="true">/</kbd></div>
       <div class="curated-filter-row">
-        <label class="curated-filter-field"><span>${zh ? "分类" : "Category"}</span><select id="curated-link-category"><option value="all">${zh ? "全部" : "All"}</option>${categoryOptions}</select></label>
-        <label class="curated-filter-field"><span>${zh ? "来源" : "Source"}</span><select id="curated-link-origin"><option value="all">${zh ? "全部" : "All"}</option><option value="chat">${zh ? "历史收录" : "Archived"}</option><option value="related">${zh ? "官方 / 精选" : "Official / curated"}</option><option value="featured">${zh ? "优先" : "Priority"}</option></select></label>
-        <button class="curated-filter-reset" id="curated-link-reset" type="button">${zh ? "重置" : "Reset"}</button>
+        <label class="curated-filter-field"><span>${c.category}</span><select id="curated-link-category"><option value="all">${c.all}</option>${categoryOptions}</select></label>
+        <label class="curated-filter-field"><span>${c.source}</span><select id="curated-link-origin"><option value="all">${c.all}</option><option value="chat">${c.archivedLabel}</option><option value="related">${c.official}</option><option value="featured">${c.priority}</option></select></label>
+        <button class="curated-filter-reset" id="curated-link-reset" type="button">${c.reset}</button>
       </div>
-      <div class="curated-filter-status" aria-live="polite"><strong id="curated-link-result-count">${CURATED_LINKS.length}</strong><span id="curated-link-result-label">${zh ? ` / ${CURATED_LINKS.length}` : `of ${CURATED_LINKS.length}`}</span></div>
+      <div class="curated-filter-status" aria-live="polite"><strong id="curated-link-result-count">${CURATED_LINKS.length}</strong><span id="curated-link-result-label">${c.of(CURATED_LINKS.length)}</span></div>
     </section>
-    <nav class="curated-link-nav" aria-label="${zh ? "链接分类" : "Link categories"}">${categoryNav}</nav>
-    <section class="curated-featured" data-curated-featured-section><div class="curated-featured-head"><h2>${zh ? "优先" : "Priority"}</h2><p>${zh ? "常用入口" : "Common entries"}</p></div><div class="curated-featured-row">${featured.map(link => renderLink(link, zh)).join("")}</div></section>
-    <div class="curated-links-empty" id="curated-links-empty"><strong>${zh ? "没有结果" : "No results"}</strong><span>${zh ? "换个关键词或筛选条件。" : "Try another keyword or filter."}</span></div>
-    ${categories.map(category => renderCategory(category, zh)).join("")}
-    <div class="curated-links-note"><strong>${zh ? "来源：" : "Sources: "}</strong>${zh ? "“历史收录”表示长期保留的常用项目与资料；“官方 / 精选”表示相关官方文档或补充入口。搜索在当前页面本地完成。" : "“Archived” marks useful projects and references kept over time. “Official / curated” contains related primary references. Search runs locally on this page."}</div>
+    <nav class="curated-link-nav" aria-label="${c.categoryNav}">${categoryNav}</nav>
+    <section class="curated-featured" data-curated-featured-section><div class="curated-featured-head"><h2>${c.priority}</h2><p>${c.common}</p></div><div class="curated-featured-row">${featured.map(link => renderLink(link, zh, locale)).join("")}</div></section>
+    <div class="curated-links-empty" id="curated-links-empty"><strong>${c.noResults}</strong><span>${c.tryAnother}</span></div>
+    ${categories.map(category => renderCategory(category, zh, locale)).join("")}
+    <div class="curated-links-note"><strong>${c.sources}</strong>${c.sourceNote}</div>
   </div>
   <script>(function(){
     const root=document.querySelector('[data-curated-links-root]');
@@ -112,7 +127,7 @@ export function curatedLinksContent(zh) {
     const primaryCards=groups.flatMap(group=>Array.from(group.querySelectorAll('[data-curated-card]')));
     const featuredCards=featuredSection?Array.from(featuredSection.querySelectorAll('[data-curated-card]')):[];
     const total=primaryCards.length;
-    const zh=${zh ? "true" : "false"};
+    const resultSuffix=${JSON.stringify(c.of(CURATED_LINKS.length))};
     const normalize=value=>String(value||'').trim().toLocaleLowerCase();
     const matches=(card,query,categoryValue,originValue)=>{
       if(query&&!normalize(card.dataset.curatedSearch).includes(query))return false;
@@ -142,7 +157,7 @@ export function curatedLinksContent(zh) {
       if(featuredSection)featuredSection.hidden=filtered;
       featuredCards.forEach(card=>{card.hidden=filtered;});
       resultCount.textContent=String(visible);
-      resultLabel.textContent=zh?(' / '+total):('of '+total);
+      resultLabel.textContent=resultSuffix;
       empty.classList.toggle('is-visible',visible===0);
     }
     search.addEventListener('input',apply);
