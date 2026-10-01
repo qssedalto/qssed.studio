@@ -508,7 +508,7 @@ export function buildOsPages(zh) {
     tasks: ["Tasks", "No tasks table is connected yet."],
     settings: ["Settings", "Manage general, appearance, language, account security, notifications, AI, integrations, and storage settings."],
     general: ["General", "Manage the site's basic behavior and general preferences."],
-    appearance: ["Appearance", "Light and dark themes are available through the theme button in the top-right corner."],
+    appearance: ["Theme & Appearance", "Follow the system or choose a fixed light/dark mode and a Studio accent color."],
     language: ["Language", "Choose the site language; Chinese and English are currently supported."],
     notifications: ["Notifications", "Manage reminders, in-app messages, and other notification preferences."],
     ai: ["AI Settings", "View your Intelligence access, available providers and models, usage quotas, and browser default model."],
