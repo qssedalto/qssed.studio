@@ -26,6 +26,94 @@ const SUMMARY_COPY = {
   "ar-sa": {eyebrow:"مساحة الملخصات",title:"ابدأ ملخصًا",intro:"ترتبط الملخصات بالحساب الحالي وتُحفظ في تخزين نظام محمي.",titleLabel:"عنوان الملخص",sourceLabel:"المصدر / المادة الأصلية",purposeLabel:"السياق والهدف",summaryLabel:"الملخص الأساسي",pointsLabel:"النقاط الرئيسية",evidenceLabel:"البيانات والأدلة والأمثلة المهمة",limitsLabel:"القيود والخلافات وعدم اليقين",actionLabel:"الخلاصة والخطوات التالية",tagsLabel:"الوسوم",guideTitle:"البنية المقترحة",guideIntro:"ينبغي أن يجيب الملخص المفيد عن هذه النقاط الخمس على الأقل:",save:"حفظ في الحساب",clear:"مسح",saved:"تم الحفظ في الحساب",saving:"جارٍ الحفظ…",loading:"جارٍ تحميل الملخص…",autosaved:"تم الحفظ تلقائيًا",empty:"لا يوجد محتوى بعد",chars:"حرفًا",unavailable:"خدمة الملخصات غير متاحة مؤقتًا",migration:"تم نقل المسودة القديمة في هذا المتصفح إلى الحساب"}
 };
 
+Object.assign(SUMMARY_COPY["zh-tw"], {
+  titlePlaceholder:"例如：某篇論文的核心結論與方法摘要",
+  sourcePlaceholder:"貼上網頁連結、論文名稱、課程章節、會議主題或其他來源說明",
+  purposePlaceholder:"為什麼要讀這份材料？最想解決什麼問題？這份摘要之後準備怎麼用？",
+  summaryPlaceholder:"用完整段落說明材料內容。建議先寫結論，再補充背景、核心邏輯、方法與結果。",
+  pointsPlaceholder:"每行一個重點。\n例如：\n1. 核心觀點是什麼\n2. 使用了什麼方法或證據\n3. 哪些條件會影響結論",
+  evidencePlaceholder:"記錄最值得保留的數字、實驗結果、定義、公式、案例、引用位置或反例。",
+  limitsPlaceholder:"寫清楚材料尚未解決的問題、結論依賴的假設、可能的偏差與仍需確認的內容。",
+  actionPlaceholder:"這份材料對你意味著什麼？接下來要驗證、閱讀、修改或執行什麼？",
+  tagsPlaceholder:"例如：統計學, AI, 論文, 方法論",
+  guideItems:[["01","背景","材料討論的對象、範圍與問題是什麼。"],["02","結論","最重要的答案是什麼，先寫結論再展開。"],["03","依據","哪些資料、方法、事實或例子支持結論。"],["04","邊界","哪些假設、限制或爭議會改變對結論的理解。"],["05","行動","讀完後需要記住、驗證或執行什麼。"]]
+});
+Object.assign(SUMMARY_COPY["ja-jp"], {
+  titlePlaceholder:"例：論文の主要な結論と手法の要約",
+  sourcePlaceholder:"URL、論文名、授業の章、会議テーマなどの出典情報を入力",
+  purposePlaceholder:"なぜ読むのか、何を明らかにしたいのか、この要約を後でどう使うのかを書きます。",
+  summaryPlaceholder:"資料の内容を完整な段落で説明します。結論を先に書き、背景、論理、手法、結果を続けます。",
+  pointsPlaceholder:"1 行に 1 つのポイント。\n例：\n1. 中心的な主張\n2. 根拠となる手法や証拠\n3. 結論に影響する条件",
+  evidencePlaceholder:"重要な数値、実験結果、定義、数式、事例、参照箇所、反例を記録します。",
+  limitsPlaceholder:"未解決点、前提、バイアスの可能性、追加確認が必要な点を記録します。",
+  actionPlaceholder:"この資料から何を得たか、次に何を検証・読む・変更・実行するかを書きます。",
+  tagsPlaceholder:"例：統計学, AI, 論文, 手法",
+  guideItems:[["01","背景","対象、範囲、問題を明確にします。"],["02","結論","最も重要な答えを先に書きます。"],["03","根拠","結論を支えるデータ、手法、事実、例を整理します。"],["04","境界","前提、制約、論点を記録します。"],["05","行動","今後覚えること、検証すること、実行することを決めます。"]]
+});
+Object.assign(SUMMARY_COPY["ko-kr"], {
+  titlePlaceholder:"예: 논문의 핵심 결론과 방법 요약",
+  sourcePlaceholder:"URL, 논문 제목, 수업 단원, 회의 주제 등 출처 정보를 입력하세요",
+  purposePlaceholder:"왜 읽는지, 어떤 질문에 답하려는지, 나중에 이 요약을 어떻게 사용할지 적으세요.",
+  summaryPlaceholder:"자료의 내용을 완전한 문단으로 설명하세요. 결론부터 쓰고 배경, 논리, 방법 및 결과를 이어서 정리하세요.",
+  pointsPlaceholder:"한 줄에 한 가지 핵심 포인트.\n예:\n1. 핵심 주장은 무엇인가\n2. 어떤 방법이나 근거를 사용했는가\n3. 어떤 조건이 결론에 영향을 주는가",
+  evidencePlaceholder:"중요한 수치, 실험 결과, 정의, 공식, 사례, 인용 위치 또는 반례를 기록하세요.",
+  limitsPlaceholder:"해결하지 못한 부분, 전제, 가능한 편향 및 추가 확인이 필요한 내용을 기록하세요.",
+  actionPlaceholder:"이 자료가 무엇을 의미하는지, 다음에 무엇을 검증·읽기·수정·실행할지 적으세요.",
+  tagsPlaceholder:"예: 통계학, AI, 논문, 방법론",
+  guideItems:[["01","배경","대상, 범위 및 문제를 설명합니다."],["02","결론","가장 중요한 답을 먼저 제시합니다."],["03","근거","결론을 뒷받침하는 데이터, 방법, 사실 또는 사례를 정리합니다."],["04","경계","전제, 한계 및 논쟁점을 기록합니다."],["05","행동","기억하거나 검증하거나 실행할 다음 단계를 정합니다."]]
+});
+Object.assign(SUMMARY_COPY["fr-fr"], {
+  titlePlaceholder:"Ex. : conclusions et méthodes principales d’un article",
+  sourcePlaceholder:"Collez une URL, un titre d’article, un chapitre de cours, un sujet de réunion ou une autre source",
+  purposePlaceholder:"Pourquoi lisez-vous ce document ? À quelle question le résumé doit-il répondre ? Comment l’utiliserez-vous ensuite ?",
+  summaryPlaceholder:"Expliquez le contenu en paragraphes complets. Commencez par la conclusion, puis donnez le contexte, le raisonnement, les méthodes et les résultats.",
+  pointsPlaceholder:"Un point par ligne.\nEx. :\n1. Quelle est l’idée centrale ?\n2. Quelle méthode ou preuve l’étaye ?\n3. Quelles conditions modifient la conclusion ?",
+  evidencePlaceholder:"Conservez les chiffres, résultats, définitions, formules, exemples, références ou contre-exemples importants.",
+  limitsPlaceholder:"Indiquez les questions non résolues, les hypothèses, les biais possibles et les points à vérifier.",
+  actionPlaceholder:"Que signifie ce document pour vous ? Que faut-il vérifier, lire, modifier ou faire ensuite ?",
+  tagsPlaceholder:"Ex. : Statistiques, IA, Article, Méthodes",
+  guideItems:[["01","Contexte","Quel est l’objet, le périmètre et le problème traité ?"],["02","Conclusion","Quelle est la réponse la plus importante ? Commencez par elle."],["03","Preuves","Quelles données, méthodes, faits ou exemples soutiennent la conclusion ?"],["04","Limites","Quelles hypothèses, limites ou controverses modifient l’interprétation ?"],["05","Action","Que faut-il retenir, vérifier ou faire ensuite ?"]]
+});
+Object.assign(SUMMARY_COPY["es-es"], {
+  titlePlaceholder:"Ej.: conclusiones y métodos principales de un artículo",
+  sourcePlaceholder:"Pega una URL, título de artículo, capítulo de clase, tema de reunión u otra fuente",
+  purposePlaceholder:"¿Por qué estás leyendo esto? ¿Qué pregunta debe responder el resumen? ¿Cómo lo usarás después?",
+  summaryPlaceholder:"Explica el contenido en párrafos completos. Empieza por la conclusión y continúa con el contexto, el razonamiento, los métodos y los resultados.",
+  pointsPlaceholder:"Un punto por línea.\nEj.:\n1. ¿Cuál es la idea central?\n2. ¿Qué método o prueba la respalda?\n3. ¿Qué condiciones afectan la conclusión?",
+  evidencePlaceholder:"Guarda cifras, resultados, definiciones, fórmulas, ejemplos, referencias o contraejemplos importantes.",
+  limitsPlaceholder:"Anota lo que no se resuelve, los supuestos, los posibles sesgos y lo que aún debe verificarse.",
+  actionPlaceholder:"¿Qué significa este material para ti? ¿Qué deberías verificar, leer, cambiar o hacer después?",
+  tagsPlaceholder:"Ej.: Estadística, IA, Artículo, Métodos",
+  guideItems:[["01","Contexto","¿Qué objeto, alcance y problema aborda el material?"],["02","Conclusión","¿Cuál es la respuesta más importante? Empieza por ella."],["03","Pruebas","¿Qué datos, métodos, hechos o ejemplos respaldan la conclusión?"],["04","Límites","¿Qué supuestos, límites o controversias cambian la interpretación?"],["05","Acción","¿Qué conviene recordar, verificar o hacer a continuación?"]]
+});
+Object.assign(SUMMARY_COPY["el-gr"], {
+  titlePlaceholder:"π.χ. βασικά συμπεράσματα και μέθοδοι μιας μελέτης",
+  sourcePlaceholder:"Επικολλήστε URL, τίτλο μελέτης, ενότητα μαθήματος, θέμα συνάντησης ή άλλη πηγή",
+  purposePlaceholder:"Γιατί διαβάζετε αυτό το υλικό; Σε ποια ερώτηση πρέπει να απαντήσει η περίληψη; Πώς θα τη χρησιμοποιήσετε αργότερα;",
+  summaryPlaceholder:"Εξηγήστε το υλικό σε πλήρεις παραγράφους. Ξεκινήστε από το συμπέρασμα και συνεχίστε με πλαίσιο, συλλογισμό, μεθόδους και αποτελέσματα.",
+  pointsPlaceholder:"Ένα σημείο ανά γραμμή.\nπ.χ.\n1. Ποιος είναι ο βασικός ισχυρισμός;\n2. Ποια μέθοδος ή απόδειξη τον στηρίζει;\n3. Ποιες συνθήκες επηρεάζουν το συμπέρασμα;",
+  evidencePlaceholder:"Καταγράψτε σημαντικούς αριθμούς, αποτελέσματα, ορισμούς, τύπους, παραδείγματα, παραπομπές ή αντιπαραδείγματα.",
+  limitsPlaceholder:"Καταγράψτε τι δεν επιλύεται, τις παραδοχές, πιθανές μεροληψίες και ό,τι χρειάζεται επιβεβαίωση.",
+  actionPlaceholder:"Τι σημαίνει αυτό το υλικό για εσάς; Τι πρέπει να ελέγξετε, διαβάσετε, αλλάξετε ή κάνετε μετά;",
+  tagsPlaceholder:"π.χ. Στατιστική, AI, Μελέτη, Μέθοδοι",
+  guideItems:[["01","Πλαίσιο","Ποιο αντικείμενο, εύρος και πρόβλημα εξετάζεται;"],["02","Συμπέρασμα","Ποια είναι η σημαντικότερη απάντηση; Ξεκινήστε από αυτή."],["03","Στοιχεία","Ποια δεδομένα, μέθοδοι, γεγονότα ή παραδείγματα στηρίζουν το συμπέρασμα;"],["04","Όρια","Ποιες παραδοχές, περιορισμοί ή διαφωνίες αλλάζουν την ερμηνεία;"],["05","Ενέργεια","Τι πρέπει να θυμάστε, να επαληθεύσετε ή να κάνετε στη συνέχεια;"]]
+});
+Object.assign(SUMMARY_COPY["ar-sa"], {
+  titlePlaceholder:"مثال: أهم نتائج وأساليب ورقة بحثية",
+  sourcePlaceholder:"ألصق رابطًا أو عنوان ورقة أو فصلًا دراسيًا أو موضوع اجتماع أو معلومات مصدر أخرى",
+  purposePlaceholder:"لماذا تقرأ هذه المادة؟ ما السؤال الذي ينبغي أن يجيب عنه الملخص؟ وكيف ستستخدمه لاحقًا؟",
+  summaryPlaceholder:"اشرح محتوى المادة في فقرات كاملة. ابدأ بالخلاصة ثم قدّم السياق والمنطق والأساليب والنتائج.",
+  pointsPlaceholder:"نقطة واحدة في كل سطر.\nمثال:\n1. ما الفكرة الأساسية؟\n2. ما الأسلوب أو الدليل الذي يدعمها؟\n3. ما الشروط التي تؤثر في النتيجة؟",
+  evidencePlaceholder:"احتفظ بالأرقام والنتائج والتعريفات والصيغ والأمثلة والمراجع أو الأمثلة المضادة المهمة.",
+  limitsPlaceholder:"سجّل ما لم تتم معالجته والافتراضات والتحيزات المحتملة وما يزال بحاجة إلى تحقق.",
+  actionPlaceholder:"ماذا تعني هذه المادة لك؟ وما الذي ينبغي التحقق منه أو قراءته أو تغييره أو تنفيذه بعد ذلك؟",
+  tagsPlaceholder:"مثال: إحصاء، ذكاء اصطناعي، بحث، مناهج",
+  guideItems:[["01","السياق","ما الموضوع والنطاق والمشكلة التي تناقشها المادة؟"],["02","الخلاصة","ما أهم إجابة؟ ابدأ بها."],["03","الأدلة","ما البيانات أو الأساليب أو الحقائق أو الأمثلة التي تدعم الخلاصة؟"],["04","الحدود","ما الافتراضات أو القيود أو الخلافات التي تغيّر تفسير الخلاصة؟"],["05","الإجراء","ما الذي يجب تذكره أو التحقق منه أو فعله بعد ذلك؟"]]
+});
+
+SUMMARY_COPY["en-gb"] = SUMMARY_COPY["en-us"] || {};
+SUMMARY_COPY["en-au"] = SUMMARY_COPY["en-us"] || {};
+
 export function linksContent(zh, locale = "") {
   return curatedLinksContent(zh, locale) + curatedLinksFavoritesEnhancer(zh, locale);
 }
