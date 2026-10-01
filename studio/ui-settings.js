@@ -428,8 +428,9 @@ export function aiSettingsContent(zh) {
   `;
 }
 
-export function settingsHubContent(zh) {
-  const prefix = zh ? "/zh-cn" : "/en";
+export function settingsHubContent(zh, locale = "") {
+  const activeLocale = locale || (zh ? "zh-cn" : "en-us");
+  const prefix = "/" + activeLocale;
   const copy = zh ? {
     eyebrow:"SETTINGS",
     title:"设置你的 AERTEX",
@@ -469,9 +470,18 @@ export function settingsHubContent(zh) {
     notifications:["Notifications","Alerts and in-app messages"],
     integrations:["Integrations","External services and authorization"]
   };
-  const availability = zh
-    ? { ai:{meta:"可用"}, storage:{meta:"可用"}, subscription:{meta:"测试中"}, student:{meta:"可用"} }
-    : { ai:{meta:"Available"}, storage:{meta:"Available"}, subscription:{meta:"Testing"}, student:{meta:"Available"} };
+  const localeCopy = {
+    "zh-tw":{title:"設定你的 AERTEX",intro:"把最常用的偏好放在最前面，其餘設定依功能分組。主題、語言、安全性、AI 與儲存空間都從這裡進入。",theme:"主題與外觀",themeMeta:"個人化",themeDetail:"系統、淺色、深色與強調色",openTheme:"調整主題",essentials:"常用",services:"服務",advanced:"其他",language:["語言","11 種顯示語言"],security:["帳號與安全性","裝置、登入記錄與提醒"],ai:["AI 設定","Provider、模型與額度"],subscription:["訂閱與權益","方案、有效期與產品權益"],student:["學生資格","驗證狀態與學生價格資格"],storage:["AERTEX Drive","私人雲端硬碟與容量"],notifications:["通知","提醒與站內訊息"],integrations:["第三方整合","外部服務與授權"]},
+    "ja-jp":{title:"AERTEX を設定",intro:"よく使う設定を上にまとめ、その他は目的別に整理しています。テーマ、言語、セキュリティ、AI、ストレージをここから管理できます。",theme:"テーマと外観",themeMeta:"パーソナライズ",themeDetail:"システム、ライト、ダーク、アクセントカラー",openTheme:"テーマを変更",essentials:"基本設定",services:"サービス",advanced:"その他",language:["言語","11 の表示言語"],security:["アカウントとセキュリティ","デバイス、サインイン履歴、通知"],ai:["AI 設定","Provider、モデル、上限"],subscription:["サブスクリプション","プラン、有効期間、特典"],student:["学生資格","認証状況と学生料金"],storage:["AERTEX Drive","プライベートストレージと容量"],notifications:["通知","アラートとアプリ内メッセージ"],integrations:["連携","外部サービスと認証"]},
+    "ko-kr":{title:"AERTEX 설정",intro:"자주 사용하는 환경설정을 위에 두고 나머지는 기능별로 정리했습니다. 테마, 언어, 보안, AI 및 저장 공간을 여기에서 관리할 수 있습니다.",theme:"테마 및 모양",themeMeta:"개인화",themeDetail:"시스템, 라이트, 다크 및 강조 색상",openTheme:"테마 조정",essentials:"주요 설정",services:"서비스",advanced:"기타",language:["언어","11개 표시 언어"],security:["계정 및 보안","기기, 로그인 기록 및 알림"],ai:["AI 설정","Provider, 모델 및 한도"],subscription:["구독","요금제, 유효 기간 및 혜택"],student:["학생 자격","인증 상태 및 학생 가격"],storage:["AERTEX Drive","개인 저장 공간 및 용량"],notifications:["알림","경고 및 앱 내 메시지"],integrations:["연동","외부 서비스 및 권한"]},
+    "fr-fr":{title:"Personnalisez AERTEX",intro:"Les préférences les plus utilisées sont placées en premier, les autres sont regroupées par fonction. Thème, langue, sécurité, IA et stockage se gèrent ici.",theme:"Thème et apparence",themeMeta:"Personnalisation",themeDetail:"Système, clair, sombre et couleur d’accent",openTheme:"Personnaliser le thème",essentials:"Essentiels",services:"Services",advanced:"Autres",language:["Langue","11 langues d’affichage"],security:["Compte et sécurité","Appareils, connexions et alertes"],ai:["Réglages IA","Providers, modèles et limites"],subscription:["Abonnement","Offres, validité et avantages"],student:["Statut étudiant","Vérification et tarif étudiant"],storage:["AERTEX Drive","Fichiers privés et capacité"],notifications:["Notifications","Alertes et messages intégrés"],integrations:["Intégrations","Services externes et autorisations"]},
+    "es-es":{title:"Configura AERTEX a tu gusto",intro:"Las preferencias más usadas aparecen primero y el resto se agrupa por función. Tema, idioma, seguridad, IA y almacenamiento se gestionan desde aquí.",theme:"Tema y apariencia",themeMeta:"Personalización",themeDetail:"Sistema, claro, oscuro y color de acento",openTheme:"Personalizar tema",essentials:"Esenciales",services:"Servicios",advanced:"Otros",language:["Idioma","11 idiomas de visualización"],security:["Cuenta y seguridad","Dispositivos, accesos y alertas"],ai:["Ajustes de IA","Providers, modelos y límites"],subscription:["Suscripción","Planes, vigencia y ventajas"],student:["Elegibilidad de estudiante","Verificación y precio para estudiantes"],storage:["AERTEX Drive","Archivos privados y capacidad"],notifications:["Notificaciones","Alertas y mensajes internos"],integrations:["Integraciones","Servicios externos y autorización"]},
+    "el-gr":{title:"Ρυθμίστε το AERTEX",intro:"Οι πιο συχνές προτιμήσεις εμφανίζονται πρώτες και οι υπόλοιπες ομαδοποιούνται ανά λειτουργία. Θέμα, γλώσσα, ασφάλεια, AI και αποθήκευση διαχειρίζονται από εδώ.",theme:"Θέμα και εμφάνιση",themeMeta:"Εξατομίκευση",themeDetail:"Σύστημα, φωτεινό, σκοτεινό και χρώμα έμφασης",openTheme:"Προσαρμογή θέματος",essentials:"Βασικά",services:"Υπηρεσίες",advanced:"Άλλα",language:["Γλώσσα","11 γλώσσες εμφάνισης"],security:["Λογαριασμός και ασφάλεια","Συσκευές, συνδέσεις και ειδοποιήσεις"],ai:["Ρυθμίσεις AI","Providers, μοντέλα και όρια"],subscription:["Συνδρομή","Προγράμματα, διάρκεια και παροχές"],student:["Φοιτητική ιδιότητα","Επαλήθευση και φοιτητική τιμή"],storage:["AERTEX Drive","Ιδιωτικά αρχεία και χωρητικότητα"],notifications:["Ειδοποιήσεις","Ειδοποιήσεις και μηνύματα εφαρμογής"],integrations:["Ενσωματώσεις","Εξωτερικές υπηρεσίες και εξουσιοδότηση"]},
+    "ar-sa":{title:"خصّص AERTEX",intro:"تظهر التفضيلات الأكثر استخدامًا أولاً، وتُجمع بقية الإعدادات حسب الوظيفة. يمكنك إدارة السمة واللغة والأمان والذكاء الاصطناعي والتخزين من هنا.",theme:"السمة والمظهر",themeMeta:"التخصيص",themeDetail:"النظام والفاتح والداكن ولون التمييز",openTheme:"تخصيص السمة",essentials:"الأساسيات",services:"الخدمات",advanced:"أخرى",language:["اللغة","11 لغة عرض"],security:["الحساب والأمان","الأجهزة وعمليات تسجيل الدخول والتنبيهات"],ai:["إعدادات الذكاء الاصطناعي","Providers والنماذج والحدود"],subscription:["الاشتراك","الخطط والصلاحية والمزايا"],student:["أهلية الطالب","التحقق وتسعير الطلاب"],storage:["AERTEX Drive","الملفات الخاصة والسعة"],notifications:["الإشعارات","التنبيهات والرسائل داخل التطبيق"],integrations:["عمليات التكامل","الخدمات الخارجية والتفويض"]}
+  }[activeLocale];
+  if (localeCopy) Object.assign(copy, localeCopy);
+  const statusCopy = activeLocale === "zh-cn" ? ["可用","测试中"] : activeLocale === "zh-tw" ? ["可用","測試中"] : activeLocale === "ja-jp" ? ["利用可能","テスト中"] : activeLocale === "ko-kr" ? ["사용 가능","테스트 중"] : activeLocale === "fr-fr" ? ["Disponible","En test"] : activeLocale === "es-es" ? ["Disponible","En pruebas"] : activeLocale === "el-gr" ? ["Διαθέσιμο","Σε δοκιμή"] : activeLocale === "ar-sa" ? ["متاح","قيد الاختبار"] : ["Available","Testing"];
+  const availability = { ai:{meta:statusCopy[0]}, storage:{meta:statusCopy[0]}, subscription:{meta:statusCopy[1]}, student:{meta:statusCopy[0]} };
   const row = (item, href, icon, status = "") => `
     <a class="settings-stage-row" href="${href}">
       <span class="settings-stage-row-icon">${dashboardIcon(icon)}</span>
