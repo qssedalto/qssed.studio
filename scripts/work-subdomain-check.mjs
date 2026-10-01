@@ -1,4 +1,6 @@
 import fs from "node:fs";
+import { normalizeHandoffNext } from "../studio/auth-handoff.js";
+import { SUPPORTED_LOCALES } from "../studio/locale.js";
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
 const workAuditWrapper = fs.readFileSync(new URL("../studio/worker-audit.js", import.meta.url), "utf8");
@@ -30,8 +32,26 @@ assert(work.includes("WORK_DOCUMENT_ID_RE"), "Work must constrain document route
 assert(work.includes("parseWorkDocumentPath") && work.includes("parseShortWorkDocumentPath"), "Work must support localized and short document deep-link forms.");
 assert(work.includes("/d/"), "Work canonical document routes must use the /d/<uuid> namespace.");
 assert(work.includes("huawei-exempt/"), "Work document deep links must accept the existing Huawei exemption alias marker.");
-assert(handoff.includes("/d/huawei-exempt/") && handoff.includes("/d/"), "Auth handoff must preserve ordinary and Huawei-exempt Work document targets.");
-assert(accountMenu.includes('new RegExp("^/(?:zh-cn|en)/d/') && accountMenu.includes("/work/handoff?next="), "Work account switching must preserve the active document deep link.");
+const TEST_DOCUMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
+for (const locale of SUPPORTED_LOCALES) {
+  assert(
+    normalizeHandoffNext(`/${locale}/d/${TEST_DOCUMENT_ID}`, locale, true, false) === `/${locale}/d/${TEST_DOCUMENT_ID}`,
+    `Auth handoff must preserve ordinary Work document targets for ${locale}.`
+  );
+  assert(
+    normalizeHandoffNext(`/${locale}/d/huawei-exempt/${TEST_DOCUMENT_ID}`, locale, true, false) === `/${locale}/d/huawei-exempt/${TEST_DOCUMENT_ID}`,
+    `Auth handoff must preserve Huawei-exempt Work document targets for ${locale}.`
+  );
+  assert(
+    normalizeHandoffNext(`/d/${TEST_DOCUMENT_ID}`, locale, true, false) === `/${locale}/d/${TEST_DOCUMENT_ID}`,
+    `Auth handoff must localize short Work document targets for ${locale}.`
+  );
+}
+assert(
+  normalizeHandoffNext(`/en/d/${TEST_DOCUMENT_ID}`, "ja-jp", true, false) === `/en-us/d/${TEST_DOCUMENT_ID}`,
+  "Legacy /en Work document links must normalize to en-us without losing the document."
+);
+assert(accountMenu.includes("supportedLocales: SUPPORTED_LOCALES") && accountMenu.includes('const localePattern=(config.supportedLocales||[]).join("|");') && accountMenu.includes("/work/handoff?next="), "Work account switching must preserve multilingual document deep links.");
 
 for (const required of [
   'workOriginForRequest(request)',
@@ -39,8 +59,9 @@ for (const required of [
   'authOriginForRequest(request)',
   'isServiceHost(new URL(request.url).hostname, "work")',
   'const canonicalPath = `/${locale}/tex`',
-  'internalUrl.pathname = pathname.startsWith("/en/") ? "/en/work/tex" : "/zh-cn/work/tex"',
-  '"/zh-cn/local", "/en/local"',
+  'internalUrl.pathname = `/${localizedDocument.locale}/work/tex`',
+  'internalUrl.pathname = `/${routeLocale}/work/tex`',
+  'const canonicalAliases = new Set(["", "tex", "local", "work", "work/local", "work/tex"])',
   'action="${workOrigin}/auth/handoff"',
   'canonicalWorkPath',
   '__Host-qsseda-studio-refresh'
@@ -51,7 +72,12 @@ assert(!work.includes('internalPath = `/${locale}/work`'), "Work must not expose
 
 assert(handoff.includes('isServiceHost(hostname, "work")'), "Auth handoff must identify Work on every domain family");
 assert(handoff.includes("new Set([authOrigin, mainOrigin])"), "Work handoff must allow only matching-family Auth and main-site origins");
-assert(handoff.includes('return candidateLocale === "zh" ? "/zh-cn/tex" : "/en/tex"'), "Every Work handoff must land on localized TeX");
+for (const locale of SUPPORTED_LOCALES) {
+  assert(
+    normalizeHandoffNext("/not-a-work-document", locale, true, false) === `/${locale}/tex`,
+    `Every Work handoff must fall back to localized TeX for ${locale}.`
+  );
+}
 
 assert(sessionGate.includes('const ACCOUNT_COOKIE = "__Secure-qsseda-account-id"'), "Work sessions must use a domain-wide account identity marker");
 assert(sessionGate.includes("rootDomainForHost(hostname)"), "The account identity marker must follow the active root domain");
@@ -99,7 +125,7 @@ for (const [host, zone] of [["work.qsseda.com","qsseda.com"],["work.qsseda.onlin
   assert(workWrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
 }
 assert(!workAuditWrapper.includes("canonicalQssedaAlias"), "Work .online/.studio hosts must stay on their own domains");
-assert(entry.includes('workHref: `${workOrigin}/${zh ? "zh-cn/tex" : "en/tex"}`'), "Studio shell must receive the canonical localized AERTEX Work product URL.");
+assert(entry.includes('workHref: `${workOrigin}/${fullLocale}/tex`'), "Studio shell must preserve the complete locale in the AERTEX Work product URL.");
 assert(shell.includes('title:"AERTEX Work"'), "Compact main menu must list AERTEX Work as an independent product.");
 assert(shell.includes('id: "work", label: "AERTEX Work"'), "Desktop product navigation must list AERTEX Work as an independent product.");
 assert(shell.indexOf('title:"AERTEX Work"') < shell.indexOf('title:"AERTEX Intelligence"'), "Compact independent products must order AERTEX Work before Intelligence.");
