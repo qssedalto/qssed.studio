@@ -354,9 +354,23 @@ export function profileClientScript() {
     </script>`;
 }
 
-export function profileHubContent(zh) {
-  const prefix = zh ? "/zh-cn" : "/en";
-  const primaryRows = zh ? [
+export function profileHubContent(zh, locale = "") {
+  const activeLocale = locale || (zh ? "zh-cn" : "en-us");
+  const prefix = "/" + activeLocale;
+  const localized = {
+    "zh-tw": {
+      loading:"正在讀取帳號...", foot:"在這裡集中管理與你的 AERTEX 帳號相關的個人資料、安全性與內容入口。",
+      primary:[["個人資料","照片、姓名、使用者名稱、出生日期與性別","profile","blue"],["登入與安全性","裝置、登入記錄與帳號安全性","shield","green"],["帳號資訊","電子郵件、帳號 ID、註冊時間與稽核記錄","account","gray"],["偏好設定","個人使用體驗與偏好入口","preferences","purple"]],
+      services:[["AERTEX Drive","私人檔案與儲存空間","storage","cyan"],["收藏連結","你的連結與常用入口","links","orange"]]
+    },
+    "ja-jp": {loading:"アカウントを読み込み中…",foot:"AERTEX アカウントに関連する個人情報、セキュリティ、コンテンツへの入口を管理します。",primary:[["個人情報","写真、氏名、ユーザー名、生年月日、性別","profile","blue"],["サインインとセキュリティ","デバイス、サインイン履歴、アカウント保護","shield","green"],["アカウント情報","メール、アカウント ID、登録日時、監査履歴","account","gray"],["環境設定","個人設定と利用体験","preferences","purple"]],services:[["AERTEX Drive","プライベートファイルとストレージ","storage","cyan"],["保存したリンク","リンクとよく使う項目","links","orange"]]},
+    "ko-kr": {loading:"계정을 불러오는 중…",foot:"AERTEX 계정과 연결된 개인 정보, 보안 및 콘텐츠 진입점을 관리합니다.",primary:[["개인 정보","사진, 이름, 사용자 이름, 생년월일 및 성별","profile","blue"],["로그인 및 보안","기기, 로그인 기록 및 계정 보안","shield","green"],["계정 정보","이메일, 계정 ID, 가입 및 감사 기록","account","gray"],["환경설정","개인 사용 환경 및 기본 설정","preferences","purple"]],services:[["AERTEX Drive","개인 파일 및 저장 공간","storage","cyan"],["저장된 링크","링크 및 자주 사용하는 항목","links","orange"]]},
+    "fr-fr": {loading:"Chargement du compte…",foot:"Gérez les informations personnelles, la sécurité et les contenus associés à votre compte AERTEX.",primary:[["Informations personnelles","Photo, nom, identifiant, date de naissance et genre","profile","blue"],["Connexion et sécurité","Appareils, historique des connexions et sécurité","shield","green"],["Informations du compte","E-mail, ID du compte, inscription et audit","account","gray"],["Préférences","Expérience personnelle et préférences","preferences","purple"]],services:[["AERTEX Drive","Fichiers privés et stockage","storage","cyan"],["Liens enregistrés","Vos liens et destinations fréquentes","links","orange"]]},
+    "es-es": {loading:"Cargando cuenta…",foot:"Gestiona la información personal, la seguridad y el contenido conectado a tu cuenta AERTEX.",primary:[["Información personal","Foto, nombre, usuario, fecha de nacimiento y género","profile","blue"],["Inicio de sesión y seguridad","Dispositivos, historial de acceso y seguridad","shield","green"],["Información de la cuenta","Correo, ID de cuenta, registro y auditoría","account","gray"],["Preferencias","Experiencia personal y preferencias","preferences","purple"]],services:[["AERTEX Drive","Archivos privados y almacenamiento","storage","cyan"],["Enlaces guardados","Tus enlaces y destinos frecuentes","links","orange"]]},
+    "el-gr": {loading:"Φόρτωση λογαριασμού…",foot:"Διαχειριστείτε τα προσωπικά στοιχεία, την ασφάλεια και το περιεχόμενο που συνδέονται με τον λογαριασμό AERTEX.",primary:[["Προσωπικά στοιχεία","Φωτογραφία, όνομα, όνομα χρήστη, ημερομηνία γέννησης και φύλο","profile","blue"],["Σύνδεση και ασφάλεια","Συσκευές, ιστορικό σύνδεσης και ασφάλεια","shield","green"],["Στοιχεία λογαριασμού","Email, ID λογαριασμού, εγγραφή και έλεγχος","account","gray"],["Προτιμήσεις","Προσωπική εμπειρία και προτιμήσεις","preferences","purple"]],services:[["AERTEX Drive","Ιδιωτικά αρχεία και αποθήκευση","storage","cyan"],["Αποθηκευμένοι σύνδεσμοι","Οι σύνδεσμοι και οι συχνές επιλογές σας","links","orange"]]},
+    "ar-sa": {loading:"جارٍ تحميل الحساب…",foot:"أدِر المعلومات الشخصية والأمان والمحتوى المرتبط بحساب AERTEX.",primary:[["المعلومات الشخصية","الصورة والاسم واسم المستخدم وتاريخ الميلاد والجنس","profile","blue"],["تسجيل الدخول والأمان","الأجهزة وسجل تسجيل الدخول وأمان الحساب","shield","green"],["معلومات الحساب","البريد الإلكتروني ومعرّف الحساب والتسجيل وسجل التدقيق","account","gray"],["التفضيلات","تجربة الاستخدام والتفضيلات الشخصية","preferences","purple"]],services:[["AERTEX Drive","الملفات الخاصة والتخزين","storage","cyan"],["الروابط المحفوظة","روابطك والوجهات المتكررة","links","orange"]]}
+  }[activeLocale];
+  const primaryRows = localized ? localized.primary.map((row,index)=>[...row,index===0?`${prefix}/profile/details`:index===1?`${prefix}/settings/security`:index===2?`${prefix}/profile/account`:`${prefix}/profile/preferences`]) : zh ? [
     ["个人信息", "头像、姓名、用户名、出生日期与性别", "profile", "blue", `${prefix}/profile/details`],
     ["登录与安全", "设备、登录记录与账户安全", "shield", "green", `${prefix}/settings/security`],
     ["账户信息", "邮箱、账号 ID、注册时间与审计记录", "account", "gray", `${prefix}/profile/account`],
@@ -367,7 +381,7 @@ export function profileHubContent(zh) {
     ["Account Information", "Email, account ID, registration, and audit history", "account", "gray", `${prefix}/profile/account`],
     ["Preferences", "Personal experience and preference entry points", "preferences", "purple", `${prefix}/profile/preferences`]
   ];
-  const serviceRows = zh ? [
+  const serviceRows = localized ? localized.services.map((row,index)=>[...row,index===0?`${prefix}/settings/storage`:`${prefix}/info/links`]) : zh ? [
     ["AERTEX Drive", "私人文件与存储", "storage", "cyan", `${prefix}/settings/storage`],
     ["收藏链接", "你的链接与常用入口", "links", "orange", `${prefix}/info/links`]
   ] : [
@@ -389,7 +403,7 @@ export function profileHubContent(zh) {
     <section id="profile-summary" class="profile-account-home" data-profile-account-home>
       <header class="profile-account-identity">
         <div id="profile-avatar" class="profile-account-avatar">A</div>
-        <h2 id="profile-display-name">${zh ? "正在读取账户..." : "Loading account..."}</h2>
+        <h2 id="profile-display-name">${localized?.loading || (zh ? "正在读取账户..." : "Loading account...")}</h2>
         <p id="profile-email">...</p>
       </header>
 
@@ -401,7 +415,7 @@ export function profileHubContent(zh) {
         <div class="profile-account-group">${serviceRows.map(renderRow).join("")}</div>
       </section>
 
-      <p class="profile-account-footnote">${zh ? "这里集中管理与你的 AERTEX 账户相关的个人资料、安全与内容入口。" : "Manage the personal information, security, and content connected to your AERTEX account."}</p>
+      <p class="profile-account-footnote">${localized?.foot || (zh ? "这里集中管理与你的 AERTEX 账户相关的个人资料、安全与内容入口。" : "Manage the personal information, security, and content connected to your AERTEX account.")}</p>
     </section>
   `;
 }
