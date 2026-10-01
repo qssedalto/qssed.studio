@@ -229,7 +229,7 @@ export function languageSettingsContent(zh) {
   return `
     <section class="os-card is-large settings-detail-card">
       <h2>${zh ? "显示语言" : "Language"}</h2>
-      <p>${zh ? "选择 AERTEX 的界面语言。" : "Choose the interface language for AERTEX."}</p>
+      <p>${zh ? "AERTEX 默认跟随当前设备语言。你可以临时切换界面语言；重新从网站入口打开或下次登录时，会再次跟随设备语言。" : "AERTEX follows the current device language by default. You can switch the interface language for the current visit; opening the site again from its default entry point or signing in next time will follow the device language again."}</p>
       <div class="settings-choice-grid">
         <a class="settings-choice ${zh ? "is-selected" : ""}" href="/zh-cn/settings/language"><strong>中文</strong><span>简体中文</span></a>
         <a class="settings-choice ${zh ? "" : "is-selected"}" href="/en/settings/language"><strong>English</strong><span>English</span></a>
