@@ -1,5 +1,15 @@
-export function billingSettingsContent(zh, view = "billing") {
-  const text = zh ? {
+const BILLING_CORE = {
+  "zh-tw":{billingTitle:"訂閱與權益",billingIntro:"查看目前方案、有效期與 AERTEX Drive 權益。",progress:"學生驗證進度",pendingHelp:"你已提交學生驗證，目前正在等待審核。審核期間無法重複提交；如需重新提交，請先取消目前申請。",privacyTitle:"隱私提醒",studentPricingFootnote:"學生驗證通過後可使用學生價格；學生資格只影響價格，不改變方案容量與權益。",loading:"正在讀取訂閱…",current:"目前方案",renew:"有效期",free:"長期有效",plans:"可用方案",student:"學生資格",studentBenefitTitle:"學生價格",studentBenefitAction:"管理學生資格"},
+  "ja-jp":{billingTitle:"サブスクリプションと特典",billingIntro:"現在のプラン、有効期間、AERTEX Drive の特典を確認します。",progress:"学生認証の進捗",pendingHelp:"学生認証はすでに提出され、審査待ちです。審査中は再提出できません。再提出する場合は現在の申請を取り消してください。",privacyTitle:"プライバシーに関する注意",studentPricingFootnote:"学生認証後は対応プランで学生価格を利用できます。学生資格は価格だけに影響し、容量や特典は変わりません。",loading:"サブスクリプションを読み込み中…",current:"現在のプラン",renew:"有効期限",free:"期限なし",plans:"利用可能なプラン",student:"学生資格",studentBenefitTitle:"学生価格",studentBenefitAction:"学生資格を管理"},
+  "ko-kr":{billingTitle:"구독 및 혜택",billingIntro:"현재 요금제, 유효 기간 및 AERTEX Drive 혜택을 확인합니다.",progress:"학생 인증 진행 상황",pendingHelp:"학생 인증 요청이 이미 제출되어 검토 중입니다. 검토 중에는 다시 제출할 수 없습니다. 다시 제출하려면 현재 요청을 먼저 취소하세요.",privacyTitle:"개인정보 안내",studentPricingFootnote:"학생 인증 후 지원되는 요금제에서 학생 가격을 사용할 수 있습니다. 학생 자격은 가격에만 영향을 주며 용량과 혜택은 변경되지 않습니다.",loading:"구독을 불러오는 중…",current:"현재 요금제",renew:"유효 기간",free:"만료 없음",plans:"사용 가능한 요금제",student:"학생 자격",studentBenefitTitle:"학생 가격",studentBenefitAction:"학생 자격 관리"},
+  "fr-fr":{billingTitle:"Abonnement et avantages",billingIntro:"Consultez votre offre actuelle, sa période de validité et les avantages AERTEX Drive.",progress:"Progression de la vérification étudiante",pendingHelp:"Une demande de vérification étudiante est déjà en attente. Vous ne pouvez pas en soumettre une autre pendant l’examen. Annulez d’abord la demande actuelle si vous devez recommencer.",privacyTitle:"Avis de confidentialité",studentPricingFootnote:"Après vérification, les étudiants peuvent utiliser le tarif étudiant sur les offres compatibles. L’éligibilité modifie uniquement le prix, pas la capacité ni les avantages.",loading:"Chargement de l’abonnement…",current:"Offre actuelle",renew:"Valide jusqu’au",free:"Sans expiration",plans:"Offres disponibles",student:"Statut étudiant",studentBenefitTitle:"Tarif étudiant",studentBenefitAction:"Gérer le statut étudiant"},
+  "es-es":{billingTitle:"Suscripción y ventajas",billingIntro:"Consulta tu plan actual, su periodo de validez y las ventajas de AERTEX Drive.",progress:"Progreso de verificación de estudiante",pendingHelp:"Ya has enviado una solicitud de verificación de estudiante y está pendiente de revisión. No puedes enviar otra durante la revisión. Cancela primero la solicitud actual si necesitas volver a enviarla.",privacyTitle:"Aviso de privacidad",studentPricingFootnote:"Tras verificar la condición de estudiante, podrás usar precios para estudiantes en los planes compatibles. La elegibilidad solo cambia el precio, no la capacidad ni las ventajas.",loading:"Cargando suscripción…",current:"Plan actual",renew:"Válido hasta",free:"Sin caducidad",plans:"Planes disponibles",student:"Elegibilidad de estudiante",studentBenefitTitle:"Precio para estudiantes",studentBenefitAction:"Gestionar elegibilidad"},
+  "el-gr":{billingTitle:"Συνδρομή και παροχές",billingIntro:"Δείτε το τρέχον πρόγραμμα, τη διάρκεια ισχύος και τις παροχές AERTEX Drive.",progress:"Πρόοδος φοιτητικής επαλήθευσης",pendingHelp:"Έχει ήδη υποβληθεί αίτημα φοιτητικής επαλήθευσης και αναμένει έλεγχο. Δεν μπορείτε να υποβάλετε νέο αίτημα κατά τον έλεγχο. Ακυρώστε πρώτα το τρέχον αν χρειάζεται νέα υποβολή.",privacyTitle:"Ειδοποίηση απορρήτου",studentPricingFootnote:"Μετά την επαλήθευση μπορείτε να χρησιμοποιείτε φοιτητική τιμή στα υποστηριζόμενα προγράμματα. Η ιδιότητα επηρεάζει μόνο την τιμή, όχι τη χωρητικότητα ή τις παροχές.",loading:"Φόρτωση συνδρομής…",current:"Τρέχον πρόγραμμα",renew:"Ισχύει έως",free:"Χωρίς λήξη",plans:"Διαθέσιμα προγράμματα",student:"Φοιτητική ιδιότητα",studentBenefitTitle:"Φοιτητική τιμή",studentBenefitAction:"Διαχείριση φοιτητικής ιδιότητας"},
+  "ar-sa":{billingTitle:"الاشتراك والمزايا",billingIntro:"اعرض خطتك الحالية وفترة صلاحيتها ومزايا AERTEX Drive.",progress:"تقدم التحقق من أهلية الطالب",pendingHelp:"لقد أرسلت طلب تحقق من أهلية الطالب وهو قيد المراجعة. لا يمكنك إرسال طلب آخر أثناء المراجعة. ألغِ الطلب الحالي أولاً إذا كنت بحاجة إلى إعادة التقديم.",privacyTitle:"تنبيه الخصوصية",studentPricingFootnote:"بعد التحقق من أهلية الطالب يمكنك استخدام سعر الطلاب في الخطط المدعومة. تؤثر الأهلية في السعر فقط ولا تغيّر السعة أو المزايا.",loading:"جارٍ تحميل الاشتراك…",current:"الخطة الحالية",renew:"صالح حتى",free:"بلا انتهاء",plans:"الخطط المتاحة",student:"أهلية الطالب",studentBenefitTitle:"سعر الطلاب",studentBenefitAction:"إدارة أهلية الطالب"}
+};
+export function billingSettingsContent(zh, view = "billing", locale = "") {
+  const activeLocale=locale||(zh?"zh-cn":"en-us");
+  let text = zh ? {
     loading:"正在读取订阅…", current:"当前套餐", drive:"AERTEX Drive", renew:"有效期",
     free:"长期有效", source:"来源", plans:"可用套餐", unavailable:"支付接口尚未开放",
     unavailableDetail:"当前阶段用于验证套餐、权益和管理员授权。支付宝与微信支付接入后会在这里启用购买。",
@@ -80,15 +90,16 @@ export function billingSettingsContent(zh, view = "billing") {
     studentBenefitTitle:"Student pricing", studentBenefitIntro:"Verify student eligibility to use student pricing on supported plans. Capacity and product entitlements stay unchanged.", studentBenefitAction:"Manage student eligibility",
     verificationPrivacy:"Enrollment status only", verificationPrivacyDetail:"AERTEX does not classify eligibility by nationality and does not require government-issued identity documents."
   };
+  if (BILLING_CORE[activeLocale]) text = { ...text, ...BILLING_CORE[activeLocale] };
 
   const studentOnly = view === "student";
-  const prefix = zh ? "/zh-cn" : "/en";
+  const prefix = "/" + activeLocale;
   const billingMarkup = studentOnly ? "" : `    <section id="billing-settings" class="os-card is-large settings-detail-card">
       <div class="settings-general-heading">
         <div>
           <small>AERTEX</small>
-          <h2>${zh ? "订阅与权益" : "Subscription & Entitlements"}</h2>
-          <p>${zh ? "查看当前套餐、有效期以及 AERTEX Drive 权益。" : "View your current plan, validity period, and AERTEX Drive entitlement."}</p>
+          <h2>${text.billingTitle || (zh ? "订阅与权益" : "Subscription & Entitlements")}</h2>
+          <p>${text.billingIntro || (zh ? "查看当前套餐、有效期以及 AERTEX Drive 权益。" : "View your current plan, validity period, and AERTEX Drive entitlement.")}</p>
         </div>
       </div>
       <div id="billing-current" class="settings-choice-grid">
@@ -119,7 +130,7 @@ export function billingSettingsContent(zh, view = "billing") {
           </div>
         </aside>
       </header>
-      <nav class="student-progress" aria-label="${zh ? "学生认证进度" : "Student verification progress"}">
+      <nav class="student-progress" aria-label="${text.progress || (zh ? "学生认证进度" : "Student verification progress")}">
         <div class="student-progress-track" aria-hidden="true"><i id="student-progress-fill"></i></div>
         <ol>
           <li data-student-progress="1"><span>1</span><strong>${text.stepSource}</strong></li>
@@ -129,7 +140,7 @@ export function billingSettingsContent(zh, view = "billing") {
       </nav>
       <div class="student-flow-panel">
       <div id="student-pending-actions" hidden>
-        <p>${zh ? "你已经提交过学生认证，当前正在等待审核。审核期间不能重复上传二维码；如需重新提交，请先取消当前申请。" : "You already have a student verification request pending. You cannot submit another QR code while it is under review. Cancel the current request first if you need to resubmit."}</p>
+        <p>${text.pendingHelp || (zh ? "你已经提交过学生认证，当前正在等待审核。审核期间不能重复上传二维码；如需重新提交，请先取消当前申请。" : "You already have a student verification request pending. You cannot submit another QR code while it is under review. Cancel the current request first if you need to resubmit.")}</p>
         <button id="student-cancel" class="btn" type="button">${text.cancelStudent}</button>
       </div>
       <section id="student-region-step" class="student-path">
@@ -188,7 +199,7 @@ export function billingSettingsContent(zh, view = "billing") {
         <button id="student-tutorial-ready" class="btn primary" type="button" style="margin-top:16px">${text.tutorialReady}</button>
       </div>
       <div id="student-verification-form" hidden style="margin-top:18px;padding:16px;border:1px solid var(--border);border-radius:16px">
-        <strong>${zh ? "隐私提醒" : "Privacy notice"}</strong>
+        <strong>${text.privacyTitle || (zh ? "隐私提醒" : "Privacy notice")}</strong>
         <p style="margin:8px 0 0">${text.privacy}</p>
         <p style="margin:8px 0 0">${text.localOnly}</p>
         <label style="display:flex;gap:10px;align-items:flex-start;margin-top:14px">
@@ -229,7 +240,7 @@ export function billingSettingsContent(zh, view = "billing") {
   const planMarkup = studentOnly ? "" : `    <section class="os-card settings-general-note">
       <strong>${text.plans}</strong>
       <div id="billing-plan-list" class="pricing-grid"></div>
-      <p class="pricing-footnote">${zh ? "学生认证通过后可使用学生价格；学生资格只影响价格，不改变套餐容量与权益。" : "Verified students can use student pricing. Student eligibility changes price only, not plan capacity or entitlements."}</p>
+      <p class="pricing-footnote">${text.studentPricingFootnote || (zh ? "学生认证通过后可使用学生价格；学生资格只影响价格，不改变套餐容量与权益。" : "Verified students can use student pricing. Student eligibility changes price only, not plan capacity or entitlements.")}</p>
       <p id="billing-status" style="margin-top:12px">${text.unavailableDetail}</p>
     </section>
 `;
@@ -664,7 +675,7 @@ export function billingSettingsContent(zh, view = "billing") {
             const subscription=data.subscription||null;
             const quota=Number(data.entitlements?.drive_storage_bytes)||0;
             current.innerHTML=
-              '<div class="settings-choice is-selected"><strong>'+esc(plan.display_name_${zh ? "zh" : "en"}||plan.display_name_en||plan.id||"AERTEX Free")+'</strong><span>'+esc(subscription?.status==="grace"?copy.grace:copy.active)+'</span></div>'+
+              '<div class="settings-choice is-selected"><strong>'+esc(plan.display_name_${activeLocale.startsWith("zh-") ? "zh" : "en"}||plan.display_name_en||plan.id||"AERTEX Free")+'</strong><span>'+esc(subscription?.status==="grace"?copy.grace:copy.active)+'</span></div>'+
               '<div class="settings-choice"><strong>'+esc(copy.quota)+'</strong><span>'+esc(bytes(quota))+'</span></div>'+
               '<div class="settings-choice"><strong>'+esc(copy.renew)+'</strong><span>'+esc(date(subscription?.current_period_end))+'</span></div>'+
               '<div class="settings-choice"><strong>'+esc(copy.autoRenew)+'</strong><span>'+esc(subscription?.auto_renew?copy.on:copy.off)+' · '+esc(source(subscription?.source))+'</span></div>';
