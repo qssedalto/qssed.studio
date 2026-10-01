@@ -76,7 +76,7 @@ function richMessageRuntime(copy) {
     });
   }
 
-  const BARE_MATH_COMMAND = /\\(?:frac|dfrac|tfrac|sqrt|sum|prod|int|oint|lim|log|ln|sin|cos|tan|exp|cdot|times|div|pm|mp|leq|geq|neq|approx|sim|equiv|infty|alpha|beta|gamma|delta|epsilon|varepsilon|theta|lambda|mu|pi|rho|sigma|phi|varphi|psi|omega|mid|cap|cup|to|rightarrow|leftarrow|leftrightarrow|overline|underline|vec|hat|bar|mathbf|mathrm|mathbb|mathcal|operatorname|text|begin|end|left|right)\b/;
+  const BARE_MATH_COMMAND = /\\(?:frac|dfrac|tfrac|binom|sqrt|sum|prod|int|iint|iiint|oint|lim|log|ln|sin|cos|tan|arcsin|arccos|arctan|exp|cdot|times|div|pm|mp|leq|geq|neq|approx|sim|equiv|propto|infty|partial|nabla|alpha|beta|gamma|delta|epsilon|varepsilon|zeta|eta|theta|vartheta|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|phi|varphi|chi|psi|omega|mid|cap|cup|subset|supset|subseteq|supseteq|in|notin|to|mapsto|rightarrow|leftarrow|leftrightarrow|Rightarrow|Leftarrow|Leftrightarrow|overline|underline|vec|hat|bar|mathbf|mathrm|mathbb|mathcal|operatorname|text|begin|end|left|right|displaystyle)\b/;
   const MATH_SAFE_PUNCT = "\\\\{}[]_^=+-*/().,:<>|!%'";
 
   function isMathSafeChar(ch) {
@@ -196,12 +196,56 @@ function richMessageRuntime(copy) {
     return best;
   }
 
+  function prettyMathFallback(expression) {
+    let value = String(expression || "").trim();
+    const simple = part => /^[A-Za-z0-9_.+-]+$/.test(part) ? part : "(" + part + ")";
+    for (let pass = 0; pass < 5; pass++) {
+      const next = value.replace(/\\(?:dfrac|tfrac|frac)\{([^{}]+)\}\{([^{}]+)\}/g, (_, numerator, denominator) => simple(numerator) + "⁄" + simple(denominator));
+      if (next === value) break;
+      value = next;
+    }
+    value = value
+      .replace(/\\sqrt\{([^{}]+)\}/g, "√($1)")
+      .replace(/\\(?:cdot|times)\b/g, match => match.includes("times") ? "×" : "·")
+      .replace(/\\div\b/g, "÷")
+      .replace(/\\pm\b/g, "±")
+      .replace(/\\mp\b/g, "∓")
+      .replace(/\\leq\b/g, "≤")
+      .replace(/\\geq\b/g, "≥")
+      .replace(/\\neq\b/g, "≠")
+      .replace(/\\approx\b/g, "≈")
+      .replace(/\\equiv\b/g, "≡")
+      .replace(/\\infty\b/g, "∞")
+      .replace(/\\partial\b/g, "∂")
+      .replace(/\\nabla\b/g, "∇")
+      .replace(/\\sum\b/g, "∑")
+      .replace(/\\prod\b/g, "∏")
+      .replace(/\\(?:iiint|iint|int)\b/g, match => match.includes("iiint") ? "∭" : match.includes("iint") ? "∬" : "∫")
+      .replace(/\\to\b|\\rightarrow\b/g, "→")
+      .replace(/\\leftarrow\b/g, "←")
+      .replace(/\\leftrightarrow\b/g, "↔")
+      .replace(/\\Rightarrow\b/g, "⇒")
+      .replace(/\\Leftarrow\b/g, "⇐")
+      .replace(/\\Leftrightarrow\b/g, "⇔")
+      .replace(/\\alpha\b/g, "α").replace(/\\beta\b/g, "β").replace(/\\gamma\b/g, "γ")
+      .replace(/\\delta\b/g, "δ").replace(/\\epsilon\b|\\varepsilon\b/g, "ε")
+      .replace(/\\theta\b|\\vartheta\b/g, "θ").replace(/\\lambda\b/g, "λ").replace(/\\mu\b/g, "μ")
+      .replace(/\\pi\b/g, "π").replace(/\\rho\b/g, "ρ").replace(/\\sigma\b/g, "σ")
+      .replace(/\\phi\b|\\varphi\b/g, "φ").replace(/\\psi\b/g, "ψ").replace(/\\omega\b/g, "ω");
+    const subs = { "0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉","+":"₊","-":"₋" };
+    const sups = { "0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","+":"⁺","-":"⁻" };
+    value = value
+      .replace(/_\{?([0-9+-]+)\}?/g, (_, digits) => [...digits].map(ch => subs[ch] || ch).join(""))
+      .replace(/\^\{?([0-9+-]+)\}?/g, (_, digits) => [...digits].map(ch => sups[ch] || ch).join(""));
+    return value.replace(/\\(?:left|right|displaystyle)\b/g, "").replace(/[{}]/g, "");
+  }
+
   function addMath(parent, expression, display) {
     const node = document.createElement(display ? "div" : "span");
     node.className = (display ? "mathBlock " : "mathInline ") + "mathFallback";
     node.dataset.math = expression;
     node.dataset.display = display ? "1" : "0";
-    node.textContent = expression;
+    node.textContent = prettyMathFallback(expression);
     parent.appendChild(node);
   }
 
