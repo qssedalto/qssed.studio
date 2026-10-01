@@ -383,6 +383,162 @@ export function baseHead(title) {
           border-color:var(--border-strong)!important;
         }
       }
+
+      /* AWARD_QUALITY_SYSTEM_2026 — Studio shell only.
+         Protected product surfaces keep their dedicated layout contracts:
+         Intelligence/Watch are standalone; Work TeX and Student Verification
+         are explicitly excluded from this shared visual pass. */
+      :root[data-theme="light"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){
+        --bg:#f4f4f2;
+        --bg-soft:#ebece9;
+        --surface:#fbfbfa;
+        --surface-strong:#f0f1ee;
+        --surface-soft:#f4f5f2;
+        --card:#ffffff;
+        --text:#18181a;
+        --muted:#6f7075;
+        --quiet:#94959a;
+        --border:rgba(24,24,27,.10);
+        --border-strong:rgba(24,24,27,.18);
+        --hairline:rgba(24,24,27,.075);
+        --glass:rgba(255,255,255,.74);
+        --glass-heavy:rgba(250,250,248,.88);
+        --shadow:0 36px 90px rgba(22,24,29,.12);
+        --shadow-soft:0 12px 36px rgba(22,24,29,.075);
+        --ease-emphasized:cubic-bezier(.16,1,.3,1);
+        --ease-standard:cubic-bezier(.2,.8,.2,1);
+      }
+      :root:not([data-theme="light"]) body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){
+        --bg:#08090b;
+        --bg-soft:#101114;
+        --surface:#15171a;
+        --surface-strong:#1d2024;
+        --surface-soft:#1a1c20;
+        --card:#15171a;
+        --text:#f4f4f5;
+        --muted:#a5a7ad;
+        --quiet:#73767e;
+        --border:rgba(255,255,255,.095);
+        --border-strong:rgba(255,255,255,.17);
+        --hairline:rgba(255,255,255,.065);
+        --glass:rgba(18,20,23,.74);
+        --glass-heavy:rgba(14,16,19,.88);
+        --shadow:0 36px 100px rgba(0,0,0,.42);
+        --shadow-soft:0 14px 40px rgba(0,0,0,.24);
+        --ease-emphasized:cubic-bezier(.16,1,.3,1);
+        --ease-standard:cubic-bezier(.2,.8,.2,1);
+      }
+
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){
+        padding:clamp(12px,1.55vw,24px)!important;
+        background:
+          radial-gradient(1200px 760px at 4% -18%,color-mix(in srgb,var(--primary) 11%,transparent),transparent 66%),
+          radial-gradient(940px 720px at 104% 104%,color-mix(in srgb,#af52de 7%,transparent),transparent 71%),
+          var(--bg)!important;
+        -webkit-font-smoothing:antialiased;
+        -moz-osx-font-smoothing:grayscale;
+      }
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-layout{
+        max-width:1760px!important;
+        grid-template-columns:286px minmax(0,1fr)!important;
+        gap:18px!important;
+      }
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-sidebar{
+        padding:16px!important;
+        border-radius:30px!important;
+        background:color-mix(in srgb,var(--glass-heavy) 94%,transparent)!important;
+        border-color:color-mix(in srgb,var(--border) 88%,transparent)!important;
+        box-shadow:
+          0 1px 0 color-mix(in srgb,#fff 22%,transparent) inset,
+          0 26px 80px rgba(0,0,0,.13)!important;
+      }
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-main{
+        padding:clamp(28px,3.5vw,54px)!important;
+        border-radius:30px!important;
+        background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 97%,#fff 3%),var(--surface))!important;
+        border-color:color-mix(in srgb,var(--border) 88%,transparent)!important;
+        box-shadow:
+          0 1px 0 color-mix(in srgb,#fff 19%,transparent) inset,
+          0 28px 88px rgba(0,0,0,.11)!important;
+      }
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-hero{
+        margin-bottom:34px!important;
+        gap:24px!important;
+      }
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-hero h1{
+        max-width:12ch;
+        font-size:clamp(42px,5vw,68px)!important;
+        line-height:.96!important;
+        letter-spacing:-.058em!important;
+        font-weight:760!important;
+      }
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-nav-title{
+        min-height:42px;
+        display:flex;
+        align-items:center;
+        padding:10px 11px!important;
+        border-radius:13px!important;
+      }
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-nav-items a{
+        min-height:40px;
+        border-radius:11px!important;
+      }
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) :is(.os-card,.os-profile-card,.os-lock,.os-hub-card,.storage-overview-panel,.storage-browser){
+        border-radius:22px!important;
+        border-color:color-mix(in srgb,var(--border) 88%,transparent)!important;
+        background:linear-gradient(180deg,color-mix(in srgb,var(--card) 97%,#fff 3%),var(--card))!important;
+        box-shadow:
+          0 1px 0 color-mix(in srgb,#fff 18%,transparent) inset,
+          0 10px 30px rgba(0,0,0,.055)!important;
+      }
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-card{
+        padding:clamp(20px,2vw,28px)!important;
+      }
+      body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-card h2{
+        font-size:clamp(19px,2vw,24px);
+        letter-spacing:-.035em!important;
+      }
+      @media (hover:hover) and (pointer:fine){
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) :is(.os-hub-card,.settings-card-link){
+          transition:
+            transform .3s var(--ease-emphasized),
+            background .22s ease,
+            border-color .22s ease,
+            box-shadow .3s var(--ease-emphasized)!important;
+        }
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) :is(.os-hub-card,.settings-card-link):hover{
+          transform:translateY(-2px)!important;
+          border-color:var(--border-strong)!important;
+          box-shadow:0 18px 42px rgba(0,0,0,.08)!important;
+        }
+      }
+      @media (max-width:1180px){
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-layout{
+          grid-template-columns:264px minmax(0,1fr)!important;
+          gap:14px!important;
+        }
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-main{padding:30px!important}
+      }
+      @media (max-width:1050px){
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){padding:10px!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-layout{height:calc(100dvh - 20px)!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) :is(.os-main,.os-sidebar){border-radius:24px!important}
+      }
+      @media (max-width:560px){
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){padding:8px!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-layout{height:calc(100dvh - 16px)!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-main{padding:22px 17px!important;border-radius:22px!important}
+        html.compact-content-view body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-main{padding-top:68px!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-hero{margin-bottom:24px!important}
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) .os-hero h1{font-size:clamp(38px,12vw,52px)!important}
+      }
+      @media (prefers-reduced-motion:reduce){
+        body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)) :is(.os-hub-card,.settings-card-link){
+          transform:none!important;
+          transition-duration:.01ms!important;
+        }
+      }
+
     </style>
     <style>${accountMenuStyles()}</style>
   `;
