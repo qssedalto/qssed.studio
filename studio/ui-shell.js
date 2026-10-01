@@ -71,7 +71,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
         </span>
       </a>
       <div class="os-user">
-        <strong>${t.account}</strong>
+        <strong>${ui.account}</strong>
         <span id="os-user-name">${escapeHtmlText(cachedOsUserLabel)}</span>
         <button id="os-signout-button" class="os-signout-button" type="button">
           <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -601,8 +601,10 @@ export function buildOsPages(zh) {
 
 
 function renderCompactMainMenu(copy, productLinks = {}) {
-  const zh = copy.platform.includes("个人");
-  const prefix = zh ? "/zh-cn" : "/en";
+  const locale = productLinks.activeLocale || copy.locale || (copy.platform.includes("个人") ? "zh-cn" : "en-us");
+  const ui = shellText(locale);
+  const zh = locale === "zh-cn";
+  const prefix = "/" + locale;
   const workHref = String(productLinks?.workHref || "");
   const gptHref = String(productLinks?.gptHref || "");
   const adminHref = String(productLinks?.adminHref || "");
@@ -633,16 +635,16 @@ function renderCompactMainMenu(copy, productLinks = {}) {
     '<b aria-hidden="true">↗</b></a>';
 
   return `
-    <section class="compact-main-menu" aria-label="${zh ? "主菜单" : "Main menu"}">
+    <section class="compact-main-menu" aria-label="${ui.menu}">
       <header class="compact-menu-hero">
         <small>AERTEX · MENU</small>
-        <h1>${zh ? "主菜单" : "Main menu"}</h1>
-        <p>${zh ? "先选择要去的区域，进入后再处理具体内容。" : "Choose a destination first, then work with the details inside it."}</p>
+        <h1>${ui.menu}</h1>
+        <p>${ui.menuLead}</p>
       </header>
       <div class="compact-menu-grid">${mainItems.map(card).join("")}</div>
       ${products.length ? `
         <section class="compact-menu-products">
-          <div class="compact-menu-section-label">${zh ? "独立产品" : "Products"}</div>
+          <div class="compact-menu-section-label">${ui.products}</div>
           <div class="compact-menu-product-grid">${products.map(card).join("")}</div>
         </section>` : ""}
     </section>
@@ -650,7 +652,8 @@ function renderCompactMainMenu(copy, productLinks = {}) {
 }
 
 export function renderOsNav(copy, activeSection, currentPath = "", productLinks = {}) {
-  const zh = copy.platform.includes("个人");
+  const locale = productLinks.activeLocale || copy.locale || (copy.platform.includes("个人") ? "zh-cn" : "en-us");
+  const zh = locale === "zh-cn";
   const workHref = String(productLinks?.workHref || "");
   const gptHref = String(productLinks?.gptHref || "");
   const adminHref = String(productLinks?.adminHref || "");
