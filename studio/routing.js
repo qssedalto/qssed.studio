@@ -1,5 +1,5 @@
 import { SUPABASE_URL } from "./config.js";
-import { preferredLocaleFromRequest } from "./locale.js";
+import { localeContentLanguage, localeFromPath, localePrefix, preferredLocaleFromRequest, SUPPORTED_LOCALES } from "./locale.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
 
 const SUPABASE_ORIGIN = new URL(SUPABASE_URL).origin;
@@ -61,52 +61,47 @@ export function getRouteInfo(request) {
   const region = request.cf?.region || request.cf?.regionCode || "";
   const city = request.cf?.city || "";
   const pathParts = url.pathname.split("/").filter(Boolean);
-  const firstSegment = pathParts[0]?.toLowerCase();
+  const routeLocale = localeFromPath(url.pathname);
   let pathname = url.pathname;
-  let locale;
+  const fullLocale = routeLocale || preferredLocaleFromRequest(request);
 
-  if (firstSegment === "zh-cn") {
-    locale = "zh";
-    pathname = "/" + pathParts.slice(1).join("/");
-  } else if (firstSegment === "en") {
-    locale = "en";
-    pathname = "/" + pathParts.slice(1).join("/");
-  }
+  if (routeLocale) pathname = "/" + pathParts.slice(1).join("/");
+  if (!pathname || pathname === "//") pathname = "/";
 
-  if (!pathname || pathname === "//") {
-    pathname = "/";
-  }
-
-  if (!locale) {
-    // No locale in the URL means "follow this device". Do not persist or infer
-    // interface language from query parameters, cookies, accounts, or IP region.
-    locale = preferredLocaleFromRequest(request) === "zh-cn" ? "zh" : "en";
-  }
+  // Legacy renderers are still bilingual. Keep their content-language contract
+  // while exposing the complete regional locale to routing and language controls.
+  const locale = localeContentLanguage(fullLocale);
 
   return {
     pathname,
     locale,
-    ipInfo: {
-      ip,
-      country,
-      region,
-      city,
-      locale
-    }
+    fullLocale,
+    ipInfo: { ip, country, region, city, locale: fullLocale }
   };
 }
 
-export function buildLinks(locale, pathname) {
-  const prefix = locale === "zh" ? "/zh-cn" : "/en";
+export function buildLinks(locale, pathname, fullLocale = "") {
+  const activeLocale = fullLocale || (locale === "zh" ? "zh-cn" : "en-us");
+  const prefix = localePrefix(activeLocale);
   const currentPath = pathname === "/" ? "" : pathname;
+  const localeLinks = Object.fromEntries(SUPPORTED_LOCALES.map(code => [code, `${localePrefix(code)}${currentPath}`]));
 
   return {
     login: `${prefix}/login`,
     signUp: `${prefix}/sign-up`,
-    dashboard: `${prefix}`,
-    zhCurrent: `/zh-cn${currentPath}`,
-    enCurrent: `/en${currentPath}`
+    dashboard: prefix,
+    zhCurrent: localeLinks["zh-cn"],
+    enCurrent: localeLinks["en-us"],
+    localeLinks,
+    activeLocale
   };
+}
+
+export function localizedRedirect(request, locale, pathname) {
+  const url = new URL(request.url);
+  const code = locale === "zh" ? "zh-cn" : locale === "en" ? "en-us" : locale;
+  url.pathname = `${localePrefix(code)}${pathname}`;
+  return Response.redirect(url.toString(), 302);
 }
 
 export function html(content, status = 200, options = {}) {
