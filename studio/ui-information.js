@@ -235,7 +235,7 @@ export function searchContent(zh, locale = "") {
 export function informationContent(path, zh, locale = "") {
   const copy=INFO_COPY[locale]||INFO_COPY[zh?"zh-cn":"en-us"];
   if (path === "/info") return '<section class="os-card is-large status-card"><h2>'+copy.info[0]+'</h2><p>'+copy.info[1]+'</p></section>';
-  if (path === "/info/knowledge" || path.startsWith("/info/knowledge/")) return knowledgeContent(path, zh);
+  if (path === "/info/knowledge" || path.startsWith("/info/knowledge/")) return knowledgeContent(path, zh, locale);
   if (path === "/info/links") return linksContent(zh);
   if (path === "/info/notes") return notesContent(zh, locale);
   if (path === "/info/summaries") return summariesContent(zh, locale);
