@@ -735,19 +735,20 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
 }
 
 export function renderOsContent(path, copy, productLinks = {}) {
-  const zh = copy.platform.includes("个人");
-  if (path === "/" || path === "/dashboard") return dashboardContent(zh, productLinks);
-  if (path.startsWith("/info")) return informationContent(path, zh);
-  if (path === "/profile") return profileHubContent(zh);
-  if (path.startsWith("/profile/")) return profileContent(path, zh);
-  if (path.startsWith("/workspace")) return workspaceContent(path, zh);
-  if (path.startsWith("/settings")) return settingsContent(path, zh, productLinks.activeLocale || "");
+  const locale = productLinks.activeLocale || copy.locale || (copy.platform.includes("个人") ? "zh-cn" : "en-us");
+  const zh = locale === "zh-cn";
+  if (path === "/" || path === "/dashboard") return dashboardContent(zh, productLinks, locale);
+  if (path.startsWith("/info")) return informationContent(path, zh, locale);
+  if (path === "/profile") return profileHubContent(zh, locale);
+  if (path.startsWith("/profile/")) return profileContent(path, zh, locale);
+  if (path.startsWith("/workspace")) return workspaceContent(path, zh, locale);
+  if (path.startsWith("/settings")) return settingsContent(path, zh, locale);
   throw new Error("Unhandled OS path: " + path);
 }
 
 export function settingsContent(path, zh, activeLocale = "") {
-  if (path === "/settings") return settingsHubContent(zh);
-  if (path.endsWith("/general")) return settingsGeneralContent(zh);
+  if (path === "/settings") return settingsHubContent(zh, activeLocale);
+  if (path.endsWith("/general")) return settingsGeneralContent(zh, activeLocale);
   if (path.endsWith("/appearance")) return appearanceSettingsContent(zh);
   if (path.endsWith("/language")) return languageSettingsContent(zh, activeLocale || (zh ? "zh-cn" : "en-us"));
   if (path.endsWith("/security")) return securityAuditContent(zh);
