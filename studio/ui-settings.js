@@ -361,46 +361,22 @@ export function languageSettingsContent(zh, activeLocale = "en-us") {
   `;
 }
 
-export function aiSettingsContent(zh) {
-  const copy = zh ? {
-    title:"AI 设置",
-    intro:"查看当前账号的 Intelligence 权限、Provider、模型和使用额度。默认模型保存在当前浏览器。",
-    loading:"正在读取 AI 配置…",
-    enabled:"已启用",
-    disabled:"未启用",
-    providers:"可用 Provider",
-    models:"默认模型",
-    usage:"用量与额度",
-    today:"今日",
-    month:"本月",
-    tokens:"Token",
-    cost:"费用",
-    unlimited:"不限",
-    unavailable:"当前账号尚未获得 Intelligence 权限，或管理员尚未分配可用 Provider。",
-    region:"当前网络区域",
-    open:"打开 AERTEX Intelligence",
-    saved:"默认模型已保存到当前浏览器",
-    error:"无法读取 AI 配置"
-  } : {
-    title:"AI Settings",
-    intro:"View this account's Intelligence access, providers, models, and usage limits. The default model is saved in this browser.",
-    loading:"Loading AI configuration…",
-    enabled:"Enabled",
-    disabled:"Not enabled",
-    providers:"Available providers",
-    models:"Default model",
-    usage:"Usage & limits",
-    today:"Today",
-    month:"This month",
-    tokens:"Tokens",
-    cost:"Cost",
-    unlimited:"Unlimited",
-    unavailable:"Intelligence access has not been enabled for this account, or no provider has been assigned.",
-    region:"Current network region",
-    open:"Open AERTEX Intelligence",
-    saved:"Default model saved in this browser",
-    error:"Unable to load AI configuration"
-  };
+const AI_SETTINGS_COPY = {
+  "en-us":{title:"AI Settings",intro:"View this account's Intelligence access, providers, models, and usage limits. The default model is saved in this browser.",loading:"Loading AI configuration…",enabled:"Enabled",disabled:"Not enabled",providers:"Available providers",models:"Default model",usage:"Usage & limits",today:"Today",month:"This month",tokens:"Tokens",cost:"Cost",unlimited:"Unlimited",unavailable:"Intelligence access has not been enabled for this account, or no provider has been assigned.",region:"Current network region",open:"Open AERTEX Intelligence",saved:"Default model saved in this browser",error:"Unable to load AI configuration",available:"Available",networkUnavailable:"Unavailable on current network"},
+  "zh-cn":{title:"AI 设置",intro:"查看当前账号的 Intelligence 权限、Provider、模型和使用额度。默认模型保存在当前浏览器。",loading:"正在读取 AI 配置…",enabled:"已启用",disabled:"未启用",providers:"可用 Provider",models:"默认模型",usage:"用量与额度",today:"今日",month:"本月",tokens:"Token",cost:"费用",unlimited:"不限",unavailable:"当前账号尚未获得 Intelligence 权限，或管理员尚未分配可用 Provider。",region:"当前网络区域",open:"打开 AERTEX Intelligence",saved:"默认模型已保存到当前浏览器",error:"无法读取 AI 配置",available:"可用",networkUnavailable:"当前网络不可用"},
+  "zh-tw":{title:"AI 設定",intro:"查看目前帳號的 Intelligence 權限、Provider、模型與使用額度。預設模型會儲存在目前瀏覽器。",loading:"正在讀取 AI 設定…",enabled:"已啟用",disabled:"未啟用",providers:"可用 Provider",models:"預設模型",usage:"用量與額度",today:"今日",month:"本月",tokens:"Token",cost:"費用",unlimited:"不限",unavailable:"目前帳號尚未啟用 Intelligence，或尚未分配可用 Provider。",region:"目前網路區域",open:"開啟 AERTEX Intelligence",saved:"預設模型已儲存在目前瀏覽器",error:"無法讀取 AI 設定",available:"可用",networkUnavailable:"目前網路無法使用"},
+  "ja-jp":{title:"AI 設定",intro:"このアカウントの Intelligence アクセス、Provider、モデル、使用上限を確認します。既定のモデルはこのブラウザに保存されます。",loading:"AI 設定を読み込み中…",enabled:"有効",disabled:"未有効",providers:"利用可能な Provider",models:"既定のモデル",usage:"使用量と上限",today:"今日",month:"今月",tokens:"トークン",cost:"費用",unlimited:"無制限",unavailable:"このアカウントでは Intelligence が有効になっていないか、利用可能な Provider が割り当てられていません。",region:"現在のネットワーク地域",open:"AERTEX Intelligence を開く",saved:"既定のモデルをこのブラウザに保存しました",error:"AI 設定を読み込めません",available:"利用可能",networkUnavailable:"現在のネットワークでは利用不可"},
+  "ko-kr":{title:"AI 설정",intro:"현재 계정의 Intelligence 권한, Provider, 모델 및 사용 한도를 확인합니다. 기본 모델은 이 브라우저에 저장됩니다.",loading:"AI 설정을 불러오는 중…",enabled:"사용 가능",disabled:"사용 안 함",providers:"사용 가능한 Provider",models:"기본 모델",usage:"사용량 및 한도",today:"오늘",month:"이번 달",tokens:"토큰",cost:"비용",unlimited:"무제한",unavailable:"이 계정에 Intelligence 권한이 활성화되지 않았거나 사용 가능한 Provider가 할당되지 않았습니다.",region:"현재 네트워크 지역",open:"AERTEX Intelligence 열기",saved:"기본 모델을 이 브라우저에 저장했습니다",error:"AI 설정을 불러올 수 없습니다",available:"사용 가능",networkUnavailable:"현재 네트워크에서 사용할 수 없음"},
+  "fr-fr":{title:"Réglages IA",intro:"Consultez l’accès Intelligence, les providers, les modèles et les limites d’utilisation de ce compte. Le modèle par défaut est enregistré dans ce navigateur.",loading:"Chargement de la configuration IA…",enabled:"Activé",disabled:"Non activé",providers:"Providers disponibles",models:"Modèle par défaut",usage:"Utilisation et limites",today:"Aujourd’hui",month:"Ce mois-ci",tokens:"Tokens",cost:"Coût",unlimited:"Illimité",unavailable:"L’accès Intelligence n’est pas activé pour ce compte ou aucun provider disponible n’a été attribué.",region:"Région réseau actuelle",open:"Ouvrir AERTEX Intelligence",saved:"Modèle par défaut enregistré dans ce navigateur",error:"Impossible de charger la configuration IA",available:"Disponible",networkUnavailable:"Indisponible sur ce réseau"},
+  "es-es":{title:"Ajustes de IA",intro:"Consulta el acceso a Intelligence, los providers, los modelos y los límites de uso de esta cuenta. El modelo predeterminado se guarda en este navegador.",loading:"Cargando configuración de IA…",enabled:"Activado",disabled:"No activado",providers:"Providers disponibles",models:"Modelo predeterminado",usage:"Uso y límites",today:"Hoy",month:"Este mes",tokens:"Tokens",cost:"Coste",unlimited:"Sin límite",unavailable:"Intelligence no está habilitado para esta cuenta o no se ha asignado ningún provider disponible.",region:"Región de red actual",open:"Abrir AERTEX Intelligence",saved:"Modelo predeterminado guardado en este navegador",error:"No se pudo cargar la configuración de IA",available:"Disponible",networkUnavailable:"No disponible en la red actual"},
+  "el-gr":{title:"Ρυθμίσεις AI",intro:"Δείτε την πρόσβαση Intelligence, τους providers, τα μοντέλα και τα όρια χρήσης αυτού του λογαριασμού. Το προεπιλεγμένο μοντέλο αποθηκεύεται σε αυτό το πρόγραμμα περιήγησης.",loading:"Φόρτωση ρυθμίσεων AI…",enabled:"Ενεργό",disabled:"Μη ενεργό",providers:"Διαθέσιμοι providers",models:"Προεπιλεγμένο μοντέλο",usage:"Χρήση και όρια",today:"Σήμερα",month:"Αυτόν τον μήνα",tokens:"Tokens",cost:"Κόστος",unlimited:"Χωρίς όριο",unavailable:"Η πρόσβαση Intelligence δεν έχει ενεργοποιηθεί για αυτόν τον λογαριασμό ή δεν έχει εκχωρηθεί διαθέσιμος provider.",region:"Τρέχουσα περιοχή δικτύου",open:"Άνοιγμα AERTEX Intelligence",saved:"Το προεπιλεγμένο μοντέλο αποθηκεύτηκε σε αυτό το πρόγραμμα περιήγησης",error:"Δεν ήταν δυνατή η φόρτωση των ρυθμίσεων AI",available:"Διαθέσιμο",networkUnavailable:"Μη διαθέσιμο στο τρέχον δίκτυο"},
+  "ar-sa":{title:"إعدادات الذكاء الاصطناعي",intro:"اعرض صلاحية Intelligence وموفري الخدمة والنماذج وحدود الاستخدام لهذا الحساب. يُحفظ النموذج الافتراضي في هذا المتصفح.",loading:"جارٍ تحميل إعدادات الذكاء الاصطناعي…",enabled:"مفعّل",disabled:"غير مفعّل",providers:"موفرو الخدمة المتاحون",models:"النموذج الافتراضي",usage:"الاستخدام والحدود",today:"اليوم",month:"هذا الشهر",tokens:"الرموز",cost:"التكلفة",unlimited:"بلا حد",unavailable:"لم يتم تفعيل Intelligence لهذا الحساب أو لم يتم تعيين Provider متاح.",region:"منطقة الشبكة الحالية",open:"فتح AERTEX Intelligence",saved:"تم حفظ النموذج الافتراضي في هذا المتصفح",error:"تعذر تحميل إعدادات الذكاء الاصطناعي",available:"متاح",networkUnavailable:"غير متاح على الشبكة الحالية"}
+};
+AI_SETTINGS_COPY["en-gb"]=AI_SETTINGS_COPY["en-us"]; AI_SETTINGS_COPY["en-au"]=AI_SETTINGS_COPY["en-us"];
+
+export function aiSettingsContent(zh, locale = "") {
+  const activeLocale = locale || (zh ? "zh-cn" : "en-us");
+  const copy = AI_SETTINGS_COPY[activeLocale] || AI_SETTINGS_COPY["en-us"];
   return `
     <style>
       .ai-settings-stack{display:grid;gap:16px}
@@ -435,7 +411,6 @@ export function aiSettingsContent(zh) {
     <script>
       (() => {
         const copy=${JSON.stringify(copy)};
-        const isZh=${JSON.stringify(zh)};
         const root=document.getElementById("ai-settings-state");
         const preferenceKey="aertex-ai-default-model-v1";
         const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
@@ -490,7 +465,7 @@ export function aiSettingsContent(zh) {
                 '<div class="ai-settings-panel"><small>'+esc(copy.providers)+'</small><strong>'+esc(String(providers.filter(p=>p.available!==false).length))+'</strong><p>'+esc(available.length+" "+copy.models)+'</p></div>'+
               '</div>'+
               '<div class="ai-settings-panel"><small>'+esc(copy.providers)+'</small><div class="ai-provider-list">'+
-                providers.map(p=>'<div class="ai-provider-row"><strong>'+esc(providerLabel(p))+'</strong><span>'+esc(p.available===false?(isZh?"当前网络不可用":"Unavailable on current network"):(isZh?"可用":"Available"))+'</span></div>').join("")+
+                providers.map(p=>'<div class="ai-provider-row"><strong>'+esc(providerLabel(p))+'</strong><span>'+esc(p.available===false?copy.networkUnavailable:copy.available)+'</span></div>').join("")+
               '</div></div>'+
               '<div class="ai-settings-panel"><small>'+esc(copy.models)+'</small><strong>'+esc(chosen?.model||"—")+'</strong>'+
                 '<select id="ai-default-model" class="ai-model-select" '+(available.length?"":"disabled")+'>'+
