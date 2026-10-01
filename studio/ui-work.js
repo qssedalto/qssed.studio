@@ -685,7 +685,7 @@ export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https
           <div class="os-nav-items">
             <a href="${mainOrigin}${prefix}/work"${rootCurrent}>${dashboardIcon("work")}<span>${navCopy.overview}</span></a>
             <a href="${mainOrigin}${prefix}/work/local"${localCurrent}>${dashboardIcon("computer")}<span>${navCopy.computer}</span></a>
-            <a href="${workTexUrl}">${dashboardIcon("tex")}<span>${copy.texTitle}</span></a>
+            <a href="${workTexUrl}">${dashboardIcon("tex")}<span>${navCopy.tex}</span></a>
           </div>
         </section>
       `;
