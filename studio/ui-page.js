@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_KEY, TEXT } from "./config.js";
 import { FAVICON_LINKS } from "./favicon.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
+import { LOCALE_META } from "./locale.js";
 
 export function baseHead(title) {
   return `
@@ -329,7 +330,7 @@ export function baseHead(title) {
         line-height:1;
         transition:background .12s ease,transform 100ms ease-out;
       }
-      .language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}
+      .language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}.language-menu{position:relative}.language-menu summary{list-style:none;cursor:pointer;width:auto;min-width:44px;padding:0 10px}.language-menu summary::-webkit-details-marker{display:none}.language-menu-popover{position:absolute;top:calc(100% + 8px);right:0;width:230px;max-height:min(70vh,480px);overflow:auto;padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--surface-strong);box-shadow:0 18px 48px rgba(0,0,0,.18);z-index:2147483001}.language-menu-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;border-radius:10px;color:var(--text);text-decoration:none;font-size:13px}.language-menu-item:hover,.language-menu-item[aria-current="true"]{background:var(--glass-heavy)}.language-menu-item small{color:var(--muted);font-size:10px;text-transform:uppercase}
       .theme-toggle:hover,.language-toggle:hover{background:color-mix(in srgb,var(--glass-heavy) 82%,var(--surface-strong) 18%);filter:none;transform:none}
       .theme-toggle:active,.language-toggle:active{transform:scale(.92)}
       .theme-toggle .theme-sun,:root[data-theme="light"] .theme-toggle .theme-moon{display:none}
@@ -708,14 +709,19 @@ export function themeToggle() {
 }
 
 export function languageToggle(links, t) {
-  const targetUrl = t === TEXT.zh ? links.enCurrent : links.zhCurrent;
-  const label = t === TEXT.zh ? "ZH" : "EN";
-  const title = t === TEXT.zh ? "Switch to English" : "切换到中文";
-  return `<a class="language-toggle" href="${targetUrl}" aria-label="${title}" title="${title}">${label}</a>`;
+  const activeLocale = links.activeLocale || (t === TEXT.zh ? "zh-cn" : "en-us");
+  const label = LOCALE_META[activeLocale]?.nativeName || activeLocale;
+  const items = Object.entries(links.localeLinks || {}).map(([code, href]) => {
+    const meta = LOCALE_META[code];
+    if (!meta) return "";
+    const current = code === activeLocale ? ' aria-current="true"' : "";
+    return `<a class="language-menu-item" href="${href}" lang="${code}"${meta.dir === "rtl" ? ' dir="rtl"' : ""}${current}><span>${meta.nativeName}</span><small>${code}</small></a>`;
+  }).join("");
+  return `<details class="language-menu"><summary class="language-toggle" aria-label="Language" title="Language">${label}</summary><div class="language-menu-popover">${items}</div></details>`;
 }
 
 export function topControls(links, t) {
-  const locale = t === TEXT.zh ? "zh-cn" : "en";
+  const locale = links.activeLocale || (t === TEXT.zh ? "zh-cn" : "en-us");
   return `
     <div class="top-controls-zone" aria-label="Page controls">
       <div class="top-controls">
