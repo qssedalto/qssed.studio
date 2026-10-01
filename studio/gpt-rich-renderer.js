@@ -76,6 +76,81 @@ function richMessageRuntime(copy) {
     });
   }
 
+  const BARE_MATH_COMMAND = /\\(?:frac|dfrac|tfrac|sqrt|sum|prod|int|oint|lim|log|ln|sin|cos|tan|exp|cdot|times|div|pm|mp|leq|geq|neq|approx|sim|equiv|infty|alpha|beta|gamma|delta|epsilon|varepsilon|theta|lambda|mu|pi|rho|sigma|phi|varphi|psi|omega|mid|cap|cup|to|rightarrow|leftarrow|leftrightarrow|overline|underline|vec|hat|bar|mathbf|mathrm|mathbb|mathcal|operatorname|text|begin|end|left|right)\b/;
+  const MATH_SAFE_CHAR = /[A-Za-z0-9\\{}_[\]^=+\-*/().,:<>|!%'\s]/;
+
+  function hasBareLatexMath(value) {
+    return BARE_MATH_COMMAND.test(String(value || ""));
+  }
+
+  function isRecoverableMathOnlyLine(value) {
+    const text = String(value || "").trim();
+    if (!text || !hasBareLatexMath(text)) return false;
+    if (/[^\x00-\x7F]/.test(text)) return false;
+    if (!/[_^={}+\-*/()\[\]\\]/.test(text)) return false;
+    const proseProbe = text
+      .replace(/\\[A-Za-z]+/g, " ")
+      .replace(/\{[^{}]*\}/g, " ")
+      .replace(/[A-Za-z](?:_[A-Za-z0-9{}]+)?/g, " ")
+      .replace(/[0-9\s_=+\-*/().,:<>|!%'\[\]{}]/g, "");
+    return !/[A-Za-z]/.test(proseProbe);
+  }
+
+  function findBareMathToken(source) {
+    const text = String(source || "");
+    const command = text.match(BARE_MATH_COMMAND);
+    if (!command) return null;
+    const markerStart = command.index || 0;
+    let start = markerStart;
+    let end = markerStart + command[0].length;
+    while (start > 0 && MATH_SAFE_CHAR.test(text[start - 1])) start--;
+
+    const before = text.slice(start, markerStart);
+    const equalIndex = before.lastIndexOf("=");
+    if (equalIndex >= 0) {
+      const lhs = before.slice(0, equalIndex);
+      const lhsMatch = lhs.match(/([A-Za-z][A-Za-z0-9_{}^]*(?:\s*\([^)]*\))?)\s*$/);
+      if (lhsMatch) start += lhs.length - lhsMatch[0].length;
+    } else {
+      start = markerStart;
+      while (start > 0 && /[0-9_{}^=+\-*/().,\s]/.test(text[start - 1])) start--;
+    }
+
+    let depth = 0;
+    let sawBrace = false;
+    let cursor = markerStart;
+    while (cursor < text.length) {
+      const ch = text[cursor];
+      if (!MATH_SAFE_CHAR.test(ch)) break;
+      if (ch === "{") { depth++; sawBrace = true; }
+      if (ch === "}" && depth > 0) depth--;
+      if (depth === 0 && sawBrace && /\s/.test(ch)) {
+        const tail = text.slice(cursor).match(/^\s+([A-Za-z]{3,})\b/);
+        const previous = text.slice(start, cursor).trim().slice(-1);
+        if (tail && previous && !/[=+\-*/^(,_\\]/.test(previous)) break;
+      }
+      cursor++;
+    }
+    end = cursor;
+
+    let expression = text.slice(start, end).trim();
+    expression = expression.replace(/[,:;]+$/, "").trim();
+    if (!expression || !hasBareLatexMath(expression)) return null;
+    if (expression.length > 600) return null;
+    return { index: start, full: text.slice(start, end), expression };
+  }
+
+  function appendRecoveredPlain(parent, value) {
+    let rest = String(value || "");
+    while (rest) {
+      const token = findBareMathToken(rest);
+      if (!token) { appendPlain(parent, rest); break; }
+      if (token.index > 0) appendPlain(parent, rest.slice(0, token.index));
+      addMath(parent, token.expression, false);
+      rest = rest.slice(token.index + token.full.length);
+    }
+  }
+
   function safeHref(value) {
     const raw = String(value || "").trim();
     if (!raw) return "";
@@ -91,8 +166,9 @@ function richMessageRuntime(copy) {
   function findToken(source) {
     const rules = [
       { type: "code", re: /\x60([^\x60\n]+)\x60/ },
-      { type: "mathDisplay", re: /\$\$([^$\n]+?)\$\$/ },
-      { type: "mathParen", re: /\\\((.+?)\\\)/ },
+      { type: "mathDisplay", re: /\$\$([\s\S]+?)\$\$/ },
+      { type: "mathBracket", re: /\\\[([\s\S]+?)\\\]/ },
+      { type: "mathParen", re: /\\\(([\s\S]+?)\\\)/ },
       { type: "math", re: /\$([^$\n]+?)\$/ },
       { type: "strong", re: /\*\*([\s\S]+?)\*\*/ },
       { type: "strong", re: /__([\s\S]+?)__/ },
@@ -125,9 +201,9 @@ function richMessageRuntime(copy) {
     let rest = String(source || "");
     while (rest) {
       const token = findToken(rest);
-      if (!token) { appendPlain(parent, rest); break; }
+      if (!token) { appendRecoveredPlain(parent, rest); break; }
       const index = token.match.index || 0;
-      if (index) appendPlain(parent, rest.slice(0, index));
+      if (index) appendRecoveredPlain(parent, rest.slice(0, index));
       const full = token.match[0];
       const type = token.rule.type;
       if (type === "code") {
@@ -135,8 +211,8 @@ function richMessageRuntime(copy) {
         code.className = "inlineCode";
         code.textContent = token.match[1];
         parent.appendChild(code);
-      } else if (type === "math" || type === "mathParen" || type === "mathDisplay") {
-        addMath(parent, token.match[1], type === "mathDisplay");
+      } else if (type === "math" || type === "mathParen" || type === "mathBracket" || type === "mathDisplay") {
+        addMath(parent, token.match[1], type === "mathDisplay" || type === "mathBracket");
       } else if (type === "strong" || type === "em" || type === "strike") {
         const el = document.createElement(type === "strong" ? "strong" : type === "em" ? "em" : "s");
         appendInline(el, token.match[1]);
@@ -151,7 +227,7 @@ function richMessageRuntime(copy) {
           appendInline(link, token.match[1]);
           parent.appendChild(link);
         } else {
-          appendPlain(parent, full);
+          appendRecoveredPlain(parent, full);
         }
       } else if (type === "url") {
         const href = safeHref(full);
@@ -162,7 +238,7 @@ function richMessageRuntime(copy) {
           link.rel = "noopener noreferrer nofollow";
           link.textContent = full;
           parent.appendChild(link);
-        } else appendPlain(parent, full);
+        } else appendRecoveredPlain(parent, full);
       }
       rest = rest.slice(index + full.length);
     }
@@ -263,8 +339,8 @@ function richMessageRuntime(copy) {
         continue;
       }
 
-      if (trimmed.startsWith("$$") || trimmed.startsWith("\\[")) {
-        const dollar = trimmed.startsWith("$$");
+      if (trimmed.startsWith("$") || trimmed.startsWith("\\[")) {
+        const dollar = trimmed.startsWith("$");
         const opener = dollar ? "$$" : "\\[";
         const closer = dollar ? "$$" : "\\]";
         let expr = trimmed.slice(opener.length);
@@ -282,6 +358,12 @@ function richMessageRuntime(copy) {
           expr = rows.join("\n");
         }
         addMath(fragment, expr.trim(), true);
+        continue;
+      }
+
+      if (isRecoverableMathOnlyLine(trimmed)) {
+        addMath(fragment, trimmed, true);
+        i++;
         continue;
       }
 
