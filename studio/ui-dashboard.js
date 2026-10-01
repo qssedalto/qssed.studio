@@ -362,7 +362,7 @@ export function dashboardContent(zh, options = {}, locale = "") {
           if (time) time.textContent = new Intl.DateTimeFormat(locale, { hour:"2-digit", minute:"2-digit", hour12:false }).format(now);
           if (date) date.textContent = new Intl.DateTimeFormat(locale, { year:"numeric", month:"long", day:"numeric", weekday:"short" }).format(now);
           if (zone) zone.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || "Local";
-          if (week) week.textContent = dc.week(isoWeek(now));
+          if (week) week.textContent = (${dc.week.toString()})(isoWeek(now));
           if (theme) {
             const current = document.documentElement.dataset.theme || "light";
             const mode = window.AERTEXTheme?.getMode?.() || document.documentElement.dataset.themeMode || current;
