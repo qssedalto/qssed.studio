@@ -5,7 +5,7 @@ import { TEXT } from "./config.js";
 import { buildLinks, getRouteInfo, html } from "./routing.js";
 import { notFoundPage } from "./auth-pages.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
-import { localeFromPath as sharedLocaleFromPath, normalizeSupportedLocale, preferredLocaleFromRequest } from "./locale.js";
+import { localeDirection, localeFromPath as sharedLocaleFromPath, normalizeSupportedLocale, preferredLocaleFromRequest } from "./locale.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const WORK_DOCUMENT_ID_RE = /^[0-9a-f-]{36}$/i;
@@ -120,7 +120,8 @@ export function rewriteWorkSubdomainRequest(request) {
 }
 
 export function workSessionRedirect(request, next = "/tex") {
-  const safeNext = canonicalWorkPath(next, localeFromPath(next));
+  const locale = localeFromPath(next) || preferredLocaleFromRequest(request);
+  const safeNext = canonicalWorkPath(next, locale);
   const target = new URL("/work/handoff", mainOriginForRequest(request));
   target.searchParams.set("next", safeNext);
   return redirect(target.toString());
@@ -149,7 +150,8 @@ export async function handleMainWorkHandoff(request) {
   const refreshField = refreshToken
     ? `<input type="hidden" name="refresh_token" value="${escapeHtml(refreshToken)}">`
     : "";
-  const page = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AERTEX Work</title>${FAVICON_LINKS}</head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><p>正在进入 AERTEX Work…</p></main><form id="handoff" method="post" action="${workOrigin}/auth/handoff"><input type="hidden" name="access_token" value="${escapeHtml(gate.accessToken)}">${refreshField}<input type="hidden" name="next" value="${escapeHtml(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  const handoffText = {"zh-cn":"正在进入 AERTEX Work…","zh-tw":"正在進入 AERTEX Work…","ja-jp":"AERTEX Work に移動しています…","ko-kr":"AERTEX Work로 이동 중…","fr-fr":"Ouverture d’AERTEX Work…","es-es":"Entrando en AERTEX Work…","el-gr":"Μετάβαση στο AERTEX Work…","ar-sa":"جارٍ الدخول إلى AERTEX Work…"}[locale] || "Entering AERTEX Work…";
+  const page = `<!doctype html><html lang="${locale}" dir="${localeDirection(locale)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AERTEX Work</title>${FAVICON_LINKS}</head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><p>${handoffText}</p></main><form id="handoff" method="post" action="${workOrigin}/auth/handoff"><input type="hidden" name="access_token" value="${escapeHtml(gate.accessToken)}">${refreshField}<input type="hidden" name="next" value="${escapeHtml(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
   const headers = new Headers({
     "content-type": "text/html;charset=UTF-8",
     "cache-control": "no-store",
