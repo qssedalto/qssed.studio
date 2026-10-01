@@ -8,6 +8,7 @@ const assert = (condition, message) => {
 const shell = read("studio/ui-shell.js");
 const admin = read("admin/ui.js");
 const gpt = read("studio/gpt-ui.js");
+const gptI18n = read("studio/gpt-i18n.js");
 const gptHandoff = read("studio/gpt-subdomain.js");
 const authHandoff = read("studio/auth-handoff.js");
 const auth = read("auth-worker.js");
@@ -41,8 +42,8 @@ assert(sso.includes("<title>AERTEX ID</title>"), "SSO must be branded AERTEX ID"
 assert(work.includes("<title>AERTEX Work</title>"), "Work product must be AERTEX Work");
 assert(workUi.includes("AERTEX Work"), "Work UI must use AERTEX Work");
 
-assert(gpt.includes('title:"AERTEX Intelligence"'), "GPT product must be AERTEX Intelligence");
-assert(gpt.includes('subtitle:"Cloud Intelligence"'), "GPT subtitle must be Cloud Intelligence");
+assert(gpt.includes("<title>AERTEX Intelligence</title>") && gptI18n.includes('title:"AERTEX Intelligence"'), "GPT product must be AERTEX Intelligence");
+assert(gptI18n.includes('subtitle:"Cloud Intelligence"'), "GPT subtitle must be Cloud Intelligence");
 assert(gptHandoff.includes("<title>AERTEX Intelligence</title>"), "GPT handoff must use AERTEX Intelligence");
 assert(authHandoff.includes('gptTarget ? "AERTEX Intelligence"'), "Auth handoff must use AERTEX Intelligence");
 assert(!gpt.includes("AERTEX AI"), "AERTEX AI must not replace the approved Intelligence product name");
