@@ -1,4 +1,6 @@
 import { dashboardIcon } from "./ui-dashboard.js";
+import { workText } from "./i18n-work.js";
+import { normalizeSupportedLocale } from "./locale.js";
 function workStyles() {
   return `
     <style id="qsseda-work-product-ui">
@@ -298,60 +300,22 @@ function workIcon(kind) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 2.8 8.2 7 10 4.2-1.8 7-5.6 7-10V6z"></path><path d="m9.2 12 1.8 1.8 3.8-4"></path></svg>`;
 }
 
-export function workHubContent(zh, workOrigin = "https://work.qsseda.com") {
-  const prefix = zh ? "/zh-cn" : "/en";
-  const workTexUrl = `${workOrigin}${zh ? "/zh-cn/tex" : "/en/tex"}`;
-  const copy = zh ? {
-    statusLabel: "本机连接",
-    idle: "尚未连接",
-    idleDetail: "连接这台电脑后，Work 会显示可用的本机工具。",
-    online: "已连接",
-    onlineDetail: "这台电脑已可供 Work 使用。",
-    recentOffline: "未连接",
-    recentOfflineDetail: "刚才没有检测到本机连接，可以重新检查。",
-    computer: "这台电脑",
-    available: "可用",
-    notConnected: "等待连接",
-    tex: "TeX",
-    privacy: "隐私",
-    localOnly: "仅本机访问",
-    texReady: "可用",
-    texMissing: "未检测到",
-    details: "连接详情",
-    endpoint: "地址",
-    version: "版本"
-  } : {
-    statusLabel: "Computer connection",
-    idle: "Not connected",
-    idleDetail: "Connect this computer to show local tools available to Work.",
-    online: "Connected",
-    onlineDetail: "This computer is ready to use with Work.",
-    recentOffline: "Not connected",
-    recentOfflineDetail: "The local connection was not detected. You can check again.",
-    computer: "This computer",
-    available: "Available",
-    notConnected: "Waiting",
-    tex: "TeX",
-    privacy: "Privacy",
-    localOnly: "Local only",
-    texReady: "Available",
-    texMissing: "Not detected",
-    details: "Connection details",
-    endpoint: "Address",
-    version: "Version"
-  };
-
+export function workHubContent(zh, workOrigin = "https://work.qsseda.com", locale = "") {
+  const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
+  const prefix = "/" + activeLocale;
+  const workTexUrl = `${workOrigin}/${activeLocale}/tex`;
+  const copy = workText(activeLocale).hub;
   return `
     ${workStyles()}
     <div class="work-shell" id="work-hub-root">
       <section class="work-hero-card">
         <div class="work-hero-copy">
           <p class="work-eyebrow">AERTEX Work</p>
-          <h2>${zh ? "让网页和这台电脑一起工作。" : "Let the web and this computer work together."}</h2>
-          <p class="work-hero-description">${zh ? "连接这台电脑后，Work 可以使用本机的 TeX 等工具。连接只在当前设备上进行，账号信息不会发送到本机服务。" : "Connect this computer so Work can use local tools such as TeX. The connection stays on this device, and account credentials are never sent to the local service."}</p>
+          <h2>${copy.hero}</h2>
+          <p class="work-hero-description">${copy.heroDetail}</p>
           <div class="work-actions">
-            <a class="work-button primary" href="${prefix}/work/local">${zh ? "连接这台电脑" : "Connect this computer"}</a>
-            <a class="work-button secondary" href="${workTexUrl}">${zh ? "打开 TeX" : "Open TeX"}</a>
+            <a class="work-button primary" href="${prefix}/work/local">${copy.connect}</a>
+            <a class="work-button secondary" href="${workTexUrl}">${copy.openTex}</a>
           </div>
         </div>
 
@@ -383,23 +347,23 @@ export function workHubContent(zh, workOrigin = "https://work.qsseda.com") {
         </aside>
       </section>
 
-      <section class="work-grid" aria-label="${zh ? "Work 功能" : "Work features"}">
+      <section class="work-grid" aria-label="${copy.features}">
         <a class="work-card work-card-link" href="${prefix}/work/local">
           <span class="work-card-icon">${workIcon("computer")}</span>
-          <h3>${zh ? "本机连接" : "Computer connection"}</h3>
-          <p>${zh ? "连接当前电脑，并确认哪些本机工具可以安全地与 Work 配合使用。" : "Connect this computer and see which local tools are safely available to Work."}</p>
-          <span class="work-card-action">${zh ? "管理连接" : "Manage connection"}</span>
+          <h3>${copy.computerTitle}</h3>
+          <p>${copy.computerDetail}</p>
+          <span class="work-card-action">${copy.manage}</span>
         </a>
         <a class="work-card work-card-link" href="${workTexUrl}">
           <span class="work-card-icon">${workIcon("tex")}</span>
-          <h3>${zh ? "TeX 工作台" : "TeX Workbench"}</h3>
-          <p>${zh ? "创建、编辑并预览 TeX 文档；可用时自动使用这台电脑上的编译工具。" : "Create, edit, and preview TeX documents, using local compilation when available."}</p>
-          <span class="work-card-action">${zh ? "打开 TeX" : "Open TeX"}</span>
+          <h3>${copy.texTitle}</h3>
+          <p>${copy.texDetail}</p>
+          <span class="work-card-action">${copy.openTex}</span>
         </a>
         <article class="work-card">
           <span class="work-card-icon">${workIcon("privacy")}</span>
-          <h3>${zh ? "隐私优先" : "Privacy first"}</h3>
-          <p>${zh ? "连接检查不会把你的登录凭据或文档内容发送给本机服务。需要新的本机能力时，会单独说明并请求权限。" : "Connection checks never send sign-in credentials or document content to the local service. New local capabilities request permission separately."}</p>
+          <h3>${copy.privacyTitle}</h3>
+          <p>${copy.privacyDetail}</p>
         </article>
       </section>
     </div>
@@ -463,82 +427,21 @@ export function workHubContent(zh, workOrigin = "https://work.qsseda.com") {
   `;
 }
 
-export function workLocalBridgeContent(zh) {
-  const copy = zh ? {
-    statusLabel: "本机连接",
-    idle: "尚未连接",
-    idleDetail: "点击检查连接，确认这台电脑是否已准备好。",
-    checking: "正在连接…",
-    checkingDetail: "正在确认这台电脑上的 Work 连接组件。",
-    online: "已连接",
-    onlineDetail: "这台电脑已可供 Work 使用。",
-    offline: "未连接",
-    offlineDetail: "没有检测到本机连接。可以安装连接组件，或检查浏览器权限后重试。",
-    computer: "这台电脑",
-    available: "可用",
-    unavailable: "未连接",
-    tex: "TeX",
-    privacy: "隐私",
-    localOnly: "仅本机访问",
-    texReady: "可用",
-    texMissing: "未检测到",
-    retry: "重新检查",
-    details: "连接详情",
-    endpoint: "地址",
-    version: "版本",
-    capabilities: "可用功能",
-    capabilitiesDetail: "Work 只会显示当前真正可用的本机功能。新的功能需要单独授权。",
-    privacyTitle: "连接保持在这台电脑上",
-    privacyDetail: "连接检查不会发送账号 Cookie、Bearer Token 或文档内容。",
-    logIdle: "尚未检查连接。",
-    logChecking: "正在检查这台电脑上的连接组件。",
-    logOnline: "连接正常。这台电脑已经可以与 Work 配合使用。",
-    logOffline: "暂时没有检测到连接。安装或启动连接组件后再试一次。",
-    texStatusUnavailable: "未能读取 TeX 状态"
-  } : {
-    statusLabel: "Computer connection",
-    idle: "Not connected",
-    idleDetail: "Check the connection to see whether this computer is ready.",
-    checking: "Connecting…",
-    checkingDetail: "Checking the Work connection component on this computer.",
-    online: "Connected",
-    onlineDetail: "This computer is ready to use with Work.",
-    offline: "Not connected",
-    offlineDetail: "The local connection was not detected. Install the connection component or check browser permissions and try again.",
-    computer: "This computer",
-    available: "Available",
-    unavailable: "Not connected",
-    tex: "TeX",
-    privacy: "Privacy",
-    localOnly: "Local only",
-    texReady: "Available",
-    texMissing: "Not detected",
-    retry: "Check again",
-    details: "Connection details",
-    endpoint: "Address",
-    version: "Version",
-    capabilities: "Available features",
-    capabilitiesDetail: "Work only shows local capabilities that are actually available. New capabilities request permission separately.",
-    privacyTitle: "The connection stays on this computer",
-    privacyDetail: "Connection checks do not send account cookies, bearer tokens, or document content.",
-    logIdle: "The connection has not been checked yet.",
-    logChecking: "Checking the connection component on this computer.",
-    logOnline: "Connection looks good. This computer is ready to work with Work.",
-    logOffline: "The connection was not detected. Install or start the connection component, then try again.",
-    texStatusUnavailable: "Could not read TeX status"
-  };
-
+export function workLocalBridgeContent(zh, locale = "") {
+  const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
+  const prefix = "/" + activeLocale;
+  const copy = workText(activeLocale).local;
   return `
     ${workStyles()}
     <div class="work-shell" id="work-local-root">
       <section class="work-hero-card">
         <div class="work-hero-copy">
           <p class="work-eyebrow">AERTEX Work</p>
-          <h2>${zh ? "连接这台电脑。" : "Connect this computer."}</h2>
-          <p class="work-hero-description">${zh ? "连接完成后，Work 可以发现这台电脑上可用的 TeX 等工具。连接检查只发生在本机，不会把账号凭据或文档内容发送给连接组件。" : "Once connected, Work can discover local tools such as TeX. Connection checks happen locally and do not send account credentials or document content to the connection component."}</p>
+          <h2>${copy.hero}</h2>
+          <p class="work-hero-description">${copy.heroDetail}</p>
           <div class="work-actions">
-            <button class="work-button primary" id="work-local-connect" type="button">${zh ? "检查连接" : "Check connection"}</button>
-            <a class="work-button secondary" href="${zh ? "/zh-cn/work" : "/en/work"}">${zh ? "返回 Work" : "Back to Work"}</a>
+            <button class="work-button primary" id="work-local-connect" type="button">${copy.check}</button>
+            <a class="work-button secondary" href="${prefix}/work">${copy.back}</a>
             <!--QSSedaWorkNativeAction-->
           </div>
         </div>
@@ -576,7 +479,7 @@ export function workLocalBridgeContent(zh) {
           <span class="work-card-icon">${workIcon("computer")}</span>
           <h3>${copy.capabilities}</h3>
           <p>${copy.capabilitiesDetail}</p>
-          <div class="work-capabilities" id="work-local-capabilities"><span class="work-capability">${zh ? "等待连接" : "Waiting"}</span></div>
+          <div class="work-capabilities" id="work-local-capabilities"><span class="work-capability">${copy.waiting}</span></div>
           <div class="work-native-slot" id="work-native-note-slot"><!--QSSedaWorkNativeNote--></div>
         </article>
         <article class="work-card">
@@ -653,9 +556,9 @@ export function workLocalBridgeContent(zh) {
 
         function capabilityLabel(value) {
           const key = String(value || "");
-          if (key === "health") return ${JSON.stringify(zh ? "连接检查" : "Connection check")};
-          if (key === "tex.status") return ${JSON.stringify(zh ? "TeX 状态" : "TeX status")};
-          if (key === "tex.compile") return ${JSON.stringify(zh ? "TeX 编译" : "TeX compile")};
+          if (key === "health") return ${JSON.stringify(copy.capHealth)};
+          if (key === "tex.status") return ${JSON.stringify(copy.capTexStatus)};
+          if (key === "tex.compile") return ${JSON.stringify(copy.capTexCompile)};
           return key.replace(/[._-]+/g, " ");
         }
 
@@ -763,10 +666,12 @@ export function workLocalBridgeContent(zh) {
   `;
 }
 
-export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https://qsseda.com", workOrigin = "https://work.qsseda.com") {
+export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https://qsseda.com", workOrigin = "https://work.qsseda.com", locale = "") {
   let output = String(markup || "");
-  const prefix = zh ? "/zh-cn" : "/en";
-  const workTexUrl = `${workOrigin}${zh ? "/zh-cn/tex" : "/en/tex"}`;
+  const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
+  const prefix = "/" + activeLocale;
+  const workTexUrl = `${workOrigin}/${activeLocale}/tex`;
+  const navCopy = workText(activeLocale).nav;
   const isWork = pathname === "/work" || pathname === "/work/local";
   const rootCurrent = pathname === "/work" ? ' aria-current="page"' : "";
   const localCurrent = pathname === "/work/local" ? ' aria-current="page"' : "";
@@ -778,9 +683,9 @@ export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https
             <b aria-hidden="true">›</b>
           </a>
           <div class="os-nav-items">
-            <a href="${mainOrigin}${prefix}/work"${rootCurrent}>${dashboardIcon("work")}<span>${zh ? "概览" : "Overview"}</span></a>
-            <a href="${mainOrigin}${prefix}/work/local"${localCurrent}>${dashboardIcon("computer")}<span>${zh ? "本机连接" : "Computer"}</span></a>
-            <a href="${workTexUrl}">${dashboardIcon("tex")}<span>${zh ? "TeX 工作台" : "TeX Workbench"}</span></a>
+            <a href="${mainOrigin}${prefix}/work"${rootCurrent}>${dashboardIcon("work")}<span>${navCopy.overview}</span></a>
+            <a href="${mainOrigin}${prefix}/work/local"${localCurrent}>${dashboardIcon("computer")}<span>${navCopy.computer}</span></a>
+            <a href="${workTexUrl}">${dashboardIcon("tex")}<span>${copy.texTitle}</span></a>
           </div>
         </section>
       `;
@@ -796,12 +701,10 @@ export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https
 
   if (!isWork) return output;
 
-  const title = pathname === "/work/local" ? (zh ? "本机连接" : "Computer Connection") : "Work";
-  const description = pathname === "/work/local"
-    ? (zh ? "管理这台电脑与 AERTEX Work 的连接。" : "Manage the connection between this computer and AERTEX Work.")
-    : (zh ? "让网页工作区与这台电脑配合使用。" : "Let the web workspace work together with this computer.");
-  const shellTitle = zh ? "工作区" : "Workspace";
-  const shellDescription = zh ? "工作区总览，用于查看并进入工作台、项目、实验、草稿与任务。" : "An overview for entering the Workbench, projects, experiments, drafts, and tasks.";
+  const title = pathname === "/work/local" ? navCopy.localTitle : "Work";
+  const description = pathname === "/work/local" ? navCopy.localDescription : navCopy.workDescription;
+  const shellTitle = navCopy.workspaceTitle;
+  const shellDescription = navCopy.workspaceDescription;
 
   output = output.replace(`<h1>${shellTitle}</h1>`, `<h1>${title}</h1>`);
   output = output.replace(`<p>${shellDescription}</p>`, `<p>${description}</p>`);
