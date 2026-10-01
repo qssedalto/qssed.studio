@@ -11,7 +11,7 @@ import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
 import { intelligenceThemeAttr, intelligenceThemeBootScript, intelligenceThemeFromRequest } from "./studio/intelligence-theme.js";
-import { preferredLocaleFromRequest } from "./studio/locale.js";
+import { localeFromPath, preferredLocaleFromRequest } from "./studio/locale.js";
 
 
 export default {
@@ -87,25 +87,28 @@ export default {
       return redirect(`${gptOriginForRequest(request)}/${locale}`);
     }
 
-    if (
-      pathname === "/admin" ||
-      pathname.startsWith("/admin/") ||
-      pathname === "/zh-cn/admin" ||
-      pathname.startsWith("/zh-cn/admin/") ||
-      pathname === "/en/admin" ||
-      pathname.startsWith("/en/admin/")
-    ) {
-      return html(renderIntelligenceNotFound(preferredLocale(request), { kind: "page", theme: intelligenceTheme }), 404);
+    const routeLocale = localeFromPath(pathname);
+    const routeParts = pathname.split("/").filter(Boolean);
+    const localizedRest = routeLocale ? routeParts.slice(1) : routeParts;
+
+    if (localizedRest[0] === "admin") {
+      return html(renderIntelligenceNotFound(routeLocale || preferredLocale(request), { kind: "page", theme: intelligenceTheme }), 404);
     }
 
-    const conversationRoute = pathname.match(/^\/(zh-cn|en)\/c\/(?:huawei-exempt\/)?([0-9a-f-]{36})$/i);
-    if (pathname === "/zh-cn" || pathname === "/en" || conversationRoute) {
-      const locale = pathname.startsWith("/en") ? "en" : "zh-cn";
+    let conversationId = "";
+    if (routeLocale && localizedRest[0] === "c") {
+      const exempt = localizedRest[1] === "huawei-exempt";
+      const id = exempt ? localizedRest[2] : localizedRest[1];
+      const expectedLength = exempt ? 3 : 2;
+      if (localizedRest.length === expectedLength && /^[0-9a-f-]{36}$/i.test(id || "")) conversationId = id;
+    }
+
+    if (routeLocale && (localizedRest.length === 0 || conversationId)) {
+      const locale = routeLocale;
       const gate = await verifyStudioPageSession(request);
       if (!gate.ok) {
         return withStudioSessionCookies(gptSessionRedirect(request, pathname), gate.cookies || []);
       }
-      const conversationId = conversationRoute?.[2] || "";
       const bootstrap = await loadGptBootstrap(request, env, gate, conversationId);
       if (conversationId && !bootstrap.current) {
         const missing = withStudioSessionCookies(html(renderIntelligenceNotFound(locale, { kind: "conversation", theme: intelligenceTheme }), 404), gate.cookies || []);
