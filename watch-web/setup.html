@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>设置电脑同步 · AERTEX Watch</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/appearance.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../">AERTEX</a>
+    <div class="product">Watch</div>
+    <div class="spacer"></div>
+    <a class="quiet-link" href="../">返回 Watch</a>
+  </header>
+
+  <main class="setup-main">
+    <section class="setup-hero">
+      <p class="eyebrow">设置教程</p>
+      <h1>把电脑的 ActivityWatch 记录同步到手机</h1>
+      <p class="lead">电脑负责记录，AERTEX Watch 负责同步。设置完成后，在手机、平板或其他电脑打开 Watch 就能查看已经同步的使用记录。</p>
+      <div class="setup-note">
+        <strong>先说明一件事</strong>
+        <p>AERTEX Watch 不读取 Windows 自带的“屏幕使用时间”。它同步的是 ActivityWatch 记录的应用、窗口和离开电脑状态，所以电脑上需要先安装并运行 ActivityWatch。</p>
+      </div>
+    </section>
+
+    <nav class="setup-jump" aria-label="教程步骤">
+      <a href="#step-1">1. 安装 ActivityWatch</a>
+      <a href="#step-2">2. 确认本机记录</a>
+      <a href="#step-3">3. 生成设备令牌</a>
+      <a href="#step-4">4. 启动同步</a>
+      <a href="#step-5">5. 在手机查看</a>
+    </nav>
+
+    <section class="setup-steps">
+      <article class="setup-step" id="step-1">
+        <div class="step-number">1</div>
+        <div class="step-body">
+          <p class="eyebrow">电脑</p>
+          <h2>安装并启动 ActivityWatch</h2>
+          <p>如果电脑上还没有 ActivityWatch，先到 ActivityWatch 官网下载安装。安装完成后启动它，并确认任务栏通知区域里 ActivityWatch 正在运行。</p>
+          <a class="setup-action" href="https://activitywatch.net/downloads/" target="_blank" rel="noopener noreferrer">打开 ActivityWatch 下载页 ↗</a>
+          <div class="check-list">
+            <span>ActivityWatch 已启动</span>
+            <span>窗口记录器正在运行</span>
+            <span>AFK / 离开电脑记录器正在运行</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="setup-step" id="step-2">
+        <div class="step-number">2</div>
+        <div class="step-body">
+          <p class="eyebrow">电脑</p>
+          <h2>先确认 ActivityWatch 本机记录正常</h2>
+          <p>在电脑浏览器打开下面这个地址。能看到 ActivityWatch 页面，并且 Activity 页面里已经有应用和窗口记录，再继续下一步。</p>
+          <div class="code-row"><code>http://127.0.0.1:5600</code></div>
+          <div class="setup-note compact">
+            <strong>打不开？</strong>
+            <p>先检查 ActivityWatch 是否真的在运行。AERTEX Watch 不会直接读取 ActivityWatch 的数据库文件，而是通过这个仅限本机访问的接口读取记录。</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="setup-step" id="step-3">
+        <div class="step-number">3</div>
+        <div class="step-body">
+          <p class="eyebrow">手机或电脑</p>
+          <h2>生成一个设备令牌</h2>
+          <p>回到 AERTEX Watch 首页，在“连接电脑”里点击“生成设备令牌”。令牌只显示一次，把它复制到需要同步的那台电脑。</p>
+          <a class="setup-action" href="../">返回 Watch 生成设备令牌</a>
+          <div class="setup-note compact warning">
+            <strong>不要公开设备令牌</strong>
+            <p>设备令牌只应该保存在你自己的电脑上，不要放进截图、聊天记录或公开仓库。</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="setup-step" id="step-4">
+        <div class="step-number">4</div>
+        <div class="step-body">
+          <p class="eyebrow">Windows</p>
+          <h2>启动 AERTEX Watch Sync</h2>
+          <p>目前同步工具是预览版，需要 Node.js 18 或更新版本。先在 PowerShell 7 运行：</p>
+          <div class="code-block"><code>node --version</code></div>
+          <p>然后下载同步脚本：</p>
+          <div class="code-block"><code>Invoke-WebRequest "https://aw.qsseda.com/aw-sync.mjs" -OutFile "$env:USERPROFILE\Downloads\AERTEX-Watch-Sync.mjs"</code></div>
+          <p>把刚才生成的设备令牌放进环境变量，再启动同步：</p>
+          <div class="code-block"><code>$env:AERTEX_WATCH_TOKEN = "&lt;YOUR_DEVICE_TOKEN&gt;"
+node "$env:USERPROFILE\Downloads\AERTEX-Watch-Sync.mjs" --watch</code></div>
+          <p>第一次会同步最近 30 天的数据。之后每 10 分钟检查一次新增记录，只上传新增部分。</p>
+          <div class="setup-note compact">
+            <strong>当前预览版需要保持这个 PowerShell 窗口运行</strong>
+            <p>关掉窗口后同步会停止，但 ActivityWatch 仍会继续在电脑本机记录；下次重新启动同步工具后会从上次进度继续。</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="setup-step" id="step-5">
+        <div class="step-number">5</div>
+        <div class="step-body">
+          <p class="eyebrow">手机</p>
+          <h2>回到 Watch 查看同步结果</h2>
+          <p>同步成功后，Watch 首页会从“等待电脑连接”变成“同步正常”，并显示最近同步时间、ActivityWatch 数据源和今天的应用使用记录。</p>
+          <a class="setup-action primary" href="../">打开 AERTEX Watch</a>
+        </div>
+      </article>
+    </section>
+
+    <section class="setup-faq">
+      <p class="eyebrow">常见问题</p>
+      <h2>遇到问题时先看这里</h2>
+      <details>
+        <summary>手机上显示“等待电脑连接”</summary>
+        <p>先确认电脑上的同步命令仍在运行，并检查 PowerShell 里有没有网络错误、认证错误，或无法连接 127.0.0.1:5600 的提示。</p>
+      </details>
+      <details>
+        <summary>ActivityWatch 有记录，但 Watch 页面没有</summary>
+        <p>先在电脑打开 127.0.0.1:5600 确认数据存在，再重新启动同步脚本。首次同步的数据较多时需要一些时间。</p>
+      </details>
+      <details>
+        <summary>关机后还会同步吗？</summary>
+        <p>不会。电脑关机或 ActivityWatch 没有运行时不会产生新的电脑使用记录。重新开机并启动 ActivityWatch 和同步工具后会继续。</p>
+      </details>
+      <details>
+        <summary>会上传屏幕截图吗？</summary>
+        <p>这套同步当前上传 ActivityWatch 的事件数据，例如应用名、窗口活动和持续时间；不会主动抓取或上传电脑屏幕截图。</p>
+      </details>
+      <details>
+        <summary>我可以同时连接多台电脑吗？</summary>
+        <p>可以。每台电脑单独生成一个设备令牌并运行同步工具，Watch 会把各台电脑的 ActivityWatch 数据源一起显示出来。</p>
+      </details>
+    </section>
+  </main>
+</body>
+</html>
