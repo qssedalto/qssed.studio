@@ -20,6 +20,7 @@ const legacyApi = read("studio/legacy-cookie-api.js");
 const gptUi = read("studio/gpt-ui.js");
 const intelligenceTheme = read("studio/intelligence-theme.js");
 const authWorker = read("auth-worker.js");
+const authOauth = read("auth-oauth.js");
 const gptWrangler = JSON.parse(read("wrangler.gpt.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 const aiGateway = read("studio/ai-gateway.js");
 const huaweiGate = read("studio/huawei-harmony-gate.js");
@@ -201,6 +202,9 @@ assert(gptUi.includes(':root[data-accent="sapphire"]'), "Intelligence UI must ma
 assert(authWorker.includes('qssed_locale='), "AERTEX ID must persist the resolved interface locale across authentication visits.");
 assert(authWorker.includes('normalizeSupportedLocale(saved)'), "AERTEX ID must validate the saved locale before using it.");
 assert(authWorker.includes(':root[data-accent="sapphire"]'), "AERTEX ID must map the shared accent palette.");
+assert(authOauth.includes("intelligenceThemeBootScript()"), "OAuth authorization pages must use the shared AERTEX theme runtime.");
+assert(authOauth.includes(':root[data-theme="light"]') && authOauth.includes(':root[data-theme="dark"]'), "OAuth authorization pages must honor shared light and dark modes.");
+assert(authOauth.includes(':root[data-accent="sapphire"]'), "OAuth authorization pages must honor the shared accent palette.");
 assert(authHandoff.includes("Browser auth persistence failed; continuing with validated server session"), "Handoff must continue with its validated server session when client persistence is unavailable.");
 assert(chatSource.includes("if (createdConversation)"), "New conversations must be removed when a provider stream fails.");
 assert(chatSource.includes('method: "DELETE"'), "Failed newly-created conversations must be deleted.");
