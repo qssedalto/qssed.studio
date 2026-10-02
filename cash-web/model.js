@@ -122,7 +122,8 @@
       amount, huabeiAmount: roundMoney(huabeiAmount), category: String(item?.category || (type === 'income' ? 'otherIncome' : 'otherExpense')),
       note: String(item?.note || ''),
       linkedPlanId: item?.linkedPlanId ? String(item.linkedPlanId) : null,
-      linkedRecurringId: item?.linkedRecurringId ? String(item.linkedRecurringId) : null
+      linkedRecurringId: item?.linkedRecurringId ? String(item.linkedRecurringId) : null,
+      linkedRecurringMonth: /^\d{4}-\d{2}$/.test(String(item?.linkedRecurringMonth || '')) ? String(item.linkedRecurringMonth) : null
     };
   }
   function normalizeData(input) {
@@ -225,8 +226,18 @@
     for (const instance of instances) {
       allocate(instance, pools.filter(pool =>
         pool.tx.linkedRecurringId === instance.recurringId &&
-        monthKey(pool.tx.date) === instance.month
+        (pool.tx.linkedRecurringMonth || monthKey(pool.tx.date)) === instance.month
       ));
+      const explicit = transactions
+        .filter(tx =>
+          tx.type === 'expense' &&
+          tx.date <= asOf &&
+          tx.linkedRecurringId === instance.recurringId &&
+          (tx.linkedRecurringMonth || monthKey(tx.date)) === instance.month
+        )
+        .sort((a, b) => a.date.localeCompare(b.date));
+      instance.settledDate = explicit.length ? explicit[0].date : null;
+      instance.prepaid = Boolean(instance.settledDate && instance.exactDate && instance.settledDate < instance.exactDate);
     }
 
     // For dated recurring charges, automatic matching is deliberately strict:
@@ -277,6 +288,8 @@
           actual: 0,
           remaining: roundMoney(recurring.amount),
           matchedTransactionIds: [],
+          settledDate: null,
+          prepaid: false,
           reserveWhenUndated: recurring.reserveWhenUndated,
           status: 'pending',
           reserve: false
@@ -288,7 +301,7 @@
 
     for (const instance of instances) {
       if (instance.remaining <= 0) {
-        instance.status = 'settled';
+        instance.status = instance.prepaid ? 'prepaid' : 'settled';
       } else if (instance.exactDate) {
         if (instance.exactDate < asOf) instance.status = 'overdue';
         else if (instance.exactDate === asOf) instance.status = 'due';
