@@ -69,7 +69,8 @@ export function appearanceClientRuntime() {
       return "";
     }
     function persistPageLocale(){
-      const locale=normalizeLocale(document.documentElement.lang);
+      const pathLocale=normalizeLocale(String(location.pathname||"").split("/").filter(Boolean)[0]||"");
+      const locale=pathLocale||normalizeLocale(document.documentElement.lang);
       if(locale)persistCookie(LOCALE_COOKIE,locale);
     }
     function migrateDefaultToSystem(){
