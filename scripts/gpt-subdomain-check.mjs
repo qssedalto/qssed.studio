@@ -171,6 +171,10 @@ assert(chatSource.includes("output_tokens: null"), "User ai_messages rows must e
 assert(uiPage.includes('storageKey: AERTEX_SUPABASE_STORAGE_KEY'), "Browser Supabase auth must use the versioned AERTEX storage key.");
 assert(uiPage.includes('sessionStorage.setItem(key, value)'), "Browser Supabase auth must fall back when localStorage persistence is unavailable.");
 assert(uiPage.includes('appearanceBootScript()'), "Studio and Work must load the shared appearance runtime.");
+assert(uiPage.includes('data-control-menu-backdrop'), "Top controls must include an outside-click dismissal layer.");
+assert(uiPage.includes('aertex-control-menu-open'), "Top-control popovers must lock page scrolling while open.");
+assert(uiPage.includes('data-theme-option="system"') && uiPage.includes('data-theme-option="light"') && uiPage.includes('data-theme-option="dark"'), "Appearance control must expose System, Light, and Dark.");
+assert(uiPage.includes('window.AERTEXTheme.setMode(mode)'), "Appearance control must use the shared theme runtime.");
 assert(appearance.includes('return "system";'), "Shared appearance runtime must default to System mode.");
 assert(appearance.includes('function cookieValue(name)'), "Shared appearance runtime must define cookie readers instead of calling missing helpers.");
 assert(appearance.includes('qssed_theme_generation'), "Shared appearance runtime must version the one-time System default migration.");
