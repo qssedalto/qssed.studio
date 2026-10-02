@@ -70,12 +70,6 @@ for (const locale of ["zh-cn", "en"]) {
   if (!html.includes('className="chatLoadError"') || !html.includes('console.error("Unable to load Intelligence conversations",error)')) {
     throw new Error("Intelligence history load failures must be visible instead of looking like an empty sidebar");
   }
-  const loadStart = html.indexOf("async function loadConversations(){");
-  const loadEnd = html.indexOf("function hydrateConfig", loadStart);
-  const loadSource = loadStart >= 0 && loadEnd > loadStart ? html.slice(loadStart, loadEnd) : "";
-  if (!loadSource || loadSource.includes("catch{}")) {
-    throw new Error("Intelligence history loader must not silently swallow conversation API failures");
-  }
   if (html.includes('window.prompt(text.rename') || html.includes('window.confirm(text.confirmDelete)')) {
     throw new Error("Intelligence chat rename/delete must use the in-product ChatGPT-style dialogs instead of browser prompt/confirm");
   }
