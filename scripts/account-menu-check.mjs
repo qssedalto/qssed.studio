@@ -31,6 +31,8 @@ for (const required of [
   assert(authWorker.includes(required), "AERTEX ID global logout invariant is missing: " + required);
 }
 
+assert(authWorker.includes('href="${mainOrigin}/${locale}"'), "AERTEX ID brand must return to the localized main site.");
+assert(authWorker.includes('const homeLabel = locale === "zh-cn" ? "返回 AERTEX 主站" : "AERTEX Home";'), "AERTEX ID must label its main-site exit clearly.");
 assert(globalBrowser.includes("injectAccountMenuRuntime("), "Main/Work browser HTML must receive the shared account menu fallback.");
 assert(accountSecurity.includes("email: String(session.user.email ||"), "Account summary must expose the signed-in email to the server-rendered account menu.");
 assert(accountMenu.includes('id="aertex-account-signout"'), "Shared account menu must expose sign out.");
