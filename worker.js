@@ -32,6 +32,10 @@ import {
   isMainGptHandoffPath
 } from "./studio/gpt-subdomain.js";
 import {
+  handleMainCashHandoff,
+  isMainCashHandoffPath
+} from "./studio/cash-subdomain.js";
+import {
   handleMainAdminHandoff,
   isMainAdminHandoffPath
 } from "./studio/admin-subdomain.js";
@@ -65,6 +69,7 @@ async function routeStudioRequest(request, env, ctx) {
 
   if (!workHost && isMainWorkHandoffPath(pathname)) return handleMainWorkHandoff(request);
   if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);
+  if (!workHost && isMainCashHandoffPath(pathname)) return handleMainCashHandoff(request);
   if (!workHost && isMainAdminHandoffPath(pathname)) return handleMainAdminHandoff(request);
 
   if (!workHost) {
