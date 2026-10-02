@@ -8,6 +8,7 @@
   let editingTransactionId = null;
   let editingPlanId = null;
   let editingExpectedId = null;
+  let settlingRecurringId = null;
   let selectedDay = null;
   let saveChain = Promise.resolve();
   let toastTimer;
@@ -124,7 +125,12 @@
     const warnings = [];
     if (model.reserve.shortfall > 0) warnings.push(`固定支出预留需求为 ${money(model.reserve.requiredAmount, 2)}，当前只覆盖 ${money(model.reserve.amount, 2)}，尚缺 ${money(model.reserve.shortfall, 2)}。`);
     if (model.disposableBalance < 500) warnings.push(`当前可支配余额为 ${money(model.disposableBalance)}，低于 500 元。`);
+    if (model.recurring.due?.length) warnings.push(`今天有 ${model.recurring.due.length} 项固定支出已到扣费日但尚未在真实账本中匹配，当前先作为待覆盖预留。`);
     if (model.recurring.overdue.length) warnings.push(`有 ${model.recurring.overdue.length} 项固定支出已过预计扣费时间但尚未在真实账本中匹配，现继续作为待覆盖预留。`);
+    const zeroDatedRecurring = data.recurringExpenses.filter(item => item.enabled && item.dayOfMonth && !(item.amount > 0));
+    if (zeroDatedRecurring.length) warnings.push(`有 ${zeroDatedRecurring.length} 项周期支出设置了扣费日但金额为 0；日历会标出日期，但不会产生扣款金额。`);
+    const numericRecurringCategories = data.recurringExpenses.filter(item => /^\d+(?:\.\d+)?$/.test(String(item.category || '').trim()));
+    if (numericRecurringCategories.length) warnings.push(`有 ${numericRecurringCategories.length} 项周期支出的“分类”看起来像金额，请检查是否填错字段。`);
     if (model.ledger.outOfPeriodTransactions.length) warnings.push(`检测到 ${model.ledger.outOfPeriodTransactions.length} 笔规划周期外交易；它们保留在数据中，但不会改变本周期的期初现金。`);
     $('notice').hidden = !warnings.length;
     $('notice').className = `notice${model.disposableBalance < 500 ? ' warning' : ''}`;
@@ -194,7 +200,9 @@
     $('transactionBody').innerHTML = transactions.map(tx => {
       const huabei = M.huabeiPart(tx), cash = tx.type === 'income' ? tx.amount : M.roundMoney(tx.amount - huabei);
       const payment = tx.type === 'income' ? `现金 ${money(cash, 2)}` : `${cash > 0 ? `现金 ${money(cash, 2)}` : ''}${cash > 0 && huabei > 0 ? '<br>' : ''}${huabei > 0 ? `花呗 ${money(huabei, 2)}` : ''}`;
-      return `<tr><td>${tx.date}</td><td><span class="badge actual-badge">实际${tx.type === 'income' ? '收入' : '支出'}</span></td><td class="${tx.type === 'income' ? 'positive' : 'negative'}">${tx.type === 'income' ? '+' : '-'}${money(tx.amount, 2)}</td><td>${payment}</td><td>${escapeHtml(M.categoryName(tx.category))}</td><td>${escapeHtml(tx.note || '—')}</td><td><button class="table-action" data-edit-tx="${tx.id}">编辑</button><button class="table-action danger" data-delete-tx="${tx.id}">删除</button></td></tr>`;
+      const linkedRecurring = tx.linkedRecurringId ? data.recurringExpenses.find(item => item.id === tx.linkedRecurringId) : null;
+      const recurringBadge = linkedRecurring ? `<br><span class="badge forecast-badge">结算 ${escapeHtml(linkedRecurring.name)} · ${escapeHtml(tx.linkedRecurringMonth || M.monthKey(tx.date))}</span>` : '';
+      return `<tr><td>${tx.date}</td><td><span class="badge actual-badge">实际${tx.type === 'income' ? '收入' : '支出'}</span></td><td class="${tx.type === 'income' ? 'positive' : 'negative'}">${tx.type === 'income' ? '+' : '-'}${money(tx.amount, 2)}</td><td>${payment}</td><td>${escapeHtml(M.categoryName(tx.category))}</td><td>${escapeHtml(tx.note || '—')}${recurringBadge}</td><td><button class="table-action" data-edit-tx="${tx.id}">编辑</button><button class="table-action danger" data-delete-tx="${tx.id}">删除</button></td></tr>`;
     }).join('');
     document.querySelectorAll('[data-edit-tx]').forEach(button => button.addEventListener('click', () => openTransaction(data.transactions.find(x => x.id === button.dataset.editTx))));
     document.querySelectorAll('[data-delete-tx]').forEach(button => button.addEventListener('click', () => deleteTransaction(button.dataset.deleteTx)));
@@ -208,10 +216,25 @@
       const buttons = days.map(day => {
         const actual = day.statuses.actual.length > 0;
         const planned = day.statuses.planned.some(x => !x.replaced);
-        const forecast = day.statuses.forecast.foodForecast > 0 || day.statuses.forecast.knownRecurringItems.length > 0;
+        const recurringItems = day.statuses.recurring || [];
+        const recurringOutstanding = recurringItems.filter(item => item.remaining > 0 && item.status !== 'settled');
+        const recurringAmount = M.roundMoney(recurringOutstanding.reduce((sum, item) => sum + item.remaining, 0));
+        const recurringOriginalAmount = M.roundMoney(recurringItems.reduce((sum, item) => sum + item.amount, 0));
+        const forecast = day.statuses.forecast.foodForecast > 0 || recurringOutstanding.length > 0;
         const dow = M.parseDateKey(day.key).getUTCDay();
         const deltaLabel = day.key <= model.asOf ? '实际现金变化' : '预测变化';
-        return `<button class="day${dow === 0 || dow === 6 ? ' weekend' : ''}" data-day="${day.key}" title="${deltaLabel} ${signed(day.displayDelta, 2)}"><span>${Number(day.key.slice(-2))}</span><span class="amount">${signed(day.displayDelta, 0)}</span><span class="day-statuses">${actual ? '<b class="status-dot actual"></b>' : ''}${planned ? '<b class="status-dot plan"></b>' : ''}${forecast ? '<b class="status-dot forecast"></b>' : ''}</span></button>`;
+        const prepaid = recurringItems.some(item => item.status === 'prepaid');
+        const recurringLine = recurringItems.length
+          ? recurringAmount > 0
+            ? `<span class="recurring-amount">固定 -${money(recurringAmount, 0)}</span>`
+            : recurringOriginalAmount > 0
+              ? `<span class="recurring-amount settled">固定 ${prepaid ? '已提前结清' : '已结清'}</span>`
+              : '<span class="recurring-amount zero">固定 ¥0</span>'
+          : '';
+        const recurringTitle = recurringItems.length
+          ? ` · 周期支出：${recurringItems.map(item => `${item.name} ${money(item.remaining > 0 ? item.remaining : item.amount, 2)}`).join('；')}`
+          : '';
+        return `<button class="day${dow === 0 || dow === 6 ? ' weekend' : ''}${recurringItems.length ? ' has-recurring' : ''}" data-day="${day.key}" title="${deltaLabel} ${signed(day.displayDelta, 2)}${escapeHtml(recurringTitle)}"><span>${Number(day.key.slice(-2))}</span><span class="amount">${signed(day.displayDelta, 0)}</span>${recurringLine}<span class="day-statuses">${actual ? '<b class="status-dot actual"></b>' : ''}${planned ? '<b class="status-dot plan"></b>' : ''}${forecast ? '<b class="status-dot forecast"></b>' : ''}</span></button>`;
       }).join('');
       return `<div class="calendar-month"><h3>${month.replace('-', ' 年 ')} 月</h3><div class="weekday-row">${weekdays.map(x => `<span>${x}</span>`).join('')}</div><div class="month-days">${blanks}${buttons}</div></div>`;
     }).join('');
@@ -239,19 +262,33 @@
     for (const [id, value] of Object.entries(mapping)) $(id).value = value;
   }
   function renderRecurring() {
-    $('recurringEditor').innerHTML = data.recurringExpenses.map(item => `<section class="recurring-card">
+    const categoryOptions = M.CATEGORIES.expense.map(item => `<option value="${escapeHtml(item.name)}"></option>`).join('');
+    const cards = data.recurringExpenses.map(item => {
+      const categoryLooksNumeric = /^\d+(?:\.\d+)?$/.test(String(item.category || '').trim());
+      const zeroAmountWithDate = item.dayOfMonth && !(item.amount > 0);
+      const warnings = [
+        categoryLooksNumeric ? `“分类”当前是 ${escapeHtml(item.category)}，看起来更像金额；请确认是否填错。` : '',
+        zeroAmountWithDate ? `已设置每月 ${item.dayOfMonth} 日扣费，但金额为 0；日历会标记日期但不会产生扣款。` : ''
+      ].filter(Boolean);
+      return `<section class="recurring-card${warnings.length ? ' has-warning' : ''}">
       <div class="recurring-card-head">
         <label class="toggle-field"><input data-recurring-enabled="${item.id}" aria-label="启用" type="checkbox"${item.enabled ? ' checked' : ''}><span>启用这项周期支出</span></label>
-        <button class="button danger-button" type="button" data-delete-recurring="${item.id}">删除</button>
+        <div class="recurring-card-actions">
+          <button class="button" type="button" data-settle-recurring="${item.id}">记录提前还款</button>
+          <button class="button danger-button" type="button" data-delete-recurring="${item.id}">删除</button>
+        </div>
       </div>
       <div class="recurring-grid">
         <label class="mini-field recurring-name-field"><span>名称 <em>可修改</em></span><input data-recurring-name="${item.id}" aria-label="名称" type="text" maxlength="80" value="${escapeHtml(item.name)}"></label>
-        <label class="mini-field"><span>分类 <em>可修改</em></span><input data-recurring-category="${item.id}" aria-label="分类" type="text" maxlength="80" value="${escapeHtml(item.category)}"></label>
         <label class="mini-field"><span>金额 <em>可修改</em></span><input data-recurring-amount="${item.id}" aria-label="金额" type="number" min="0" step="0.01" value="${item.amount}"></label>
         <label class="mini-field"><span>每月扣费日 <em>可修改</em></span><input data-recurring-day="${item.id}" aria-label="扣费日" type="number" min="1" max="31" placeholder="留空表示待定" value="${item.dayOfMonth || ''}"></label>
-        <label class="toggle-field recurring-reserve-field"><input data-recurring-reserve="${item.id}" type="checkbox"${item.reserveWhenUndated ? ' checked' : ''}><span>扣费日未知时仍预留金额</span></label>
+        <label class="mini-field"><span>分类 <em>可修改</em></span><input data-recurring-category="${item.id}" aria-label="分类" type="text" maxlength="80" list="recurringCategoryList" placeholder="例如 Apple / 电费" value="${escapeHtml(M.categoryName(item.category))}"></label>
+        <label class="toggle-field recurring-reserve-field"><input data-recurring-reserve="${item.id}" type="checkbox"${item.reserveWhenUndated ? ' checked' : ''}><span>只有扣费日留空时，才按“未知日期”预留金额</span></label>
       </div>
-    </section>`).join('');
+      ${warnings.length ? `<div class="recurring-warning">${warnings.join('<br>')}</div>` : ''}
+    </section>`;
+    }).join('');
+    $('recurringEditor').innerHTML = `<datalist id="recurringCategoryList">${categoryOptions}</datalist>${cards}`;
 
     document.querySelectorAll('[data-recurring-enabled]').forEach(el => el.addEventListener('change', () => {
       data.recurringExpenses.find(x => x.id === el.dataset.recurringEnabled).enabled = el.checked;
@@ -264,7 +301,9 @@
     }));
     document.querySelectorAll('[data-recurring-category]').forEach(el => el.addEventListener('change', () => {
       const item = data.recurringExpenses.find(x => x.id === el.dataset.recurringCategory);
-      item.category = el.value.trim() || 'otherExpense';
+      const value = el.value.trim();
+      const known = M.CATEGORIES.expense.find(category => category.id === value || category.name === value);
+      item.category = known?.id || value || 'otherExpense';
       mutate('周期支出分类已保存到云端');
     }));
     document.querySelectorAll('[data-recurring-amount]').forEach(el => el.addEventListener('change', () => {
@@ -283,6 +322,7 @@
       item.reserveWhenUndated = el.checked;
       mutate('预留规则已保存到云端');
     }));
+    document.querySelectorAll('[data-settle-recurring]').forEach(el => el.addEventListener('click', () => openRecurringSettlement(el.dataset.settleRecurring)));
     document.querySelectorAll('[data-delete-recurring]').forEach(el => el.addEventListener('click', () => {
       if (!confirm('确定删除这项周期支出吗？')) return;
       data.recurringExpenses = data.recurringExpenses.filter(x => x.id !== el.dataset.deleteRecurring);
@@ -302,6 +342,91 @@
       enabled: true
     });
     mutate('已新增周期支出');
+  }
+
+  function openRecurringSettlement(recurringId) {
+    const item = data.recurringExpenses.find(x => x.id === recurringId);
+    if (!item) return;
+    if (!(item.amount > 0)) return showToast('请先为这项周期支出填写大于 0 的金额，再记录提前还款。', true);
+    settlingRecurringId = item.id;
+    const today = meta.today < data.settings.periodStart ? data.settings.periodStart : meta.today > data.settings.periodEnd ? data.settings.periodEnd : meta.today;
+    const periodStartMonth = M.monthKey(data.settings.periodStart);
+    const periodEndMonth = M.monthKey(data.settings.periodEnd);
+    const nextInstance = model.recurring.instances
+      .filter(instance => instance.recurringId === item.id && instance.remaining > 0 && (!instance.exactDate || instance.exactDate >= today))
+      .sort((a, b) => String(a.exactDate || a.monthEnd).localeCompare(String(b.exactDate || b.monthEnd)))[0];
+    let targetMonth = nextInstance?.month || M.monthKey(today);
+    if (targetMonth < periodStartMonth) targetMonth = periodStartMonth;
+    if (targetMonth > periodEndMonth) targetMonth = periodEndMonth;
+    $('settlementTitle').textContent = `提前结算 · ${item.name}`;
+    $('settlementHelp').textContent = item.dayOfMonth
+      ? `这笔真实还款会结算所选月份原定 ${item.dayOfMonth} 日的固定扣款；到扣款日时系统会标记“无需再扣”。`
+      : '这笔真实还款会结算所选月份的固定支出预留。';
+    $('settlementDate').min = data.settings.periodStart;
+    $('settlementDate').max = meta.today < data.settings.periodEnd ? meta.today : data.settings.periodEnd;
+    $('settlementDate').value = today;
+    $('settlementMonth').min = periodStartMonth;
+    $('settlementMonth').max = periodEndMonth;
+    $('settlementMonth').value = targetMonth;
+    $('settlementAmount').value = item.amount > 0 ? item.amount : '';
+    $('settlementNote').value = '';
+    $('settlementValidation').hidden = true;
+    $('settlementDialog').showModal();
+  }
+
+  function saveRecurringSettlement(event) {
+    event.preventDefault();
+    const item = data.recurringExpenses.find(x => x.id === settlingRecurringId);
+    if (!item) return;
+    const date = $('settlementDate').value;
+    const targetMonth = $('settlementMonth').value;
+    const value = amount($('settlementAmount'), -1);
+    const periodStartMonth = M.monthKey(data.settings.periodStart);
+    const periodEndMonth = M.monthKey(data.settings.periodEnd);
+    if (!isActualDateAllowed(date)) {
+      $('settlementValidation').hidden = false;
+      $('settlementValidation').textContent = '提前还款日期必须是规划周期内、且不晚于今天的真实日期。';
+      return;
+    }
+    if (!/^\d{4}-\d{2}$/.test(targetMonth) || targetMonth < periodStartMonth || targetMonth > periodEndMonth) {
+      $('settlementValidation').hidden = false;
+      $('settlementValidation').textContent = '请选择规划周期内需要被结算的扣款月份。';
+      return;
+    }
+    if (!(value > 0)) {
+      $('settlementValidation').hidden = false;
+      $('settlementValidation').textContent = '实际还款金额必须大于 0。';
+      return;
+    }
+    const alreadyLinked = M.roundMoney(data.transactions
+      .filter(tx => tx.type === 'expense' && tx.linkedRecurringId === item.id && (tx.linkedRecurringMonth || M.monthKey(tx.date)) === targetMonth)
+      .reduce((sum, tx) => sum + tx.amount, 0));
+    const remainingToSettle = M.roundMoney(Math.max(0, item.amount - alreadyLinked));
+    if (!(remainingToSettle > 0)) {
+      $('settlementValidation').hidden = false;
+      $('settlementValidation').textContent = `${targetMonth} 的这项固定支出已经通过提前还款记录结清，不需要再次记录。`;
+      return;
+    }
+    if (value > remainingToSettle) {
+      $('settlementValidation').hidden = false;
+      $('settlementValidation').textContent = `本月尚未结算金额为 ${money(remainingToSettle, 2)}，提前还款不能超过这个金额。`;
+      return;
+    }
+    const note = $('settlementNote').value.trim() || `提前结算：${item.name}（对应 ${targetMonth}）`;
+    data.transactions.push({
+      id: M.uid('tx'),
+      date,
+      type: 'expense',
+      amount: value,
+      huabeiAmount: 0,
+      category: item.category,
+      note,
+      linkedRecurringId: item.id,
+      linkedRecurringMonth: targetMonth
+    });
+    $('settlementDialog').close();
+    settlingRecurringId = null;
+    mutate('提前还款已记录，原扣款日将按结算结果重新计算');
   }
 
   function planStatus(plan) {
@@ -359,7 +484,17 @@
     if (huabeiAmount > availableForThisEntry) { $('txValidation').hidden = false; $('txValidation').textContent = `花呗可用额度不足，本笔最多可记 ${money(Math.max(0, availableForThisEntry), 2)}。`; return; }
     const category = transactionCategory(type);
     if (!category) { $('txValidation').hidden = false; $('txValidation').textContent = '请输入或选择分类。'; return; }
-    const transaction = { id: editingTransactionId || M.uid('tx'), date, type, amount: value, huabeiAmount, category, note: $('txNote').value.trim() };
+    const transaction = {
+      id: editingTransactionId || M.uid('tx'),
+      date,
+      type,
+      amount: value,
+      huabeiAmount,
+      category,
+      note: $('txNote').value.trim(),
+      linkedRecurringId: type === 'expense' ? existing?.linkedRecurringId || null : null,
+      linkedRecurringMonth: type === 'expense' ? existing?.linkedRecurringMonth || null : null
+    };
     const index = data.transactions.findIndex(x => x.id === editingTransactionId); if (index >= 0) data.transactions[index] = transaction; else data.transactions.push(transaction);
     $('transactionDialog').close(); mutate('真实账本已保存');
   }
@@ -463,8 +598,20 @@
       : `${dayTypeLabels[day.dayType]} · 当日预测变化 ${signed(day.projectedDelta, 2)}`;
     const actual = day.statuses.actual.length ? day.statuses.actual.map(x => `<p>${x.type === 'income' ? '+' : '-'}${money(x.amount, 2)} · ${escapeHtml(M.categoryName(x.category))}${M.huabeiPart(x) ? ` · 花呗 ${money(M.huabeiPart(x), 2)}` : ''} ${escapeHtml(x.note)}</p>`).join('') : '<p>无真实交易</p>';
     const planned = day.statuses.planned.length ? day.statuses.planned.map(x => `<p>${x.replaced ? '已替换' : x.type === 'income' ? '+' : '-'}${x.replaced ? ' · ' : money(x.amount, 2) + ' · '}${escapeHtml(x.note)}</p>`).join('') : '<p>无明确日期计划</p>';
-    const forecast = `<p>餐饮预算 ${money(day.statuses.forecast.foodBudget, 1)}${day.statuses.forecast.foodForecast ? ` · 未来需预留 ${money(day.statuses.forecast.foodForecast, 1)}` : ' · 当日不再产生餐饮预测'}</p><p>本周剩余社交交通预算 ${money(day.statuses.forecast.weeklySocialRemaining, 1)} · 仅按周保留，不伪造成当天支出</p>${day.statuses.forecast.knownRecurringItems.map(x => `<p>${escapeHtml(x.name)} ${money(x.remaining, 1)}</p>`).join('')}`;
-    $('dayLayers').innerHTML = `<section class="day-layer actual"><h3>实际</h3>${actual}</section><section class="day-layer plan"><h3>计划</h3>${planned}</section><section class="day-layer forecast"><h3>预测</h3>${forecast}</section>`;
+    const recurringStatus = { scheduled:'计划扣款', due:'今日待扣', overdue:'逾期待确认', settled:'已由真实账本结清', prepaid:'已提前结清，本日无需再扣款', reserve:'未知日期预留', unreserved:'未预留' };
+    const recurring = day.statuses.recurring?.length
+      ? day.statuses.recurring.map(item => {
+          const adjusted = item.adjustedToMonthEnd ? ` · 原设每月 ${item.requestedDay} 日，本月自动落到月末` : '';
+          const paid = M.roundMoney(item.amount - item.remaining);
+          const amountText = item.amount > 0
+            ? `${money(item.amount, 2)}${paid > 0 && item.remaining > 0 ? ` · 已提前/实际支付 ${money(paid, 2)} · 扣款日仍需 ${money(item.remaining, 2)}` : ''}`
+            : '金额为 ¥0，不影响现金';
+          const settlement = item.status === 'prepaid' && item.settledDate ? ` · 已于 ${item.settledDate} 提前支付` : '';
+          return `<p><strong>${escapeHtml(item.name)}</strong> · ${amountText} · ${recurringStatus[item.status] || item.status}${settlement}${adjusted}</p>`;
+        }).join('')
+      : '<p>无周期支出</p>';
+    const forecast = `<p>餐饮预算 ${money(day.statuses.forecast.foodBudget, 1)}${day.statuses.forecast.foodForecast ? ` · 未来需预留 ${money(day.statuses.forecast.foodForecast, 1)}` : ' · 当日不再产生餐饮预测'}</p><p>本周剩余社交交通预算 ${money(day.statuses.forecast.weeklySocialRemaining, 1)} · 仅按周保留，不伪造成当天支出</p>`;
+    $('dayLayers').innerHTML = `<section class="day-layer actual"><h3>实际</h3>${actual}</section><section class="day-layer plan"><h3>计划</h3>${planned}</section><section class="day-layer recurring"><h3>周期支出</h3>${recurring}</section><section class="day-layer forecast"><h3>预算预测</h3>${forecast}</section>`;
     $('transactionForDay').disabled = !isActualDateAllowed(key); $('dayDialog').showModal();
   }
 
@@ -590,13 +737,14 @@
 
   $('addTransaction').addEventListener('click', () => openTransaction()); $('addPlan').addEventListener('click', () => openPlan());
   $('addRecurring').addEventListener('click', addRecurring); $('addExpected').addEventListener('click', () => openExpected());
-  $('transactionForm').addEventListener('submit', saveTransaction); $('planForm').addEventListener('submit', savePlan); $('expectedForm').addEventListener('submit', saveExpected);
+  $('transactionForm').addEventListener('submit', saveTransaction); $('planForm').addEventListener('submit', savePlan); $('expectedForm').addEventListener('submit', saveExpected); $('settlementForm').addEventListener('submit', saveRecurringSettlement);
   $('txType').addEventListener('change', () => { setTransactionCategory($('txType').value); updateTransactionPaymentFields(); });
   $('planType').addEventListener('change', () => setFreeCategoryField('planCategory', 'planCategoryList', $('planType').value));
   $('expectedType').addEventListener('change', () => setFreeCategoryField('expectedCategory', 'expectedCategoryList', $('expectedType').value));
   document.querySelectorAll('.close-dialog').forEach(x => x.addEventListener('click', () => $('transactionDialog').close()));
   document.querySelectorAll('.close-plan').forEach(x => x.addEventListener('click', () => $('planDialog').close()));
   document.querySelectorAll('.close-expected').forEach(x => x.addEventListener('click', () => $('expectedDialog').close()));
+  document.querySelectorAll('.close-settlement').forEach(x => x.addEventListener('click', () => { $('settlementDialog').close(); settlingRecurringId = null; }));
   $('closeDay').addEventListener('click', () => $('dayDialog').close());
   $('transactionForDay').addEventListener('click', () => { $('dayDialog').close(); openTransaction(null, selectedDay); });
   $('planForDay').addEventListener('click', () => { $('dayDialog').close(); openPlan(null, selectedDay); });
