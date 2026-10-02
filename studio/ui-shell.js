@@ -661,6 +661,7 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
   const locale = productLinks.activeLocale || copy.locale || (copy.platform.includes("个人") ? "zh-cn" : "en-us");
   const zh = locale === "zh-cn";
   const workHref = String(productLinks?.workHref || "");
+  const cashHref = String(productLinks?.cashHref || "");
   const awHref = String(productLinks?.awHref || "");
   const gptHref = String(productLinks?.gptHref || "");
   const adminHref = String(productLinks?.adminHref || "");
