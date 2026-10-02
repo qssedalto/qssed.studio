@@ -51,3 +51,17 @@ dialog .form-grid{gap:14px}.dialog-actions .button{min-height:44px;padding:10px 
   dialog:not(.advanced-dialog),.advanced-dialog{width:calc(100vw - 20px);padding:18px}
   .section-head{align-items:flex-start;flex-wrap:wrap}.section-head>div:last-child{flex-wrap:wrap}
 }
+
+/* Shared AERTEX appearance contract */
+:root[data-theme="light"]{color-scheme:light;--bg:#f5f5f7;--panel:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#d2d2d7;--grid:#e8e8ed;--positive:#167445;--danger:#b42318;--warning:#9b6817;--actual:#167445;--budget:#8e67c8;--plan:#d47a20;--forecast:#3b7fc4;--actual-soft:#eaf7ef;--budget-soft:#f3edfb;--plan-soft:#fff3e6;--forecast-soft:#eaf3fc;--shadow:0 1px 3px rgba(0,0,0,.04)}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#101113;--panel:#1c1c1e;--text:#f5f5f7;--muted:#a1a1a6;--line:#3a3a3c;--grid:#2c2c2e;--positive:#58c68b;--danger:#ff6961;--warning:#f0b557;--actual:#58c68b;--budget:#b69ae0;--plan:#f0a45b;--forecast:#78afe3;--actual-soft:#183327;--budget-soft:#2d253a;--plan-soft:#392b1c;--forecast-soft:#1c3044;--shadow:none}
+:root[data-accent="sapphire"]{--accent:#4964d8;--accent-soft:color-mix(in srgb,#4964d8 14%,transparent)}
+:root[data-accent="aqua"]{--accent:#2a9d8f;--accent-soft:color-mix(in srgb,#2a9d8f 14%,transparent)}
+:root[data-accent="jade"]{--accent:#3a9d72;--accent-soft:color-mix(in srgb,#3a9d72 14%,transparent)}
+:root[data-accent="lime"]{--accent:#86a93b;--accent-soft:color-mix(in srgb,#86a93b 14%,transparent)}
+:root[data-accent="amber"]{--accent:#d49a2a;--accent-soft:color-mix(in srgb,#d49a2a 14%,transparent)}
+:root[data-accent="coral"]{--accent:#e26d5a;--accent-soft:color-mix(in srgb,#e26d5a 14%,transparent)}
+:root[data-accent="rose"]{--accent:#d95686;--accent-soft:color-mix(in srgb,#d95686 14%,transparent)}
+:root[data-accent="magenta"]{--accent:#b755c7;--accent-soft:color-mix(in srgb,#b755c7 14%,transparent)}
+:root[data-accent="violet"]{--accent:#7559d9;--accent-soft:color-mix(in srgb,#7559d9 14%,transparent)}
+:root[data-accent="graphite"]{--accent:#5a5d64;--accent-soft:color-mix(in srgb,#5a5d64 14%,transparent)}
