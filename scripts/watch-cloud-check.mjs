@@ -17,7 +17,6 @@ const authHandoff = read("studio/auth-handoff.js");
 const domains = read("studio/domain-family.js");
 const setupPage = read("studio/watch-setup-page.js");
 const entry = read("studio/entry.js");
-const setupPage = read("studio/watch-setup-page.js");
 
 assert(worker.includes('const TOKEN_PREFIX = "awd1"'), "Watch device tokens need an explicit prefix.");
 assert(worker.includes('sha256Hex(token)'), "Raw device tokens must not be used as storage keys.");
