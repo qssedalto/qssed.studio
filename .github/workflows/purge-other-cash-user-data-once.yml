@@ -1,0 +1,102 @@
+name: Purge Other Cash User Data Once
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/purge-other-cash-user-data-once.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Locate non-preserved Cash user objects
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PRESERVE_USER_ID: eb8c338d-b533-4e7a-987f-491739f925ed
+        run: |
+          set -euo pipefail
+          response="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets/qsseda-studio-storage/objects?prefix=cash%2Fusers%2F")"
+          printf "%s" "$response" > /tmp/r2-list.json
+          node <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('/tmp/r2-list.json','utf8'));
+          if (!body.success) { console.error('R2 listing failed.'); process.exit(2); }
+          const preserve = process.env.PRESERVE_USER_ID.toLowerCase();
+          const keys = (body.result || []).map(x => String(x.key || ''));
+          const userObjects = [];
+          const preserved = [];
+          for (const key of keys) {
+            const match = /^cash\/users\/([0-9a-f-]{36})\/(.+)$/i.exec(key);
+            if (!match) continue;
+            if (match[1].toLowerCase() === preserve) preserved.push(key);
+            else userObjects.push(key);
+          }
+          if (!preserved.some(key => key === `cash/users/${preserve}/data.json`)) {
+            console.error('Preserved account data.json was not found; refusing purge.');
+            process.exit(3);
+          }
+          if (userObjects.some(key => key.startsWith(`cash/users/${preserve}/`))) {
+            console.error('Safety check failed: preserved key entered deletion set.');
+            process.exit(4);
+          }
+          fs.writeFileSync('/tmp/delete-keys.txt', userObjects.join('\n') + (userObjects.length ? '\n' : ''));
+          console.log('Preserved account objects:', preserved.length);
+          console.log('Non-preserved Cash objects to delete:', userObjects.length);
+          console.log('Non-preserved user prefixes:', new Set(userObjects.map(k => k.split('/')[2])).size);
+          NODE
+
+      - name: Delete non-preserved Cash user objects
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r key; do
+            [ -z "$key" ] && continue
+            npx --yes wrangler@4.136.3 r2 object delete "qsseda-studio-storage/$key" --remote >/dev/null
+            count=$((count + 1))
+          done < /tmp/delete-keys.txt
+          echo "Deleted non-preserved Cash objects: $count"
+
+      - name: Verify only preserved Cash user data remains
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PRESERVE_USER_ID: eb8c338d-b533-4e7a-987f-491739f925ed
+        run: |
+          set -euo pipefail
+          response="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets/qsseda-studio-storage/objects?prefix=cash%2Fusers%2F")"
+          printf "%s" "$response" > /tmp/r2-after.json
+          node <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('/tmp/r2-after.json','utf8'));
+          if (!body.success) process.exit(5);
+          const preserve = process.env.PRESERVE_USER_ID.toLowerCase();
+          const keys = (body.result || []).map(x => String(x.key || ''));
+          const userKeys = keys.filter(k => /^cash\/users\/[0-9a-f-]{36}\//i.test(k));
+          const foreign = userKeys.filter(k => !k.toLowerCase().startsWith(`cash/users/${preserve}/`));
+          if (foreign.length) {
+            console.error('Verification failed: non-preserved Cash user objects remain:', foreign.length);
+            process.exit(6);
+          }
+          if (!userKeys.includes(`cash/users/${preserve}/data.json`)) {
+            console.error('Verification failed: preserved account data.json is missing.');
+            process.exit(7);
+          }
+          console.log('Verified: all remaining Cash user objects belong to the preserved account.');
+          console.log('Remaining preserved Cash objects:', userKeys.length);
+          NODE
