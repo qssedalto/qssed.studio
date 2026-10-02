@@ -14,6 +14,7 @@ const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta
 const sessionGate = fs.readFileSync(new URL("../studio/session-gate.js", import.meta.url), "utf8");
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
 const workTexUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
+const workUi = fs.readFileSync(new URL("../studio/ui-work.js", import.meta.url), "utf8");
 const bridge = fs.readFileSync(new URL("../local-bridge/server.mjs", import.meta.url), "utf8");
 const nativeOrigin = fs.readFileSync(new URL("../local-bridge/native/origins_work_windows.go", import.meta.url), "utf8");
 const workWranglerText = fs.readFileSync(new URL("../wrangler.work.jsonc", import.meta.url), "utf8");
@@ -98,6 +99,12 @@ assert(authEntry.includes('id="qsseda-auth-return-target"'), "Auth login UI must
 assert(authEntry.includes('location.replace(target)'), "Auth login must resume the original app handoff instead of falling back to Dashboard");
 assert(authEntry.includes('path.startsWith("/")') && authEntry.includes('path.startsWith("//")'), "Auth return target must remain constrained to same-origin paths");
 
+assert(workUi.includes('AERTEX 主站') && workUi.includes('AERTEX Home'), "Work Hub/navigation must expose a localized AERTEX Home exit.");
+assert(workUi.includes('work-home-button'), "Work Hub and Local Bridge must provide an explicit main-site action.");
+assert(workUi.includes('dashboardIcon("home")'), "Work sidebar navigation must include the AERTEX Home destination.");
+assert(entry.includes("workHubContent(zh, workOrigin, fullLocale, mainOrigin)"), "Work Hub must receive the active domain-family main origin.");
+assert(entry.includes("workLocalBridgeContent(zh, fullLocale, mainOrigin)"), "Work Local Bridge must receive the active domain-family main origin.");
+assert(workTexUi.includes("injectWorkTexHomeLinks"), "Standalone Work TeX must expose the three-pane main-site exit injector.");
 assert(workTexUi.includes('id="qsseda-work-tex-only"'), "Work TeX must include the dedicated full-viewport shell override");
 assert(workTexUi.includes('.tex-workbench .tex-hero{display:none!important}'), "Work must hide inherited product chrome above the workspace");
 assert(workTexUi.includes('.os-sidebar'), "Work must remove the inherited sidebar from layout");
