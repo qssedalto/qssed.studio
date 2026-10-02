@@ -120,7 +120,9 @@
       id: String(item?.id || uid(type === 'income' ? 'income' : 'expense')),
       date: parseDateKey(item?.date) ? item.date : '', type,
       amount, huabeiAmount: roundMoney(huabeiAmount), category: String(item?.category || (type === 'income' ? 'otherIncome' : 'otherExpense')),
-      note: String(item?.note || ''), linkedPlanId: item?.linkedPlanId ? String(item.linkedPlanId) : null
+      note: String(item?.note || ''),
+      linkedPlanId: item?.linkedPlanId ? String(item.linkedPlanId) : null,
+      linkedRecurringId: item?.linkedRecurringId ? String(item.linkedRecurringId) : null
     };
   }
   function normalizeData(input) {
@@ -185,6 +187,124 @@
     return replaced;
   }
 
+  function recurringDateForMonth(month, dayOfMonth) {
+    if (!dayOfMonth) return { exactDate: null, requestedDay: null, effectiveDay: null, adjustedToMonthEnd: false };
+    const [year, monthNumber] = String(month).split('-').map(Number);
+    const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+    const requestedDay = Math.max(1, Math.min(31, Number(dayOfMonth)));
+    const effectiveDay = Math.min(requestedDay, lastDay);
+    return {
+      exactDate: `${month}-${String(effectiveDay).padStart(2, '0')}`,
+      requestedDay,
+      effectiveDay,
+      adjustedToMonthEnd: requestedDay !== effectiveDay
+    };
+  }
+
+  function allocateRecurringActuals(instances, transactions, asOf) {
+    const pools = transactions
+      .filter(tx => tx.type === 'expense' && tx.date <= asOf && tx.amount > 0)
+      .map(tx => ({ tx, remaining: roundMoney(tx.amount) }));
+
+    const allocate = (instance, candidates) => {
+      let matched = roundMoney(instance.actual || 0);
+      for (const pool of candidates) {
+        if (pool.remaining <= 0 || matched >= instance.amount) continue;
+        const amount = roundMoney(Math.min(pool.remaining, instance.amount - matched));
+        if (amount <= 0) continue;
+        matched = roundMoney(matched + amount);
+        pool.remaining = roundMoney(pool.remaining - amount);
+        instance.matchedTransactionIds.push(pool.tx.id);
+      }
+      instance.actual = matched;
+      instance.remaining = roundMoney(Math.max(0, instance.amount - matched));
+    };
+
+    // Explicit links are authoritative and may settle a recurring item even
+    // when the real bank posting date differs from the configured due date.
+    for (const instance of instances) {
+      allocate(instance, pools.filter(pool =>
+        pool.tx.linkedRecurringId === instance.recurringId &&
+        monthKey(pool.tx.date) === instance.month
+      ));
+    }
+
+    // For dated recurring charges, automatic matching is deliberately strict:
+    // the real expense must share both the configured date and category.
+    // This prevents an unrelated purchase in the same category from silently
+    // cancelling one or more recurring charges.
+    for (const instance of instances) {
+      if (!instance.exactDate || instance.remaining <= 0) continue;
+      allocate(instance, pools.filter(pool =>
+        !pool.tx.linkedRecurringId &&
+        pool.tx.date === instance.exactDate &&
+        pool.tx.category === instance.category
+      ));
+    }
+
+    // Undated recurring items may only auto-match when the month/category also
+    // has a strong identity signal: same amount or the note names the item.
+    for (const instance of instances) {
+      if (instance.exactDate || instance.remaining <= 0) continue;
+      const name = String(instance.name || '').trim().toLowerCase();
+      allocate(instance, pools.filter(pool => {
+        if (pool.tx.linkedRecurringId || monthKey(pool.tx.date) !== instance.month || pool.tx.category !== instance.category) return false;
+        const note = String(pool.tx.note || '').trim().toLowerCase();
+        return roundMoney(pool.tx.amount) === roundMoney(instance.amount) || (name && note.includes(name));
+      }));
+    }
+
+    return instances;
+  }
+
+  function buildRecurringInstances(data, periodTransactions, start, end, asOf) {
+    const instances = [];
+    for (const recurring of data.recurringExpenses.filter(item => item.enabled)) {
+      for (const month of monthKeys(start, end)) {
+        const dateInfo = recurringDateForMonth(month, recurring.dayOfMonth);
+        if (dateInfo.exactDate && !within(dateInfo.exactDate, start, end)) continue;
+        instances.push({
+          recurringId: recurring.id,
+          name: recurring.name,
+          category: recurring.category,
+          month,
+          monthEnd: monthEndKey(month),
+          exactDate: dateInfo.exactDate,
+          requestedDay: dateInfo.requestedDay,
+          effectiveDay: dateInfo.effectiveDay,
+          adjustedToMonthEnd: dateInfo.adjustedToMonthEnd,
+          amount: roundMoney(recurring.amount),
+          actual: 0,
+          remaining: roundMoney(recurring.amount),
+          matchedTransactionIds: [],
+          reserveWhenUndated: recurring.reserveWhenUndated,
+          status: 'pending',
+          reserve: false
+        });
+      }
+    }
+
+    allocateRecurringActuals(instances, periodTransactions, asOf);
+
+    for (const instance of instances) {
+      if (instance.remaining <= 0) {
+        instance.status = 'settled';
+      } else if (instance.exactDate) {
+        if (instance.exactDate < asOf) instance.status = 'overdue';
+        else if (instance.exactDate === asOf) instance.status = 'due';
+        else instance.status = 'scheduled';
+      } else if (instance.monthEnd < asOf) {
+        instance.status = 'overdue';
+      } else if (instance.reserveWhenUndated) {
+        instance.status = 'reserve';
+      } else {
+        instance.status = 'unreserved';
+      }
+      instance.reserve = instance.status === 'reserve' || instance.status === 'overdue' || instance.status === 'due';
+    }
+    return instances;
+  }
+
   function calculateFinancialModel(input, options = {}) {
     const data = normalizeData(input);
     const {
@@ -210,37 +330,10 @@
     const huabeiUsed = roundMoney(currentTransactions.reduce((sum, tx) => sum + huabeiPart(tx), 0));
     const huabeiAvailable = roundMoney(Math.max(0, emergencyCredit - huabeiUsed));
 
-    // Recurring expenses have three materially different states:
-    // scheduled (known future date), reserve (unknown date), and overdue.
-    // Overdue items remain reserved instead of silently disappearing.
-    const recurringInstances = [];
-    for (const recurring of data.recurringExpenses.filter(x => x.enabled)) {
-      for (const month of monthKeys(start, end)) {
-        const [year, monthNumber] = month.split('-').map(Number);
-        const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
-        const exactDate = recurring.dayOfMonth ? `${month}-${String(Math.min(recurring.dayOfMonth, lastDay)).padStart(2, '0')}` : null;
-        if (exactDate && !within(exactDate, start, end)) continue;
-        const actual = actualForCategory(
-          periodTransactions,
-          recurring.category,
-          tx => monthKey(tx.date) === month && tx.type === 'expense' && tx.date <= asOf
-        );
-        const remaining = roundMoney(Math.max(0, recurring.amount - actual));
-        const monthEnd = monthEndKey(month);
-        let status = 'settled';
-        if (remaining > 0) {
-          if (monthEnd <= asOf || (exactDate && exactDate <= asOf)) status = 'overdue';
-          else if (exactDate) status = 'scheduled';
-          else if (recurring.reserveWhenUndated) status = 'reserve';
-          else status = 'unreserved';
-        }
-        recurringInstances.push({
-          recurringId: recurring.id, name: recurring.name, category: recurring.category,
-          month, monthEnd, exactDate, amount: recurring.amount, actual, remaining,
-          status, reserve: status === 'reserve' || status === 'overdue'
-        });
-      }
-    }
+    // Each enabled recurring expense becomes one explicit monthly instance.
+    // Dated instances participate in the daily calendar; undated or overdue
+    // instances are kept in reserve instead of being invented on a fake date.
+    const recurringInstances = buildRecurringInstances(data, periodTransactions, start, end, asOf);
     const reserveItems = recurringInstances.filter(x => x.reserve && x.remaining > 0);
     const reserveRequiredAmount = roundMoney(reserveItems.reduce((sum, x) => sum + x.remaining, 0));
     const fundedReserveAmount = roundMoney(Math.min(Math.max(0, cashBalance), reserveRequiredAmount));
@@ -300,7 +393,8 @@
       const plannedDelta = isFuture
         ? roundMoney(plannedItems.filter(x => !x.replaced).reduce((sum, x) => sum + signedAmount(x), 0))
         : 0;
-      const knownRecurringItems = isFuture ? scheduledRecurring.filter(x => x.exactDate === key) : [];
+      const recurringItems = recurringInstances.filter(x => x.exactDate === key);
+      const knownRecurringItems = isFuture ? recurringItems.filter(x => x.status === 'scheduled' && x.remaining > 0) : [];
       const recurringDelta = isFuture
         ? -roundMoney(knownRecurringItems.reduce((sum, x) => sum + x.remaining, 0))
         : 0;
@@ -322,6 +416,7 @@
         statuses: {
           actual: actualItems,
           planned: plannedItems,
+          recurring: recurringItems,
           forecast: {
             foodBudget, foodForecast,
             weeklySocialRemaining: week?.remaining || 0,
@@ -426,6 +521,7 @@
       recurring: {
         instances: recurringInstances,
         scheduled: scheduledRecurring,
+        due: reserveItems.filter(x => x.status === 'due'),
         overdue: reserveItems.filter(x => x.status === 'overdue')
       },
       monthly
@@ -445,5 +541,5 @@
     return '\uFEFF' + [header, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
   }
 
-  return { PERIOD_START, PERIOD_END, MANUAL_ENTRY_END, ODD_MONDAY_ANCHOR, TUTOR_DATES, CATEGORIES, parseDateKey, isoDate, addDays, monthKey, monthEndKey, finiteNumber, finiteAmount, roundMoney, dateRange, isOddMonday, weekKey, dayType, uid, createDefaultData, normalizeData, calculateFinancialModel, categoryName, huabeiPart, cashSignedAmount, serializeData, parseData, transactionsToCsv };
+  return { PERIOD_START, PERIOD_END, MANUAL_ENTRY_END, ODD_MONDAY_ANCHOR, TUTOR_DATES, CATEGORIES, parseDateKey, isoDate, addDays, monthKey, monthEndKey, finiteNumber, finiteAmount, roundMoney, dateRange, isOddMonday, weekKey, dayType, uid, createDefaultData, normalizeData, calculateFinancialModel, categoryName, huabeiPart, cashSignedAmount, recurringDateForMonth, serializeData, parseData, transactionsToCsv };
 });
