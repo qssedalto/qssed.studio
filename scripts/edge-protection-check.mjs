@@ -5,6 +5,7 @@ import {
   hasStudioSessionCookie,
   requestBodyLimit
 } from "../studio/edge-protection.js";
+import { publicSitemapUrls } from "../studio/public-indexing.js";
 
 const allow = { limit: async () => ({ success: true }) };
 const deny = { limit: async () => ({ success: false }) };
@@ -53,7 +54,21 @@ assert(robotsText.includes("Sitemap: https://qsseda.com/sitemap.xml"), "Canonica
 
 const sitemap = await protectEdgeRequest(browserRequest("/sitemap.xml"), env());
 assert(sitemap?.status === 200, "Canonical sitemap.xml should be served at the edge");
-assert((await sitemap.text()).includes("<loc>https://qsseda.com/</loc>"), "Canonical sitemap must include the public home");
+const sitemapText = await sitemap.text();
+const sitemapUrls = publicSitemapUrls();
+assert(sitemapUrls.length === 56, "Complete public sitemap must expose 56 canonical URLs");
+for (const required of [
+  "https://qsseda.com/",
+  "https://qsseda.com/zh-cn",
+  "https://qsseda.com/zh-cn/aw/setup",
+  "https://qsseda.com/zh-cn/wishes",
+  "https://qsseda.com/zh-cn/birthday",
+  "https://qsseda.com/zh-cn/mid-autumn",
+  "https://qsseda.com/ar-sa/aw/setup",
+  "https://qsseda.com/fr-fr/birthday"
+]) {
+  assert(sitemapText.includes("<loc>" + required + "</loc>"), "Sitemap is missing " + required);
+}
 
 const scanner = await protectEdgeRequest(browserRequest("/.env"), env({ EDGE_GLOBAL_RATE_LIMITER: deny }));
 assert(scanner?.status === 404, "Common scanner paths must be rejected before business routing");
