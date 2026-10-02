@@ -43,6 +43,14 @@ export function awOriginForRequest(request) {
   return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "aw");
 }
 
+export function awdOriginForRequest(request) {
+  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "awd");
+}
+
+export function awDataOriginForRequest(request) {
+  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "aw.data");
+}
+
 export function gptOriginForRequest(request) {
   return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "gpt");
 }

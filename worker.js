@@ -36,6 +36,10 @@ import {
   isMainCashHandoffPath
 } from "./studio/cash-subdomain.js";
 import {
+  handleMainWatchHandoff,
+  isMainWatchHandoffPath
+} from "./studio/watch-subdomain.js";
+import {
   handleMainAdminHandoff,
   isMainAdminHandoffPath
 } from "./studio/admin-subdomain.js";
@@ -70,6 +74,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (!workHost && isMainWorkHandoffPath(pathname)) return handleMainWorkHandoff(request);
   if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);
   if (!workHost && isMainCashHandoffPath(pathname)) return handleMainCashHandoff(request);
+  if (!workHost && isMainWatchHandoffPath(pathname)) return handleMainWatchHandoff(request);
   if (!workHost && isMainAdminHandoffPath(pathname)) return handleMainAdminHandoff(request);
 
   if (!workHost) {
