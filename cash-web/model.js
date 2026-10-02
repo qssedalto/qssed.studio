@@ -63,10 +63,12 @@
   }
   function isOddMonday(key, anchorKey = ODD_MONDAY_ANCHOR) {
     const date = typeof key === 'string' ? parseDateKey(key) : key;
-    const anchor = parseDateKey(anchorKey) || parseDateKey(ODD_MONDAY_ANCHOR);
+    const rawAnchor = parseDateKey(anchorKey) || parseDateKey(ODD_MONDAY_ANCHOR);
     if (!date || date.getUTCDay() !== 1) return false;
-    const diff = Math.round((date.getTime() - anchor.getTime()) / DAY_MS);
-    return diff >= 0 && diff % 14 === 0;
+    const anchorOffset = (rawAnchor.getUTCDay() + 6) % 7;
+    const anchorMonday = addDays(rawAnchor, -anchorOffset);
+    const diff = Math.round((date.getTime() - anchorMonday.getTime()) / DAY_MS);
+    return diff % 14 === 0;
   }
   function weekKey(key) {
     const date = parseDateKey(key);
