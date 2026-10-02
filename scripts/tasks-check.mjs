@@ -28,8 +28,16 @@ for (const zh of [true, false]) {
 assert(worker.includes('pathname === "/api/tasks"'), "Worker is missing the task API route");
 assert(worker.includes("handleTasks(request, env)"), "Worker does not dispatch tasks through its API boundary");
 assert(entry.includes('pathname === "/workspace/tasks"'), "Studio entry does not mount Task Center");
-assert(entry.includes("tasksWorkspaceContent(zh)"), "Task Center renderer is not mounted");
+assert(entry.includes("tasksWorkspaceContent(zh, fullLocale)"), "Task Center renderer must receive the full locale");
 assert(edge.includes('"/api/tasks"'), "Task listing must remain behind the expensive-endpoint limiter");
+
+for (const [locale, expected] of [["zh-tw","任務中心"],["ja-jp","タスクセンター"],["ko-kr","작업 센터"],["fr-fr","Centre des tâches"],["es-es","Centro de tareas"],["el-gr","Κέντρο εργασιών"],["ar-sa","مركز المهام"]]) {
+  const markup = tasksWorkspaceContent(false, locale);
+  assert(markup.includes(expected), "Task translation missing for " + locale);
+  assert(markup.includes("/api/tasks") && markup.includes("/api/projects"), "Task APIs must remain intact for " + locale);
+  const scripts = [...markup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+  for (const code of scripts) new Function(code);
+}
 
 assert(api.includes('const TASK_ROOT = "_system/tasks/"'), "Tasks must use the hidden R2 task namespace");
 assert(api.includes("taskPrefix(userId)"), "Task storage must be scoped by user ID");
