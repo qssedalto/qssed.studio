@@ -234,15 +234,19 @@
     for (const [id, value] of Object.entries(mapping)) $(id).value = value;
   }
   function renderRecurring() {
-    $('recurringEditor').innerHTML = data.recurringExpenses.map(item => `<div class="recurring-row">
-      <input data-recurring-enabled="${item.id}" aria-label="启用" type="checkbox"${item.enabled ? ' checked' : ''}>
-      <input data-recurring-name="${item.id}" aria-label="名称" type="text" maxlength="80" value="${escapeHtml(item.name)}">
-      <input data-recurring-category="${item.id}" aria-label="分类" type="text" maxlength="80" value="${escapeHtml(item.category)}">
-      <input data-recurring-amount="${item.id}" aria-label="金额" type="number" min="0" step="0.01" value="${item.amount}">
-      <input data-recurring-day="${item.id}" aria-label="扣费日" type="number" min="1" max="31" placeholder="待定" value="${item.dayOfMonth || ''}">
-      <label class="reserve-toggle"><input data-recurring-reserve="${item.id}" type="checkbox"${item.reserveWhenUndated ? ' checked' : ''}>未知日预留</label>
-      <button class="table-action danger" type="button" data-delete-recurring="${item.id}">删除</button>
-    </div>`).join('');
+    $('recurringEditor').innerHTML = data.recurringExpenses.map(item => `<section class="recurring-card">
+      <div class="recurring-card-head">
+        <label class="toggle-field"><input data-recurring-enabled="${item.id}" aria-label="启用" type="checkbox"${item.enabled ? ' checked' : ''}><span>启用这项周期支出</span></label>
+        <button class="button danger-button" type="button" data-delete-recurring="${item.id}">删除</button>
+      </div>
+      <div class="recurring-grid">
+        <label class="mini-field recurring-name-field"><span>名称 <em>可修改</em></span><input data-recurring-name="${item.id}" aria-label="名称" type="text" maxlength="80" value="${escapeHtml(item.name)}"></label>
+        <label class="mini-field"><span>分类 <em>可修改</em></span><input data-recurring-category="${item.id}" aria-label="分类" type="text" maxlength="80" value="${escapeHtml(item.category)}"></label>
+        <label class="mini-field"><span>金额 <em>可修改</em></span><input data-recurring-amount="${item.id}" aria-label="金额" type="number" min="0" step="0.01" value="${item.amount}"></label>
+        <label class="mini-field"><span>每月扣费日 <em>可修改</em></span><input data-recurring-day="${item.id}" aria-label="扣费日" type="number" min="1" max="31" placeholder="留空表示待定" value="${item.dayOfMonth || ''}"></label>
+        <label class="toggle-field recurring-reserve-field"><input data-recurring-reserve="${item.id}" type="checkbox"${item.reserveWhenUndated ? ' checked' : ''}><span>扣费日未知时仍预留金额</span></label>
+      </div>
+    </section>`).join('');
 
     document.querySelectorAll('[data-recurring-enabled]').forEach(el => el.addEventListener('change', () => {
       data.recurringExpenses.find(x => x.id === el.dataset.recurringEnabled).enabled = el.checked;
