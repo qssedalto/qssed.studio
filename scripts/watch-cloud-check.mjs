@@ -25,11 +25,15 @@ assert(worker.includes('handleEventQuery') && worker.includes('/api/0/buckets/')
 assert(worker.includes('mergeEvents') && worker.includes('dayObjectKey'), "Cloud ingestion must deduplicate and shard events.");
 assert(worker.includes('verifyStudioPageSession'), "Watch browser reads must remain behind the AERTEX session gate.");
 
+for (const root of ["qsseda.com","qsseda.online"]) {
+  assert(wrangler.includes("aw." + root), "Missing Watch UI domain for aw." + root);
+}
 for (const root of ["qsseda.com","qsseda.online","qsseda.studio"]) {
-  for (const host of ["aw.","awd.","aw.data."]) {
-    assert(wrangler.includes(host + root), "Missing Watch route for " + host + root);
+  for (const host of ["awd.","aw.data."]) {
+    assert(wrangler.includes(host + root), "Missing Watch data domain for " + host + root);
   }
 }
+assert(!wrangler.includes('"pattern": "aw.qsseda.studio'), "Legacy aw.qsseda.studio must stay outside the cloud Worker configuration.");
 
 assert(wrangler.includes('"bucket_name": "qsseda-studio-storage"'), "Watch must use the existing private R2 binding until a dedicated bucket is provisioned.");
 assert(index.includes("AERTEX Watch Cloud") && index.includes("生成设备令牌"), "Watch UI must expose cloud status and device onboarding.");
@@ -40,7 +44,8 @@ assert(sync.includes("limit:\"-1\""), "Native sync must request the complete inc
 assert(sync.includes("--watch"), "Native sync must support continuous operation.");
 assert(handoff.includes("/aw/handoff") && handoff.includes("/auth/handoff"), "Watch must support the secure main-site session handoff.");
 assert(studioWorker.includes("isMainWatchHandoffPath") && studioWorker.includes("handleMainWatchHandoff"), "Main Studio worker must route Watch handoffs.");
-assert(authWorker.includes('service === "aw"'), "AERTEX ID must allow Watch as a handoff target.");
+assert(authWorker.includes('service === "aw"') && authWorker.includes("awOriginForRequest(request)"), "AERTEX ID must route Watch through the canonical Watch origin.");
 assert(domains.includes("awdOriginForRequest") && domains.includes("awDataOriginForRequest"), "Domain family must define both Watch data names.");
+assert(domains.includes('root === "qsseda.studio" ? "qsseda.com" : root'), "The legacy qsseda.studio Watch UI must canonicalize to the cloud .com UI.");
 
 console.log("AERTEX Watch cloud checks passed.");
