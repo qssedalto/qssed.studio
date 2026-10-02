@@ -1,5 +1,5 @@
 import { handleOAuthRequest } from "./auth-oauth.js";
-import { localeDirection, localeFromPath, preferredLocaleFromRequest } from "./studio/locale.js";
+import { localeDirection, localeFromPath, normalizeSupportedLocale, preferredLocaleFromRequest } from "./studio/locale.js";
 import { mainOriginForRequest, rootDomainForRequest, serviceOrigin } from "./studio/domain-family.js";
 import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
