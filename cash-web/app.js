@@ -15,7 +15,12 @@
   const money = (value, decimals = 0) => `¥${Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
   const signed = (value, decimals = 1) => `${value >= 0 ? '+' : '-'}${money(Math.abs(value), decimals)}`;
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
-  const amount = (element, fallback = 0) => { const number = Number(String(element.value).trim().replace(/[，,。]/g, '.')); return Number.isFinite(number) && number >= 0 ? number : fallback; };
+  const numericValue = (element, fallback = 0, { allowNegative = false } = {}) => {
+    const number = Number(String(element.value).trim().replace(/[，,。]/g, '.'));
+    if (!Number.isFinite(number)) return fallback;
+    return allowNegative || number >= 0 ? number : fallback;
+  };
+  const amount = (element, fallback = 0) => numericValue(element, fallback);
   const normalizeDateInput = value => {
     const parts = String(value || '').trim().replace(/[年/.]/g, '-').replace('月', '-').replace(/日/g, '').split('-');
     if (parts.length !== 3) return '';
@@ -494,7 +499,11 @@
       foodSunday: v => data.budgetRules.foodByDayType.sunday = v, socialVisits: v => data.budgetRules.socialTransport.weeklyVisits = v,
       socialMedian: v => data.budgetRules.socialTransport.medianPerVisit = v, socialMin: v => data.budgetRules.socialTransport.minPerVisit = v, socialMax: v => data.budgetRules.socialTransport.maxPerVisit = v
     };
-    for (const id of Object.keys(bindings)) $(id).addEventListener('change', () => { setters[id](amount($(id), bindings[id]())); mutate('预算规则已保存到云端'); });
+    for (const id of Object.keys(bindings)) $(id).addEventListener('change', () => {
+      const value = numericValue($(id), bindings[id](), { allowNegative: id === 'openingCash' });
+      setters[id](value);
+      mutate(id === 'openingCash' ? '起始余额已保存到云端' : '预算规则已保存到云端');
+    });
   }
 
   function downloadText(filename, content, type) {
