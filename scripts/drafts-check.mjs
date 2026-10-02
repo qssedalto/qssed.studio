@@ -28,8 +28,16 @@ for (const zh of [true, false]) {
 assert(worker.includes('pathname === "/api/drafts"'), "Worker is missing the draft API route");
 assert(worker.includes("handleDrafts(request, env)"), "Worker does not dispatch drafts through its API boundary");
 assert(entry.includes('pathname === "/workspace/drafts"'), "Studio entry does not mount Drafts");
-assert(entry.includes("draftsWorkspaceContent(zh)"), "Draft renderer is not mounted");
+assert(entry.includes("draftsWorkspaceContent(zh, fullLocale)"), "Draft renderer must receive the full locale");
 assert(edge.includes('"/api/drafts"'), "Draft listing/search must remain behind the expensive-endpoint limiter");
+
+for (const [locale, expected] of [["zh-tw","草稿箱"],["ja-jp","下書き"],["ko-kr","초안"],["fr-fr","Brouillons"],["es-es","Borradores"],["el-gr","Προσχέδια"],["ar-sa","المسودات"]]) {
+  const markup = draftsWorkspaceContent(false, locale);
+  assert(markup.includes(expected), "Draft translation missing for " + locale);
+  assert(markup.includes("/api/drafts") && markup.includes("/api/projects"), "Draft APIs must remain intact for " + locale);
+  const scripts = [...markup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+  for (const code of scripts) new Function(code);
+}
 
 assert(api.includes('const DRAFT_ROOT = "_system/drafts/"'), "Drafts must use the hidden R2 namespace");
 assert(api.includes("draftPrefix(userId)"), "Draft storage must be scoped by user ID");
