@@ -42,6 +42,12 @@ on:
       - "scripts/cash-subdomain-check.mjs"
       - "scripts/cash-model-check.mjs"
       - "wrangler.cash.jsonc"
+      - "watch-worker.js"
+      - "watch-web/**"
+      - "AW-Sync/**"
+      - "studio/watch-subdomain.js"
+      - "scripts/watch-cloud-check.mjs"
+      - "wrangler.watch.jsonc"
       - "wrangler.admin.jsonc"
       - ".github/workflows/studio-check.yml"
   push:
@@ -142,6 +148,10 @@ jobs:
           node --check cash-web/app.js
           node --check scripts/cash-subdomain-check.mjs
           node --check scripts/cash-model-check.mjs
+          node --check watch-worker.js
+          node --check watch-web/app.js
+          node --check AW-Sync/native/aw-sync.mjs
+          node --check scripts/watch-cloud-check.mjs
 
       - name: Verify browser security markup
         run: node scripts/security-markup-check.mjs
@@ -193,6 +203,9 @@ jobs:
           node scripts/cash-subdomain-check.mjs
           node scripts/cash-model-check.mjs
 
+      - name: Verify AERTEX Watch cloud architecture
+        run: node scripts/watch-cloud-check.mjs
+
       - name: Verify isolated admin control plane
         run: node scripts/admin-control-plane-check.mjs
 
@@ -225,6 +238,9 @@ jobs:
 
       - name: Bundle Cash Worker
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.cash.jsonc --dry-run --outdir .wrangler-cash-check
+
+      - name: Bundle Watch Worker
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.watch.jsonc --dry-run --outdir .wrangler-watch-check
 
       - name: Bundle Admin Worker
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.admin.jsonc --dry-run --outdir .wrangler-admin-check
