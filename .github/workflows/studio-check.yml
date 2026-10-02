@@ -35,6 +35,11 @@ on:
       - "wrangler.work.jsonc"
       - "gpt-worker.js"
       - "wrangler.gpt.jsonc"
+      - "cash-worker.js"
+      - "cash-web/**"
+      - "studio/cash-subdomain.js"
+      - "scripts/cash-subdomain-check.mjs"
+      - "wrangler.cash.jsonc"
       - "wrangler.admin.jsonc"
       - ".github/workflows/studio-check.yml"
   push:
@@ -73,6 +78,11 @@ on:
       - "wrangler.work.jsonc"
       - "gpt-worker.js"
       - "wrangler.gpt.jsonc"
+      - "cash-worker.js"
+      - "cash-web/**"
+      - "studio/cash-subdomain.js"
+      - "scripts/cash-subdomain-check.mjs"
+      - "wrangler.cash.jsonc"
       - "wrangler.admin.jsonc"
       - ".github/workflows/studio-check.yml"
   workflow_dispatch:
@@ -123,6 +133,10 @@ jobs:
           node --check scripts/billing-subscription-check.mjs
           node --check scripts/wishes-check.mjs
           node --check gpt-worker.js
+          node --check cash-worker.js
+          node --check cash-web/model.js
+          node --check cash-web/app.js
+          node --check scripts/cash-subdomain-check.mjs
 
       - name: Verify browser security markup
         run: node scripts/security-markup-check.mjs
@@ -166,6 +180,9 @@ jobs:
       - name: Verify GPT rendered UI
         run: node scripts/gpt-ui-check.mjs
 
+      - name: Verify Cash custom domain and editable model
+        run: node scripts/cash-subdomain-check.mjs
+
       - name: Verify isolated admin control plane
         run: node scripts/admin-control-plane-check.mjs
 
@@ -195,6 +212,9 @@ jobs:
 
       - name: Bundle GPT Worker
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.gpt.jsonc --dry-run --outdir .wrangler-gpt-check
+
+      - name: Bundle Cash Worker
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.cash.jsonc --dry-run --outdir .wrangler-cash-check
 
       - name: Bundle Admin Worker
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.admin.jsonc --dry-run --outdir .wrangler-admin-check
