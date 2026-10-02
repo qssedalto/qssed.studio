@@ -47,6 +47,10 @@ export function gptOriginForRequest(request) {
   return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "gpt");
 }
 
+export function cashOriginForRequest(request) {
+  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "cash");
+}
+
 export function adminOriginForRequest(request) {
   return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "admin");
 }
