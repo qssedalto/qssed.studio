@@ -59,6 +59,12 @@ for (const [label, source, endpoints] of cookieClients) {
   assertContains(source, "same-origin", `${label} must explicitly use same-origin credentials after hardening`);
 }
 
+for (const [locale, expected] of [["zh-tw","研究工作區"],["ja-jp","研究ワークスペース"],["ko-kr","연구 작업 공간"],["fr-fr","Espace de recherche"],["es-es","Espacio de investigación"],["el-gr","Χώρος έρευνας"],["ar-sa","مساحة البحث"]]) {
+  const notesMarkup = researchNotesContent(false, locale);
+  assertContains(notesMarkup, expected, "Notes translation missing for " + locale);
+  assertContains(notesMarkup, "/api/notes", "Notes API behavior must remain intact for " + locale);
+}
+
 const storageMarkup = storageSettingsContent(true) + storageClientScript(true, "/zh-cn/login");
 assertAbsent(storageMarkup, 'id="storage-login-link"', "Storage must not render a redundant re-login button.");
 assertAbsent(storageMarkup, "supabaseClient.auth.getSession()", "Storage must not classify a valid server session as signed out because browser auth storage is missing.");
