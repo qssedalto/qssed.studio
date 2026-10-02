@@ -759,6 +759,8 @@ export function injectWorkTexHomeLinks(markup, locale = "en-us", mainOrigin = "h
         -webkit-tap-highlight-color:transparent;
       }
       .tex-work-app .tex-panel-home-link:hover{background:var(--surface-strong);color:var(--text)}
+      .tex-work-app .tex-editor-placeholder>.tex-panel-home-link{margin:8px auto 0}
+      .tex-work-app .tex-editor-toolbar>.tex-panel-home-link{align-self:center;margin-left:auto}
       .tex-work-app .tex-panel-home-link svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
       @media(max-width:760px){
         .tex-work-app .tex-panel-home-link{min-height:30px;padding:0 9px;font-size:10px}
@@ -770,7 +772,8 @@ export function injectWorkTexHomeLinks(markup, locale = "en-us", mainOrigin = "h
         const label = ${JSON.stringify(label)};
         const targets = [
           [".tex-documents-panel .tex-panel-head", "documents"],
-          [".tex-editor-panel .tex-panel-head", "editor"],
+          [".tex-editor-panel .tex-editor-toolbar", "editor"],
+          [".tex-editor-panel .tex-editor-placeholder", "editor-empty"],
           [".tex-runs-panel .tex-runs-head", "preview"]
         ];
         const icon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11.25 12 4l8.5 7.25"/><path d="M5.5 10.5v8.25h13V10.5"/><path d="M9.5 18.75v-5.5h5v5.5"/></svg>';
