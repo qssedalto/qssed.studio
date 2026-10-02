@@ -426,9 +426,21 @@ jobs:
 
           verify_main() {
             url="$1"
+            mode="$2"
             status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-family-robots.txt --write-out '%{http_code}' "$url" || true)"
-            if [ "$status" != "200" ] || ! grep -q '^Disallow: /$' /tmp/qsseda-family-robots.txt; then
+            if [ "$status" != "200" ]; then
               echo "Main domain regression: $url (HTTP ${status:-unknown})"
+              cat /tmp/qsseda-family-robots.txt || true
+              exit 1
+            fi
+            if [ "$mode" = "canonical" ]; then
+              if ! grep -q '^Allow: /$' /tmp/qsseda-family-robots.txt || ! grep -q '^Sitemap: https://qsseda.com/sitemap.xml$' /tmp/qsseda-family-robots.txt; then
+                echo "Canonical main domain is not crawlable."
+                cat /tmp/qsseda-family-robots.txt || true
+                exit 1
+              fi
+            elif ! grep -q '^Disallow: /$' /tmp/qsseda-family-robots.txt; then
+              echo "Alias main domain must remain excluded from indexing."
               cat /tmp/qsseda-family-robots.txt || true
               exit 1
             fi
@@ -459,9 +471,9 @@ jobs:
           verify_health "https://admin.qsseda.online/health" "qsseda-admin" "https://admin.qsseda.online"
           verify_health "https://admin.qsseda.studio/health" "qsseda-admin" "https://admin.qsseda.studio"
 
-          verify_main "https://qsseda.com/robots.txt"
-          verify_main "https://qsseda.online/robots.txt"
-          verify_main "https://qsseda.studio/robots.txt"
+          verify_main "https://qsseda.com/robots.txt" "canonical"
+          verify_main "https://qsseda.online/robots.txt" "alias"
+          verify_main "https://qsseda.studio/robots.txt" "alias"
 
           verify_work "https://work.qsseda.com/zh-cn/tex" "https://qsseda.com/work/handoff?next=%2Fzh-cn%2Ftex"
           verify_work "https://work.qsseda.online/zh-cn/tex" "https://qsseda.online/work/handoff?next=%2Fzh-cn%2Ftex"
@@ -472,12 +484,31 @@ jobs:
         run: |
           set -euo pipefail
           robots_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-robots.txt --write-out '%{http_code}' 'https://qsseda.com/robots.txt' || true)"
-          if [ "$robots_status" != "200" ] || ! grep -q '^Disallow: /$' /tmp/qsseda-robots.txt; then
-            echo "Edge protection regression: robots.txt is not denying crawler access."
+          if [ "$robots_status" != "200" ] || ! grep -q '^Allow: /$' /tmp/qsseda-robots.txt || ! grep -q '^Sitemap: https://qsseda.com/sitemap.xml$' /tmp/qsseda-robots.txt; then
+            echo "SEO regression: canonical robots.txt is not crawlable."
             echo "HTTP status: ${robots_status:-unknown}"
             cat /tmp/qsseda-robots.txt || true
             exit 1
           fi
+
+          sitemap_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-sitemap.xml --write-out '%{http_code}' 'https://qsseda.com/sitemap.xml' || true)"
+          if [ "$sitemap_status" != "200" ] || ! grep -q '<loc>https://qsseda.com/</loc>' /tmp/qsseda-sitemap.xml; then
+            echo "SEO regression: canonical sitemap is unavailable."
+            echo "HTTP status: ${sitemap_status:-unknown}"
+            cat /tmp/qsseda-sitemap.xml || true
+            exit 1
+          fi
+
+          home_headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-public-home.html --dump-header - -H 'User-Agent: Mozilla/5.0' -H 'Accept: text/html' -H 'Sec-Fetch-Mode: navigate' -H 'Sec-Fetch-Site: none' -H 'Sec-Fetch-Dest: document' 'https://qsseda.com/' || true)"
+          home_status="$(printf '%s\n' "$home_headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
+          home_robots="$(printf '%s\n' "$home_headers" | awk 'BEGIN{IGNORECASE=1} /^x-robots-tag:/ {sub(/\r$/,""); sub(/^x-robots-tag:[[:space:]]*/,""); value=$0} END {print value}')"
+          if [ "$home_status" != "200" ] || ! printf '%s' "$home_robots" | grep -qi '^index, follow' || ! grep -q '<link rel="canonical" href="https://qsseda.com/">' /tmp/qsseda-public-home.html; then
+            echo "SEO regression: signed-out canonical home is not indexable."
+            echo "HTTP status: ${home_status:-unknown}; X-Robots-Tag: ${home_robots:-none}"
+            sed -n '1,60p' /tmp/qsseda-public-home.html || true
+            exit 1
+          fi
+
           probe_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-probe.txt --write-out '%{http_code}' 'https://qsseda.com/.env' || true)"
           if [ "$probe_status" != "404" ]; then
             echo "Edge protection regression: scanner probe was not rejected before AERTEX routing."

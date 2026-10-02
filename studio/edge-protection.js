@@ -31,7 +31,8 @@ const EXPENSIVE_PATHS = new Set([
 export async function protectEdgeRequest(request, env) {
   const url = new URL(request.url);
   const pathname = url.pathname;
-  if (pathname === "/robots.txt") return robotsResponse();
+  if (pathname === "/robots.txt") return robotsResponse(url.hostname);
+  if (pathname === "/sitemap.xml") return sitemapResponse(url.hostname);
   if (pathname.length > MAX_PATH_LENGTH || url.search.length > MAX_QUERY_LENGTH) return compactError(request, 414, "Request target is too long.");
   if (request.method === "TRACE" || request.method === "CONNECT") return compactError(request, 405, "Method not allowed.");
   if (SCANNER_PATH.test(pathname)) return scannerNotFound();
@@ -51,7 +52,11 @@ export async function protectEdgeRequest(request, env) {
 export function applyEdgeProtectionHeaders(request, response) {
   const headers = new Headers(response.headers);
   const contentType = headers.get("content-type") || "";
-  if (contentType.includes("text/html") || contentType.includes("application/json")) headers.set("x-robots-tag", "noindex, nofollow, noarchive, nosnippet");
+  if (contentType.includes("application/json")) {
+    headers.set("x-robots-tag", "noindex, nofollow, noarchive, nosnippet");
+  } else if (contentType.includes("text/html") && !headers.has("x-robots-tag")) {
+    headers.set("x-robots-tag", "noindex, nofollow, noarchive, nosnippet");
+  }
   if (!headers.has("referrer-policy")) headers.set("referrer-policy", "strict-origin-when-cross-origin");
   if (!headers.has("x-content-type-options")) headers.set("x-content-type-options", "nosniff");
   if (!headers.has("permissions-policy")) headers.set("permissions-policy", "camera=(), microphone=(), geolocation=()");
@@ -121,4 +126,39 @@ function compactError(request, status, message) {
   return new Response(isApi ? JSON.stringify({ error: message }) : message, { status, headers: { "content-type": isApi ? "application/json;charset=UTF-8" : "text/plain;charset=UTF-8", "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex, nofollow, noarchive, nosnippet" } });
 }
 function scannerNotFound() { return new Response("Not found.", { status: 404, headers: { "content-type": "text/plain;charset=UTF-8", "cache-control": "public, max-age=300", "x-content-type-options": "nosniff", "x-robots-tag": "noindex, nofollow, noarchive, nosnippet" } }); }
-function robotsResponse() { return new Response("User-agent: *\nDisallow: /\n", { status: 200, headers: { "content-type": "text/plain;charset=UTF-8", "cache-control": "public, max-age=3600", "x-content-type-options": "nosniff" } }); }
+
+function robotsResponse(hostname) {
+  const canonical = String(hostname || "").toLowerCase() === "qsseda.com";
+  const body = canonical
+    ? "User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /auth/\nSitemap: https://qsseda.com/sitemap.xml\n"
+    : "User-agent: *\nDisallow: /\n";
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "text/plain;charset=UTF-8",
+      "cache-control": "public, max-age=3600",
+      "x-content-type-options": "nosniff"
+    }
+  });
+}
+
+function sitemapResponse(hostname) {
+  if (String(hostname || "").toLowerCase() !== "qsseda.com") return scannerNotFound();
+  const locales = ["en-us","en-gb","en-au","zh-cn","zh-tw","ja-jp","ko-kr","fr-fr","es-es","el-gr","ar-sa"];
+  const urls = [
+    "https://qsseda.com/",
+    ...locales.map(locale => "https://qsseda.com/" + locale)
+  ];
+  const body = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    + urls.map(url => "  <url><loc>" + url + "</loc></url>").join("\n")
+    + "\n</urlset>\n";
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "application/xml;charset=UTF-8",
+      "cache-control": "public, max-age=3600",
+      "x-content-type-options": "nosniff"
+    }
+  });
+}

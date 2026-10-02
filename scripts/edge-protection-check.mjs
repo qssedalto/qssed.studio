@@ -47,7 +47,13 @@ assert(result === null, "Normal browser navigation should pass edge protection")
 
 const robots = await protectEdgeRequest(browserRequest("/robots.txt"), env());
 assert(robots?.status === 200, "robots.txt should be served at the edge");
-assert((await robots.text()).includes("Disallow: /"), "robots.txt must disallow crawling");
+const robotsText = await robots.text();
+assert(robotsText.includes("Allow: /"), "Canonical robots.txt must allow public crawling");
+assert(robotsText.includes("Sitemap: https://qsseda.com/sitemap.xml"), "Canonical robots.txt must publish the sitemap");
+
+const sitemap = await protectEdgeRequest(browserRequest("/sitemap.xml"), env());
+assert(sitemap?.status === 200, "Canonical sitemap.xml should be served at the edge");
+assert((await sitemap.text()).includes("<loc>https://qsseda.com/</loc>"), "Canonical sitemap must include the public home");
 
 const scanner = await protectEdgeRequest(browserRequest("/.env"), env({ EDGE_GLOBAL_RATE_LIMITER: deny }));
 assert(scanner?.status === 404, "Common scanner paths must be rejected before business routing");
@@ -150,7 +156,18 @@ const protectedHtml = applyEdgeProtectionHeaders(
   browserRequest(),
   new Response("<html><body>ok</body></html>", { headers: { "content-type": "text/html;charset=UTF-8" } })
 );
-assert(protectedHtml.headers.get("x-robots-tag")?.includes("noindex"), "HTML responses must opt out of indexing");
+assert(protectedHtml.headers.get("x-robots-tag")?.includes("noindex"), "HTML without an explicit indexing policy must remain noindex");
+
+const publicHtml = applyEdgeProtectionHeaders(
+  browserRequest("/"),
+  new Response("<html><body>public</body></html>", {
+    headers: {
+      "content-type": "text/html;charset=UTF-8",
+      "x-robots-tag": "index, follow, max-snippet:-1, max-image-preview:large"
+    }
+  })
+);
+assert(publicHtml.headers.get("x-robots-tag")?.startsWith("index, follow"), "Explicit public indexing policy must survive edge hardening");
 assert(protectedHtml.headers.get("x-content-type-options") === "nosniff", "nosniff header is required");
 assert(protectedHtml.headers.get("permissions-policy")?.includes("camera=()"), "Restrictive permissions policy is required");
 

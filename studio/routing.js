@@ -47,7 +47,12 @@ function htmlSecurityHeaders(options = {}) {
   ];
   if (!allowLoopback) directives.push("upgrade-insecure-requests");
   headers.set("content-security-policy", directives.join("; "));
-  headers.set("x-robots-tag", "noindex, nofollow, noarchive, nosnippet, noimageindex");
+  headers.set(
+    "x-robots-tag",
+    options?.indexable === true
+      ? "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+      : "noindex, nofollow, noarchive, nosnippet, noimageindex"
+  );
   headers.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
   headers.set("pragma", "no-cache");
   headers.set("expires", "0");
