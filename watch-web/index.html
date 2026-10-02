@@ -19,43 +19,43 @@
   <main>
     <section class="hero">
       <div>
-        <p class="eyebrow">AERTEX Watch Cloud</p>
-        <h1>你的 ActivityWatch，现在不只在这台电脑上。</h1>
-        <p class="lead">本机继续负责采集，AERTEX 云端负责同步、存储和跨设备查看。</p>
+        <p class="eyebrow">AERTEX Watch</p>
+        <h1>电脑上的 ActivityWatch，手机也能看。</h1>
+        <p class="lead">连接电脑后，ActivityWatch 的记录会同步到这里。</p>
       </div>
       <div class="sync-state">
         <span id="syncDot" class="dot"></span>
-        <div><strong id="syncLabel">正在读取云端状态…</strong><small id="syncDetail"></small></div>
+        <div><strong id="syncLabel">正在检查同步状态…</strong><small id="syncDetail"></small></div>
       </div>
     </section>
 
     <section class="kpis">
-      <article><span>今日记录</span><strong id="todayDuration">—</strong><small>窗口活动总时长</small></article>
-      <article><span>数据桶</span><strong id="bucketCount">—</strong><small>已同步到云端</small></article>
-      <article><span>最近同步</span><strong id="lastSync">—</strong><small id="lastSyncHost">等待设备</small></article>
+      <article><span>今日活动</span><strong id="todayDuration">—</strong><small>已记录的活动时间</small></article>
+      <article><span>数据源</span><strong id="bucketCount">—</strong><small>来自 ActivityWatch</small></article>
+      <article><span>最近同步</span><strong id="lastSync">—</strong><small id="lastSyncHost">尚未连接</small></article>
     </section>
 
     <section class="grid">
       <article class="panel">
-        <div class="panel-head"><div><p class="eyebrow">Today</p><h2>今日应用</h2></div></div>
+        <div class="panel-head"><div><p class="eyebrow">今天</p><h2>应用使用</h2></div></div>
         <div id="apps" class="apps"><p class="muted">正在加载…</p></div>
       </article>
 
       <article class="panel">
-        <div class="panel-head"><div><p class="eyebrow">Cloud sync</p><h2>连接这台电脑</h2></div></div>
-        <p class="muted">生成一次设备令牌，然后让本机同步代理把 ActivityWatch 的增量数据上传到 <code>awd.*</code>。</p>
+        <div class="panel-head"><div><p class="eyebrow">同步</p><h2>连接电脑</h2></div></div>
+        <p class="muted">在电脑上运行 AERTEX Watch Sync，并使用这里生成的设备令牌。连接后，新记录会自动同步。</p>
         <div class="actions"><button id="createToken" type="button">生成设备令牌</button></div>
         <div id="tokenBox" class="token-box" hidden>
-          <label>设备令牌（只显示这一次）</label>
+          <label>设备令牌（仅显示一次）</label>
           <code id="tokenValue"></code>
           <button id="copyToken" class="quiet" type="button">复制</button>
         </div>
-        <p class="hint">完整语义域名 <code>aw.data.*</code> 与短域名 <code>awd.*</code> 指向同一云端数据服务。</p>
+        <p class="hint">这个令牌只用于连接你的电脑。</p>
       </article>
     </section>
 
     <section class="panel buckets-panel">
-      <div class="panel-head"><div><p class="eyebrow">Buckets</p><h2>云端数据桶</h2></div></div>
+      <div class="panel-head"><div><p class="eyebrow">ActivityWatch</p><h2>已连接的数据源</h2></div></div>
       <div id="buckets" class="bucket-list"><p class="muted">正在加载…</p></div>
     </section>
   </main>
