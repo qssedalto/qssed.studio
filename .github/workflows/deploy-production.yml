@@ -358,18 +358,31 @@ jobs:
             exit 1
           fi
 
-          short_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-awd.json --write-out '%{http_code}' 'https://awd.qsseda.com/' || true)"
-          semantic_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-awdata.json --write-out '%{http_code}' 'https://aw.data.qsseda.com/' || true)"
-          if [ "$short_status" != "200" ] || ! grep -q '"short_host":true' /tmp/qsseda-awd.json; then
-            echo "Watch short data domain regression."
-            cat /tmp/qsseda-awd.json || true
-            exit 1
-          fi
-          if [ "$semantic_status" != "200" ] || ! grep -q '"semantic_alias":true' /tmp/qsseda-awdata.json; then
-            echo "Watch semantic data alias regression."
-            cat /tmp/qsseda-awdata.json || true
-            exit 1
-          fi
+          verify_watch_data_domain() {
+            url="$1"
+            output="$2"
+            expected="$3"
+            label="$4"
+            ready=0
+            for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+              rm -f "$output"
+              status="$(curl --silent --show-error --max-time 20 --output "$output" --write-out '%{http_code}' "$url" || true)"
+              if [ "$status" = "200" ] && grep -q "$expected" "$output"; then
+                ready=1
+                break
+              fi
+              echo "$label not ready on attempt $attempt (HTTP ${status:-unknown}); retrying for DNS/TLS propagation..."
+              sleep 4
+            done
+            if [ "$ready" -ne 1 ]; then
+              echo "$label regression."
+              cat "$output" || true
+              exit 1
+            fi
+          }
+
+          verify_watch_data_domain "https://awd.qsseda.com/" "/tmp/qsseda-awd.json" '"short_host":true' "Watch short data domain"
+          verify_watch_data_domain "https://aw.data.qsseda.com/" "/tmp/qsseda-awdata.json" '"semantic_alias":true' "Watch semantic data alias"
 
       - name: Verify all independent domains
         shell: bash
