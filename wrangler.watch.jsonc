@@ -33,7 +33,6 @@
     { "pattern": "aw.data.qsseda.online/*", "zone_name": "qsseda.online" },
     { "pattern": "aw.data.qsseda.online", "custom_domain": true },
     { "pattern": "aw.qsseda.studio/*", "zone_name": "qsseda.studio" },
-    { "pattern": "aw.qsseda.studio", "custom_domain": true },
     { "pattern": "awd.qsseda.studio/*", "zone_name": "qsseda.studio" },
     { "pattern": "awd.qsseda.studio", "custom_domain": true },
     { "pattern": "aw.data.qsseda.studio/*", "zone_name": "qsseda.studio" },
