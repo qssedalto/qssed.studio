@@ -1,6 +1,7 @@
 import { FAVICON_LINKS } from "./favicon.js";
 import { awOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 import { localeDirection, localeFromPath, normalizeSupportedLocale } from "./locale.js";
+import { injectPublicSeo } from "./public-indexing.js";
 
 export function isWatchSetupPath(pathname) {
   const locale = localeFromPath(pathname);
