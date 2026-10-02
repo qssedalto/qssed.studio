@@ -39,6 +39,7 @@ on:
       - "cash-web/**"
       - "studio/cash-subdomain.js"
       - "scripts/cash-subdomain-check.mjs"
+      - "scripts/cash-model-check.mjs"
       - "wrangler.cash.jsonc"
       - "wrangler.admin.jsonc"
       - ".github/workflows/studio-check.yml"
@@ -137,6 +138,7 @@ jobs:
           node --check cash-web/model.js
           node --check cash-web/app.js
           node --check scripts/cash-subdomain-check.mjs
+          node --check scripts/cash-model-check.mjs
 
       - name: Verify browser security markup
         run: node scripts/security-markup-check.mjs
@@ -181,7 +183,9 @@ jobs:
         run: node scripts/gpt-ui-check.mjs
 
       - name: Verify Cash custom domain and editable model
-        run: node scripts/cash-subdomain-check.mjs
+        run: |
+          node scripts/cash-subdomain-check.mjs
+          node scripts/cash-model-check.mjs
 
       - name: Verify isolated admin control plane
         run: node scripts/admin-control-plane-check.mjs
