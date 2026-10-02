@@ -190,6 +190,40 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.cash.jsonc
 
+      - name: Migrate legacy Watch Studio DNS
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.cloudflare.com/client/v4"
+          auth=(-H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json")
+
+          zone_json="$(curl --fail --silent --show-error "${auth[@]}" -G "$api/zones" --data-urlencode "name=qsseda.studio" --data-urlencode "status=active")"
+          zone_id="$(printf '%s' "$zone_json" | jq -r '.result[0].id // empty')"
+          if [ -z "$zone_id" ]; then
+            echo "Unable to resolve the qsseda.studio Cloudflare zone."
+            printf '%s\n' "$zone_json"
+            exit 1
+          fi
+
+          records_json="$(curl --fail --silent --show-error "${auth[@]}" -G "$api/zones/$zone_id/dns_records" --data-urlencode "name=aw.qsseda.studio" --data-urlencode "per_page=100")"
+          mapfile -t legacy_ids < <(printf '%s' "$records_json" | jq -r '.result[] | select(.type == "A" or .type == "AAAA" or .type == "CNAME") | .id')
+
+          if [ "${#legacy_ids[@]}" -eq 0 ]; then
+            echo "No legacy A/AAAA/CNAME record remains for aw.qsseda.studio."
+          else
+            echo "Removing ${#legacy_ids[@]} legacy DNS record(s) for aw.qsseda.studio before Worker Custom Domain migration."
+            for record_id in "${legacy_ids[@]}"; do
+              delete_json="$(curl --fail --silent --show-error "${auth[@]}" -X DELETE "$api/zones/$zone_id/dns_records/$record_id")"
+              if [ "$(printf '%s' "$delete_json" | jq -r '.success')" != "true" ]; then
+                echo "Failed to delete legacy Watch DNS record $record_id."
+                printf '%s\n' "$delete_json"
+                exit 1
+              fi
+            done
+          fi
+
       - name: Deploy AERTEX Watch
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
