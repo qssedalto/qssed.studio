@@ -59,6 +59,11 @@ for (const [label, source, endpoints] of cookieClients) {
   assertContains(source, "same-origin", `${label} must explicitly use same-origin credentials after hardening`);
 }
 
+const storageMarkup = storageSettingsContent(true) + storageClientScript(true, "/zh-cn/login");
+assertAbsent(storageMarkup, 'id="storage-login-link"', "Storage must not render a redundant re-login button.");
+assertAbsent(storageMarkup, "supabaseClient.auth.getSession()", "Storage must not classify a valid server session as signed out because browser auth storage is missing.");
+assertContains(storageMarkup, 'credentials: "same-origin"', "Storage must use the validated server cookie session.");
+
 console.log("Browser security markup checks passed.");
 
 function assertBrowserInternalsHidden(source, label) {

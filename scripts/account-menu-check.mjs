@@ -34,7 +34,8 @@ for (const required of [
 assert(globalBrowser.includes("injectAccountMenuRuntime("), "Main/Work browser HTML must receive the shared account menu fallback.");
 assert(accountSecurity.includes("email: String(session.user.email ||"), "Account summary must expose the signed-in email to the server-rendered account menu.");
 assert(accountMenu.includes('id="aertex-account-signout"'), "Shared account menu must expose sign out.");
-assert(accountMenu.includes('id="aertex-account-switch"'), "Shared account menu must expose switch/re-login.");
+assert(accountMenu.includes('id="aertex-account-switch"'), "Shared account menu must expose account switching.");
+assert(!accountMenu.includes("切换账号 / 重新登录") && !accountMenu.includes("Switch account / sign in again"), "Shared account menu must not label account switching as re-login.");
 assert(accountMenu.includes('new URL("/logout",authOrigin())'), "App account menu must route global sign-out through AERTEX ID.");
 assert(accountMenu.includes(':root[data-theme="dark"] .aertex-account-root'), "Shared account menu must define an explicit dark-theme surface.");
 assert(accountMenu.includes('--aertex-account-panel:var(--panel,var(--glass-heavy,var(--surface,#1c1c1e)))'), "Shared account menu must have a dark fallback when the host page does not define panel variables.");

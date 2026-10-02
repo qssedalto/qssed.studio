@@ -118,13 +118,11 @@ export function authHandoffHtml(accessToken, refreshToken, next, workTarget = fa
   const product = workTarget ? "AERTEX Work" : gptTarget ? "AERTEX Intelligence" : cashTarget ? "AERTEX Cash" : "AERTEX";
   const locale = localeFromPath(next) || "en-us";
   const copy = {
-    "zh-cn":["正在完成登录…","重新登录"], "zh-tw":["正在完成登入…","重新登入"],
-    "ja-jp":["サインインを完了しています…","もう一度サインイン"], "ko-kr":["로그인을 완료하는 중…","다시 로그인"],
-    "fr-fr":["Finalisation de la connexion…","Se reconnecter"], "es-es":["Finalizando el inicio de sesión…","Volver a iniciar sesión"],
-    "el-gr":["Ολοκλήρωση σύνδεσης…","Νέα σύνδεση"], "ar-sa":["جارٍ إكمال تسجيل الدخول…","تسجيل الدخول مجددًا"]
-  }[locale] || ["Finishing sign-in…","Sign in again"];
-  const login = new URL("/login", authOrigin);
-  login.searchParams.set("next", retryNext);
-  const page = `<!DOCTYPE html><html lang="${locale}" dir="${localeDirection(locale)}"><head>${baseHead(product)}</head><body><main style="min-height:100vh;display:grid;place-items:center;padding:24px"><section style="text-align:center"><h1 style="font-size:24px;margin:0 0 8px">${product}</h1><p id="handoff-status" style="color:var(--muted,#8e8e93)">${copy[0]}</p><a id="handoff-retry" href="${login.toString()}" hidden style="display:inline-flex;margin-top:14px;text-decoration:none;font-weight:650">${copy[1]}</a></section></main>${supabaseScript()}<script>(async()=>{const status=document.getElementById("handoff-status");let result=null;try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}})}catch{}if(result?.error){try{aertexAuthStorage.removeItem(AERTEX_SUPABASE_STORAGE_KEY)}catch{}try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}})}catch{}}if(result?.error){console.warn("Browser auth persistence failed; continuing with validated server session",result.error)}location.replace(${scriptLiteral(next)})})().catch(()=>{location.replace(${scriptLiteral(next)})})</script></body></html>`;
+    "zh-cn":"正在完成登录…", "zh-tw":"正在完成登入…",
+    "ja-jp":"サインインを完了しています…", "ko-kr":"로그인을 완료하는 중…",
+    "fr-fr":"Finalisation de la connexion…", "es-es":"Finalizando el inicio de sesión…",
+    "el-gr":"Ολοκλήρωση σύνδεσης…", "ar-sa":"جارٍ إكمال تسجيل الدخول…"
+  }[locale] || "Finishing sign-in…";
+  const page = `<!DOCTYPE html><html lang="${locale}" dir="${localeDirection(locale)}"><head>${baseHead(product)}</head><body><main style="min-height:100vh;display:grid;place-items:center;padding:24px"><section style="text-align:center"><h1 style="font-size:24px;margin:0 0 8px">${product}</h1><p id="handoff-status" style="color:var(--muted,#8e8e93)">${copy}</p></section></main>${supabaseScript()}<script>(async()=>{let result=null;try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}})}catch{}if(result?.error){try{aertexAuthStorage.removeItem(AERTEX_SUPABASE_STORAGE_KEY)}catch{}try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}})}catch{}}if(result?.error){console.warn("Browser auth persistence failed; continuing with validated server session",result.error)}location.replace(${scriptLiteral(next)})})().catch(()=>{location.replace(${scriptLiteral(next)})})</script></body></html>`;
   return new Response(injectBrandLogoRuntime(page), { status: 200, headers: { "content-type": "text/html;charset=UTF-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" } });
 }
