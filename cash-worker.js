@@ -4,6 +4,7 @@ import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { cashSessionRedirect } from "./studio/cash-subdomain.js";
 import { cashOriginForRequest } from "./studio/domain-family.js";
 import { localeFromPath, preferredLocaleFromRequest } from "./studio/locale.js";
+import { appearanceClientRuntime } from "./studio/appearance.js";
 
 const MAX_DATA_BYTES = 2 * 1024 * 1024;
 const ASSET_PATHS = new Set(["/styles.css", "/model.js", "/app.js", "/icon.svg"]);
@@ -27,6 +28,11 @@ export default {
 
     if (pathname === "/robots.txt") {
       return text("User-agent: *\nDisallow: /\n", 200, "text/plain;charset=UTF-8");
+    }
+
+    if (pathname === "/appearance.js") {
+      if (request.method !== "GET" && request.method !== "HEAD") return text("Method not allowed", 405);
+      return text(request.method === "HEAD" ? "" : appearanceClientRuntime(), 200, "text/javascript;charset=UTF-8");
     }
 
     if (pathname === "/auth/handoff") {
