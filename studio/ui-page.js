@@ -32,6 +32,14 @@ export function baseHead(title) {
           const match = document.cookie.match(/(?:^|;\\s*)qssed_theme=(light|dark)(?:;|$)/);
           return match ? match[1] : "";
         }
+        function readCookieMode() {
+          const match = document.cookie.match(/(?:^|;\\s*)qssed_theme_mode=(system|light|dark)(?:;|$)/);
+          return match ? match[1] : "";
+        }
+        function readCookieAccent() {
+          const match = document.cookie.match(/(?:^|;\\s*)qssed_accent=([a-z-]+)(?:;|$)/);
+          return match ? match[1] : "";
+        }
         function resolvedTheme(mode) {
           if (mode === "light" || mode === "dark") return mode;
           return media.matches ? "light" : "dark";
