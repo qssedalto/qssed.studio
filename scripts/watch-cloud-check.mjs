@@ -15,6 +15,8 @@ const studioWorker = read("worker.js");
 const authWorker = read("auth-worker.js");
 const authHandoff = read("studio/auth-handoff.js");
 const domains = read("studio/domain-family.js");
+const entry = read("studio/entry.js");
+const setupPage = read("studio/watch-setup-page.js");
 
 assert(worker.includes('const TOKEN_PREFIX = "awd1"'), "Watch device tokens need an explicit prefix.");
 assert(worker.includes('sha256Hex(token)'), "Raw device tokens must not be used as storage keys.");
@@ -38,6 +40,9 @@ assert(!wrangler.includes('"pattern": "aw.qsseda.studio'), "Legacy aw.qsseda.stu
 
 assert(wrangler.includes('"bucket_name": "qsseda-studio-storage"'), "Watch must use the existing private R2 binding until a dedicated bucket is provisioned.");
 assert(index.includes("AERTEX Watch") && index.includes("生成设备令牌") && index.includes("连接电脑"), "Watch UI must expose product identity and device onboarding.");
+assert(index.includes("https://qsseda.com/zh-cn/aw/setup") && index.includes("查看设置教程"), "Watch UI must link to the computer setup tutorial.");
+assert(entry.includes('pathname === "/aw/setup"') && entry.includes("watchSetupPage(request)"), "Studio must route the localized Watch setup tutorial.");
+assert(setupPage.includes("ActivityWatch") && setupPage.includes("127.0.0.1:5600") && setupPage.includes("PowerShell"), "Watch setup tutorial must cover ActivityWatch, the local service, and Windows setup.");
 assert(app.includes("/api/watch/tokens") && app.includes("/api/0/buckets/"), "Watch UI must use authenticated cloud APIs.");
 assert(sync.includes("http://127.0.0.1:5600"), "Native sync must default to ActivityWatch localhost.");
 assert(sync.includes("https://awd.qsseda.com"), "Native sync must default to the short cloud data domain.");
