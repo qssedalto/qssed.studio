@@ -399,7 +399,7 @@ ${intelligenceWatchClientScript()}
   function closeChatMenu(){
     const menu=$("chatMenuPortal");if(!menu||menu.hidden)return;
     menu.hidden=true;
-    document.querySelectorAll(".chatMore[aria-expanded=\"true\"]").forEach(button=>button.setAttribute("aria-expanded","false"));
+    document.querySelectorAll('.chatMore[aria-expanded="true"]').forEach(button=>button.setAttribute("aria-expanded","false"));
     chatMenuConversationId="";
   }
   function openChatMenu(button,id){
