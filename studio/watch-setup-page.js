@@ -168,7 +168,10 @@ ${faq(copy.q1,copy.a1)}${faq(copy.q2,copy.a2)}${faq(copy.q3,copy.a3)}${faq(copy.
 </body>
 </html>`;
 
-  return new Response(page, {
+  const canonicalHost = url.hostname.toLowerCase() === "qsseda.com";
+  const indexedPage = injectPublicSeo(page, locale, "/aw/setup", copy.intro);
+
+  return new Response(indexedPage, {
     status: 200,
     headers: {
       "content-type": "text/html;charset=UTF-8",
@@ -177,6 +180,9 @@ ${faq(copy.q1,copy.a1)}${faq(copy.q2,copy.a2)}${faq(copy.q3,copy.a3)}${faq(copy.
       "referrer-policy": "same-origin",
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
+      "x-robots-tag": canonicalHost
+        ? "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+        : "noindex, nofollow, noarchive, nosnippet",
       "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'; connect-src 'none'"
     }
   });
