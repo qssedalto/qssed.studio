@@ -11,6 +11,7 @@ const ipInfo = { ip:"127.0.0.1", country:"US", region:"", city:"", locale:"en-us
 for (const root of QSS_DOMAIN_ROOTS) {
   const mainOrigin = `https://${root}`;
   const workOrigin = `https://work.${root}`;
+  const cashOrigin = `https://cash.${root}`;
   const gptOrigin = `https://gpt.${root}`;
   const expectedAwOrigin = `https://aw.${root}`;
   const request = new Request(mainOrigin + "/");
@@ -27,6 +28,7 @@ for (const root of QSS_DOMAIN_ROOTS) {
     const links = buildLinks(contentLanguage, "/", fullLocale);
     const productLinks = {
       workHref: `${workOrigin}/${fullLocale}/tex`,
+      cashHref: `${cashOrigin}/${fullLocale}`,
       awHref: expectedAwOrigin,
       gptHref: `${gptOrigin}/${fullLocale}`,
       adminHref: "",
@@ -68,10 +70,14 @@ for (const root of QSS_DOMAIN_ROOTS) {
       }
     }
     const workIndex = markup.indexOf("AERTEX Work");
+    const cashIndex = markup.indexOf("AERTEX Cash");
     const awIndex = markup.indexOf("ActivityWatch");
     const intelligenceIndex = markup.indexOf("AERTEX Intelligence");
-    if (!(workIndex >= 0 && awIndex > workIndex && intelligenceIndex > awIndex)) {
+    if (!(workIndex >= 0 && cashIndex > workIndex && awIndex > cashIndex && intelligenceIndex > awIndex)) {
       throw new Error(`Independent product order is wrong for ${root} / ${fullLocale}`);
+    }
+    if (!markup.includes(`href="${cashOrigin}/${fullLocale}"`)) {
+      throw new Error(`Root SSR lost the matching Cash product for ${root} / ${fullLocale}`);
     }
   }
 }
