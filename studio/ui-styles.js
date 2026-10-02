@@ -821,7 +821,7 @@ ${profileStyles()}    /* SETTINGS_GENERAL_ROUTE_V1 */
         display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px
       }
       .desktop-main-menu .compact-menu-product-grid{
-        display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px
+        display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px
       }
       .desktop-main-menu .compact-menu-card{
         position:relative;overflow:hidden;display:grid;
@@ -863,7 +863,7 @@ ${profileStyles()}    /* SETTINGS_GENERAL_ROUTE_V1 */
         letter-spacing:.12em;text-transform:uppercase
       }
       .desktop-main-menu .compact-menu-product-grid .compact-menu-card{
-        min-height:112px
+        min-height:128px
       }
       @media(hover:hover) and (pointer:fine){
         .desktop-main-menu .compact-menu-card:hover{
