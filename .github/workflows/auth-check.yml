@@ -6,6 +6,8 @@ on:
       - "auth-entry.js"
       - "auth-sso.js"
       - "studio/domain-family.js"
+      - "studio/appearance.js"
+      - "studio/intelligence-theme.js"
       - "studio/account-menu.js"
       - "auth-worker.js"
       - "auth-login-identifier.js"
@@ -13,6 +15,7 @@ on:
       - "auth-pkce-test.js"
       - "auth-edge-protection.js"
       - "scripts/auth-edge-protection-check.mjs"
+      - "scripts/appearance-check.mjs"
       - "scripts/brand-check.mjs"
       - "wrangler.auth.jsonc"
       - "AUTH_PORTAL.md"
@@ -25,6 +28,8 @@ on:
       - "auth-entry.js"
       - "auth-sso.js"
       - "studio/domain-family.js"
+      - "studio/appearance.js"
+      - "studio/intelligence-theme.js"
       - "studio/account-menu.js"
       - "auth-worker.js"
       - "auth-login-identifier.js"
@@ -58,11 +63,14 @@ jobs:
           node --check auth-sso.js
           node --check auth-worker.js
           node --check studio/account-menu.js
+          node --check studio/appearance.js
+          node --check studio/intelligence-theme.js
           node --check auth-login-identifier.js
           node --check auth-oauth.js
           node --check auth-pkce-test.js
           node --check auth-edge-protection.js
           node --check scripts/auth-edge-protection-check.mjs
+          node --check scripts/appearance-check.mjs
           node --check scripts/brand-check.mjs
 
       - name: Verify Auth edge anti-crawl and surge protection
@@ -70,6 +78,9 @@ jobs:
 
       - name: Verify AERTEX product naming
         run: node scripts/brand-check.mjs
+
+      - name: Verify shared appearance runtime
+        run: node scripts/appearance-check.mjs
 
       - name: Verify streamlined Auth handoff contract
         run: |
