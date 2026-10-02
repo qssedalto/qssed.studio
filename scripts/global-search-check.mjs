@@ -35,14 +35,14 @@ for (const [locale, expectedText] of [["zh-tw","全域搜尋"],["ja-jp","グロ�
   const markup = globalSearchContent(false, locale);
   assert(markup.includes(expectedText), "Global search translation missing for " + locale);
   assert(markup.includes('const prefix="' + "/" + locale + '";'), "Global search must preserve locale prefix for " + locale);
-  const scripts = [...markup.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].map(match => match[1]);
+  const scripts = [...markup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
   for (const code of scripts) new Function(code);
 }
 
 const jaCommunity = communityLinksPageContent(false, "ja-jp");
 assert(jaCommunity.includes("コミュニティリンク"), "Community links Japanese translation missing");
 assert(jaCommunity.includes('href="/ja-jp/info/links"'), "Community links back route must preserve Japanese locale");
-for (const code of [...jaCommunity.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].map(match => match[1])) new Function(code);
+for (const code of [...jaCommunity.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1])) new Function(code);
 
 const arHub = enhanceLinksHubWithCommunity(
   '<button class="links-quick-submit" id="links-quick-submit" type="submit" disabled>إنشاء رابط</button><a class="links-route-card" href="/ar-sa/info/links/curated"></a><script>body:JSON.stringify({ title:inferTitle(url), url, category:\'tools\', description:\'\' })<\\/script>',
