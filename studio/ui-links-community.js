@@ -1,18 +1,40 @@
-export function enhanceLinksHubWithCommunity(content, zh) {
-  const communityHref = zh ? "/zh-cn/info/links/community" : "/en/info/links/community";
+import { normalizeSupportedLocale } from "./locale.js";
+
+const COMMUNITY_EN = {
+  submit:"Create link",publish:"Publish to Community",publishHint:"Turn on to make this link public. Off keeps it private to you and administrators.",
+  library:"Community library",title:"Community links",intro:"Only links explicitly shared by their creators appear here. Private and non-shared links never enter Community search results.",
+  shared:"shared by users",back:"Back to Saved Links",search:"Search community links",loading:"Loading community links…",
+  empty:"No links have been shared to the community yet.",noResults:"No community links match your search.",owner:"Shared by",count:"community links",
+  signIn:"Sign in to view community links.",unavailable:"Community links are currently unavailable."
+};
+
+const COMMUNITY_COPY = {
+  "en-us":COMMUNITY_EN,"en-gb":COMMUNITY_EN,"en-au":COMMUNITY_EN,
+  "zh-cn":{submit:"新建链接",publish:"发布到社区",publishHint:"开启后公开给所有用户；关闭时仅你和管理员可见。",library:"社区链接库",title:"社区链接",intro:"这里仅展示用户主动选择公开到社区的链接。私人链接和未公开内容不会出现在社区搜索结果中。",shared:"用户公开分享",back:"返回收藏链接",search:"搜索社区链接",loading:"正在读取社区链接…",empty:"社区里还没有公开链接。",noResults:"没有符合搜索条件的社区链接。",owner:"分享者",count:"社区链接",signIn:"请先登录后查看社区链接。",unavailable:"当前无法读取社区链接。"},
+  "zh-tw":{submit:"建立連結",publish:"發佈到社群",publishHint:"開啟後會公開給所有使用者；關閉時只有你與管理員可見。",library:"社群連結庫",title:"社群連結",intro:"這裡只顯示使用者主動公開到社群的連結。私人連結與未公開內容不會出現在社群搜尋結果中。",shared:"使用者公開分享",back:"返回收藏連結",search:"搜尋社群連結",loading:"正在讀取社群連結…",empty:"社群目前還沒有公開連結。",noResults:"沒有符合搜尋條件的社群連結。",owner:"分享者",count:"社群連結",signIn:"請先登入再查看社群連結。",unavailable:"目前無法讀取社群連結。"},
+  "ja-jp":{submit:"リンクを作成",publish:"コミュニティに公開",publishHint:"オンにすると全ユーザーに公開されます。オフの場合は自分と管理者だけが閲覧できます。",library:"コミュニティライブラリ",title:"コミュニティリンク",intro:"作成者が明示的に公開したリンクだけを表示します。非公開リンクや未公開の内容がコミュニティ検索に表示されることはありません。",shared:"ユーザーによる公開",back:"保存済みリンクに戻る",search:"コミュニティリンクを検索",loading:"コミュニティリンクを読み込み中…",empty:"コミュニティに公開されたリンクはまだありません。",noResults:"検索条件に一致するコミュニティリンクはありません。",owner:"共有者",count:"コミュニティリンク",signIn:"コミュニティリンクを見るにはサインインしてください。",unavailable:"現在コミュニティリンクを読み込めません。"},
+  "ko-kr":{submit:"링크 만들기",publish:"커뮤니티에 공개",publishHint:"켜면 모든 사용자에게 공개됩니다. 끄면 본인과 관리자만 볼 수 있습니다.",library:"커뮤니티 라이브러리",title:"커뮤니티 링크",intro:"작성자가 명시적으로 공개한 링크만 표시됩니다. 비공개 링크와 공개하지 않은 내용은 커뮤니티 검색 결과에 나타나지 않습니다.",shared:"사용자 공개 공유",back:"저장된 링크로 돌아가기",search:"커뮤니티 링크 검색",loading:"커뮤니티 링크 불러오는 중…",empty:"아직 커뮤니티에 공개된 링크가 없습니다.",noResults:"검색 조건에 맞는 커뮤니티 링크가 없습니다.",owner:"공유자",count:"커뮤니티 링크",signIn:"커뮤니티 링크를 보려면 로그인하세요.",unavailable:"현재 커뮤니티 링크를 불러올 수 없습니다."},
+  "fr-fr":{submit:"Créer le lien",publish:"Publier dans la communauté",publishHint:"Activez cette option pour rendre le lien public. Désactivée, il reste visible uniquement par vous et les administrateurs.",library:"Bibliothèque communautaire",title:"Liens de la communauté",intro:"Seuls les liens explicitement partagés par leurs créateurs apparaissent ici. Les liens privés et non publiés n’entrent jamais dans les résultats de la communauté.",shared:"partagés par les utilisateurs",back:"Retour aux liens enregistrés",search:"Rechercher dans la communauté",loading:"Chargement des liens de la communauté…",empty:"Aucun lien n’a encore été partagé avec la communauté.",noResults:"Aucun lien de la communauté ne correspond à la recherche.",owner:"Partagé par",count:"liens de la communauté",signIn:"Connectez-vous pour voir les liens de la communauté.",unavailable:"Les liens de la communauté sont actuellement indisponibles."},
+  "es-es":{submit:"Crear enlace",publish:"Publicar en la comunidad",publishHint:"Actívalo para hacer público este enlace. Desactivado, solo tú y los administradores podrán verlo.",library:"Biblioteca de la comunidad",title:"Enlaces de la comunidad",intro:"Aquí solo aparecen los enlaces que sus creadores han compartido explícitamente. Los enlaces privados y no publicados nunca entran en los resultados de la comunidad.",shared:"compartidos por usuarios",back:"Volver a Enlaces guardados",search:"Buscar enlaces de la comunidad",loading:"Cargando enlaces de la comunidad…",empty:"Todavía no se ha compartido ningún enlace con la comunidad.",noResults:"Ningún enlace de la comunidad coincide con la búsqueda.",owner:"Compartido por",count:"enlaces de la comunidad",signIn:"Inicia sesión para ver los enlaces de la comunidad.",unavailable:"Los enlaces de la comunidad no están disponibles en este momento."},
+  "el-gr":{submit:"Δημιουργία συνδέσμου",publish:"Δημοσίευση στην κοινότητα",publishHint:"Ενεργοποιήστε το για να γίνει ο σύνδεσμος δημόσιος. Όταν είναι κλειστός, παραμένει ορατός μόνο σε εσάς και στους διαχειριστές.",library:"Βιβλιοθήκη κοινότητας",title:"Σύνδεσμοι κοινότητας",intro:"Εδώ εμφανίζονται μόνο σύνδεσμοι που οι δημιουργοί τους επέλεξαν ρητά να δημοσιεύσουν. Οι ιδιωτικοί και μη δημοσιευμένοι σύνδεσμοι δεν εμφανίζονται ποτέ στα αποτελέσματα της κοινότητας.",shared:"δημόσιες κοινοποιήσεις χρηστών",back:"Πίσω στους αποθηκευμένους συνδέσμους",search:"Αναζήτηση συνδέσμων κοινότητας",loading:"Φόρτωση συνδέσμων κοινότητας…",empty:"Δεν έχουν δημοσιευτεί ακόμη σύνδεσμοι στην κοινότητα.",noResults:"Δεν υπάρχουν σύνδεσμοι κοινότητας που να ταιριάζουν στην αναζήτηση.",owner:"Κοινοποιήθηκε από",count:"σύνδεσμοι κοινότητας",signIn:"Συνδεθείτε για να δείτε τους συνδέσμους κοινότητας.",unavailable:"Οι σύνδεσμοι κοινότητας δεν είναι διαθέσιμοι αυτή τη στιγμή."},
+  "ar-sa":{submit:"إنشاء رابط",publish:"النشر في المجتمع",publishHint:"فعّل هذا الخيار لجعل الرابط عامًا. عند إيقافه يبقى مرئيًا لك وللمشرفين فقط.",library:"مكتبة المجتمع",title:"روابط المجتمع",intro:"لا تظهر هنا إلا الروابط التي اختار أصحابها مشاركتها علنًا. الروابط الخاصة وغير المنشورة لا تدخل نتائج بحث المجتمع.",shared:"مشاركات المستخدمين العامة",back:"العودة إلى الروابط المحفوظة",search:"البحث في روابط المجتمع",loading:"جارٍ تحميل روابط المجتمع…",empty:"لم تتم مشاركة أي روابط مع المجتمع بعد.",noResults:"لا توجد روابط مجتمع تطابق البحث.",owner:"شاركها",count:"روابط المجتمع",signIn:"سجّل الدخول لعرض روابط المجتمع.",unavailable:"روابط المجتمع غير متاحة حاليًا."}
+};
+
+function communityLocale(zh, locale) {
+  return normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
+}
+
+export function enhanceLinksHubWithCommunity(content, zh, locale = "") {
+  const activeLocale = communityLocale(zh, locale);
+  const prefix = "/" + activeLocale;
+  const copy = COMMUNITY_COPY[activeLocale] || COMMUNITY_EN;
+  const communityHref = prefix + "/info/links/community";
   let output = String(content || "");
 
-  const submitButton = zh
-    ? '<button class="links-quick-submit" id="links-quick-submit" type="submit" disabled>新建链接</button>'
-    : '<button class="links-quick-submit" id="links-quick-submit" type="submit" disabled>Create link</button>';
-  const shareText = zh ? "发布到社区" : "Publish to Community";
-  const shareHint = zh
-    ? "开启后公开给所有用户；关闭时仅你和管理员可见。"
-    : "Turn on to make this link public. Off keeps it private to you and administrators.";
-
+  const submitButton = '<button class="links-quick-submit" id="links-quick-submit" type="submit" disabled>' + copy.submit + '</button>';
   output = output.replace(
     submitButton,
-    `<div class="links-create-actions">${submitButton}<label class="links-community-option"><input id="links-community-opt-in" type="checkbox"><span class="links-community-switch" aria-hidden="true"></span><span class="links-community-copy"><strong>${shareText}</strong><small>${shareHint}</small></span></label></div>`
+    `<div class="links-create-actions">${submitButton}<label class="links-community-option"><input id="links-community-opt-in" type="checkbox"><span class="links-community-switch" aria-hidden="true"></span><span class="links-community-copy"><strong>${copy.publish}</strong><small>${copy.publishHint}</small></span></label></div>`
   );
 
   output = output.replace(
@@ -20,16 +42,14 @@ export function enhanceLinksHubWithCommunity(content, zh) {
     "body:JSON.stringify({ title:inferTitle(url), url, category:'tools', description:'', community:Boolean(document.getElementById('links-community-opt-in')?.checked) })"
   );
 
-  const curatedNeedle = zh
-    ? '<a class="links-route-card" href="/zh-cn/info/links/curated">'
-    : '<a class="links-route-card" href="/en/info/links/curated">';
+  const curatedNeedle = '<a class="links-route-card" href="' + prefix + '/info/links/curated">';
   const communityCard = `
       <a class="links-route-card links-community-route-card" href="${communityHref}">
         <div>
-          <span class="links-card-eyebrow">${zh ? "社区链接库" : "Community library"}</span>
-          <h2>${zh ? "社区链接" : "Community links"}</h2>
-          <p>${zh ? "浏览用户主动公开分享的链接。只有创建时明确勾选发布到社区的内容才会出现在这里。" : "Browse links users explicitly chose to share. Private links never appear here unless the creator opted in."}</p>
-          <div class="links-route-meta"><strong>↗</strong><span>${zh ? "用户公开分享" : "shared by users"}</span></div>
+          <span class="links-card-eyebrow">${copy.library}</span>
+          <h2>${copy.title}</h2>
+          <p>${copy.intro}</p>
+          <div class="links-route-meta"><strong>↗</strong><span>${copy.shared}</span></div>
         </div>
         <span class="links-route-arrow" aria-hidden="true">→</span>
       </a>
@@ -55,32 +75,11 @@ export function enhanceLinksHubWithCommunity(content, zh) {
   return output;
 }
 
-export function communityLinksPageContent(zh) {
-  const backHref = zh ? "/zh-cn/info/links" : "/en/info/links";
-  const copy = zh ? {
-    eyebrow: "社区链接库",
-    title: "社区链接",
-    intro: "这里仅展示用户主动选择公开到社区的链接。私人链接和未公开内容不会出现在社区搜索结果中。",
-    back: "返回收藏链接",
-    search: "搜索社区链接",
-    loading: "正在读取社区链接…",
-    empty: "社区里还没有公开链接。",
-    noResults: "没有符合搜索条件的社区链接。",
-    owner: "分享者",
-    count: "社区链接"
-  } : {
-    eyebrow: "Community library",
-    title: "Community links",
-    intro: "Only links explicitly shared by their creators appear here. Private and non-shared links never enter Community search results.",
-    back: "Back to Saved Links",
-    search: "Search community links",
-    loading: "Loading community links…",
-    empty: "No links have been shared to the community yet.",
-    noResults: "No community links match your search.",
-    owner: "Shared by",
-    count: "community links"
-  };
-
+export function communityLinksPageContent(zh, locale = "") {
+  const activeLocale = communityLocale(zh, locale);
+  const prefix = "/" + activeLocale;
+  const copy = COMMUNITY_COPY[activeLocale] || COMMUNITY_EN;
+  const backHref = prefix + "/info/links";
   return `
     <style>
       .community-links-shell{border:1px solid var(--border);border-radius:22px;background:var(--card);overflow:hidden}
@@ -114,7 +113,7 @@ export function communityLinksPageContent(zh) {
         const host=value=>{try{return new URL(value).hostname.replace(/^www\./,'')}catch{return 'external'}};
         async function session(){if(typeof supabaseClient==='undefined')return null;const result=await supabaseClient.auth.getSession();return result?.data?.session||null;}
         function draw(){const search=document.getElementById('community-link-search');const grid=document.getElementById('community-links-grid');const empty=document.getElementById('community-links-empty');const count=document.getElementById('community-link-count');if(!grid||!empty)return;const q=String(search?.value||'').trim().toLocaleLowerCase();const visible=links.filter(link=>!q||[link.title,link.description,link.url,link.owner_label].join(' ').toLocaleLowerCase().includes(q));grid.innerHTML=visible.map(link=>'<a class="community-link-card" href="'+esc(link.url)+'" target="_blank" rel="noopener noreferrer"><div class="community-link-card-top"><strong>'+esc(link.title)+'</strong><span>↗</span></div><p>'+esc(link.description||link.url)+'</p><div class="community-link-meta"><span>'+esc(copy.owner)+' '+esc(link.owner_label||'')+'</span><code>'+esc(host(link.url))+'</code></div></a>').join('');empty.hidden=visible.length>0;empty.textContent=links.length?copy.noResults:copy.empty;if(count)count.textContent=String(links.length);}
-        async function init(){const s=await session();const empty=document.getElementById('community-links-empty');if(!s){if(empty)empty.textContent=${JSON.stringify(zh ? "请先登录后查看社区链接。" : "Sign in to view community links.")};return;}try{const response=await fetch('/api/user-links?scope=community',{headers:{Authorization:'Bearer '+s.access_token,Accept:'application/json'},cache:'no-store'});if(!response.ok)throw new Error('HTTP '+response.status);const payload=await response.json();links=Array.isArray(payload.links)?payload.links:[];const search=document.getElementById('community-link-search');search?.addEventListener('input',draw);document.addEventListener('keydown',event=>{const target=event.target;const typing=target instanceof HTMLInputElement||target instanceof HTMLTextAreaElement||target instanceof HTMLSelectElement||target?.isContentEditable;if(event.key==='/'&&!typing){event.preventDefault();search?.focus();}if(event.key==='Escape'&&document.activeElement===search&&search?.value){search.value='';draw();}});draw();}catch(error){console.error('Community links failed',error);if(empty)empty.textContent=${JSON.stringify(zh ? "当前无法读取社区链接。" : "Community links are currently unavailable.")};}}
+        async function init(){const s=await session();const empty=document.getElementById('community-links-empty');if(!s){if(empty)empty.textContent=${JSON.stringify(copy.signIn)};return;}try{const response=await fetch('/api/user-links?scope=community',{headers:{Authorization:'Bearer '+s.access_token,Accept:'application/json'},cache:'no-store'});if(!response.ok)throw new Error('HTTP '+response.status);const payload=await response.json();links=Array.isArray(payload.links)?payload.links:[];const search=document.getElementById('community-link-search');search?.addEventListener('input',draw);document.addEventListener('keydown',event=>{const target=event.target;const typing=target instanceof HTMLInputElement||target instanceof HTMLTextAreaElement||target instanceof HTMLSelectElement||target?.isContentEditable;if(event.key==='/'&&!typing){event.preventDefault();search?.focus();}if(event.key==='Escape'&&document.activeElement===search&&search?.value){search.value='';draw();}});draw();}catch(error){console.error('Community links failed',error);if(empty)empty.textContent=${JSON.stringify(copy.unavailable)};}}
         if(document.readyState==='loading')window.addEventListener('DOMContentLoaded',init,{once:true});else window.setTimeout(init,0);
       })();
     </script>
