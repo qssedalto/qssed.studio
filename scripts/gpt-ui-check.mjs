@@ -67,6 +67,12 @@ for (const locale of ["zh-cn", "en"]) {
   ]) {
     if (!html.includes(required)) throw new Error(`GPT UI ${locale} missing multi-provider invariant: ${required}`);
   }
+  if (!html.includes('className="chatLoadError"') || !html.includes('console.error("Unable to load Intelligence conversations",error)')) {
+    throw new Error("Intelligence history load failures must be visible instead of looking like an empty sidebar");
+  }
+  if (html.includes('}catch{}\n  }\n')) {
+    throw new Error("Intelligence history loader must not silently swallow conversation API failures");
+  }
   if (html.includes('window.prompt(text.rename') || html.includes('window.confirm(text.confirmDelete)')) {
     throw new Error("Intelligence chat rename/delete must use the in-product ChatGPT-style dialogs instead of browser prompt/confirm");
   }
