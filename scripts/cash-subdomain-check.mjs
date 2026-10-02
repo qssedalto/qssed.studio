@@ -81,7 +81,12 @@ assert(!shell.includes('title:"ActivityWatch"') && !shell.includes('label: "Acti
 assert(!app.includes("window.desktopAPI"), "Cash web client must not depend on Electron desktop APIs");
 assert(app.includes("fetch('/api/cash/data'"), "Cash web client must load/save account cloud data");
 assert(app.includes("advancedJson"), "Cash web client must expose full JSON editing");
-for (const id of ["periodStart","periodEnd","manualEntryEnd","oddMondayAnchor","advancedData"]) {
+assert(app.includes("function addRecurring()"), "Cash UI must support adding recurring expenses.");
+assert(app.includes("data-delete-recurring"), "Cash UI must support deleting recurring expenses.");
+assert(app.includes("function renderExpected()"), "Cash UI must expose expected monthly events.");
+assert(app.includes("function deleteExpected("), "Cash UI must support deleting expected monthly events.");
+assert(app.includes("freeCategory('planCategory'"), "Cash plans must accept custom categories.");
+for (const id of ["periodStart","periodEnd","manualEntryEnd","oddMondayAnchor","advancedData","addRecurring","addExpected","expectedBody","expectedDialog","planEnabled"]) {
   assert(index.includes(`id="${id}"`), `Cash UI is missing editable field: ${id}`);
 }
 assert(model.includes("manualEntryEnd"), "Cash model must expose the manual-entry cutoff in settings");
