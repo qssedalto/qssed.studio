@@ -131,15 +131,14 @@
   function normalizeData(input) {
     const base = createDefaultData(), source = input && typeof input === 'object' ? input : {};
     const settings = { ...base.settings, ...(source.settings || {}) };
-    settings.periodStart = source.version === 2 || settings.periodStart === '2026-10-12' ? PERIOD_START : (parseDateKey(settings.periodStart) ? settings.periodStart : PERIOD_START);
+    settings.periodStart = parseDateKey(settings.periodStart) ? settings.periodStart : PERIOD_START;
     settings.periodEnd = parseDateKey(settings.periodEnd) ? settings.periodEnd : PERIOD_END;
     settings.manualEntryEnd = parseDateKey(settings.manualEntryEnd) ? settings.manualEntryEnd : MANUAL_ENTRY_END;
     settings.oddMondayAnchor = parseDateKey(settings.oddMondayAnchor) ? settings.oddMondayAnchor : ODD_MONDAY_ANCHOR;
     if (settings.periodEnd < settings.periodStart) settings.periodEnd = settings.periodStart;
     if (settings.manualEntryEnd < settings.periodStart) settings.manualEntryEnd = settings.periodStart;
     if (settings.manualEntryEnd > settings.periodEnd) settings.manualEntryEnd = settings.periodEnd;
-    const legacyOpeningCash = finiteAmount(settings.openingCash, 6206.32);
-    settings.openingCash = [4605, 6205].includes(legacyOpeningCash) ? 6206.32 : legacyOpeningCash;
+    settings.openingCash = finiteAmount(settings.openingCash, 6206.32);
     settings.emergencyCredit = finiteAmount(settings.emergencyCredit, 200);
     const transactions = Array.isArray(source.transactions) ? source.transactions.map(x => normalizeItem(x)).filter(x => x.date) : [];
     const plannedEventsSource = Array.isArray(source.plannedEvents) ? source.plannedEvents : base.plannedEvents;
