@@ -34,6 +34,11 @@ const accessAudit = read("studio/access-audit.js");
 const workflow = read(".github/workflows/deploy-production.yml");
 const wrangler = JSON.parse(read("wrangler.admin.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 
+assertContains(adminWorker, "mainOriginForRequest", "Administration Worker must derive AERTEX Home from the active domain family.");
+assertContains(adminWorker, 'mainHref: `${mainOriginForRequest(request)}/${page.locale}`', "Administration must preserve locale when returning to AERTEX Home.");
+assertContains(adminUi, 'class="admin-main-link"', "Administration sidebar must expose an explicit AERTEX Home entry.");
+assertContains(adminUi, 'class="brand" href="${mainHref}"', "Administration brand must also return to AERTEX Home.");
+
 for (const required of [
   "handleAdminHandoff(request)",
   "verifyAdminSession(request)",
@@ -157,9 +162,11 @@ assertContains(adminNav, 'data-product-link="admin-console"', "Administrator men
 assertContains(adminNav, "管理员控制台", "Administrator menu must label the control-plane shortcut.");
 assertContains(adminNav, "https://admin.qsseda.com/", "Administrator menu must target the admin prefix domain.");
 
-const html = renderAdminConsole("/", { identity: "admin@example.test", root: "admin.qsseda.com" });
+const html = renderAdminConsole("/", { identity: "admin@example.test", root: "admin.qsseda.com", mainHref: "https://qsseda.com/zh-cn" });
 for (const required of [
   "AERTEX ADMIN",
+  "https://qsseda.com/zh-cn",
+  "AERTEX 主站",
   "管理控制面",
   "生产环境",
   'href="/users"',
