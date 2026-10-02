@@ -22,7 +22,7 @@ import { enhanceTexWorkbenchLocal } from "./ui-tex-local.js";
 import { polishTexWorkbenchApp } from "./ui-tex-app.js";
 import { decorateWorkNavigation, workHubContent, workLocalBridgeContent } from "./ui-work.js";
 import { enhanceWorkLocalBridgeNative } from "./ui-work-native.js";
-import { polishWorkHubTexRoute, polishWorkTexNavigation, polishWorkTexVisualTheme } from "./ui-work-tex.js";
+import { injectWorkTexHomeLinks, polishWorkHubTexRoute, polishWorkTexNavigation, polishWorkTexVisualTheme } from "./ui-work-tex.js";
 import { enhanceWorkTexCollapsiblePanels } from "./ui-work-tex-panels.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
@@ -320,9 +320,9 @@ export default {
       if (pathname === "/workspace/drafts") markup = replaceOsContent(markup, draftsWorkspaceContent(zh));
       if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh));
       if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh));
-      if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin, fullLocale), workOrigin));
-      if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, fullLocale), zh));
-      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); }
+      if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin, fullLocale, mainOrigin), workOrigin));
+      if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, fullLocale, mainOrigin), zh));
+      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); }
       const pageOptions = pathname === "/work/local" || pathname === "/work/tex" || pathname === "/workspace/experiments/tex" ? { allowLoopback: true } : {};
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }

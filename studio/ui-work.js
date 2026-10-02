@@ -300,10 +300,12 @@ function workIcon(kind) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 2.8 8.2 7 10 4.2-1.8 7-5.6 7-10V6z"></path><path d="m9.2 12 1.8 1.8 3.8-4"></path></svg>`;
 }
 
-export function workHubContent(zh, workOrigin = "https://work.qsseda.com", locale = "") {
+export function workHubContent(zh, workOrigin = "https://work.qsseda.com", locale = "", mainOrigin = "https://qsseda.com") {
   const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
   const prefix = "/" + activeLocale;
   const workTexUrl = `${workOrigin}/${activeLocale}/tex`;
+  const mainHref = `${String(mainOrigin).replace(/\/$/, "")}/${activeLocale}`;
+  const mainLabel = activeLocale === "zh-cn" ? "返回 AERTEX 主站" : "AERTEX Home";
   const copy = workText(activeLocale).hub;
   return `
     ${workStyles()}
@@ -316,6 +318,7 @@ export function workHubContent(zh, workOrigin = "https://work.qsseda.com", local
           <div class="work-actions">
             <a class="work-button primary" href="${prefix}/work/local">${copy.connect}</a>
             <a class="work-button secondary" href="${workTexUrl}">${copy.openTex}</a>
+            <a class="work-button secondary work-home-button" href="${mainHref}">${mainLabel}</a>
           </div>
         </div>
 
@@ -427,9 +430,11 @@ export function workHubContent(zh, workOrigin = "https://work.qsseda.com", local
   `;
 }
 
-export function workLocalBridgeContent(zh, locale = "") {
+export function workLocalBridgeContent(zh, locale = "", mainOrigin = "https://qsseda.com") {
   const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
   const prefix = "/" + activeLocale;
+  const mainHref = `${String(mainOrigin).replace(/\/$/, "")}/${activeLocale}`;
+  const mainLabel = activeLocale === "zh-cn" ? "返回 AERTEX 主站" : "AERTEX Home";
   const copy = workText(activeLocale).local;
   return `
     ${workStyles()}
@@ -442,6 +447,7 @@ export function workLocalBridgeContent(zh, locale = "") {
           <div class="work-actions">
             <button class="work-button primary" id="work-local-connect" type="button">${copy.check}</button>
             <a class="work-button secondary" href="${prefix}/work">${copy.back}</a>
+            <a class="work-button secondary work-home-button" href="${mainHref}">${mainLabel}</a>
             <!--QSSedaWorkNativeAction-->
           </div>
         </div>
@@ -683,6 +689,7 @@ export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https
             <b aria-hidden="true">›</b>
           </a>
           <div class="os-nav-items">
+            <a href="${mainOrigin}${prefix}">${dashboardIcon("home")}<span>${activeLocale === "zh-cn" ? "AERTEX 主站" : "AERTEX Home"}</span></a>
             <a href="${mainOrigin}${prefix}/work"${rootCurrent}>${dashboardIcon("work")}<span>${navCopy.overview}</span></a>
             <a href="${mainOrigin}${prefix}/work/local"${localCurrent}>${dashboardIcon("computer")}<span>${navCopy.computer}</span></a>
             <a href="${workTexUrl}">${dashboardIcon("tex")}<span>${navCopy.tex}</span></a>

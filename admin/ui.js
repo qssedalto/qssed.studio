@@ -16,6 +16,7 @@ export function renderAdminConsole(route, options = {}) {
   const current = NAV.some(([path]) => path === route) ? route : "/";
   const identity = escapeHtml(options.identity || "管理员");
   const root = escapeHtml(options.root || "qsseda.com");
+  const mainHref = escapeHtml(options.mainHref || "https://qsseda.com/zh-cn");
   const build = escapeHtml(options.build || "control-plane-v1");
 
   return `<!doctype html>
@@ -39,7 +40,7 @@ body{font-size:13px}
 button,input,select,textarea{font:inherit}
 .app{min-height:100vh;display:grid;grid-template-columns:238px minmax(0,1fr)}
 .side{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:#0b0f14;padding:14px 12px;display:flex;flex-direction:column;gap:14px}
-.brand{padding:8px 10px 12px;border-bottom:1px solid var(--line2)}
+.brand{display:block;padding:8px 10px 12px;border-bottom:1px solid var(--line2);border-radius:8px;color:inherit;text-decoration:none;transition:background .12s ease}.brand:hover,.brand:focus-visible{background:var(--panel);outline:0}
 .brand strong{display:block;font-size:14px;letter-spacing:.09em}
 .brand span{display:block;margin-top:5px;color:var(--quiet);font:10px ui-monospace,SFMono-Regular,Menlo,monospace}
 .env{display:flex;align-items:center;gap:8px;margin:0 10px;padding:8px 10px;border:1px solid #2a3a2f;background:#0d1711;color:#9deab9;font:10px ui-monospace,SFMono-Regular,Menlo,monospace}
@@ -235,9 +236,10 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
 <body data-route="${escapeHtml(current)}">
 <div class="app">
   <aside class="side">
-    <div class="brand"><strong>AERTEX ADMIN</strong><span>管理控制面 · ${build}</span></div>
+    <a class="brand" href="${mainHref}" aria-label="返回 AERTEX 主站" title="返回 AERTEX 主站"><strong>AERTEX ADMIN</strong><span>管理控制面 · ${build}</span></a>
     <div class="env">生产环境 · ${root}</div>
     <nav>
+      <a class="admin-main-link" href="${mainHref}"><b>HM</b><span>AERTEX 主站</span></a>
       ${NAV.map(([path,label,code])=>`<a href="${path}" class="${path===current?"active":""}"><b>${code}</b><span>${escapeHtml(label)}</span></a>`).join("")}
     </nav>
     <div class="sidefoot">

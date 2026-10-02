@@ -729,3 +729,75 @@ export function polishWorkTexVisualTheme(markup) {
   const source = String(markup || "");
   return source.replace("</body>", WORK_TEX_VISUAL_STYLE + "</body>");
 }
+
+
+export function injectWorkTexHomeLinks(markup, locale = "en-us", mainOrigin = "https://qsseda.com") {
+  const output = String(markup || "");
+  const activeLocale = String(locale || "en-us");
+  const mainHref = `${String(mainOrigin || "https://qsseda.com").replace(/\/$/, "")}/${activeLocale}`;
+  const label = activeLocale === "zh-cn" ? "返回 AERTEX 主站" : "AERTEX Home";
+  const script = `
+    <style id="qsseda-work-tex-home-links">
+      .tex-work-app .tex-panel-home-link{
+        flex:0 0 auto;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:5px;
+        min-height:28px;
+        margin-left:auto;
+        padding:0 8px;
+        border:1px solid var(--border);
+        border-radius:8px;
+        background:var(--fill);
+        color:var(--muted);
+        text-decoration:none;
+        font-size:9px;
+        font-weight:700;
+        line-height:1;
+        white-space:nowrap;
+        -webkit-tap-highlight-color:transparent;
+      }
+      .tex-work-app .tex-panel-home-link:hover{background:var(--surface-strong);color:var(--text)}
+      .tex-work-app .tex-editor-placeholder>.tex-panel-home-link{margin:8px auto 0}
+      .tex-work-app .tex-editor-toolbar>.tex-panel-home-link{align-self:center;margin-left:auto}
+      .tex-work-app .tex-panel-home-link svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+      @media(max-width:760px){
+        .tex-work-app .tex-panel-home-link{min-height:30px;padding:0 9px;font-size:10px}
+      }
+    </style>
+    <script id="qsseda-work-tex-home-links-runtime">
+      (() => {
+        const href = ${JSON.stringify(mainHref)};
+        const label = ${JSON.stringify(label)};
+        const targets = [
+          [".tex-documents-panel .tex-panel-head", "documents"],
+          [".tex-editor-panel .tex-editor-toolbar", "editor"],
+          [".tex-editor-panel .tex-editor-placeholder", "editor-empty"],
+          [".tex-runs-panel .tex-runs-head", "preview"]
+        ];
+        const icon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11.25 12 4l8.5 7.25"/><path d="M5.5 10.5v8.25h13V10.5"/><path d="M9.5 18.75v-5.5h5v5.5"/></svg>';
+        function mount() {
+          let pending = false;
+          for (const [selector, slot] of targets) {
+            const head = document.querySelector(selector);
+            if (!head) { pending = true; continue; }
+            if (head.querySelector('[data-aertex-home-slot="' + slot + '"]')) continue;
+            const link = document.createElement("a");
+            link.className = "tex-panel-home-link";
+            link.dataset.aertexHomeSlot = slot;
+            link.href = href;
+            link.title = label;
+            link.setAttribute("aria-label", label);
+            link.innerHTML = icon + "<span>AERTEX</span>";
+            head.append(link);
+          }
+          if (pending) window.setTimeout(mount, 120);
+        }
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount, { once:true });
+        else mount();
+      })();
+    <\/script>
+  `;
+  return output.replace("</head>", script + "</head>");
+}

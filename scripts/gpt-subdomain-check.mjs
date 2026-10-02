@@ -31,6 +31,11 @@ const deviceExemptionMigration = read("supabase/migrations/202609251510_huawei_d
 const shareAuthorMigration = read("supabase/migrations/202609261610_shared_conversation_author_choice.sql");
 const chatOrganizationMigration = read("supabase/migrations/202610021530_intelligence_conversation_pin_archive.sql");
 
+assert(gpt.includes('mainOriginForRequest(request)'), "Intelligence Worker must derive the main-site home from the active domain family.");
+assert(gpt.includes('mainOrigin: mainOriginForRequest(request)'), "Intelligence render bootstrap must receive the active AERTEX main-site origin.");
+assert(gptUi.includes('class="iconButton topbarHome"'), "Intelligence UI must expose a persistent top-bar AERTEX Home entry.");
+assert(gptUi.includes('class="brand" href="${mainHref}"'), "Intelligence sidebar brand must return to AERTEX Home.");
+
 for (const required of [
   'verifyStudioPageSession(request)',
   'gptSessionRedirect(request, pathname)',

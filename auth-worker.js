@@ -490,6 +490,7 @@ function authPage(pathname, request) {
   const mainOrigin = mainOriginForRequest(request);
   const locale = preferredAuthLocale(request);
   const zh = locale === "zh-cn";
+  const homeLabel = locale === "zh-cn" ? "返回 AERTEX 主站" : "AERTEX Home";
   const copy = authCopy(locale, authHost);
 
 
@@ -519,7 +520,7 @@ function authPage(pathname, request) {
     :root[data-accent="violet"]{--accent:#7559d9;--accent-hover:#8469e4}
     :root[data-accent="graphite"]{--accent:#5a5d64;--accent-hover:#6b6e76}
     *{box-sizing:border-box}html,body{min-height:100%;margin:0}body{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:max(22px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;background:radial-gradient(circle at 18% 12%,rgba(10,132,255,.16),transparent 34%),radial-gradient(circle at 82% 78%,rgba(94,92,230,.12),transparent 31%),var(--bg);color:var(--text)}
-    .shell{width:min(100%,460px)}.brand{display:flex;align-items:center;gap:12px;margin:0 0 18px 4px}.mark{width:42px;height:42px;display:block;object-fit:contain}.brand-copy strong{display:block;font-size:15px}.brand-copy span{display:block;margin-top:2px;color:var(--muted);font-size:12px}
+    .shell{width:min(100%,460px)}.brand{display:flex;align-items:center;gap:12px;width:max-content;max-width:100%;margin:0 0 18px 4px;padding:6px 8px 6px 6px;border-radius:14px;color:var(--text);text-decoration:none;transition:.16s ease background,.16s ease transform}.brand:hover,.brand:focus-visible{background:var(--surface);outline:0}.brand:active{transform:scale(.985)}.mark{width:42px;height:42px;display:block;object-fit:contain}.brand-copy strong{display:block;font-size:15px}.brand-copy span{display:block;margin-top:2px;color:var(--muted);font-size:12px}
     .card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);backdrop-filter:blur(30px) saturate(150%);-webkit-backdrop-filter:blur(30px) saturate(150%);box-shadow:var(--shadow);padding:30px}.card:before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);opacity:.65}h1{margin:0;font-size:31px;line-height:1.08;letter-spacing:-.04em;font-weight:760}.lead{margin:10px 0 24px;color:var(--muted);font-size:14px;line-height:1.55}.hidden{display:none!important}
     .loading{display:flex;align-items:center;gap:12px;color:var(--muted);padding:8px 0}.spinner{width:18px;height:18px;border:2px solid var(--line-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}label{display:block;margin:0 0 8px;color:var(--muted);font-size:13px;font-weight:600}.field{margin-top:16px}input{width:100%;height:50px;border-radius:var(--control);border:1px solid var(--line);padding:0 14px;background:var(--surface);color:var(--text);font:inherit;font-size:15px;outline:none;transition:.18s ease border-color,.18s ease box-shadow,.18s ease background}input:focus{border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent);background:var(--panel-strong)}
     button,.button{width:100%;min-height:50px;margin-top:18px;border:0;border-radius:var(--control);padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.16s ease transform,.16s ease background,.16s ease opacity}button:hover,.button:hover{background:var(--accent-hover)}button:active,.button:active{transform:scale(.985)}button:disabled{opacity:.48;cursor:not-allowed}.secondary{background:var(--surface);color:var(--text);border:1px solid var(--line)}.secondary:hover{background:var(--surface-hover)}.message{min-height:20px;margin:13px 0 0;color:var(--muted);font-size:13px;line-height:1.45}.message.error{color:var(--danger)}
@@ -535,7 +536,7 @@ function authPage(pathname, request) {
 <body data-page="${page}">
   <div class="auth-account-zone">${accountMenuMarkup(locale)}</div>
   <main class="shell">
-    <div class="brand"><img class="mark" src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true"><div class="brand-copy"><strong>AERTEX ID</strong><span>AERTEX Account</span></div></div>
+    <a class="brand" href="${mainOrigin}/${locale}" aria-label="${homeLabel}" title="${homeLabel}"><img class="mark" src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true"><div class="brand-copy"><strong>AERTEX ID</strong><span>AERTEX Account</span></div></a>
     <section class="card">
       <div id="loading" class="loading"><span class="spinner"></span><span>${copy.checking}</span></div>
       <div id="signedOut" class="hidden">

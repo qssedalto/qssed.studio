@@ -67,6 +67,12 @@ for (const locale of ["zh-cn", "en"]) {
   ]) {
     if (!html.includes(required)) throw new Error(`GPT UI ${locale} missing multi-provider invariant: ${required}`);
   }
+  if (!html.includes('class="iconButton topbarHome"') || !html.includes('href="https://qsseda.com/')) {
+    throw new Error("Intelligence must expose a persistent main-site home entry in the top bar");
+  }
+  if (!html.includes('<a class="brand" href="https://qsseda.com/')) {
+    throw new Error("Intelligence sidebar product identity must also return to AERTEX Home");
+  }
   if (!html.includes('className="chatLoadError"') || !html.includes('console.error("Unable to load Intelligence conversations",error)')) {
     throw new Error("Intelligence history load failures must be visible instead of looking like an empty sidebar");
   }

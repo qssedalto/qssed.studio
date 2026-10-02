@@ -5,7 +5,7 @@ import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp, renderSharedConversation, renderIntelligenceNotFound } from "./studio/gpt-ui.js";
 import { handleAiApi, handleAiAdminApi } from "./studio/ai-gateway.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
-import { gptOriginForRequest } from "./studio/domain-family.js";
+import { gptOriginForRequest, mainOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
@@ -114,7 +114,7 @@ export default {
         const missing = withStudioSessionCookies(html(renderIntelligenceNotFound(locale, { kind: "conversation", theme: intelligenceTheme }), 404), gate.cookies || []);
         return request.method === "HEAD" ? new Response(null,{status:missing.status,headers:missing.headers}) : missing;
       }
-      const response = withStudioSessionCookies(html(renderShell(locale, { ...bootstrap, theme: intelligenceTheme })), gate.cookies || []);
+      const response = withStudioSessionCookies(html(renderShell(locale, { ...bootstrap, theme: intelligenceTheme, mainOrigin: mainOriginForRequest(request) })), gate.cookies || []);
       return request.method === "HEAD"
         ? new Response(null, { status: response.status, headers: response.headers })
         : response;

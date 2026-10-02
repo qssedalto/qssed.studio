@@ -3,6 +3,8 @@ import { preferredLocaleFromRequest } from "../studio/locale.js";
 const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/billing", "/student-verification", "/intelligence", "/logs", "/system"];
 
 const EN = [
+  ["AERTEX 主站","AERTEX Home"],
+  ["返回 AERTEX 主站","Return to AERTEX Home"],
   ["AERTEX 管理控制台","AERTEX Administration"],
   ["管理控制面 ·","CONTROL PLANE ·"],
   ["生产环境 ·","PRODUCTION ·"],
