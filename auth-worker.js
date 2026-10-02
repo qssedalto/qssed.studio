@@ -1,6 +1,6 @@
 import { handleOAuthRequest } from "./auth-oauth.js";
 import { localeDirection, localeFromPath, normalizeSupportedLocale, preferredLocaleFromRequest } from "./studio/locale.js";
-import { mainOriginForRequest, rootDomainForRequest, serviceOrigin } from "./studio/domain-family.js";
+import { awOriginForRequest, mainOriginForRequest, rootDomainForRequest, serviceOrigin } from "./studio/domain-family.js";
 import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
@@ -258,7 +258,10 @@ function resolveHandoffTarget(request, next, mainSite) {
     const service = parts[offset];
     const action = parts[offset + 1];
     const nested = service && action === "handoff" ? validatedNextPath(parsed.searchParams.get("next")) : "";
-    if ((service === "gpt" || service === "work" || service === "cash" || service === "aw") && nested) {
+    if (service === "aw" && nested) {
+      return { origin: awOriginForRequest(request), next: nested };
+    }
+    if ((service === "gpt" || service === "work" || service === "cash") && nested) {
       return { origin: serviceOrigin(root, service), next: nested };
     }
   } catch {}

@@ -40,7 +40,9 @@ export function workOriginForRequest(request) {
 }
 
 export function awOriginForRequest(request) {
-  return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "aw");
+  const root = rootDomainForRequest(request) || "qsseda.com";
+  const canonicalRoot = root === "qsseda.studio" ? "qsseda.com" : root;
+  return serviceOrigin(canonicalRoot, "aw");
 }
 
 export function awdOriginForRequest(request) {

@@ -13,7 +13,8 @@ for (const root of QSS_DOMAIN_ROOTS) {
   const workOrigin = `https://work.${root}`;
   const cashOrigin = `https://cash.${root}`;
   const gptOrigin = `https://gpt.${root}`;
-  const expectedAwOrigin = `https://aw.${root}`;
+  const expectedAwRoot = root === "qsseda.studio" ? "qsseda.com" : root;
+  const expectedAwOrigin = `https://aw.${expectedAwRoot}`;
   const request = new Request(mainOrigin + "/");
 
   if (awOriginForRequest(request) !== expectedAwOrigin) {
@@ -74,7 +75,7 @@ for (const root of QSS_DOMAIN_ROOTS) {
       throw new Error(`Root SSR lost the matching AERTEX Watch product for ${root} / ${fullLocale}`);
     }
     for (const otherRoot of QSS_DOMAIN_ROOTS) {
-      if (otherRoot !== root && markup.includes(`href="https://aw.${otherRoot}"`)) {
+      if (otherRoot !== expectedAwRoot && markup.includes(`href="https://aw.${otherRoot}"`)) {
         throw new Error(`AERTEX Watch cross-root leak: ${root} rendered aw.${otherRoot}`);
       }
     }

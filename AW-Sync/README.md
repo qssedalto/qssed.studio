@@ -4,10 +4,11 @@ AERTEX Watch keeps ActivityWatch collection local while copying selected bucket 
 
 ## Domain model
 
-- `aw.<root>` — AERTEX Watch web UI.
+- `aw.qsseda.com` and `aw.qsseda.online` — AERTEX Watch cloud web UI.
+- Requests from the `qsseda.studio` product family canonicalize to `aw.qsseda.com`; the legacy `aw.qsseda.studio` hostname is intentionally not used by the product.
 - `awd.<root>` — short cloud data/API hostname.
 - `aw.data.<root>` — semantic alias of the same cloud data/API service.
-- Supported roots: `qsseda.com`, `qsseda.online`, `qsseda.studio`.
+- Data roots: `qsseda.com`, `qsseda.online`, `qsseda.studio`.
 
 The cloud service is not a publicly exposed ActivityWatch server. The local ActivityWatch server remains bound to localhost; the sync agent reads its REST API and uploads authenticated batches over HTTPS.
 
