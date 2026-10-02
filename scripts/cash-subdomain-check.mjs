@@ -15,6 +15,8 @@ const huaweiGate = read("studio/huawei-harmony-gate.js");
 const app = read("cash-web/app.js");
 const model = read("cash-web/model.js");
 const index = read("cash-web/index.html");
+const styles = read("cash-web/styles.css");
+const appearance = read("studio/appearance.js");
 const shell = read("studio/ui-shell.js");
 const entry = read("studio/entry.js");
 const wrangler = JSON.parse(read("wrangler.cash.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
@@ -26,7 +28,9 @@ for (const required of [
   'pathname === "/api/cash/data"',
   'env.STORAGE.put',
   'env.STORAGE.get',
-  'env.ASSETS.fetch'
+  'env.ASSETS.fetch',
+  'pathname === "/appearance.js"',
+  'appearanceClientRuntime()'
 ]) assert(cash.includes(required), `Cash worker is missing invariant: ${required}`);
 
 for (const required of [
@@ -77,6 +81,12 @@ assert(shell.includes('id: "cash", label: "AERTEX Cash"'), "Desktop product navi
 assert(shell.includes('title:"AERTEX Watch"'), "Compact product menu must use the AERTEX Watch brand.");
 assert(shell.includes('id: "activitywatch", label: "AERTEX Watch"'), "Desktop product navigation must use the AERTEX Watch brand.");
 assert(!shell.includes('title:"ActivityWatch"') && !shell.includes('label: "ActivityWatch"'), "Legacy ActivityWatch must not remain as a rendered product name.");
+
+assert(index.includes('<script src="/appearance.js"></script>'), "Cash must load the shared appearance runtime before rendering.");
+assert(styles.includes(':root[data-theme="light"]') && styles.includes(':root[data-theme="dark"]'), "Cash must support explicit shared light and dark modes.");
+assert(styles.includes(':root[data-accent="sapphire"]') && styles.includes(':root[data-accent="graphite"]'), "Cash must map the shared accent palette.");
+assert(!styles.includes('select{color-scheme:light}'), "Cash controls must not force light native widgets in dark mode.");
+assert(appearance.includes('qssed_theme_generation'), "Cash shared runtime must receive the one-time System-mode migration.");
 
 assert(!app.includes("window.desktopAPI"), "Cash web client must not depend on Electron desktop APIs");
 assert(app.includes("fetch('/api/cash/data'"), "Cash web client must load/save account cloud data");
