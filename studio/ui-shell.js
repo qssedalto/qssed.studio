@@ -613,15 +613,15 @@ function renderCompactMainMenu(copy, productLinks = {}) {
   const gptHref = String(productLinks?.gptHref || "");
   const adminHref = String(productLinks?.adminHref || "");
   const mainItems = zh ? [
-    { title:"首页", description:"概览、最近入口与当前状态", href:prefix + "/dashboard", icon:"home", tone:"primary" },
-    { title:"工作区", description:"工作台、项目、草稿与任务", href:prefix + "/workspace", icon:"workspace", tone:"primary" },
+    { title:"首页", description:"概览、最近入口与当前状态", href:prefix + "/dashboard", icon:"home" },
+    { title:"工作区", description:"工作台、项目、草稿与任务", href:prefix + "/workspace", icon:"workspace" },
     { title:"信息中心", description:"知识、收藏、笔记与搜索", href:prefix + "/info", icon:"info" },
     { title:"AERTEX 账户", description:"个人资料、账户与安全", href:prefix + "/profile", icon:"profile" },
     { title:"设置", description:"主题、语言、订阅与存储", href:prefix + "/settings", icon:"settings" },
     { title:"祝福中心", description:"生日与节日分享链接", href:prefix + "/wishes", icon:"wishes" }
   ] : [
-    { title:"Home", description:"Overview, recent destinations, and status", href:prefix + "/dashboard", icon:"home", tone:"primary" },
-    { title:"Workspace", description:"Workbench, projects, drafts, and tasks", href:prefix + "/workspace", icon:"workspace", tone:"primary" },
+    { title:"Home", description:"Overview, recent destinations, and status", href:prefix + "/dashboard", icon:"home" },
+    { title:"Workspace", description:"Workbench, projects, drafts, and tasks", href:prefix + "/workspace", icon:"workspace" },
     { title:"Information", description:"Knowledge, links, notes, and search", href:prefix + "/info", icon:"info" },
     { title:"AERTEX Account", description:"Profile, account, and security", href:prefix + "/profile", icon:"profile" },
     { title:"Settings", description:"Theme, language, subscription, and storage", href:prefix + "/settings", icon:"settings" },
@@ -635,7 +635,7 @@ function renderCompactMainMenu(copy, productLinks = {}) {
     ...(adminHref ? [{ title:zh ? "管理员控制台" : "Administration", description:zh ? "独立管理控制面" : "Isolated control plane", href:adminHref, icon:"admin" }] : [])
   ];
 
-  const card = item => '<a class="compact-menu-card' + (item.tone === "primary" ? ' is-primary' : '') + '" href="' + item.href + '">' +
+  const card = item => '<a class="compact-menu-card" href="' + item.href + '">' +
     '<span class="compact-menu-card-icon">' + dashboardIcon(item.icon) + '</span>' +
     '<span class="compact-menu-card-copy"><strong>' + item.title + '</strong><small>' + item.description + '</small></span>' +
     '<b aria-hidden="true">↗</b></a>';
