@@ -33,6 +33,8 @@ assert(normalized.settings.periodEnd === "2027-02-28", "Custom period end must s
 assert(normalized.settings.manualEntryEnd === "2027-02-03", "Manual-entry cutoff must be editable.");
 assert(normalized.settings.oddMondayAnchor === "2027-02-10", "Odd-week anchor must be editable.");
 assert(normalized.settings.openingCash === 1234.56, "Opening cash must never be silently rewritten.");
+const negativeOpening = M.normalizeData({ ...data, settings: { ...data.settings, openingCash: -321.45 } });
+assert(negativeOpening.settings.openingCash === -321.45, "Opening balance must remain fully editable, including signed values.");
 assert(normalized.settings.emergencyCredit === 345, "Emergency credit must be editable.");
 assert(normalized.recurringExpenses[0].name === "Custom recurring", "Recurring name must remain editable.");
 assert(normalized.recurringExpenses[0].category === "custom-recurring", "Recurring category must remain editable.");
