@@ -42,7 +42,7 @@ select{color-scheme:inherit}.field select option{background:var(--panel);color:v
 .field small{font-size:12px;line-height:1.45}.important-field input{font-size:18px;font-weight:650}
 .roomy-button{min-height:44px;padding-inline:16px}
 .recurring-list{gap:12px}.recurring-card{padding:15px;border:1px solid var(--grid);border-radius:14px;background:color-mix(in srgb,var(--panel) 88%,var(--bg))}
-.recurring-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.recurring-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.recurring-card-actions{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:8px}
 .recurring-grid{display:grid;grid-template-columns:minmax(220px,1.6fr) minmax(180px,1.2fr) minmax(150px,.8fr) minmax(190px,1fr);gap:12px;align-items:end}
 .mini-field{display:grid;gap:6px;min-width:0;color:var(--muted);font-size:12px}.mini-field>span{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .mini-field input{width:100%;border:1px solid var(--line);background:transparent;color:var(--text)}
@@ -58,7 +58,7 @@ dialog .form-grid{gap:14px}.dialog-actions .button{min-height:44px;padding:10px 
   .editability-note{display:grid;gap:5px}.editability-note strong{white-space:normal}
   .settings-grid{grid-template-columns:1fr}.settings-grid .important-field{grid-column:auto}
   .field input,.field select,.mini-field input{min-height:52px;font-size:16px}
-  .recurring-card{padding:14px}.recurring-card-head{align-items:flex-start}
+  .recurring-card{padding:14px}.recurring-card-head{align-items:flex-start}.recurring-card-actions{justify-content:flex-start}
   .recurring-grid{grid-template-columns:1fr}.recurring-reserve-field{grid-column:auto}
   dialog:not(.advanced-dialog),.advanced-dialog{width:calc(100vw - 20px);padding:18px}
   .section-head{align-items:flex-start;flex-wrap:wrap}.section-head>div:last-child{flex-wrap:wrap}
