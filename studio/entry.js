@@ -29,6 +29,7 @@ import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
 import { osPage } from "./ui-shell.js";
+import { publicHomeMarkup } from "./public-home.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
@@ -288,7 +289,16 @@ export default {
 
     if (isHomeRoute || isProtectedOsRoute) {
       const gate = await verifyStudioPageSession(request);
-      if (!gate.ok) return withStudioSessionCookies(studioSessionBootstrapPage(locale, request), gate.cookies);
+      if (!gate.ok) {
+        if (isHomeRoute) {
+          const canonicalHost = new URL(request.url).hostname.toLowerCase() === "qsseda.com";
+          return withStudioSessionCookies(
+            localizedPage(publicHomeMarkup(fullLocale, request), locale, 200, { indexable: canonicalHost }),
+            gate.cookies
+          );
+        }
+        return withStudioSessionCookies(studioSessionBootstrapPage(locale, request), gate.cookies);
+      }
 
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");
       const zh = locale === "zh";
