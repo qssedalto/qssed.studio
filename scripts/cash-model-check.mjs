@@ -132,5 +132,46 @@ const linkedModel = M.calculateFinancialModel(linkedData, { asOf:"2027-02-20" })
 const linkedInstance = linkedModel.recurring.instances.find(item => item.recurringId === "linked-recurring");
 assert(linkedInstance.status === "settled" && linkedInstance.remaining === 0, "An explicit recurring link must settle the item even when posting date/category differ.");
 assert(M.normalizeData(linkedData).transactions[0].linkedRecurringId === "linked-recurring", "Recurring transaction links must survive normalization.");
+assert(M.normalizeData(linkedData).transactions[0].linkedRecurringMonth === null, "Legacy recurring links without an explicit month must remain backward-compatible.");
+
+const prepaidData = M.createDefaultData();
+prepaidData.settings.periodStart = "2027-01-01";
+prepaidData.settings.periodEnd = "2027-02-28";
+prepaidData.settings.manualEntryEnd = "2027-01-01";
+prepaidData.settings.openingCash = 1000;
+prepaidData.recurringExpenses = [
+  { id:"loan", name:"月供", category:"installment", amount:150, frequency:"monthly", dayOfMonth:15, reserveWhenUndated:true, enabled:true }
+];
+prepaidData.transactions = [
+  { id:"prepay", date:"2027-01-28", type:"expense", amount:150, category:"installment", note:"提前还 2 月月供", linkedRecurringId:"loan", linkedRecurringMonth:"2027-02" }
+];
+const prepaidNormalized = M.normalizeData(prepaidData);
+assert(prepaidNormalized.transactions[0].linkedRecurringMonth === "2027-02", "Cross-month recurring settlement target must survive normalization.");
+const prepaidModel = M.calculateFinancialModel(prepaidNormalized, { asOf:"2027-02-01" });
+const prepaidInstance = prepaidModel.recurring.instances.find(item => item.recurringId === "loan" && item.month === "2027-02");
+assert(prepaidInstance.status === "prepaid", "A fully linked payment before the configured due date must mark the target recurring instance prepaid.");
+assert(prepaidInstance.settledDate === "2027-01-28", "A prepaid recurring instance must remember the actual early payment date.");
+assert(prepaidInstance.remaining === 0, "A prepaid recurring instance must have no remaining amount on the original due date.");
+const prepaidDueDay = prepaidModel.forecast.daily.find(day => day.key === "2027-02-15");
+assert(prepaidDueDay.statuses.recurring.some(item => item.recurringId === "loan" && item.status === "prepaid"), "The original due date must still expose the prepaid recurring instance for explanation.");
+assert(prepaidDueDay.recurringDelta === 0, "A prepaid recurring instance must not deduct cash again on the original due date.");
+assert(prepaidModel.forecast.components.knownRecurringExpense === 0, "Prepaid fixed charges must be removed from future known recurring deductions.");
+
+const partialData = M.createDefaultData();
+partialData.settings.periodStart = "2027-02-01";
+partialData.settings.periodEnd = "2027-02-28";
+partialData.settings.manualEntryEnd = "2027-02-01";
+partialData.settings.openingCash = 1000;
+partialData.recurringExpenses = [
+  { id:"partial-loan", name:"部分提前还款", category:"installment", amount:150, frequency:"monthly", dayOfMonth:15, reserveWhenUndated:true, enabled:true }
+];
+partialData.transactions = [
+  { id:"partial-payment", date:"2027-02-05", type:"expense", amount:100, category:"installment", note:"提前还 100", linkedRecurringId:"partial-loan", linkedRecurringMonth:"2027-02" }
+];
+const partialModel = M.calculateFinancialModel(partialData, { asOf:"2027-02-06" });
+const partialInstance = partialModel.recurring.instances.find(item => item.recurringId === "partial-loan" && item.month === "2027-02");
+assert(partialInstance.status === "scheduled" && partialInstance.remaining === 50, "A partial early repayment must leave only the unpaid remainder scheduled.");
+const partialDueDay = partialModel.forecast.daily.find(day => day.key === "2027-02-15");
+assert(partialDueDay.recurringDelta === -50, "The original due date must deduct only the remainder after a partial early repayment.");
 
 console.log("Cash configurable model checks passed.");
