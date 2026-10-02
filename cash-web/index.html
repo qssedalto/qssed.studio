@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <title>AERTEX Cash · 学期现金流</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<main class="app">
+  <header class="topbar">
+    <div class="brand-block"><div class="brand-row"><img src="/icon.svg" class="app-logo" alt=""><div><h1>学期现金流</h1><p id="periodSummary">正在读取规划周期…</p></div></div><small id="storageStatus">正在读取本地账本…</small></div>
+    <div class="actions">
+      <a id="backToAertex" class="button" href="/">AERTEX</a>
+      <button id="addTransaction" class="button primary">新增收支</button>
+      <button id="addPlan" class="button">新增计划</button>
+      <button id="exportBackup" class="button">导出备份</button>
+      <button id="importBackup" class="button">导入备份</button>
+      <button id="exportCsv" class="button">账本 CSV</button>
+      <button id="advancedData" class="button">高级数据</button>
+      <input id="importFile" type="file" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <section id="notice" class="notice" hidden></section>
+
+  <section class="kpis six">
+    <article><span>现金余额</span><strong id="kCash">—</strong><small>仅真实账本</small></article>
+    <article><span>当前已覆盖预留</span><strong id="kReserve">—</strong><small id="kReserveDetail">按现有现金实际覆盖</small></article>
+    <article><span>当前可支配余额</span><strong id="kDisposable">—</strong><small>现金扣除已覆盖预留</small></article>
+    <article><span>花呗可用额度</span><strong id="kCredit">—</strong><small id="kCreditDetail">不计入现金</small></article>
+    <article><span>预计寒假余额</span><strong id="kForecast">—</strong><small>按账本、计划与预算推演</small></article>
+    <article><span>本月预算执行</span><strong id="kBudget">—</strong><small id="kBudgetDetail">—</small></article>
+  </section>
+
+  <section class="layer-strip" aria-label="四层财务模型">
+    <div><b class="dot actual"></b><strong>真实账本</strong><span>只记录已发生收支</span></div>
+    <div><b class="dot budget"></b><strong>预算</strong><span>目标，不是交易</span></div>
+    <div><b class="dot plan"></b><strong>计划</strong><span>明确日期的未来事件</span></div>
+    <div><b class="dot forecast"></b><strong>预测</strong><span>动态推演结果</span></div>
+  </section>
+
+  <section class="two-column forecast-layout">
+    <article class="card">
+      <div class="section-head"><div><h2>期末余额怎么算</h2><p id="forecastFormula">按真实现金、未来计划和预算逐项核对</p></div></div>
+      <div id="forecastBreakdown" class="formula-grid"></div>
+    </article>
+    <article class="card">
+      <div class="section-head"><div><h2>余额曲线</h2><p id="balanceCaption">只展示按日期发生的现金路径</p></div><div class="chart-legend"><span><b class="line actual-line"></b>实际现金</span><span><b class="line forecast-line"></b>有日期的预测</span></div></div>
+      <svg id="balanceChart" class="chart balance-chart" viewBox="0 0 1000 300" role="img" aria-label="实际现金和有明确日期的预测余额曲线"></svg>
+    </article>
+  </section>
+
+  <section class="two-column">
+    <article class="card">
+      <div class="section-head"><div><h2 id="budgetTitle">本月预算</h2><p>预算与实际分开统计</p></div></div>
+      <div id="budgetExecution" class="budget-execution"></div>
+    </article>
+    <article class="card">
+      <div class="section-head"><div><h2>固定支出预留</h2><p>未知扣费日项目不会提前改变现金余额</p></div></div>
+      <div id="reserveSummary"></div>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="section-head"><div><h2>真实账本</h2><p>这里只显示真实发生的收入与支出</p></div><span id="transactionCount" class="pill actual-pill">0 笔实际</span></div>
+    <div class="table-scroll"><table><thead><tr><th>日期</th><th>类型</th><th>金额</th><th>支付构成</th><th>分类</th><th>备注</th><th></th></tr></thead><tbody id="transactionBody"></tbody></table></div>
+    <div id="emptyLedger" class="empty">尚无真实交易。预算和预测不会出现在这里。</div>
+  </section>
+
+  <section class="card">
+    <div class="section-head"><div><h2 id="calendarTitle">日历</h2><p>日历只放有明确日期的实际、计划与预测；周预算不会伪造成某一天的消费</p></div><div class="status-legend"><span class="badge actual-badge">实际</span><span class="badge plan-badge">计划</span><span class="badge forecast-badge">预测</span></div></div>
+    <div id="calendar" class="calendar"></div>
+  </section>
+
+  <section class="two-column settings-layout">
+    <article class="card">
+      <div class="section-head"><div><h2>预算规则</h2><p>修改后自动保存并重算预测</p></div></div>
+      <div class="form-grid three">
+        <label class="field">规划开始<input id="periodStart" type="date"></label>
+        <label class="field">规划结束<input id="periodEnd" type="date"></label>
+        <label class="field">手动补录截止<input id="manualEntryEnd" type="date"></label>
+        <label class="field">单周周一锚点<input id="oddMondayAnchor" type="date"></label>
+        <label class="field">起始现金<input id="openingCash" type="number" min="0" step="0.01"></label>
+        <label class="field">应急信用额度<input id="emergencyCredit" type="number" min="0" step="0.5"></label>
+        <label class="field">普通上课日餐饮<input id="foodClassDay" type="number" min="0" step="0.5"></label>
+        <label class="field">单周周一餐饮<input id="foodOddMonday" type="number" min="0" step="0.5"></label>
+        <label class="field">双周周一餐饮<input id="foodEvenMonday" type="number" min="0" step="0.5"></label>
+        <label class="field">周六餐饮<input id="foodSaturday" type="number" min="0" step="0.5"></label>
+        <label class="field">周日餐饮<input id="foodSunday" type="number" min="0" step="0.5"></label>
+        <label class="field">每周社交次数<input id="socialVisits" type="number" min="0" step="0.5"></label>
+        <label class="field">单次交通中值<input id="socialMedian" type="number" min="0" step="0.5"></label>
+        <label class="field">单次交通下限<input id="socialMin" type="number" min="0" step="0.5"></label>
+        <label class="field">单次交通上限<input id="socialMax" type="number" min="0" step="0.5"></label>
+      </div>
+      <p class="note">社交交通按每周预算计算，不会自动生成周三、周五交易。</p>
+    </article>
+    <article class="card">
+      <div class="section-head"><div><h2>周期支出</h2><p>名称、分类、金额、扣费日和预留规则都可以修改</p></div><button id="addRecurring" class="button" type="button">新增周期支出</button></div>
+      <div id="recurringEditor" class="recurring-list"></div>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="section-head"><div><h2>明确日期计划</h2><p>家教收入和交通等未来事件；真实发生后由账本替换</p></div><span id="planCount" class="pill plan-pill">0 项计划</span></div>
+    <div class="table-scroll"><table><thead><tr><th>日期</th><th>类型</th><th>金额</th><th>分类</th><th>说明</th><th>状态</th><th></th></tr></thead><tbody id="planBody"></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <div class="section-head"><div><h2>未定日期预期</h2><p>只有预计月份、没有明确日期的未来收入或支出</p></div><div><span id="expectedCount" class="pill plan-pill">0 项预期</span> <button id="addExpected" class="button" type="button">新增预期</button></div></div>
+    <div class="table-scroll"><table><thead><tr><th>预计月份</th><th>类型</th><th>金额</th><th>分类</th><th>说明</th><th>状态</th><th></th></tr></thead><tbody id="expectedBody"></tbody></table></div>
+    <div id="emptyExpected" class="empty">尚无未定日期预期。</div>
+  </section>
+
+  <section class="card">
+    <div class="section-head"><div><h2>月度分析</h2><p>实际、计划、预算和预留保持独立列</p></div></div>
+    <svg id="monthlyChart" class="chart monthly-chart" viewBox="0 0 900 280" role="img" aria-label="月度分层分析图"></svg>
+    <div class="table-scroll"><table><thead><tr><th>月份</th><th>实际收入</th><th>实际支出</th><th>计划收入</th><th>计划支出</th><th>餐饮预算 / 实际</th><th>社交预算 / 实际</th><th>预留</th></tr></thead><tbody id="monthBody"></tbody></table></div>
+  </section>
+</main>
+
+<dialog id="transactionDialog">
+  <form id="transactionForm">
+    <div class="dialog-head"><div><h2 id="transactionTitle">新增真实收支</h2><p>只记录已经发生的交易</p></div><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div>
+    <div class="form-grid two">
+      <label class="field">日期<input id="txDate" type="text" inputmode="numeric" placeholder="例如 2026-10-01" autocomplete="off" required></label>
+      <label class="field">类型<select id="txType"><option value="expense">支出</option><option value="income">收入</option></select></label>
+      <label class="field">金额<input id="txAmount" type="text" inputmode="decimal" placeholder="例如 25.50" autocomplete="off" required></label>
+      <label class="field">分类<input id="txCategory" type="text" list="txCategoryList" placeholder="可输入或选择" autocomplete="off" required><datalist id="txCategoryList"></datalist></label>
+      <label class="field span-two" id="txHuabeiField">其中花呗消费金额<input id="txHuabeiAmount" type="text" inputmode="decimal" value="0" autocomplete="off"><small>其余金额按现金支出；填 0 表示全部使用现金</small></label>
+      <label class="field span-two">备注<input id="txNote" type="text" maxlength="160" placeholder="可选"></label>
+    </div>
+    <p id="txValidation" class="validation" hidden></p>
+    <div class="dialog-actions"><button type="button" class="button close-dialog">取消</button><button type="submit" class="button primary">保存真实交易</button></div>
+  </form>
+</dialog>
+
+<dialog id="planDialog">
+  <form id="planForm">
+    <div class="dialog-head"><div><h2 id="planTitle">新增明确日期计划</h2><p>计划不会写入真实账本</p></div><button type="button" class="icon-button close-plan" aria-label="关闭">×</button></div>
+    <div class="form-grid two">
+      <label class="field">日期<input id="planDate" type="date" required></label>
+      <label class="field">类型<select id="planType"><option value="expense">支出</option><option value="income">收入</option></select></label>
+      <label class="field">金额<input id="planAmount" type="number" min="0.01" step="0.01" required></label>
+      <label class="field">分类<input id="planCategory" type="text" list="planCategoryList" placeholder="可输入或选择" autocomplete="off" required><datalist id="planCategoryList"></datalist></label>
+      <label class="field span-two">说明<input id="planNote" type="text" maxlength="160" placeholder="可选"></label>
+      <label class="field span-two checkbox-field"><input id="planEnabled" type="checkbox" checked>启用这项计划</label>
+    </div>
+    <div class="dialog-actions"><button type="button" class="button close-plan">取消</button><button type="submit" class="button primary">保存计划</button></div>
+  </form>
+</dialog>
+
+<dialog id="expectedDialog">
+  <form id="expectedForm">
+    <div class="dialog-head"><div><h2 id="expectedTitle">新增未定日期预期</h2><p>只指定预计月份，不伪造具体发生日期</p></div><button type="button" class="icon-button close-expected" aria-label="关闭">×</button></div>
+    <div class="form-grid two">
+      <label class="field">预计月份<input id="expectedMonth" type="month" required></label>
+      <label class="field">类型<select id="expectedType"><option value="expense">支出</option><option value="income">收入</option></select></label>
+      <label class="field">金额<input id="expectedAmount" type="number" min="0.01" step="0.01" required></label>
+      <label class="field">分类<input id="expectedCategory" type="text" list="expectedCategoryList" placeholder="可输入或选择" autocomplete="off" required><datalist id="expectedCategoryList"></datalist></label>
+      <label class="field span-two">说明<input id="expectedNote" type="text" maxlength="160" placeholder="可选"></label>
+      <label class="field span-two checkbox-field"><input id="expectedEnabled" type="checkbox" checked>启用这项预期</label>
+    </div>
+    <div class="dialog-actions"><button type="button" class="button close-expected">取消</button><button type="submit" class="button primary">保存预期</button></div>
+  </form>
+</dialog>
+
+<dialog id="dayDialog">
+  <div class="dialog-head"><div><h2 id="dayTitle">日期明细</h2><p id="daySubtitle"></p></div><button type="button" id="closeDay" class="icon-button" aria-label="关闭">×</button></div>
+  <div id="dayLayers" class="day-layers"></div>
+  <div class="dialog-actions"><button type="button" id="planForDay" class="button">添加计划</button><button type="button" id="transactionForDay" class="button primary">记录实际</button></div>
+</dialog>
+
+<dialog id="advancedDialog" class="advanced-dialog">
+  <div class="dialog-head"><div><h2>高级数据编辑</h2><p>这里是当前账户的完整 Cash JSON。应用后会校验、规范化并保存到云端。</p></div><button type="button" id="closeAdvanced" class="icon-button" aria-label="关闭">×</button></div>
+  <textarea id="advancedJson" class="json-editor" spellcheck="false"></textarea>
+  <p id="advancedValidation" class="validation" hidden></p>
+  <div class="dialog-actions">
+    <button type="button" id="refreshAdvanced" class="button">重新载入</button>
+    <button type="button" id="applyAdvanced" class="button primary">应用并保存</button>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/model.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

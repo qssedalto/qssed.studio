@@ -41,6 +41,9 @@ assert(sso.includes("<title>AERTEX ID</title>"), "SSO must be branded AERTEX ID"
 
 assert(work.includes("<title>AERTEX Work</title>"), "Work product must be AERTEX Work");
 assert(workUi.includes("AERTEX Work"), "Work UI must use AERTEX Work");
+assert(shell.includes('title:"AERTEX Cash"') && shell.includes('id: "cash", label: "AERTEX Cash"'), "Cash product must be AERTEX Cash.");
+assert(shell.includes('title:"AERTEX Watch"') && shell.includes('id: "activitywatch", label: "AERTEX Watch"'), "Activity tracking product must be branded AERTEX Watch.");
+assert(!shell.includes('title:"ActivityWatch"') && !shell.includes('label: "ActivityWatch"'), "Legacy ActivityWatch must not remain as a rendered product name.");
 
 assert(gpt.includes("<title>AERTEX Intelligence</title>") && gptI18n.includes('title:"AERTEX Intelligence"'), "GPT product must be AERTEX Intelligence");
 assert(gptI18n.includes('subtitle:"Cloud Intelligence"'), "GPT subtitle must be Cloud Intelligence");

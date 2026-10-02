@@ -47,6 +47,12 @@ on:
       - wrangler.auth.jsonc
       - gpt-worker.js
       - wrangler.gpt.jsonc
+      - cash-worker.js
+      - cash-web/**
+      - studio/cash-subdomain.js
+      - scripts/cash-subdomain-check.mjs
+      - scripts/cash-model-check.mjs
+      - wrangler.cash.jsonc
       - wrangler.admin.jsonc
       - .github/workflows/deploy-production.yml
   workflow_dispatch:
@@ -134,6 +140,13 @@ jobs:
           node --check auth-pkce-test.js
           node --check auth-edge-protection.js
           node --check gpt-worker.js
+          node --check cash-worker.js
+          node --check cash-web/model.js
+          node --check cash-web/app.js
+          node --check scripts/cash-subdomain-check.mjs
+          node --check scripts/cash-model-check.mjs
+          node scripts/cash-subdomain-check.mjs
+          node scripts/cash-model-check.mjs
           grep -q '"region": "aws:us-east-1"' wrangler.gpt.jsonc
           node --check studio/ai-gateway.js
           node --check scripts/auth-edge-protection-check.mjs
@@ -156,6 +169,12 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.gpt.jsonc
+
+      - name: Deploy AERTEX Cash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.cash.jsonc
 
       - name: Deploy AERTEX Administration
         env:
@@ -277,6 +296,27 @@ jobs:
             exit 1
           fi
 
+      - name: Verify Cash custom domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          ok=0
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-cash-guest.html --dump-header - 'https://cash.qsseda.com/zh-cn' || true)"
+            status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
+            location="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^location:/ {sub(/\r$/,""); sub(/^location:[[:space:]]*/,""); value=$0} END {print value}')"
+            if [ "$status" = "302" ] && printf '%s' "$location" | grep -q '^https://qsseda\.com/cash/handoff?next=%2Fzh-cn'; then
+              ok=1
+              break
+            fi
+            echo "Cash custom domain not ready on attempt $attempt (HTTP ${status:-unknown}, location ${location:-none}); retrying..."
+            sleep 4
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "Cash authentication regression: unauthenticated UI did not enter the secure main-site handoff."
+            exit 1
+          fi
+
       - name: Verify all independent domains
         shell: bash
         run: |
@@ -330,6 +370,10 @@ jobs:
           verify_health "https://gpt.qsseda.com/health" "qsseda-gpt" "https://gpt.qsseda.com"
           verify_health "https://gpt.qsseda.online/health" "qsseda-gpt" "https://gpt.qsseda.online"
           verify_health "https://gpt.qsseda.studio/health" "qsseda-gpt" "https://gpt.qsseda.studio"
+
+          verify_health "https://cash.qsseda.com/health" "qsseda-cash" "https://cash.qsseda.com"
+          verify_health "https://cash.qsseda.online/health" "qsseda-cash" "https://cash.qsseda.online"
+          verify_health "https://cash.qsseda.studio/health" "qsseda-cash" "https://cash.qsseda.studio"
 
           verify_health "https://auth.qsseda.com/health" "qsseda-auth"
           verify_health "https://auth.qsseda.online/health" "qsseda-auth"

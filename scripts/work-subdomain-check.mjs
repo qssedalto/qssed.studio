@@ -126,12 +126,15 @@ for (const [host, zone] of [["work.qsseda.com","qsseda.com"],["work.qsseda.onlin
 }
 assert(!workAuditWrapper.includes("canonicalQssedaAlias"), "Work .online/.studio hosts must stay on their own domains");
 assert(entry.includes('workHref: `${workOrigin}/${fullLocale}/tex`'), "Studio shell must preserve the complete locale in the AERTEX Work product URL.");
-assert(entry.includes('awHref: awOriginForRequest(request)'), "Studio shell must derive ActivityWatch from the active qsseda root instead of hard-coding one domain.");
+assert(entry.includes('cashHref: `${cashOrigin}/${fullLocale}`'), "Studio shell must expose AERTEX Cash as an independent product.");
+assert(entry.includes('awHref: awOriginForRequest(request)'), "Studio shell must derive AERTEX Watch from the active qsseda root instead of hard-coding one domain.");
 assert(shell.includes('title:"AERTEX Work"'), "Compact main menu must list AERTEX Work as an independent product.");
 assert(shell.includes('id: "work", label: "AERTEX Work"'), "Desktop product navigation must list AERTEX Work as an independent product.");
-assert(shell.includes('title:"ActivityWatch"'), "Compact main menu must list ActivityWatch as an independent product.");
-assert(shell.includes('id: "activitywatch", label: "ActivityWatch"'), "Desktop product navigation must list ActivityWatch as an independent product.");
-assert(shell.indexOf('title:"AERTEX Work"') < shell.indexOf('title:"ActivityWatch"') && shell.indexOf('title:"ActivityWatch"') < shell.indexOf('title:"AERTEX Intelligence"'), "Compact independent products must order AERTEX Work, ActivityWatch, then Intelligence.");
+assert(shell.includes('title:"AERTEX Cash"'), "Compact main menu must list AERTEX Cash as an independent product.");
+assert(shell.includes('id: "cash", label: "AERTEX Cash"'), "Desktop product navigation must list AERTEX Cash as an independent product.");
+assert(shell.includes('title:"AERTEX Watch"'), "Compact main menu must list AERTEX Watch as an independent product.");
+assert(shell.includes('id: "activitywatch", label: "AERTEX Watch"'), "Desktop product navigation must list AERTEX Watch as an independent product.");
+assert(shell.indexOf('title:"AERTEX Work"') < shell.indexOf('title:"AERTEX Cash"') && shell.indexOf('title:"AERTEX Cash"') < shell.indexOf('title:"AERTEX Watch"') && shell.indexOf('title:"AERTEX Watch"') < shell.indexOf('title:"AERTEX Intelligence"'), "Compact independent products must order AERTEX Work, AERTEX Cash, AERTEX Watch, then Intelligence.");
 assert(workWrangler.r2_buckets?.some(bucket => bucket.binding === "STORAGE" && bucket.bucket_name === "qsseda-studio-storage"), "Work Worker must share the protected main-site storage binding");
 
 for (const host of ["work.qsseda.com","work.qsseda.online","work.qsseda.studio"]) {

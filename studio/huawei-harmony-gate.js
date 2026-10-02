@@ -523,6 +523,8 @@ function exemptionVerificationUrl(request, forceAccountSwitch = false) {
       returnPath = `/${locale}/gpt/handoff?next=${encodeURIComponent(currentPath)}`;
     } else if (isServiceHost(current.hostname, "work")) {
       returnPath = `/${locale}/work/handoff?next=${encodeURIComponent(currentPath)}`;
+    } else if (isServiceHost(current.hostname, "cash")) {
+      returnPath = `/${locale}/cash/handoff?next=${encodeURIComponent(currentPath)}`;
     }
 
     const authOrigin = authOriginForRequest(request);

@@ -14,7 +14,8 @@ export async function handleAuthHandoff(request, env, locale) {
   const mainOrigin = serviceOrigin(root);
   const workTarget = isServiceHost(hostname, "work");
   const gptTarget = isServiceHost(hostname, "gpt");
-  const isolatedTarget = workTarget || gptTarget;
+  const cashTarget = isServiceHost(hostname, "cash");
+  const isolatedTarget = workTarget || gptTarget || cashTarget;
   const origin = request.headers.get("Origin") || "";
   const referer = request.headers.get("Referer") || "";
   const fetchSite = (request.headers.get("Sec-Fetch-Site") || "").toLowerCase();
@@ -36,8 +37,8 @@ export async function handleAuthHandoff(request, env, locale) {
   try { form = await request.formData(); } catch { return json({ error: "Invalid handoff request" }, 400); }
   const accessToken = typeof form.get("access_token") === "string" ? form.get("access_token") : "";
   const refreshToken = typeof form.get("refresh_token") === "string" ? form.get("refresh_token") : "";
-  const next = normalizeHandoffNext(form.get("next"), locale, workTarget, gptTarget);
-  const retryNext = authRetryPath(next, locale, workTarget, gptTarget);
+  const next = normalizeHandoffNext(form.get("next"), locale, workTarget, gptTarget, cashTarget);
+  const retryNext = authRetryPath(next, locale, workTarget, gptTarget, cashTarget);
   if (!accessToken || !refreshToken) return json({ error: "Missing session" }, 400);
 
   let userResponse;
@@ -59,11 +60,11 @@ export async function handleAuthHandoff(request, env, locale) {
   const profiles = await profileResponse.json();
   if (!Array.isArray(profiles) || profiles[0]?.status !== "active") return json({ error: "Account is not active" }, 403);
 
-  const response = authHandoffHtml(accessToken, refreshToken, next, workTarget, gptTarget, authOrigin, retryNext);
+  const response = authHandoffHtml(accessToken, refreshToken, next, workTarget, gptTarget, cashTarget, authOrigin, retryNext);
   return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken, undefined, request));
 }
 
-export function normalizeHandoffNext(value, locale, workTarget = false, gptTarget = false) {
+export function normalizeHandoffNext(value, locale, workTarget = false, gptTarget = false, cashTarget = false) {
   const candidate = typeof value === "string" ? value.trim() : "";
   const baseLocale = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
   const candidateLocale = localeFromPath(candidate) || baseLocale;
@@ -93,16 +94,19 @@ export function normalizeHandoffNext(value, locale, workTarget = false, gptTarge
     return prefix;
   }
 
+  if (cashTarget) return prefix;
+
   if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\u0000")) return prefix;
   if (localeFromPath(candidate)) return candidate;
   return candidate === "/" ? prefix : prefix + candidate;
 }
 
-export function authRetryPath(next, locale, workTarget = false, gptTarget = false) {
+export function authRetryPath(next, locale, workTarget = false, gptTarget = false, cashTarget = false) {
   const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
   const prefix = "/" + code;
   if (workTarget) return `${prefix}/work/handoff?next=${encodeURIComponent(next)}`;
   if (gptTarget) return `${prefix}/gpt/handoff?next=${encodeURIComponent(next)}`;
+  if (cashTarget) return `${prefix}/cash/handoff?next=${encodeURIComponent(next)}`;
   return next;
 }
 
@@ -110,8 +114,8 @@ export function scriptLiteral(value) {
   return JSON.stringify(String(value || "")).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
 
-export function authHandoffHtml(accessToken, refreshToken, next, workTarget = false, gptTarget = false, authOrigin = "https://auth.qsseda.com", retryNext = next) {
-  const product = workTarget ? "AERTEX Work" : gptTarget ? "AERTEX Intelligence" : "AERTEX";
+export function authHandoffHtml(accessToken, refreshToken, next, workTarget = false, gptTarget = false, cashTarget = false, authOrigin = "https://auth.qsseda.com", retryNext = next) {
+  const product = workTarget ? "AERTEX Work" : gptTarget ? "AERTEX Intelligence" : cashTarget ? "AERTEX Cash" : "AERTEX";
   const locale = localeFromPath(next) || "en-us";
   const copy = {
     "zh-cn":["正在完成登录…","重新登录"], "zh-tw":["正在完成登入…","重新登入"],
