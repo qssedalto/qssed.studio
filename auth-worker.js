@@ -258,7 +258,7 @@ function resolveHandoffTarget(request, next, mainSite) {
     const service = parts[offset];
     const action = parts[offset + 1];
     const nested = service && action === "handoff" ? validatedNextPath(parsed.searchParams.get("next")) : "";
-    if ((service === "gpt" || service === "work") && nested) {
+    if ((service === "gpt" || service === "work" || service === "cash") && nested) {
       return { origin: serviceOrigin(root, service), next: nested };
     }
   } catch {}
