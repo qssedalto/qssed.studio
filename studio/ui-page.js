@@ -15,6 +15,7 @@ export function baseHead(title) {
         const ACCENT_KEY = "qssed-accent";
         const MODE_COOKIE = "qssed_theme_mode";
         const ACCENT_COOKIE = "qssed_accent";
+        const DEFAULT_POLICY_COOKIE = "qssed_theme_default_v2";
         const VALID_MODES = new Set(["system","light","dark"]);
         const VALID_ACCENTS = new Set(["sapphire","aqua","jade","lime","amber","coral","rose","magenta","violet","graphite"]);
         const media = window.matchMedia("(prefers-color-scheme: light)");
@@ -61,6 +62,16 @@ export function baseHead(title) {
           try {
             const domain = preferenceDomain();
             document.cookie = ACCENT_COOKIE + "=" + accent + "; Path=/; Max-Age=31536000; SameSite=Lax" + (domain ? "; Domain=." + domain : "");
+          } catch {}
+        }
+        function ensureSystemDefaultV2() {
+          const applied = document.cookie.match(/(?:^|;\s*)qssed_theme_default_v2=1(?:;|$)/);
+          if (applied) return;
+          try { localStorage.setItem(MODE_KEY, "system"); } catch {}
+          persistMode("system");
+          try {
+            const domain = preferenceDomain();
+            document.cookie = DEFAULT_POLICY_COOKIE + "=1; Path=/; Max-Age=31536000; SameSite=Lax" + (domain ? "; Domain=." + domain : "");
           } catch {}
         }
         function readMode() {
@@ -115,6 +126,7 @@ export function baseHead(title) {
           return next;
         }
 
+        ensureSystemDefaultV2();
         const initialMode = readMode();
         const initialAccent = readAccent();
         setMode(initialMode,{persist:false,announce:false});
