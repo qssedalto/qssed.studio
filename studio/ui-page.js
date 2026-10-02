@@ -239,7 +239,7 @@ export function baseHead(title) {
       .top-controls-zone{position:fixed;top:0;right:0;width:190px;height:72px;z-index:120;pointer-events:none}
       .top-controls{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:8px;opacity:1;transform:none;pointer-events:auto}
       html.top-control-menu-open,html.top-control-menu-open body{overflow:hidden!important;overscroll-behavior:none!important}
-      html.top-control-menu-open .top-controls-zone{top:0!important;right:0!important;bottom:0!important;left:0!important;width:auto!important;height:auto!important;pointer-events:auto!important;touch-action:none}
+      html.top-control-menu-open .top-controls-zone{top:0!important;right:0!important;bottom:0!important;left:0!important;width:auto!important;height:auto!important;z-index:2147483000!important;pointer-events:auto!important;overscroll-behavior:none}
       html.top-control-menu-open .top-controls{z-index:2}
       html[dir="rtl"] .top-control-popover{left:0;right:auto}
       .top-controls .language-toggle,.top-controls .theme-toggle{position:static!important;top:auto!important;right:auto!important}
@@ -724,7 +724,7 @@ export function themeScript() {
           });
         }
 
-        controls.addEventListener("click", event => event.stopPropagation());
+        controls.addEventListener("click", event => {\n          if (openMenu && !event.target?.closest?.("[data-top-control-menu]")) closeMenus();\n          event.stopPropagation();\n        });
         zone.addEventListener("click", event => {
           if (!openMenu) return;
           if (event.target === zone) closeMenus();
