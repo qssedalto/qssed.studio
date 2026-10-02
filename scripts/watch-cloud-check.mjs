@@ -13,6 +13,7 @@ const sync = read("AW-Sync/native/aw-sync.mjs");
 const handoff = read("studio/watch-subdomain.js");
 const studioWorker = read("worker.js");
 const authWorker = read("auth-worker.js");
+const authHandoff = read("studio/auth-handoff.js");
 const domains = read("studio/domain-family.js");
 
 assert(worker.includes('const TOKEN_PREFIX = "awd1"'), "Watch device tokens need an explicit prefix.");
@@ -45,6 +46,10 @@ assert(sync.includes("--watch"), "Native sync must support continuous operation.
 assert(handoff.includes("/aw/handoff") && handoff.includes("/auth/handoff"), "Watch must support the secure main-site session handoff.");
 assert(studioWorker.includes("isMainWatchHandoffPath") && studioWorker.includes("handleMainWatchHandoff"), "Main Studio worker must route Watch handoffs.");
 assert(authWorker.includes('service === "aw"') && authWorker.includes("awOriginForRequest(request)"), "AERTEX ID must route Watch through the canonical Watch origin.");
+assert(authHandoff.includes('const watchTarget = isServiceHost(hostname, "aw");'), "Watch auth handoff must classify aw.* as an isolated product target.");
+assert(authHandoff.includes("workTarget || gptTarget || cashTarget || watchTarget"), "Watch auth handoff must trust the main-site origin for Watch just like other isolated products.");
+assert(authHandoff.includes("if (cashTarget || watchTarget) return prefix;"), "Watch auth handoff must constrain post-login navigation to the localized Watch root.");
+assert(authHandoff.includes('watchTarget ? "AERTEX Watch"'), "Watch auth handoff completion page must use the Watch product identity.");
 assert(domains.includes("awdOriginForRequest") && domains.includes("awDataOriginForRequest"), "Domain family must define both Watch data names.");
 assert(domains.includes('root === "qsseda.studio" ? "qsseda.com" : root'), "The legacy qsseda.studio Watch UI must canonicalize to the cloud .com UI.");
 
