@@ -15,6 +15,8 @@ const huaweiGate = read("studio/huawei-harmony-gate.js");
 const app = read("cash-web/app.js");
 const model = read("cash-web/model.js");
 const index = read("cash-web/index.html");
+const shell = read("studio/ui-shell.js");
+const entry = read("studio/entry.js");
 const wrangler = JSON.parse(read("wrangler.cash.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 
 for (const required of [
@@ -68,6 +70,13 @@ assert(wrangler.assets?.directory === "./cash-web", "Cash static asset directory
 assert(wrangler.assets?.binding === "ASSETS", "Cash ASSETS binding is missing");
 assert(wrangler.assets?.run_worker_first === true, "Cash authentication must run before the app shell");
 assert(wrangler.r2_buckets?.some(item => item.binding === "STORAGE" && item.bucket_name === "qsseda-studio-storage"), "Cash R2 binding is missing");
+
+assert(entry.includes('cashHref: `${cashOrigin}/${fullLocale}`'), "Main shell must expose Cash as an independent product.");
+assert(shell.includes('title:"AERTEX Cash"'), "Compact product menu must list AERTEX Cash.");
+assert(shell.includes('id: "cash", label: "AERTEX Cash"'), "Desktop product navigation must list AERTEX Cash.");
+assert(shell.includes('title:"AERTEX Watch"'), "Compact product menu must use the AERTEX Watch brand.");
+assert(shell.includes('id: "activitywatch", label: "AERTEX Watch"'), "Desktop product navigation must use the AERTEX Watch brand.");
+assert(!shell.includes('title:"ActivityWatch"') && !shell.includes('label: "ActivityWatch"'), "Legacy ActivityWatch must not remain as a rendered product name.");
 
 assert(!app.includes("window.desktopAPI"), "Cash web client must not depend on Electron desktop APIs");
 assert(app.includes("fetch('/api/cash/data'"), "Cash web client must load/save account cloud data");
