@@ -172,6 +172,8 @@ assert(
 assert(chatSource.includes("provider_response_id: null"), "User and assistant ai_messages rows must keep the same PostgREST bulk-insert shape.");
 assert(chatSource.includes("input_tokens: null"), "User ai_messages rows must explicitly include nullable token fields.");
 assert(chatSource.includes("output_tokens: null"), "User ai_messages rows must explicitly include nullable token fields.");
+assert(aiGateway.includes("Compatibility fallback: a schema migration must never make existing"), "Conversation history must survive missing pin/archive schema.");
+assert(aiGateway.includes("&select=id,title,model,provider_id,is_shared,share_token,share_author_name,created_at,updated_at&order=updated_at.desc&limit=100"), "Conversation history fallback must use the legacy schema.");
 assert(uiPage.includes('storageKey: AERTEX_SUPABASE_STORAGE_KEY'), "Browser Supabase auth must use the versioned AERTEX storage key.");
 assert(uiPage.includes('sessionStorage.setItem(key, value)'), "Browser Supabase auth must fall back when localStorage persistence is unavailable.");
 assert(uiPage.includes('appearanceBootScript()'), "Studio and Work must load the shared appearance runtime.");
