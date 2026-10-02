@@ -214,15 +214,34 @@ export function baseHead(title) {
         line-height:1;
         transition:background .12s ease,transform 100ms ease-out;
       }
-      .language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}.language-menu{position:relative}.language-menu summary{list-style:none;cursor:pointer;width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;padding:0!important;border-radius:50%!important;display:inline-flex!important;align-items:center;justify-content:center}.language-menu summary::-webkit-details-marker{display:none}.language-menu-popover{position:absolute;top:calc(100% + 8px);right:0;width:230px;max-height:min(70vh,480px);overflow:auto;padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--surface-strong);box-shadow:0 18px 48px rgba(0,0,0,.18);z-index:2147483001}.language-menu-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;border-radius:10px;color:var(--text);text-decoration:none;font-size:13px}.language-menu-item:hover,.language-menu-item[aria-current="true"]{background:var(--glass-heavy)}.language-menu-item small{color:var(--muted);font-size:10px;text-transform:uppercase}
+      .language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}
+      .control-menu{position:relative}
+      .control-menu>summary{list-style:none;cursor:pointer;width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;padding:0!important;border-radius:50%!important;display:inline-flex!important;align-items:center;justify-content:center}
+      .control-menu>summary::-webkit-details-marker{display:none}
+      .language-menu-popover,.theme-menu-popover{position:absolute;top:calc(100% + 8px);right:0;overflow:auto;padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--surface-strong);box-shadow:0 18px 48px rgba(0,0,0,.18);z-index:3;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+      .language-menu-popover{width:230px;max-height:min(70vh,480px)}
+      .theme-menu-popover{width:190px;max-height:min(60vh,320px)}
+      .language-menu-item,.theme-menu-item{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;margin:0;padding:10px 11px;border:0;border-radius:10px;background:transparent;color:var(--text);text-decoration:none;font:inherit;font-size:13px;box-shadow:none;cursor:pointer}
+      .language-menu-item:hover,.language-menu-item[aria-current="true"],.theme-menu-item:hover,.theme-menu-item[aria-current="true"]{background:var(--glass-heavy);filter:none;transform:none}
+      .language-menu-item small,.theme-menu-item small{color:var(--muted);font-size:10px;text-transform:uppercase}
+      .theme-menu-item span:first-child{display:flex;align-items:center;gap:9px}
+      .theme-menu-dot{width:10px;height:10px;border-radius:50%;border:1px solid var(--border-strong);background:var(--fill)}
+      .theme-menu-item[data-theme-option="system"] .theme-menu-dot{background:linear-gradient(90deg,#f5f5f7 0 50%,#1c1c1e 50% 100%)}
+      .theme-menu-item[data-theme-option="light"] .theme-menu-dot{background:#f5f5f7}
+      .theme-menu-item[data-theme-option="dark"] .theme-menu-dot{background:#1c1c1e}
+      .theme-menu-item[aria-current="true"]{font-weight:700}
+      .theme-menu-item[aria-current="true"] small:after{content:"✓";margin-left:6px;color:var(--primary);font-weight:800}
       .theme-toggle:hover,.language-toggle:hover{background:color-mix(in srgb,var(--glass-heavy) 82%,var(--surface-strong) 18%);filter:none;transform:none}
       .theme-toggle:active,.language-toggle:active{transform:scale(.92)}
       .theme-toggle .theme-sun,:root[data-theme="light"] .theme-toggle .theme-moon{display:none}
       :root[data-theme="light"] .theme-toggle .theme-sun{display:inline}
       :root.theme-switching body,:root.theme-switching .card{transition:background .20s ease,color .20s ease,border-color .20s ease}
+      html.aertex-control-menu-open,html.aertex-control-menu-open body{overflow:hidden!important;overscroll-behavior:none!important}
+      .control-menu-backdrop{position:fixed;inset:0;z-index:0;background:transparent;pointer-events:auto;touch-action:none}
+      .control-menu-backdrop[hidden]{display:none!important}
 
-      .top-controls-zone{position:fixed;top:0;right:0;width:190px;height:72px;z-index:120;pointer-events:none}
-      .top-controls{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:8px;opacity:1;transform:none;pointer-events:auto}
+      .top-controls-zone{position:fixed;top:0;right:0;width:190px;height:72px;z-index:2147482000;pointer-events:none}
+      .top-controls{position:absolute;top:14px;right:14px;z-index:1;display:flex;align-items:center;gap:8px;opacity:1;transform:none;pointer-events:auto}
       .top-controls .language-toggle,.top-controls .theme-toggle{position:static!important;top:auto!important;right:auto!important}
 
       /* Site-wide authenticated workspace pass. Keep structural app CSS, but make
@@ -585,12 +604,30 @@ export function supabaseScript() {
   `;
 }
 
-export function themeToggle() {
+export function themeToggle(locale = "en-us") {
+  const copy = {
+    "zh-cn": { title:"外观", system:"跟随系统", light:"浅色", dark:"深色" },
+    "zh-tw": { title:"外觀", system:"跟隨系統", light:"淺色", dark:"深色" },
+    "ja-jp": { title:"外観", system:"システム", light:"ライト", dark:"ダーク" },
+    "ko-kr": { title:"화면 모드", system:"시스템", light:"라이트", dark:"다크" },
+    "fr-fr": { title:"Apparence", system:"Système", light:"Clair", dark:"Sombre" },
+    "es-es": { title:"Apariencia", system:"Sistema", light:"Claro", dark:"Oscuro" },
+    "el-gr": { title:"Εμφάνιση", system:"Σύστημα", light:"Φωτεινό", dark:"Σκούρο" },
+    "ar-sa": { title:"المظهر", system:"النظام", light:"فاتح", dark:"داكن" }
+  }[locale] || { title:"Appearance", system:"System", light:"Light", dark:"Dark" };
+  const option = (mode, label) => `<button class="theme-menu-item" type="button" data-theme-option="${mode}" aria-current="false"><span><i class="theme-menu-dot" aria-hidden="true"></i>${label}</span><small>${mode}</small></button>`;
   return `
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color mode" title="Toggle color mode">
-      <span class="theme-moon">◐</span>
-      <span class="theme-sun">◑</span>
-    </button>
+    <details class="theme-menu control-menu">
+      <summary id="theme-toggle" class="theme-toggle" aria-label="${copy.title}" title="${copy.title}">
+        <span class="theme-moon">◐</span>
+        <span class="theme-sun">◑</span>
+      </summary>
+      <div class="theme-menu-popover" role="menu" aria-label="${copy.title}">
+        ${option("system", copy.system)}
+        ${option("light", copy.light)}
+        ${option("dark", copy.dark)}
+      </div>
+    </details>
   `;
 }
 
@@ -604,16 +641,17 @@ export function languageToggle(links, t) {
     const current = code === activeLocale ? ' aria-current="true"' : "";
     return `<a class="language-menu-item" href="${href}" lang="${code}"${meta.dir === "rtl" ? ' dir="rtl"' : ""}${current}><span>${meta.nativeName}</span><small>${code}</small></a>`;
   }).join("");
-  return `<details class="language-menu"><summary class="language-toggle" aria-label="Language" title="Language">${label}</summary><div class="language-menu-popover">${items}</div></details>`;
+  return `<details class="language-menu control-menu"><summary class="language-toggle" aria-label="Language" title="Language">${label}</summary><div class="language-menu-popover">${items}</div></details>`;
 }
 
 export function topControls(links, t) {
   const locale = links.activeLocale || (t === TEXT.zh ? "zh-cn" : "en-us");
   return `
     <div class="top-controls-zone" aria-label="Page controls">
+      <div class="control-menu-backdrop" data-control-menu-backdrop hidden aria-hidden="true"></div>
       <div class="top-controls">
         ${languageToggle(links, t)}
-        ${themeToggle()}
+        ${themeToggle(locale)}
         ${accountMenuMarkup(locale)}
       </div>
     </div>
@@ -625,25 +663,76 @@ export function themeScript() {
   return `
     <script>
       (function () {
-        const button = document.getElementById("theme-toggle");
-        if (!button || !window.AERTEXTheme) return;
+        const root = document.documentElement;
+        const themeTrigger = document.getElementById("theme-toggle");
+        const menus = Array.from(document.querySelectorAll(".control-menu"));
+        const backdrop = document.querySelector("[data-control-menu-backdrop]");
+        if (!menus.length) return;
 
-        const syncButton = () => {
-          const resolved = window.AERTEXTheme.getResolvedTheme();
-          const mode = window.AERTEXTheme.getMode();
-          button.dataset.themeMode = mode;
-          button.setAttribute("aria-label", resolved === "light" ? "Switch to dark mode" : "Switch to light mode");
-          button.title = mode === "system" ? "System appearance" : (resolved === "light" ? "Light appearance" : "Dark appearance");
+        const openMenus = () => menus.filter(menu => menu.open);
+        const syncOverlayState = () => {
+          const open = openMenus().length > 0;
+          root.classList.toggle("aertex-control-menu-open", open);
+          if (backdrop) backdrop.hidden = !open;
+        };
+        const closeMenus = (except = null) => {
+          menus.forEach(menu => {
+            if (menu !== except && menu.open) menu.open = false;
+          });
+          syncOverlayState();
         };
 
-        button.addEventListener("click", () => {
-          const current = window.AERTEXTheme.getResolvedTheme();
-          document.documentElement.classList.add("theme-switching");
-          window.AERTEXTheme.setMode(current === "light" ? "dark" : "light");
-          window.setTimeout(() => document.documentElement.classList.remove("theme-switching"), 260);
+        menus.forEach(menu => {
+          menu.addEventListener("toggle", () => {
+            if (menu.open) closeMenus(menu);
+            syncOverlayState();
+          });
         });
-        window.addEventListener("aertex-themechange", syncButton);
-        syncButton();
+
+        if (backdrop) {
+          backdrop.addEventListener("pointerdown", event => {
+            event.preventDefault();
+            closeMenus();
+          });
+          backdrop.addEventListener("touchmove", event => event.preventDefault(), { passive:false });
+          backdrop.addEventListener("wheel", event => event.preventDefault(), { passive:false });
+        }
+
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape" && openMenus().length) {
+            event.preventDefault();
+            closeMenus();
+          }
+        });
+
+        document.querySelectorAll(".language-menu-item").forEach(item => {
+          item.addEventListener("click", () => closeMenus());
+        });
+
+        if (themeTrigger && window.AERTEXTheme) {
+          const syncThemeMenu = () => {
+            const mode = window.AERTEXTheme.getMode();
+            themeTrigger.dataset.themeMode = mode;
+            document.querySelectorAll("[data-theme-option]").forEach(option => {
+              option.setAttribute("aria-current", option.dataset.themeOption === mode ? "true" : "false");
+            });
+          };
+
+          document.querySelectorAll("[data-theme-option]").forEach(option => {
+            option.addEventListener("click", () => {
+              const mode = option.dataset.themeOption || "system";
+              document.documentElement.classList.add("theme-switching");
+              window.AERTEXTheme.setMode(mode);
+              window.setTimeout(() => document.documentElement.classList.remove("theme-switching"), 260);
+              closeMenus();
+            });
+          });
+
+          window.addEventListener("aertex-themechange", syncThemeMenu);
+          syncThemeMenu();
+        }
+
+        syncOverlayState();
       })();
     </script>
   `;
