@@ -15,6 +15,8 @@ const huaweiGate = read("studio/huawei-harmony-gate.js");
 const app = read("cash-web/app.js");
 const model = read("cash-web/model.js");
 const index = read("cash-web/index.html");
+const theme = read("cash-web/theme.js");
+const styles = read("cash-web/styles.css");
 const shell = read("studio/ui-shell.js");
 const entry = read("studio/entry.js");
 const wrangler = JSON.parse(read("wrangler.cash.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
@@ -77,6 +79,14 @@ assert(shell.includes('id: "cash", label: "AERTEX Cash"'), "Desktop product navi
 assert(shell.includes('title:"AERTEX Watch"'), "Compact product menu must use the AERTEX Watch brand.");
 assert(shell.includes('id: "activitywatch", label: "AERTEX Watch"'), "Desktop product navigation must use the AERTEX Watch brand.");
 assert(!shell.includes('title:"ActivityWatch"') && !shell.includes('label: "ActivityWatch"'), "Legacy ActivityWatch must not remain as a rendered product name.");
+
+assert(cash.includes('"/theme.js"'), "Cash Worker must serve the shared theme runtime.");
+assert(index.includes('<script src="/theme.js"></script>'), "Cash must load the shared theme runtime before the application.");
+assert(theme.includes('qssed_theme_mode') && theme.includes('qssed_accent'), "Cash theme runtime must consume shared mode and accent preferences.");
+assert(theme.includes('qsseda.online') && theme.includes('qsseda.studio'), "Cash theme runtime must support every AERTEX domain family.");
+assert(theme.includes('qssed_theme_default_v2'), "Cash must participate in the one-time System-default migration.");
+assert(styles.includes(':root[data-theme="light"]') && styles.includes(':root[data-theme="dark"]'), "Cash CSS must honor explicit shared light and dark themes.");
+assert(styles.includes(':root[data-accent="sapphire"]') && styles.includes(':root[data-accent="violet"]'), "Cash CSS must map the shared accent palette.");
 
 assert(!app.includes("window.desktopAPI"), "Cash web client must not depend on Electron desktop APIs");
 assert(app.includes("fetch('/api/cash/data'"), "Cash web client must load/save account cloud data");
