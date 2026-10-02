@@ -51,6 +51,15 @@ for (const root of QSS_DOMAIN_ROOTS) {
     if (!markup.includes('class="desktop-main-menu"') || !markup.includes('class="compact-main-menu"')) {
       throw new Error(`Desktop root did not reuse the compact/mobile menu for ${root} / ${fullLocale}`);
     }
+    if (markup.includes("compact-menu-card is-primary")) {
+      throw new Error(`Root menu must not render mismatched oversized primary cards for ${root} / ${fullLocale}`);
+    }
+    if (!markup.includes(".desktop-main-menu .compact-menu-product-grid{\n        display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px")) {
+      throw new Error(`Desktop root menu and product cards must use the same three-column proportions for ${root} / ${fullLocale}`);
+    }
+    if (!markup.includes("body.os-shell.os-root-menu{\n        height:auto!important;") || !markup.includes("overflow-y:auto!important;")) {
+      throw new Error(`Desktop root menu must allow document scrolling for ${root} / ${fullLocale}`);
+    }
     if (!markup.includes(`lang="${fullLocale}"`)) {
       throw new Error(`Root SSR lost locale ${root} / ${fullLocale}`);
     }
