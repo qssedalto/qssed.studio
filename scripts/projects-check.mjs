@@ -25,8 +25,16 @@ for (const zh of [true, false]) {
 assert(worker.includes('pathname === "/api/projects"'), "Worker is missing the project API route");
 assert(worker.includes("handleProjects(request, env)"), "Worker does not dispatch projects through its API boundary");
 assert(entry.includes('pathname === "/workspace/projects"'), "Studio entry does not mount the project workspace");
-assert(entry.includes("projectsWorkspaceContent(zh)"), "Project workspace renderer is not mounted");
+assert(entry.includes("projectsWorkspaceContent(zh, fullLocale)"), "Project workspace renderer must receive the full locale");
 assert(edge.includes('"/api/projects"'), "Project listing must remain behind the expensive-endpoint limiter");
+
+for (const [locale, expected] of [["zh-tw","專案管理"],["ja-jp","プロジェクト管理"],["ko-kr","프로젝트 관리"],["fr-fr","Gestion des projets"],["es-es","Gestión de proyectos"],["el-gr","Διαχείριση έργων"],["ar-sa","إدارة المشاريع"]]) {
+  const markup = projectsWorkspaceContent(false, locale);
+  assert(markup.includes(expected), "Project translation missing for " + locale);
+  assert(markup.includes("/api/projects"), "Project API behavior must remain intact for " + locale);
+  const scripts = [...markup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+  for (const code of scripts) new Function(code);
+}
 
 assert(api.includes('const PROJECT_ROOT = "_system/projects/"'), "Projects must use the hidden R2 project namespace");
 assert(api.includes("projectPrefix(userId)"), "Project storage must be scoped by user ID");
