@@ -82,6 +82,11 @@ assert(shell.includes('title:"AERTEX Watch"'), "Compact product menu must use th
 assert(shell.includes('id: "activitywatch", label: "AERTEX Watch"'), "Desktop product navigation must use the AERTEX Watch brand.");
 assert(!shell.includes('title:"ActivityWatch"') && !shell.includes('label: "ActivityWatch"'), "Legacy ActivityWatch must not remain as a rendered product name.");
 
+assert(index.includes('id="cashHomeBrand"') && index.includes('id="backToAertex"'), "Cash must expose both product-identity and explicit AERTEX Home exits.");
+assert(index.includes("返回 AERTEX"), "Cash explicit main-site action must be clearly labeled.");
+assert(app.includes("if ($('cashHomeBrand')) $('cashHomeBrand').href = mainSiteOrigin();"), "Cash brand must resolve to the active AERTEX domain-family root.");
+assert(app.includes("if ($('backToAertex')) $('backToAertex').href = mainSiteOrigin();"), "Cash explicit exit must resolve to the active AERTEX domain-family root.");
+assert(styles.includes(".brand-home-link"), "Cash product identity must be styled as a first-class navigation target.");
 assert(index.includes('<script src="/appearance.js"></script>'), "Cash must load the shared appearance runtime before rendering.");
 assert(styles.includes(':root[data-theme="light"]') && styles.includes(':root[data-theme="dark"]'), "Cash must support explicit shared light and dark modes.");
 assert(styles.includes(':root[data-accent="sapphire"]') && styles.includes(':root[data-accent="graphite"]'), "Cash must map the shared accent palette.");
