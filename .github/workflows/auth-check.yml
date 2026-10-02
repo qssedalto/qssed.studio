@@ -37,6 +37,7 @@ on:
       - "auth-pkce-test.js"
       - "auth-edge-protection.js"
       - "scripts/auth-edge-protection-check.mjs"
+      - "scripts/appearance-check.mjs"
       - "scripts/brand-check.mjs"
       - "wrangler.auth.jsonc"
       - "supabase/migrations/**"
