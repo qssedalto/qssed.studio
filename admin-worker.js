@@ -1,6 +1,6 @@
 import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
-import { adminOriginForRequest } from "./studio/domain-family.js";
+import { adminOriginForRequest, mainOriginForRequest } from "./studio/domain-family.js";
 import { adminSessionRedirect } from "./studio/admin-subdomain.js";
 import { handleAuthorizedAccessAuditAdmin, recordAccessAudit } from "./studio/access-audit.js";
 import { handleAdminAccess, handleAdminAction } from "./admin/admin-api.js";
@@ -125,6 +125,7 @@ async function routeAdminRequest(request, env) {
   const markup = renderAdminConsole(page.path, {
     identity,
     root: adminOriginForRequest(request).replace(/^https:\/\//, ""),
+    mainHref: `${mainOriginForRequest(request)}/${page.locale}`,
     build: "control-plane-v1"
   });
   const response = adminHtml(localizeAdminHtml(markup, page.locale, page.path));
