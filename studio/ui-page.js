@@ -214,7 +214,22 @@ export function baseHead(title) {
         line-height:1;
         transition:background .12s ease,transform 100ms ease-out;
       }
-      .language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}.language-menu{position:relative}.language-menu summary{list-style:none;cursor:pointer;width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;padding:0!important;border-radius:50%!important;display:inline-flex!important;align-items:center;justify-content:center}.language-menu summary::-webkit-details-marker{display:none}.language-menu-popover{position:absolute;top:calc(100% + 8px);right:0;width:230px;max-height:min(70vh,480px);overflow:auto;padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--surface-strong);box-shadow:0 18px 48px rgba(0,0,0,.18);z-index:2147483001}.language-menu-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 11px;border-radius:10px;color:var(--text);text-decoration:none;font-size:13px}.language-menu-item:hover,.language-menu-item[aria-current="true"]{background:var(--glass-heavy)}.language-menu-item small{color:var(--muted);font-size:10px;text-transform:uppercase}
+      .language-toggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;white-space:nowrap;overflow:hidden}
+      .top-control-menu{position:relative;display:inline-flex}
+      .top-control-popover{position:absolute;top:calc(100% + 8px);right:0;padding:8px;border:1px solid var(--border);border-radius:16px;background:var(--surface-strong);box-shadow:0 18px 48px rgba(0,0,0,.18);z-index:4;-webkit-backdrop-filter:blur(24px) saturate(165%);backdrop-filter:blur(24px) saturate(165%);touch-action:pan-y;overscroll-behavior:contain}
+      .top-control-popover[hidden]{display:none!important}
+      .language-menu-popover{width:250px;max-height:min(70dvh,520px);overflow:auto;-webkit-overflow-scrolling:touch}
+      .language-menu-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border-radius:11px;color:var(--text);text-decoration:none;font-size:13px}
+      .language-menu-item:hover,.language-menu-item[aria-current="true"]{background:var(--glass-heavy)}
+      .language-menu-item small{color:var(--muted);font-size:10px;text-transform:uppercase}
+      .theme-menu-popover{width:224px;display:grid;gap:4px}
+      .theme-mode-option{width:100%;min-height:50px;margin:0;padding:8px 10px;display:grid;grid-template-columns:28px minmax(0,1fr) 18px;align-items:center;gap:10px;border:0;border-radius:11px;background:transparent;color:var(--text);text-align:left;box-shadow:none}
+      .theme-mode-option:hover{background:var(--glass-heavy);filter:none}
+      .theme-mode-option:active{transform:scale(.985)}
+      .theme-mode-option[aria-checked="true"]{background:color-mix(in srgb,var(--primary) 10%,var(--glass-heavy))}
+      .theme-mode-option-copy{display:grid;gap:2px;min-width:0}.theme-mode-option-copy strong{font-size:13px}.theme-mode-option-copy small{color:var(--muted);font-size:10px;line-height:1.35}
+      .theme-mode-option-icon{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--fill);color:var(--text);font-size:13px;box-shadow:inset 0 0 0 1px var(--border)}
+      .theme-mode-option-check{opacity:0;color:var(--primary);font-size:13px;font-weight:800}.theme-mode-option[aria-checked="true"] .theme-mode-option-check{opacity:1}
       .theme-toggle:hover,.language-toggle:hover{background:color-mix(in srgb,var(--glass-heavy) 82%,var(--surface-strong) 18%);filter:none;transform:none}
       .theme-toggle:active,.language-toggle:active{transform:scale(.92)}
       .theme-toggle .theme-sun,:root[data-theme="light"] .theme-toggle .theme-moon{display:none}
@@ -223,6 +238,10 @@ export function baseHead(title) {
 
       .top-controls-zone{position:fixed;top:0;right:0;width:190px;height:72px;z-index:120;pointer-events:none}
       .top-controls{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:8px;opacity:1;transform:none;pointer-events:auto}
+      html.top-control-menu-open,html.top-control-menu-open body{overflow:hidden!important;overscroll-behavior:none!important}
+      html.top-control-menu-open .top-controls-zone{top:0!important;right:0!important;bottom:0!important;left:0!important;width:auto!important;height:auto!important;pointer-events:auto!important;touch-action:none}
+      html.top-control-menu-open .top-controls{z-index:2}
+      html[dir="rtl"] .top-control-popover{left:0;right:auto}
       .top-controls .language-toggle,.top-controls .theme-toggle{position:static!important;top:auto!important;right:auto!important}
 
       /* Site-wide authenticated workspace pass. Keep structural app CSS, but make
@@ -585,12 +604,29 @@ export function supabaseScript() {
   `;
 }
 
-export function themeToggle() {
+export function themeToggle(locale = "en-us") {
+  const copy = {
+    "zh-cn": { label:"外观", system:"跟随系统", systemHint:"随设备外观自动切换", light:"浅色", lightHint:"始终使用浅色", dark:"深色", darkHint:"始终使用深色" },
+    "zh-tw": { label:"外觀", system:"跟隨系統", systemHint:"隨裝置外觀自動切換", light:"淺色", lightHint:"始終使用淺色", dark:"深色", darkHint:"始終使用深色" },
+    "ja-jp": { label:"外観", system:"システム", systemHint:"デバイスの外観に合わせる", light:"ライト", lightHint:"常にライトを使用", dark:"ダーク", darkHint:"常にダークを使用" },
+    "ko-kr": { label:"모양", system:"시스템", systemHint:"기기 모양을 자동으로 따름", light:"라이트", lightHint:"항상 라이트 사용", dark:"다크", darkHint:"항상 다크 사용" },
+    "fr-fr": { label:"Apparence", system:"Système", systemHint:"Suivre l’apparence de l’appareil", light:"Clair", lightHint:"Toujours utiliser le mode clair", dark:"Sombre", darkHint:"Toujours utiliser le mode sombre" },
+    "es-es": { label:"Apariencia", system:"Sistema", systemHint:"Seguir la apariencia del dispositivo", light:"Claro", lightHint:"Usar siempre el modo claro", dark:"Oscuro", darkHint:"Usar siempre el modo oscuro" },
+    "el-gr": { label:"Εμφάνιση", system:"Σύστημα", systemHint:"Ακολούθηση εμφάνισης συσκευής", light:"Φωτεινό", lightHint:"Πάντα φωτεινή εμφάνιση", dark:"Σκούρο", darkHint:"Πάντα σκούρα εμφάνιση" },
+    "ar-sa": { label:"المظهر", system:"النظام", systemHint:"اتباع مظهر الجهاز تلقائيًا", light:"فاتح", lightHint:"استخدام المظهر الفاتح دائمًا", dark:"داكن", darkHint:"استخدام المظهر الداكن دائمًا" }
+  }[locale] || { label:"Appearance", system:"System", systemHint:"Follow the device appearance", light:"Light", lightHint:"Always use light appearance", dark:"Dark", darkHint:"Always use dark appearance" };
   return `
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color mode" title="Toggle color mode">
-      <span class="theme-moon">◐</span>
-      <span class="theme-sun">◑</span>
-    </button>
+    <div class="top-control-menu theme-menu" data-top-control-menu="theme">
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="${copy.label}" title="${copy.label}" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu-popover" data-top-control-trigger="theme">
+        <span class="theme-moon">◐</span>
+        <span class="theme-sun">◑</span>
+      </button>
+      <div id="theme-menu-popover" class="top-control-popover theme-menu-popover" role="menu" hidden data-top-control-popover="theme">
+        <button class="theme-mode-option" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="system"><span class="theme-mode-option-icon">◐</span><span class="theme-mode-option-copy"><strong>${copy.system}</strong><small>${copy.systemHint}</small></span><span class="theme-mode-option-check">✓</span></button>
+        <button class="theme-mode-option" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="light"><span class="theme-mode-option-icon">☀</span><span class="theme-mode-option-copy"><strong>${copy.light}</strong><small>${copy.lightHint}</small></span><span class="theme-mode-option-check">✓</span></button>
+        <button class="theme-mode-option" type="button" role="menuitemradio" aria-checked="false" data-theme-choice="dark"><span class="theme-mode-option-icon">◒</span><span class="theme-mode-option-copy"><strong>${copy.dark}</strong><small>${copy.darkHint}</small></span><span class="theme-mode-option-check">✓</span></button>
+      </div>
+    </div>
   `;
 }
 
@@ -602,9 +638,9 @@ export function languageToggle(links, t) {
     const meta = LOCALE_META[code];
     if (!meta) return "";
     const current = code === activeLocale ? ' aria-current="true"' : "";
-    return `<a class="language-menu-item" href="${href}" lang="${code}"${meta.dir === "rtl" ? ' dir="rtl"' : ""}${current}><span>${meta.nativeName}</span><small>${code}</small></a>`;
+    return `<a class="language-menu-item" role="menuitem" href="${href}" lang="${code}"${meta.dir === "rtl" ? ' dir="rtl"' : ""}${current}><span>${meta.nativeName}</span><small>${code}</small></a>`;
   }).join("");
-  return `<details class="language-menu"><summary class="language-toggle" aria-label="Language" title="Language">${label}</summary><div class="language-menu-popover">${items}</div></details>`;
+  return `<div class="top-control-menu language-menu" data-top-control-menu="language"><button id="language-toggle" class="language-toggle" type="button" aria-label="Language" title="Language" aria-haspopup="menu" aria-expanded="false" aria-controls="language-menu-popover" data-top-control-trigger="language">${label}</button><div id="language-menu-popover" class="top-control-popover language-menu-popover" role="menu" hidden data-top-control-popover="language">${items}</div></div>`;
 }
 
 export function topControls(links, t) {
@@ -613,7 +649,7 @@ export function topControls(links, t) {
     <div class="top-controls-zone" aria-label="Page controls">
       <div class="top-controls">
         ${languageToggle(links, t)}
-        ${themeToggle()}
+        ${themeToggle(locale)}
         ${accountMenuMarkup(locale)}
       </div>
     </div>
@@ -625,25 +661,104 @@ export function themeScript() {
   return `
     <script>
       (function () {
-        const button = document.getElementById("theme-toggle");
-        if (!button || !window.AERTEXTheme) return;
+        const root = document.documentElement;
+        const zone = document.querySelector(".top-controls-zone");
+        const controls = zone?.querySelector(".top-controls");
+        const themeButton = document.getElementById("theme-toggle");
+        const triggers = Array.from(zone?.querySelectorAll("[data-top-control-trigger]") || []);
+        const popovers = Array.from(zone?.querySelectorAll("[data-top-control-popover]") || []);
+        const themeChoices = Array.from(zone?.querySelectorAll("[data-theme-choice]") || []);
+        if (!zone || !controls || !themeButton || !window.AERTEXTheme) return;
 
-        const syncButton = () => {
-          const resolved = window.AERTEXTheme.getResolvedTheme();
+        let openMenu = "";
+
+        const triggerFor = name => triggers.find(item => item.dataset.topControlTrigger === name) || null;
+        const popoverFor = name => popovers.find(item => item.dataset.topControlPopover === name) || null;
+
+        const syncTheme = () => {
           const mode = window.AERTEXTheme.getMode();
-          button.dataset.themeMode = mode;
-          button.setAttribute("aria-label", resolved === "light" ? "Switch to dark mode" : "Switch to light mode");
-          button.title = mode === "system" ? "System appearance" : (resolved === "light" ? "Light appearance" : "Dark appearance");
+          themeButton.dataset.themeMode = mode;
+          for (const option of themeChoices) {
+            const selected = option.dataset.themeChoice === mode;
+            option.setAttribute("aria-checked", selected ? "true" : "false");
+          }
+          const selected = themeChoices.find(option => option.dataset.themeChoice === mode);
+          const label = selected?.querySelector("strong")?.textContent || "Appearance";
+          themeButton.title = label;
         };
 
-        button.addEventListener("click", () => {
-          const current = window.AERTEXTheme.getResolvedTheme();
-          document.documentElement.classList.add("theme-switching");
-          window.AERTEXTheme.setMode(current === "light" ? "dark" : "light");
-          window.setTimeout(() => document.documentElement.classList.remove("theme-switching"), 260);
+        const closeMenus = (restoreFocus = false) => {
+          const previous = openMenu;
+          openMenu = "";
+          for (const trigger of triggers) trigger.setAttribute("aria-expanded", "false");
+          for (const popover of popovers) popover.hidden = true;
+          root.classList.remove("top-control-menu-open");
+          if (restoreFocus && previous) triggerFor(previous)?.focus({ preventScroll: true });
+        };
+
+        const open = name => {
+          if (!name) return;
+          if (openMenu === name) {
+            closeMenus();
+            return;
+          }
+          closeMenus();
+          openMenu = name;
+          const trigger = triggerFor(name);
+          const popover = popoverFor(name);
+          if (!trigger || !popover) {
+            openMenu = "";
+            return;
+          }
+          trigger.setAttribute("aria-expanded", "true");
+          popover.hidden = false;
+          root.classList.add("top-control-menu-open");
+          if (name === "theme") syncTheme();
+        };
+
+        for (const trigger of triggers) {
+          trigger.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            open(trigger.dataset.topControlTrigger || "");
+          });
+        }
+
+        controls.addEventListener("click", event => event.stopPropagation());
+        zone.addEventListener("click", event => {
+          if (!openMenu) return;
+          if (event.target === zone) closeMenus();
         });
-        window.addEventListener("aertex-themechange", syncButton);
-        syncButton();
+
+        const blockBackgroundScroll = event => {
+          if (!openMenu) return;
+          if (event.target?.closest?.(".top-control-popover")) return;
+          if (event.cancelable) event.preventDefault();
+        };
+        zone.addEventListener("touchmove", blockBackgroundScroll, { passive:false });
+        zone.addEventListener("wheel", blockBackgroundScroll, { passive:false });
+
+        document.addEventListener("keydown", event => {
+          if (event.key !== "Escape" || !openMenu) return;
+          event.preventDefault();
+          closeMenus(true);
+        });
+
+        for (const option of themeChoices) {
+          option.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const mode = option.dataset.themeChoice || "system";
+            document.documentElement.classList.add("theme-switching");
+            window.AERTEXTheme.setMode(mode);
+            window.setTimeout(() => document.documentElement.classList.remove("theme-switching"), 260);
+            syncTheme();
+            closeMenus();
+          });
+        }
+
+        window.addEventListener("aertex-themechange", syncTheme);
+        syncTheme();
       })();
     </script>
   `;
