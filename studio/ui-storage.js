@@ -95,7 +95,6 @@ export function storageClientScript(zh, loginUrl, locale = "") {
     <script>
       (() => {
         const copy = ${JSON.stringify(copy)};
-        const loginUrl = ${JSON.stringify(loginUrl)};
         const maximumBytes = ${MAX_STORAGE_FILE_BYTES};
         const STORAGE_CACHE_PREFIX = "qssed-storage-v2:";
         const root = document.getElementById("storage-manager");
