@@ -39,6 +39,8 @@
 
   async function load() {
     $("backHome").href = rootOrigin();
+    const guide = $("setupGuideLink");
+    if (guide) guide.href = "/" + locale + "/setup/";
     const [status, bucketMap] = await Promise.all([
       api("/api/watch/status"),
       api("/api/0/buckets/")
