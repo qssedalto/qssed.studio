@@ -51,6 +51,7 @@ on:
       - cash-web/**
       - studio/cash-subdomain.js
       - scripts/cash-subdomain-check.mjs
+      - scripts/cash-model-check.mjs
       - wrangler.cash.jsonc
       - wrangler.admin.jsonc
       - .github/workflows/deploy-production.yml
@@ -143,7 +144,9 @@ jobs:
           node --check cash-web/model.js
           node --check cash-web/app.js
           node --check scripts/cash-subdomain-check.mjs
+          node --check scripts/cash-model-check.mjs
           node scripts/cash-subdomain-check.mjs
+          node scripts/cash-model-check.mjs
           grep -q '"region": "aws:us-east-1"' wrangler.gpt.jsonc
           node --check studio/ai-gateway.js
           node --check scripts/auth-edge-protection-check.mjs
