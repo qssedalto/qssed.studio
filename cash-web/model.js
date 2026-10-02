@@ -549,8 +549,19 @@
   }
   function csvEscape(value) { const text = String(value ?? ''); return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
   function transactionsToCsv(data) {
-    const normalized = normalizeData(data), header = ['日期', '类型', '金额', '现金金额', '花呗金额', '分类', '备注'];
-    const rows = normalized.transactions.slice().sort((a, b) => a.date.localeCompare(b.date)).map(tx => [tx.date, tx.type === 'income' ? '收入' : '支出', tx.amount, tx.type === 'income' ? tx.amount : roundMoney(tx.amount - huabeiPart(tx)), huabeiPart(tx), categoryName(tx.category), tx.note]);
+    const normalized = normalizeData(data), header = ['日期', '类型', '金额', '现金金额', '花呗金额', '分类', '备注', '周期支出结算', '结算月份'];
+    const recurringNames = new Map(normalized.recurringExpenses.map(item => [item.id, item.name]));
+    const rows = normalized.transactions.slice().sort((a, b) => a.date.localeCompare(b.date)).map(tx => [
+      tx.date,
+      tx.type === 'income' ? '收入' : '支出',
+      tx.amount,
+      tx.type === 'income' ? tx.amount : roundMoney(tx.amount - huabeiPart(tx)),
+      huabeiPart(tx),
+      categoryName(tx.category),
+      tx.note,
+      tx.linkedRecurringId ? (recurringNames.get(tx.linkedRecurringId) || tx.linkedRecurringId) : '',
+      tx.linkedRecurringMonth || ''
+    ]);
     return '\uFEFF' + [header, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
   }
 
