@@ -1,59 +1,30 @@
-export function globalSearchContent(zh) {
-  const copy = zh ? {
-    eyebrow: "全局搜索",
-    title: "搜索你的 Studio",
-    intro: "统一搜索知识库、研究笔记、摘要、账号链接、社区链接和精选链接。私人内容仍按原有权限隔离，搜索不会扩大任何内容的可见范围。",
-    placeholder: "搜索知识、笔记、链接、摘要…",
-    hint: "输入至少 1 个关键词",
-    searching: "正在搜索…",
-    empty: "没有找到结果",
-    emptyDetail: "换一个关键词，或切换到“全部”。",
-    error: "搜索暂时不可用",
-    partial: "部分模块暂时不可用，下面仍展示已完成的结果。",
-    result: "个结果",
-    all: "全部",
-    knowledge: "知识库",
-    note: "研究笔记",
-    summary: "摘要",
-    link: "我的 / 管理链接",
-    community_link: "社区",
-    curated_link: "精选",
-    private: "私人",
-    community: "社区",
-    curated: "精选",
-    admin: "管理员范围",
-    current: "当前账号",
-    open: "打开",
-    external: "外部链接",
-    shortcut: "按 / 聚焦搜索"
-  } : {
-    eyebrow: "Global Search",
-    title: "Search your Studio",
-    intro: "Search Knowledge, research notes, summaries, account links, community links, and curated links in one place. Private content keeps its existing visibility rules; search never expands access.",
-    placeholder: "Search knowledge, notes, links, summaries…",
-    hint: "Enter at least one keyword",
-    searching: "Searching…",
-    empty: "No results",
-    emptyDetail: "Try another keyword or switch back to All.",
-    error: "Search is temporarily unavailable",
-    partial: "Some modules are temporarily unavailable. Available results are still shown below.",
-    result: "results",
-    all: "All",
-    knowledge: "Knowledge",
-    note: "Research notes",
-    summary: "Summaries",
-    link: "Account / admin links",
-    community_link: "Community",
-    curated_link: "Curated",
-    private: "Private",
-    community: "Community",
-    curated: "Curated",
-    admin: "Admin scope",
-    current: "Current account",
-    open: "Open",
-    external: "External link",
-    shortcut: "Press / to focus search"
-  };
+import { normalizeSupportedLocale } from "./locale.js";
+
+const GLOBAL_SEARCH_EN = {
+  eyebrow:"Global Search",title:"Search your Studio",
+  intro:"Search Knowledge, research notes, summaries, account links, community links, and curated links in one place. Private content keeps its existing visibility rules; search never expands access.",
+  placeholder:"Search knowledge, notes, links, summaries…",hint:"Enter at least one keyword",searching:"Searching…",empty:"No results",
+  emptyDetail:"Try another keyword or switch back to All.",error:"Search is temporarily unavailable",
+  partial:"Some modules are temporarily unavailable. Available results are still shown below.",result:"results",all:"All",knowledge:"Knowledge",
+  note:"Research notes",summary:"Summaries",link:"Account / admin links",community_link:"Community",curated_link:"Curated",private:"Private",
+  community:"Community",curated:"Curated",admin:"Admin scope",current:"Current account",open:"Open",external:"External link",shortcut:"Press / to focus search"
+};
+
+const GLOBAL_SEARCH_COPY = {
+  "en-us":GLOBAL_SEARCH_EN,"en-gb":GLOBAL_SEARCH_EN,"en-au":GLOBAL_SEARCH_EN,
+  "zh-cn":{eyebrow:"全局搜索",title:"搜索你的 Studio",intro:"统一搜索知识库、研究笔记、摘要、账号链接、社区链接和精选链接。私人内容仍按原有权限隔离，搜索不会扩大任何内容的可见范围。",placeholder:"搜索知识、笔记、链接、摘要…",hint:"输入至少 1 个关键词",searching:"正在搜索…",empty:"没有找到结果",emptyDetail:"换一个关键词，或切换到“全部”。",error:"搜索暂时不可用",partial:"部分模块暂时不可用，下面仍展示已完成的结果。",result:"个结果",all:"全部",knowledge:"知识库",note:"研究笔记",summary:"摘要",link:"我的 / 管理链接",community_link:"社区",curated_link:"精选",private:"私人",community:"社区",curated:"精选",admin:"管理员范围",current:"当前账号",open:"打开",external:"外部链接",shortcut:"按 / 聚焦搜索"},
+  "zh-tw":{eyebrow:"全域搜尋",title:"搜尋你的 Studio",intro:"一次搜尋知識庫、研究筆記、摘要、帳號連結、社群連結與精選連結。私人內容仍沿用原有可見性規則，搜尋不會擴大存取權限。",placeholder:"搜尋知識、筆記、連結、摘要…",hint:"請輸入至少 1 個關鍵字",searching:"正在搜尋…",empty:"找不到結果",emptyDetail:"換一個關鍵字，或切回「全部」。",error:"搜尋暫時無法使用",partial:"部分模組暫時無法使用，以下仍顯示已完成的結果。",result:"個結果",all:"全部",knowledge:"知識庫",note:"研究筆記",summary:"摘要",link:"帳號 / 管理連結",community_link:"社群",curated_link:"精選",private:"私人",community:"社群",curated:"精選",admin:"管理員範圍",current:"目前帳號",open:"開啟",external:"外部連結",shortcut:"按 / 聚焦搜尋"},
+  "ja-jp":{eyebrow:"グローバル検索",title:"Studio 全体を検索",intro:"Knowledge、研究ノート、要約、アカウントリンク、コミュニティリンク、厳選リンクをまとめて検索します。非公開コンテンツの公開範囲は変わらず、検索によってアクセス権が広がることはありません。",placeholder:"知識、ノート、リンク、要約を検索…",hint:"キーワードを1つ以上入力してください",searching:"検索中…",empty:"結果がありません",emptyDetail:"別のキーワードを試すか、「すべて」に戻してください。",error:"検索は一時的に利用できません",partial:"一部のモジュールは一時的に利用できません。取得できた結果は引き続き表示しています。",result:"件",all:"すべて",knowledge:"Knowledge",note:"研究ノート",summary:"要約",link:"アカウント / 管理リンク",community_link:"コミュニティ",curated_link:"厳選",private:"非公開",community:"コミュニティ",curated:"厳選",admin:"管理者範囲",current:"現在のアカウント",open:"開く",external:"外部リンク",shortcut:"/ キーで検索にフォーカス"},
+  "ko-kr":{eyebrow:"전체 검색",title:"Studio 전체 검색",intro:"Knowledge, 연구 노트, 요약, 계정 링크, 커뮤니티 링크와 선별 링크를 한곳에서 검색합니다. 비공개 콘텐츠의 기존 공개 범위는 유지되며 검색으로 접근 권한이 확대되지 않습니다.",placeholder:"지식, 노트, 링크, 요약 검색…",hint:"검색어를 1개 이상 입력하세요",searching:"검색 중…",empty:"검색 결과가 없습니다",emptyDetail:"다른 검색어를 입력하거나 ‘전체’로 돌아가세요.",error:"검색을 일시적으로 사용할 수 없습니다",partial:"일부 모듈을 일시적으로 사용할 수 없습니다. 확인된 결과는 아래에 계속 표시됩니다.",result:"개 결과",all:"전체",knowledge:"Knowledge",note:"연구 노트",summary:"요약",link:"계정 / 관리자 링크",community_link:"커뮤니티",curated_link:"선별",private:"비공개",community:"커뮤니티",curated:"선별",admin:"관리자 범위",current:"현재 계정",open:"열기",external:"외부 링크",shortcut:"/ 키로 검색창에 포커스"},
+  "fr-fr":{eyebrow:"Recherche globale",title:"Rechercher dans votre Studio",intro:"Recherchez au même endroit dans Knowledge, les notes de recherche, les résumés, les liens du compte, les liens communautaires et les liens sélectionnés. Les règles de visibilité restent inchangées et la recherche n’élargit jamais les accès.",placeholder:"Rechercher connaissances, notes, liens, résumés…",hint:"Saisissez au moins un mot-clé",searching:"Recherche…",empty:"Aucun résultat",emptyDetail:"Essayez un autre mot-clé ou revenez à « Tout ».",error:"La recherche est temporairement indisponible",partial:"Certains modules sont temporairement indisponibles. Les résultats disponibles restent affichés ci-dessous.",result:"résultats",all:"Tout",knowledge:"Knowledge",note:"Notes de recherche",summary:"Résumés",link:"Liens compte / admin",community_link:"Communauté",curated_link:"Sélection",private:"Privé",community:"Communauté",curated:"Sélection",admin:"Portée administrateur",current:"Compte actuel",open:"Ouvrir",external:"Lien externe",shortcut:"Appuyez sur / pour rechercher"},
+  "es-es":{eyebrow:"Búsqueda global",title:"Busca en todo tu Studio",intro:"Busca en Knowledge, notas de investigación, resúmenes, enlaces de la cuenta, enlaces de la comunidad y enlaces seleccionados desde un solo lugar. El contenido privado conserva sus reglas de visibilidad y la búsqueda nunca amplía el acceso.",placeholder:"Buscar conocimiento, notas, enlaces, resúmenes…",hint:"Introduce al menos una palabra clave",searching:"Buscando…",empty:"No hay resultados",emptyDetail:"Prueba otra palabra o vuelve a «Todo».",error:"La búsqueda no está disponible temporalmente",partial:"Algunos módulos no están disponibles temporalmente. Los resultados disponibles se siguen mostrando abajo.",result:"resultados",all:"Todo",knowledge:"Knowledge",note:"Notas de investigación",summary:"Resúmenes",link:"Enlaces de cuenta / admin",community_link:"Comunidad",curated_link:"Seleccionados",private:"Privado",community:"Comunidad",curated:"Seleccionados",admin:"Ámbito de administrador",current:"Cuenta actual",open:"Abrir",external:"Enlace externo",shortcut:"Pulsa / para enfocar la búsqueda"},
+  "el-gr":{eyebrow:"Καθολική αναζήτηση",title:"Αναζήτηση σε όλο το Studio",intro:"Αναζητήστε Knowledge, ερευνητικές σημειώσεις, περιλήψεις, συνδέσμους λογαριασμού, συνδέσμους κοινότητας και επιλεγμένους συνδέσμους από ένα σημείο. Οι κανόνες ορατότητας των ιδιωτικών δεδομένων παραμένουν ίδιοι και η αναζήτηση δεν διευρύνει την πρόσβαση.",placeholder:"Αναζήτηση γνώσης, σημειώσεων, συνδέσμων, περιλήψεων…",hint:"Εισαγάγετε τουλάχιστον μία λέξη-κλειδί",searching:"Αναζήτηση…",empty:"Δεν βρέθηκαν αποτελέσματα",emptyDetail:"Δοκιμάστε άλλη λέξη-κλειδί ή επιστρέψτε στο «Όλα».",error:"Η αναζήτηση δεν είναι προσωρινά διαθέσιμη",partial:"Ορισμένες ενότητες δεν είναι προσωρινά διαθέσιμες. Τα διαθέσιμα αποτελέσματα εμφανίζονται παρακάτω.",result:"αποτελέσματα",all:"Όλα",knowledge:"Knowledge",note:"Ερευνητικές σημειώσεις",summary:"Περιλήψεις",link:"Σύνδεσμοι λογαριασμού / διαχειριστή",community_link:"Κοινότητα",curated_link:"Επιλεγμένα",private:"Ιδιωτικό",community:"Κοινότητα",curated:"Επιλεγμένα",admin:"Πεδίο διαχειριστή",current:"Τρέχων λογαριασμός",open:"Άνοιγμα",external:"Εξωτερικός σύνδεσμος",shortcut:"Πατήστε / για εστίαση στην αναζήτηση"},
+  "ar-sa":{eyebrow:"البحث الشامل",title:"ابحث في Studio بالكامل",intro:"ابحث في Knowledge وملاحظات البحث والملخصات وروابط الحساب وروابط المجتمع والروابط المختارة من مكان واحد. تظل قواعد ظهور المحتوى الخاص كما هي، ولا يوسّع البحث صلاحيات الوصول.",placeholder:"ابحث في المعرفة والملاحظات والروابط والملخصات…",hint:"أدخل كلمة مفتاحية واحدة على الأقل",searching:"جارٍ البحث…",empty:"لا توجد نتائج",emptyDetail:"جرّب كلمة أخرى أو عُد إلى «الكل».",error:"البحث غير متاح مؤقتًا",partial:"بعض الوحدات غير متاحة مؤقتًا. ما زالت النتائج المتاحة معروضة أدناه.",result:"نتائج",all:"الكل",knowledge:"Knowledge",note:"ملاحظات البحث",summary:"الملخصات",link:"روابط الحساب / الإدارة",community_link:"المجتمع",curated_link:"مختارة",private:"خاص",community:"المجتمع",curated:"مختارة",admin:"نطاق الإدارة",current:"الحساب الحالي",open:"فتح",external:"رابط خارجي",shortcut:"اضغط / للتركيز على البحث"}
+};
+
+export function globalSearchContent(zh, locale = "") {
+  const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
+  const copy = GLOBAL_SEARCH_COPY[activeLocale] || GLOBAL_SEARCH_EN;
 
   return `
     <section class="global-search-shell" data-global-search>
@@ -134,7 +105,7 @@ export function globalSearchContent(zh) {
           let sequence=0;
           let allResults=[];
           let activeFilter='all';
-          const prefix=location.pathname.startsWith('/zh-cn/')?'/zh-cn':location.pathname.startsWith('/en/')?'/en':'';
+          const prefix=${JSON.stringify("/" + activeLocale)};
 
           function internalHref(value){if(!value)return '#';if(String(value).startsWith('https://')||String(value).startsWith('http://'))return value;return prefix+value;}
           function setStatus(value){status.textContent=value;}

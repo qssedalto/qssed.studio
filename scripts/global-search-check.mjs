@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { globalSearchMatchScore } from "../studio/global-search-api.js";
 import { globalSearchContent } from "../studio/ui-global-search.js";
+import { communityLinksPageContent, enhanceLinksHubWithCommunity } from "../studio/ui-links-community.js";
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
@@ -27,8 +28,30 @@ for (const zh of [true, false]) {
 assert(worker.includes('pathname === "/api/search/global"'), "Worker is missing the global search API route");
 assert(worker.includes("handleGlobalSearch(request, env)"), "Worker does not dispatch global search through its API boundary");
 assert(entry.includes('pathname === "/info/search"'), "Studio entry does not mount the global search workspace");
-assert(entry.includes("globalSearchContent(zh)"), "Global search workspace renderer is not mounted");
+assert(entry.includes("globalSearchContent(zh, fullLocale)"), "Global search workspace renderer must receive the full locale");
 assert(edge.includes('"/api/search/global"'), "Global search must remain behind the expensive-endpoint limiter");
+
+for (const [locale, expectedText] of [["zh-tw","全域搜尋"],["ja-jp","グローバル検索"],["ko-kr","전체 검색"],["fr-fr","Recherche globale"],["es-es","Búsqueda global"],["el-gr","Καθολική αναζήτηση"],["ar-sa","البحث الشامل"]]) {
+  const markup = globalSearchContent(false, locale);
+  assert(markup.includes(expectedText), "Global search translation missing for " + locale);
+  assert(markup.includes('const prefix="' + "/" + locale + '";'), "Global search must preserve locale prefix for " + locale);
+  const scripts = [...markup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+  for (const code of scripts) new Function(code);
+}
+
+const jaCommunity = communityLinksPageContent(false, "ja-jp");
+assert(jaCommunity.includes("コミュニティリンク"), "Community links Japanese translation missing");
+assert(jaCommunity.includes('href="/ja-jp/info/links"'), "Community links back route must preserve Japanese locale");
+for (const code of [...jaCommunity.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1])) new Function(code);
+
+const arHub = enhanceLinksHubWithCommunity(
+  '<button class="links-quick-submit" id="links-quick-submit" type="submit" disabled>إنشاء رابط</button><a class="links-route-card" href="/ar-sa/info/links/curated"></a><script>body:JSON.stringify({ title:inferTitle(url), url, category:\'tools\', description:\'\' })<\\/script>',
+  false,
+  "ar-sa"
+);
+assert(arHub.includes("/ar-sa/info/links/community"), "Community hub route must preserve Arabic locale");
+assert(arHub.includes("النشر في المجتمع"), "Community hub Arabic translation missing");
+assert(arHub.includes("community:Boolean"), "Community opt-in must still be included in the create request");
 
 console.log("Global search checks passed.");
 
