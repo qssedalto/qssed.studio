@@ -521,7 +521,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL="https://qsseda.com/zh-cn/dashboard"
+          URL="https://qsseda.com/zh-cn/info"
           ok=0
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
             status="$(curl --silent --show-error --location --max-time 20 --output /tmp/qsseda-dashboard.html --write-out '%{http_code}' "$URL" || true)"
@@ -533,7 +533,7 @@ jobs:
             sleep 3
           done
           if [ "$ok" -ne 1 ]; then
-            echo "Security regression: unauthenticated Dashboard did not return the minimal session gate."
+            echo "Security regression: unauthenticated private Studio route did not return the minimal session gate."
             echo "HTTP status: ${status:-unknown}"
             sed -n '1,80p' /tmp/qsseda-dashboard.html || true
             exit 1
