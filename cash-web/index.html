@@ -75,7 +75,7 @@
   </section>
 
   <section class="card">
-    <div class="section-head"><div><h2 id="calendarTitle">日历</h2><p>日历只放有明确日期的实际、计划与预测；周预算不会伪造成某一天的消费</p></div><div class="status-legend"><span class="badge actual-badge">实际</span><span class="badge plan-badge">计划</span><span class="badge forecast-badge">预测</span></div></div>
+    <div class="section-head"><div><h2 id="calendarTitle">日历</h2><p>明确扣费日的周期支出会直接展开到每个月对应日期，并单独显示固定支出金额；当天净额仍同时计算实际、计划与预算。</p></div><div class="status-legend"><span class="badge actual-badge">实际</span><span class="badge plan-badge">计划</span><span class="badge forecast-badge">预测 / 周期</span></div></div>
     <div id="calendar" class="calendar"></div>
   </section>
 
@@ -102,7 +102,7 @@
       <p class="note">社交交通按每周预算计算，不会自动生成周三、周五交易。</p>
     </article>
     <article class="card editable-card">
-      <div class="section-head"><div><div class="title-line"><h2>周期支出</h2><span class="editable-badge">每项可修改</span></div><p>名称、分类、金额、扣费日、是否预留与启用状态都可以直接改。</p></div><button id="addRecurring" class="button roomy-button" type="button">新增周期支出</button></div>
+      <div class="section-head"><div><div class="title-line"><h2>周期支出</h2><span class="editable-badge">每项可修改</span></div><p>填写“每月扣费日”后会生成明确日期；只有扣费日留空时，“未知日期预留”才生效。金额为 0 不会产生扣款。</p></div><button id="addRecurring" class="button roomy-button" type="button">新增周期支出</button></div>
       <div id="recurringEditor" class="recurring-list"></div>
     </article>
   </section>
