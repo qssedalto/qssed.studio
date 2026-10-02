@@ -25,6 +25,7 @@ on:
       - scripts/work-subdomain-check.mjs
       - scripts/gpt-subdomain-check.mjs
       - scripts/gpt-ui-check.mjs
+      - scripts/appearance-check.mjs
       - scripts/admin-control-plane-check.mjs
       - scripts/account-menu-check.mjs
       - scripts/r2-storage-audit-check.mjs
@@ -114,6 +115,8 @@ jobs:
           node scripts/gpt-subdomain-check.mjs
           node --check scripts/gpt-ui-check.mjs
           node scripts/gpt-ui-check.mjs
+          node --check scripts/appearance-check.mjs
+          node scripts/appearance-check.mjs
           node --check scripts/admin-control-plane-check.mjs
           node scripts/admin-control-plane-check.mjs
           node --check scripts/account-menu-check.mjs
