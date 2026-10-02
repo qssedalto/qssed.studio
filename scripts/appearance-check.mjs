@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import vm from "node:vm";
 import {
   APPEARANCE_GENERATION_VALUE,
@@ -8,6 +9,8 @@ import {
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
+
+const uiPage = fs.readFileSync(new URL("../studio/ui-page.js", import.meta.url), "utf8");
 
 function browserHarness() {
   const cookieStore = new Map([
@@ -124,5 +127,16 @@ const systemRequest = {
   }
 };
 assert(appearanceThemeFromRequest(systemRequest) === "", "System mode must not be frozen to the legacy resolved theme on the server.");
+
+assert(!uiPage.includes('<details class="language-menu"'), "Language picker must not rely on native details-only dismissal.");
+assert(uiPage.includes('data-top-control-trigger="language"'), "Language control must use the shared top-control menu controller.");
+assert(uiPage.includes('data-top-control-trigger="theme"'), "Appearance control must use the shared top-control menu controller.");
+assert(uiPage.includes('data-theme-choice="system"') && uiPage.includes('data-theme-choice="light"') && uiPage.includes('data-theme-choice="dark"'), "Appearance popover must expose System, Light, and Dark choices.");
+assert(uiPage.includes('html.top-control-menu-open,html.top-control-menu-open body{overflow:hidden!important'), "Open top-control menus must lock background page scrolling.");
+assert(uiPage.includes('event.target === zone') && uiPage.includes('closeMenus()'), "Clicking the blank backdrop must dismiss an open top-control menu.");
+assert(uiPage.includes('zone.addEventListener("touchmove", blockBackgroundScroll, { passive:false })'), "Mobile touch scrolling outside the popover must be blocked.");
+assert(uiPage.includes('if (event.target?.closest?.(".top-control-popover")) return;'), "Popover contents must remain independently scrollable.");
+assert(uiPage.includes('window.AERTEXTheme.setMode(mode)'), "Theme menu choices must set the selected appearance mode directly.");
+assert(!uiPage.includes('window.AERTEXTheme.setMode(current === "light" ? "dark" : "light")'), "Theme control must not regress to binary light/dark toggling.");
 
 console.log("Shared AERTEX appearance runtime checks passed.");
