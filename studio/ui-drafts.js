@@ -1,65 +1,31 @@
-export function draftsWorkspaceContent(zh) {
-  const copy = zh ? {
-    eyebrow: "工作区 · 草稿",
-    title: "草稿箱",
-    intro: "快速记录还没有定稿的内容。草稿自动保存到当前账号，并可以关联项目、按最近编辑排序和搜索正文。",
-    create: "新建草稿",
-    search: "搜索标题或正文…",
-    recent: "最近编辑",
-    loading: "正在读取草稿…",
-    empty: "还没有草稿",
-    emptyDetail: "新建一份草稿，输入后会自动保存。",
-    noMatch: "没有匹配的草稿",
-    noMatchDetail: "换一个关键词再搜索。",
-    untitled: "未命名草稿",
-    noProject: "无项目",
-    projectUnavailable: "项目不可用",
-    project: "所属项目",
-    titleLabel: "标题",
-    titlePlaceholder: "未命名草稿",
-    bodyPlaceholder: "开始写…",
-    chars: "字",
-    saved: "已自动保存",
-    saving: "正在保存…",
-    unsaved: "有未保存修改",
-    error: "草稿服务暂时不可用",
-    select: "选择左侧草稿开始编辑",
-    selectDetail: "也可以新建一份草稿。",
-    delete: "删除草稿",
-    deleteConfirm: "确定删除这份草稿吗？此操作不可撤销。",
-    deleted: "草稿已删除",
-    privateLabel: "当前账号私人草稿"
-  } : {
-    eyebrow: "Workspace · Drafts",
-    title: "Drafts",
-    intro: "Capture unfinished work quickly. Drafts autosave to the current account, can attach to projects, stay sorted by recent edits, and support body search.",
-    create: "New Draft",
-    search: "Search titles or body text…",
-    recent: "Recently edited",
-    loading: "Loading drafts…",
-    empty: "No drafts yet",
-    emptyDetail: "Create a draft. Changes save automatically as you type.",
-    noMatch: "No matching drafts",
-    noMatchDetail: "Try another keyword.",
-    untitled: "Untitled draft",
-    noProject: "No Project",
-    projectUnavailable: "Project unavailable",
-    project: "Project",
-    titleLabel: "Title",
-    titlePlaceholder: "Untitled draft",
-    bodyPlaceholder: "Start writing…",
-    chars: "characters",
-    saved: "Autosaved",
-    saving: "Saving…",
-    unsaved: "Unsaved changes",
-    error: "Draft service is temporarily unavailable",
-    select: "Select a draft to start editing",
-    selectDetail: "Or create a new draft.",
-    delete: "Delete Draft",
-    deleteConfirm: "Delete this draft? This cannot be undone.",
-    deleted: "Draft deleted",
-    privateLabel: "Private to current account"
-  };
+import { normalizeSupportedLocale } from "./locale.js";
+
+const DRAFT_EN = {
+  eyebrow:"Workspace · Drafts",title:"Drafts",
+  intro:"Capture unfinished work quickly. Drafts autosave to the current account, can attach to projects, stay sorted by recent edits, and support body search.",
+  create:"New Draft",search:"Search titles or body text…",recent:"Recently edited",loading:"Loading drafts…",empty:"No drafts yet",
+  emptyDetail:"Create a draft. Changes save automatically as you type.",noMatch:"No matching drafts",noMatchDetail:"Try another keyword.",
+  untitled:"Untitled draft",noProject:"No Project",projectUnavailable:"Project unavailable",project:"Project",titleLabel:"Title",
+  titlePlaceholder:"Untitled draft",bodyPlaceholder:"Start writing…",chars:"characters",saved:"Autosaved",saving:"Saving…",unsaved:"Unsaved changes",
+  error:"Draft service is temporarily unavailable",select:"Select a draft to start editing",selectDetail:"Or create a new draft.",delete:"Delete Draft",
+  deleteConfirm:"Delete this draft? This cannot be undone.",deleted:"Draft deleted",privateLabel:"Private to current account"
+};
+
+const DRAFT_COPY = {
+  "en-us":DRAFT_EN,"en-gb":DRAFT_EN,"en-au":DRAFT_EN,
+  "zh-cn":{eyebrow:"工作区 · 草稿",title:"草稿箱",intro:"快速记录还没有定稿的内容。草稿自动保存到当前账号，并可以关联项目、按最近编辑排序和搜索正文。",create:"新建草稿",search:"搜索标题或正文…",recent:"最近编辑",loading:"正在读取草稿…",empty:"还没有草稿",emptyDetail:"新建一份草稿，输入后会自动保存。",noMatch:"没有匹配的草稿",noMatchDetail:"换一个关键词再搜索。",untitled:"未命名草稿",noProject:"无项目",projectUnavailable:"项目不可用",project:"所属项目",titleLabel:"标题",titlePlaceholder:"未命名草稿",bodyPlaceholder:"开始写…",chars:"字",saved:"已自动保存",saving:"正在保存…",unsaved:"有未保存修改",error:"草稿服务暂时不可用",select:"选择左侧草稿开始编辑",selectDetail:"也可以新建一份草稿。",delete:"删除草稿",deleteConfirm:"确定删除这份草稿吗？此操作不可撤销。",deleted:"草稿已删除",privateLabel:"当前账号私人草稿"},
+  "zh-tw":{eyebrow:"工作區 · 草稿",title:"草稿箱",intro:"快速記錄尚未定稿的內容。草稿會自動儲存到目前帳號，也能關聯專案、依最近編輯排序並搜尋正文。",create:"新增草稿",search:"搜尋標題或正文…",recent:"最近編輯",loading:"正在讀取草稿…",empty:"還沒有草稿",emptyDetail:"建立一份草稿，輸入後會自動儲存。",noMatch:"沒有符合的草稿",noMatchDetail:"換一個關鍵字再搜尋。",untitled:"未命名草稿",noProject:"無專案",projectUnavailable:"專案無法使用",project:"所屬專案",titleLabel:"標題",titlePlaceholder:"未命名草稿",bodyPlaceholder:"開始寫…",chars:"字元",saved:"已自動儲存",saving:"正在儲存…",unsaved:"有未儲存的修改",error:"草稿服務暫時無法使用",select:"選擇左側草稿開始編輯",selectDetail:"也可以新增一份草稿。",delete:"刪除草稿",deleteConfirm:"確定要刪除這份草稿嗎？此操作無法復原。",deleted:"草稿已刪除",privateLabel:"目前帳號的私人草稿"},
+  "ja-jp":{eyebrow:"ワークスペース · 下書き",title:"下書き",intro:"未完成の内容をすばやく記録します。下書きは現在のアカウントへ自動保存され、プロジェクトへの関連付け、最近の編集順での並び替え、本文検索に対応します。",create:"新規下書き",search:"タイトルまたは本文を検索…",recent:"最近の編集",loading:"下書きを読み込み中…",empty:"下書きはまだありません",emptyDetail:"下書きを作成すると、入力内容は自動保存されます。",noMatch:"一致する下書きがありません",noMatchDetail:"別のキーワードを試してください。",untitled:"無題の下書き",noProject:"プロジェクトなし",projectUnavailable:"プロジェクトを利用できません",project:"プロジェクト",titleLabel:"タイトル",titlePlaceholder:"無題の下書き",bodyPlaceholder:"書き始める…",chars:"文字",saved:"自動保存済み",saving:"保存中…",unsaved:"未保存の変更があります",error:"下書きサービスは一時的に利用できません",select:"左側の下書きを選択して編集を開始",selectDetail:"新しい下書きを作成することもできます。",delete:"下書きを削除",deleteConfirm:"この下書きを削除しますか？元に戻せません。",deleted:"下書きを削除しました",privateLabel:"現在のアカウント専用"},
+  "ko-kr":{eyebrow:"작업 공간 · 초안",title:"초안",intro:"완성되지 않은 내용을 빠르게 기록하세요. 초안은 현재 계정에 자동 저장되고 프로젝트에 연결할 수 있으며 최근 편집 순 정렬과 본문 검색을 지원합니다.",create:"새 초안",search:"제목 또는 본문 검색…",recent:"최근 편집",loading:"초안 불러오는 중…",empty:"아직 초안이 없습니다",emptyDetail:"초안을 만들면 입력한 내용이 자동으로 저장됩니다.",noMatch:"일치하는 초안이 없습니다",noMatchDetail:"다른 검색어를 입력해 보세요.",untitled:"제목 없는 초안",noProject:"프로젝트 없음",projectUnavailable:"프로젝트를 사용할 수 없음",project:"프로젝트",titleLabel:"제목",titlePlaceholder:"제목 없는 초안",bodyPlaceholder:"작성 시작…",chars:"자",saved:"자동 저장됨",saving:"저장 중…",unsaved:"저장되지 않은 변경 사항",error:"초안 서비스를 일시적으로 사용할 수 없습니다",select:"왼쪽에서 초안을 선택해 편집 시작",selectDetail:"새 초안을 만들 수도 있습니다.",delete:"초안 삭제",deleteConfirm:"이 초안을 삭제할까요? 이 작업은 되돌릴 수 없습니다.",deleted:"초안이 삭제되었습니다",privateLabel:"현재 계정 전용 초안"},
+  "fr-fr":{eyebrow:"Espace de travail · Brouillons",title:"Brouillons",intro:"Notez rapidement les contenus encore inachevés. Les brouillons sont enregistrés automatiquement dans le compte actuel, peuvent être liés à des projets, restent triés par modification récente et permettent la recherche dans le texte.",create:"Nouveau brouillon",search:"Rechercher dans les titres ou le texte…",recent:"Modifiés récemment",loading:"Chargement des brouillons…",empty:"Aucun brouillon",emptyDetail:"Créez un brouillon : les modifications seront enregistrées automatiquement pendant la saisie.",noMatch:"Aucun brouillon correspondant",noMatchDetail:"Essayez un autre mot-clé.",untitled:"Brouillon sans titre",noProject:"Aucun projet",projectUnavailable:"Projet indisponible",project:"Projet",titleLabel:"Titre",titlePlaceholder:"Brouillon sans titre",bodyPlaceholder:"Commencez à écrire…",chars:"caractères",saved:"Enregistré automatiquement",saving:"Enregistrement…",unsaved:"Modifications non enregistrées",error:"Le service de brouillons est temporairement indisponible",select:"Sélectionnez un brouillon pour commencer",selectDetail:"Vous pouvez aussi créer un nouveau brouillon.",delete:"Supprimer le brouillon",deleteConfirm:"Supprimer ce brouillon ? Cette action est irréversible.",deleted:"Brouillon supprimé",privateLabel:"Privé pour le compte actuel"},
+  "es-es":{eyebrow:"Espacio de trabajo · Borradores",title:"Borradores",intro:"Captura rápidamente contenido que todavía no está terminado. Los borradores se guardan automáticamente en la cuenta actual, pueden vincularse a proyectos, se ordenan por edición reciente y permiten buscar en el texto.",create:"Nuevo borrador",search:"Buscar en títulos o texto…",recent:"Editados recientemente",loading:"Cargando borradores…",empty:"Todavía no hay borradores",emptyDetail:"Crea un borrador; los cambios se guardarán automáticamente mientras escribes.",noMatch:"No hay borradores coincidentes",noMatchDetail:"Prueba otra palabra clave.",untitled:"Borrador sin título",noProject:"Sin proyecto",projectUnavailable:"Proyecto no disponible",project:"Proyecto",titleLabel:"Título",titlePlaceholder:"Borrador sin título",bodyPlaceholder:"Empieza a escribir…",chars:"caracteres",saved:"Guardado automático",saving:"Guardando…",unsaved:"Cambios sin guardar",error:"El servicio de borradores no está disponible temporalmente",select:"Selecciona un borrador para empezar a editar",selectDetail:"También puedes crear un borrador nuevo.",delete:"Eliminar borrador",deleteConfirm:"¿Eliminar este borrador? Esta acción no se puede deshacer.",deleted:"Borrador eliminado",privateLabel:"Privado para la cuenta actual"},
+  "el-gr":{eyebrow:"Χώρος εργασίας · Προσχέδια",title:"Προσχέδια",intro:"Καταγράψτε γρήγορα περιεχόμενο που δεν έχει ολοκληρωθεί. Τα προσχέδια αποθηκεύονται αυτόματα στον τρέχοντα λογαριασμό, μπορούν να συνδεθούν με έργα, ταξινομούνται με βάση την πρόσφατη επεξεργασία και υποστηρίζουν αναζήτηση στο κείμενο.",create:"Νέο προσχέδιο",search:"Αναζήτηση σε τίτλους ή κείμενο…",recent:"Πρόσφατη επεξεργασία",loading:"Φόρτωση προσχεδίων…",empty:"Δεν υπάρχουν προσχέδια ακόμη",emptyDetail:"Δημιουργήστε ένα προσχέδιο· οι αλλαγές αποθηκεύονται αυτόματα καθώς γράφετε.",noMatch:"Δεν βρέθηκαν προσχέδια",noMatchDetail:"Δοκιμάστε άλλη λέξη-κλειδί.",untitled:"Προσχέδιο χωρίς τίτλο",noProject:"Χωρίς έργο",projectUnavailable:"Το έργο δεν είναι διαθέσιμο",project:"Έργο",titleLabel:"Τίτλος",titlePlaceholder:"Προσχέδιο χωρίς τίτλο",bodyPlaceholder:"Ξεκινήστε να γράφετε…",chars:"χαρακτήρες",saved:"Αυτόματη αποθήκευση",saving:"Αποθήκευση…",unsaved:"Μη αποθηκευμένες αλλαγές",error:"Η υπηρεσία προσχεδίων δεν είναι προσωρινά διαθέσιμη",select:"Επιλέξτε προσχέδιο για επεξεργασία",selectDetail:"Ή δημιουργήστε ένα νέο προσχέδιο.",delete:"Διαγραφή προσχεδίου",deleteConfirm:"Να διαγραφεί αυτό το προσχέδιο; Η ενέργεια δεν αναιρείται.",deleted:"Το προσχέδιο διαγράφηκε",privateLabel:"Ιδιωτικό για τον τρέχοντα λογαριασμό"},
+  "ar-sa":{eyebrow:"مساحة العمل · المسودات",title:"المسودات",intro:"سجّل بسرعة المحتوى الذي لم يكتمل بعد. تُحفظ المسودات تلقائيًا في الحساب الحالي، ويمكن ربطها بالمشاريع وترتيبها حسب آخر تعديل والبحث داخل النص.",create:"مسودة جديدة",search:"البحث في العنوان أو النص…",recent:"آخر تعديل",loading:"جارٍ تحميل المسودات…",empty:"لا توجد مسودات بعد",emptyDetail:"أنشئ مسودة، وستُحفظ التغييرات تلقائيًا أثناء الكتابة.",noMatch:"لا توجد مسودات مطابقة",noMatchDetail:"جرّب كلمة أخرى.",untitled:"مسودة بلا عنوان",noProject:"بلا مشروع",projectUnavailable:"المشروع غير متاح",project:"المشروع",titleLabel:"العنوان",titlePlaceholder:"مسودة بلا عنوان",bodyPlaceholder:"ابدأ الكتابة…",chars:"حرفًا",saved:"تم الحفظ تلقائيًا",saving:"جارٍ الحفظ…",unsaved:"تغييرات غير محفوظة",error:"خدمة المسودات غير متاحة مؤقتًا",select:"اختر مسودة لبدء التحرير",selectDetail:"أو أنشئ مسودة جديدة.",delete:"حذف المسودة",deleteConfirm:"هل تريد حذف هذه المسودة؟ لا يمكن التراجع عن ذلك.",deleted:"تم حذف المسودة",privateLabel:"خاصة بالحساب الحالي"}
+};
+
+export function draftsWorkspaceContent(zh, locale = "") {
+  const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
+  const copy = DRAFT_COPY[activeLocale] || DRAFT_EN;
 
   return `
     <section class="drafts-workspace" data-drafts-workspace>
