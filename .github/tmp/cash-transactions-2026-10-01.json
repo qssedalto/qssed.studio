@@ -1,0 +1,62 @@
+[
+  {
+    "id": "tx-mupnync6-sh9dztnb",
+    "date": "2026-10-01",
+    "type": "expense",
+    "amount": 350.09,
+    "huabeiAmount": 0,
+    "category": "otherExpense",
+    "note": "被勒索",
+    "linkedPlanId": null
+  },
+  {
+    "id": "tx-mupo0gi5-mixxt3ie",
+    "date": "2026-10-01",
+    "type": "expense",
+    "amount": 412.81,
+    "huabeiAmount": 0,
+    "category": "installment",
+    "note": "Apple Care+ for Apple Watch",
+    "linkedPlanId": null
+  },
+  {
+    "id": "tx-mupourg0-po0k5mk1",
+    "date": "2026-10-01",
+    "type": "expense",
+    "amount": 200,
+    "huabeiAmount": 200,
+    "category": "installment",
+    "note": "apple watch功能开通和apple care的剩余部分",
+    "linkedPlanId": null
+  },
+  {
+    "id": "tx-mupowc0n-jb6pnkm6",
+    "date": "2026-10-01",
+    "type": "expense",
+    "amount": 200,
+    "huabeiAmount": 0,
+    "category": "phone",
+    "note": "15952007978 18896969161",
+    "linkedPlanId": null
+  },
+  {
+    "id": "tx-mupoxakg-dw9xc8is",
+    "date": "2026-10-01",
+    "type": "expense",
+    "amount": 3.65,
+    "huabeiAmount": 0,
+    "category": "otherExpense",
+    "note": "中国人民人寿保险股份有限公司",
+    "linkedPlanId": null
+  },
+  {
+    "id": "tx-muppvbje-i3b5uisf",
+    "date": "2026-10-01",
+    "type": "expense",
+    "amount": 5000,
+    "huabeiAmount": 0,
+    "category": "otherExpense",
+    "note": "招商银行定期存款",
+    "linkedPlanId": null
+  }
+]
