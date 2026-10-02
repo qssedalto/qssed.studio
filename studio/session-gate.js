@@ -149,15 +149,15 @@ export function handleStudioSessionLogout(request) {
 }
 
 export function studioSessionBootstrapPage(locale, request) {
-  const zh = locale === "zh";
+  const zh = String(locale || "").toLowerCase().startsWith("zh");
   const authOrigin = authOriginForRequest(request);
   const title = zh ? "正在验证登录状态…" : "Verifying your session…";
-  const failed = zh ? "登录状态已失效，正在返回登录页…" : "Your session expired. Returning to sign in…";
+  const failed = zh ? "正在重新同步 AERTEX 登录状态…" : "Resynchronizing your AERTEX sign-in state…";
 
   const page = `<!DOCTYPE html>
 <html>
 <head>
-  ${baseHead("QssedA")}
+  ${baseHead("AERTEX")}
 </head>
 <body>
   <main style="min-height:100vh;display:grid;place-items:center;padding:24px">
