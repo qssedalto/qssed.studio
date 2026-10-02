@@ -27,19 +27,20 @@ for (const zh of [true, false]) {
   assert(scripts.length > 0, "TeX Workbench must include a client runtime");
   for (const code of scripts) new Function(code);
 
-  const workMarkup = injectWorkTexHomeLinks(
-    enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh), zh),
+  const workMarkup = enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh), zh);
+  const workPageMarkup = injectWorkTexHomeLinks(
+    `<!doctype html><html><head></head><body>${workMarkup}</body></html>`,
     zh ? "zh-cn" : "en-us",
     "https://qsseda.com"
   );
-  assert(workMarkup.includes('id="qsseda-work-tex-home-links"'), "Work TeX must install shared main-site exit styling");
+  assert(workPageMarkup.includes('id="qsseda-work-tex-home-links"'), "Work TeX must install shared main-site exit styling");
   for (const selector of [
     ".tex-documents-panel .tex-panel-head",
     ".tex-editor-panel .tex-editor-toolbar",
     ".tex-editor-panel .tex-editor-placeholder",
     ".tex-runs-panel .tex-runs-head"
-  ]) assert(workMarkup.includes(selector), "Work TeX home navigation is missing panel target: " + selector);
-  assert(workMarkup.includes("https://qsseda.com/") && workMarkup.includes("AERTEX"), "Every Work TeX pane must receive an AERTEX Home destination");
+  ]) assert(workPageMarkup.includes(selector), "Work TeX home navigation is missing panel target: " + selector);
+  assert(workPageMarkup.includes("https://qsseda.com/") && workPageMarkup.includes("AERTEX"), "Every Work TeX pane must receive an AERTEX Home destination");
   assert(workMarkup.includes("tex-work-app"), "Work TeX route must render the dedicated app surface");
   assert(workMarkup.includes("tex-live-preview-switch"), "Live preview must use the custom switch instead of a native checkbox UI");
   assert(!workMarkup.includes('class="tex-live-switch"'), "Live preview switch class must match its CSS selector");
