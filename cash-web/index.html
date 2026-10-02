@@ -141,6 +141,20 @@
   </form>
 </dialog>
 
+<dialog id="settlementDialog">
+  <form id="settlementForm">
+    <div class="dialog-head"><div><div class="title-line"><h2 id="settlementTitle">提前结算周期支出</h2><span class="editable-badge">真实支出</span></div><p id="settlementHelp">记录实际提前支付，并让原扣款日不再重复扣款。</p></div><button type="button" class="icon-button close-settlement" aria-label="关闭">×</button></div>
+    <div class="form-grid two">
+      <label class="field">实际还款日期<input id="settlementDate" type="date" required><small>这一天会作为真实现金支出进入账本。</small></label>
+      <label class="field">对应扣款月份<input id="settlementMonth" type="month" required><small>即使跨月提前支付，也要选择它原本属于哪个月的固定扣款。</small></label>
+      <label class="field">实际还款金额<input id="settlementAmount" type="number" min="0.01" step="0.01" required><small>默认使用周期支出金额；部分还款后，原扣款日只扣剩余金额。</small></label>
+      <label class="field">说明<input id="settlementNote" type="text" maxlength="160" placeholder="可选，例如：提前还 11 月月供"></label>
+    </div>
+    <p id="settlementValidation" class="validation" hidden></p>
+    <div class="dialog-actions"><button type="button" class="button close-settlement">取消</button><button type="submit" class="button primary">记录提前还款</button></div>
+  </form>
+</dialog>
+
 <dialog id="planDialog">
   <form id="planForm">
     <div class="dialog-head"><div><div class="title-line"><h2 id="planTitle">新增明确日期计划</h2><span class="editable-badge">字段可修改</span></div><p>计划不会写入真实账本</p></div><button type="button" class="icon-button close-plan" aria-label="关闭">×</button></div>
