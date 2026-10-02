@@ -32,7 +32,7 @@ import { osPage } from "./ui-shell.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
-import { adminOriginForRequest, authOriginForRequest, awOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
+import { adminOriginForRequest, authOriginForRequest, awOriginForRequest, cashOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
 
 function safeLocalNext(value) {
@@ -293,9 +293,11 @@ export default {
       const zh = locale === "zh";
       const mainOrigin = mainOriginForRequest(request);
       const workOrigin = workOriginForRequest(request);
+      const cashOrigin = cashOriginForRequest(request);
       const gptOrigin = gptOriginForRequest(request);
       const shellProductLinks = {
         workHref: `${workOrigin}/${fullLocale}/tex`,
+        cashHref: `${cashOrigin}/${fullLocale}`,
         awHref: awOriginForRequest(request),
         gptHref: `${gptOrigin}/${fullLocale}`,
         adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : "",
