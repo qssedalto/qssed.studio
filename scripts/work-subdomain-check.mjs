@@ -112,8 +112,9 @@ assert(workTexUi.includes('.tex-start-card::after'), "Work start templates must 
 assert(entry.includes("polishWorkTexVisualTheme(markup)"), "Work visual theme must be applied only after existing TeX behavior enhancements.");
 assert(uiPage.includes('const ACCENT_COOKIE = "qssed_accent"'), "Shared appearance runtime must publish the accent across the active AERTEX domain family.");
 assert(uiPage.includes('const MODE_COOKIE = "qssed_theme_mode"'), "Shared appearance runtime must publish theme mode across the active AERTEX domain family.");
-assert(uiPage.includes("readCookieAccent()"), "Shared appearance runtime must read the cross-subdomain accent preference.");
-assert(uiPage.includes("readCookieMode()"), "Shared appearance runtime must read the cross-subdomain theme-mode preference.");
+assert(uiPage.includes("function readCookieAccent()"), "Shared appearance runtime must define the cross-subdomain accent preference reader.");
+assert(uiPage.includes("function readCookieMode()"), "Shared appearance runtime must define the cross-subdomain theme-mode preference reader.");
+assert(uiPage.includes("ensureSystemDefaultV2();"), "Shared appearance runtime must reset browsers to System once before respecting later user choices.");
 assert(uiPage.includes("isRootPreferenceHost()"), "Main-site appearance preferences must migrate into the shared domain cookie without changing app logic.");
 
 assert(workWrangler.name === "qsseda-work", "Work Worker must use a dedicated script name");
