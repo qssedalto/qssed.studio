@@ -31,7 +31,8 @@ const EXPENSIVE_PATHS = new Set([
 export async function protectEdgeRequest(request, env) {
   const url = new URL(request.url);
   const pathname = url.pathname;
-  if (pathname === "/robots.txt") return robotsResponse(url.hostname);\n  if (pathname === "/sitemap.xml") return sitemapResponse(url.hostname);
+  if (pathname === "/robots.txt") return robotsResponse(url.hostname);
+  if (pathname === "/sitemap.xml") return sitemapResponse(url.hostname);
   if (pathname.length > MAX_PATH_LENGTH || url.search.length > MAX_QUERY_LENGTH) return compactError(request, 414, "Request target is too long.");
   if (request.method === "TRACE" || request.method === "CONNECT") return compactError(request, 405, "Method not allowed.");
   if (SCANNER_PATH.test(pathname)) return scannerNotFound();
