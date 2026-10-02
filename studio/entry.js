@@ -313,7 +313,7 @@ export default {
       if (pathname === "/info/links/mine") markup = replaceOsContent(markup, polishLinksContent(privateLinksPageContent(zh, fullLocale), pathname, zh));
       if (pathname === "/info/links/community") markup = replaceOsContent(markup, communityLinksPageContent(zh, fullLocale));
       if (pathname === "/info/links/curated") markup = replaceOsContent(markup, polishLinksContent(curatedLinksPageContent(zh, fullLocale), pathname, zh));
-      if (pathname === "/info/notes") markup = replaceOsContent(markup, researchNotesContent(zh));
+      if (pathname === "/info/notes") markup = replaceOsContent(markup, researchNotesContent(zh, fullLocale));
       if (pathname === "/info/search") markup = replaceOsContent(markup, globalSearchContent(zh, fullLocale));
       if (pathname === "/workspace/workbench") markup = replaceOsContent(markup, workbenchContent(zh));
       if (pathname === "/workspace/projects") markup = replaceOsContent(markup, projectsWorkspaceContent(zh, fullLocale));
