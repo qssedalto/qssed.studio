@@ -101,6 +101,10 @@ assert(app.includes('class="recurring-amount"'), "Calendar days must expose fixe
 assert(app.includes("day.statuses.recurring"), "Calendar rendering must consume explicit recurring instances.");
 assert(app.includes("分类”看起来像金额") || app.includes("分类") && app.includes("看起来更像金额"), "Recurring editor must warn when a category looks like a misplaced amount.");
 assert(index.includes("填写“每月扣费日”后会生成明确日期"), "Cash UI must explain the dated recurring rule.");
+assert(app.includes("function openRecurringSettlement(") && app.includes("function saveRecurringSettlement("), "Cash UI must provide a dedicated early recurring repayment workflow.");
+assert(app.includes("linkedRecurringMonth"), "Early recurring repayments must bind a real transaction to a specific target month.");
+assert(app.includes("已提前结清") && app.includes("本日无需再扣款"), "Calendar/day details must explain that a prepaid due date will not charge again.");
+assert(index.includes('id="settlementDialog"') && index.includes('id="settlementMonth"') && index.includes('id="settlementDate"'), "Cash must render the early settlement dialog with payment date and target month.");
 assert(!index.includes('id="openingCash" type="number" min="0"'), "Opening balance must not be artificially constrained to non-negative values.");
 assert(app.includes("function addRecurring()"), "Cash UI must support adding recurring expenses.");
 assert(app.includes("data-delete-recurring"), "Cash UI must support deleting recurring expenses.");
