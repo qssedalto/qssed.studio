@@ -81,6 +81,10 @@ assert(!shell.includes('title:"ActivityWatch"') && !shell.includes('label: "Acti
 assert(!app.includes("window.desktopAPI"), "Cash web client must not depend on Electron desktop APIs");
 assert(app.includes("fetch('/api/cash/data'"), "Cash web client must load/save account cloud data");
 assert(app.includes("advancedJson"), "Cash web client must expose full JSON editing");
+assert(index.includes("起始余额") && index.includes("全部可修改"), "Cash settings must visibly mark the opening balance and configuration as editable.");
+assert(index.includes("每项可修改") && index.includes("每笔可修改"), "Cash records and plans must visibly communicate editability.");
+assert(app.includes("recurring-card") && app.includes("mini-field"), "Recurring expenses must render as roomy editable cards.");
+assert(!index.includes('id="openingCash" type="number" min="0"'), "Opening balance must not be artificially constrained to non-negative values.");
 assert(app.includes("function addRecurring()"), "Cash UI must support adding recurring expenses.");
 assert(app.includes("data-delete-recurring"), "Cash UI must support deleting recurring expenses.");
 assert(app.includes("function renderExpected()"), "Cash UI must expose expected monthly events.");
