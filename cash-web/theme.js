@@ -14,6 +14,12 @@
   function writeCookie(name,value){
     try{const domain=rootDomain();document.cookie=name+"="+encodeURIComponent(value)+"; Path=/; Max-Age=31536000; SameSite=Lax"+(domain?"; Domain=."+domain:"")}catch{}
   }
+  function ensureSystemDefaultV2(){
+    if(cookie("qssed_theme_default_v2")==="1") return;
+    try{localStorage.setItem("qssed-theme-mode","system")}catch{}
+    writeCookie("qssed_theme_mode","system");
+    writeCookie("qssed_theme_default_v2","1");
+  }
   function readMode(){
     const shared=cookie("qssed_theme_mode"); if(VALID_MODES.has(shared)) return shared;
     try{const local=localStorage.getItem("qssed-theme-mode");if(VALID_MODES.has(local))return local}catch{}
@@ -26,6 +32,7 @@
   }
   function resolved(mode){return mode==="light"||mode==="dark"?mode:(media.matches?"light":"dark")}
   function apply(){
+    ensureSystemDefaultV2();
     const mode=readMode(),accent=readAccent(),theme=resolved(mode);
     document.documentElement.dataset.themeMode=mode;
     document.documentElement.dataset.theme=theme;
