@@ -20,7 +20,29 @@ export async function handleAiApi(request, env, session) {
   const path = new URL(request.url).pathname;
   if (path === "/api/ai/config" && request.method === "GET") return userConfig(request, session);
   if (path === "/api/ai/conversations" && request.method === "GET") {
-    return rest(session, "/ai_conversations?user_id=eq." + encodeURIComponent(session.user.id) + "&is_archived=eq.false&select=id,title,model,provider_id,is_shared,share_token,share_author_name,is_pinned,pinned_at,is_archived,archived_at,created_at,updated_at&order=is_pinned.desc,pinned_at.desc.nullslast,updated_at.desc&limit=100");
+    const userFilter = "user_id=eq." + encodeURIComponent(session.user.id);
+    const modernPath = "/ai_conversations?" + userFilter + "&is_archived=eq.false&select=id,title,model,provider_id,is_shared,share_token,share_author_name,is_pinned,pinned_at,is_archived,archived_at,created_at,updated_at&order=is_pinned.desc,pinned_at.desc.nullslast,updated_at.desc&limit=100";
+    const modern = await restData(session, modernPath);
+    if (modern.ok) return json(Array.isArray(modern.data) ? modern.data : []);
+
+    // Compatibility fallback: a schema migration must never make existing
+    // conversations disappear from the sidebar. Older schemas do not have
+    // pin/archive columns, so load the legacy shape and supply safe defaults.
+    const legacy = await restData(
+      session,
+      "/ai_conversations?" + userFilter + "&select=id,title,model,provider_id,is_shared,share_token,share_author_name,created_at,updated_at&order=updated_at.desc&limit=100"
+    );
+    if (!legacy.ok) {
+      return json({ error: modern.data?.message || legacy.data?.message || "Unable to load conversations." }, modern.status || legacy.status || 502);
+    }
+    const rows = (Array.isArray(legacy.data) ? legacy.data : []).map(row => ({
+      ...row,
+      is_pinned: false,
+      pinned_at: null,
+      is_archived: false,
+      archived_at: null
+    }));
+    return json(rows);
   }
 
   const shareMatch = path.match(/^\/api\/ai\/conversations\/([0-9a-f-]{36})\/share$/i);
@@ -77,12 +99,26 @@ export async function handleAiApi(request, env, session) {
   if (conversationMatch) {
     const conversationId = conversationMatch[1];
     if (request.method === "GET") {
-      const conversation = await restData(
+      let conversation = await restData(
         session,
         "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) +
         "&select=id,title,model,provider_id,is_shared,share_token,share_author_name,is_pinned,pinned_at,is_archived,archived_at,created_at,updated_at&limit=1"
       );
-      const row = conversation.ok && Array.isArray(conversation.data) ? conversation.data[0] : null;
+      if (!conversation.ok) {
+        conversation = await restData(
+          session,
+          "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) +
+          "&select=id,title,model,provider_id,is_shared,share_token,share_author_name,created_at,updated_at&limit=1"
+        );
+      }
+      const rawRow = conversation.ok && Array.isArray(conversation.data) ? conversation.data[0] : null;
+      const row = rawRow ? {
+        ...rawRow,
+        is_pinned: rawRow.is_pinned === true,
+        pinned_at: rawRow.pinned_at || null,
+        is_archived: rawRow.is_archived === true,
+        archived_at: rawRow.archived_at || null
+      } : null;
       if (!row) return json({ error: "Conversation not found." }, 404);
       const messages = await restData(
         session,
