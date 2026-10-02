@@ -17,7 +17,7 @@ for (const root of QSS_DOMAIN_ROOTS) {
   const request = new Request(mainOrigin + "/");
 
   if (awOriginForRequest(request) !== expectedAwOrigin) {
-    throw new Error(`ActivityWatch origin mapping failed for ${root}`);
+    throw new Error(`AERTEX Watch origin mapping failed for ${root}`);
   }
 
   for (const fullLocale of SUPPORTED_LOCALES) {
@@ -61,17 +61,17 @@ for (const root of QSS_DOMAIN_ROOTS) {
     if (!markup.includes(':root[data-theme="dark"] body.os-shell .os-brand-mark img{filter:brightness(0) invert(1)!important}')) {
       throw new Error(`Dark-mode white logo rule missing for ${root} / ${fullLocale}`);
     }
-    if (!markup.includes(`href="${expectedAwOrigin}"`) || !markup.includes("ActivityWatch")) {
-      throw new Error(`Root SSR lost the matching ActivityWatch product for ${root} / ${fullLocale}`);
+    if (!markup.includes(`href="${expectedAwOrigin}"`) || !markup.includes("AERTEX Watch")) {
+      throw new Error(`Root SSR lost the matching AERTEX Watch product for ${root} / ${fullLocale}`);
     }
     for (const otherRoot of QSS_DOMAIN_ROOTS) {
       if (otherRoot !== root && markup.includes(`href="https://aw.${otherRoot}"`)) {
-        throw new Error(`ActivityWatch cross-root leak: ${root} rendered aw.${otherRoot}`);
+        throw new Error(`AERTEX Watch cross-root leak: ${root} rendered aw.${otherRoot}`);
       }
     }
     const workIndex = markup.indexOf("AERTEX Work");
     const cashIndex = markup.indexOf("AERTEX Cash");
-    const awIndex = markup.indexOf("ActivityWatch");
+    const awIndex = markup.indexOf("AERTEX Watch");
     const intelligenceIndex = markup.indexOf("AERTEX Intelligence");
     if (!(workIndex >= 0 && cashIndex > workIndex && awIndex > cashIndex && intelligenceIndex > awIndex)) {
       throw new Error(`Independent product order is wrong for ${root} / ${fullLocale}`);
