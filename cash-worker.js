@@ -6,7 +6,7 @@ import { cashOriginForRequest } from "./studio/domain-family.js";
 import { localeFromPath, preferredLocaleFromRequest } from "./studio/locale.js";
 
 const MAX_DATA_BYTES = 2 * 1024 * 1024;
-const ASSET_PATHS = new Set(["/styles.css", "/model.js", "/app.js", "/icon.svg"]);
+const ASSET_PATHS = new Set(["/styles.css", "/theme.js", "/model.js", "/app.js", "/icon.svg"]);
 
 export default {
   async fetch(request, env) {
