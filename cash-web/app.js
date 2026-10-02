@@ -347,11 +347,15 @@
   function openRecurringSettlement(recurringId) {
     const item = data.recurringExpenses.find(x => x.id === recurringId);
     if (!item) return;
+    if (!(item.amount > 0)) return showToast('请先为这项周期支出填写大于 0 的金额，再记录提前还款。', true);
     settlingRecurringId = item.id;
     const today = meta.today < data.settings.periodStart ? data.settings.periodStart : meta.today > data.settings.periodEnd ? data.settings.periodEnd : meta.today;
     const periodStartMonth = M.monthKey(data.settings.periodStart);
     const periodEndMonth = M.monthKey(data.settings.periodEnd);
-    let targetMonth = M.monthKey(today);
+    const nextInstance = model.recurring.instances
+      .filter(instance => instance.recurringId === item.id && instance.remaining > 0 && (!instance.exactDate || instance.exactDate >= today))
+      .sort((a, b) => String(a.exactDate || a.monthEnd).localeCompare(String(b.exactDate || b.monthEnd)))[0];
+    let targetMonth = nextInstance?.month || M.monthKey(today);
     if (targetMonth < periodStartMonth) targetMonth = periodStartMonth;
     if (targetMonth > periodEndMonth) targetMonth = periodEndMonth;
     $('settlementTitle').textContent = `提前结算 · ${item.name}`;
@@ -392,6 +396,20 @@
     if (!(value > 0)) {
       $('settlementValidation').hidden = false;
       $('settlementValidation').textContent = '实际还款金额必须大于 0。';
+      return;
+    }
+    const alreadyLinked = M.roundMoney(data.transactions
+      .filter(tx => tx.type === 'expense' && tx.linkedRecurringId === item.id && (tx.linkedRecurringMonth || M.monthKey(tx.date)) === targetMonth)
+      .reduce((sum, tx) => sum + tx.amount, 0));
+    const remainingToSettle = M.roundMoney(Math.max(0, item.amount - alreadyLinked));
+    if (!(remainingToSettle > 0)) {
+      $('settlementValidation').hidden = false;
+      $('settlementValidation').textContent = `${targetMonth} 的这项固定支出已经通过提前还款记录结清，不需要再次记录。`;
+      return;
+    }
+    if (value > remainingToSettle) {
+      $('settlementValidation').hidden = false;
+      $('settlementValidation').textContent = `本月尚未结算金额为 ${money(remainingToSettle, 2)}，提前还款不能超过这个金额。`;
       return;
     }
     const note = $('settlementNote').value.trim() || `提前结算：${item.name}（对应 ${targetMonth}）`;
@@ -466,7 +484,17 @@
     if (huabeiAmount > availableForThisEntry) { $('txValidation').hidden = false; $('txValidation').textContent = `花呗可用额度不足，本笔最多可记 ${money(Math.max(0, availableForThisEntry), 2)}。`; return; }
     const category = transactionCategory(type);
     if (!category) { $('txValidation').hidden = false; $('txValidation').textContent = '请输入或选择分类。'; return; }
-    const transaction = { id: editingTransactionId || M.uid('tx'), date, type, amount: value, huabeiAmount, category, note: $('txNote').value.trim() };
+    const transaction = {
+      id: editingTransactionId || M.uid('tx'),
+      date,
+      type,
+      amount: value,
+      huabeiAmount,
+      category,
+      note: $('txNote').value.trim(),
+      linkedRecurringId: type === 'expense' ? existing?.linkedRecurringId || null : null,
+      linkedRecurringMonth: type === 'expense' ? existing?.linkedRecurringMonth || null : null
+    };
     const index = data.transactions.findIndex(x => x.id === editingTransactionId); if (index >= 0) data.transactions[index] = transaction; else data.transactions.push(transaction);
     $('transactionDialog').close(); mutate('真实账本已保存');
   }
