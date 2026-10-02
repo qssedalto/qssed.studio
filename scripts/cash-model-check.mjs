@@ -130,7 +130,7 @@ linkedData.transactions = [
 ];
 const linkedModel = M.calculateFinancialModel(linkedData, { asOf:"2027-02-20" });
 const linkedInstance = linkedModel.recurring.instances.find(item => item.recurringId === "linked-recurring");
-assert(linkedInstance.status === "settled" && linkedInstance.remaining === 0, "An explicit recurring link must settle the item even when posting date/category differ.");
+assert(linkedInstance.status === "prepaid" && linkedInstance.remaining === 0, "An explicit recurring link before the configured due date must settle the item as prepaid even when posting date/category differ.");
 assert(M.normalizeData(linkedData).transactions[0].linkedRecurringId === "linked-recurring", "Recurring transaction links must survive normalization.");
 assert(M.normalizeData(linkedData).transactions[0].linkedRecurringMonth === null, "Legacy recurring links without an explicit month must remain backward-compatible.");
 
