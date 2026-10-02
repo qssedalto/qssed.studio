@@ -39,6 +39,7 @@ import {
   handleMainWatchHandoff,
   isMainWatchHandoffPath
 } from "./studio/watch-subdomain.js";
+import { isWatchSetupPath, watchSetupPage } from "./studio/watch-setup-page.js";
 import {
   handleMainAdminHandoff,
   isMainAdminHandoffPath
@@ -75,6 +76,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);
   if (!workHost && isMainCashHandoffPath(pathname)) return handleMainCashHandoff(request);
   if (!workHost && isMainWatchHandoffPath(pathname)) return handleMainWatchHandoff(request);
+  if (!workHost && isWatchSetupPath(pathname)) return watchSetupPage(request);
   if (!workHost && isMainAdminHandoffPath(pathname)) return handleMainAdminHandoff(request);
 
   if (!workHost) {
