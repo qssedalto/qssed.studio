@@ -44,10 +44,10 @@ ${themeBoot}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}button,select,textarea{font:inherit}
 .app{min-height:100vh;display:grid;grid-template-columns:270px minmax(0,1fr);transition:grid-template-columns .22s cubic-bezier(.2,.8,.2,1)}
 .app.sidebar-collapsed{grid-template-columns:0 minmax(0,1fr)}
-.sidebar{width:270px;min-width:270px;border-right:1px solid var(--line);padding:14px;background:var(--panel2);display:flex;flex-direction:column;gap:12px;overflow:hidden;transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .18s ease}
+.sidebar{width:270px;min-width:270px;border-right:1px solid color-mix(in srgb,var(--text) 6%,transparent);padding:10px;background:color-mix(in srgb,var(--panel2) 82%,var(--panel));display:flex;flex-direction:column;gap:8px;overflow:hidden;transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .18s ease}
 .app.sidebar-collapsed .sidebar{transform:translateX(-100%);opacity:0;pointer-events:none}
 .sidebarHead{display:flex;align-items:center;gap:8px;min-width:0}
-.brand{min-width:0;flex:1;font-weight:760;letter-spacing:-.03em;font-size:20px;padding:8px 6px}.brand small{display:block;color:var(--muted);font-size:12px;font-weight:500;letter-spacing:0;margin-top:4px}
+.brand{min-width:0;flex:1;font-weight:650;letter-spacing:-.015em;font-size:16px;padding:8px}.brand small{display:none}
 .iconButton,.quietButton{border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer}
 .iconButton{width:48px;height:48px;min-width:48px;min-height:48px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;line-height:0;border:1px solid color-mix(in srgb,var(--text) 15%,transparent);background:color-mix(in srgb,var(--panel) 96%,transparent);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.30) inset;transition:background .12s ease,transform .1s ease,border-color .12s ease}
 .iconButton:hover{background:color-mix(in srgb,var(--panel) 82%,var(--panel2));border-color:color-mix(in srgb,var(--text) 22%,transparent)}
@@ -55,11 +55,11 @@ ${themeBoot}
 .iconButton svg{display:block;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
 .sidebarToggleGlyph{width:25px!important;height:25px!important;stroke-width:2.65!important}
 .composeGlyph{width:25px!important;height:25px!important;stroke-width:2.35!important}
-.sidebarNewChat{flex:0 0 auto}
+.sidebarNewChat{flex:0 0 auto;width:36px;height:36px;min-width:36px;min-height:36px;border:0;background:transparent;box-shadow:none}.sidebarNewChat:hover{background:color-mix(in srgb,var(--text) 7%,transparent);border-color:transparent}
 .quietButton{border-radius:12px;padding:10px 12px;font-size:12px}
 .sidebarBackdrop{display:none}
-.statusRow{display:flex;align-items:center;gap:9px;font-size:13px}.dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}.dot.online{background:var(--success);box-shadow:0 0 0 5px color-mix(in srgb,var(--success) 15%,transparent)}.dot.offline{background:var(--danger);box-shadow:0 0 0 5px color-mix(in srgb,var(--danger) 12%,transparent)}
-.sideSectionTitle{padding:8px 6px 2px;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}.chatList{min-height:0;overflow:auto;display:grid;gap:4px}.chatItem{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px;border-radius:10px}.chatItem.active{background:var(--panel)}.chatLink{min-width:0;padding:9px 8px;color:var(--text);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.chatActions{display:flex;gap:2px;padding-right:4px;opacity:.1}.chatItem:hover .chatActions,.chatItem.active .chatActions{opacity:1}.chatAction{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:5px;border-radius:7px;font-size:12px}.chatAction:hover{background:var(--panel2);color:var(--text)}
+.statusRow{display:none}.statusRow{align-items:center;gap:9px;font-size:13px}.dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}.dot.online{background:var(--success);box-shadow:0 0 0 5px color-mix(in srgb,var(--success) 15%,transparent)}.dot.offline{background:var(--danger);box-shadow:0 0 0 5px color-mix(in srgb,var(--danger) 12%,transparent)}
+.sideSectionTitle{padding:9px 8px 5px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:0}.chatList{min-height:0;overflow:auto;display:grid;gap:2px;padding:0 2px}.chatItem{min-height:38px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px;border-radius:9px;position:relative}.chatItem:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}.chatItem.active{background:color-mix(in srgb,var(--text) 8%,transparent)}.chatLink{min-width:0;padding:9px 8px 9px 10px;color:var(--text);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px}.chatMeta{display:flex;align-items:center;gap:1px;padding-right:4px}.chatPin{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}.chatPin svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round}.chatMore{width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:var(--text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s ease,background .12s ease}.chatItem:hover .chatMore,.chatItem.active .chatMore,.chatMore[aria-expanded="true"]{opacity:1}.chatMore:hover{background:color-mix(in srgb,var(--text) 8%,transparent)}.chatMore svg{width:18px;height:18px;fill:currentColor}.chatMenuPortal{position:fixed;z-index:620;width:252px;padding:6px;border:1px solid color-mix(in srgb,var(--text) 10%,transparent);border-radius:16px;background:var(--panel);box-shadow:0 14px 38px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08)}.chatMenuPortal[hidden]{display:none!important}.chatMenuItem{width:100%;min-height:44px;display:flex;align-items:center;gap:12px;padding:9px 11px;border:0;border-radius:10px;background:transparent;color:var(--text);font-size:14px;text-align:left;cursor:pointer}.chatMenuItem:hover,.chatMenuItem:focus-visible{background:color-mix(in srgb,var(--text) 7%,transparent);outline:0}.chatMenuItem svg{width:20px;height:20px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round}.chatMenuItem.danger{color:#ef4146}.chatMenuDivider{height:1px;margin:5px 6px;background:var(--line)}.chatDialog{position:fixed;z-index:640;inset:0;display:grid;place-items:center;padding:20px}.chatDialog[hidden]{display:none!important}.chatDialogBackdrop{position:absolute;inset:0;background:rgba(0,0,0,.36)}.chatDialogCard{position:relative;width:min(460px,calc(100vw - 32px));padding:22px;border-radius:18px;background:var(--panel);box-shadow:0 24px 70px rgba(0,0,0,.28)}.chatDialogCard h2{margin:0 0 8px;font-size:20px;letter-spacing:-.02em}.chatDialogCard p{margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.55}.chatDialogInput{width:100%;height:44px;border:1px solid color-mix(in srgb,var(--text) 18%,transparent);border-radius:10px;background:transparent;color:var(--text);padding:0 12px;outline:none}.chatDialogInput:focus{border-color:color-mix(in srgb,var(--text) 55%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--text) 35%,transparent)}.chatDialogActions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.chatDialogButton{min-width:80px;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font-weight:600;cursor:pointer}.chatDialogButton.primaryDialog{border-color:var(--text);background:var(--text);color:var(--bg)}.chatDialogButton.dangerDialog{border-color:#ef4146;background:#ef4146;color:#fff}
 .main{min-width:0;height:100vh;display:flex;flex-direction:column}.topbar{height:62px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%)}.topbarToggle{flex:0 0 auto}.topbarNewChat{flex:0 0 auto}.topbarSpacer{flex:1;min-width:0}
 select{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;padding:8px 10px}.model{min-width:190px;max-width:340px}.account{margin-left:auto;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
 .content{flex:1;min-height:0;overflow:auto}.messages{width:min(820px,calc(100% - 32px));margin:0 auto;padding:42px 0 160px}.empty{min-height:58vh;display:grid;place-items:center;text-align:center}.empty h1{font-size:30px;letter-spacing:-.04em;margin:0 0 8px}.empty p{max-width:600px;margin:0;color:var(--muted);line-height:1.7}
@@ -143,6 +143,17 @@ textarea{display:block;width:100%;min-height:48px;max-height:180px;resize:none;b
 </div>
 ${intelligenceWatchPortalMarkup(zh)}
 <div class="shareChoice" id="shareChoice" role="dialog" aria-modal="true" aria-labelledby="shareChoiceTitle" hidden><div class="shareChoiceBackdrop" id="shareChoiceBackdrop"></div><section class="shareChoiceCard"><h2 id="shareChoiceTitle">${t.shareIdentityTitle}</h2><p>${t.shareIdentityText}</p><div class="shareChoiceActions"><button class="shareChoiceAction primaryChoice" id="shareWithName" type="button">${t.shareWithName}</button><button class="shareChoiceAction" id="shareAnonymous" type="button">${t.shareAnonymous}</button><button class="shareChoiceAction cancelChoice" id="shareCancel" type="button">${t.shareCancel}</button></div></section></div>
+<div class="chatMenuPortal" id="chatMenuPortal" role="menu" aria-label="${t.menu}" hidden>
+  <button class="chatMenuItem" type="button" role="menuitem" data-menu-action="share"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg><span>${t.share}</span></button>
+  <button class="chatMenuItem" type="button" role="menuitem" data-menu-action="rename"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 6.5 17.5 10.5"/><path d="m4 20 4.6-1 10-10a2.12 2.12 0 0 0-3-3l-10 10L4 20Z"/></svg><span>${t.rename}</span></button>
+  <div class="chatMenuDivider"></div>
+  <button class="chatMenuItem" type="button" role="menuitem" data-menu-action="pin"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l-.8 5 3.3 3.3v1.2h-11v-1.2L9.8 9 9 4Z"/><path d="M12 13.5V21"/></svg><span id="chatMenuPinLabel">${t.pin}</span></button>
+  <button class="chatMenuItem" type="button" role="menuitem" data-menu-action="archive"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M5.5 7v12h13V7"/><path d="M9 11h6"/><path d="M4 4h16v3H4z"/></svg><span>${t.archive}</span></button>
+  <div class="chatMenuDivider"></div>
+  <button class="chatMenuItem danger" type="button" role="menuitem" data-menu-action="delete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="m7 7 1 13h8l1-13"/><path d="M10 11v5M14 11v5"/></svg><span>${t.delete}</span></button>
+</div>
+<div class="chatDialog" id="renameDialog" role="dialog" aria-modal="true" aria-labelledby="renameDialogTitle" hidden><div class="chatDialogBackdrop" data-dialog-close="rename"></div><section class="chatDialogCard"><h2 id="renameDialogTitle">${t.renameTitle}</h2><input class="chatDialogInput" id="renameDialogInput" maxlength="120" placeholder="${t.renamePlaceholder}"><div class="chatDialogActions"><button class="chatDialogButton" id="renameDialogCancel" type="button">${t.cancel}</button><button class="chatDialogButton primaryDialog" id="renameDialogSave" type="button">${t.renameSave}</button></div></section></div>
+<div class="chatDialog" id="deleteDialog" role="dialog" aria-modal="true" aria-labelledby="deleteDialogTitle" hidden><div class="chatDialogBackdrop" data-dialog-close="delete"></div><section class="chatDialogCard"><h2 id="deleteDialogTitle">${t.confirmDeleteTitle}</h2><p>${t.confirmDeleteText}</p><div class="chatDialogActions"><button class="chatDialogButton" id="deleteDialogCancel" type="button">${t.cancel}</button><button class="chatDialogButton dangerDialog" id="deleteDialogConfirm" type="button">${t.confirmDeleteAction}</button></div></section></div>
 ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.codeBlock })}
 <script>
 (() => {
@@ -260,13 +271,17 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
   function renderConversationList(){
     const root=$("conversationList");root.replaceChildren();
     for(const item of state.conversations){
-      const row=document.createElement("div");row.className="chatItem"+(item.id===state.conversationId?" active":"");
+      const row=document.createElement("div");row.className="chatItem"+(item.id===state.conversationId?" active":"");row.dataset.id=item.id;
       const link=document.createElement("a");link.className="chatLink";link.href=routeFor(item.id);link.textContent=item.title||text.untitled;link.title=item.title||text.untitled;
-      const actions=document.createElement("div");actions.className="chatActions";
-      const rename=document.createElement("button");rename.className="chatAction";rename.type="button";rename.dataset.action="rename";rename.dataset.id=item.id;rename.textContent="✎";rename.title=text.rename;
-      const share=document.createElement("button");share.className="chatAction";share.type="button";share.dataset.action="share";share.dataset.id=item.id;share.textContent="↗";share.title=text.share;
-      const del=document.createElement("button");del.className="chatAction";del.type="button";del.dataset.action="delete";del.dataset.id=item.id;del.textContent="×";del.title=text.delete;
-      actions.append(rename,share,del);row.append(link,actions);root.append(row);
+      const meta=document.createElement("div");meta.className="chatMeta";
+      if(item.is_pinned){
+        const pin=document.createElement("span");pin.className="chatPin";pin.title=text.pin;pin.setAttribute("aria-label",text.pin);
+        pin.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l-.8 5 3.3 3.3v1.2h-11v-1.2L9.8 9 9 4Z"/><path d="M12 13.5V21"/></svg>';
+        meta.append(pin);
+      }
+      const more=document.createElement("button");more.className="chatMore";more.type="button";more.dataset.action="menu";more.dataset.id=item.id;more.title=text.menu;more.setAttribute("aria-label",text.menu);more.setAttribute("aria-expanded","false");
+      more.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.75"/><circle cx="12" cy="12" r="1.75"/><circle cx="19" cy="12" r="1.75"/></svg>';
+      meta.append(more);row.append(link,meta);root.append(row);
     }
   }
   async function loadConversations(){
@@ -380,29 +395,96 @@ ${intelligenceWatchClientScript()}
       if(!isTinyWatch())$("composer").focus();
     }
   }
-  $("conversationList").addEventListener("click",async event=>{
-    const button=event.target.closest("[data-action]");if(!button)return;
-    event.preventDefault();event.stopPropagation();
-    const id=button.dataset.id,action=button.dataset.action;
+  let chatMenuConversationId="";
+  function closeChatMenu(){
+    const menu=$("chatMenuPortal");if(!menu||menu.hidden)return;
+    menu.hidden=true;
+    document.querySelectorAll('.chatMore[aria-expanded="true"]').forEach(button=>button.setAttribute("aria-expanded","false"));
+    chatMenuConversationId="";
+  }
+  function openChatMenu(button,id){
     const item=state.conversations.find(value=>value.id===id);if(!item)return;
-    if(action==="rename"){
-      const title=window.prompt(text.rename,item.title||text.untitled);if(!title?.trim())return;
-      try{await req("/conversations/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:title.trim()})});await loadConversations()}catch{}
+    chatMenuConversationId=id;
+    const menu=$("chatMenuPortal"),rect=button.getBoundingClientRect();
+    $("chatMenuPinLabel").textContent=item.is_pinned?text.unpin:text.pin;
+    menu.hidden=false;
+    menu.style.left="0px";menu.style.top="0px";
+    const width=menu.offsetWidth||252,height=menu.offsetHeight||260,gap=6,pad=8;
+    let left=rect.right-width;
+    if(left<pad)left=pad;
+    if(left+width>innerWidth-pad)left=innerWidth-width-pad;
+    let top=rect.bottom+gap;
+    if(top+height>innerHeight-pad)top=Math.max(pad,rect.top-height-gap);
+    menu.style.left=Math.round(left)+"px";menu.style.top=Math.round(top)+"px";
+    button.setAttribute("aria-expanded","true");
+    menu.querySelector(".chatMenuItem")?.focus({preventScroll:true});
+  }
+  function openRenameDialog(item){
+    closeChatMenu();
+    const dialog=$("renameDialog"),input=$("renameDialogInput");
+    dialog.dataset.id=item.id;input.value=item.title||text.untitled;dialog.hidden=false;
+    requestAnimationFrame(()=>{input.focus();input.select()});
+  }
+  function closeRenameDialog(){$("renameDialog").hidden=true;$("renameDialog").dataset.id=""}
+  async function saveRenameDialog(){
+    const dialog=$("renameDialog"),id=dialog.dataset.id,title=$("renameDialogInput").value.trim();if(!id||!title)return;
+    $("renameDialogSave").disabled=true;
+    try{await req("/conversations/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({title})});closeRenameDialog();await loadConversations()}catch{}
+    finally{$("renameDialogSave").disabled=false}
+  }
+  function openDeleteDialog(item){closeChatMenu();$("deleteDialog").dataset.id=item.id;$("deleteDialog").hidden=false;$("deleteDialogConfirm").focus({preventScroll:true})}
+  function closeDeleteDialog(){$("deleteDialog").hidden=true;$("deleteDialog").dataset.id=""}
+  async function deleteConversation(id){
+    try{
+      await req("/conversations/"+id,{method:"DELETE"});
+      if(id===state.conversationId){state.conversationId="";state.current=null;history.replaceState({},"",localeBase);$("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden")}
+      closeDeleteDialog();await loadConversations();
+    }catch{}
+  }
+  async function shareConversation(id){
+    const shareAuthorName=await chooseShareIdentity();
+    if(shareAuthorName===null)return;
+    try{
+      const result=await req("/conversations/"+id+"/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({share_author_name:shareAuthorName})});
+      const url=location.origin+(result.share_path||("/share/"+result.share_token));
+      try{await navigator.clipboard.writeText(url);window.alert(text.shareCopied)}catch{window.prompt(text.share,url)}
+    }catch{window.alert(text.shareFailed)}
+  }
+  $("conversationList").addEventListener("click",event=>{
+    const button=event.target.closest('[data-action="menu"]');if(!button)return;
+    event.preventDefault();event.stopPropagation();
+    const wasOpen=button.getAttribute("aria-expanded")==="true";closeChatMenu();if(!wasOpen)openChatMenu(button,button.dataset.id);
+  });
+  $("chatMenuPortal").addEventListener("click",async event=>{
+    const button=event.target.closest("[data-menu-action]");if(!button)return;
+    const id=chatMenuConversationId,item=state.conversations.find(value=>value.id===id);if(!item)return;
+    const action=button.dataset.menuAction;
+    if(action==="rename"){openRenameDialog(item);return}
+    if(action==="delete"){openDeleteDialog(item);return}
+    if(action==="share"){closeChatMenu();await shareConversation(id);return}
+    if(action==="pin"){
+      closeChatMenu();
+      try{await req("/conversations/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({is_pinned:!item.is_pinned})});await loadConversations()}catch{}
+      return;
     }
-    if(action==="delete"){
-      if(!window.confirm(text.confirmDelete))return;
-      try{await req("/conversations/"+id,{method:"DELETE"});if(id===state.conversationId){state.conversationId="";state.current=null;history.replaceState({},"",localeBase);$("messages").querySelectorAll(".msg").forEach(n=>n.remove());$("emptyState").classList.remove("hidden")}await loadConversations()}catch{}
-    }
-    if(action==="share"){
-      const shareAuthorName=await chooseShareIdentity();
-      if(shareAuthorName===null)return;
+    if(action==="archive"){
+      closeChatMenu();
       try{
-        const result=await req("/conversations/"+id+"/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({share_author_name:shareAuthorName})});
-        const url=location.origin+(result.share_path||("/share/"+result.share_token));
-        try{await navigator.clipboard.writeText(url);window.alert(text.shareCopied)}catch{window.prompt(text.share,url)}
-      }catch{window.alert(text.shareFailed)}
+        await req("/conversations/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({is_archived:true})});
+        if(id===state.conversationId)startNewChat();
+        await loadConversations();
+      }catch{}
     }
   });
+  document.addEventListener("pointerdown",event=>{if(!$("chatMenuPortal").hidden&&!event.target.closest("#chatMenuPortal")&&!event.target.closest(".chatMore"))closeChatMenu()});
+  window.addEventListener("resize",closeChatMenu);
+  $("renameDialogCancel").addEventListener("click",closeRenameDialog);
+  $("renameDialogSave").addEventListener("click",()=>void saveRenameDialog());
+  $("renameDialogInput").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();void saveRenameDialog()}});
+  $("deleteDialogCancel").addEventListener("click",closeDeleteDialog);
+  $("deleteDialogConfirm").addEventListener("click",()=>{const id=$("deleteDialog").dataset.id;if(id)void deleteConversation(id)});
+  document.querySelectorAll("[data-dialog-close]").forEach(backdrop=>backdrop.addEventListener("click",()=>{if(backdrop.dataset.dialogClose==="rename")closeRenameDialog();else closeDeleteDialog()}));
+  document.addEventListener("keydown",event=>{if(event.key!=="Escape")return;if(!$("renameDialog").hidden)closeRenameDialog();else if(!$("deleteDialog").hidden)closeDeleteDialog();else closeChatMenu()});
   $("retry").addEventListener("click",()=>void checkStatus(true));
   function startNewChat(){
     persistComposerDraft();state.conversationId="";state.current=null;history.pushState({},"",localeBase);

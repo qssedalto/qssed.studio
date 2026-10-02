@@ -28,8 +28,16 @@ for (const locale of ["zh-cn", "en"]) {
     'aertex-intelligence-sidebar-v1',
     'app.classList.toggle("sidebar-collapsed"',
     'app.classList.toggle("sidebar-open"',
-    'rename.dataset.action="rename"',
-    'share.dataset.action="share"',
+    'className="chatMore"',
+    'more.dataset.action="menu"',
+    'id="chatMenuPortal"',
+    'data-menu-action="share"',
+    'data-menu-action="rename"',
+    'data-menu-action="pin"',
+    'data-menu-action="archive"',
+    'data-menu-action="delete"',
+    'id="renameDialog"',
+    'id="deleteDialog"',
     'id="shareChoice"',
     'id="shareWithName"',
     'id="shareAnonymous"',
@@ -43,7 +51,6 @@ for (const locale of ["zh-cn", "en"]) {
     'className = "codeCopy"',
     'className = "tableScroll"',
     'rel = "noopener noreferrer nofollow"',
-    'del.dataset.action="delete"',
     'history.replaceState({conversationId:state.conversationId}',
     'qssed_theme',
     'data-theme="dark"',
@@ -59,6 +66,15 @@ for (const locale of ["zh-cn", "en"]) {
     'clearComposerDraft()',
   ]) {
     if (!html.includes(required)) throw new Error(`GPT UI ${locale} missing multi-provider invariant: ${required}`);
+  }
+  if (html.includes('window.prompt(text.rename') || html.includes('window.confirm(text.confirmDelete)')) {
+    throw new Error("Intelligence chat rename/delete must use the in-product ChatGPT-style dialogs instead of browser prompt/confirm");
+  }
+  if (!html.includes('.chatMenuPortal{position:fixed') || !html.includes('.chatMenuItem.danger') || !html.includes('.chatPin svg')) {
+    throw new Error("Intelligence sidebar must provide the ChatGPT-style ellipsis menu, destructive row, and pinned indicator");
+  }
+  if (!html.includes('JSON.stringify({is_pinned:!item.is_pinned})') || !html.includes('JSON.stringify({is_archived:true})')) {
+    throw new Error("Intelligence chat menu must wire pin/unpin and archive actions to the conversation API");
   }
   if (!html.includes('@media(max-width:760px)') || !html.includes('.app.sidebar-open .sidebar')) {
     throw new Error("Intelligence must provide mobile overlay sidebar behavior");

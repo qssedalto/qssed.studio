@@ -20,7 +20,7 @@ export async function handleAiApi(request, env, session) {
   const path = new URL(request.url).pathname;
   if (path === "/api/ai/config" && request.method === "GET") return userConfig(request, session);
   if (path === "/api/ai/conversations" && request.method === "GET") {
-    return rest(session, "/ai_conversations?user_id=eq." + encodeURIComponent(session.user.id) + "&select=id,title,model,provider_id,is_shared,share_token,share_author_name,created_at,updated_at&order=updated_at.desc&limit=100");
+    return rest(session, "/ai_conversations?user_id=eq." + encodeURIComponent(session.user.id) + "&is_archived=eq.false&select=id,title,model,provider_id,is_shared,share_token,share_author_name,is_pinned,pinned_at,is_archived,archived_at,created_at,updated_at&order=is_pinned.desc,pinned_at.desc.nullslast,updated_at.desc&limit=100");
   }
 
   const shareMatch = path.match(/^\/api\/ai\/conversations\/([0-9a-f-]{36})\/share$/i);
@@ -80,7 +80,7 @@ export async function handleAiApi(request, env, session) {
       const conversation = await restData(
         session,
         "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) +
-        "&select=id,title,model,provider_id,is_shared,share_token,share_author_name,created_at,updated_at&limit=1"
+        "&select=id,title,model,provider_id,is_shared,share_token,share_author_name,is_pinned,pinned_at,is_archived,archived_at,created_at,updated_at&limit=1"
       );
       const row = conversation.ok && Array.isArray(conversation.data) ? conversation.data[0] : null;
       if (!row) return json({ error: "Conversation not found." }, 404);
@@ -95,15 +95,32 @@ export async function handleAiApi(request, env, session) {
     if (request.method === "PATCH") {
       if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
       const b = await body(request);
-      const title = String(b.title || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
-      if (!title) return json({ error: "Conversation title is required." }, 400);
+      const patch = { updated_at: new Date().toISOString() };
+      if (Object.prototype.hasOwnProperty.call(b, "title")) {
+        const title = String(b.title || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
+        if (!title) return json({ error: "Conversation title is required." }, 400);
+        patch.title = title;
+      }
+      if (Object.prototype.hasOwnProperty.call(b, "is_pinned")) {
+        patch.is_pinned = b.is_pinned === true;
+        patch.pinned_at = patch.is_pinned ? new Date().toISOString() : null;
+      }
+      if (Object.prototype.hasOwnProperty.call(b, "is_archived")) {
+        patch.is_archived = b.is_archived === true;
+        patch.archived_at = patch.is_archived ? new Date().toISOString() : null;
+        if (patch.is_archived) {
+          patch.is_pinned = false;
+          patch.pinned_at = null;
+        }
+      }
+      if (Object.keys(patch).length === 1) return json({ error: "No conversation changes supplied." }, 400);
       const updated = await restData(
         session,
         "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id),
         {
           method: "PATCH",
           headers: { Prefer: "return=representation" },
-          body: JSON.stringify({ title, updated_at: new Date().toISOString() })
+          body: JSON.stringify(patch)
         }
       );
       if (!updated.ok) return json({ error: updated.data?.message || "Unable to rename conversation." }, updated.status || 502);
