@@ -37,7 +37,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
 <head>
   ${baseHead(page.title + " · " + t.studioName)}
   ${osStyles()}
-  <style>html[dir="rtl"] .os-layout{direction:rtl}html[dir="rtl"] .os-main,html[dir="rtl"] .os-sidebar{text-align:right}html[dir="rtl"] .top-controls-zone{left:14px;right:auto}html[dir="rtl"] .language-menu-popover{left:0;right:auto}html[dir="rtl"] .compact-back-button svg,html[dir="rtl"] .os-nav-group>a>b{transform:scaleX(-1)}</style>
+  <style>html[dir="rtl"] .os-layout{direction:rtl}html[dir="rtl"] .os-main,html[dir="rtl"] .os-sidebar{text-align:right}html[dir="rtl"] .top-controls-zone{left:14px;right:auto}html[dir="rtl"] .language-menu-popover,html[dir="rtl"] .theme-menu-popover{left:0;right:auto}html[dir="rtl"] .compact-back-button svg,html[dir="rtl"] .os-nav-group>a>b{transform:scaleX(-1)}</style>
   <script>
     (() => {
       try {
