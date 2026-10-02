@@ -17,7 +17,7 @@ export function watchSetupPage(request) {
   const mainOrigin = mainOriginForRequest(request);
   const watchHome = watchOrigin + "/" + locale;
   const country = String(request.cf?.country || request.headers.get("CF-IPCountry") || "").toUpperCase();
-  const mainlandChina = country === "CN";
+  const mainlandChina = country === "CN" || locale === "zh-cn";
   const activityWatchOfficialUrl = "https://activitywatch.net/downloads/";
   const activityWatchChinaUrl = "https://www.icloud.com.cn/iclouddrive/0f1o93e_H_OyQJtlbDfArEeUQ";
   const syncScriptUrl = "https://aw.qsseda.com/aw-sync.mjs";
