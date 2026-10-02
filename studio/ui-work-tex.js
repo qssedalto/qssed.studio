@@ -761,6 +761,9 @@ export function injectWorkTexHomeLinks(markup, locale = "en-us", mainOrigin = "h
       .tex-work-app .tex-panel-home-link:hover{background:var(--surface-strong);color:var(--text)}
       .tex-work-app .tex-editor-placeholder>.tex-panel-home-link{margin:8px auto 0}
       .tex-work-app .tex-editor-toolbar>.tex-panel-home-link{align-self:center;margin-left:auto}
+      @media(min-width:1081px){
+        .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel .tex-panel-home-link{display:none!important}
+      }
       .tex-work-app .tex-panel-home-link svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
       @media(max-width:760px){
         .tex-work-app .tex-panel-home-link{min-height:30px;padding:0 9px;font-size:10px}
