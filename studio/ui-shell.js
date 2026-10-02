@@ -630,7 +630,7 @@ function renderCompactMainMenu(copy, productLinks = {}) {
   const products = [
     ...(workHref ? [{ title:"AERTEX Work", description:zh ? "独立工作产品 · TeX 与本机能力" : "Independent work product · TeX and local capabilities", href:workHref, icon:"workbench" }] : []),
     ...(cashHref ? [{ title:"AERTEX Cash", description:zh ? "个人现金流、预算与预测" : "Personal cashflow, budgets, and forecasts", href:cashHref, icon:"cash" }] : []),
-    ...(awHref ? [{ title:"ActivityWatch", description:zh ? "本机活动记录与使用分析" : "Local activity tracking and usage analytics", href:awHref, icon:"activitywatch" }] : []),
+    ...(awHref ? [{ title:"AERTEX Watch", description:zh ? "本机活动记录与使用分析" : "Local activity tracking and usage analytics", href:awHref, icon:"activitywatch" }] : []),
     ...(gptHref ? [{ title:"AERTEX Intelligence", description:zh ? "AI 对话与工作空间" : "AI conversations and workspace", href:gptHref, icon:"intelligence" }] : []),
     ...(adminHref ? [{ title:zh ? "管理员控制台" : "Administration", description:zh ? "独立管理控制面" : "Isolated control plane", href:adminHref, icon:"admin" }] : [])
   ];
@@ -702,7 +702,7 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
   const productGroups = [
     ...(workHref ? [{ id: "work", label: "AERTEX Work", href: workHref, icon: "workbench" }] : []),
     ...(cashHref ? [{ id: "cash", label: "AERTEX Cash", href: cashHref, icon: "cash" }] : []),
-    ...(awHref ? [{ id: "activitywatch", label: "ActivityWatch", href: awHref, icon: "activitywatch" }] : []),
+    ...(awHref ? [{ id: "activitywatch", label: "AERTEX Watch", href: awHref, icon: "activitywatch" }] : []),
     ...(gptHref ? [{ id: "intelligence", label: "AERTEX Intelligence", href: gptHref, icon: "intelligence" }] : []),
     ...(adminHref ? [{ id: "admin-console", label: zh ? "管理员控制台" : "Admin Console", href: adminHref, icon: "admin" }] : [])
   ];
