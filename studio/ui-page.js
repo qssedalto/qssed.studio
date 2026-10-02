@@ -618,7 +618,7 @@ export function themeToggle(locale = "en-us") {
   const option = (mode, label) => `<button class="theme-menu-item" type="button" data-theme-option="${mode}" aria-current="false"><span><i class="theme-menu-dot" aria-hidden="true"></i>${label}</span><small>${mode}</small></button>`;
   return `
     <details class="theme-menu control-menu">
-      <summary id="theme-toggle" class="theme-toggle" aria-label="${copy.title}" title="${copy.title}">
+      <summary id="theme-toggle" class="theme-toggle" aria-label="${copy.title}" title="${copy.title}" aria-haspopup="menu" aria-expanded="false">
         <span class="theme-moon">◐</span>
         <span class="theme-sun">◑</span>
       </summary>
@@ -641,7 +641,7 @@ export function languageToggle(links, t) {
     const current = code === activeLocale ? ' aria-current="true"' : "";
     return `<a class="language-menu-item" href="${href}" lang="${code}"${meta.dir === "rtl" ? ' dir="rtl"' : ""}${current}><span>${meta.nativeName}</span><small>${code}</small></a>`;
   }).join("");
-  return `<details class="language-menu control-menu"><summary class="language-toggle" aria-label="Language" title="Language">${label}</summary><div class="language-menu-popover">${items}</div></details>`;
+  return `<details class="language-menu control-menu"><summary class="language-toggle" aria-label="Language" title="Language" aria-haspopup="menu" aria-expanded="false">${label}</summary><div class="language-menu-popover" role="menu">${items}</div></details>`;
 }
 
 export function topControls(links, t) {
@@ -683,10 +683,14 @@ export function themeScript() {
         };
 
         menus.forEach(menu => {
+          const trigger = menu.querySelector("summary");
+          const syncExpanded = () => trigger?.setAttribute("aria-expanded", menu.open ? "true" : "false");
           menu.addEventListener("toggle", () => {
             if (menu.open) closeMenus(menu);
+            syncExpanded();
             syncOverlayState();
           });
+          syncExpanded();
         });
 
         if (backdrop) {
@@ -706,8 +710,10 @@ export function themeScript() {
         });
 
         document.querySelectorAll(".language-menu-item").forEach(item => {
+          item.setAttribute("role", "menuitem");
           item.addEventListener("click", () => closeMenus());
         });
+        document.getElementById("aertex-account-button")?.addEventListener("click", () => closeMenus());
 
         if (themeTrigger && window.AERTEXTheme) {
           const syncThemeMenu = () => {
