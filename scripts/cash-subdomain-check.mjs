@@ -94,6 +94,13 @@ assert(app.includes("advancedJson"), "Cash web client must expose full JSON edit
 assert(index.includes("起始余额") && index.includes("全部可修改"), "Cash settings must visibly mark the opening balance and configuration as editable.");
 assert(index.includes("每项可修改") && index.includes("每笔可修改"), "Cash records and plans must visibly communicate editability.");
 assert(app.includes("recurring-card") && app.includes("mini-field"), "Recurring expenses must render as roomy editable cards.");
+assert(model.includes("function buildRecurringInstances("), "Recurring expenses must expand into explicit monthly instances.");
+assert(model.includes("function allocateRecurringActuals("), "Recurring settlement must use one shared allocation pass instead of category-wide duplicate subtraction.");
+assert(model.includes("linkedRecurringId"), "Real transactions must preserve optional explicit recurring links.");
+assert(app.includes('class="recurring-amount"'), "Calendar days must expose fixed recurring charges separately from the net delta.");
+assert(app.includes("day.statuses.recurring"), "Calendar rendering must consume explicit recurring instances.");
+assert(app.includes("分类”看起来像金额") || app.includes("分类") && app.includes("看起来更像金额"), "Recurring editor must warn when a category looks like a misplaced amount.");
+assert(index.includes("填写“每月扣费日”后会生成明确日期"), "Cash UI must explain the dated recurring rule.");
 assert(!index.includes('id="openingCash" type="number" min="0"'), "Opening balance must not be artificially constrained to non-negative values.");
 assert(app.includes("function addRecurring()"), "Cash UI must support adding recurring expenses.");
 assert(app.includes("data-delete-recurring"), "Cash UI must support deleting recurring expenses.");
