@@ -92,7 +92,10 @@ export function appearanceClientRuntime() {
       if(VALID_MODES.has(shared))return shared;
       try{
         const saved=localStorage.getItem(MODE_KEY);
-        if(VALID_MODES.has(saved))return saved;
+        if(VALID_MODES.has(saved)){
+          persistCookie(MODE_COOKIE,saved);
+          return saved;
+        }
       }catch{}
       return "system";
     }
@@ -101,7 +104,10 @@ export function appearanceClientRuntime() {
       if(VALID_ACCENTS.has(shared))return shared;
       try{
         const saved=localStorage.getItem(ACCENT_KEY);
-        if(VALID_ACCENTS.has(saved))return saved;
+        if(VALID_ACCENTS.has(saved)){
+          persistCookie(ACCENT_COOKIE,saved);
+          return saved;
+        }
       }catch{}
       return "sapphire";
     }
