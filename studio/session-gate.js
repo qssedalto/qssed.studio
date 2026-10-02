@@ -46,7 +46,8 @@ export async function verifyStudioPageSession(request) {
   const hostname = url.hostname.toLowerCase();
   const workHost = isServiceHost(hostname, "work");
   const gptHost = isServiceHost(hostname, "gpt");
-  const isolatedAppHost = workHost || gptHost;
+  const cashHost = isServiceHost(hostname, "cash");
+  const isolatedAppHost = workHost || gptHost || cashHost;
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   const accessToken = cookies[ACCESS_COOKIE] || "";
   const refreshToken = cookies[REFRESH_COOKIE] || "";
@@ -66,7 +67,7 @@ export async function verifyStudioPageSession(request) {
   if (accessToken) {
     const verified = await verifyAccessToken(accessToken);
     if (verified.ok && identityMatches(verified.user.id)) {
-      const migrationCookies = !accountId && !workHost
+      const migrationCookies = !accountId && !isolatedAppHost
         ? [accountCookie(verified.user.id, REFRESH_MAX_AGE, rootDomainForHost(hostname) || "qsseda.com")]
         : [];
       return { ok: true, user: verified.user, accessToken, cookies: migrationCookies };
