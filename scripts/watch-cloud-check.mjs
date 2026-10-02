@@ -37,7 +37,7 @@ for (const root of ["qsseda.com","qsseda.online","qsseda.studio"]) {
 assert(!wrangler.includes('"pattern": "aw.qsseda.studio'), "Legacy aw.qsseda.studio must stay outside the cloud Worker configuration.");
 
 assert(wrangler.includes('"bucket_name": "qsseda-studio-storage"'), "Watch must use the existing private R2 binding until a dedicated bucket is provisioned.");
-assert(index.includes("AERTEX Watch Cloud") && index.includes("生成设备令牌"), "Watch UI must expose cloud status and device onboarding.");
+assert(index.includes("AERTEX Watch") && index.includes("生成设备令牌") && index.includes("连接电脑"), "Watch UI must expose product identity and device onboarding.");
 assert(app.includes("/api/watch/tokens") && app.includes("/api/0/buckets/"), "Watch UI must use authenticated cloud APIs.");
 assert(sync.includes("http://127.0.0.1:5600"), "Native sync must default to ActivityWatch localhost.");
 assert(sync.includes("https://awd.qsseda.com"), "Native sync must default to the short cloud data domain.");
