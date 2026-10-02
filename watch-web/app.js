@@ -53,16 +53,16 @@
     const values = Object.values(status?.buckets || {});
     $("bucketCount").textContent = values.length;
     $("lastSync").textContent = fmtTime(status?.last_sync);
-    $("lastSyncHost").textContent = status?.last_host || (zh ? "等待设备" : "Waiting for a device");
-    $("syncLabel").textContent = values.length ? (zh ? "云端已连接" : "Cloud connected") : (zh ? "等待首次同步" : "Waiting for first sync");
-    $("syncDetail").textContent = values.length ? (zh ? values.length + " 个数据桶" : values.length + " buckets") : (zh ? "生成设备令牌后启动同步代理" : "Create a device token and start the sync agent");
+    $("lastSyncHost").textContent = status?.last_host || (zh ? "尚未连接" : "Not connected yet");
+    $("syncLabel").textContent = values.length ? (zh ? "同步正常" : "Sync active") : (zh ? "等待电脑连接" : "Waiting for a computer");
+    $("syncDetail").textContent = values.length ? (zh ? values.length + " 个数据源" : values.length + " data sources") : (zh ? "在电脑上使用设备令牌完成连接" : "Use a device token on your computer to connect");
     $("syncDot").classList.toggle("ok", Boolean(values.length));
   }
 
   function renderBuckets() {
     const entries = Object.values(buckets || {}).sort((a,b) => String(b.last_sync || "").localeCompare(String(a.last_sync || "")));
     if (!entries.length) {
-      $("buckets").innerHTML = '<p class="muted">' + (zh ? "云端还没有数据。先连接一台运行 ActivityWatch 的电脑。" : "No cloud data yet. Connect a computer running ActivityWatch first.") + "</p>";
+      $("buckets").innerHTML = '<p class="muted">' + (zh ? "还没有同步数据。连接电脑后，这里会显示 ActivityWatch 的数据源。" : "No synced data yet. Connect a computer to see its ActivityWatch data sources here.") + "</p>";
       return;
     }
     $("buckets").innerHTML = entries.map(bucket =>
@@ -78,7 +78,7 @@
     );
     if (!windowBuckets.length) {
       $("todayDuration").textContent = "0m";
-      $("apps").innerHTML = '<p class="muted">' + (zh ? "还没有窗口活动数据。" : "No window activity data yet.") + "</p>";
+      $("apps").innerHTML = '<p class="muted">' + (zh ? "还没有应用使用记录。" : "No app usage recorded yet.") + "</p>";
       return;
     }
 
@@ -111,7 +111,7 @@
     $("apps").innerHTML = ranked.length ? ranked.map(([app,seconds]) =>
       '<div class="app-row"><span>' + escapeHtml(app) + '</span><div class="bar"><i style="width:' +
       Math.max(2, seconds/max*100).toFixed(1) + '%"></i></div><strong>' + fmtDuration(seconds) + "</strong></div>"
-    ).join("") : '<p class="muted">' + (zh ? "今天还没有数据。" : "No data for today yet.") + "</p>";
+    ).join("") : '<p class="muted">' + (zh ? "今天还没有应用使用记录。" : "No app usage recorded today.") + "</p>";
   }
 
   $("refreshButton").addEventListener("click", () => load().catch(showError));
@@ -139,7 +139,7 @@
   });
 
   function showError(error) {
-    $("syncLabel").textContent = zh ? "云端读取失败" : "Cloud load failed";
+    $("syncLabel").textContent = zh ? "无法读取同步状态" : "Could not load sync status";
     $("syncDetail").textContent = error?.message || String(error);
     $("syncDot").classList.remove("ok");
   }
