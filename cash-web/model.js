@@ -50,9 +50,13 @@
     const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
     return `${month}-${String(lastDay).padStart(2, '0')}`;
   }
+  function finiteNumber(value, fallback = 0) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+  }
   function finiteAmount(value, fallback = 0) {
-    const amount = Number(value);
-    return Number.isFinite(amount) && amount >= 0 ? amount : fallback;
+    const amount = finiteNumber(value, fallback);
+    return amount >= 0 ? amount : fallback;
   }
   function roundMoney(value) { return Math.round((Number(value) + Number.EPSILON) * 100) / 100; }
   function dateRange(startKey = PERIOD_START, endKey = PERIOD_END) {
@@ -140,7 +144,7 @@
     if (settings.periodEnd < settings.periodStart) settings.periodEnd = settings.periodStart;
     if (settings.manualEntryEnd < settings.periodStart) settings.manualEntryEnd = settings.periodStart;
     if (settings.manualEntryEnd > settings.periodEnd) settings.manualEntryEnd = settings.periodEnd;
-    settings.openingCash = finiteAmount(settings.openingCash, 6206.32);
+    settings.openingCash = finiteNumber(settings.openingCash, 6206.32);
     settings.emergencyCredit = finiteAmount(settings.emergencyCredit, 200);
     const transactions = Array.isArray(source.transactions) ? source.transactions.map(x => normalizeItem(x)).filter(x => x.date) : [];
     const plannedEventsSource = Array.isArray(source.plannedEvents) ? source.plannedEvents : base.plannedEvents;
@@ -452,5 +456,5 @@
     return '\uFEFF' + [header, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
   }
 
-  return { PERIOD_START, PERIOD_END, MANUAL_ENTRY_END, ODD_MONDAY_ANCHOR, TUTOR_DATES, CATEGORIES, parseDateKey, isoDate, addDays, monthKey, monthEndKey, finiteAmount, roundMoney, dateRange, isOddMonday, weekKey, dayType, uid, createDefaultData, normalizeData, calculateFinancialModel, categoryName, huabeiPart, cashSignedAmount, serializeData, parseData, transactionsToCsv };
+  return { PERIOD_START, PERIOD_END, MANUAL_ENTRY_END, ODD_MONDAY_ANCHOR, TUTOR_DATES, CATEGORIES, parseDateKey, isoDate, addDays, monthKey, monthEndKey, finiteNumber, finiteAmount, roundMoney, dateRange, isOddMonday, weekKey, dayType, uid, createDefaultData, normalizeData, calculateFinancialModel, categoryName, huabeiPart, cashSignedAmount, serializeData, parseData, transactionsToCsv };
 });

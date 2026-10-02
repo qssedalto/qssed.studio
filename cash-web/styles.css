@@ -15,3 +15,39 @@ select{color-scheme:light}.field select option{background:#fff;color:#1d1d1f}.fi
 .advanced-dialog{width:min(900px,calc(100vw - 28px))}
 .json-editor{width:100%;min-height:52vh;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;resize:vertical;tab-size:2}
 .actions a.button{text-decoration:none;display:inline-flex;align-items:center}
+
+
+/* Editable-data clarity and larger controls */
+.editability-note{display:flex;align-items:flex-start;gap:12px;margin:0 0 12px;padding:13px 16px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.editability-note strong{white-space:nowrap}.editability-note span{color:var(--muted);line-height:1.5}
+.settings-stack{display:grid;gap:12px}.editable-card{overflow:visible}
+.title-line{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.title-line h2{margin:0}
+.editable-badge,.field-label em,.mini-field em{display:inline-flex;align-items:center;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:11px;font-style:normal;font-weight:600;line-height:1;padding:5px 8px}
+.field-label{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--text);font-weight:600}
+.settings-grid{grid-template-columns:repeat(3,minmax(220px,1fr));gap:14px 16px}
+.settings-grid .field{min-width:0}.settings-grid .important-field{grid-column:span 2}
+.field input,.field select,.mini-field input{min-height:50px;padding:11px 13px;border-radius:12px;font-size:15px}
+.field small{font-size:12px;line-height:1.45}.important-field input{font-size:18px;font-weight:650}
+.roomy-button{min-height:44px;padding-inline:16px}
+.recurring-list{gap:12px}.recurring-card{padding:15px;border:1px solid var(--grid);border-radius:14px;background:color-mix(in srgb,var(--panel) 88%,var(--bg))}
+.recurring-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.recurring-grid{display:grid;grid-template-columns:minmax(220px,1.6fr) minmax(180px,1.2fr) minmax(150px,.8fr) minmax(190px,1fr);gap:12px;align-items:end}
+.mini-field{display:grid;gap:6px;min-width:0;color:var(--muted);font-size:12px}.mini-field>span{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mini-field input{width:100%;border:1px solid var(--line);background:transparent;color:var(--text)}
+.recurring-name-field{grid-column:auto}.recurring-reserve-field{grid-column:1/-1}
+.toggle-field{display:flex;align-items:center;gap:9px;min-height:44px;color:var(--text);cursor:pointer}.toggle-field input{width:19px;height:19px;flex:0 0 auto}
+.danger-button{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--line));min-height:40px}
+.table-action{min-height:36px;min-width:44px;padding:7px 9px}
+dialog:not(.advanced-dialog){width:min(760px,calc(100vw - 28px));padding:24px}
+dialog .form-grid{gap:14px}.dialog-actions .button{min-height:44px;padding:10px 16px}
+.json-editor{font-size:13px;line-height:1.65}
+@media(max-width:1100px){.settings-grid{grid-template-columns:repeat(2,minmax(220px,1fr))}.recurring-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){
+  .editability-note{display:grid;gap:5px}.editability-note strong{white-space:normal}
+  .settings-grid{grid-template-columns:1fr}.settings-grid .important-field{grid-column:auto}
+  .field input,.field select,.mini-field input{min-height:52px;font-size:16px}
+  .recurring-card{padding:14px}.recurring-card-head{align-items:flex-start}
+  .recurring-grid{grid-template-columns:1fr}.recurring-reserve-field{grid-column:auto}
+  dialog:not(.advanced-dialog),.advanced-dialog{width:calc(100vw - 20px);padding:18px}
+  .section-head{align-items:flex-start;flex-wrap:wrap}.section-head>div:last-child{flex-wrap:wrap}
+}
