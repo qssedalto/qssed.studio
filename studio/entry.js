@@ -32,6 +32,7 @@ import { osPage } from "./ui-shell.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
+import { watchSetupPage } from "./watch-setup-page.js";
 import { adminOriginForRequest, authOriginForRequest, awOriginForRequest, cashOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
 
@@ -327,6 +328,7 @@ export default {
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }
 
+    if (pathname === "/aw/setup") return watchSetupPage(request);
     if (pathname === "/wishes") return localizedPage(wishesPage(fullLocale), locale);
     if (pathname === "/birthday") return localizedPage(birthdayPage(fullLocale), locale);
     if (pathname === "/mid-autumn") return localizedPage(midAutumnPage(fullLocale), locale);
