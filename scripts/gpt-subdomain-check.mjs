@@ -29,6 +29,7 @@ const huaweiGate = read("studio/huawei-harmony-gate.js");
 const adminApi = read("admin/admin-api.js");
 const deviceExemptionMigration = read("supabase/migrations/202609251510_huawei_device_access_exemptions.sql");
 const shareAuthorMigration = read("supabase/migrations/202609261610_shared_conversation_author_choice.sql");
+const chatOrganizationMigration = read("supabase/migrations/202610021530_intelligence_conversation_pin_archive.sql");
 
 for (const required of [
   'verifyStudioPageSession(request)',
@@ -147,6 +148,9 @@ for (const required of [
   '/api/ai/conversations',
   'share_token',
   'share_author_name',
+  'is_pinned',
+  'is_archived',
+  'order=is_pinned.desc,pinned_at.desc.nullslast,updated_at.desc',
   'Conversation not found.',
   'RICH_FORMAT_SYSTEM',
   'For every mathematical expression, always wrap inline LaTeX in $...$ and display LaTeX in $...$',
@@ -217,6 +221,11 @@ assert(chatSource.includes('method: "DELETE"'), "Failed newly-created conversati
 assert(shareAuthorMigration.includes("share_author_name boolean not null default false"), "Shared conversations must default to anonymous author identity.");
 assert(shareAuthorMigration.includes("'author_name'"), "Public share RPC must expose an author name field.");
 assert(shareAuthorMigration.includes("when c.share_author_name"), "Public share RPC must gate identity on explicit user consent.");
+assert(chatOrganizationMigration.includes("is_pinned boolean not null default false"), "Intelligence conversations must support persistent pin state.");
+assert(chatOrganizationMigration.includes("is_archived boolean not null default false"), "Intelligence conversations must support persistent archive state.");
+assert(aiGateway.includes('patch.is_pinned = b.is_pinned === true'), "Conversation PATCH must support pin/unpin.");
+assert(aiGateway.includes('patch.is_archived = b.is_archived === true'), "Conversation PATCH must support archiving.");
+assert(aiGateway.includes('"&is_archived=eq.false&select='), "Archived chats must be excluded from the default Intelligence sidebar.");
 
 console.log("GPT authentication handoff looks valid.");
 
