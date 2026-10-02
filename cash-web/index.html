@@ -24,6 +24,10 @@
   </header>
 
   <section id="notice" class="notice" hidden></section>
+  <section class="editability-note" aria-label="数据编辑说明">
+    <strong>原始数据均可修改</strong>
+    <span>起始余额、规划日期、预算规则、真实账本、周期支出、计划和预期都可以编辑；上方余额与预测属于自动计算结果，不直接修改。</span>
+  </section>
 
   <section class="kpis six">
     <article><span>现金余额</span><strong id="kCash">—</strong><small>仅真实账本</small></article>
@@ -64,7 +68,7 @@
   </section>
 
   <section class="card">
-    <div class="section-head"><div><h2>真实账本</h2><p>这里只显示真实发生的收入与支出</p></div><span id="transactionCount" class="pill actual-pill">0 笔实际</span></div>
+    <div class="section-head"><div><div class="title-line"><h2>真实账本</h2><span class="editable-badge">每笔可修改</span></div><p>这里只显示真实发生的收入与支出；每笔都可以编辑或删除。</p></div><span id="transactionCount" class="pill actual-pill">0 笔实际</span></div>
     <div class="table-scroll"><table><thead><tr><th>日期</th><th>类型</th><th>金额</th><th>支付构成</th><th>分类</th><th>备注</th><th></th></tr></thead><tbody id="transactionBody"></tbody></table></div>
     <div id="emptyLedger" class="empty">尚无真实交易。预算和预测不会出现在这里。</div>
   </section>
@@ -74,41 +78,41 @@
     <div id="calendar" class="calendar"></div>
   </section>
 
-  <section class="two-column settings-layout">
-    <article class="card">
-      <div class="section-head"><div><h2>预算规则</h2><p>修改后自动保存并重算预测</p></div></div>
-      <div class="form-grid three">
-        <label class="field">规划开始<input id="periodStart" type="date"></label>
-        <label class="field">规划结束<input id="periodEnd" type="date"></label>
-        <label class="field">手动补录截止<input id="manualEntryEnd" type="date"></label>
-        <label class="field">单周周一锚点<input id="oddMondayAnchor" type="date"></label>
-        <label class="field">起始现金<input id="openingCash" type="number" min="0" step="0.01"></label>
-        <label class="field">应急信用额度<input id="emergencyCredit" type="number" min="0" step="0.5"></label>
-        <label class="field">普通上课日餐饮<input id="foodClassDay" type="number" min="0" step="0.5"></label>
-        <label class="field">单周周一餐饮<input id="foodOddMonday" type="number" min="0" step="0.5"></label>
-        <label class="field">双周周一餐饮<input id="foodEvenMonday" type="number" min="0" step="0.5"></label>
-        <label class="field">周六餐饮<input id="foodSaturday" type="number" min="0" step="0.5"></label>
-        <label class="field">周日餐饮<input id="foodSunday" type="number" min="0" step="0.5"></label>
-        <label class="field">每周社交次数<input id="socialVisits" type="number" min="0" step="0.5"></label>
-        <label class="field">单次交通中值<input id="socialMedian" type="number" min="0" step="0.5"></label>
-        <label class="field">单次交通下限<input id="socialMin" type="number" min="0" step="0.5"></label>
-        <label class="field">单次交通上限<input id="socialMax" type="number" min="0" step="0.5"></label>
+  <section class="settings-stack">
+    <article class="card editable-card">
+      <div class="section-head"><div><div class="title-line"><h2>基础设置与预算规则</h2><span class="editable-badge">全部可修改</span></div><p>修改任意字段后会自动保存到当前账户并重新计算；不会修改其他账户的数据。</p></div></div>
+      <div class="form-grid settings-grid">
+        <label class="field"><span class="field-label">规划开始 <em>可修改</em></span><input id="periodStart" type="date"></label>
+        <label class="field"><span class="field-label">规划结束 <em>可修改</em></span><input id="periodEnd" type="date"></label>
+        <label class="field"><span class="field-label">手动补录截止 <em>可修改</em></span><input id="manualEntryEnd" type="date"></label>
+        <label class="field"><span class="field-label">单周周一锚点 <em>可修改</em></span><input id="oddMondayAnchor" type="date"></label>
+        <label class="field important-field"><span class="field-label">起始余额 <em>可修改</em></span><input id="openingCash" type="number" step="0.01"><small>规划周期开始时的现金余额；修改它会重新计算之后的全部现金流。</small></label>
+        <label class="field"><span class="field-label">应急信用额度 <em>可修改</em></span><input id="emergencyCredit" type="number" min="0" step="0.01"></label>
+        <label class="field"><span class="field-label">普通上课日餐饮 <em>可修改</em></span><input id="foodClassDay" type="number" min="0" step="0.01"></label>
+        <label class="field"><span class="field-label">单周周一餐饮 <em>可修改</em></span><input id="foodOddMonday" type="number" min="0" step="0.01"></label>
+        <label class="field"><span class="field-label">双周周一餐饮 <em>可修改</em></span><input id="foodEvenMonday" type="number" min="0" step="0.01"></label>
+        <label class="field"><span class="field-label">周六餐饮 <em>可修改</em></span><input id="foodSaturday" type="number" min="0" step="0.01"></label>
+        <label class="field"><span class="field-label">周日餐饮 <em>可修改</em></span><input id="foodSunday" type="number" min="0" step="0.01"></label>
+        <label class="field"><span class="field-label">每周社交次数 <em>可修改</em></span><input id="socialVisits" type="number" min="0" step="0.5"></label>
+        <label class="field"><span class="field-label">单次交通中值 <em>可修改</em></span><input id="socialMedian" type="number" min="0" step="0.01"></label>
+        <label class="field"><span class="field-label">单次交通下限 <em>可修改</em></span><input id="socialMin" type="number" min="0" step="0.01"></label>
+        <label class="field"><span class="field-label">单次交通上限 <em>可修改</em></span><input id="socialMax" type="number" min="0" step="0.01"></label>
       </div>
       <p class="note">社交交通按每周预算计算，不会自动生成周三、周五交易。</p>
     </article>
-    <article class="card">
-      <div class="section-head"><div><h2>周期支出</h2><p>名称、分类、金额、扣费日和预留规则都可以修改</p></div><button id="addRecurring" class="button" type="button">新增周期支出</button></div>
+    <article class="card editable-card">
+      <div class="section-head"><div><div class="title-line"><h2>周期支出</h2><span class="editable-badge">每项可修改</span></div><p>名称、分类、金额、扣费日、是否预留与启用状态都可以直接改。</p></div><button id="addRecurring" class="button roomy-button" type="button">新增周期支出</button></div>
       <div id="recurringEditor" class="recurring-list"></div>
     </article>
   </section>
 
   <section class="card">
-    <div class="section-head"><div><h2>明确日期计划</h2><p>家教收入和交通等未来事件；真实发生后由账本替换</p></div><span id="planCount" class="pill plan-pill">0 项计划</span></div>
+    <div class="section-head"><div><div class="title-line"><h2>明确日期计划</h2><span class="editable-badge">每项可修改</span></div><p>家教收入和交通等未来事件；真实发生后由账本替换。</p></div><span id="planCount" class="pill plan-pill">0 项计划</span></div>
     <div class="table-scroll"><table><thead><tr><th>日期</th><th>类型</th><th>金额</th><th>分类</th><th>说明</th><th>状态</th><th></th></tr></thead><tbody id="planBody"></tbody></table></div>
   </section>
 
   <section class="card">
-    <div class="section-head"><div><h2>未定日期预期</h2><p>只有预计月份、没有明确日期的未来收入或支出</p></div><div><span id="expectedCount" class="pill plan-pill">0 项预期</span> <button id="addExpected" class="button" type="button">新增预期</button></div></div>
+    <div class="section-head"><div><div class="title-line"><h2>未定日期预期</h2><span class="editable-badge">每项可修改</span></div><p>只有预计月份、没有明确日期的未来收入或支出。</p></div><div><span id="expectedCount" class="pill plan-pill">0 项预期</span> <button id="addExpected" class="button roomy-button" type="button">新增预期</button></div></div>
     <div class="table-scroll"><table><thead><tr><th>预计月份</th><th>类型</th><th>金额</th><th>分类</th><th>说明</th><th>状态</th><th></th></tr></thead><tbody id="expectedBody"></tbody></table></div>
     <div id="emptyExpected" class="empty">尚无未定日期预期。</div>
   </section>
@@ -122,7 +126,7 @@
 
 <dialog id="transactionDialog">
   <form id="transactionForm">
-    <div class="dialog-head"><div><h2 id="transactionTitle">新增真实收支</h2><p>只记录已经发生的交易</p></div><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div>
+    <div class="dialog-head"><div><div class="title-line"><h2 id="transactionTitle">新增真实收支</h2><span class="editable-badge">字段可修改</span></div><p>只记录已经发生的交易</p></div><button type="button" class="icon-button close-dialog" aria-label="关闭">×</button></div>
     <div class="form-grid two">
       <label class="field">日期<input id="txDate" type="text" inputmode="numeric" placeholder="例如 2026-10-01" autocomplete="off" required></label>
       <label class="field">类型<select id="txType"><option value="expense">支出</option><option value="income">收入</option></select></label>
@@ -138,7 +142,7 @@
 
 <dialog id="planDialog">
   <form id="planForm">
-    <div class="dialog-head"><div><h2 id="planTitle">新增明确日期计划</h2><p>计划不会写入真实账本</p></div><button type="button" class="icon-button close-plan" aria-label="关闭">×</button></div>
+    <div class="dialog-head"><div><div class="title-line"><h2 id="planTitle">新增明确日期计划</h2><span class="editable-badge">字段可修改</span></div><p>计划不会写入真实账本</p></div><button type="button" class="icon-button close-plan" aria-label="关闭">×</button></div>
     <div class="form-grid two">
       <label class="field">日期<input id="planDate" type="date" required></label>
       <label class="field">类型<select id="planType"><option value="expense">支出</option><option value="income">收入</option></select></label>
@@ -153,7 +157,7 @@
 
 <dialog id="expectedDialog">
   <form id="expectedForm">
-    <div class="dialog-head"><div><h2 id="expectedTitle">新增未定日期预期</h2><p>只指定预计月份，不伪造具体发生日期</p></div><button type="button" class="icon-button close-expected" aria-label="关闭">×</button></div>
+    <div class="dialog-head"><div><div class="title-line"><h2 id="expectedTitle">新增未定日期预期</h2><span class="editable-badge">字段可修改</span></div><p>只指定预计月份，不伪造具体发生日期</p></div><button type="button" class="icon-button close-expected" aria-label="关闭">×</button></div>
     <div class="form-grid two">
       <label class="field">预计月份<input id="expectedMonth" type="month" required></label>
       <label class="field">类型<select id="expectedType"><option value="expense">支出</option><option value="income">收入</option></select></label>
@@ -173,7 +177,7 @@
 </dialog>
 
 <dialog id="advancedDialog" class="advanced-dialog">
-  <div class="dialog-head"><div><h2>高级数据编辑</h2><p>这里是当前账户的完整 Cash JSON。应用后会校验、规范化并保存到云端。</p></div><button type="button" id="closeAdvanced" class="icon-button" aria-label="关闭">×</button></div>
+  <div class="dialog-head"><div><div class="title-line"><h2>高级数据编辑</h2><span class="editable-badge">完整数据可修改</span></div><p>这里是当前账户的完整 Cash JSON。只有点击“应用并保存”才会写回当前账户。</p></div><button type="button" id="closeAdvanced" class="icon-button" aria-label="关闭">×</button></div>
   <textarea id="advancedJson" class="json-editor" spellcheck="false"></textarea>
   <p id="advancedValidation" class="validation" hidden></p>
   <div class="dialog-actions">
