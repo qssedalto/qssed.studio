@@ -91,11 +91,6 @@
   }
 
   function createDefaultData() {
-    const plannedEvents = [];
-    for (const date of TUTOR_DATES) {
-      plannedEvents.push({ id: `tutor-income-${date}`, date, type: 'income', amount: 160, category: 'tutoringIncome', note: '预计家教收入', source: 'tutoring', enabled: true });
-      plannedEvents.push({ id: `tutor-travel-${date}`, date, type: 'expense', amount: 32, category: 'tutoringTransport', note: '预计家教交通', source: 'tutoring', enabled: true });
-    }
     return {
       version: 4,
       settings: {
@@ -103,22 +98,16 @@
         periodEnd: PERIOD_END,
         manualEntryEnd: MANUAL_ENTRY_END,
         oddMondayAnchor: ODD_MONDAY_ANCHOR,
-        openingCash: 6206.32,
-        emergencyCredit: 200
+        openingCash: 0,
+        emergencyCredit: 0
       },
       transactions: [],
-      plannedEvents,
+      plannedEvents: [],
       expectedEvents: [],
-      recurringExpenses: [
-        { id: 'installment', name: '月供 + Apple Music + iCloud', category: 'installment', amount: 250, frequency: 'monthly', dayOfMonth: null, reserveWhenUndated: true, enabled: true },
-        { id: 'electricity', name: '电费', category: 'electricity', amount: 100, frequency: 'monthly', dayOfMonth: null, reserveWhenUndated: true, enabled: true },
-        { id: 'water', name: '水费', category: 'water', amount: 60, frequency: 'monthly', dayOfMonth: null, reserveWhenUndated: true, enabled: true },
-        { id: 'phone', name: '话费', category: 'phone', amount: 100, frequency: 'monthly', dayOfMonth: null, reserveWhenUndated: true, enabled: true },
-        { id: 'chatgpt', name: 'ChatGPT', category: 'chatgpt', amount: 140, frequency: 'monthly', dayOfMonth: null, reserveWhenUndated: true, enabled: true }
-      ],
+      recurringExpenses: [],
       budgetRules: {
-        foodByDayType: { classDay: 24, oddMonday: 20, evenMonday: 24, saturday: 20, sunday: 20 },
-        socialTransport: { weeklyVisits: 2, medianPerVisit: 25.5, minPerVisit: 21, maxPerVisit: 30 }
+        foodByDayType: { classDay: 0, oddMonday: 0, evenMonday: 0, saturday: 0, sunday: 0 },
+        socialTransport: { weeklyVisits: 0, medianPerVisit: 0, minPerVisit: 0, maxPerVisit: 0 }
       }
     };
   }
@@ -144,8 +133,8 @@
     if (settings.periodEnd < settings.periodStart) settings.periodEnd = settings.periodStart;
     if (settings.manualEntryEnd < settings.periodStart) settings.manualEntryEnd = settings.periodStart;
     if (settings.manualEntryEnd > settings.periodEnd) settings.manualEntryEnd = settings.periodEnd;
-    settings.openingCash = finiteNumber(settings.openingCash, 6206.32);
-    settings.emergencyCredit = finiteAmount(settings.emergencyCredit, 200);
+    settings.openingCash = finiteNumber(settings.openingCash, 0);
+    settings.emergencyCredit = finiteAmount(settings.emergencyCredit, 0);
     const transactions = Array.isArray(source.transactions) ? source.transactions.map(x => normalizeItem(x)).filter(x => x.date) : [];
     const plannedEventsSource = Array.isArray(source.plannedEvents) ? source.plannedEvents : base.plannedEvents;
     const plannedEvents = plannedEventsSource.map(x => ({ ...normalizeItem(x), source: String(x.source || 'manual'), enabled: x.enabled !== false })).filter(x => x.date);
@@ -160,8 +149,8 @@
     const foodByDayType = Object.fromEntries(Object.keys(foodBase).map(key => [key, finiteAmount(foodInput[key], foodBase[key])]));
     const socialInput = rules.socialTransport || {};
     const socialTransport = {
-      weeklyVisits: finiteAmount(socialInput.weeklyVisits, 2), medianPerVisit: finiteAmount(socialInput.medianPerVisit, 25.5),
-      minPerVisit: finiteAmount(socialInput.minPerVisit, 21), maxPerVisit: finiteAmount(socialInput.maxPerVisit, 30)
+      weeklyVisits: finiteAmount(socialInput.weeklyVisits, 0), medianPerVisit: finiteAmount(socialInput.medianPerVisit, 0),
+      minPerVisit: finiteAmount(socialInput.minPerVisit, 0), maxPerVisit: finiteAmount(socialInput.maxPerVisit, 0)
     };
     return { version: 4, settings, transactions, plannedEvents, expectedEvents, recurringExpenses, budgetRules: { foodByDayType, socialTransport } };
   }
