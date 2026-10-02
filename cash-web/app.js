@@ -103,6 +103,7 @@
     if ($('periodSummary')) $('periodSummary').textContent = `${data.settings.periodStart.replaceAll('-', '/')}—${data.settings.periodEnd.replaceAll('-', '/')} · ${model.dates.length} 天 · 真实账本、预算、计划与预测分层`;
     if ($('calendarTitle')) $('calendarTitle').textContent = `${model.dates.length} 天日历`;
     if ($('backToAertex')) $('backToAertex').href = mainSiteOrigin();
+    if ($('cashHomeBrand')) $('cashHomeBrand').href = mainSiteOrigin();
   }
 
   function renderKpis() {
