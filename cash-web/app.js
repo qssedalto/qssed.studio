@@ -7,6 +7,7 @@
   let meta = { today: localDateKey(), dataFilePath: 'AERTEX Cloud' };
   let editingTransactionId = null;
   let editingPlanId = null;
+  let editingExpectedId = null;
   let selectedDay = null;
   let saveChain = Promise.resolve();
   let toastTimer;
@@ -80,10 +81,21 @@
     const known = M.CATEGORIES[type].find(x => x.id === value || x.name === value);
     return known?.id || value;
   }
+  function setFreeCategoryField(inputId, listId, type, selected = null) {
+    const categories = M.CATEGORIES[type];
+    $(listId).innerHTML = categories.map(x => `<option value="${escapeHtml(x.name)}"></option>`).join('');
+    $(inputId).value = selected ? M.categoryName(selected) : categories[0].name;
+  }
+  function freeCategory(inputId, type) {
+    const value = $(inputId).value.trim();
+    const known = M.CATEGORIES[type].find(x => x.id === value || x.name === value);
+    return known?.id || value;
+  }
 
   function render() {
-    recalculate(); renderKpis(); renderForecastBreakdown(); renderBalanceChart(); renderBudget(); renderReserve(); renderTransactions(); renderCalendar(); renderRules(); renderRecurring(); renderPlans(); renderMonthly();
+    recalculate(); renderKpis(); renderForecastBreakdown(); renderBalanceChart(); renderBudget(); renderReserve(); renderTransactions(); renderCalendar(); renderRules(); renderRecurring(); renderPlans(); renderExpected(); renderMonthly();
     if ($('periodSummary')) $('periodSummary').textContent = `${data.settings.periodStart.replaceAll('-', '/')}—${data.settings.periodEnd.replaceAll('-', '/')} · ${model.dates.length} 天 · 真实账本、预算、计划与预测分层`;
+    if ($('calendarTitle')) $('calendarTitle').textContent = `${model.dates.length} 天日历`;
     if ($('backToAertex')) $('backToAertex').href = mainSiteOrigin();
   }
 
@@ -139,7 +151,7 @@
     const all = [0, model.ledger.cashBalance, ...forecastValues, ...actualValues];
     let min = Math.min(...all), max = Math.max(...all); if (max === min) max += 1;
     const pad = Math.max((max - min) * .08, 100); min -= pad; max += pad;
-    const x = index => L + index * (W - L - R) / (days.length - 1);
+    const x = index => days.length <= 1 ? (L + W - R) / 2 : L + index * (W - L - R) / (days.length - 1);
     const y = value => T + (max - value) * (H - T - B) / (max - min);
     let svg = '';
     for (let i = 0; i <= 4; i++) { const value = min + (max - min) * i / 4, yy = y(value); svg += `<line x1="${L}" y1="${yy}" x2="${W - R}" y2="${yy}" stroke="var(--grid)"/><text x="${L - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(value)}</text>`; }
@@ -149,7 +161,8 @@
       const actualPoints = actualDays.map(day => { const index = days.findIndex(x => x.key === day.key); return `${x(index).toFixed(1)},${y(day.actualCashBalance).toFixed(1)}`; }).join(' ');
       svg += `<polyline points="${actualPoints}" fill="none" stroke="var(--actual)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
     } else svg += `<circle cx="${x(0)}" cy="${y(model.ledger.cashBalance)}" r="4" fill="var(--actual)"/>`;
-    ['2026-10-01', '2026-11-01', '2026-12-01', '2027-01-01', '2027-01-13'].forEach(key => { const index = days.findIndex(x => x.key === key); if (index >= 0) svg += `<text x="${x(index)}" y="${H - 9}" text-anchor="middle" font-size="11" fill="var(--muted)">${key.slice(5).replace('-', '/')}</text>`; });
+    const labelKeys = [...new Set([days[0]?.key, ...days.filter(day => day.key.endsWith('-01')).map(day => day.key), days.at(-1)?.key].filter(Boolean))];
+    labelKeys.forEach(key => { const index = days.findIndex(day => day.key === key); if (index >= 0) svg += `<text x="${x(index)}" y="${H - 9}" text-anchor="middle" font-size="11" fill="var(--muted)">${key.slice(5).replace('-', '/')}</text>`; });
     $('balanceChart').innerHTML = svg;
     $('balanceCaption').textContent = `曲线只显示有明确日期的现金路径；未定日固定支出 ${money(model.reserve.requiredAmount, 2)} 和社交预算 ${money(model.budget.socialBudgetReserve, 2)} 在期末公式中单独扣除。`;
   }
@@ -221,13 +234,69 @@
     for (const [id, value] of Object.entries(mapping)) $(id).value = value;
   }
   function renderRecurring() {
-    $('recurringEditor').innerHTML = data.recurringExpenses.map(item => `<div class="recurring-row"><input data-recurring-enabled="${item.id}" type="checkbox"${item.enabled ? ' checked' : ''}><span>${escapeHtml(item.name)}<small> · 每月</small></span><input aria-label="金额" data-recurring-amount="${item.id}" type="number" min="0" step="1" value="${item.amount}"><input aria-label="扣费日" data-recurring-day="${item.id}" type="number" min="1" max="31" placeholder="日期待定" value="${item.dayOfMonth || ''}"></div>`).join('');
-    document.querySelectorAll('[data-recurring-enabled]').forEach(el => el.addEventListener('change', () => { data.recurringExpenses.find(x => x.id === el.dataset.recurringEnabled).enabled = el.checked; mutate('周期支出已保存'); }));
-    document.querySelectorAll('[data-recurring-amount]').forEach(el => el.addEventListener('change', () => { const item = data.recurringExpenses.find(x => x.id === el.dataset.recurringAmount); item.amount = amount(el, item.amount); mutate('周期支出已保存'); }));
-    document.querySelectorAll('[data-recurring-day]').forEach(el => el.addEventListener('change', () => { const item = data.recurringExpenses.find(x => x.id === el.dataset.recurringDay); const day = Number(el.value); item.dayOfMonth = Number.isInteger(day) && day >= 1 && day <= 31 ? day : null; mutate('扣费规则已保存'); }));
+    $('recurringEditor').innerHTML = data.recurringExpenses.map(item => `<div class="recurring-row">
+      <input data-recurring-enabled="${item.id}" aria-label="启用" type="checkbox"${item.enabled ? ' checked' : ''}>
+      <input data-recurring-name="${item.id}" aria-label="名称" type="text" maxlength="80" value="${escapeHtml(item.name)}">
+      <input data-recurring-category="${item.id}" aria-label="分类" type="text" maxlength="80" value="${escapeHtml(item.category)}">
+      <input data-recurring-amount="${item.id}" aria-label="金额" type="number" min="0" step="0.01" value="${item.amount}">
+      <input data-recurring-day="${item.id}" aria-label="扣费日" type="number" min="1" max="31" placeholder="待定" value="${item.dayOfMonth || ''}">
+      <label class="reserve-toggle"><input data-recurring-reserve="${item.id}" type="checkbox"${item.reserveWhenUndated ? ' checked' : ''}>未知日预留</label>
+      <button class="table-action danger" type="button" data-delete-recurring="${item.id}">删除</button>
+    </div>`).join('');
+
+    document.querySelectorAll('[data-recurring-enabled]').forEach(el => el.addEventListener('change', () => {
+      data.recurringExpenses.find(x => x.id === el.dataset.recurringEnabled).enabled = el.checked;
+      mutate('周期支出已保存到云端');
+    }));
+    document.querySelectorAll('[data-recurring-name]').forEach(el => el.addEventListener('change', () => {
+      const item = data.recurringExpenses.find(x => x.id === el.dataset.recurringName);
+      item.name = el.value.trim() || '周期支出';
+      mutate('周期支出名称已保存到云端');
+    }));
+    document.querySelectorAll('[data-recurring-category]').forEach(el => el.addEventListener('change', () => {
+      const item = data.recurringExpenses.find(x => x.id === el.dataset.recurringCategory);
+      item.category = el.value.trim() || 'otherExpense';
+      mutate('周期支出分类已保存到云端');
+    }));
+    document.querySelectorAll('[data-recurring-amount]').forEach(el => el.addEventListener('change', () => {
+      const item = data.recurringExpenses.find(x => x.id === el.dataset.recurringAmount);
+      item.amount = amount(el, item.amount);
+      mutate('周期支出金额已保存到云端');
+    }));
+    document.querySelectorAll('[data-recurring-day]').forEach(el => el.addEventListener('change', () => {
+      const item = data.recurringExpenses.find(x => x.id === el.dataset.recurringDay);
+      const day = Number(el.value);
+      item.dayOfMonth = Number.isInteger(day) && day >= 1 && day <= 31 ? day : null;
+      mutate('扣费规则已保存到云端');
+    }));
+    document.querySelectorAll('[data-recurring-reserve]').forEach(el => el.addEventListener('change', () => {
+      const item = data.recurringExpenses.find(x => x.id === el.dataset.recurringReserve);
+      item.reserveWhenUndated = el.checked;
+      mutate('预留规则已保存到云端');
+    }));
+    document.querySelectorAll('[data-delete-recurring]').forEach(el => el.addEventListener('click', () => {
+      if (!confirm('确定删除这项周期支出吗？')) return;
+      data.recurringExpenses = data.recurringExpenses.filter(x => x.id !== el.dataset.deleteRecurring);
+      mutate('周期支出已删除');
+    }));
+  }
+
+  function addRecurring() {
+    data.recurringExpenses.push({
+      id: M.uid('recurring'),
+      name: '新周期支出',
+      category: 'otherExpense',
+      amount: 0,
+      frequency: 'monthly',
+      dayOfMonth: null,
+      reserveWhenUndated: true,
+      enabled: true
+    });
+    mutate('已新增周期支出');
   }
 
   function planStatus(plan) {
+    if (!plan.enabled) return '<span class="badge budget-badge">已停用</span>';
     const day = model.forecast.daily.find(x => x.key === plan.date);
     const resolved = day?.statuses.planned.find(x => x.id === plan.id);
     if (resolved?.replaced) return '<span class="badge actual-badge">已由实际替换</span>';
@@ -296,17 +365,82 @@
   function openPlan(plan = null, date = null) {
     editingPlanId = plan?.id || null; $('planTitle').textContent = plan ? '编辑明确日期计划' : '新增明确日期计划';
     $('planDate').min = data.settings.periodStart; $('planDate').max = data.settings.periodEnd; $('planDate').value = plan?.date || date || data.settings.periodStart;
-    $('planType').value = plan?.type || 'expense'; $('planCategory').innerHTML = categoryOptions($('planType').value, plan?.category);
-    $('planAmount').value = plan?.amount || ''; $('planNote').value = plan?.note || ''; $('planDialog').showModal();
+    $('planType').value = plan?.type || 'expense'; setFreeCategoryField('planCategory', 'planCategoryList', $('planType').value, plan?.category);
+    $('planAmount').value = plan?.amount || ''; $('planNote').value = plan?.note || ''; $('planEnabled').checked = plan?.enabled !== false; $('planDialog').showModal();
   }
   function savePlan(event) {
     event.preventDefault(); const value = amount($('planAmount'), -1), date = $('planDate').value;
     if (!M.parseDateKey(date) || date < data.settings.periodStart || date > data.settings.periodEnd || !(value > 0)) return showToast('请填写周期内日期和有效金额', true);
-    const plan = { id: editingPlanId || M.uid('plan'), date, type: $('planType').value, amount: value, category: $('planCategory').value, note: $('planNote').value.trim(), source: 'manual', enabled: true };
+    const category = freeCategory('planCategory', $('planType').value);
+    if (!category) return showToast('请填写计划分类', true);
+    const existing = data.plannedEvents.find(x => x.id === editingPlanId);
+    const plan = { id: editingPlanId || M.uid('plan'), date, type: $('planType').value, amount: value, category, note: $('planNote').value.trim(), source: existing?.source || 'manual', enabled: $('planEnabled').checked };
     const index = data.plannedEvents.findIndex(x => x.id === editingPlanId); if (index >= 0) data.plannedEvents[index] = plan; else data.plannedEvents.push(plan);
     $('planDialog').close(); mutate('计划已保存');
   }
   function deletePlan(id) { if (!confirm('确定删除这项计划吗？')) return; data.plannedEvents = data.plannedEvents.filter(x => x.id !== id); mutate('计划已删除'); }
+
+  function renderExpected() {
+    const items = data.expectedEvents.slice().sort((a, b) => a.expectedMonth.localeCompare(b.expectedMonth));
+    $('expectedCount').textContent = `${items.length} 项预期`;
+    $('emptyExpected').hidden = items.length > 0;
+    $('expectedBody').innerHTML = items.map(item => `<tr>
+      <td>${item.expectedMonth}</td>
+      <td>${item.type === 'income' ? '收入' : '支出'}</td>
+      <td class="${item.type === 'income' ? 'positive' : 'negative'}">${item.type === 'income' ? '+' : '-'}${money(item.amount, 2)}</td>
+      <td>${escapeHtml(M.categoryName(item.category))}</td>
+      <td>${escapeHtml(item.note || '—')}</td>
+      <td><span class="badge ${item.enabled ? 'plan-badge' : 'budget-badge'}">${item.enabled ? '启用' : '停用'}</span></td>
+      <td><button class="table-action" type="button" data-edit-expected="${item.id}">编辑</button><button class="table-action danger" type="button" data-delete-expected="${item.id}">删除</button></td>
+    </tr>`).join('');
+    document.querySelectorAll('[data-edit-expected]').forEach(button => button.addEventListener('click', () => openExpected(data.expectedEvents.find(x => x.id === button.dataset.editExpected))));
+    document.querySelectorAll('[data-delete-expected]').forEach(button => button.addEventListener('click', () => deleteExpected(button.dataset.deleteExpected)));
+  }
+
+  function openExpected(item = null) {
+    editingExpectedId = item?.id || null;
+    $('expectedTitle').textContent = item ? '编辑未定日期预期' : '新增未定日期预期';
+    $('expectedMonth').min = M.monthKey(data.settings.periodStart);
+    $('expectedMonth').max = M.monthKey(data.settings.periodEnd);
+    $('expectedMonth').value = item?.expectedMonth || M.monthKey(data.settings.periodStart);
+    $('expectedType').value = item?.type || 'income';
+    setFreeCategoryField('expectedCategory', 'expectedCategoryList', $('expectedType').value, item?.category);
+    $('expectedAmount').value = item?.amount || '';
+    $('expectedNote').value = item?.note || '';
+    $('expectedEnabled').checked = item?.enabled !== false;
+    $('expectedDialog').showModal();
+  }
+
+  function saveExpected(event) {
+    event.preventDefault();
+    const expectedMonth = $('expectedMonth').value;
+    const value = amount($('expectedAmount'), -1);
+    const type = $('expectedType').value;
+    const category = freeCategory('expectedCategory', type);
+    if (!/^\d{4}-\d{2}$/.test(expectedMonth) || expectedMonth < M.monthKey(data.settings.periodStart) || expectedMonth > M.monthKey(data.settings.periodEnd)) {
+      return showToast('请选择规划周期内的预计月份', true);
+    }
+    if (!(value > 0) || !category) return showToast('请填写有效金额和分类', true);
+    const item = {
+      id: editingExpectedId || M.uid('expected'),
+      expectedMonth,
+      type,
+      amount: value,
+      category,
+      note: $('expectedNote').value.trim(),
+      enabled: $('expectedEnabled').checked
+    };
+    const index = data.expectedEvents.findIndex(x => x.id === editingExpectedId);
+    if (index >= 0) data.expectedEvents[index] = item; else data.expectedEvents.push(item);
+    $('expectedDialog').close();
+    mutate('未定日期预期已保存到云端');
+  }
+
+  function deleteExpected(id) {
+    if (!confirm('确定删除这项未定日期预期吗？')) return;
+    data.expectedEvents = data.expectedEvents.filter(x => x.id !== id);
+    mutate('未定日期预期已删除');
+  }
 
   function openDay(key) {
     selectedDay = key; const day = model.forecast.daily.find(x => x.key === key);
@@ -442,11 +576,14 @@
   }
 
   $('addTransaction').addEventListener('click', () => openTransaction()); $('addPlan').addEventListener('click', () => openPlan());
-  $('transactionForm').addEventListener('submit', saveTransaction); $('planForm').addEventListener('submit', savePlan);
+  $('addRecurring').addEventListener('click', addRecurring); $('addExpected').addEventListener('click', () => openExpected());
+  $('transactionForm').addEventListener('submit', saveTransaction); $('planForm').addEventListener('submit', savePlan); $('expectedForm').addEventListener('submit', saveExpected);
   $('txType').addEventListener('change', () => { setTransactionCategory($('txType').value); updateTransactionPaymentFields(); });
-  $('planType').addEventListener('change', () => $('planCategory').innerHTML = categoryOptions($('planType').value));
+  $('planType').addEventListener('change', () => setFreeCategoryField('planCategory', 'planCategoryList', $('planType').value));
+  $('expectedType').addEventListener('change', () => setFreeCategoryField('expectedCategory', 'expectedCategoryList', $('expectedType').value));
   document.querySelectorAll('.close-dialog').forEach(x => x.addEventListener('click', () => $('transactionDialog').close()));
   document.querySelectorAll('.close-plan').forEach(x => x.addEventListener('click', () => $('planDialog').close()));
+  document.querySelectorAll('.close-expected').forEach(x => x.addEventListener('click', () => $('expectedDialog').close()));
   $('closeDay').addEventListener('click', () => $('dayDialog').close());
   $('transactionForDay').addEventListener('click', () => { $('dayDialog').close(); openTransaction(null, selectedDay); });
   $('planForDay').addEventListener('click', () => { $('dayDialog').close(); openPlan(null, selectedDay); });
