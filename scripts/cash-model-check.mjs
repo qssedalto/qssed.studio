@@ -4,6 +4,16 @@ const require = createRequire(import.meta.url);
 const M = require("../cash-web/model.js");
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 
+const blank = M.createDefaultData();
+assert(blank.settings.openingCash === 0, "New Cash accounts must start with zero opening balance.");
+assert(blank.settings.emergencyCredit === 0, "New Cash accounts must start with zero emergency credit.");
+assert(blank.transactions.length === 0, "New Cash accounts must not contain transactions.");
+assert(blank.plannedEvents.length === 0, "New Cash accounts must not contain personal planned events.");
+assert(blank.expectedEvents.length === 0, "New Cash accounts must not contain expected events.");
+assert(blank.recurringExpenses.length === 0, "New Cash accounts must not contain personal recurring expenses.");
+assert(Object.values(blank.budgetRules.foodByDayType).every(value => value === 0), "New Cash accounts must start with zero food budgets.");
+assert(Object.values(blank.budgetRules.socialTransport).every(value => value === 0), "New Cash accounts must start with zero social transport budgets.");
+
 const data = M.createDefaultData();
 data.settings.periodStart = "2027-02-01";
 data.settings.periodEnd = "2027-02-28";
