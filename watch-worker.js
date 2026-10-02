@@ -6,7 +6,7 @@ import { awOriginForRequest } from "./studio/domain-family.js";
 import { localeFromPath, preferredLocaleFromRequest } from "./studio/locale.js";
 import { appearanceClientRuntime } from "./studio/appearance.js";
 
-const ASSET_PATHS = new Set(["/styles.css", "/app.js", "/icon.svg"]);
+const ASSET_PATHS = new Set(["/styles.css", "/app.js", "/icon.svg", "/aw-sync.mjs"]);
 const MAX_SYNC_BYTES = 8 * 1024 * 1024;
 const MAX_SYNC_EVENTS = 5000;
 const MAX_QUERY_DAYS = 400;

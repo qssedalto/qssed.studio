@@ -58,8 +58,10 @@ assert(authHandoff.includes('watchTarget ? "AERTEX Watch"'), "Watch auth handoff
 assert(domains.includes("awdOriginForRequest") && domains.includes("awDataOriginForRequest"), "Domain family must define both Watch data names.");
 assert(domains.includes('root === "qsseda.studio" ? "qsseda.com" : root'), "The legacy qsseda.studio Watch UI must canonicalize to the cloud .com UI.");
 assert(setupPage.includes('country === "CN"'), "Watch setup must use request country only for Mainland China download routing.");
-assert(setupPage.includes("https://www.icloud.com.cn/iclouddrive/0f1o93e_H_OyQJtlbDfArEeUQ"), "Mainland China Watch setup must use the iCloud China download link.");
-assert(setupPage.includes("raw.githubusercontent.com/qssedalto/qssed.studio/main/AW-Sync/native/aw-sync.mjs"), "Non-Mainland Watch setup must retain the GitHub Raw download source.");
+assert(setupPage.includes("https://www.icloud.com.cn/iclouddrive/0f1o93e_H_OyQJtlbDfArEeUQ"), "Mainland China ActivityWatch download must use the iCloud China link.");
+assert(setupPage.includes('mainlandChina ? activityWatchChinaUrl : activityWatchOfficialUrl'), "ActivityWatch download must switch between iCloud China and the official site by request country.");
+assert(setupPage.includes("https://aw.qsseda.com/aw-sync.mjs"), "Watch setup must download AERTEX Watch Sync from the first-party Watch domain.");
+assert(worker.includes('"/aw-sync.mjs"'), "Watch Worker must serve the first-party sync script asset.");
 assert(setupPage.includes('"cache-control": "private, no-store"'), "Region-specific Watch setup responses must not be shared-cacheable.");
 
 console.log("AERTEX Watch cloud checks passed.");

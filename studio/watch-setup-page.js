@@ -18,8 +18,9 @@ export function watchSetupPage(request) {
   const watchHome = watchOrigin + "/" + locale;
   const country = String(request.cf?.country || request.headers.get("CF-IPCountry") || "").toUpperCase();
   const mainlandChina = country === "CN";
-  const syncScriptGithubUrl = "https://raw.githubusercontent.com/qssedalto/qssed.studio/main/AW-Sync/native/aw-sync.mjs";
-  const syncScriptChinaUrl = "https://www.icloud.com.cn/iclouddrive/0f1o93e_H_OyQJtlbDfArEeUQ";
+  const activityWatchOfficialUrl = "https://activitywatch.net/downloads/";
+  const activityWatchChinaUrl = "https://www.icloud.com.cn/iclouddrive/0f1o93e_H_OyQJtlbDfArEeUQ";
+  const syncScriptUrl = "https://aw.qsseda.com/aw-sync.mjs";
 
   const copy = zh ? {
     title: "把电脑的使用记录同步到手机",
@@ -31,6 +32,7 @@ export function watchSetupPage(request) {
     step1Title: "安装并启动 ActivityWatch",
     step1Body: "如果电脑还没有 ActivityWatch，先下载安装并启动。安装完成后，确认任务栏通知区域里 ActivityWatch 正在运行。",
     downloadAw: "打开 ActivityWatch 下载页 ↗",
+    downloadAwChina: "从 iCloud 下载 ActivityWatch",
     step2Eyebrow: "第 2 步 · 电脑",
     step2Title: "确认本机已经有使用记录",
     step2Body: "在电脑浏览器打开下面的本机地址。能看到 ActivityWatch 页面，并且 Activity 页面里已经有应用和窗口记录，再继续下一步。",
@@ -79,6 +81,7 @@ export function watchSetupPage(request) {
     step1Title: "Install and start ActivityWatch",
     step1Body: "Download ActivityWatch if it is not installed yet, then start it and confirm that it is running in the notification area.",
     downloadAw: "Open ActivityWatch downloads ↗",
+    downloadAwChina: "Download ActivityWatch from iCloud",
     step2Eyebrow: "Step 2 · Computer",
     step2Title: "Confirm local activity is being recorded",
     step2Body: "Open the local address below in your computer browser. Continue when ActivityWatch shows app and window activity.",
@@ -119,9 +122,9 @@ export function watchSetupPage(request) {
     a5: "Yes. Create a separate device token for each computer and run the sync tool on each one."
   };
 
-  const syncDownloadMarkup = mainlandChina
-    ? `<p>${escapeHtml(copy.scriptDownloadChina)}</p><a class="action primary" href="${syncScriptChinaUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.scriptDownloadChinaAction)}</a><div class="tip"><p>${escapeHtml(copy.scriptDownloadChinaHint)}</p></div>`
-    : `<p>${escapeHtml(copy.scriptDownload)}</p><div class="code"><code>Invoke-WebRequest "${syncScriptGithubUrl}" -OutFile "$env:USERPROFILE\\Downloads\\AERTEX-Watch-Sync.mjs"</code></div>`;
+  const activityWatchDownloadUrl = mainlandChina ? activityWatchChinaUrl : activityWatchOfficialUrl;
+  const activityWatchDownloadLabel = mainlandChina ? copy.downloadAwChina : copy.downloadAw;
+  const syncDownloadMarkup = `<p>${escapeHtml(copy.scriptDownload)}</p><div class="code"><code>Invoke-WebRequest "${syncScriptUrl}" -OutFile "$env:USERPROFILE\\Downloads\\AERTEX-Watch-Sync.mjs"</code></div>`;
 
   const page = `<!doctype html>
 <html lang="${locale}" dir="${localeDirection(locale)}">
@@ -151,7 +154,7 @@ main{max-width:960px;margin:0 auto;padding:52px 22px 90px}.eyebrow{margin:0 0 9p
 <div class="note"><strong>${escapeHtml(copy.noteTitle)}</strong><p>${escapeHtml(copy.noteBody)}</p></div>
 </section>
 <section class="steps">
-${step(1,copy.step1Eyebrow,copy.step1Title,copy.step1Body,`<a class="action" href="https://activitywatch.net/downloads/" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.downloadAw)}</a>`)}
+${step(1,copy.step1Eyebrow,copy.step1Title,copy.step1Body,`<a class="action" href="${activityWatchDownloadUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(activityWatchDownloadLabel)}</a>`)}
 ${step(2,copy.step2Eyebrow,copy.step2Title,copy.step2Body,`<div class="code"><code>http://127.0.0.1:5600</code></div><div class="tip"><p>${escapeHtml(copy.step2Tip)}</p></div>`)}
 ${step(3,copy.step3Eyebrow,copy.step3Title,copy.step3Body,`<a class="action" href="${watchHome}">${escapeHtml(copy.tokenButton)}</a><div class="tip"><p>${escapeHtml(copy.tokenTip)}</p></div>`)}
 ${step(4,copy.step4Eyebrow,copy.step4Title,copy.step4Body,`<p>${escapeHtml(copy.nodeCheck)}</p><div class="code"><code>node --version</code></div><a class="action" href="https://nodejs.org/en/download" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.nodeDownload)}</a>${syncDownloadMarkup}<p>${escapeHtml(copy.tokenRun)}</p><div class="code"><code>$env:AERTEX_WATCH_TOKEN = "&lt;YOUR_DEVICE_TOKEN&gt;"\nnode "$env:USERPROFILE\\Downloads\\AERTEX-Watch-Sync.mjs" --watch</code></div><p>${escapeHtml(copy.syncNote)}</p><div class="tip"><strong>${escapeHtml(copy.previewTitle)}</strong><p>${escapeHtml(copy.previewBody)}</p></div>`)}
