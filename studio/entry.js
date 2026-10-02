@@ -316,7 +316,7 @@ export default {
       if (pathname === "/info/notes") markup = replaceOsContent(markup, researchNotesContent(zh));
       if (pathname === "/info/search") markup = replaceOsContent(markup, globalSearchContent(zh, fullLocale));
       if (pathname === "/workspace/workbench") markup = replaceOsContent(markup, workbenchContent(zh));
-      if (pathname === "/workspace/projects") markup = replaceOsContent(markup, projectsWorkspaceContent(zh));
+      if (pathname === "/workspace/projects") markup = replaceOsContent(markup, projectsWorkspaceContent(zh, fullLocale));
       if (pathname === "/workspace/tasks") markup = replaceOsContent(markup, tasksWorkspaceContent(zh));
       if (pathname === "/workspace/drafts") markup = replaceOsContent(markup, draftsWorkspaceContent(zh));
       if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh));
