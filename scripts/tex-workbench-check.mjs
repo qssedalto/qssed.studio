@@ -41,6 +41,7 @@ for (const zh of [true, false]) {
     ".tex-runs-panel .tex-runs-head"
   ]) assert(workPageMarkup.includes(selector), "Work TeX home navigation is missing panel target: " + selector);
   assert(workPageMarkup.includes("https://qsseda.com/") && workPageMarkup.includes("AERTEX"), "Every Work TeX pane must receive an AERTEX Home destination");
+  assert(workPageMarkup.includes(".tex-shell.is-left-collapsed .tex-documents-panel .tex-panel-home-link{display:none!important}"), "Collapsed Work document rail must hide the home link instead of squeezing it beside the expand control.");
   assert(workMarkup.includes("tex-work-app"), "Work TeX route must render the dedicated app surface");
   assert(workMarkup.includes("tex-live-preview-switch"), "Live preview must use the custom switch instead of a native checkbox UI");
   assert(!workMarkup.includes('class="tex-live-switch"'), "Live preview switch class must match its CSS selector");
