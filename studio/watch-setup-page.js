@@ -16,6 +16,10 @@ export function watchSetupPage(request) {
   const watchOrigin = awOriginForRequest(request);
   const mainOrigin = mainOriginForRequest(request);
   const watchHome = watchOrigin + "/" + locale;
+  const country = String(request.cf?.country || request.headers.get("CF-IPCountry") || "").toUpperCase();
+  const mainlandChina = country === "CN";
+  const syncScriptGithubUrl = "https://raw.githubusercontent.com/qssedalto/qssed.studio/main/AW-Sync/native/aw-sync.mjs";
+  const syncScriptChinaUrl = "https://www.icloud.com.cn/iclouddrive/0f1o93e_H_OyQJtlbDfArEeUQ";
 
   const copy = zh ? {
     title: "把电脑的使用记录同步到手机",
@@ -42,6 +46,9 @@ export function watchSetupPage(request) {
     nodeCheck: "先检查 Node.js：",
     nodeDownload: "没有 Node.js？打开 Node.js 下载页 ↗",
     scriptDownload: "下载同步脚本：",
+    scriptDownloadChina: "中国大陆下载：",
+    scriptDownloadChinaAction: "从 iCloud 下载 AERTEX Watch Sync",
+    scriptDownloadChinaHint: "下载后将同步脚本保存为 AERTEX-Watch-Sync.mjs，建议放在“下载”文件夹。",
     tokenRun: "把刚才生成的设备令牌放进环境变量，然后启动同步：",
     syncNote: "第一次默认同步最近 30 天的数据。之后每 10 分钟检查一次新增记录，只上传新增部分。",
     previewTitle: "当前预览版需要保持 PowerShell 窗口运行",
@@ -87,6 +94,9 @@ export function watchSetupPage(request) {
     nodeCheck: "Check Node.js first:",
     nodeDownload: "Need Node.js? Open the download page ↗",
     scriptDownload: "Download the sync script:",
+    scriptDownloadChina: "Mainland China download:",
+    scriptDownloadChinaAction: "Download AERTEX Watch Sync from iCloud",
+    scriptDownloadChinaHint: "After downloading, save the script as AERTEX-Watch-Sync.mjs, preferably in your Downloads folder.",
     tokenRun: "Set the device token and start syncing:",
     syncNote: "The first run syncs the most recent 30 days by default. After that, it checks for new records every 10 minutes.",
     previewTitle: "Keep the PowerShell window open in the current preview",
@@ -108,6 +118,10 @@ export function watchSetupPage(request) {
     q5: "Can I connect more than one of my computers?",
     a5: "Yes. Create a separate device token for each computer and run the sync tool on each one."
   };
+
+  const syncDownloadMarkup = mainlandChina
+    ? `<p>${escapeHtml(copy.scriptDownloadChina)}</p><a class="action primary" href="${syncScriptChinaUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.scriptDownloadChinaAction)}</a><div class="tip"><p>${escapeHtml(copy.scriptDownloadChinaHint)}</p></div>`
+    : `<p>${escapeHtml(copy.scriptDownload)}</p><div class="code"><code>Invoke-WebRequest "${syncScriptGithubUrl}" -OutFile "$env:USERPROFILE\\Downloads\\AERTEX-Watch-Sync.mjs"</code></div>`;
 
   const page = `<!doctype html>
 <html lang="${locale}" dir="${localeDirection(locale)}">
@@ -140,7 +154,7 @@ main{max-width:960px;margin:0 auto;padding:52px 22px 90px}.eyebrow{margin:0 0 9p
 ${step(1,copy.step1Eyebrow,copy.step1Title,copy.step1Body,`<a class="action" href="https://activitywatch.net/downloads/" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.downloadAw)}</a>`)}
 ${step(2,copy.step2Eyebrow,copy.step2Title,copy.step2Body,`<div class="code"><code>http://127.0.0.1:5600</code></div><div class="tip"><p>${escapeHtml(copy.step2Tip)}</p></div>`)}
 ${step(3,copy.step3Eyebrow,copy.step3Title,copy.step3Body,`<a class="action" href="${watchHome}">${escapeHtml(copy.tokenButton)}</a><div class="tip"><p>${escapeHtml(copy.tokenTip)}</p></div>`)}
-${step(4,copy.step4Eyebrow,copy.step4Title,copy.step4Body,`<p>${escapeHtml(copy.nodeCheck)}</p><div class="code"><code>node --version</code></div><a class="action" href="https://nodejs.org/en/download" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.nodeDownload)}</a><p>${escapeHtml(copy.scriptDownload)}</p><div class="code"><code>Invoke-WebRequest "https://raw.githubusercontent.com/qssedalto/qssed.studio/main/AW-Sync/native/aw-sync.mjs" -OutFile "$env:USERPROFILE\\Downloads\\AERTEX-Watch-Sync.mjs"</code></div><p>${escapeHtml(copy.tokenRun)}</p><div class="code"><code>$env:AERTEX_WATCH_TOKEN = "&lt;YOUR_DEVICE_TOKEN&gt;"\nnode "$env:USERPROFILE\\Downloads\\AERTEX-Watch-Sync.mjs" --watch</code></div><p>${escapeHtml(copy.syncNote)}</p><div class="tip"><strong>${escapeHtml(copy.previewTitle)}</strong><p>${escapeHtml(copy.previewBody)}</p></div>`)}
+${step(4,copy.step4Eyebrow,copy.step4Title,copy.step4Body,`<p>${escapeHtml(copy.nodeCheck)}</p><div class="code"><code>node --version</code></div><a class="action" href="https://nodejs.org/en/download" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.nodeDownload)}</a>${syncDownloadMarkup}<p>${escapeHtml(copy.tokenRun)}</p><div class="code"><code>$env:AERTEX_WATCH_TOKEN = "&lt;YOUR_DEVICE_TOKEN&gt;"\nnode "$env:USERPROFILE\\Downloads\\AERTEX-Watch-Sync.mjs" --watch</code></div><p>${escapeHtml(copy.syncNote)}</p><div class="tip"><strong>${escapeHtml(copy.previewTitle)}</strong><p>${escapeHtml(copy.previewBody)}</p></div>`)}
 ${step(5,copy.step5Eyebrow,copy.step5Title,copy.step5Body,`<a class="action primary" href="${watchHome}">${escapeHtml(copy.openWatch)}</a>`)}
 </section>
 <section class="faq"><p class="eyebrow">${escapeHtml(copy.faq)}</p><h2>${escapeHtml(copy.faqTitle)}</h2>
@@ -154,7 +168,7 @@ ${faq(copy.q1,copy.a1)}${faq(copy.q2,copy.a2)}${faq(copy.q3,copy.a3)}${faq(copy.
     status: 200,
     headers: {
       "content-type": "text/html;charset=UTF-8",
-      "cache-control": "public, max-age=300",
+      "cache-control": "private, no-store",
       "content-language": locale,
       "referrer-policy": "same-origin",
       "x-content-type-options": "nosniff",
