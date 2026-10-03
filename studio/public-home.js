@@ -17,6 +17,10 @@ const COPY = {
     intelligenceText: "你的 AI 对话与工具。",
     watch: "Watch",
     watchText: "查看已同步的 ActivityWatch 使用记录。",
+    cash: "Cash",
+    cashText: "个人现金流、预算与预测。",
+    questions: "问题与解答",
+    questionsText: "查看 AERTEX 的官方事实、产品边界与常见问题。",
     account: "Account",
     accountText: "一个账号连接所有 AERTEX 服务."
   },
@@ -35,6 +39,10 @@ const COPY = {
     intelligenceText: "你的 AI 對話與工具。",
     watch: "Watch",
     watchText: "查看已同步的 ActivityWatch 使用記錄。",
+    cash: "Cash",
+    cashText: "個人現金流、預算與預測。",
+    questions: "問題與解答",
+    questionsText: "查看 AERTEX 的官方事實、產品邊界與常見問題。",
     account: "Account",
     accountText: "一個帳號連接所有 AERTEX 服務。"
   },
@@ -53,6 +61,10 @@ const COPY = {
     intelligenceText: "Your AI conversations and tools.",
     watch: "Watch",
     watchText: "View synced ActivityWatch records from your computer.",
+    cash: "Cash",
+    cashText: "Personal cash flow, budgets, and forecasts.",
+    questions: "Questions",
+    questionsText: "Official AERTEX facts, product boundaries, and common questions.",
     account: "Account",
     accountText: "One account across AERTEX services."
   }
@@ -95,13 +107,13 @@ body{background-image:radial-gradient(circle at 8% -8%,rgba(10,132,255,.13),tran
 a{color:inherit}.topbar{height:62px;display:flex;align-items:center;gap:12px;max-width:1120px;margin:0 auto;padding:0 22px}.brand{font-weight:800;letter-spacing:-.025em;text-decoration:none}.spacer{flex:1}.toplink{font-size:14px;text-decoration:none;color:var(--muted)}.toplink:hover{color:var(--text)}
 main{max-width:1120px;margin:0 auto;padding:64px 22px 88px}.eyebrow{margin:0 0 12px;color:var(--accent);font-size:12px;font-weight:780;letter-spacing:.12em;text-transform:uppercase}.hero h1{max-width:880px;margin:0;font-size:clamp(44px,8vw,78px);line-height:.96;letter-spacing:-.06em}.lead{max-width:760px;margin:22px 0 0;color:var(--muted);font-size:19px;line-height:1.62}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}.button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 17px;border-radius:13px;text-decoration:none;font-weight:700;border:1px solid var(--line);background:var(--panel)}.button.primary{background:var(--text);color:var(--bg);border-color:transparent}
-.products{margin-top:72px}.products h2{margin:0 0 16px;font-size:14px;color:var(--muted);font-weight:680}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--panel);box-shadow:var(--shadow)}.card strong{display:block;font-size:18px;letter-spacing:-.025em}.card p{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.55}
+.products{margin-top:72px}.products h2{margin:0 0 16px;font-size:14px;color:var(--muted);font-weight:680}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.card{padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--panel);box-shadow:var(--shadow)}.card strong{display:block;font-size:18px;letter-spacing:-.025em}.card p{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.55}
 footer{max-width:1120px;margin:0 auto;padding:0 22px 28px;color:var(--muted);font-size:12px}
 @media(max-width:760px){.topbar{padding:0 16px}main{padding:44px 16px 64px}.hero h1{font-size:48px}.lead{font-size:17px}.grid{grid-template-columns:1fr}.products{margin-top:52px}}
 </style>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="${prefix}">AERTEX</a><div class="spacer"></div><a class="toplink" href="${prefix}/login">${escapeHtml(text.signIn)}</a></header>
+<header class="topbar"><a class="brand" href="${prefix}">AERTEX</a><div class="spacer"></div><a class="toplink" href="${prefix}/q">${escapeHtml(text.questions)}</a><a class="toplink" href="${prefix}/login">${escapeHtml(text.signIn)}</a></header>
 <main>
 <section class="hero">
 <p class="eyebrow">${escapeHtml(text.eyebrow)}</p>
@@ -115,6 +127,8 @@ footer{max-width:1120px;margin:0 auto;padding:0 22px 28px;color:var(--muted);fon
 <div class="card"><strong>${escapeHtml(text.work)}</strong><p>${escapeHtml(text.workText)}</p></div>
 <div class="card"><strong>${escapeHtml(text.intelligence)}</strong><p>${escapeHtml(text.intelligenceText)}</p></div>
 <div class="card"><strong>${escapeHtml(text.watch)}</strong><p>${escapeHtml(text.watchText)}</p></div>
+<div class="card"><strong>${escapeHtml(text.cash)}</strong><p>${escapeHtml(text.cashText)}</p></div>
+<a class="card" href="${prefix}/q" style="text-decoration:none"><strong>${escapeHtml(text.questions)}</strong><p>${escapeHtml(text.questionsText)}</p></a>
 <div class="card"><strong>${escapeHtml(text.account)}</strong><p>${escapeHtml(text.accountText)}</p></div>
 </div>
 </section>
