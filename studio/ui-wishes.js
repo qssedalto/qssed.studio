@@ -37,7 +37,7 @@ const WISHES_CATALOG = {
         ["七夕节","夕","planned"],["情人节","爱","planned"],["愚人节","趣","planned"]
       ]},
       {id:"society",title:"社会与自然",description:"公共纪念、劳动与自然主题。",items:[
-        ["植树节","树","planned"],["地球日","球","planned"],["劳动节","劳","planned"]
+        ["植树节","树","planned"],["地球日","球","planned"],["劳动节","劳","planned"],["国庆节","国","planned"]
       ]}
     ]
   },
@@ -62,7 +62,7 @@ const WISHES_CATALOG = {
         ["七夕節","夕","planned"],["情人節","愛","planned"],["愚人節","趣","planned"]
       ]},
       {id:"society",title:"社會與自然",description:"公共紀念、勞動與自然主題。",items:[
-        ["植樹節","樹","planned"],["地球日","球","planned"],["勞動節","勞","planned"]
+        ["植樹節","樹","planned"],["地球日","球","planned"],["勞動節","勞","planned"],["國慶節","國","planned"]
       ]}
     ]
   },
@@ -87,7 +87,7 @@ const WISHES_CATALOG = {
         ["Qixi Festival","七","planned"],["Valentine's Day","V","planned"],["April Fools' Day","!","planned"]
       ]},
       {id:"society",title:"Society & Nature",description:"Public observances, work, and nature.",items:[
-        ["Arbor Day","树","planned"],["Earth Day","地","planned"],["Labour Day","劳","planned"]
+        ["Arbor Day","树","planned"],["Earth Day","地","planned"],["Labour Day","劳","planned"],["National Day","N","planned"]
       ]}
     ]
   }

@@ -769,6 +769,7 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
                 <a href="${item[1]}"${item[1].endsWith(currentPath) ? ` aria-current="page"` : ""}>
                   ${dashboardIcon(iconForItem(item[1]))}
                   <span>${item[0]}</span>
+                  <b class="os-nav-item-chevron" aria-hidden="true">›</b>
                 </a>
               `).join("")}
             </div>` : ""}

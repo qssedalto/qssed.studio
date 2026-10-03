@@ -54,8 +54,12 @@ export function dashboardStyles() {
     .os-nav-product-link[data-product-link="admin-console"] .dashboard-icon{background:#8e8e93}
     .os-nav-title>b{color:var(--quiet);font-size:20px;font-weight:450}
     .os-nav-items{gap:0;padding:0 10px 8px 54px}
-    .os-nav-items a{min-height:34px;display:flex;align-items:center;padding:5px 8px;border-radius:9px;font-size:12px;color:var(--muted)}
+    .os-nav-items a{min-height:34px;display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:9px;font-size:12px;color:var(--muted)}
+    .os-nav-items a>span{min-width:0;flex:1 1 auto}
+    .os-nav-items a>.os-nav-item-chevron{display:grid;place-items:center;flex:0 0 15px;width:15px;height:15px;margin-left:auto;color:var(--quiet);font-size:15px;font-weight:500;line-height:1;opacity:.62;transition:transform .14s ease,color .14s ease,opacity .14s ease}
     .os-nav-items a[aria-current="page"]{color:var(--text);background:var(--fill);font-weight:650}
+    .os-nav-items a[aria-current="page"]>.os-nav-item-chevron{color:var(--primary);opacity:.9}
+    @media(hover:hover) and (pointer:fine){.os-nav-items a:hover>.os-nav-item-chevron{transform:translateX(1px);color:var(--primary);opacity:.92}}
 
     /* DASHBOARD_ACTION_ICONS_V6 */
     .dashboard-primary-action>.dashboard-icon,.dashboard-secondary-action>.dashboard-icon,.dashboard-session-settings>.dashboard-icon,.dashboard-activity-action>.dashboard-icon{
@@ -251,19 +255,6 @@ export function dashboardStyles() {
       white-space:nowrap!important;
       line-height:1.25!important;
     }
-    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a::after{
-      content:"›";
-      display:grid;
-      place-items:center;
-      flex:0 0 15px;
-      width:15px;height:15px;
-      margin-left:auto;
-      color:var(--quiet);
-      font-size:15px;
-      line-height:1;
-      opacity:.58;
-      transition:transform .14s ease,color .14s ease,opacity .14s ease;
-    }
     .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[href*="/workspace/workbench"] .dashboard-icon{
       background:color-mix(in srgb,#0a84ff 13%,var(--fill))!important;color:#0a84ff!important
     }
@@ -297,7 +288,7 @@ export function dashboardStyles() {
       background:var(--primary);
       box-shadow:0 0 10px color-mix(in srgb,var(--primary) 30%,transparent);
     }
-    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[aria-current="page"]::after{
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[aria-current="page"]>.os-nav-item-chevron{
       color:var(--primary);
       opacity:.9;
     }
@@ -306,7 +297,7 @@ export function dashboardStyles() {
         color:var(--text)!important;
         background:color-mix(in srgb,var(--primary) 5%,var(--fill))!important;
       }
-      .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a:hover::after{
+      .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a:hover>.os-nav-item-chevron{
         transform:translateX(1px);
         color:var(--primary);
         opacity:.9;
