@@ -395,7 +395,7 @@ export function buildOsCopy(zh, activeLocale = "") {
       aiHref: `${prefix}/workspace/experiments`,
       nav: [
         { id: "dashboard", label: "首页", href: `${prefix}`, items: [] },
-        { id: "wishes", label: "祝福中心", href: `${prefix}/wishes`, items: [] },
+        { id: "wishes", label: "祝福中心", href: `${prefix}/wishes`, items: wishNavItems(prefix, "zh-cn") },
         { id: "info", label: "信息中心", href: `${prefix}/info`, items: [
           ["AERTEX Knowledge", `${prefix}/info/knowledge`],
           ["收藏链接", `${prefix}/info/links`],
@@ -440,7 +440,7 @@ export function buildOsCopy(zh, activeLocale = "") {
     aiHref: `${prefix}/workspace/experiments`,
     nav: [
       { id: "dashboard", label: "Home", href: `${prefix}`, items: [] },
-      { id: "wishes", label: "Wish Center", href: `${prefix}/wishes`, items: [] },
+      { id: "wishes", label: "Wish Center", href: `${prefix}/wishes`, items: wishNavItems(prefix, "en-us") },
       { id: "info", label: "Information", href: `${prefix}/info`, items: [
         ["AERTEX Knowledge", `${prefix}/info/knowledge`],
         ["Links", `${prefix}/info/links`],
@@ -477,6 +477,31 @@ export function buildOsCopy(zh, activeLocale = "") {
   };
 }
 
+function wishNavItems(prefix, locale = "en-us") {
+  const code = String(locale || "en-us").toLowerCase();
+  if (code === "zh-cn") return [
+    ["新年与团圆", prefix + "/wishes#new-year"],
+    ["传统与节气", prefix + "/wishes#traditions"],
+    ["家庭与成长", prefix + "/wishes#family"],
+    ["关系与表达", prefix + "/wishes#relationships"],
+    ["社会与自然", prefix + "/wishes#society"]
+  ];
+  if (code === "zh-tw") return [
+    ["新年與團圓", prefix + "/wishes#new-year"],
+    ["傳統與節氣", prefix + "/wishes#traditions"],
+    ["家庭與成長", prefix + "/wishes#family"],
+    ["關係與表達", prefix + "/wishes#relationships"],
+    ["社會與自然", prefix + "/wishes#society"]
+  ];
+  return [
+    ["New Year & Reunion", prefix + "/wishes#new-year"],
+    ["Traditions & Seasons", prefix + "/wishes#traditions"],
+    ["Family & Growth", prefix + "/wishes#family"],
+    ["Relationships", prefix + "/wishes#relationships"],
+    ["Society & Nature", prefix + "/wishes#society"]
+  ];
+}
+
 function buildLocalizedOsCopy(ui, prefix, locale) {
   const n = ui.nav;
   return {
@@ -488,7 +513,7 @@ function buildLocalizedOsCopy(ui, prefix, locale) {
     locale,
     nav: [
       { id:"dashboard", label:n.home, href:prefix, items:[] },
-      { id:"wishes", label:n.wishes, href:prefix + "/wishes", items:[] },
+      { id:"wishes", label:n.wishes, href:prefix + "/wishes", items:wishNavItems(prefix, locale) },
       { id:"info", label:n.info, href:prefix + "/info", items:[[n.knowledge,prefix+"/info/knowledge"],[n.links,prefix+"/info/links"],[n.notes,prefix+"/info/notes"],[n.summaries,prefix+"/info/summaries"],[n.search,prefix+"/info/search"]] },
       { id:"profile", label:n.profile, href:prefix + "/profile", items:[[n.personal,prefix+"/profile/details"],[n.account,prefix+"/profile/account"],[n.preferences,prefix+"/profile/preferences"]] },
       { id:"workspace", label:n.workspace, href:prefix + "/workspace", items:[[n.workbench,prefix+"/workspace/workbench"],[n.projects,prefix+"/workspace/projects"],[n.experiments,prefix+"/workspace/experiments"],[n.drafts,prefix+"/workspace/drafts"],[n.tasks,prefix+"/workspace/tasks"]] },
@@ -681,6 +706,11 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
   };
   const iconForItem = href => {
     const value = String(href || "");
+    if (value.includes("/wishes#new-year")) return "gift";
+    if (value.includes("/wishes#traditions")) return "moon";
+    if (value.includes("/wishes#family")) return "profile";
+    if (value.includes("/wishes#relationships")) return "wishes";
+    if (value.includes("/wishes#society")) return "info";
     if (value.includes("/knowledge")) return "knowledge";
     if (value.includes("/links")) return "links";
     if (value.includes("/notes")) return "notes";

@@ -37,6 +37,17 @@ const wishEn = wishesContent("en-us");
 assert(wishZh.includes('data-wishes-center') && wishZh.includes("生日快乐") && wishZh.includes("/zh-cn/wish/birthday"), "Chinese Wish Center must render localized shell content.");
 assert(wishEn.includes('data-wishes-center') && wishEn.includes("Happy Birthday") && wishEn.includes("/en-us/wish/birthday"), "English Wish Center must render localized shell content.");
 assert(wishZh.includes("history.replaceState") && wishZh.includes("navigator.clipboard.writeText"), "Wish Center must preserve route preview and copy-link behavior.");
+assert(shell.includes("function wishNavItems") && shell.includes('"/wishes#new-year"') && shell.includes('"/wishes#society"'), "Wish Center must expose categorized sidebar subnavigation.");
+for (const category of ["新年与团圆","传统与节气","家庭与成长","关系与表达","社会与自然"]) {
+  assert(wishZh.includes(category), "Chinese Wish Center is missing category: " + category);
+}
+for (const festival of ["元旦","除夕","春节","元宵节","妇女节","植树节","愚人节","清明节","地球日","劳动节","端午节","儿童节","母亲节","父亲节","七夕节","情人节","生日","中秋节"]) {
+  assert(wishZh.includes(festival), "Chinese Wish Center is missing festival: " + festival);
+}
+assert((wishZh.match(/class="wish-category"/g) || []).length === 5, "Wish Center must render five categorized festival sections.");
+assert(wishZh.includes('data-catalog-kind="birthday"') && wishZh.includes('data-catalog-kind="mid-autumn"'), "Birthday and Mid-Autumn catalog entries must connect to the existing builder.");
+assert(wishZh.includes('class="wish-festival is-planned"') && wishZh.includes("准备中"), "Future festivals must render as non-link planned entries.");
+
 
 assert(birthday.includes('params.get("name")'), "Birthday page must support ?name=.");
 assert(midAutumn.includes('params.get("name")'), "Mid-Autumn page must support ?name=.");
