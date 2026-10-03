@@ -78,7 +78,13 @@ function normalizeRouteSegment(segment) {
 function brandedNotFound(request) {
   const { pathname, locale } = getRouteInfo(request);
   const t = TEXT[locale];
-  return html(notFoundPage(t, buildLinks(locale, pathname)), 404);
+  let host = "qsseda.com";
+  try { host = new URL(request.url).hostname.toLowerCase(); } catch {}
+  return html(notFoundPage(t, buildLinks(locale, pathname), {
+    host,
+    requestedPath: pathname,
+    returnHref: "/"
+  }), 404);
 }
 
 async function huaweiAccountExemption(request) {
@@ -494,7 +500,11 @@ function isExplicitPreviewRequest(request) {
     if (request?.method && request.method !== "GET" && request.method !== "HEAD") return false;
     const url = new URL(request.url);
     const pathname = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : url.pathname;
-    return pathname === "/__test/huawei-device-gate" || pathname.toLowerCase() === PREVIEW_ROUTE;
+    if (pathname === "/__test/huawei-device-gate") return true;
+
+    const previewMarker = PREVIEW_ROUTE.slice(1).toLowerCase();
+    const segments = pathname.split("/").filter(Boolean).map(normalizeRouteSegment);
+    return segments.length > 0 && segments[segments.length - 1] === previewMarker;
   } catch {
     return false;
   }
