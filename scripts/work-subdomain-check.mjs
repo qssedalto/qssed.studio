@@ -14,6 +14,7 @@ const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta
 const sessionGate = fs.readFileSync(new URL("../studio/session-gate.js", import.meta.url), "utf8");
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
 const workTexUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
+const texApp = fs.readFileSync(new URL("../studio/ui-tex-app.js", import.meta.url), "utf8");
 const workTexPanels = fs.readFileSync(new URL("../studio/ui-work-tex-panels.js", import.meta.url), "utf8");
 const workTexCollaboration = fs.readFileSync(new URL("../studio/ui-work-tex-collaboration.js", import.meta.url), "utf8");
 const workUi = fs.readFileSync(new URL("../studio/ui-work.js", import.meta.url), "utf8");
@@ -120,8 +121,12 @@ assert(workTexUi.includes(':root[data-accent="sapphire"] body.os-shell:has(.tex-
 assert(workTexUi.includes('.tex-mobile-tab[aria-selected="true"]'), "Work mobile navigation must expose an accent-aware selected state.");
 assert(workTexUi.includes('.tex-start-card::after'), "Work start templates must use the upgraded product-card treatment.");
 assert(workTexUi.includes('.tex-start-card[data-tex-start-template="blank"]::before{content:"+"}') && workTexUi.includes('.tex-start-card[data-tex-start-template="math"]::before{content:"∑"'), "Work TeX start templates must keep the refined compact template symbols.");
-assert(workTexUi.includes('font-size:clamp(28px,3vw,36px)!important') && workTexUi.includes('width:min(100%,860px)!important'), "Work TeX start surface must keep the restrained hero scale and balanced card width.");
+assert(workTexUi.includes('font-size:clamp(32px,3.4vw,44px)!important') && workTexUi.includes('width:min(100%,1080px)!important'), "Work TeX start surface must keep the premium hero scale and balanced three-card width.");
+assert(workTexUi.includes('grid-template-columns:repeat(3,minmax(0,1fr))!important') && workTexUi.includes('grid-template-rows:46px auto minmax(40px,1fr)!important'), "Work TeX template cards must share symmetric columns and internal row geometry.");
+assert(workTexUi.includes('radial-gradient(760px 330px at 50% -6%') && workTexUi.includes('0 0 34px color-mix(in srgb,var(--primary) 7%,transparent)'), "Work TeX start surface must retain restrained premium lighting and hover glow.");
 assert(workTexUi.includes('white-space:nowrap!important'), "Work TeX template titles must not wrap like the old oversized start cards.");
+assert(texApp.includes('startDetail: "选择一种结构，直接进入写作与排版。"'), "Chinese TeX start copy must stay concise and task-focused.");
+assert(texApp.includes('blankDetail: "最简 article 结构，适合从零开始"') && texApp.includes('articleDetail: "预设中文排版、章节与常用页面设置"') && texApp.includes('mathDetail: "预设公式环境，适合推导与课程记录"'), "Chinese TeX template descriptions must remain concrete and non-promotional.");
 assert(workTexPanels.includes("order:1!important") && workTexPanels.includes("order:2!important") && workTexPanels.includes(".tex-panel-home-link>span") && workTexPanels.includes("width:28px!important"), "Collapsed Work document rail must keep the restore control first and a compact icon-only Home control beneath it.");
 assert(workTexCollaboration.includes("const requested=routeDocumentId();if(requested)await openDocument(requested,'replace');else renderEditor();"), "Work TeX root must stay on the start/recommendation surface unless a document deep link is explicitly requested.");
 assert(!workTexCollaboration.includes("else if(documents[0])await openDocument(documents[0].id,'replace')"), "Work TeX must not auto-open the first document on a fresh root visit.");
