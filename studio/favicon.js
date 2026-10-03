@@ -1,6 +1,6 @@
 export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-role-swap-2" type="image/svg+xml">';
+export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-role-swap-3" type="image/svg+xml">';
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
@@ -20,32 +20,44 @@ const AERTEX_REFERENCE_HREF = FAVICON_SVG.match(/<image class="aertex-reference-
 const PRODUCT_FAVICON_META = Object.freeze({
   work: {
     label: "AERTEX Work",
-    mainScale: 3.75,
+    mainX: 27.1,
+    mainY: 28,
+    mainScale: 3.25,
     glyph: '<path d="M-1.4-4.6h-1.8A1.8 1.8 0 0 0-5-2.8v6A1.8 1.8 0 0 0-3.2 5h6A1.8 1.8 0 0 0 4.6 3.2V1.4"/><path d="M-1.55 1.8-.85-.45 2.6-3.9a1.05 1.05 0 0 1 1.48 0l.48.48a1.05 1.05 0 0 1 0 1.48L1.1 1.5l-2.65.3z"/>'
   },
   intelligence: {
     label: "AERTEX Intelligence",
-    mainScale: 3.8,
+    mainX: 27.1,
+    mainY: 27.8,
+    mainScale: 3.25,
     glyph: '<g class="intelligence-stars" transform="scale(1.16)"><path class="filled intelligence-star-main" d="M-1-3.04-.10-.75 2.25.15-.10 1.05-1 3.34-1.90 1.05-4.25.15-1.90-.75Z"/><path class="filled intelligence-star-small" d="M2.8-3.7 3.1-3 3.8-2.7 3.1-2.4 2.8-1.7 2.5-2.4 1.8-2.7 2.5-3Z"/></g>'
   },
   cash: {
     label: "AERTEX Cash",
-    mainScale: 3.55,
+    mainX: 27,
+    mainY: 28.4,
+    mainScale: 3.1,
     glyph: '<rect x="-5.2" y="-2.6" width="10.4" height="6.6" rx="1.35"/><path d="M-3.5-2.6V-4h7v1.4M2 .7h3.2"/><circle class="filled" cx="2.8" cy=".7" r=".72"/>'
   },
   watch: {
     label: "AERTEX Watch",
-    mainScale: 3.65,
+    mainX: 27.2,
+    mainY: 27.7,
+    mainScale: 3.2,
     glyph: '<circle cx="0" cy="0" r="5"/><path d="M0-3.1V0l2.45 1.65"/>'
   },
   auth: {
     label: "AERTEX ID",
-    mainScale: 3.7,
+    mainX: 27,
+    mainY: 28.7,
+    mainScale: 3.45,
     glyph: '<rect x="-4.3" y="-.7" width="8.6" height="5.5" rx="1.5"/><path d="M-2.6-.7v-1.6a2.6 2.6 0 0 1 5.2 0v1.6"/><circle class="filled" cx="0" cy="2" r=".75"/>'
   },
   admin: {
     label: "AERTEX Administration",
-    mainScale: 3.5,
+    mainX: 27.2,
+    mainY: 27.7,
+    mainScale: 3.1,
     glyph: '<path d="M0-5 4.5-2.8V.4c0 2.55-1.65 4.25-4.5 5.4C-2.85 4.65-4.5 2.95-4.5.4v-3.2z"/><path d="m-2 0 1.35 1.35L2.25-1.7"/>'
   }
 });
@@ -75,26 +87,26 @@ export function faviconSvgForProduct(product = "") {
   const knockout = `<defs>
     <mask id="aertex-product-main-knockout" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
       <rect x="0" y="0" width="64" height="64" fill="#fff"/>
-      <circle class="brand-badge-cutout" cx="51.2" cy="51.2" r="13.5" fill="#000"/>
+      <circle class="brand-badge-cutout" cx="51.6" cy="51.6" r="10.5" fill="#000"/>
     </mask>
   </defs>`;
 
   const mainGlyph = `<g class="aertex-product-main aertex-${product}-main" aria-hidden="true" mask="url(#aertex-product-main-knockout)">
-    <g class="product-main-glyph" transform="translate(28.8 29) scale(${meta.mainScale})">${meta.glyph}</g>
+    <g class="product-main-glyph" transform="translate(${meta.mainX} ${meta.mainY}) scale(${meta.mainScale})">${meta.glyph}</g>
   </g>`;
 
   const brandBadge = `<g class="aertex-brand-badge" aria-hidden="true">
-    <circle class="brand-badge-disc" cx="51.2" cy="51.2" r="11.1"/>
-    <image class="aertex-badge-mark" href="${AERTEX_REFERENCE_HREF}" x="43.2" y="44.7" width="16" height="13" preserveAspectRatio="xMidYMid meet"/>
+    <circle class="brand-badge-disc" cx="51.6" cy="51.6" r="8.7"/>
+    <image class="aertex-badge-mark" href="${AERTEX_REFERENCE_HREF}" x="45.4" y="46.55" width="12.4" height="10.05" preserveAspectRatio="xMidYMid meet"/>
   </g>`;
 
   return productShell
     .replace(
       "</style>",
-      `.aertex-product-main .product-main-glyph{fill:none;stroke:var(--ink);stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+      `.aertex-product-main .product-main-glyph{fill:none;stroke:var(--ink);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
       .aertex-product-main .product-main-glyph *{vector-effect:non-scaling-stroke}
       .aertex-product-main .product-main-glyph .filled{fill:var(--ink);stroke:none}
-      .aertex-brand-badge .brand-badge-disc{fill:none;stroke:var(--edge);stroke-width:1.6}
+      .aertex-brand-badge .brand-badge-disc{fill:none;stroke:var(--edge);stroke-width:1.4}
       </style>`
     )
     .replace("</svg>", knockout + mainGlyph + brandBadge + "</svg>");
