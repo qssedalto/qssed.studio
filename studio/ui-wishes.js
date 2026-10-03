@@ -14,10 +14,119 @@ const WISHES_COPY = {
 WISHES_COPY["en-gb"]=WISHES_COPY["en-us"]; WISHES_COPY["en-au"]=WISHES_COPY["en-us"];
 
 
+
+const WISHES_CATALOG = {
+  "zh-cn": {
+    catalogTitle:"祝福目录",
+    catalogLead:"按场景浏览祝福主题。生日与中秋已经可用，其余节日先作为栏目保留，后续再接入对应页面。",
+    available:"已开放",
+    planned:"准备中",
+    builderTitle:"当前可用模板",
+    builderLead:"先用已经完成的生日与中秋模板生成分享链接。",
+    groups:[
+      {id:"new-year",title:"新年与团圆",description:"适合跨年、年节与团圆场景。",items:[
+        ["元旦","元","planned"],["除夕","夕","planned"],["春节","春","planned"],["元宵节","灯","planned"],["中秋节","秋","mid-autumn"]
+      ]},
+      {id:"traditions",title:"传统与节气",description:"传统节日与季节性祝福。",items:[
+        ["清明节","清","planned"],["端午节","舟","planned"]
+      ]},
+      {id:"family",title:"家庭与成长",description:"适合家人、孩子与成长节点。",items:[
+        ["生日","生","birthday"],["妇女节","她","planned"],["儿童节","童","planned"],["母亲节","母","planned"],["父亲节","父","planned"]
+      ]},
+      {id:"relationships",title:"关系与表达",description:"适合爱意、关系与轻松表达。",items:[
+        ["七夕节","夕","planned"],["情人节","爱","planned"],["愚人节","趣","planned"]
+      ]},
+      {id:"society",title:"社会与自然",description:"公共纪念、劳动与自然主题。",items:[
+        ["植树节","树","planned"],["地球日","球","planned"],["劳动节","劳","planned"]
+      ]}
+    ]
+  },
+  "zh-tw": {
+    catalogTitle:"祝福目錄",
+    catalogLead:"依情境瀏覽祝福主題。生日與中秋已可使用，其餘節日先保留欄目，之後再接入對應頁面。",
+    available:"已開放",
+    planned:"準備中",
+    builderTitle:"目前可用範本",
+    builderLead:"先使用已完成的生日與中秋範本建立分享連結。",
+    groups:[
+      {id:"new-year",title:"新年與團圓",description:"適合跨年、年節與團圓情境。",items:[
+        ["元旦","元","planned"],["除夕","夕","planned"],["春節","春","planned"],["元宵節","燈","planned"],["中秋節","秋","mid-autumn"]
+      ]},
+      {id:"traditions",title:"傳統與節氣",description:"傳統節日與季節性祝福。",items:[
+        ["清明節","清","planned"],["端午節","舟","planned"]
+      ]},
+      {id:"family",title:"家庭與成長",description:"適合家人、孩子與成長節點。",items:[
+        ["生日","生","birthday"],["婦女節","她","planned"],["兒童節","童","planned"],["母親節","母","planned"],["父親節","父","planned"]
+      ]},
+      {id:"relationships",title:"關係與表達",description:"適合愛意、關係與輕鬆表達。",items:[
+        ["七夕節","夕","planned"],["情人節","愛","planned"],["愚人節","趣","planned"]
+      ]},
+      {id:"society",title:"社會與自然",description:"公共紀念、勞動與自然主題。",items:[
+        ["植樹節","樹","planned"],["地球日","球","planned"],["勞動節","勞","planned"]
+      ]}
+    ]
+  },
+  "en-us": {
+    catalogTitle:"Wish catalog",
+    catalogLead:"Browse greetings by occasion. Birthday and Mid-Autumn are available now; the remaining occasions are reserved for future templates.",
+    available:"Available",
+    planned:"Planned",
+    builderTitle:"Available templates",
+    builderLead:"Use the finished Birthday or Mid-Autumn template to create a share link.",
+    groups:[
+      {id:"new-year",title:"New Year & Reunion",description:"Year-end, new-year, and reunion occasions.",items:[
+        ["New Year's Day","NY","planned"],["Lunar New Year's Eve","Eve","planned"],["Spring Festival","春","planned"],["Lantern Festival","灯","planned"],["Mid-Autumn Festival","秋","mid-autumn"]
+      ]},
+      {id:"traditions",title:"Traditions & Seasons",description:"Traditional and seasonal greetings.",items:[
+        ["Qingming Festival","清","planned"],["Dragon Boat Festival","舟","planned"]
+      ]},
+      {id:"family",title:"Family & Growth",description:"Family, childhood, and personal milestones.",items:[
+        ["Birthday","BD","birthday"],["Women's Day","W","planned"],["Children's Day","C","planned"],["Mother's Day","M","planned"],["Father's Day","F","planned"]
+      ]},
+      {id:"relationships",title:"Relationships",description:"Affection, connection, and playful occasions.",items:[
+        ["Qixi Festival","七","planned"],["Valentine's Day","V","planned"],["April Fools' Day","!","planned"]
+      ]},
+      {id:"society",title:"Society & Nature",description:"Public observances, work, and nature.",items:[
+        ["Arbor Day","树","planned"],["Earth Day","地","planned"],["Labour Day","劳","planned"]
+      ]}
+    ]
+  }
+};
+WISHES_CATALOG["en-gb"]=WISHES_CATALOG["en-us"]; WISHES_CATALOG["en-au"]=WISHES_CATALOG["en-us"];
+
 export function wishesContent(locale = "en-us") {
   const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
   const prefix = "/" + code;
   const text = WISHES_COPY[code] || WISHES_COPY["en-us"];
+  const catalog = WISHES_CATALOG[code] || WISHES_CATALOG["en-us"];
+
+  const groupsMarkup = catalog.groups.map(group => `
+    <section class="wish-category" id="${group.id}">
+      <div class="wish-category-head">
+        <div>
+          <h3>${group.title}</h3>
+          <p>${group.description}</p>
+        </div>
+        <span>${group.items.length}</span>
+      </div>
+      <div class="wish-category-items">
+        ${group.items.map(([label,mark,state]) => {
+          const active = state === "birthday" || state === "mid-autumn";
+          return active
+            ? `<button class="wish-festival is-available" type="button" data-catalog-kind="${state}">
+                <span class="wish-festival-mark" aria-hidden="true">${mark}</span>
+                <span class="wish-festival-copy"><strong>${label}</strong><small>${catalog.available}</small></span>
+                <b aria-hidden="true">↗</b>
+              </button>`
+            : `<div class="wish-festival is-planned" aria-disabled="true">
+                <span class="wish-festival-mark" aria-hidden="true">${mark}</span>
+                <span class="wish-festival-copy"><strong>${label}</strong><small>${catalog.planned}</small></span>
+                <b aria-hidden="true">·</b>
+              </div>`;
+        }).join("")}
+      </div>
+    </section>
+  `).join("");
 
   return `
     <section class="wishes-studio" data-wishes-center>
@@ -35,7 +144,25 @@ export function wishesContent(locale = "en-us") {
         </div>
       </header>
 
-      <section class="wishes-studio-panel">
+      <section class="wishes-catalog-block" aria-labelledby="wish-catalog-title">
+        <div class="wishes-catalog-head">
+          <div>
+            <span>AERTEX WISH CATALOG</span>
+            <h2 id="wish-catalog-title">${catalog.catalogTitle}</h2>
+            <p>${catalog.catalogLead}</p>
+          </div>
+        </div>
+        <div class="wishes-catalog-grid">${groupsMarkup}</div>
+      </section>
+
+      <section class="wishes-studio-panel" id="available-templates">
+        <div class="wishes-studio-builder-head">
+          <div>
+            <span>${catalog.available}</span>
+            <h2>${catalog.builderTitle}</h2>
+            <p>${catalog.builderLead}</p>
+          </div>
+        </div>
         <div class="wishes-studio-section">
           <div class="wishes-studio-label">${text.choose}</div>
           <div class="wishes-studio-choices" role="radiogroup" aria-label="${text.choose}">
@@ -71,28 +198,40 @@ export function wishesContent(locale = "en-us") {
     </section>
 
     <style>
-      .wishes-studio{display:grid;gap:16px;min-width:0}
-      .wishes-studio-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;padding:28px;border:1px solid color-mix(in srgb,var(--border) 82%,transparent);border-radius:24px;background:radial-gradient(520px 260px at 94% 0%,color-mix(in srgb,var(--primary) 14%,transparent),transparent 72%),linear-gradient(145deg,color-mix(in srgb,var(--primary) 5%,var(--card)),var(--card));box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 18%,transparent),0 18px 46px rgba(0,0,0,.06)}
-      .wishes-studio-heading>span{display:block;color:var(--primary);font-size:11px;font-weight:720;letter-spacing:.11em}
+      .wishes-studio{display:grid;gap:18px;min-width:0}
+      .wishes-studio-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;padding:28px;border:1px solid color-mix(in srgb,var(--border) 82%,transparent);border-radius:24px;background:radial-gradient(520px 260px at 94% 0%,color-mix(in srgb,#ff9f0a 14%,transparent),transparent 72%),linear-gradient(145deg,color-mix(in srgb,#ff9f0a 4%,var(--card)),var(--card));box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 18%,transparent),0 18px 46px rgba(0,0,0,.06)}
+      .wishes-studio-heading>span,.wishes-catalog-head>div>span,.wishes-studio-builder-head span{display:block;color:#f5a623;font-size:10px;font-weight:760;letter-spacing:.12em}
       .wishes-studio-heading h2{max-width:860px;margin:8px 0 10px;font-size:clamp(34px,4.2vw,54px);line-height:.98;letter-spacing:-.055em;text-wrap:balance}
       .wishes-studio-heading p{max-width:760px;margin:0;color:var(--muted);font-size:13px;line-height:1.62}
-      .wishes-studio-badge{width:72px;height:72px;display:grid;place-items:center;border-radius:22px;color:var(--primary);background:color-mix(in srgb,var(--primary) 12%,var(--fill));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 18%,var(--border)),0 12px 30px color-mix(in srgb,var(--primary) 10%,transparent)}
+      .wishes-studio-badge{width:72px;height:72px;display:grid;place-items:center;border-radius:22px;color:#f5a623;background:color-mix(in srgb,#f5a623 12%,var(--fill));box-shadow:inset 0 0 0 1px color-mix(in srgb,#f5a623 22%,var(--border)),0 12px 30px color-mix(in srgb,#f5a623 11%,transparent)}
       .wishes-studio-badge svg{width:34px;height:34px}
+
+      .wishes-catalog-block{padding:22px;border:1px solid color-mix(in srgb,var(--border) 84%,transparent);border-radius:24px;background:linear-gradient(180deg,color-mix(in srgb,#f5a623 2.5%,var(--card)),var(--card));box-shadow:0 14px 38px rgba(0,0,0,.04)}
+      .wishes-catalog-head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:16px}.wishes-catalog-head h2,.wishes-studio-builder-head h2{margin:5px 0 7px;font-size:25px;line-height:1.05;letter-spacing:-.04em}.wishes-catalog-head p,.wishes-studio-builder-head p{max-width:720px;margin:0;color:var(--muted);font-size:11.5px;line-height:1.55}
+      .wishes-catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+      .wish-category{scroll-margin-top:22px;padding:17px;border:1px solid var(--border);border-radius:18px;background:color-mix(in srgb,var(--surface) 96%,transparent);box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 12%,transparent)}
+      .wish-category-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:13px}.wish-category-head h3{margin:0;font-size:16px;line-height:1.2;letter-spacing:-.025em}.wish-category-head p{max-width:42ch;margin:5px 0 0;color:var(--muted);font-size:10.5px;line-height:1.45}.wish-category-head>span{display:grid;place-items:center;min-width:26px;height:26px;border-radius:9px;background:var(--fill);color:var(--quiet);font-size:10px;font-weight:760}
+      .wish-category-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+      .wish-festival{box-sizing:border-box;display:grid;grid-template-columns:32px minmax(0,1fr) 14px;gap:9px;align-items:center;min-width:0;min-height:54px;padding:8px 9px;border:1px solid transparent;border-radius:12px;background:var(--fill);color:var(--text);text-align:left}
+      button.wish-festival{font:inherit;cursor:pointer}.wish-festival.is-available{border-color:color-mix(in srgb,#f5a623 20%,var(--border));background:color-mix(in srgb,#f5a623 7%,var(--fill));transition:transform .15s ease,border-color .15s ease,background .15s ease}.wish-festival.is-available:hover{transform:translateY(-1px);border-color:color-mix(in srgb,#f5a623 42%,var(--border));background:color-mix(in srgb,#f5a623 10%,var(--fill))}
+      .wish-festival.is-planned{opacity:.72}.wish-festival-mark{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--surface);color:#f5a623;font-size:12px;font-weight:760;line-height:1;box-shadow:inset 0 0 0 1px var(--border)}
+      .wish-festival-copy{min-width:0}.wish-festival-copy strong,.wish-festival-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wish-festival-copy strong{font-size:11.5px;line-height:1.25}.wish-festival-copy small{margin-top:3px;color:var(--muted);font-size:8.5px}.wish-festival>b{color:var(--quiet);font-size:13px;font-weight:500}
+
       .wishes-studio-panel{overflow:hidden;border:1px solid color-mix(in srgb,var(--border) 84%,transparent);border-radius:22px;background:color-mix(in srgb,var(--card) 94%,transparent);box-shadow:0 14px 38px rgba(0,0,0,.045)}
+      .wishes-studio-builder-head{padding:22px 22px 18px;border-bottom:1px solid var(--hairline);background:linear-gradient(180deg,color-mix(in srgb,#f5a623 3%,var(--card)),transparent)}
       .wishes-studio-section{padding:22px}.wishes-studio-section+.wishes-studio-section{border-top:1px solid var(--hairline)}
       .wishes-studio-label{display:flex;align-items:center;gap:8px;margin-bottom:13px;color:var(--muted);font-size:12px;font-weight:650}.wishes-studio-label>span{padding:3px 7px;border-radius:999px;background:var(--fill);color:var(--quiet);font-size:9px;font-weight:700}
       .wishes-studio-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-      .wishes-studio-choice{display:grid!important;grid-template-columns:44px minmax(0,1fr)!important;gap:13px!important;align-items:center!important;min-height:106px!important;margin:0!important;padding:16px!important;border:1px solid var(--border)!important;border-radius:18px!important;background:var(--surface)!important;color:var(--text)!important;text-align:left!important;box-shadow:none!important;cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease!important}
-      .wishes-studio-choice:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--primary) 28%,var(--border))!important;background:color-mix(in srgb,var(--primary) 3%,var(--surface))!important}
-      .wishes-studio-choice.is-active{border-color:color-mix(in srgb,var(--primary) 58%,var(--border))!important;background:color-mix(in srgb,var(--primary) 7%,var(--surface))!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 18%,transparent)!important}
-      .wishes-studio-choice-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:var(--fill);color:var(--primary);line-height:1}.wishes-studio-choice-icon svg{width:22px;height:22px}
+      .wishes-studio-choice{display:grid!important;grid-template-columns:44px minmax(0,1fr)!important;gap:13px!important;align-items:center!important;min-height:100px!important;margin:0!important;padding:16px!important;border:1px solid var(--border)!important;border-radius:17px!important;background:var(--surface)!important;color:var(--text)!important;text-align:left!important;box-shadow:none!important;cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease!important}
+      .wishes-studio-choice:hover{transform:translateY(-1px);border-color:color-mix(in srgb,#f5a623 28%,var(--border))!important;background:color-mix(in srgb,#f5a623 3%,var(--surface))!important}.wishes-studio-choice.is-active{border-color:color-mix(in srgb,#f5a623 58%,var(--border))!important;background:color-mix(in srgb,#f5a623 7%,var(--surface))!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,#f5a623 18%,transparent)!important}
+      .wishes-studio-choice-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:var(--fill);color:#f5a623;line-height:1}.wishes-studio-choice-icon svg{width:22px;height:22px}
       .wishes-studio-choice strong,.wishes-studio-choice small{display:block}.wishes-studio-choice strong{font-size:16px;line-height:1.25;letter-spacing:-.02em}.wishes-studio-choice small{margin-top:6px;color:var(--muted);font-size:11px;line-height:1.45}
-      .wishes-studio-name{width:100%!important;height:48px!important;min-height:48px!important;margin:0!important;padding:0 14px!important;border:1px solid var(--border)!important;border-radius:14px!important;background:var(--surface)!important;color:var(--text)!important;box-shadow:none!important;outline:none!important}
-      .wishes-studio-name:focus{border-color:color-mix(in srgb,var(--primary) 56%,var(--border))!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 10%,transparent)!important}
+      .wishes-studio-name{width:100%!important;height:48px!important;min-height:48px!important;margin:0!important;padding:0 14px!important;border:1px solid var(--border)!important;border-radius:14px!important;background:var(--surface)!important;color:var(--text)!important;box-shadow:none!important;outline:none!important}.wishes-studio-name:focus{border-color:color-mix(in srgb,#f5a623 56%,var(--border))!important;box-shadow:0 0 0 4px color-mix(in srgb,#f5a623 10%,transparent)!important}
       .wishes-studio-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.wishes-studio-result{min-width:0;padding:14px 15px;border-radius:15px;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border)}.wishes-studio-result small{display:block;margin-bottom:7px;color:var(--muted);font-size:10px}.wishes-studio-result a{display:block;overflow:hidden;color:var(--text);font:600 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;text-decoration:none;text-overflow:ellipsis;white-space:nowrap}
-      .wishes-studio-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}.wishes-studio-action{display:inline-flex!important;align-items:center;justify-content:center;width:auto!important;min-height:40px!important;margin:0!important;padding:0 14px!important;border:0!important;border-radius:12px!important;background:var(--fill)!important;color:var(--text)!important;box-shadow:none!important;text-decoration:none;font-size:12px!important;font-weight:700!important}.wishes-studio-action.is-primary{background:var(--primary)!important;color:#fff!important}
+      .wishes-studio-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}.wishes-studio-action{display:inline-flex!important;align-items:center;justify-content:center;width:auto!important;min-height:40px!important;margin:0!important;padding:0 14px!important;border:0!important;border-radius:12px!important;background:var(--fill)!important;color:var(--text)!important;box-shadow:none!important;text-decoration:none;font-size:12px!important;font-weight:700!important}.wishes-studio-action.is-primary{background:#f5a623!important;color:#16120a!important}
       .wishes-studio-note{margin:13px 0 0;color:var(--muted);font-size:11px;line-height:1.55}.wishes-studio-status{min-height:18px;margin-top:8px;color:var(--muted);font-size:11px}
-      @media(max-width:760px){.wishes-studio-hero{grid-template-columns:1fr;padding:20px}.wishes-studio-badge{width:58px;height:58px;border-radius:18px}.wishes-studio-choices,.wishes-studio-results{grid-template-columns:1fr}.wishes-studio-section{padding:18px}.wishes-studio-actions{display:grid;grid-template-columns:1fr 1fr}.wishes-studio-action{width:100%!important}}
+      @media(max-width:920px){.wishes-catalog-grid{grid-template-columns:1fr}.wish-category-items{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      @media(max-width:760px){.wishes-studio-hero{grid-template-columns:1fr;padding:20px}.wishes-studio-badge{width:58px;height:58px;border-radius:18px}.wishes-studio-choices,.wishes-studio-results,.wish-category-items{grid-template-columns:1fr}.wishes-studio-section,.wishes-catalog-block{padding:18px}.wishes-studio-actions{display:grid;grid-template-columns:1fr 1fr}.wishes-studio-action{width:100%!important}.wishes-catalog-head h2,.wishes-studio-builder-head h2{font-size:22px}}
     </style>
 
     <script>
@@ -104,12 +243,14 @@ export function wishesContent(locale = "en-us") {
         const copiedLabel=${JSON.stringify(text.copied)};
         const failedLabel=${JSON.stringify(text.failed)};
         const choices=[...root.querySelectorAll("[data-kind]")];
+        const catalogChoices=[...root.querySelectorAll("[data-catalog-kind]")];
         const nameInput=root.querySelector("#wish-name");
         const shareLink=root.querySelector("#share-link");
         const destinationLink=root.querySelector("#destination-link");
         const openLink=root.querySelector("#open-link");
         const copyButton=root.querySelector("#copy-link");
         const status=root.querySelector("#copy-status");
+        const builder=root.querySelector("#available-templates");
         let kind="birthday";
         const cleanName=value=>String(value||"").replace(/[\\u0000-\\u001f\\u007f]/g," ").replace(/\\s+/g," ").trim().slice(0,36);
         const paint=()=>{
@@ -122,7 +263,7 @@ export function wishesContent(locale = "en-us") {
           destinationLink.href=location.origin+targetPath;destinationLink.textContent=targetPath;
           openLink.href=shortUrl;
           const state=new URLSearchParams();state.set("type",kind);if(name)state.set("name",name);
-          history.replaceState(null,"",location.pathname+"?"+state.toString());
+          history.replaceState(null,"",location.pathname+"?"+state.toString()+location.hash);
         };
         const select=next=>{
           kind=next==="mid-autumn"?"mid-autumn":"birthday";
@@ -130,6 +271,7 @@ export function wishesContent(locale = "en-us") {
           status.textContent="";copyButton.textContent=copyLabel;paint();
         };
         choices.forEach(button=>button.addEventListener("click",()=>select(button.dataset.kind)));
+        catalogChoices.forEach(button=>button.addEventListener("click",()=>{select(button.dataset.catalogKind);builder?.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})}));
         nameInput.addEventListener("input",()=>{status.textContent="";copyButton.textContent=copyLabel;paint()});
         copyButton.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(shareLink.href);copyButton.textContent=copiedLabel;status.textContent=copiedLabel;setTimeout(()=>copyButton.textContent=copyLabel,1600)}catch{status.textContent=failedLabel}});
         const initial=new URLSearchParams(location.search);const initialName=cleanName(initial.get("name"));if(initialName)nameInput.value=initialName;select(initial.get("type"));
