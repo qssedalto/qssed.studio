@@ -1,6 +1,6 @@
 export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-7" type="image/svg+xml">';
+export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-8" type="image/svg+xml">';
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
@@ -22,7 +22,7 @@ const PRODUCT_FAVICON_META = Object.freeze({
   },
   intelligence: {
     label: "AERTEX Intelligence",
-    glyph: '<path class="filled" d="M0-5.1 1.5-1.5 5.1 0 1.5 1.5 0 5.1-1.5 1.5-5.1 0-1.5-1.5z"/>'
+    glyph: '<path class="filled" d="M-.8-3.7.5-.6 3.6.7.5 2-.8 5.1-2.1 2-5.2.7-2.1-.6z"/><path class="filled" d="M3.2-4.75 3.65-3.65 4.75-3.2 3.65-2.75 3.2-1.65 2.75-2.75 1.65-3.2 2.75-3.65z"/>'
   },
   cash: {
     label: "AERTEX Cash",
