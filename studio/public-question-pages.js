@@ -24,7 +24,7 @@ const UI = {
     related:"相关问题",
     current:"当前产品行为",
     note:"本页面描述当前已经实现或公开定义的产品行为；以后功能变化时，答案也会随之更新。",
-    categories:{about:"关于 AERTEX",products:"产品",account:"账户与数据边界",watch:"AERTEX Watch",availability:"可用性与兼容性"}
+    categories:{about:"关于 AERTEX",account:"AERTEX Account",products:"AERTEX Work / Intelligence / Cash",watch:"AERTEX Watch",privacy:"隐私与数据",availability:"中国大陆与兼容性"}
   },
   "en-us":{
     site:"AERTEX Questions",
@@ -39,7 +39,7 @@ const UI = {
     related:"Related questions",
     current:"Current product behavior",
     note:"This page describes product behavior that is currently implemented or officially defined. Answers can change when the product changes.",
-    categories:{about:"About AERTEX",products:"Products",account:"Account & data boundaries",watch:"AERTEX Watch",availability:"Availability & compatibility"}
+    categories:{about:"About AERTEX",account:"AERTEX Account",products:"AERTEX Work / Intelligence / Cash",watch:"AERTEX Watch",privacy:"Privacy & Data",availability:"Mainland China & Compatibility"}
   }
 };
 
