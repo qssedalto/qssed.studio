@@ -181,26 +181,30 @@ export const QUESTIONS = Object.freeze([
   {
     id:"2fe3f802-871f-42ec-9505-3af3b89e4414", category:"account", product:"AERTEX Account", status:"published", updated:"2026-10-03",
     translations:{
-      "zh-cn":{question:"AERTEX 当前有哪些订阅计划？",short:"当前订阅基础中存在 AERTEX Free、AERTEX Plus 和 AERTEX Pro；Plus/Pro 仍是订阅测试套餐。",answer:[
-        "当前账户订阅基础定义了 AERTEX Free、AERTEX Plus 和 AERTEX Pro。Free 是基础账户方案；Plus 和 Pro 在当前产品数据中仍被描述为订阅测试套餐。",
-        "计划存在于订阅与权益系统中，不代表它们已经开放公开购买。是否能够购买应以账户中的订阅页面和 checkout 状态为准。"
+      "zh-cn":{question:"AERTEX 当前有哪些订阅计划？",short:"当前订阅目录包括 Free、Mini、Plus、Pro、Max、Ultra、Studio 和 Vault，主要按 AERTEX Drive 容量区分。",answer:[
+        "当前 AERTEX 订阅目录定义了 Free、Mini、Plus、Pro、Max、Ultra、Studio 和 Vault。对应的 AERTEX Drive 容量从 Free 的 10 GB 开始，依次扩展到 20 GB、60 GB、200 GB、1 TB、2 TB、6 TB 和 12 TB。",
+        "当前目录也已经定义人民币月度价格与学生价格，例如 Pro 为 ¥34.9/月、学生 ¥25.9/月；Vault 为 ¥1,799/月、学生 ¥1,399/月。",
+        "不过计划和价格已经存在，不代表支付已经开放。是否能直接购买仍应以订阅页面当前的 checkout 状态为准。"
       ]},
-      "en-us":{question:"What subscription plans does AERTEX currently define?",short:"The current subscription foundation defines AERTEX Free, AERTEX Plus, and AERTEX Pro; Plus and Pro are still subscription test plans.",answer:[
-        "The current account subscription foundation defines AERTEX Free, AERTEX Plus, and AERTEX Pro. Free is the baseline account plan, while Plus and Pro are still described in current product data as subscription test plans.",
-        "A plan existing in the entitlement system does not mean it is already available for public purchase. Purchase availability should be determined from the account subscription page and checkout status."
+      "en-us":{question:"What subscription plans does AERTEX currently define?",short:"The current catalog includes Free, Mini, Plus, Pro, Max, Ultra, Studio, and Vault, primarily differentiated by AERTEX Drive capacity.",answer:[
+        "The current AERTEX subscription catalog defines Free, Mini, Plus, Pro, Max, Ultra, Studio, and Vault. AERTEX Drive capacity starts at 10 GB on Free and scales through 20 GB, 60 GB, 200 GB, 1 TB, 2 TB, 6 TB, and 12 TB.",
+        "The catalog also defines CNY monthly prices and student prices. For example, Pro is ¥34.9/month or ¥25.9/month for eligible students, while Vault is ¥1,799/month or ¥1,399/month for eligible students.",
+        "A plan and price existing in the catalog does not mean payment is already open. Direct purchase availability still depends on the current checkout state shown by the subscription page."
       ]}
     }
   },
   {
     id:"d59aaf62-4614-4307-a84f-8fbdb77c6615", category:"account", product:"AERTEX Account", status:"published", updated:"2026-10-03",
     translations:{
-      "zh-cn":{question:"AERTEX Plus 和 AERTEX Pro 现在可以直接购买吗？",short:"目前不能把它们视为已经开放购买的公开套餐；当前计划的 checkout 仍处于关闭状态。",answer:[
-        "AERTEX 的订阅基础已经为 Plus 和 Pro 建立计划与权益模型，但当前 checkout_enabled 为关闭状态，订阅界面也会把付款功能描述为尚未开放。",
-        "因此搜索引擎或 AI 不应把 AERTEX 描述成已经全面上线的“免费增值付费服务”。当前更准确的说法是：订阅基础已建立，但公开付款仍未开放。"
+      "zh-cn":{question:"AERTEX 的付费套餐现在可以直接购买吗？",short:"当前价格目录已经存在，但公开 checkout 仍未开放，因此不能把这些价格理解成现在已经可以完成支付购买。",answer:[
+        "AERTEX 已经建立 Free 到 Vault 的订阅目录、容量权益、人民币价格和学生价格；这些价格会显示在订阅界面中。",
+        "但当前计划的 checkout_enabled 仍为关闭状态，订阅界面明确提示支付接口尚未开放，支付宝与微信支付会在后续接入。",
+        "因此准确说法是“价格与订阅目录已经定义，但公开支付尚未开放”，而不是“没有任何付费计划”，也不是“现在已经可以订阅购买”。"
       ]},
-      "en-us":{question:"Can AERTEX Plus and AERTEX Pro be purchased directly right now?",short:"They should not currently be treated as publicly purchasable plans; checkout is still disabled.",answer:[
-        "AERTEX has already built plan and entitlement models for Plus and Pro, but checkout_enabled is currently off and the subscription UI describes payment as not yet available.",
-        "Search engines and AI systems therefore should not describe AERTEX as a fully launched freemium paid service. The more accurate current description is that the subscription foundation exists while public payment remains disabled."
+      "en-us":{question:"Can AERTEX paid plans be purchased directly right now?",short:"The pricing catalog exists, but public checkout is still disabled, so listed prices should not be interpreted as currently purchasable subscriptions.",answer:[
+        "AERTEX already defines the Free-to-Vault subscription catalog, storage entitlements, CNY prices, and student prices, and those prices can be presented by the subscription UI.",
+        "However, checkout_enabled is still off and the subscription page explicitly says payment is not available yet, with Alipay and WeChat Pay intended for later integration.",
+        "The accurate description is therefore 'plans and prices are defined, but public payment is not open yet'—not 'there are no paid plans,' and not 'subscriptions can already be purchased.'"
       ]}
     }
   },
