@@ -165,16 +165,40 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
           background:color-mix(in srgb,var(--fill) 88%,var(--surface));
         }
         .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head{
-          justify-content:center!important;
+          flex-direction:column!important;
+          align-items:center!important;
+          justify-content:flex-start!important;
+          gap:8px!important;
           padding:10px 7px!important;
         }
         .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-title,
-        .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link,
         .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>:not(.tex-panel-head){
           display:none!important;
         }
         .tex-work-app .tex-shell.is-left-collapsed .tex-left-panel-toggle{
+          order:1!important;
           margin-left:0!important;
+        }
+        .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link{
+          order:2!important;
+          display:inline-grid!important;
+          place-items:center!important;
+          width:28px!important;
+          min-width:28px!important;
+          height:28px!important;
+          min-height:28px!important;
+          margin:0!important;
+          padding:0!important;
+          gap:0!important;
+          border-radius:9px!important;
+        }
+        .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link>span,
+        .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link .aertex-wordmark-token{
+          display:none!important;
+        }
+        .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link>svg{
+          width:14px!important;
+          height:14px!important;
         }
 
         .tex-work-app .tex-shell.is-right-collapsed .tex-runs-panel{
