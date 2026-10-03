@@ -70,8 +70,8 @@ for (const [source,name] of [[worker,"Main/Work"],[gptWorker,"Intelligence"],[au
   assert(source.includes("LOGO_PATHS") && source.includes("logoResponse(request)"), name + " Worker must serve /logo.svg from the shared wordmark source.");
   assert(source.includes("FAVICON_PATHS") && source.includes("faviconResponse(request)"), name + " Worker must serve the shared square icon routes.");
 }
-assert(cashIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-7"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261003-product-badge-7"'), "Cash must use the current square AERTEX logo in both favicon and visible brand UI.");
-assert(watchIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-7"'), "Watch must declare the current square AERTEX favicon.");
+assert(cashIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-6"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261003-product-badge-6"'), "Cash must keep its unchanged square AERTEX logo cache reference.");
+assert(watchIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-6"'), "Watch must keep its unchanged square AERTEX favicon cache reference.");
 assert(!cashWorker.includes('"/icon.svg"]') && !watchWorker.includes('"/icon.svg"'), "Cash and Watch must not serve legacy product-specific icon files.");
 
 console.log("AERTEX shared square icon and wordmark integration checks passed.");
