@@ -169,6 +169,7 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
           padding:10px 7px!important;
         }
         .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-title,
+        .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link,
         .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>:not(.tex-panel-head){
           display:none!important;
         }
