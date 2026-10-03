@@ -341,16 +341,7 @@ export function polishWorkHubTexRoute(markup, workOrigin = "https://work.qsseda.
 
 const WORK_TEX_VISUAL_STYLE = `
   <style id="qsseda-work-tex-visual-system-v2">
-    :root[data-accent="sapphire"] body.os-shell:has(.tex-work-app){--primary:#4964d8;--primary-ink:#fff}
-    :root[data-accent="aqua"] body.os-shell:has(.tex-work-app){--primary:#2a9d8f;--primary-ink:#fff}
-    :root[data-accent="jade"] body.os-shell:has(.tex-work-app){--primary:#3a9d72;--primary-ink:#fff}
-    :root[data-accent="lime"] body.os-shell:has(.tex-work-app){--primary:#86a93b;--primary-ink:#151515}
-    :root[data-accent="amber"] body.os-shell:has(.tex-work-app){--primary:#d49a2a;--primary-ink:#151515}
-    :root[data-accent="coral"] body.os-shell:has(.tex-work-app){--primary:#e26d5a;--primary-ink:#fff}
-    :root[data-accent="rose"] body.os-shell:has(.tex-work-app){--primary:#d95686;--primary-ink:#fff}
-    :root[data-accent="magenta"] body.os-shell:has(.tex-work-app){--primary:#b755c7;--primary-ink:#fff}
-    :root[data-accent="violet"] body.os-shell:has(.tex-work-app){--primary:#7559d9;--primary-ink:#fff}
-    :root[data-accent="graphite"] body.os-shell:has(.tex-work-app){--primary:#5a5d64;--primary-ink:#fff}
+    :root[data-accent] body.os-shell:has(.tex-work-app){--primary:var(--aertex-accent);--primary-ink:var(--aertex-accent-ink)}
 
     body.os-shell:has(.tex-work-app){
       --work-panel:color-mix(in srgb,var(--surface) 97%,var(--primary) 3%);
