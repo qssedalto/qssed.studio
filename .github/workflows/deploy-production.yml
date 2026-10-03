@@ -492,12 +492,38 @@ jobs:
           fi
 
           sitemap_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-sitemap.xml --write-out '%{http_code}' 'https://qsseda.com/sitemap.xml' || true)"
-          if [ "$sitemap_status" != "200" ] || ! grep -q '<loc>https://qsseda.com/</loc>' /tmp/qsseda-sitemap.xml; then
-            echo "SEO regression: canonical sitemap is unavailable."
-            echo "HTTP status: ${sitemap_status:-unknown}"
+          sitemap_count="$(grep -o '<url>' /tmp/qsseda-sitemap.xml | wc -l | tr -d ' ')"
+          if [ "$sitemap_status" != "200" ] || [ "$sitemap_count" != "56" ] \
+             || ! grep -q '<loc>https://qsseda.com/</loc>' /tmp/qsseda-sitemap.xml \
+             || ! grep -q '<loc>https://qsseda.com/zh-cn/aw/setup</loc>' /tmp/qsseda-sitemap.xml \
+             || ! grep -q '<loc>https://qsseda.com/en-us/wishes</loc>' /tmp/qsseda-sitemap.xml \
+             || ! grep -q '<loc>https://qsseda.com/ja-jp/birthday</loc>' /tmp/qsseda-sitemap.xml \
+             || ! grep -q '<loc>https://qsseda.com/ar-sa/mid-autumn</loc>' /tmp/qsseda-sitemap.xml; then
+            echo "SEO regression: canonical sitemap is incomplete."
+            echo "HTTP status: ${sitemap_status:-unknown}; URL count: ${sitemap_count:-unknown}"
             cat /tmp/qsseda-sitemap.xml || true
             exit 1
           fi
+
+          verify_public_indexable() {
+            url="$1"
+            canonical="$2"
+            output="$3"
+            headers="$(curl --silent --show-error --max-time 20 --output "$output" --dump-header - -H 'User-Agent: Mozilla/5.0' -H 'Accept: text/html' -H 'Sec-Fetch-Mode: navigate' -H 'Sec-Fetch-Site: none' -H 'Sec-Fetch-Dest: document' "$url" || true)"
+            status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
+            robots="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^x-robots-tag:/ {sub(/\r$/,""); sub(/^x-robots-tag:[[:space:]]*/,""); value=$0} END {print value}')"
+            if [ "$status" != "200" ] || ! printf '%s' "$robots" | grep -qi '^index, follow' || ! grep -q "<link rel=\"canonical\" href=\"$canonical\">" "$output"; then
+              echo "SEO regression: public page is not indexable: $url"
+              echo "HTTP status: ${status:-unknown}; X-Robots-Tag: ${robots:-none}; canonical: $canonical"
+              sed -n '1,80p' "$output" || true
+              exit 1
+            fi
+          }
+
+          verify_public_indexable "https://qsseda.com/zh-cn/aw/setup" "https://qsseda.com/zh-cn/aw/setup" "/tmp/qsseda-public-watch-setup.html"
+          verify_public_indexable "https://qsseda.com/en-us/wishes" "https://qsseda.com/en-us/wishes" "/tmp/qsseda-public-wishes.html"
+          verify_public_indexable "https://qsseda.com/ja-jp/birthday" "https://qsseda.com/ja-jp/birthday" "/tmp/qsseda-public-birthday.html"
+          verify_public_indexable "https://qsseda.com/ar-sa/mid-autumn" "https://qsseda.com/ar-sa/mid-autumn" "/tmp/qsseda-public-mid-autumn.html"
 
           home_headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-public-home.html --dump-header - -H 'User-Agent: Mozilla/5.0' -H 'Accept: text/html' -H 'Sec-Fetch-Mode: navigate' -H 'Sec-Fetch-Site: none' -H 'Sec-Fetch-Dest: document' 'https://qsseda.com/' || true)"
           home_status="$(printf '%s\n' "$home_headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"

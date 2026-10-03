@@ -30,6 +30,7 @@ import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-iden
 import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js";
 import { osPage } from "./ui-shell.js";
 import { publicHomeMarkup } from "./public-home.js";
+import { injectPublicSeo } from "./public-indexing.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
@@ -339,9 +340,33 @@ export default {
     }
 
     if (pathname === "/aw/setup") return watchSetupPage(request);
-    if (pathname === "/wishes") return localizedPage(wishesPage(fullLocale), locale);
-    if (pathname === "/birthday") return localizedPage(birthdayPage(fullLocale), locale);
-    if (pathname === "/mid-autumn") return localizedPage(midAutumnPage(fullLocale), locale);
+    if (pathname === "/wishes") {
+      const canonicalHost = new URL(request.url).hostname.toLowerCase() === "qsseda.com";
+      return localizedPage(
+        injectPublicSeo(wishesPage(fullLocale), fullLocale, "/wishes"),
+        locale,
+        200,
+        { indexable: canonicalHost }
+      );
+    }
+    if (pathname === "/birthday") {
+      const canonicalHost = new URL(request.url).hostname.toLowerCase() === "qsseda.com";
+      return localizedPage(
+        injectPublicSeo(birthdayPage(fullLocale), fullLocale, "/birthday"),
+        locale,
+        200,
+        { indexable: canonicalHost }
+      );
+    }
+    if (pathname === "/mid-autumn") {
+      const canonicalHost = new URL(request.url).hostname.toLowerCase() === "qsseda.com";
+      return localizedPage(
+        injectPublicSeo(midAutumnPage(fullLocale), fullLocale, "/mid-autumn"),
+        locale,
+        200,
+        { indexable: canonicalHost }
+      );
+    }
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
     if (pathname === "/login") {
       const authUrl = new URL("/login", authOriginForRequest(request));

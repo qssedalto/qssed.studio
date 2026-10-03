@@ -1,3 +1,4 @@
+import { publicSitemapUrls } from "./public-indexing.js";
 const ACCESS_COOKIE = "__Host-qsseda-studio-access";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const MAX_PATH_LENGTH = 2048;
@@ -144,11 +145,7 @@ function robotsResponse(hostname) {
 
 function sitemapResponse(hostname) {
   if (String(hostname || "").toLowerCase() !== "qsseda.com") return scannerNotFound();
-  const locales = ["en-us","en-gb","en-au","zh-cn","zh-tw","ja-jp","ko-kr","fr-fr","es-es","el-gr","ar-sa"];
-  const urls = [
-    "https://qsseda.com/",
-    ...locales.map(locale => "https://qsseda.com/" + locale)
-  ];
+  const urls = publicSitemapUrls();
   const body = '<?xml version="1.0" encoding="UTF-8"?>\n'
     + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     + urls.map(url => "  <url><loc>" + url + "</loc></url>").join("\n")

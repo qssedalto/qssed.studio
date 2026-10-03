@@ -11,7 +11,10 @@ const dashboardStyle = read("studio/ui-style-dashboard.js");
 const uiStyles = read("studio/ui-styles.js");
 
 for (const required of [
-  'if (pathname === "/wishes") return localizedPage(wishesPage(fullLocale), locale);',
+  'if (pathname === "/wishes") {',
+  'injectPublicSeo(wishesPage(fullLocale), fullLocale, "/wishes")',
+  'injectPublicSeo(birthdayPage(fullLocale), fullLocale, "/birthday")',
+  'injectPublicSeo(midAutumnPage(fullLocale), fullLocale, "/mid-autumn")',
   '/^\\/wish\\/(birthday|mid-autumn)$/',
   'if (kind === "birthday") return "/birthday";',
   'if (kind === "mid-autumn") return "/mid-autumn";',
