@@ -706,8 +706,7 @@ function renderCompactMainMenu(copy, productLinks = {}) {
   const card = (item, openInNewTab = false) => '<a class="compact-menu-card" href="' + item.href + '"' +
     (openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '') + '>' +
     '<span class="compact-menu-card-icon">' + dashboardIcon(item.icon) + '</span>' +
-    '<span class="compact-menu-card-copy"><strong>' + item.title + '</strong><small>' + item.description + '</small></span>' +
-    '<b aria-hidden="true">↗</b></a>';
+    '<span class="compact-menu-card-copy"><strong>' + item.title + '</strong><small>' + item.description + '</small></span></a>';
 
   return `
     <section class="compact-main-menu" aria-label="${ui.menu}">
