@@ -289,6 +289,12 @@ export default {
       authUrl.searchParams.set("next", safeLocalNext(requestedNext) || fallbackNext);
       return Response.redirect(authUrl.toString(), 302);
     }
-    return localizedPage(notFoundPage(t, links), locale, 404);
+    let notFoundHost = "qsseda.com";
+    try { notFoundHost = new URL(request.url).hostname.toLowerCase(); } catch {}
+    return localizedPage(notFoundPage(t, links, {
+      host: notFoundHost,
+      requestedPath: pathname,
+      returnHref: "/"
+    }), locale, 404);
   }
 };
