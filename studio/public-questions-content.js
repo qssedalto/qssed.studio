@@ -167,7 +167,7 @@ export function questionLanguage(locale) {
 }
 
 export function questionLocale(locale) {
-  return String(locale || "").toLowerCase() === "zh-cn" ? "zh-cn" : "en-us";
+  return String(locale || "").toLowerCase().startsWith("zh") ? "zh-cn" : "en-us";
 }
 
 export function questionSitemapUrls() {
