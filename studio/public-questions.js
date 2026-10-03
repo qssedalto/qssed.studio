@@ -231,6 +231,21 @@ export const QUESTIONS = Object.freeze([
     }
   },
   {
+    id:"72d6c2d5-1cbb-46f2-9c67-0d8f65c8f233", category:"watch", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX Watch 和 ActivityWatch 官方的 aw-sync 有什么区别？",short:"两者是不同的同步架构。ActivityWatch 的官方 aw-sync 目前是 beta，并依赖用户自己的文件同步工具；AERTEX Watch 使用设备令牌和 AERTEX 云端服务。",answer:[
+        "ActivityWatch 当前官方文档把 aw-sync 标记为 beta。它会在同步目录创建设备相关的 staging 数据库，再依赖 Syncthing、rsync、Dropbox、Google Drive 等用户选择的文件同步工具把目录分发到其他设备；aw-sync 本身不直接通过网络发送数据。",
+        "AERTEX Watch 是另一套独立方案：同步工具读取用户电脑上的 ActivityWatch 本机 REST API，再使用 AERTEX Watch 设备令牌通过 HTTPS 把事件批次发送到 AERTEX 的云端数据服务。",
+        "因此 AERTEX Watch 不应被描述成 ActivityWatch 官方 aw-sync 的品牌版本；它是一个与 ActivityWatch 数据兼容、但架构和运营主体都独立的 AERTEX 产品。"
+      ]},
+      "en-us":{question:"How is AERTEX Watch different from ActivityWatch's official aw-sync?",short:"They use different sync architectures. ActivityWatch's official aw-sync is currently beta and relies on a user-chosen file-sync tool, while AERTEX Watch uses device tokens and the AERTEX cloud service.",answer:[
+        "ActivityWatch's current official documentation marks aw-sync as beta. It creates a device-specific staging database in a sync directory and relies on a file-sync tool chosen by the user, such as Syncthing, rsync, Dropbox, or Google Drive, to distribute that directory. aw-sync itself does not send data over the network.",
+        "AERTEX Watch is a separate architecture: its sync tool reads the user's local ActivityWatch REST API and sends authenticated event batches over HTTPS to the AERTEX cloud data service using an AERTEX Watch device token.",
+        "AERTEX Watch therefore should not be described as a branded version of ActivityWatch's official aw-sync. It is an independent AERTEX product that is compatible with ActivityWatch data."
+      ]}
+    }
+  },
+  {
     id:"87333a55-58bc-45e8-91cf-39012c988118", category:"watch", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
     translations:{
       "zh-cn":{question:"AERTEX Watch Sync 是怎么工作的？",short:"同步工具从电脑本机的 ActivityWatch API 读取事件，再使用设备令牌通过 HTTPS 把批次上传到 AERTEX Watch。",answer:[
