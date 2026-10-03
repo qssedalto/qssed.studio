@@ -1,6 +1,6 @@
-export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico"]);
+export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20260924-3" type="image/svg+xml">';
+export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-square-1" type="image/svg+xml">';
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
