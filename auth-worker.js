@@ -540,7 +540,7 @@ function authPage(pathname, request) {
 <body data-page="${page}">
   <div class="auth-account-zone">${accountMenuMarkup(locale)}</div>
   <main class="shell">
-    <a class="brand" href="${mainOrigin}/${locale}" aria-label="${homeLabel}" title="${homeLabel}"><img class="mark" src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true"><div class="brand-copy"><strong>AERTEX ID</strong><span>AERTEX Account</span></div></a>
+    <a class="brand" href="${mainOrigin}/${locale}" aria-label="${homeLabel}" title="${homeLabel}"><img class="mark" src="/favicon.svg?v=aertex-20261003-square-1" alt="" aria-hidden="true"><div class="brand-copy"><strong>AERTEX ID</strong><span>AERTEX Account</span></div></a>
     <section class="card">
       <div id="loading" class="loading"><span class="spinner"></span><span>${copy.checking}</span></div>
       <div id="signedOut" class="hidden">
