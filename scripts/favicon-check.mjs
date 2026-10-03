@@ -26,7 +26,7 @@ assert(favicon.includes('"content-type": "image/svg+xml;charset=UTF-8"'), "Favic
 assert(favicon.includes('"cache-control": "public, max-age=604800, immutable"'), "Favicon should be cacheable at the edge/browser");
 assert(favicon.includes('--paper:#ffffff') && favicon.includes('--ink:#121417'), "Favicon must preserve the monochrome light/dark palette");
 assert(favicon.includes("Broken angular orbit") && favicon.includes("Three-way core"), "Favicon must preserve the angular orbit and three-way core visual system");
-assert(favicon.includes("aertex-20261003-product-badge-6"), "Favicon cache key must use the current product-badge release.");
+assert(favicon.includes("aertex-20261003-product-badge-7"), "Favicon cache key must use the current product-badge release.");
 assert(brandLogo.includes('new Set(["/logo.svg"])') && brandLogo.includes("logoResponse(request)"), "Official wordmark must be exposed at /logo.svg.");
 assert(brandLogo.includes('viewBox="0 0 1027 198"'), "Official /logo.svg must use the AERTEX wordmark artwork.");
 
@@ -53,6 +53,7 @@ const workSvg = faviconSvgForProduct("work");
 assert(workSvg.includes("aertex-work-badge"), "Work must use the same circular branch badge system.");
 assert(workSvg.includes('cx="51.2" cy="51.2" r="11.1"'), "Work must use the same circle as every other branch logo.");
 assert(workSvg.includes('class="badge-glyph" transform="translate(51.2 51.2)"'), "Work edit glyph must be geometrically centered on the shared badge origin.");
+assert(workSvg.includes('M-1.55 1.8-.85-.45 2.6-3.9'), "Work pencil must keep the shorter reference-matched geometry.");
 assert(!workSvg.includes("work-badge-cutout") && !workSvg.includes("work-edit-backdrop"), "Work must not use a custom square cutout or background panel.");
 assert(workSvg.includes(".badge-disc{fill:none;stroke:var(--edge)"), "All shared product badge discs must use transparent fill.");
 assert(!workSvg.includes("work-window") && !workSvg.includes("#9bbcf5") && !workSvg.includes("#5f8fdf"), "Work branch logo must not reintroduce the old blue workspace panes.");
@@ -69,8 +70,8 @@ for (const [source,name] of [[worker,"Main/Work"],[gptWorker,"Intelligence"],[au
   assert(source.includes("LOGO_PATHS") && source.includes("logoResponse(request)"), name + " Worker must serve /logo.svg from the shared wordmark source.");
   assert(source.includes("FAVICON_PATHS") && source.includes("faviconResponse(request)"), name + " Worker must serve the shared square icon routes.");
 }
-assert(cashIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-6"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261003-product-badge-6"'), "Cash must use the current square AERTEX logo in both favicon and visible brand UI.");
-assert(watchIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-6"'), "Watch must declare the current square AERTEX favicon.");
+assert(cashIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-7"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261003-product-badge-7"'), "Cash must use the current square AERTEX logo in both favicon and visible brand UI.");
+assert(watchIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-7"'), "Watch must declare the current square AERTEX favicon.");
 assert(!cashWorker.includes('"/icon.svg"]') && !watchWorker.includes('"/icon.svg"'), "Cash and Watch must not serve legacy product-specific icon files.");
 
 console.log("AERTEX shared square icon and wordmark integration checks passed.");
