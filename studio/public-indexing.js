@@ -1,4 +1,5 @@
 import { SUPPORTED_LOCALES, normalizeSupportedLocale } from "./locale.js";
+import { QUESTION_INDEX_LOCALES, publishedQuestionIds } from "./public-questions.js";
 
 export const PUBLIC_INDEXABLE_ROUTES = Object.freeze([
   "/",
@@ -19,16 +20,19 @@ export function canonicalPublicUrl(locale, pathname) {
   return "https://qsseda.com/" + code + route;
 }
 
-export function publicSeoHeadMarkup(locale, pathname, description = "") {
+export function publicSeoHeadMarkup(locale, pathname, description = "", options = {}) {
   const route = normalizeRoute(pathname);
   const code = normalizeSupportedLocale(locale) || "en-us";
   const canonical = canonicalPublicUrl(code, route);
-  const alternates = SUPPORTED_LOCALES.map(item =>
+  const alternateLocales = Array.isArray(options?.alternateLocales) && options.alternateLocales.length
+    ? options.alternateLocales
+    : SUPPORTED_LOCALES;
+  const alternates = alternateLocales.map(item =>
     '<link rel="alternate" hreflang="' + item + '" href="' + canonicalPublicUrl(item, route) + '">'
   ).join("");
-  const xDefault = route === "/"
+  const xDefault = options?.xDefault || (route === "/"
     ? "https://qsseda.com/"
-    : canonicalPublicUrl("en-us", route);
+    : canonicalPublicUrl("en-us", route));
   const descriptionMeta = description
     ? '<meta name="description" content="' + escapeHtml(description) + '">'
     : "";
@@ -41,9 +45,9 @@ export function publicSeoHeadMarkup(locale, pathname, description = "") {
   ].filter(Boolean).join("");
 }
 
-export function injectPublicSeo(markup, locale, pathname, description = "") {
+export function injectPublicSeo(markup, locale, pathname, description = "", options = {}) {
   const source = String(markup || "");
-  const meta = publicSeoHeadMarkup(locale, pathname, description);
+  const meta = publicSeoHeadMarkup(locale, pathname, description, options);
   if (!source.includes("</head>")) return source;
   return source.replace("</head>", meta + "</head>");
 }
@@ -53,6 +57,12 @@ export function publicSitemapUrls() {
   for (const route of PUBLIC_INDEXABLE_ROUTES) {
     for (const locale of SUPPORTED_LOCALES) {
       urls.push(canonicalPublicUrl(locale, route));
+    }
+  }
+  for (const locale of QUESTION_INDEX_LOCALES) {
+    urls.push(canonicalPublicUrl(locale, "/q"));
+    for (const id of publishedQuestionIds()) {
+      urls.push(canonicalPublicUrl(locale, "/q/" + id));
     }
   }
   return [...new Set(urls)];

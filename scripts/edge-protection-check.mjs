@@ -6,6 +6,7 @@ import {
   requestBodyLimit
 } from "../studio/edge-protection.js";
 import { publicSitemapUrls } from "../studio/public-indexing.js";
+import { QUESTION_INDEX_LOCALES, publishedQuestions } from "../studio/public-questions.js";
 
 const allow = { limit: async () => ({ success: true }) };
 const deny = { limit: async () => ({ success: false }) };
@@ -56,7 +57,8 @@ const sitemap = await protectEdgeRequest(browserRequest("/sitemap.xml"), env());
 assert(sitemap?.status === 200, "Canonical sitemap.xml should be served at the edge");
 const sitemapText = await sitemap.text();
 const sitemapUrls = publicSitemapUrls();
-assert(sitemapUrls.length === 56, "Complete public sitemap must expose 56 canonical URLs");
+const expectedSitemapCount = 56 + QUESTION_INDEX_LOCALES.length * (1 + publishedQuestions().length);
+assert(sitemapUrls.length === expectedSitemapCount, "Complete public sitemap count is out of sync with public Questions.");
 for (const required of [
   "https://qsseda.com/",
   "https://qsseda.com/zh-cn",
@@ -65,7 +67,9 @@ for (const required of [
   "https://qsseda.com/zh-cn/birthday",
   "https://qsseda.com/zh-cn/mid-autumn",
   "https://qsseda.com/ar-sa/aw/setup",
-  "https://qsseda.com/fr-fr/birthday"
+  "https://qsseda.com/fr-fr/birthday",
+  "https://qsseda.com/zh-cn/q",
+  "https://qsseda.com/en-us/q/0e5f2ec8-99cf-4bd1-93a0-66ec12360f01"
 ]) {
   assert(sitemapText.includes("<loc>" + required + "</loc>"), "Sitemap is missing " + required);
 }

@@ -1,6 +1,10 @@
 import worker from "../studio/entry.js";
 
+const QUESTION_ID = "0e5f2ec8-99cf-4bd1-93a0-66ec12360f01";
+
 const cases = [
+  ["/zh-cn/q", "https://qsseda.com/zh-cn/q"],
+  ["/zh-cn/q/" + QUESTION_ID, "https://qsseda.com/zh-cn/q/" + QUESTION_ID],
   ["/ja-jp/birthday", "https://qsseda.com/ja-jp/birthday"],
   ["/en-us/wishes", "https://qsseda.com/en-us/wishes"],
   ["/ar-sa/mid-autumn", "https://qsseda.com/ar-sa/mid-autumn"],
