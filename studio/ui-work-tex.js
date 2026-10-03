@@ -387,7 +387,10 @@ const WORK_TEX_VISUAL_STYLE = `
     body.os-shell:has(.tex-work-app) .tex-start-surface{
       position:relative!important;
       isolation:isolate;
-      overflow:auto!important;
+      min-width:0!important;
+      max-width:100%!important;
+      overflow-x:hidden!important;
+      overflow-y:auto!important;
       background:
         radial-gradient(640px 400px at 92% 4%,color-mix(in srgb,var(--primary) 17%,transparent),transparent 70%),
         radial-gradient(520px 340px at -6% 104%,color-mix(in srgb,var(--primary) 7%,transparent),transparent 72%),
