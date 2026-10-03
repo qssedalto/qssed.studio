@@ -1,6 +1,6 @@
 export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-3" type="image/svg+xml">';
+export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-4" type="image/svg+xml">';
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
@@ -18,7 +18,7 @@ export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
 const PRODUCT_FAVICON_META = Object.freeze({
   work: {
     label: "AERTEX Work",
-    badge: '<g class="aertex-product-badge aertex-work-badge" aria-hidden="true"><rect class="work-edit-backdrop" x="39.4" y="39.4" width="21.2" height="21.2"/><path class="work-edit-frame" d="M49.1 42.8h-3.6a3.2 3.2 0 0 0-3.2 3.2v8.9a3.2 3.2 0 0 0 3.2 3.2h8.9a3.2 3.2 0 0 0 3.2-3.2v-3.7"/><path class="work-edit-pencil" d="M47.6 53.2l1.05-4.05 7.3-7.3a2.15 2.15 0 0 1 3.05 3.05l-7.3 7.3-4.1 1z"/></g>'
+    badge: '<g class="aertex-product-badge aertex-work-badge" aria-hidden="true"><path class="work-edit-frame" d="M49.1 42.8h-3.6a3.2 3.2 0 0 0-3.2 3.2v8.9a3.2 3.2 0 0 0 3.2 3.2h8.9a3.2 3.2 0 0 0 3.2-3.2v-3.7"/><path class="work-edit-pencil" d="M47.6 53.2l1.05-4.05 7.3-7.3a2.15 2.15 0 0 1 3.05 3.05l-7.3 7.3-4.1 1z"/></g>'
   },
   intelligence: { label: "AERTEX Intelligence", glyph: '<path class="filled" d="m51.2 44.8 1.55 3.85 3.85 1.55-3.85 1.55-1.55 3.85-1.55-3.85-3.85-1.55 3.85-1.55z"/><path d="M55.2 44.7v2.2M54.1 45.8h2.2"/>' },
   cash: { label: "AERTEX Cash", glyph: '<path d="M46.5 48.1h9.8v7.2h-9.8zM48 48.1v-1.8h6.6v1.8M53.2 51.7h3.1"/><circle class="filled" cx="53.6" cy="51.7" r=".75"/>' },
@@ -52,12 +52,11 @@ export function faviconSvgForProduct(product = "") {
     .replace('aria-label="AERTEX"', 'aria-label="' + meta.label + '"')
     .replace(
       "</style>",
-      `.aertex-product-badge .badge-disc{fill:var(--paper);stroke:var(--edge);stroke-width:1.6}
+      `.aertex-product-badge .badge-disc{fill:none;stroke:var(--edge);stroke-width:1.6}
       .aertex-product-badge .badge-glyph{fill:none;stroke:var(--ink);stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
       .aertex-product-badge .badge-glyph .filled{fill:var(--ink);stroke:none}
-      .aertex-work-badge .work-edit-backdrop{fill:#fff}
-      .aertex-work-badge .work-edit-frame{fill:none;stroke:#2f2f2f;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
-      .aertex-work-badge .work-edit-pencil{fill:#fff;stroke:#2f2f2f;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
+      .aertex-work-badge .work-edit-frame{fill:none;stroke:var(--ink);stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
+      .aertex-work-badge .work-edit-pencil{fill:none;stroke:var(--ink);stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
       </style>`
     )
     .replace("</svg>", badge + "</svg>");
