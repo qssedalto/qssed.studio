@@ -1,5 +1,5 @@
 import { SUPPORTED_LOCALES, normalizeSupportedLocale } from "./locale.js";
-import { QUESTION_INDEX_LOCALES, publishedQuestionIds } from "./public-questions.js";
+import { QUESTION_INDEX_LOCALES, publishedQuestions } from "./public-questions.js";
 
 export const PUBLIC_INDEXABLE_ROUTES = Object.freeze([
   "/",
@@ -52,20 +52,46 @@ export function injectPublicSeo(markup, locale, pathname, description = "", opti
   return source.replace("</head>", meta + "</head>");
 }
 
-export function publicSitemapUrls() {
-  const urls = ["https://qsseda.com/"];
+export function publicQuestionSitemapEntries() {
+  const questions = publishedQuestions();
+  const latestQuestionUpdate = questions.reduce(
+    (latest, item) => String(item.updated || "") > latest ? String(item.updated || "") : latest,
+    ""
+  );
+  const entries = [];
+  for (const locale of QUESTION_INDEX_LOCALES) {
+    entries.push({
+      url: canonicalPublicUrl(locale, "/q"),
+      lastmod: latestQuestionUpdate
+    });
+    for (const item of questions) {
+      entries.push({
+        url: canonicalPublicUrl(locale, "/q/" + item.id),
+        lastmod: String(item.updated || latestQuestionUpdate || "")
+      });
+    }
+  }
+  return entries;
+}
+
+export function publicSitemapEntries() {
+  const entries = [{ url: "https://qsseda.com/", lastmod: "" }];
   for (const route of PUBLIC_INDEXABLE_ROUTES) {
     for (const locale of SUPPORTED_LOCALES) {
-      urls.push(canonicalPublicUrl(locale, route));
+      entries.push({ url: canonicalPublicUrl(locale, route), lastmod: "" });
     }
   }
-  for (const locale of QUESTION_INDEX_LOCALES) {
-    urls.push(canonicalPublicUrl(locale, "/q"));
-    for (const id of publishedQuestionIds()) {
-      urls.push(canonicalPublicUrl(locale, "/q/" + id));
-    }
+  entries.push(...publicQuestionSitemapEntries());
+
+  const unique = new Map();
+  for (const entry of entries) {
+    if (!unique.has(entry.url)) unique.set(entry.url, entry);
   }
-  return [...new Set(urls)];
+  return [...unique.values()];
+}
+
+export function publicSitemapUrls() {
+  return publicSitemapEntries().map(entry => entry.url);
 }
 
 function normalizeRoute(pathname) {
