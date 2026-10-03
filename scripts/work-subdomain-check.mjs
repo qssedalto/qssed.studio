@@ -119,7 +119,7 @@ assert(workTexUi.includes("targetAddressSpace: 'loopback'"), "Manual Work TeX co
 assert(workTexUi.includes("loopbackFetch(base, '/tex/status')"), "Manual Work TeX connection checks must verify TeX availability after Bridge health");
 assert(workTexUi.includes("fetch('/api/tex/status'"), "Manual Work TeX connection checks must also verify cloud compiler availability");
 assert(workTexUi.includes('id="qsseda-work-tex-visual-system-v2"'), "Standalone Work TeX must include the final shared visual-system layer.");
-assert(workTexUi.includes(':root[data-accent="sapphire"] body.os-shell:has(.tex-work-app)'), "Work TeX must map Studio accent tokens into the standalone product.");
+assert(workTexUi.includes(':root[data-accent] body.os-shell:has(.tex-work-app){--primary:var(--aertex-accent)'), "Work TeX must consume the shared iPhone accent variables.");
 assert(workTexUi.includes('.tex-mobile-tab[aria-selected="true"]'), "Work mobile navigation must expose an accent-aware selected state.");
 assert(workTexUi.includes('.tex-start-card::after'), "Work start templates must use the upgraded product-card treatment.");
 assert(workTexUi.includes('.tex-start-card[data-tex-start-template="blank"]::before{content:"+"}') && workTexUi.includes('.tex-start-card[data-tex-start-template="math"]::before{content:"∑"'), "Work TeX start templates must keep the refined compact template symbols.");
