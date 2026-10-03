@@ -138,7 +138,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
   );
   output = output.replace(
     "async function initialize(){try{const [statusData,documentData]=await Promise.all([api('/api/tex/status'),api('/api/tex/documents')]);applyCompilerStatus(statusData);documents=Array.isArray(documentData.documents)?documentData.documents:[];renderDocuments();if(documents[0])await openDocument(documents[0].id);else renderEditor();}",
-    "async function initialize(){try{const [statusData,documentData]=await Promise.all([api('/api/tex/status'),api('/api/tex/documents')]);applyCompilerStatus(statusData);documents=Array.isArray(documentData.documents)?documentData.documents:[];renderDocuments();const requested=routeDocumentId();if(requested)await openDocument(requested,'replace');else if(documents[0])await openDocument(documents[0].id,'replace');else renderEditor();}"
+    "async function initialize(){try{const [statusData,documentData]=await Promise.all([api('/api/tex/status'),api('/api/tex/documents')]);applyCompilerStatus(statusData);documents=Array.isArray(documentData.documents)?documentData.documents:[];renderDocuments();const requested=routeDocumentId();if(requested)await openDocument(requested,'replace');else renderEditor();}"
   );
   output = output.replace(
     "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());void initialize();",
