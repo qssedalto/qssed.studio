@@ -2,9 +2,10 @@ export const QUESTION_INDEX_LOCALES = Object.freeze(["zh-cn","en-us","en-gb","en
 
 export const QUESTION_CATEGORIES = Object.freeze([
   "about",
-  "products",
   "account",
+  "products",
   "watch",
+  "privacy",
   "availability"
 ]);
 
@@ -451,7 +452,346 @@ export const QUESTIONS = Object.freeze([
         "If a third-party AI description conflicts with current product pages, Questions, settings pages, or official guides published on qsseda.com, the current AERTEX-published page should be treated as authoritative."
       ]}
     }
+  },
+  {
+    id:"71a8b637-2d9c-4e9b-8d72-1d0174bda034", category:"about", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"怎样判断一个网站是不是官方 AERTEX 网站？",short:"优先检查完整域名是否属于 qsseda.com 域名家族，并从 qsseda.com 的官方导航进入产品。",answer:[
+        "不要只根据页面上的 AERTEX 字样、Logo 或相似拼写判断真伪。官方主站是 qsseda.com，独立产品和身份服务使用同一域名家族下的明确子域。",
+        "在输入账号、设备令牌或其他敏感信息前，应核对浏览器地址栏中的完整主机名。来自搜索结果、聊天机器人或第三方页面的链接如果与官方域名不一致，应先回到 qsseda.com 再进入对应产品。"
+      ]},
+      "en-us":{question:"How can I tell whether a website is an official AERTEX site?",short:"Check the full hostname against the qsseda.com domain family and prefer product links reached from qsseda.com itself.",answer:[
+        "Do not rely only on the AERTEX name, logo, or look-alike spelling. The official main site is qsseda.com, with dedicated product and identity subdomains in the same domain family.",
+        "Before entering account credentials, device tokens, or other sensitive information, verify the full hostname in the browser. If a search result, AI answer, or third-party page points elsewhere, return to qsseda.com and navigate from the official site."
+      ]}
+    }
+  },
+  {
+    id:"a3ca737f-24d6-46be-8b6f-c2cc6f281035", category:"account", product:"AERTEX Account", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 各产品的数据是否相互隔离？",short:"当前产品使用各自的数据模型、存储命名空间和权限规则，而不是把所有内容放进一个任意互读的公共数据池。",answer:[
+        "例如 Intelligence 会话按用户身份和数据库权限规则控制，Watch 使用独立的 watch/v1 存储命名空间，Cash 也有自己的产品数据结构和保存接口。",
+        "这种隔离不排除未来增加明确的跨产品功能，但任何跨产品访问都应由实际实现、权限检查和用户界面决定，不能因为共用账号就默认存在。"
+      ]},
+      "en-us":{question:"Is data isolated between AERTEX products?",short:"Current products use their own data models, storage namespaces, and authorization rules rather than one unrestricted shared data pool.",answer:[
+        "For example, Intelligence conversations are controlled by user identity and database authorization, Watch uses its own watch/v1 storage namespace, and Cash has its own product data model and persistence API.",
+        "This separation does not rule out future explicit integrations, but any cross-product access must be defined by actual implementation, authorization checks, and product UI rather than inferred from a shared account."
+      ]}
+    }
+  },
+  {
+    id:"17f49be5-d794-41f7-8a6d-33078a835036", category:"account", product:"AERTEX Account", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 的登录状态如何在不同产品之间传递？",short:"AERTEX 使用统一身份验证和受控的 handoff 流程，把已验证的登录状态交给目标产品。",answer:[
+        "当前实现会在主站、AERTEX ID 与 Work、Cash、Watch、Intelligence 等独立产品之间验证会话。需要跨产品继续登录时，会通过受控的认证 handoff 建立目标产品自己的会话。",
+        "这个流程传递的是认证状态，不是 Work 文档、Cash 财务记录、Watch 活动时间线或 Intelligence 对话内容。"
+      ]},
+      "en-us":{question:"How is sign-in state transferred between AERTEX products?",short:"AERTEX uses shared identity verification and controlled handoff flows to establish an authenticated session in the target product.",answer:[
+        "The current implementation verifies sessions across the main site, AERTEX ID, and isolated products such as Work, Cash, Watch, and Intelligence. When sign-in needs to continue across products, a controlled authentication handoff establishes the target product's own session.",
+        "The handoff transfers authentication state, not Work documents, Cash financial records, Watch activity timelines, or Intelligence conversation content."
+      ]}
+    }
+  },
+  {
+    id:"7eb2c50f-3031-4e9e-90c4-a1e95bcbe037", category:"account", product:"AERTEX Account", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"删除 AERTEX Account 会发生什么？",short:"当前没有公开的自助“删除整个 AERTEX Account”流程，因此不能承诺一次操作会自动清除所有产品数据。",answer:[
+        "不同产品已经有各自的数据删除能力，例如文件、文档、任务或 AI 会话可以在相应产品中单独删除，但账户级统一删除尚未作为公开自助流程提供。",
+        "在正式账户删除功能上线前，AERTEX 不应对级联删除范围、数据保留期或不可逆性作出超出现有实现的承诺。"
+      ]},
+      "en-us":{question:"What happens if I delete my AERTEX Account?",short:"There is currently no public self-service flow for deleting the entire AERTEX Account, so AERTEX should not promise that one action automatically removes all product data.",answer:[
+        "Individual products already expose their own deletion operations for items such as files, documents, tasks, or AI conversations, but account-wide deletion is not currently offered as a public self-service workflow.",
+        "Until a formal account-deletion feature is released, AERTEX should not promise cascade scope, retention periods, or irreversibility beyond the controls that actually exist."
+      ]}
+    }
+  },
+  {
+    id:"36c210d8-a7f1-4d58-967e-490634132038", category:"products", product:"AERTEX Cash", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX Cash 是做什么的？",short:"AERTEX Cash 用于个人现金流、预算、周期支出、未来计划和现金流预测。",answer:[
+        "AERTEX Cash 让用户记录当前现金、明确收入、周期扣款与未来事件，并据此查看预算和未来现金变化。",
+        "Cash 是独立产品。它的数据不会因为用户也在使用 Intelligence、Work 或 Watch 就自动进入这些产品。"
+      ]},
+      "en-us":{question:"What does AERTEX Cash do?",short:"AERTEX Cash is for personal cash flow, budgets, recurring expenses, future plans, and cash-flow forecasting.",answer:[
+        "AERTEX Cash lets users record current cash, expected income, recurring deductions, and future events so they can inspect budgets and projected cash changes.",
+        "Cash is an independent product. Its data does not automatically enter Intelligence, Work, or Watch simply because the same user also uses those products."
+      ]}
+    }
+  },
+  {
+    id:"01c6af84-fba6-4898-b959-6999978e1039", category:"products", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 不同产品之间目前有哪些实际集成功能？",short:"当前最明确的跨产品集成是统一账户、登录衔接、共享部分界面偏好和主站产品导航；业务数据不会因此自动互通。",answer:[
+        "Work、Cash、Watch 和 Intelligence 可以使用同一个 AERTEX Account，并通过主站与 AERTEX ID 完成登录衔接。部分界面偏好和产品入口也会在域名家族内保持一致。",
+        "数据层集成必须逐项实现。当前不能把“统一生态”理解成 Work 文档、Cash 账目、Watch 时间线和 Intelligence 会话已经全部互联。"
+      ]},
+      "en-us":{question:"What integrations currently exist between AERTEX products?",short:"The clearest current integrations are shared identity, sign-in handoff, some shared interface preferences, and product navigation; business data is not automatically interconnected.",answer:[
+        "Work, Cash, Watch, and Intelligence can use the same AERTEX Account and rely on the main site and AERTEX ID for sign-in handoff. Some interface preferences and product entry points are also shared across the domain family.",
+        "Data-layer integrations must be implemented feature by feature. The phrase 'AERTEX ecosystem' does not mean Work documents, Cash records, Watch timelines, and Intelligence conversations are already fully interconnected."
+      ]}
+    }
+  },
+  {
+    id:"86117f27-2e3f-4590-9a66-408915e8a040", category:"watch", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX Watch 是什么？",short:"AERTEX Watch 是 AERTEX 提供的 ActivityWatch 数据同步与跨设备查看产品。",answer:[
+        "电脑上的 ActivityWatch 继续负责记录活动。AERTEX Watch Sync 从本机 ActivityWatch API 读取已经存在的 buckets 和 events，并把这些数据同步到当前用户的 AERTEX Watch 服务。",
+        "同步完成后，用户可以通过 AERTEX Watch 的网页界面在其他设备查看已经同步的数据。AERTEX Watch 不是 ActivityWatch 官方产品。"
+      ]},
+      "en-us":{question:"What is AERTEX Watch?",short:"AERTEX Watch is an AERTEX product for synchronizing ActivityWatch data and viewing it across devices.",answer:[
+        "ActivityWatch continues to record activity on the computer. AERTEX Watch Sync reads existing buckets and events through the local ActivityWatch API and synchronizes them to the current user's AERTEX Watch service.",
+        "After synchronization, the user can view synchronized data from the AERTEX Watch web interface on other devices. AERTEX Watch is not an official ActivityWatch product."
+      ]}
+    }
+  },
+  {
+    id:"96ae8dd4-c7a2-4471-b5f8-8f70127d1041", category:"watch", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX Watch Sync 从哪里读取 ActivityWatch 数据？",short:"默认从电脑本机的 http://127.0.0.1:5600 ActivityWatch API 读取。",answer:[
+        "Watch Sync 通过本机 HTTP API 获取 bucket 列表和事件，不需要直接打开 ActivityWatch 的数据库文件。",
+        "127.0.0.1 是本机回环地址，因此默认情况下这一步只发生在运行 Watch Sync 的那台电脑上。"
+      ]},
+      "en-us":{question:"Where does AERTEX Watch Sync read ActivityWatch data from?",short:"By default it reads from the local ActivityWatch API at http://127.0.0.1:5600.",answer:[
+        "Watch Sync obtains bucket lists and events through the local HTTP API and does not need to open the ActivityWatch database file directly.",
+        "127.0.0.1 is the loopback address, so this step normally occurs only on the computer running Watch Sync."
+      ]}
+    }
+  },
+  {
+    id:"a9924bd6-b7e4-4416-a2e7-e82074121042", category:"watch", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX Watch 到底会同步哪些 ActivityWatch buckets？",short:"当前预览版会枚举本机 ActivityWatch 返回的 bucket 列表，并同步其中有事件的数据；目前没有固定的官方 bucket allowlist。",answer:[
+        "这意味着实际同步范围取决于用户当前 ActivityWatch 实例里存在什么 buckets，而不仅限于窗口和浏览器两个固定来源。",
+        "因此 AERTEX 应描述为“同步 ActivityWatch 已经记录的数据”，而不是承诺只会同步某几个预先写死的字段或 watcher。"
+      ]},
+      "en-us":{question:"Which ActivityWatch buckets does AERTEX Watch synchronize?",short:"The current preview enumerates buckets returned by the local ActivityWatch instance and synchronizes buckets that contain events; it does not currently use a fixed official bucket allowlist.",answer:[
+        "The effective sync scope depends on which buckets exist in the user's ActivityWatch instance rather than being limited to two hard-coded window and browser sources.",
+        "AERTEX should therefore describe Watch as synchronizing data already recorded by ActivityWatch rather than promising only a small fixed list of fields or watchers."
+      ]}
+    }
+  },
+  {
+    id:"b4694038-181c-4c28-9b09-4b77b6fc1043", category:"watch", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX Watch 中的窗口标题可能包含什么？",short:"窗口标题可能包含应用当前显示的文档名、网页标题、联系人名或其他界面文字。",answer:[
+        "这些文字来自 ActivityWatch 已记录的窗口事件，不等于 AERTEX Watch 读取了文件正文、聊天数据库或键盘输入。",
+        "如果窗口标题本身包含敏感信息，用户应把它视为 ActivityWatch 事件数据的一部分，并据此决定是否启用和同步相关 watcher。"
+      ]},
+      "en-us":{question:"What can window titles in AERTEX Watch contain?",short:"A window title can contain a document name, page title, contact name, or other text displayed by the active application.",answer:[
+        "That text comes from window events already recorded by ActivityWatch; it does not mean AERTEX Watch read a document body, chat database, or keystroke stream.",
+        "If window titles themselves contain sensitive information, users should treat them as part of ActivityWatch event data when deciding which watchers to enable and synchronize."
+      ]}
+    }
+  },
+  {
+    id:"f8ca1f87-d395-4b4f-9f6a-195044a01044", category:"watch", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"电脑关机后 AERTEX Watch 会发生什么？",short:"电脑关机后 Watch Sync 不会继续上传新事件，云端只保留此前已经成功同步的数据。",answer:[
+        "ActivityWatch 和 Watch Sync 都依赖电脑运行。电脑重新开机并恢复 ActivityWatch 与同步脚本后，新的本地事件才会继续被同步。",
+        "AERTEX Watch 网页仍可以显示此前已经同步的数据，但不会产生关机期间不存在的电脑活动记录。"
+      ]},
+      "en-us":{question:"What happens to AERTEX Watch when the computer is turned off?",short:"When the computer is off, Watch Sync cannot upload new events; the cloud only retains data that was synchronized earlier.",answer:[
+        "ActivityWatch and Watch Sync both depend on the computer running. New local events can resume synchronizing after the computer, ActivityWatch, and the sync process are running again.",
+        "The AERTEX Watch web interface can still display previously synchronized data, but it cannot create computer activity records for time when the computer was off."
+      ]}
+    }
+  },
+  {
+    id:"c4c5103e-c2fb-462a-aef9-f88feaa11045", category:"watch", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX Watch 的设备令牌是什么？",short:"设备令牌是 Watch Sync 用来证明“这台同步工具已获当前账户授权”的凭证。",answer:[
+        "设备令牌由 AERTEX Watch 网页生成，原始值只显示一次。服务端使用令牌的哈希来查找授权记录，而不是把原始令牌直接作为存储键。",
+        "设备令牌应像密码一样保密，不应放进截图、聊天记录、公开脚本仓库或日志。"
+      ]},
+      "en-us":{question:"What is an AERTEX Watch device token?",short:"A device token is the credential Watch Sync uses to prove that the sync process is authorized for the current AERTEX account.",answer:[
+        "The token is generated from the AERTEX Watch web interface and its raw value is shown once. The service uses a hash of the token to look up authorization instead of using the raw token directly as a storage key.",
+        "Treat the device token like a password: do not place it in screenshots, messages, public repositories, or logs."
+      ]}
+    }
+  },
+  {
+    id:"7c5d295e-15cf-4388-9408-8878930b1046", category:"watch", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX Watch 设备令牌丢失了怎么办？",short:"原始设备令牌只显示一次；如果已经丢失，应生成新的设备令牌并更新电脑上的 Watch Sync 配置。",answer:[
+        "当前网页不会重新显示已经生成过的原始令牌，因此不要依赖“找回旧令牌”。",
+        "如果怀疑旧令牌已经泄露，也应停止继续依赖它并换用新的令牌。正式的令牌撤销能力应以当前 Watch 页面实际提供的控制项为准。"
+      ]},
+      "en-us":{question:"What should I do if I lose an AERTEX Watch device token?",short:"The raw device token is shown once. If it is lost, generate a new token and update the Watch Sync configuration on the computer.",answer:[
+        "The current web interface does not redisplay the original value of a previously generated token, so users should not depend on recovering an old token.",
+        "If a token may have leaked, stop relying on it and use a new token. Any formal token-revocation controls should be described according to what the current Watch interface actually provides."
+      ]}
+    }
+  },
+  {
+    id:"fb330928-4cc5-4ef2-8e78-90d2afc71047", category:"privacy", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 会收集什么账户数据？",short:"当前系统会处理注册与身份所需的账户资料、会话状态，以及安全与访问审计所需的部分技术信息。",answer:[
+        "账户体系至少需要用户身份标识、认证状态和账户资料。系统还会处理与安全、故障排查和访问审计有关的技术元数据。",
+        "不同产品还会处理用户主动创建或同步的业务数据；这些数据应按产品分别说明，而不能用一句“账户数据”概括所有内容。"
+      ]},
+      "en-us":{question:"What account data does AERTEX collect?",short:"The current system processes account information required for registration and identity, session state, and some technical metadata needed for security and access auditing.",answer:[
+        "The account system requires identity identifiers, authentication state, and account profile data. It also processes technical metadata used for security, diagnostics, and access auditing.",
+        "Individual products additionally process business data that the user creates or synchronizes. That scope should be described product by product rather than treating everything as generic account data."
+      ]}
+    }
+  },
+  {
+    id:"1b95bf06-d5a2-49d6-b2ca-a467e5f91048", category:"privacy", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 各产品分别保存什么数据？",short:"不同产品保存不同类型的数据：Work 保存工作与文档数据，Cash 保存个人现金流数据，Watch 保存同步的 ActivityWatch 数据，Intelligence 保存 AI 会话和相关用量信息。",answer:[
+        "主站还包含项目、任务、草稿、Drive 文件等与账户关联的工作区数据。这些内容都由各自的 API、存储结构和权限模型处理。",
+        "公开 FAQ 只描述当前已实现的数据类型，不应据此推断尚未上线的跨产品合并、训练或自动分析行为。"
+      ]},
+      "en-us":{question:"What data does each AERTEX product store?",short:"Different products store different data: Work stores work and document data, Cash stores personal cash-flow data, Watch stores synchronized ActivityWatch data, and Intelligence stores AI conversations and related usage information.",answer:[
+        "The main site also contains account-scoped workspace data such as projects, tasks, drafts, and Drive files. These are handled by their own APIs, storage structures, and authorization models.",
+        "The public FAQ describes implemented data types only and should not be used to infer cross-product merging, training, or automatic analysis that has not been released."
+      ]}
+    }
+  },
+  {
+    id:"7094e1bd-e5e8-4a8f-92a5-9c9b397e1049", category:"privacy", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 会出售用户数据吗？",short:"当前公开仓库里没有一份已经发布、可引用的统一隐私政策条款来支持“永不出售用户数据”这一法律承诺。",answer:[
+        "因此 AERTEX 不应该让搜索引擎、AI 或 FAQ 擅自把“不会出售数据”写成已经发布的合同式保证。",
+        "在正式 Privacy Policy 明确这项政策之前，准确的说法是：当前没有公开的正式政策条款可以用来回答这一法律问题。"
+      ]},
+      "en-us":{question:"Does AERTEX sell user data?",short:"The current public repository does not contain a published, citable privacy-policy clause supporting a formal legal promise that AERTEX never sells user data.",answer:[
+        "AERTEX should therefore not let search engines, AI systems, or an FAQ invent a contractual-style guarantee that has not been formally published.",
+        "Until a formal Privacy Policy explicitly defines this policy, the accurate answer is that no public policy clause currently exists that settles this legal question."
+      ]}
+    }
+  },
+  {
+    id:"fe346326-40af-471e-812d-2f22e3c51050", category:"privacy", product:"AERTEX Intelligence", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 会把用户数据用于训练 AI 吗？",short:"当前没有公开的正式 AI 数据训练政策，因此不能把“绝不会训练”或“会用于训练”任何一边写成既定事实。",answer:[
+        "Intelligence 会把用户请求发送给当前配置的 AI provider 以生成回答，但“处理一次请求”和“用于模型训练”是不同问题。",
+        "AERTEX 需要在正式隐私与 AI 数据政策中分别说明自身保存方式、上游 provider 的处理规则以及用户内容是否用于训练；在此之前 FAQ 不应猜测。"
+      ]},
+      "en-us":{question:"Does AERTEX use user data to train AI models?",short:"There is currently no published formal AI-training data policy, so neither 'never used for training' nor 'used for training' should be stated as an established fact.",answer:[
+        "Intelligence sends user requests to the currently configured AI provider to generate responses, but processing a request and using content for model training are different questions.",
+        "AERTEX needs a formal privacy and AI-data policy covering its own retention, upstream-provider handling, and whether user content is used for training. Until then, the FAQ should not guess."
+      ]}
+    }
+  },
+  {
+    id:"9b044c3c-7288-4b07-bb5f-6155bd4c1051", category:"privacy", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 的数据会保存多久？",short:"当前没有一份统一公开的保留期政策，把同一个保存时长应用到所有 AERTEX 产品。",answer:[
+        "不同数据类型的生命周期由对应产品实现决定。AI 会话、文件、文档、Watch 事件和访问审计记录并不必然使用同一个保留周期。",
+        "在正式 retention policy 发布前，不应给出“所有数据都保存 X 天”这类未经政策和实现确认的数字。"
+      ]},
+      "en-us":{question:"How long does AERTEX retain data?",short:"There is currently no single published retention policy that applies one duration to every AERTEX product.",answer:[
+        "Different data types follow the lifecycle of their respective product implementations. AI conversations, files, documents, Watch events, and access-audit records do not necessarily share one retention period.",
+        "Until a formal retention policy is published, AERTEX should not invent a universal number such as 'all data is kept for X days.'"
+      ]}
+    }
+  },
+  {
+    id:"fd60774e-f413-4755-a5d6-83d354bf1052", category:"privacy", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"如何删除 AERTEX 中的数据？",short:"当前应在保存该数据的具体产品中使用对应的删除功能；还没有一个公开的“清空全部 AERTEX 数据”统一按钮。",answer:[
+        "例如 Drive 文件、部分 Work 内容、项目任务和 Intelligence 会话拥有各自的删除操作；Watch 当前没有公开的“删除全部云端活动数据”接口。",
+        "删除范围必须按产品分别确认，不能把某个产品的 DELETE 操作理解成整个账户的数据清除。"
+      ]},
+      "en-us":{question:"How can I delete data from AERTEX?",short:"Use the deletion controls of the product that stores the data; there is not currently one public button that erases every category of AERTEX data.",answer:[
+        "For example, Drive files, some Work content, project/task data, and Intelligence conversations have their own deletion operations, while Watch currently has no public delete-all cloud activity endpoint.",
+        "Deletion scope must be verified product by product rather than treating one product's DELETE operation as account-wide erasure."
+      ]}
+    }
+  },
+  {
+    id:"0cddfd2b-7b23-4b76-a5da-a8436e861053", category:"privacy", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"删除 AERTEX 云端数据会影响本地副本吗？",short:"不能一概而论；是否影响本地副本取决于具体产品是否实现双向同步、本机桥接或独立本地存储。",answer:[
+        "以 Watch 为例，当前甚至没有公开的“删除全部云端活动数据”接口，因此不能凭空承诺一次云端删除会怎样影响本地 ActivityWatch。",
+        "Work 本机能力、浏览器缓存和用户手动导出的备份也具有不同语义。每个删除动作都应以对应产品当时的界面说明为准。"
+      ]},
+      "en-us":{question:"Does deleting AERTEX cloud data affect local copies?",short:"There is no universal rule; the effect on local copies depends on whether a specific product implements bidirectional sync, a local bridge, or separate local storage.",answer:[
+        "For Watch, the current product does not even expose a public delete-all cloud activity operation, so AERTEX should not invent a promise about how such a deletion would affect local ActivityWatch data.",
+        "Work local capabilities, browser caches, and user-exported backups also have different semantics. Each deletion action should be described by the relevant product UI."
+      ]}
+    }
+  },
+  {
+    id:"4b735bc3-0d3d-4ee7-a75b-9f13f50c1054", category:"availability", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"中国大陆可以访问 AERTEX 吗？",short:"AERTEX 主站和主要 Web 产品按标准 HTTPS Web 服务提供，但实际可达性仍取决于当时网络环境和具体上游服务。",answer:[
+        "AERTEX Watch 已为简体中文设置流程提供中国大陆下载路径，说明产品会针对大陆网络条件做适配。",
+        "对于 Intelligence 等依赖外部 AI provider 的能力，不应把某一时刻的上游可用性概括成永久保证。"
+      ]},
+      "en-us":{question:"Can AERTEX be accessed from Mainland China?",short:"AERTEX's main site and core web products are delivered as standard HTTPS web services, but real-world reachability can still depend on the current network environment and specific upstream services.",answer:[
+        "AERTEX Watch provides a Mainland China download path in its Simplified Chinese setup flow, reflecting product-specific network adaptation.",
+        "For capabilities such as Intelligence that depend on external AI providers, temporary upstream availability should not be turned into a permanent guarantee."
+      ]}
+    }
+  },
+  {
+    id:"65080ea0-9e2d-4092-90b4-bb1c966c1055", category:"availability", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"为什么 AERTEX Watch 的中国大陆教程不优先使用 GitHub 下载？",short:"主要是为了提高下载可达性和减少网络波动，而不是因为 ActivityWatch 不是开源项目。",answer:[
+        "ActivityWatch 仍然是独立开源项目。AERTEX 只是为中国大陆的设置流程提供更容易访问的下载来源。",
+        "AERTEX Watch Sync 本身则直接由第一方 aw.qsseda.com 提供，避免让普通用户在多个仓库和 Release 页面之间寻找文件。"
+      ]},
+      "en-us":{question:"Why doesn't the Mainland China AERTEX Watch guide prefer GitHub downloads?",short:"The main reason is download reachability and network reliability, not because ActivityWatch is not open source.",answer:[
+        "ActivityWatch remains an independent open-source project. AERTEX simply provides a more reachable download source for the Mainland China setup flow.",
+        "AERTEX Watch Sync itself is served directly from the first-party aw.qsseda.com domain so users do not need to search across repositories and Release pages."
+      ]}
+    }
+  },
+  {
+    id:"72987c07-38ac-4982-9e40-1517e6cc1056", category:"availability", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 支持哪些浏览器？",short:"AERTEX 主要面向现代浏览器；当前代码识别并适配 Chrome、Edge、Firefox、Safari 等常见浏览器，但没有发布固定的最低版本支持矩阵。",answer:[
+        "Web 功能依赖现代 JavaScript、Fetch、Web API 和安全 Cookie 等浏览器能力，因此过旧浏览器可能无法完整工作。",
+        "需要特定能力的页面，例如本机桥接或二维码识别，还可能依赖额外浏览器 API；应以对应功能页面的实际检测结果为准。"
+      ]},
+      "en-us":{question:"Which browsers does AERTEX support?",short:"AERTEX targets modern browsers. The current code recognizes common browsers such as Chrome, Edge, Firefox, and Safari, but there is no published fixed minimum-version support matrix.",answer:[
+        "Web features depend on modern JavaScript, Fetch, Web APIs, and secure-cookie behavior, so very old browsers may not work completely.",
+        "Pages that need special capabilities, such as local bridging or QR decoding, can depend on additional browser APIs. Their own capability checks are the source of truth."
+      ]}
+    }
+  },
+  {
+    id:"5d00c493-cd1a-4814-bce6-b0ab901a1057", category:"availability", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 支持哪些操作系统？",short:"大多数 AERTEX 产品通过浏览器使用，因此可在能运行现代浏览器的主流桌面和移动系统上访问；本机组件有各自的系统要求。",answer:[
+        "Windows、macOS、Linux、iOS/iPadOS 和 Android 都可以作为 Web 访问环境，但这不代表每个平台都有 AERTEX 原生客户端。",
+        "例如 Watch Sync 是电脑端脚本工具，而 Work 的本机桥接当前以 Windows 为主要完整目标。"
+      ]},
+      "en-us":{question:"Which operating systems does AERTEX support?",short:"Most AERTEX products are accessed through a browser and can therefore be used on major desktop and mobile systems with a modern browser; local components have their own platform requirements.",answer:[
+        "Windows, macOS, Linux, iOS/iPadOS, and Android can all be web-access environments, but that does not mean AERTEX ships a native app for every platform.",
+        "For example, Watch Sync is a computer-side script tool, while Work's local bridge currently treats Windows as the primary full desktop target."
+      ]}
+    }
+  },
+  {
+    id:"cd3af9a6-4c58-41a9-b02c-a59cba721058", category:"availability", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX Watch Sync 当前支持哪些系统？",short:"Watch Sync 是 Node.js 脚本；官方设置教程当前重点覆盖 Windows + PowerShell 7，其他桌面系统取决于 Node.js 与 ActivityWatch 本机 API 环境。",answer:[
+        "同步器本身使用 Node.js、HTTP 请求和本机状态文件，没有把代码硬编码成只能在 Windows 运行。",
+        "但“理论可运行”和“已经有官方完整教程与验证”是两回事；当前公开指南应把 Windows 视为主要经过说明的路径。"
+      ]},
+      "en-us":{question:"Which systems does AERTEX Watch Sync currently support?",short:"Watch Sync is a Node.js script. The official setup guide currently focuses on Windows with PowerShell 7, while other desktop systems depend on Node.js and a reachable local ActivityWatch API.",answer:[
+        "The sync code itself uses Node.js, HTTP requests, and a local state file and is not hard-coded to run only on Windows.",
+        "However, theoretical portability is not the same as an officially documented and tested path. The current public guide treats Windows as the primary documented setup."
+      ]}
+    }
+  },
+  {
+    id:"de271170-d34b-4515-ac4e-4363d0491059", category:"availability", product:"AERTEX", status:"published", updated:"2026-10-03",
+    translations:{
+      "zh-cn":{question:"AERTEX 的 Web 页面和本机组件分别负责什么？",short:"Web 页面负责账户、内容、查询和可视化；本机组件只在需要访问电脑本地能力时参与。",answer:[
+        "例如 AERTEX Watch 网页负责账户、设备令牌、状态和活动数据查看，而 Watch Sync 在电脑上连接 127.0.0.1:5600 并上传 ActivityWatch 事件。",
+        "AERTEX Work 的本机桥接用于需要本地 TeX 或其他电脑能力的场景。把这些本机组件统称为完整的 AERTEX 原生客户端并不准确。"
+      ]},
+      "en-us":{question:"What do AERTEX web pages and local components each do?",short:"Web pages handle accounts, content, queries, and visualization; local components participate only when a feature needs capabilities on the user's computer.",answer:[
+        "For example, the AERTEX Watch web interface handles the account, device tokens, status, and activity viewing, while Watch Sync connects to 127.0.0.1:5600 on the computer and uploads ActivityWatch events.",
+        "AERTEX Work's local bridge is used when local TeX or other computer capabilities are required. These components should not automatically be described as full native AERTEX clients."
+      ]}
+    }
   }
+
 ]);
 
 export function publishedQuestions() {
