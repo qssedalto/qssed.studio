@@ -38,8 +38,8 @@ const productIcons = {
   auth: "AERTEX ID",
   admin: "AERTEX Administration"
 };
-assert(favicon.includes('.aertex-product-main .product-main-glyph{fill:none;stroke:var(--ink);stroke-width:1.9'), "Primary product icons must use the balanced 1.9 stroke weight.");
-assert(favicon.includes('.aertex-product-main .product-main-glyph *{vector-effect:non-scaling-stroke}'), "Enlarged product icons must preserve non-scaling strokes so geometry can grow without thickening the lines.");
+assert(favicon.includes('.aertex-product-main .product-main-glyph{fill:none;stroke:var(--ink);stroke-width:.52'), "Scaled product icons must use an inverse-compensated stroke so the rendered line weight stays close to the original small-icon appearance.");
+assert(!favicon.includes('vector-effect:non-scaling-stroke'), "Primary product icons must not depend on renderer-specific non-scaling-stroke behavior.");
 assert(favicon.includes('.aertex-brand-badge .brand-badge-disc{fill:none;stroke:var(--edge);stroke-width:1.4'), "AERTEX ownership badge must remain visually subordinate with a lighter ring.");
 
 for (const [product,label] of Object.entries(productIcons)) {
