@@ -299,7 +299,7 @@ export default {
       }
       const canonicalHost = new URL(request.url).hostname.toLowerCase() === "qsseda.com";
       const id = questionIdFromPath(pathname);
-      const markup = id ? questionDetailPage(code, id) : questionIndexPage(code);
+      const markup = id ? questionDetailPage(code, id, canonicalHost) : questionIndexPage(code, canonicalHost);
       if (markup) return localizedPage(markup, locale, 200, { indexable: canonicalHost });
     }
 
