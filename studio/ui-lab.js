@@ -1,51 +1,40 @@
-import { LAB_TOOL_CATEGORIES, LAB_TOOLS } from "./lab-tools.js";
+import { LAB_TOOL_CATEGORIES, LAB_TOOLS, LAB_TOOL_LOCALIZATIONS } from "./lab-tools.js";
+import { normalizeSupportedLocale } from "./locale.js";
 import { escapeHtmlText } from "./html-utils.js";
 
-export function labContent(zh) {
-  const copy = zh ? {
-    eyebrow: "工作区 · 实验室",
-    title: "实验室",
-    intro: "这里作为 TeX、AI、媒体处理与工程工具的统一容器。已经可用的 Studio 能力可以直接打开，尚未实现的工具会明确标记为规划中。",
-    search: "搜索工具、能力或分类…",
-    all: "全部",
-    ready: "可用",
-    planned: "规划中",
-    tools: "工具",
-    categories: "分类",
-    readyCount: "可用工具",
-    plannedCount: "规划工具",
-    open: "打开工具",
-    plannedAction: "尚未开放",
-    empty: "没有匹配的工具",
-    emptyDetail: "换一个关键词或分类。",
-    registry: "工具注册中心",
-    registryIntro: "实验室本身不存储业务数据；每个工具继续使用自己的账号数据和权限边界。"
-  } : {
-    eyebrow: "Workspace · Lab",
-    title: "Lab",
-    intro: "A unified container for TeX, AI, media processing, and engineering tools. Live Studio capabilities open directly; future tools are clearly marked as planned.",
-    search: "Search tools, capabilities, or categories…",
-    all: "All",
-    ready: "Ready",
-    planned: "Planned",
-    tools: "tools",
-    categories: "categories",
-    readyCount: "ready tools",
-    plannedCount: "planned tools",
-    open: "Open tool",
-    plannedAction: "Not available yet",
-    empty: "No matching tools",
-    emptyDetail: "Try another keyword or category.",
-    registry: "Tool Registry",
-    registryIntro: "Lab does not store business data itself; each tool keeps its own account data and permission boundaries."
-  };
+const LAB_EN = {
+  eyebrow:"Workspace · Lab",title:"Lab",
+  intro:"A unified container for TeX, AI, media processing, and engineering tools. Live Studio capabilities open directly; future tools are clearly marked as planned.",
+  search:"Search tools, capabilities, or categories…",all:"All",ready:"Ready",planned:"Planned",tools:"tools",categories:"categories",
+  readyCount:"ready tools",plannedCount:"planned tools",open:"Open tool",plannedAction:"Not available yet",empty:"No matching tools",
+  emptyDetail:"Try another keyword or category.",registry:"Tool Registry",
+  registryIntro:"Lab does not store business data itself; each tool keeps its own account data and permission boundaries."
+};
+const LAB_COPY = {
+  "en-us":LAB_EN,"en-gb":LAB_EN,"en-au":LAB_EN,
+  "zh-cn":{eyebrow:"工作区 · 实验室",title:"实验室",intro:"这里作为 TeX、AI、媒体处理与工程工具的统一容器。已经可用的 Studio 能力可以直接打开，尚未实现的工具会明确标记为规划中。",search:"搜索工具、能力或分类…",all:"全部",ready:"可用",planned:"规划中",tools:"工具",categories:"分类",readyCount:"可用工具",plannedCount:"规划工具",open:"打开工具",plannedAction:"尚未开放",empty:"没有匹配的工具",emptyDetail:"换一个关键词或分类。",registry:"工具注册中心",registryIntro:"实验室本身不存储业务数据；每个工具继续使用自己的账号数据和权限边界。"},
+  "zh-tw":{eyebrow:"工作區 · 實驗室",title:"實驗室",intro:"這裡是 TeX、AI、媒體處理與工程工具的統一容器。已可用的 Studio 能力可以直接開啟，尚未實作的工具會明確標示為規劃中。",search:"搜尋工具、能力或分類…",all:"全部",ready:"可用",planned:"規劃中",tools:"工具",categories:"分類",readyCount:"可用工具",plannedCount:"規劃工具",open:"開啟工具",plannedAction:"尚未開放",empty:"沒有符合的工具",emptyDetail:"換一個關鍵字或分類。",registry:"工具註冊中心",registryIntro:"實驗室本身不儲存業務資料；每個工具仍使用自己的帳號資料與權限邊界。"},
+  "ja-jp":{eyebrow:"ワークスペース · Lab",title:"ラボ",intro:"TeX、AI、メディア処理、エンジニアリングツールをまとめた統合コンテナです。利用可能な Studio 機能は直接開け、未実装のツールは計画中として明示されます。",search:"ツール、機能、カテゴリを検索…",all:"すべて",ready:"利用可能",planned:"計画中",tools:"ツール",categories:"カテゴリ",readyCount:"利用可能",plannedCount:"計画中",open:"ツールを開く",plannedAction:"未提供",empty:"一致するツールがありません",emptyDetail:"別のキーワードまたはカテゴリを試してください。",registry:"ツールレジストリ",registryIntro:"Lab 自体は業務データを保存しません。各ツールはそれぞれのアカウントデータと権限境界を維持します。"},
+  "ko-kr":{eyebrow:"작업 공간 · Lab",title:"랩",intro:"TeX, AI, 미디어 처리 및 엔지니어링 도구를 위한 통합 컨테이너입니다. 사용 가능한 Studio 기능은 바로 열 수 있고, 아직 구현되지 않은 도구는 계획 중으로 표시됩니다.",search:"도구, 기능 또는 분류 검색…",all:"전체",ready:"사용 가능",planned:"계획 중",tools:"도구",categories:"분류",readyCount:"사용 가능 도구",plannedCount:"계획 도구",open:"도구 열기",plannedAction:"아직 사용할 수 없음",empty:"일치하는 도구가 없습니다",emptyDetail:"다른 검색어나 분류를 사용해 보세요.",registry:"도구 레지스트리",registryIntro:"Lab 자체는 업무 데이터를 저장하지 않습니다. 각 도구는 자체 계정 데이터와 권한 경계를 유지합니다."},
+  "fr-fr":{eyebrow:"Espace de travail · Lab",title:"Lab",intro:"Un conteneur unifié pour TeX, l’IA, le traitement multimédia et les outils d’ingénierie. Les capacités Studio disponibles s’ouvrent directement ; les outils futurs sont clairement indiqués comme planifiés.",search:"Rechercher des outils, capacités ou catégories…",all:"Tout",ready:"Disponible",planned:"Planifié",tools:"outils",categories:"catégories",readyCount:"outils disponibles",plannedCount:"outils planifiés",open:"Ouvrir l’outil",plannedAction:"Pas encore disponible",empty:"Aucun outil correspondant",emptyDetail:"Essayez un autre mot-clé ou une autre catégorie.",registry:"Registre des outils",registryIntro:"Lab ne stocke pas lui-même les données métier ; chaque outil conserve ses propres données de compte et limites d’autorisation."},
+  "es-es":{eyebrow:"Espacio de trabajo · Lab",title:"Lab",intro:"Un contenedor unificado para TeX, IA, procesamiento multimedia y herramientas de ingeniería. Las capacidades de Studio disponibles se abren directamente; las futuras aparecen claramente como planificadas.",search:"Buscar herramientas, capacidades o categorías…",all:"Todo",ready:"Disponible",planned:"Planificado",tools:"herramientas",categories:"categorías",readyCount:"herramientas disponibles",plannedCount:"herramientas planificadas",open:"Abrir herramienta",plannedAction:"Aún no disponible",empty:"No hay herramientas coincidentes",emptyDetail:"Prueba otra palabra clave o categoría.",registry:"Registro de herramientas",registryIntro:"Lab no almacena datos de negocio por sí mismo; cada herramienta mantiene sus propios datos de cuenta y límites de permisos."},
+  "el-gr":{eyebrow:"Χώρος εργασίας · Lab",title:"Lab",intro:"Ένας ενιαίος χώρος για TeX, AI, επεξεργασία πολυμέσων και εργαλεία μηχανικής. Οι διαθέσιμες δυνατότητες του Studio ανοίγουν άμεσα, ενώ τα μελλοντικά εργαλεία επισημαίνονται καθαρά ως προγραμματισμένα.",search:"Αναζήτηση εργαλείων, δυνατοτήτων ή κατηγοριών…",all:"Όλα",ready:"Διαθέσιμο",planned:"Προγραμματισμένο",tools:"εργαλεία",categories:"κατηγορίες",readyCount:"διαθέσιμα εργαλεία",plannedCount:"προγραμματισμένα εργαλεία",open:"Άνοιγμα εργαλείου",plannedAction:"Δεν είναι ακόμη διαθέσιμο",empty:"Δεν βρέθηκαν εργαλεία",emptyDetail:"Δοκιμάστε άλλη λέξη-κλειδί ή κατηγορία.",registry:"Μητρώο εργαλείων",registryIntro:"Το Lab δεν αποθηκεύει επιχειρησιακά δεδομένα· κάθε εργαλείο διατηρεί τα δικά του δεδομένα λογαριασμού και όρια δικαιωμάτων."},
+  "ar-sa":{eyebrow:"مساحة العمل · Lab",title:"المختبر",intro:"حاوية موحدة لأدوات TeX والذكاء الاصطناعي ومعالجة الوسائط والهندسة. يمكن فتح قدرات Studio المتاحة مباشرة، بينما تُعرض الأدوات المستقبلية بوضوح على أنها مخطط لها.",search:"البحث في الأدوات أو القدرات أو التصنيفات…",all:"الكل",ready:"متاح",planned:"مخطط",tools:"أدوات",categories:"تصنيفات",readyCount:"أدوات متاحة",plannedCount:"أدوات مخططة",open:"فتح الأداة",plannedAction:"غير متاحة بعد",empty:"لا توجد أدوات مطابقة",emptyDetail:"جرّب كلمة أخرى أو تصنيفًا مختلفًا.",registry:"سجل الأدوات",registryIntro:"لا يخزن Lab بيانات العمل بنفسه؛ تحتفظ كل أداة ببيانات حسابها وحدود صلاحياتها الخاصة."}
+};
 
-  const localeKey = zh ? "zh" : "en";
+export function labContent(zh, locale = "") {
+  const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
+  const copy = LAB_COPY[activeLocale] || LAB_EN;
+  const localizedRegistry = LAB_TOOL_LOCALIZATIONS[activeLocale] || null;
+  const localeKey = activeLocale === "zh-cn" ? "zh" : "en";
   const categories = Object.entries(LAB_TOOL_CATEGORIES).filter(([id]) => LAB_TOOLS.some(tool => tool.category === id));
   const readyCount = LAB_TOOLS.filter(tool => tool.status === "ready").length;
   const plannedCount = LAB_TOOLS.filter(tool => tool.status === "planned").length;
-  const categoryButtons = categories.map(([id, labels]) => `<button type="button" data-lab-category="${escapeHtmlText(id)}">${escapeHtmlText(labels[localeKey])}<b>${LAB_TOOLS.filter(tool => tool.category === id).length}</b></button>`).join("");
-  const cards = LAB_TOOLS.map(tool => renderTool(tool, localeKey, copy)).join("");
+  const categoryButtons = categories.map(([id, labels]) => {
+    const label = localizedRegistry?.categories?.[id] || labels[localeKey] || labels.en || id;
+    return `<button type="button" data-lab-category="${escapeHtmlText(id)}">${escapeHtmlText(label)}<b>${LAB_TOOLS.filter(tool => tool.category === id).length}</b></button>`;
+  }).join("");
+  const cards = LAB_TOOLS.map(tool => renderTool(tool, localeKey, copy, localizedRegistry)).join("");
 
   return `
     <section class="lab-shell" data-lab-root>
@@ -85,7 +74,7 @@ export function labContent(zh) {
         const start=()=>{
           const root=document.querySelector('[data-lab-root]');if(!root)return;
           const search=document.getElementById('lab-search');const grid=document.getElementById('lab-grid');const empty=document.getElementById('lab-empty');let status='all';let category='all';
-          const prefix=location.pathname.startsWith('/zh-cn/')?'/zh-cn':location.pathname.startsWith('/en/')?'/en':'';
+          const prefix=${JSON.stringify("/" + activeLocale)};
           grid.querySelectorAll('[data-lab-href]').forEach(card=>{const path=card.dataset.labHref||'';if(path)card.setAttribute('href',prefix+path);});
           function apply(){const query=search.value.trim().toLocaleLowerCase();let visible=0;grid.querySelectorAll('[data-lab-card]').forEach(card=>{const matchStatus=status==='all'||card.dataset.labStatus===status;const matchCategory=category==='all'||card.dataset.labCategory===category;const matchSearch=!query||(card.dataset.labSearch||'').includes(query);const show=matchStatus&&matchCategory&&matchSearch;card.hidden=!show;if(show)visible+=1;});empty.hidden=visible>0;}
           search.addEventListener('input',apply);document.querySelectorAll('[data-lab-status]').forEach(button=>button.addEventListener('click',()=>{status=button.dataset.labStatus||'all';document.querySelectorAll('[data-lab-status]').forEach(item=>item.classList.toggle('is-active',item===button));apply();}));document.querySelectorAll('[data-lab-category]').forEach(button=>button.addEventListener('click',()=>{category=button.dataset.labCategory||'all';document.querySelectorAll('[data-lab-category]').forEach(item=>item.classList.toggle('is-active',item===button));apply();}));apply();
@@ -95,11 +84,12 @@ export function labContent(zh) {
   `;
 }
 
-function renderTool(tool, localeKey, copy) {
-  const category = LAB_TOOL_CATEGORIES[tool.category]?.[localeKey] || tool.category;
-  const title = tool.title?.[localeKey] || tool.id;
-  const description = tool.description?.[localeKey] || "";
-  const capabilities = Array.isArray(tool.capabilities?.[localeKey]) ? tool.capabilities[localeKey] : [];
+function renderTool(tool, localeKey, copy, localizedRegistry) {
+  const localized = localizedRegistry?.tools?.[tool.id] || null;
+  const category = localizedRegistry?.categories?.[tool.category] || LAB_TOOL_CATEGORIES[tool.category]?.[localeKey] || tool.category;
+  const title = localized?.[0] || tool.title?.[localeKey] || tool.id;
+  const description = localized?.[1] || tool.description?.[localeKey] || "";
+  const capabilities = Array.isArray(localized?.[2]) ? localized[2] : (Array.isArray(tool.capabilities?.[localeKey]) ? tool.capabilities[localeKey] : []);
   const statusLabel = tool.status === "ready" ? copy.ready : copy.planned;
   const action = tool.status === "ready" ? copy.open : copy.plannedAction;
   const searchText = [title, description, category, ...capabilities].join(" ").toLocaleLowerCase();
