@@ -1,3 +1,4 @@
+import { faviconSvgForProduct } from "../studio/favicon.js";
 import fs from "node:fs";
 
 const read = path => fs.readFileSync(path, "utf8");
@@ -25,9 +26,25 @@ assert(favicon.includes('"content-type": "image/svg+xml;charset=UTF-8"'), "Favic
 assert(favicon.includes('"cache-control": "public, max-age=604800, immutable"'), "Favicon should be cacheable at the edge/browser");
 assert(favicon.includes('--paper:#ffffff') && favicon.includes('--ink:#121417'), "Favicon must preserve the monochrome light/dark palette");
 assert(favicon.includes("Broken angular orbit") && favicon.includes("Three-way core"), "Favicon must preserve the angular orbit and three-way core visual system");
-assert(favicon.includes("aertex-20261003-square-1"), "Favicon cache key must use the current square-logo release.");
+assert(favicon.includes("aertex-20261003-product-badge-1"), "Favicon cache key must use the current product-badge release.");
 assert(brandLogo.includes('new Set(["/logo.svg"])') && brandLogo.includes("logoResponse(request)"), "Official wordmark must be exposed at /logo.svg.");
 assert(brandLogo.includes('viewBox="0 0 1027 198"'), "Official /logo.svg must use the AERTEX wordmark artwork.");
+
+const productIcons = {
+  work: "AERTEX Work",
+  intelligence: "AERTEX Intelligence",
+  cash: "AERTEX Cash",
+  watch: "AERTEX Watch",
+  auth: "AERTEX ID",
+  admin: "AERTEX Administration"
+};
+for (const [product,label] of Object.entries(productIcons)) {
+  const svg = faviconSvgForProduct(product);
+  assert(svg.includes('class="aertex-product-badge"'), product + " favicon must include the shared lower-right product badge.");
+  assert(svg.includes('aria-label="' + label + '"'), product + " favicon must expose the correct product label.");
+  assert(svg.includes('cx="51.2" cy="51.2" r="11.1"'), product + " favicon must keep the common badge geometry.");
+}
+assert(!faviconSvgForProduct("").includes('aertex-product-badge'), "Main-site favicon must remain the plain AERTEX square mark.");
 
 for (const [source, name] of [[uiPage,"Studio base head"],[gptUi,"GPT UI"],[authWorker,"Auth UI"],[workHandoff,"Work handoff"],[gptHandoff,"GPT handoff"],[authSso,"Auth SSO handoff"]]) {
   assert(source.includes("${FAVICON_LINKS}"), `${name} must include the favicon`);
@@ -40,8 +57,8 @@ for (const [source,name] of [[worker,"Main/Work"],[gptWorker,"Intelligence"],[au
   assert(source.includes("LOGO_PATHS") && source.includes("logoResponse(request)"), name + " Worker must serve /logo.svg from the shared wordmark source.");
   assert(source.includes("FAVICON_PATHS") && source.includes("faviconResponse(request)"), name + " Worker must serve the shared square icon routes.");
 }
-assert(cashIndex.includes('href="/favicon.svg?v=aertex-20261003-square-1"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261003-square-1"'), "Cash must use the current square AERTEX logo in both favicon and visible brand UI.");
-assert(watchIndex.includes('href="/favicon.svg?v=aertex-20261003-square-1"'), "Watch must declare the current square AERTEX favicon.");
+assert(cashIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-1"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261003-product-badge-1"'), "Cash must use the current square AERTEX logo in both favicon and visible brand UI.");
+assert(watchIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-1"'), "Watch must declare the current square AERTEX favicon.");
 assert(!cashWorker.includes('"/icon.svg"]') && !watchWorker.includes('"/icon.svg"'), "Cash and Watch must not serve legacy product-specific icon files.");
 
 console.log("AERTEX shared square icon and wordmark integration checks passed.");
