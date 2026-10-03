@@ -1,6 +1,8 @@
+import { IPHONE_THEME_DEFAULT, IPHONE_THEME_PALETTE } from "./iphone-theme-palette.js";
+
 const ROOT_DOMAINS = Object.freeze(["qsseda.com","qsseda.online","qsseda.studio"]);
 const VALID_MODES = Object.freeze(["system","light","dark"]);
-const VALID_ACCENTS = Object.freeze(["sapphire","aqua","jade","lime","amber","coral","rose","magenta","violet","graphite"]);
+const VALID_ACCENTS = Object.freeze(IPHONE_THEME_PALETTE.map(color => color.id));
 const APPEARANCE_GENERATION = "20261002-system-v2";
 
 export function appearanceThemeFromRequest(request) {
@@ -19,12 +21,16 @@ export function appearanceClientRuntime() {
   const roots = JSON.stringify(ROOT_DOMAINS);
   const modes = JSON.stringify(VALID_MODES);
   const accents = JSON.stringify(VALID_ACCENTS);
+  const accentMeta = JSON.stringify(Object.fromEntries(IPHONE_THEME_PALETTE.map(color => [color.id, { hex: color.hex, ink: color.ink }])));
+  const defaultAccent = JSON.stringify(IPHONE_THEME_DEFAULT);
   const generation = JSON.stringify(APPEARANCE_GENERATION);
   return `(function(){
     "use strict";
     const ROOTS=${roots};
     const VALID_MODES=new Set(${modes});
     const VALID_ACCENTS=new Set(${accents});
+    const ACCENT_META=${accentMeta};
+    const DEFAULT_ACCENT=${defaultAccent};
     const MODE_KEY="qssed-theme-mode";
     const RESOLVED_KEY="qssed-theme";
     const ACCENT_KEY="qssed-accent";
@@ -109,7 +115,7 @@ export function appearanceClientRuntime() {
           return saved;
         }
       }catch{}
-      return "sapphire";
+      return DEFAULT_ACCENT;
     }
     function setMode(mode,options={}){
       const nextMode=VALID_MODES.has(mode)?mode:"system";
@@ -128,8 +134,13 @@ export function appearanceClientRuntime() {
       return nextTheme;
     }
     function setAccent(accent,options={}){
-      const next=VALID_ACCENTS.has(accent)?accent:"sapphire";
+      const next=VALID_ACCENTS.has(accent)?accent:DEFAULT_ACCENT;
       document.documentElement.dataset.accent=next;
+      const meta=ACCENT_META[next]||ACCENT_META[DEFAULT_ACCENT];
+      if(meta){
+        document.documentElement.style?.setProperty?.("--aertex-accent",meta.hex);
+        document.documentElement.style?.setProperty?.("--aertex-accent-ink",meta.ink);
+      }
       if(options.persist!==false){
         try{localStorage.setItem(ACCENT_KEY,next)}catch{}
         persistCookie(ACCENT_COOKIE,next);
@@ -152,7 +163,9 @@ export function appearanceClientRuntime() {
       getMode:readMode,
       getAccent:readAccent,
       getResolvedTheme:()=>document.documentElement.dataset.theme||resolvedTheme(readMode()),
-      palette:Array.from(VALID_ACCENTS)
+      palette:Array.from(VALID_ACCENTS),
+      colors:ACCENT_META,
+      defaultAccent:DEFAULT_ACCENT
     };
   })();`;
 }
