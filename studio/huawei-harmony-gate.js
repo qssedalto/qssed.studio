@@ -49,11 +49,21 @@ function invalidHuaweiRouteResponse(request) {
   try {
     const url = new URL(request.url);
     const segments = url.pathname.split("/").filter(Boolean).map(normalizeRouteSegment);
+    const previewMarker = PREVIEW_ROUTE.slice(1).toLowerCase();
     const exemptionCount = segments.filter(segment => segment === DEVICE_ROUTE_MARKER).length;
-    const hasPreviewMarker = segments.includes(PREVIEW_ROUTE.slice(1).toLowerCase());
+    const previewCount = segments.filter(segment => segment === previewMarker).length;
 
-    if (exemptionCount >= 2) return brandedNotFound(request);
-    if (exemptionCount === 1 && hasPreviewMarker) return brandedNotFound(request);
+    // Route-marker invariants:
+    // - /hw is the explicit Huawei interception preview and is valid only once, at the end.
+    // - /huawei-exempt is valid only once, directly before the final resource segment.
+    // - the preview and exemption markers are mutually exclusive in every ordering.
+    if (exemptionCount >= 2 || previewCount >= 2) return brandedNotFound(request);
+    if (exemptionCount === 1 && previewCount === 1) return brandedNotFound(request);
+
+    if (previewCount === 1) {
+      const previewIndex = segments.lastIndexOf(previewMarker);
+      if (previewIndex !== segments.length - 1) return brandedNotFound(request);
+    }
 
     if (exemptionCount === 1) {
       const markerIndex = segments.lastIndexOf(DEVICE_ROUTE_MARKER);

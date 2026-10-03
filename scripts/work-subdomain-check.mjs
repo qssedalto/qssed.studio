@@ -52,6 +52,29 @@ assert(hwPreviewResponse?.status === 200, "A trailing /hw segment must force the
 const hwPreviewMarkup = await hwPreviewResponse.text();
 assert(hwPreviewMarkup.includes("检测到您使用华为手机"), "Trailing /hw must render the Huawei unsupported-device preview instead of Work 404.");
 
+const validExemptionResponse = await huaweiHarmonyGate(new Request(
+  `https://work.qsseda.com/zh-cn/d/huawei-exempt/${TEST_DOCUMENT_ID}`,
+  { method: "GET", headers: { Accept: "text/html" } }
+));
+assert(validExemptionResponse?.status === 200, "A single correctly placed huawei-exempt marker must remain a valid exemption route.");
+
+const invalidHuaweiMarkerPaths = [
+  `/zh-cn/d/${TEST_DOCUMENT_ID}/hw/hw`,
+  `/zh-cn/d/hw/${TEST_DOCUMENT_ID}`,
+  `/zh-cn/d/${TEST_DOCUMENT_ID}/hw/extra`,
+  `/zh-cn/d/huawei-exempt/huawei-exempt/${TEST_DOCUMENT_ID}`,
+  `/zh-cn/d/${TEST_DOCUMENT_ID}/huawei-exempt`,
+  `/zh-cn/d/huawei-exempt/${TEST_DOCUMENT_ID}/hw`,
+  `/zh-cn/d/hw/huawei-exempt/${TEST_DOCUMENT_ID}`
+];
+for (const path of invalidHuaweiMarkerPaths) {
+  const response = await huaweiHarmonyGate(new Request(
+    "https://work.qsseda.com" + path,
+    { method: "GET", headers: { Accept: "text/html" } }
+  ));
+  assert(response?.status === 404, `Invalid Huawei marker ordering/count must be rejected at the gate: ${path}`);
+}
+
 const hostAware404 = notFoundPage(TEXT.zh, { dashboard: "/zh-cn/dashboard" }, {
   host: "work.qsseda.com",
   requestedPath: `/zh-cn/d/${TEST_DOCUMENT_ID}/unexpected`,
