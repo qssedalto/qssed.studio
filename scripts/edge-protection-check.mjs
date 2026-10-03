@@ -56,7 +56,7 @@ const sitemap = await protectEdgeRequest(browserRequest("/sitemap.xml"), env());
 assert(sitemap?.status === 200, "Canonical sitemap.xml should be served at the edge");
 const sitemapText = await sitemap.text();
 const sitemapUrls = publicSitemapUrls();
-assert(sitemapUrls.length === 56, "Complete public sitemap must expose 56 canonical URLs");
+assert(sitemapUrls.length === 114, "Complete public sitemap must expose 114 canonical URLs including Q pages");
 for (const required of [
   "https://qsseda.com/",
   "https://qsseda.com/zh-cn",
@@ -65,7 +65,11 @@ for (const required of [
   "https://qsseda.com/zh-cn/birthday",
   "https://qsseda.com/zh-cn/mid-autumn",
   "https://qsseda.com/ar-sa/aw/setup",
-  "https://qsseda.com/fr-fr/birthday"
+  "https://qsseda.com/fr-fr/birthday",
+  "https://qsseda.com/zh-cn/q",
+  "https://qsseda.com/en-us/q",
+  "https://qsseda.com/zh-cn/q/4e9a4ad1-22a3-4a63-a755-f7a3ca889101",
+  "https://qsseda.com/en-us/q/048deced-42b8-414c-bc1a-103f6f76c116"
 ]) {
   assert(sitemapText.includes("<loc>" + required + "</loc>"), "Sitemap is missing " + required);
 }
