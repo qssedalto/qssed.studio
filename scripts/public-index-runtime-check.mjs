@@ -4,7 +4,10 @@ const cases = [
   ["/ja-jp/birthday", "https://qsseda.com/ja-jp/birthday"],
   ["/en-us/wishes", "https://qsseda.com/en-us/wishes"],
   ["/ar-sa/mid-autumn", "https://qsseda.com/ar-sa/mid-autumn"],
-  ["/zh-cn/aw/setup", "https://qsseda.com/zh-cn/aw/setup"]
+  ["/zh-cn/aw/setup", "https://qsseda.com/zh-cn/aw/setup"],
+  ["/zh-cn/q", "https://qsseda.com/zh-cn/q"],
+  ["/zh-cn/q/4e9a4ad1-22a3-4a63-a755-f7a3ca889101", "https://qsseda.com/zh-cn/q/4e9a4ad1-22a3-4a63-a755-f7a3ca889101"],
+  ["/en-us/q/048deced-42b8-414c-bc1a-103f6f76c116", "https://qsseda.com/en-us/q/048deced-42b8-414c-bc1a-103f6f76c116"]
 ];
 
 for (const [path, canonical] of cases) {
