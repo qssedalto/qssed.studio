@@ -330,7 +330,7 @@ export default {
       if (pathname === "/workspace/projects") markup = replaceOsContent(markup, projectsWorkspaceContent(zh, fullLocale));
       if (pathname === "/workspace/tasks") markup = replaceOsContent(markup, tasksWorkspaceContent(zh, fullLocale));
       if (pathname === "/workspace/drafts") markup = replaceOsContent(markup, draftsWorkspaceContent(zh, fullLocale));
-      if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh));
+      if (pathname === "/workspace/experiments") markup = replaceOsContent(markup, labContent(zh, fullLocale));
       if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh));
       if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin, fullLocale, mainOrigin), workOrigin));
       if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, fullLocale, mainOrigin), zh));
