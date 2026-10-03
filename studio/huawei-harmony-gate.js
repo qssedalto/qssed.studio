@@ -181,7 +181,9 @@ function shouldAutoApplyExemptionRoute(request) {
       isExemptionVerificationTransport(request) ||
       pathname.startsWith("/api/") ||
       pathname.startsWith("/.well-known/") ||
-      pathname.startsWith("/favicon")
+      pathname.startsWith("/favicon") ||
+      pathname === "/icon.svg" ||
+      pathname === "/logo.svg"
     ) return false;
 
     const fetchDest = String(request.headers.get("Sec-Fetch-Dest") || "").toLowerCase();
