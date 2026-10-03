@@ -761,9 +761,32 @@ export function injectWorkTexHomeLinks(markup, locale = "en-us", mainOrigin = "h
       .tex-work-app .tex-panel-home-link:hover{background:var(--surface-strong);color:var(--text)}
       .tex-work-app .tex-editor-placeholder>.tex-panel-home-link{margin:8px auto 0}
       .tex-work-app .tex-editor-toolbar>.tex-panel-home-link{align-self:center;margin-left:auto}
-      .tex-work-app .tex-panel-home-link svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+      .tex-work-app .tex-panel-home-link>svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+      .tex-work-app .tex-panel-home-link .aertex-wordmark-token{
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        width:70px!important;
+        min-width:70px!important;
+        height:13.5px!important;
+        min-height:13.5px!important;
+        padding:0!important;
+        border-radius:0!important;
+        background:transparent!important;
+        color:currentColor!important;
+        line-height:1!important;
+      }
+      .tex-work-app .tex-panel-home-link .aertex-wordmark-token>svg{
+        display:block!important;
+        width:100%!important;
+        height:100%!important;
+        overflow:visible!important;
+        fill:currentColor!important;
+        stroke:none!important;
+      }
       @media(max-width:760px){
         .tex-work-app .tex-panel-home-link{min-height:30px;padding:0 9px;font-size:10px}
+        .tex-work-app .tex-panel-home-link .aertex-wordmark-token{width:66px!important;min-width:66px!important;height:12.7px!important;min-height:12.7px!important}
       }
     </style>
     <script id="qsseda-work-tex-home-links-runtime">
