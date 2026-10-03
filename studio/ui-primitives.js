@@ -42,7 +42,12 @@ export function osHubIcon(name) {
     language: '<path d="M4 5h10M9 5c-.2 5-2.3 8.3-5 10M6 9c1.8 2.8 4 4.8 7 6M14 10h6M17 7v10M14 17h6"/>',
     notifications: '<path d="M6 16h12l-1.5-2V10a4.5 4.5 0 00-9 0v4L6 16z"/><path d="M10 19h4"/>',
     ai: '<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3zM18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15z"/>',
-    integrations: '<path d="M8 8V5a3 3 0 016 0v3M16 16v3a3 3 0 01-6 0v-3M7 12h10"/>'
+    integrations: '<path d="M8 8V5a3 3 0 016 0v3M16 16v3a3 3 0 01-6 0v-3M7 12h10"/>',
+    workbench: '<rect x="3.5" y="4" width="17" height="16" rx="3"/><path d="M7.5 8h9M7.5 12h5M7.5 16h7"/>',
+    projects: '<path d="M4 7h6l1.5 2H20v9H4z"/><path d="M4 7V5h6l1.5 2"/>',
+    experiments: '<path d="M9 3h6M10 3v5l-5 9a2 2 0 001.8 3h10.4A2 2 0 0019 17l-5-9V3"/><path d="M8 14h8"/>',
+    drafts: '<path d="M5 4h10l4 4v12H5z"/><path d="M15 4v5h5M8 13h8M8 17h6"/>',
+    tasks: '<path d="M5 7h2l1 1 2-3M12 7h7M5 13h2l1 1 2-3M12 13h7M5 19h2l1 1 2-3M12 19h7"/>'
   };
   const body = icons[name] || icons.general;
   return `<span class="os-hub-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${body}</svg></span>`;
