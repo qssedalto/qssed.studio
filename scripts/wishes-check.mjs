@@ -12,6 +12,7 @@ const birthday = read("studio/ui-birthday.js");
 const midAutumn = read("studio/ui-mid-autumn.js");
 const dashboardStyle = read("studio/ui-style-dashboard.js");
 const uiStyles = read("studio/ui-styles.js");
+const navigation = read("studio/ui-navigation.js");
 
 for (const required of [
   'injectPublicSeo(birthdayPage(fullLocale), fullLocale, "/birthday")',
@@ -26,35 +27,48 @@ for (const required of [
   assert(entry.includes(required), "Wish routing invariant missing: " + required);
 }
 
-assert(config.includes('"/wishes"'), "Wish Center must be an authenticated OS route.");
-assert(shell.includes('if (path === "/wishes") return wishesContent(locale);'), "Studio shell must render Wish Center content inside the standard layout.");
-assert(shell.includes('"/wishes": { section: "wishes"') && shell.includes('"/wishes":page("wishes",n.wishes)'), "Wish Center must have metadata for core and localized shell routes.");
+for (const route of ["/wishes","/wishes/new-year","/wishes/traditions","/wishes/family","/wishes/relationships","/wishes/society"]) {
+  assert(config.includes('"' + route + '"'), "Wish Center category route missing from OS_PATHS: " + route);
+}
+assert(shell.includes('if (path === "/wishes" || path.startsWith("/wishes/")) return wishesContent(path, locale);'), "Studio shell must render the Wish Center hub and category pages inside the standard layout.");
+assert(shell.includes('"/wishes": { section: "wishes"') && shell.includes('"/wishes/new-year"') && shell.includes('"/wishes/society"'), "Wish Center must expose metadata for the hub and all category pages.");
 assert(!entry.includes("function wishesPage("), "Legacy standalone Wish Center page must be removed.");
 assert(!entry.includes('injectPublicSeo(wishesPage('), "Wish Center must not bypass the Studio shell as a public page.");
 
-const wishZh = wishesContent("zh-cn");
-const wishEn = wishesContent("en-us");
-assert(wishZh.includes('data-wishes-center') && wishZh.includes("生日快乐") && wishZh.includes("/zh-cn/wish/birthday"), "Chinese Wish Center must render localized shell content.");
-assert(wishEn.includes('data-wishes-center') && wishEn.includes("Happy Birthday") && wishEn.includes("/en-us/wish/birthday"), "English Wish Center must render localized shell content.");
-assert(wishZh.includes("history.replaceState") && wishZh.includes("navigator.clipboard.writeText"), "Wish Center must preserve route preview and copy-link behavior.");
-assert(shell.includes("function wishNavItems") && shell.includes('"/wishes#new-year"') && shell.includes('"/wishes#society"'), "Wish Center must expose categorized sidebar subnavigation.");
-assert(!shell.includes('class="os-nav-item-chevron"') && !shell.includes('aria-hidden="true">›</b>'), "Sidebar arrows must not use extra markup.");
-assert(shell.includes('class="os-nav-title${group.items.length ? " has-subnav" : ""}"'), "Expandable sidebar sections must expose a has-subnav state for the CSS arrow.");
-assert(dashboardStyle.includes('.os-nav-title::after') && dashboardStyle.includes('.os-nav-items a::after'), "Top-level and child sidebar arrows must be drawn with CSS ::after.");
-assert(dashboardStyle.includes('.os-nav-entry.is-active>.os-nav-title.has-subnav::after') && dashboardStyle.includes('transform:rotate(90deg)'), "An active expandable sidebar section must rotate its arrow downward.");
-assert(dashboardStyle.includes('justify-self:end') && dashboardStyle.includes('margin-left:auto'), "Sidebar arrows must stay pinned to the far right edge.");
-for (const category of ["新年与团圆","传统与节气","家庭与成长","关系与表达","社会与自然"]) {
-  assert(wishZh.includes(category), "Chinese Wish Center is missing category: " + category);
-}
-for (const festival of ["元旦","除夕","春节","元宵节","妇女节","植树节","愚人节","清明节","地球日","劳动节","国庆节","端午节","儿童节","母亲节","父亲节","七夕节","情人节","生日","中秋节"]) {
-  assert(wishZh.includes(festival), "Chinese Wish Center is missing festival: " + festival);
-}
-assert((wishZh.match(/class="wish-category"/g) || []).length === 5, "Wish Center must render five categorized festival sections.");
-assert(wishZh.includes('data-catalog-kind="birthday"') && wishZh.includes('data-catalog-kind="mid-autumn"'), "Birthday and Mid-Autumn catalog entries must connect to the existing builder.");
-assert(wishZh.includes('class="wish-festival is-planned"') && wishZh.includes("准备中"), "Future festivals must render as non-link planned entries.");
-assert(wishZh.includes("grid-auto-rows:72px") && wishZh.includes("margin:0!important") && wishZh.includes("height:100%"), "Wish Center festival cards must keep identical row height and reset global button spacing.");
-assert(wishZh.includes("button.wish-festival{appearance:none"), "Interactive festival cards must neutralize browser/global button appearance so available and planned cards keep the same proportions.");
+const wishZh = wishesContent("/wishes", "zh-cn");
+const wishEn = wishesContent("/wishes", "en-us");
+assert(wishZh.includes('data-wishes-hub') && wishZh.includes("选择祝福分类"), "Chinese Wish Center must render a compact category hub.");
+assert(wishEn.includes('data-wishes-hub') && wishEn.includes("Choose a wish category"), "English Wish Center must render a compact category hub.");
+assert(!wishZh.includes('class="wish-festival-grid"'), "Wish Center hub must not stack every festival on one large page.");
 
+assert(shell.includes("function wishNavItems") && shell.includes('"/wishes/new-year"') && shell.includes('"/wishes/society"'), "Wish Center sidebar must navigate to real category routes instead of hash anchors.");
+assert(!shell.includes('/wishes#new-year') && !shell.includes('/wishes#society'), "Wish Center must not use hash-only category navigation.");
+assert(navigation.includes('"/wishes"') && navigation.includes('const sectionRoots = ["/info", "/profile", "/wishes"'), "Compact navigation must treat Wish Center as the parent of category pages.");
+
+const wishPages = {
+  "new-year": wishesContent("/wishes/new-year", "zh-cn"),
+  traditions: wishesContent("/wishes/traditions", "zh-cn"),
+  family: wishesContent("/wishes/family", "zh-cn"),
+  relationships: wishesContent("/wishes/relationships", "zh-cn"),
+  society: wishesContent("/wishes/society", "zh-cn")
+};
+for (const [id, markup] of Object.entries(wishPages)) {
+  assert(markup.includes('data-wishes-category="' + id + '"'), "Wish category page missing dedicated interface: " + id);
+  assert(markup.includes('class="wish-category-overview"') && markup.includes('class="wish-festival-grid"'), "Wish category page must include detailed overview and festival grid: " + id);
+}
+for (const festival of ["元旦","除夕","春节","元宵节","中秋节"]) assert(wishPages["new-year"].includes(festival), "New Year category missing festival: " + festival);
+for (const festival of ["清明节","端午节"]) assert(wishPages.traditions.includes(festival), "Traditions category missing festival: " + festival);
+for (const festival of ["生日","妇女节","儿童节","母亲节","父亲节"]) assert(wishPages.family.includes(festival), "Family category missing festival: " + festival);
+for (const festival of ["七夕节","情人节","愚人节"]) assert(wishPages.relationships.includes(festival), "Relationships category missing festival: " + festival);
+for (const festival of ["植树节","地球日","劳动节","国庆节"]) assert(wishPages.society.includes(festival), "Society category missing festival: " + festival);
+
+assert(wishPages.family.includes('data-template-kind="birthday"') && wishPages.family.includes('data-wish-builder'), "Family category must keep the existing Birthday builder.");
+assert(wishPages["new-year"].includes('data-template-kind="mid-autumn"') && wishPages["new-year"].includes('data-wish-builder'), "New Year category must keep the existing Mid-Autumn builder.");
+assert(wishPages.traditions.includes("这个分类暂时没有开放的祝福模板"), "Categories without live templates must show a clear non-placeholder status panel.");
+assert(wishPages.family.includes("妇女节") && wishPages.family.includes("避免刻板化"), "Family category must include more detailed Women's Day guidance.");
+assert(wishPages.society.includes("国庆节") && wishPages.society.includes("节日与假期问候"), "Society category must include detailed National Day guidance.");
+assert(wishPages.family.includes("grid-auto-rows:112px") && wishPages.family.includes("margin:0!important") && wishPages.family.includes("height:100%"), "Festival cards must keep equal detailed-card proportions.");
+assert(wishPages.family.includes("history.replaceState") && wishPages.family.includes("navigator.clipboard.writeText"), "Available category pages must preserve route preview and copy-link behavior.");
 
 assert(birthday.includes('params.get("name")'), "Birthday page must support ?name=.");
 assert(midAutumn.includes('params.get("name")'), "Mid-Autumn page must support ?name=.");
