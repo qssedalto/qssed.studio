@@ -89,7 +89,7 @@ assert(app.includes("if ($('backToAertex')) $('backToAertex').href = mainSiteOri
 assert(styles.includes(".brand-home-link"), "Cash product identity must be styled as a first-class navigation target.");
 assert(index.includes('<script src="/appearance.js"></script>'), "Cash must load the shared appearance runtime before rendering.");
 assert(styles.includes(':root[data-theme="light"]') && styles.includes(':root[data-theme="dark"]'), "Cash must support explicit shared light and dark modes.");
-assert(styles.includes(':root[data-accent="sapphire"]') && styles.includes(':root[data-accent="graphite"]'), "Cash must map the shared accent palette.");
+assert(styles.includes(':root[data-accent]{--accent:var(--aertex-accent)'), "Cash must consume the shared iPhone accent variables.");
 assert(!styles.includes('select{color-scheme:light}'), "Cash controls must not force light native widgets in dark mode.");
 assert(appearance.includes('qssed_theme_generation'), "Cash shared runtime must receive the one-time System-mode migration.");
 
