@@ -38,7 +38,7 @@ import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
 import { watchSetupPage } from "./watch-setup-page.js";
 import { adminOriginForRequest, authOriginForRequest, awOriginForRequest, cashOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
-import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, localeFromPath, normalizeSupportedLocale } from "./locale.js";
+import { localeFromPath, normalizeSupportedLocale } from "./locale.js";
 
 function safeLocalNext(value) {
   const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
