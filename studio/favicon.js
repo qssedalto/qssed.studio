@@ -1,6 +1,6 @@
 export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-1" type="image/svg+xml">';
+export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-2" type="image/svg+xml">';
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
@@ -16,7 +16,10 @@ export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
 </svg>`;
 
 const PRODUCT_FAVICON_META = Object.freeze({
-  work: { label: "AERTEX Work", glyph: '<path d="M46.8 44.8h6.1l3.3 3.3v8.1h-9.4zM52.9 44.8v3.3h3.3M49.1 51.2h4.8M49.1 54h4"/>' },
+  work: {
+    label: "AERTEX Work",
+    badge: '<g class="aertex-product-badge aertex-work-badge" aria-hidden="true"><rect class="work-badge-panel" x="39.7" y="39.7" width="19.8" height="19.8" rx="5.1"/><rect class="work-window-back" x="44.1" y="44.2" width="10.1" height="8.2" rx="1.9"/><rect class="work-window-front" x="47.2" y="47.3" width="9.6" height="8.1" rx="1.9"/><path class="work-window-line" d="M49.5 50.1h4.9M49.5 52.4h3.7"/></g>'
+  },
   intelligence: { label: "AERTEX Intelligence", glyph: '<path class="filled" d="m51.2 44.8 1.55 3.85 3.85 1.55-3.85 1.55-1.55 3.85-1.55-3.85-3.85-1.55 3.85-1.55z"/><path d="M55.2 44.7v2.2M54.1 45.8h2.2"/>' },
   cash: { label: "AERTEX Cash", glyph: '<path d="M46.5 48.1h9.8v7.2h-9.8zM48 48.1v-1.8h6.6v1.8M53.2 51.7h3.1"/><circle class="filled" cx="53.6" cy="51.7" r=".75"/>' },
   watch: { label: "AERTEX Watch", glyph: '<circle cx="51.2" cy="50.7" r="5.1"/><path d="M51.2 47.7v3.2l2.3 1.5"/>' },
@@ -41,7 +44,7 @@ export function faviconProductForRequest(request) {
 export function faviconSvgForProduct(product = "") {
   const meta = PRODUCT_FAVICON_META[product];
   if (!meta) return FAVICON_SVG;
-  const badge = `<g class="aertex-product-badge" aria-hidden="true">
+  const badge = meta.badge || `<g class="aertex-product-badge" aria-hidden="true">
     <circle class="badge-disc" cx="51.2" cy="51.2" r="11.1"/>
     <g class="badge-glyph">${meta.glyph}</g>
   </g>`;
@@ -52,6 +55,13 @@ export function faviconSvgForProduct(product = "") {
       `.aertex-product-badge .badge-disc{fill:var(--paper);stroke:var(--edge);stroke-width:1.6}
       .aertex-product-badge .badge-glyph{fill:none;stroke:var(--ink);stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
       .aertex-product-badge .badge-glyph .filled{fill:var(--ink);stroke:none}
+      .aertex-work-badge .work-badge-panel{fill:#ffffff;stroke:#d8dde6;stroke-width:1.1}
+      .aertex-work-badge .work-window-back{fill:#9bbcf5}
+      .aertex-work-badge .work-window-front{fill:#5f8fdf}
+      .aertex-work-badge .work-window-line{fill:none;stroke:#ffffff;stroke-width:1.15;stroke-linecap:round}
+      @media (prefers-color-scheme:dark){
+        .aertex-work-badge .work-badge-panel{fill:#f6f7f9;stroke:#cdd2dc}
+      }
       </style>`
     )
     .replace("</svg>", badge + "</svg>");
