@@ -1,6 +1,6 @@
 export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-13" type="image/svg+xml">';
+export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-14" type="image/svg+xml">';
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
@@ -63,7 +63,7 @@ export function faviconSvgForProduct(product = "") {
     <circle class="badge-disc" cx="51.2" cy="51.2" r="11.1"/>
     <g class="badge-glyph" transform="translate(51.2 51.2)">${meta.glyph}</g>
   </g>`;
-  const cutout = '<circle class="product-badge-cutout" cx="51.2" cy="51.2" r="12"/>';
+  const cutout = '<circle class="product-badge-cutout" cx="51.2" cy="51.2" r="13.5"/>';
   const knockout = `<defs>
     <mask id="aertex-product-badge-knockout" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
       <rect x="0" y="0" width="64" height="64" fill="#fff"/>
