@@ -4,6 +4,7 @@ import { notFoundPage } from "../studio/auth-pages.js";
 import { TEXT } from "../studio/config.js";
 import { huaweiHarmonyGate } from "../studio/huawei-harmony-gate.js";
 import { SUPPORTED_LOCALES } from "../studio/locale.js";
+import { rewriteWorkSubdomainRequest, workDocumentNotFound } from "../studio/work-subdomain.js";
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
 const workAuditWrapper = fs.readFileSync(new URL("../studio/worker-audit.js", import.meta.url), "utf8");
@@ -78,11 +79,37 @@ for (const path of invalidHuaweiMarkerPaths) {
 const hostAware404 = notFoundPage(TEXT.zh, { dashboard: "/zh-cn/dashboard" }, {
   host: "work.qsseda.com",
   requestedPath: `/zh-cn/d/${TEST_DOCUMENT_ID}/unexpected`,
-  returnHref: "/zh-cn/tex"
+  returnHref: "https://work.qsseda.com/zh-cn/tex"
 });
 assert(hostAware404.includes("返回 work.qsseda.com"), "Work 404 must name the complete prefixed hostname in its return action.");
-assert(hostAware404.includes('href="/zh-cn/tex"'), "Work 404 must return to the localized Work root instead of the main-site dashboard.");
+assert(hostAware404.includes('href="https://work.qsseda.com/zh-cn/tex"'), "Work 404 must bind its return link explicitly to the Work hostname.");
 assert(hostAware404.includes(`work.qsseda.com/zh-cn/d/${TEST_DOCUMENT_ID}/unexpected`), "404 must show the rejected hostname and route for diagnosis.");
+
+const legacyZhWork = rewriteWorkSubdomainRequest(new Request("https://work.qsseda.com/zh/tex"));
+assert(
+  legacyZhWork.canonical === "https://work.qsseda.com/zh-cn/tex",
+  "Legacy Work /zh/tex links must normalize on work.qsseda.com instead of falling through to qsseda.com."
+);
+const legacyZhDocument = rewriteWorkSubdomainRequest(new Request(`https://work.qsseda.com/zh/d/${TEST_DOCUMENT_ID}`));
+assert(
+  legacyZhDocument.canonical === `https://work.qsseda.com/zh-cn/d/${TEST_DOCUMENT_ID}`,
+  "Legacy Work /zh/d/<uuid> links must normalize to zh-cn without leaving the Work hostname."
+);
+
+const actualWork404 = await workDocumentNotFound(new Request(
+  `https://work.qsseda.com/zh-cn/d/${TEST_DOCUMENT_ID}/unexpected`,
+  { headers: { "Accept-Language": "zh-CN" } }
+));
+const actualWork404Markup = await actualWork404.text();
+assert(actualWork404.status === 404, "Invalid Work document URLs must remain 404 responses.");
+assert(
+  actualWork404Markup.includes('href="https://work.qsseda.com/zh-cn/tex"'),
+  "Rendered Work 404 must use an absolute same-host localized return URL."
+);
+assert(
+  actualWork404Markup.includes(`work.qsseda.com/zh-cn/d/${TEST_DOCUMENT_ID}/unexpected`),
+  "Rendered Work 404 must display the complete original localized URL."
+);
 
 const localized404Expectations = {
   "en-us": { title: "Page not found", action: "Return to work.qsseda.com" },
@@ -104,15 +131,15 @@ for (const locale of SUPPORTED_LOCALES) {
     locale,
     host: "work.qsseda.com",
     requestedPath: `/${locale}/missing`,
-    returnHref: `/${locale}/tex`
+    returnHref: `https://work.qsseda.com/${locale}/tex`
   });
   assert(markup.includes(`<html lang="${locale}" dir="${locale === "ar-sa" ? "rtl" : "ltr"}">`), `404 document language/direction must match ${locale}.`);
   assert(markup.includes(expected.title), `404 title must be localized for ${locale}.`);
   assert(markup.includes(expected.action), `404 return action must be localized for ${locale}.`);
-  assert(markup.includes(`href="/${locale}/tex"`), `404 return target must preserve ${locale}.`);
+  assert(markup.includes(`href="https://work.qsseda.com/${locale}/tex"`), `404 return target must preserve ${locale} on the Work hostname.`);
 }
 assert(work.includes("locale: fullLocale"), "Work 404 must pass the full regional locale to the renderer.");
-assert(work.includes('returnHref: `/${fullLocale}/tex`'), "Work 404 must return to the same localized Work root.");
+assert(work.includes('returnHref = `\${workOriginForRequest(request)}/\${fullLocale}/tex`'), "Work 404 must build an absolute same-host localized Work return URL.");
 assert(entry.includes("locale: fullLocale"), "Main-site 404 must pass the full regional locale to the renderer.");
 for (const locale of SUPPORTED_LOCALES) {
   assert(
