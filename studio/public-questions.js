@@ -1,4 +1,4 @@
-export const QUESTION_INDEX_LOCALES = Object.freeze(["zh-cn","en-us","en-gb","en-au"]);
+export const QUESTION_INDEX_LOCALES = Object.freeze(["zh-cn","en-us"]);
 
 export const QUESTION_CATEGORIES = Object.freeze([
   "about",
@@ -808,11 +808,7 @@ export function questionById(id) {
 
 export function questionRouteLocale(locale) {
   const code = String(locale || "").toLowerCase();
-  if (code === "zh-cn") return "zh-cn";
-  if (code === "en-gb") return "en-gb";
-  if (code === "en-au") return "en-au";
-  if (code === "en-us") return "en-us";
-  if (code === "zh-tw") return "zh-cn";
+  if (code === "zh-cn" || code === "zh-tw") return "zh-cn";
   return "en-us";
 }
 
