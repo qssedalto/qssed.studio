@@ -35,6 +35,8 @@ import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
 import { watchSetupPage } from "./watch-setup-page.js";
+import { isQuestionPath, questionDetailPage, questionIdFromPath, questionIndexPage } from "./public-questions-page.js";
+import { questionLocale } from "./public-questions-content.js";
 import { adminOriginForRequest, authOriginForRequest, awOriginForRequest, cashOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
 
@@ -279,6 +281,27 @@ export default {
 
     const wishRoute = wishRedirect(request, fullLocale, pathname);
     if (wishRoute) return wishRoute;
+
+    const originalPath = new URL(request.url).pathname;
+    const explicitLocale = /^\/(?:en-us|en-gb|en-au|zh-cn|zh-tw|ja-jp|ko-kr|fr-fr|es-es|el-gr|ar-sa)(?:\/|$)/i.test(originalPath);
+    if (!explicitLocale && isQuestionPath(pathname)) {
+      const code = questionLocale(fullLocale);
+      const target = new URL(request.url);
+      target.pathname = "/" + code + pathname;
+      return Response.redirect(target.toString(), 302);
+    }
+    if (isQuestionPath(pathname)) {
+      const code = questionLocale(fullLocale);
+      if (fullLocale !== code) {
+        const target = new URL(request.url);
+        target.pathname = "/" + code + pathname;
+        return Response.redirect(target.toString(), 302);
+      }
+      const canonicalHost = new URL(request.url).hostname.toLowerCase() === "qsseda.com";
+      const id = questionIdFromPath(pathname);
+      const markup = id ? questionDetailPage(code, id) : questionIndexPage(code);
+      if (markup) return localizedPage(markup, locale, 200, { indexable: canonicalHost });
+    }
 
     const t = TEXT[locale];
     const links = buildLinks(locale, pathname, fullLocale);
