@@ -193,9 +193,9 @@ assert(appearance.includes('qssed_theme_generation'), "Shared appearance runtime
 assert(appearance.includes('localStorage.setItem(MODE_KEY,"system")'), "Existing browser preferences must be reset to System once for this migration.");
 assert(appearance.includes('["qsseda.com","qsseda.online","qsseda.studio"]'), "Shared appearance runtime must support every AERTEX domain family.");
 assert(intelligenceTheme.includes('appearanceBootScript()'), "Intelligence and AERTEX ID must delegate to the shared appearance runtime.");
-assert(gptUi.includes(':root[data-accent="sapphire"]') && gptUi.includes(':root[data-accent="graphite"]'), "Intelligence must map the shared accent palette.");
+assert(gptUi.includes(':root[data-accent]{--accent:var(--aertex-accent);--accentText:var(--aertex-accent-ink)}'), "Intelligence must consume the shared iPhone accent variables.");
 assert(authWorker.includes('requestCookieValue(request, "qssed_locale")'), "AERTEX ID must prefer the shared locale cookie when no localized return path exists.");
-assert(authWorker.includes(':root[data-accent="sapphire"]') && authWorker.includes(':root[data-accent="graphite"]'), "AERTEX ID must map the shared accent palette.");
+assert(authWorker.includes(':root[data-accent]{--accent:var(--aertex-accent)'), "AERTEX ID must consume the shared iPhone accent variables.");
 assert(!authHandoff.includes('id="handoff-retry"'), "Auth handoff must not render the obsolete re-login button.");
 assert(!storageUi.includes('id="storage-login-link"'), "AERTEX Drive must not render the obsolete re-login button.");
 assert(!storageUi.includes('supabaseClient.auth.getSession()'), "AERTEX Drive must trust the validated server cookie session instead of a second browser token.");
@@ -226,7 +226,7 @@ assert(session.includes('startsWith("zh")'), "Session recovery must keep zh-cn a
 assert(session.includes("正在重新同步 AERTEX 登录状态"), "Chinese session recovery must use neutral resynchronization copy.");
 assert(authOauth.includes("appearanceBootScript()"), "OAuth authorization pages must use the shared appearance runtime.");
 assert(authOauth.includes(':root[data-theme="light"]') && authOauth.includes(':root[data-theme="dark"]'), "OAuth authorization pages must honor fixed light and dark selections.");
-assert(authOauth.includes(':root[data-accent="sapphire"]') && authOauth.includes(':root[data-accent="graphite"]'), "OAuth authorization pages must honor the shared accent palette.");
+assert(authOauth.includes(':root[data-accent]{--accent:var(--aertex-accent)'), "OAuth authorization pages must honor the shared iPhone accent palette.");
 assert(authHandoff.includes("Browser auth persistence failed; continuing with validated server session"), "Handoff must continue with its validated server session when client persistence is unavailable.");
 assert(chatSource.includes("if (createdConversation)"), "New conversations must be removed when a provider stream fails.");
 assert(chatSource.includes('method: "DELETE"'), "Failed newly-created conversations must be deleted.");
