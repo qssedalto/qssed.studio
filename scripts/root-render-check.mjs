@@ -1,4 +1,4 @@
-import { TEXT } from "../studio/config.js";
+import { LEGACY_REDIRECTS, TEXT } from "../studio/config.js";
 import { buildLinks } from "../studio/routing.js";
 import { osPage } from "../studio/ui-shell.js";
 import { decorateWorkNavigation } from "../studio/ui-work.js";
@@ -7,6 +7,10 @@ import { LOCALE_META, SUPPORTED_LOCALES, localeContentLanguage } from "../studio
 import { QSS_DOMAIN_ROOTS, awOriginForRequest } from "../studio/domain-family.js";
 
 const ipInfo = { ip:"127.0.0.1", country:"US", region:"", city:"", locale:"en-us" };
+
+if (LEGACY_REDIRECTS.has("/dashboard")) {
+  throw new Error("Dashboard must remain a real Home route and must not redirect back to the main menu.");
+}
 
 for (const root of QSS_DOMAIN_ROOTS) {
   const mainOrigin = `https://${root}`;
@@ -44,6 +48,28 @@ for (const root of QSS_DOMAIN_ROOTS) {
     } catch (error) {
       console.error(`Authenticated home render chain failed for ${root} / ${fullLocale}`);
       throw error;
+    }
+
+    const dashboardLinks = buildLinks(contentLanguage, "/dashboard", fullLocale);
+    if (dashboardLinks.menu !== "/" + fullLocale || dashboardLinks.dashboard !== "/" + fullLocale + "/dashboard") {
+      throw new Error(`Main menu and Home links must remain distinct for ${root} / ${fullLocale}`);
+    }
+    if (!markup.includes('href="/' + fullLocale + '/dashboard"')) {
+      throw new Error(`Root menu must link Home to /dashboard for ${root} / ${fullLocale}`);
+    }
+
+    let dashboardMarkup;
+    try {
+      dashboardMarkup = osPage(t, dashboardLinks, "/dashboard", { ...ipInfo, locale: fullLocale }, "", productLinks);
+    } catch (error) {
+      console.error(`Authenticated Home render failed for ${root} / ${fullLocale}`);
+      throw error;
+    }
+    if (dashboardMarkup.includes('<body class="os-shell os-root-menu">') || dashboardMarkup.includes('class="desktop-main-menu"')) {
+      throw new Error(`Home must render dashboard content, not the main menu, for ${root} / ${fullLocale}`);
+    }
+    if (!dashboardMarkup.includes('class="os-hero"') || !dashboardMarkup.includes('href="/' + fullLocale + '/dashboard"')) {
+      throw new Error(`Home must render as the dedicated dashboard route for ${root} / ${fullLocale}`);
     }
 
     if (typeof markup !== "string" || !markup.includes('<body class="os-shell os-root-menu">')) {

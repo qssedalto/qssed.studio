@@ -94,7 +94,8 @@ export function buildLinks(locale, pathname, fullLocale = "") {
   return {
     login: `${prefix}/login`,
     signUp: `${prefix}/sign-up`,
-    dashboard: prefix,
+    menu: prefix,
+    dashboard: `${prefix}/dashboard`,
     zhCurrent: localeLinks["zh-cn"],
     enCurrent: localeLinks["en-us"],
     localeLinks,

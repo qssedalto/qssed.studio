@@ -49,7 +49,6 @@ export const OS_PATHS = new Set([
   "/settings/storage"
 ]);
 export const LEGACY_REDIRECTS = new Map([
-  ["/dashboard", "/"],
   ["/general", "/dashboard"],
   ["/general/infohub", "/info"],
   ["/personal", "/profile"],
