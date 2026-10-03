@@ -2,7 +2,7 @@ import { handleOAuthRequest } from "./auth-oauth.js";
 import { localeDirection, localeFromPath, normalizeSupportedLocale, preferredLocaleFromRequest } from "./studio/locale.js";
 import { awOriginForRequest, mainOriginForRequest, rootDomainForRequest, serviceOrigin } from "./studio/domain-family.js";
 import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
-import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
+import { injectBrandLogoRuntime, LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
 import { intelligenceThemeAttr, intelligenceThemeBootScript, intelligenceThemeFromRequest } from "./studio/intelligence-theme.js";
 
@@ -31,6 +31,7 @@ export default {
     const pathname = normalizePath(url.pathname);
 
     if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
+    if (LOGO_PATHS.has(pathname)) return logoResponse(request);
 
     if (OAUTH_PATHS.has(pathname)) return handleOAuthRequest(request);
 
