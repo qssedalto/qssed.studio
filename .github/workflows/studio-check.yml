@@ -31,6 +31,7 @@ on:
       - "scripts/account-menu-check.mjs"
       - "scripts/codex-bridge-check.mjs"
       - "scripts/brand-check.mjs"
+      - "scripts/favicon-check.mjs"
       - "scripts/r2-storage-audit-check.mjs"
       - "scripts/billing-subscription-check.mjs"
       - "scripts/wishes-check.mjs"
@@ -143,6 +144,7 @@ jobs:
           node --check scripts/account-menu-check.mjs
           node --check scripts/codex-bridge-check.mjs
           node --check scripts/brand-check.mjs
+          node --check scripts/favicon-check.mjs
           node --check scripts/r2-storage-audit-check.mjs
           node --check scripts/billing-subscription-check.mjs
           node --check scripts/wishes-check.mjs
@@ -227,6 +229,9 @@ jobs:
 
       - name: Verify AERTEX product naming
         run: node scripts/brand-check.mjs
+
+      - name: Verify shared AERTEX brand assets
+        run: node scripts/favicon-check.mjs
 
       - name: Verify R2 storage and access-audit optimization
         run: node scripts/r2-storage-audit-check.mjs
