@@ -22,7 +22,7 @@ export function questionIdFromPath(pathname) {
   return match && UUID.test(match[1]) ? match[1].toLowerCase() : "";
 }
 
-export function questionIndexPage(locale = "en-us") {
+export function questionIndexPage(locale = "en-us", indexable = true) {
   const code = questionLocale(locale);
   const lang = questionLanguage(code);
   const zh = lang === "zh";
@@ -51,6 +51,11 @@ export function questionIndexPage(locale = "en-us") {
     description,
     canonicalPath:"/" + code + "/q",
     zh,
+    indexable,
+    extraHead:
+      '<link rel="alternate" hreflang="zh-CN" href="https://qsseda.com/zh-cn/q">' +
+      '<link rel="alternate" hreflang="en" href="https://qsseda.com/en-us/q">' +
+      '<link rel="alternate" hreflang="x-default" href="https://qsseda.com/en-us/q">',
     body:'<main class="shell"><header class="hero"><p class="eyebrow">AERTEX · Q</p><h1>' + (zh ? "问题与解答" : "Questions & Answers") + '</h1><p class="lead">' + escapeHtml(description) + '</p></header>' + sections + '</main>',
     structuredData:{
       "@context":"https://schema.org",
@@ -63,7 +68,7 @@ export function questionIndexPage(locale = "en-us") {
   });
 }
 
-export function questionDetailPage(locale = "en-us", id = "") {
+export function questionDetailPage(locale = "en-us", id = "", indexable = true) {
   const item = publicQuestion(id);
   if (!item) return "";
   const code = questionLocale(locale);
@@ -103,6 +108,7 @@ export function questionDetailPage(locale = "en-us", id = "") {
     description:copy.short,
     canonicalPath,
     zh,
+    indexable,
     extraHead:
       '<link rel="alternate" hreflang="zh-CN" href="https://qsseda.com/zh-cn/q/' + item.id + '">' +
       '<link rel="alternate" hreflang="en" href="https://qsseda.com/en-us/q/' + item.id + '">' +
@@ -139,7 +145,7 @@ export function questionDetailPage(locale = "en-us", id = "") {
   });
 }
 
-function shell({code,title,description,canonicalPath,zh,body,structuredData,extraHead="",topAction=""}) {
+function shell({code,title,description,canonicalPath,zh,body,structuredData,extraHead="",topAction="",indexable=true}) {
   const other = code === "zh-cn" ? "en-us" : "zh-cn";
   const indexLanguage = code === "zh-cn" ? "English" : "简体中文";
   const action = topAction || '<a class="lang" href="/' + other + '/q">' + escapeHtml(indexLanguage) + '</a>';
@@ -151,7 +157,7 @@ function shell({code,title,description,canonicalPath,zh,body,structuredData,extr
 <meta name="color-scheme" content="light dark">
 <title>${escapeHtml(title)}</title>
 <meta name="description" content="${escapeHtml(description)}">
-<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
+<meta name="robots" content="${indexable ? "index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" : "noindex,nofollow,noarchive,nosnippet"}">
 <link rel="canonical" href="https://qsseda.com${canonicalPath}">
 ${extraHead}
 ${FAVICON_LINKS}
