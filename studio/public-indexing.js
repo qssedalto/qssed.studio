@@ -1,4 +1,5 @@
 import { SUPPORTED_LOCALES, normalizeSupportedLocale } from "./locale.js";
+import { questionSitemapUrls } from "./public-questions-content.js";
 
 export const PUBLIC_INDEXABLE_ROUTES = Object.freeze([
   "/",
@@ -55,6 +56,7 @@ export function publicSitemapUrls() {
       urls.push(canonicalPublicUrl(locale, route));
     }
   }
+  urls.push(...questionSitemapUrls());
   return [...new Set(urls)];
 }
 
