@@ -706,6 +706,11 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
   };
   const iconForItem = href => {
     const value = String(href || "");
+    if (value.includes("/wishes#new-year")) return "gift";
+    if (value.includes("/wishes#traditions")) return "moon";
+    if (value.includes("/wishes#family")) return "profile";
+    if (value.includes("/wishes#relationships")) return "wishes";
+    if (value.includes("/wishes#society")) return "info";
     if (value.includes("/knowledge")) return "knowledge";
     if (value.includes("/links")) return "links";
     if (value.includes("/notes")) return "notes";
