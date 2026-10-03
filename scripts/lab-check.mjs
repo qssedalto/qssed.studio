@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { LAB_TOOL_CATEGORIES, LAB_TOOLS } from "../studio/lab-tools.js";
+import { LAB_TOOL_CATEGORIES, LAB_TOOLS, LAB_TOOL_LOCALIZATIONS } from "../studio/lab-tools.js";
 import { labContent } from "../studio/ui-lab.js";
 
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
@@ -33,6 +33,24 @@ assert(LAB_TOOLS.filter(tool => tool.status === "ready").length >= 5, "Lab shoul
 assert(!registrySource.includes("api_key"), "Lab registry must not contain API keys");
 assert(!registrySource.includes("secret"), "Lab registry must not contain secrets");
 
+for (const locale of ["zh-tw","ja-jp","ko-kr","fr-fr","es-es","el-gr","ar-sa"]) {
+  const registry = LAB_TOOL_LOCALIZATIONS[locale];
+  assert(Boolean(registry), "Missing Lab localization registry for " + locale);
+  for (const tool of LAB_TOOLS) {
+    const localized = registry.tools?.[tool.id];
+    assert(Array.isArray(localized) && localized.length === 3, "Missing localized Lab tool for " + locale + ": " + tool.id);
+    assert(localized[0] && localized[1] && Array.isArray(localized[2]) && localized[2].length > 0, "Incomplete localized Lab tool for " + locale + ": " + tool.id);
+  }
+}
+
+for (const [locale, expected] of [["zh-tw","實驗室"],["ja-jp","ラボ"],["ko-kr","랩"],["fr-fr","Registre des outils"],["es-es","Registro de herramientas"],["el-gr","Μητρώο εργαλείων"],["ar-sa","سجل الأدوات"]]) {
+  const markup = labContent(false, locale);
+  assert(markup.includes(expected), "Lab translation missing for " + locale);
+  assert(markup.includes('const prefix="' + "/" + locale + '";'), "Lab must preserve locale prefix for " + locale);
+  const scripts = [...markup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+  for (const code of scripts) new Function(code);
+}
+
 for (const zh of [true, false]) {
   const markup = labContent(zh);
   assert(markup.includes("data-lab-root"), "Lab root is missing");
@@ -47,7 +65,7 @@ for (const zh of [true, false]) {
 }
 
 assert(entry.includes('pathname === "/workspace/experiments"'), "Studio entry does not mount Lab");
-assert(entry.includes("labContent(zh)"), "Lab renderer is not mounted");
+assert(entry.includes("labContent(zh, fullLocale)"), "Lab renderer must receive the full locale");
 
 console.log("Lab registry checks passed.");
 
