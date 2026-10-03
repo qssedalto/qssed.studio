@@ -44,13 +44,20 @@ assert(accountDeletion?.short.includes("没有公开的自助"), "Account deleti
 const watchBuckets = questionTranslation(questionById("a9924bd6-b7e4-4416-a2e7-e82074121042"), "zh-cn");
 assert(watchBuckets?.short.includes("没有固定的官方 bucket allowlist"), "Watch bucket scope must remain technically accurate.");
 
+assert(JSON.stringify(QUESTION_INDEX_LOCALES) === JSON.stringify(["zh-cn","en-us"]), "Questions sitemap must only publish locales with distinct first-party translations.");
+assert(questionHubPage("en-gb").includes('/en-us/q'), "en-gb Questions must canonicalize to the en-us question route.");
+assert(questionHubPage("en-au").includes('/en-us/q'), "en-au Questions must canonicalize to the en-us question route.");
+
 const expectedSitemapCount = 56 + QUESTION_INDEX_LOCALES.length * (1 + published.length);
 const sitemap = publicSitemapUrls();
+assert(expectedSitemapCount === 176, "The 59-question bilingual sitemap should contain 176 canonical URLs.");
 assert(sitemap.length === expectedSitemapCount, "Question sitemap expansion count mismatch.");
 for (const locale of QUESTION_INDEX_LOCALES) {
   assert(sitemap.includes("https://qsseda.com/" + locale + "/q"), "Question hub missing from sitemap for " + locale);
   assert(sitemap.includes("https://qsseda.com/" + locale + "/q/" + published[0].id), "Question detail missing from sitemap for " + locale);
 }
+assert(!sitemap.some(url => url.includes("/en-gb/q")), "Duplicate en-gb Questions must not be listed in sitemap.");
+assert(!sitemap.some(url => url.includes("/en-au/q")), "Duplicate en-au Questions must not be listed in sitemap.");
 
 const hub = questionHubPage("zh-cn");
 assert(hub.includes("问题与解答") && hub.includes("data-category-filter"), "Question hub must render searchable categories.");
