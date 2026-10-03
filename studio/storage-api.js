@@ -215,6 +215,7 @@ export async function handleStorageFiles(request, env) {
   files.sort((a, b) => String(b.uploadedAt || "").localeCompare(String(a.uploadedAt || "")));
   return json({
     connected: true,
+    user_id: auth.user.id,
     scope: "own",
     usage_scope: "own-user-files",
     files,
