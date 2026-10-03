@@ -34,6 +34,11 @@ assert(shell.includes('if (path === "/wishes" || path.startsWith("/wishes/")) re
 assert(shell.includes('"/wishes": { section: "wishes"') && shell.includes('"/wishes/new-year"') && shell.includes('"/wishes/society"'), "Wish Center must expose metadata for the hub and all category pages.");
 assert(!entry.includes("function wishesPage("), "Legacy standalone Wish Center page must be removed.");
 assert(!entry.includes('injectPublicSeo(wishesPage('), "Wish Center must not bypass the Studio shell as a public page.");
+assert(entry.includes('pathname !== "/wishes"'), "Wish Center root must be excluded from the authenticated OS gate.");
+assert(entry.includes('if (pathname === "/wishes") {') && entry.includes('publicMode: true'), "Wish Center root must render the standard Studio shell in public mode.");
+assert(entry.includes('injectPublicSeo(markup, fullLocale, "/wishes")'), "Public Wish Center must keep canonical SEO metadata.");
+assert(shell.includes('const publicMode = Boolean(productLinks?.publicMode);'), "Studio shell must support an explicit public mode.");
+assert(shell.includes('${publicMode ? "" : "hydrateOsUser();"}'), "Public Studio shell must not run the authenticated account hydration redirect.");
 assert(dashboardStyle.includes('.os-nav-title::after') && dashboardStyle.includes('.os-nav-items a::after'), "Sidebar arrows must be rendered through CSS ::after.");
 assert(dashboardStyle.includes('position:absolute') && dashboardStyle.includes('right:12px') && dashboardStyle.includes('right:8px'), "Top-level and child sidebar arrows must be pinned to the far-right edge.");
 assert(dashboardStyle.includes('transform:translateY(-50%) rotate(90deg)'), "Expanded sidebar sections must keep the arrow vertically centered while rotating downward.");

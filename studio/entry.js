@@ -195,7 +195,7 @@ export default {
     const labSubroute = pathname === "/workspace/experiments/tex";
     const workRoute = pathname === "/work" || pathname === "/work/local" || pathname === "/work/tex";
     const isHomeRoute = pathname === "/";
-    const isProtectedOsRoute = OS_PATHS.has(pathname) || linksSubroute;
+    const isProtectedOsRoute = (OS_PATHS.has(pathname) && pathname !== "/wishes") || linksSubroute;
 
     if (isHomeRoute || isProtectedOsRoute) {
       const gate = await verifyStudioPageSession(request);
@@ -246,6 +246,20 @@ export default {
       if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); }
       const pageOptions = pathname === "/work/local" || pathname === "/work/tex" || pathname === "/workspace/experiments/tex" ? { allowLoopback: true } : {};
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
+    }
+
+    if (pathname === "/wishes") {
+      const canonicalHost = new URL(request.url).hostname.toLowerCase() === "qsseda.com";
+      const markup = osPage(t, links, pathname, ipInfo, "", {
+        activeLocale: fullLocale,
+        publicMode: true
+      });
+      return localizedPage(
+        injectPublicSeo(markup, fullLocale, "/wishes"),
+        locale,
+        200,
+        { indexable: canonicalHost }
+      );
     }
 
     if (pathname === "/aw/setup") return watchSetupPage(request);

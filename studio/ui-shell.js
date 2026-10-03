@@ -20,6 +20,7 @@ import { shellText } from "./i18n-ui.js";
 import { localeDirection } from "./locale.js";
 
 export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", productLinks = {}) {
+  const publicMode = Boolean(productLinks?.publicMode);
   const path = pathname;
   const zh = t === TEXT.zh;
   const activeLocale = productLinks.activeLocale || (zh ? "zh-cn" : "en-us");
@@ -73,7 +74,12 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
           <small>${copy.platform}</small>
         </span>
       </a>
-      <div class="os-user">
+      ${publicMode ? `<div class="os-user os-user-public">
+        <strong>${ui.account}</strong>
+        <a class="os-signout-button" href="${links.login}">
+          <span>${t.signIn}</span>
+        </a>
+      </div>` : `<div class="os-user">
         <strong>${ui.account}</strong>
         <span id="os-user-name">${escapeHtmlText(cachedOsUserLabel)}</span>
         <button id="os-signout-button" class="os-signout-button" type="button">
@@ -83,7 +89,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
           </svg>
           <span id="os-signout-label">${ui.signOut}</span>
         </button>
-      </div>
+      </div>`}
       ${renderCompactMainMenu(copy, productLinks)}
       ${renderOsNav(copy, activeSection, path, productLinks)}
     </aside>
@@ -369,7 +375,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
       ]);
     }
 
-    hydrateOsUser();
+    ${publicMode ? "" : "hydrateOsUser();"}
   </script>
   ${themeScript()}
 </body>
