@@ -1,6 +1,6 @@
 export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-square-1" type="image/svg+xml">';
+export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-1" type="image/svg+xml">';
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
@@ -15,6 +15,52 @@ export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
   <!-- Broken angular orbit / Three-way core: compatibility labels retained for the favicon regression check. -->
 </svg>`;
 
+const PRODUCT_FAVICON_META = Object.freeze({
+  work: { label: "AERTEX Work", glyph: '<path d="M46.8 44.8h6.1l3.3 3.3v8.1h-9.4zM52.9 44.8v3.3h3.3M49.1 51.2h4.8M49.1 54h4"/>' },
+  intelligence: { label: "AERTEX Intelligence", glyph: '<path class="filled" d="m51.2 44.8 1.55 3.85 3.85 1.55-3.85 1.55-1.55 3.85-1.55-3.85-3.85-1.55 3.85-1.55z"/><path d="M55.2 44.7v2.2M54.1 45.8h2.2"/>' },
+  cash: { label: "AERTEX Cash", glyph: '<path d="M46.5 48.1h9.8v7.2h-9.8zM48 48.1v-1.8h6.6v1.8M53.2 51.7h3.1"/><circle class="filled" cx="53.6" cy="51.7" r=".75"/>' },
+  watch: { label: "AERTEX Watch", glyph: '<circle cx="51.2" cy="50.7" r="5.1"/><path d="M51.2 47.7v3.2l2.3 1.5"/>' },
+  auth: { label: "AERTEX ID", glyph: '<rect x="47.1" y="49.4" width="8.2" height="6.5" rx="1.6"/><path d="M48.8 49.4v-1.8a2.4 2.4 0 0 1 4.8 0v1.8"/><circle class="filled" cx="51.2" cy="52.3" r=".85"/>' },
+  admin: { label: "AERTEX Administration", glyph: '<path d="M51.2 44.9 55.5 47v3.6c0 2.8-1.7 4.7-4.3 5.8-2.6-1.1-4.3-3-4.3-5.8V47z"/><path d="m49.2 50.6 1.35 1.35 2.65-2.8"/>' }
+});
+
+export function faviconProductForRequest(request) {
+  let hostname = "";
+  try { hostname = new URL(request?.url || "https://qsseda.com/").hostname.toLowerCase(); }
+  catch {}
+  const subdomain = hostname.split(".")[0] || "";
+  if (subdomain === "work") return "work";
+  if (subdomain === "gpt") return "intelligence";
+  if (subdomain === "cash") return "cash";
+  if (subdomain === "aw" || subdomain === "awd") return "watch";
+  if (subdomain === "auth") return "auth";
+  if (subdomain === "admin") return "admin";
+  return "";
+}
+
+export function faviconSvgForProduct(product = "") {
+  const meta = PRODUCT_FAVICON_META[product];
+  if (!meta) return FAVICON_SVG;
+  const badge = `<g class="aertex-product-badge" aria-hidden="true">
+    <circle class="badge-disc" cx="51.2" cy="51.2" r="11.1"/>
+    <g class="badge-glyph">${meta.glyph}</g>
+  </g>`;
+  return FAVICON_SVG
+    .replace('aria-label="AERTEX"', 'aria-label="' + meta.label + '"')
+    .replace(
+      "</style>",
+      `.aertex-product-badge .badge-disc{fill:var(--paper);stroke:var(--edge);stroke-width:1.6}
+      .aertex-product-badge .badge-glyph{fill:none;stroke:var(--ink);stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+      .aertex-product-badge .badge-glyph .filled{fill:var(--ink);stroke:none}
+      </style>`
+    )
+    .replace("</svg>", badge + "</svg>");
+}
+
+export function faviconSvgForRequest(request) {
+  return faviconSvgForProduct(faviconProductForRequest(request));
+}
+
 export function faviconResponse(request) {
   const method = String(request?.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD") {
@@ -24,7 +70,7 @@ export function faviconResponse(request) {
     });
   }
 
-  return new Response(method === "HEAD" ? null : FAVICON_SVG, {
+  return new Response(method === "HEAD" ? null : faviconSvgForRequest(request), {
     status: 200,
     headers: {
       "content-type": "image/svg+xml;charset=UTF-8",
