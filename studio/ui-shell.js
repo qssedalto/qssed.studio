@@ -751,7 +751,6 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
           <a class="os-nav-title os-nav-product-link" href="${group.href}" target="_blank" rel="noopener noreferrer" data-product-link="${group.id}">
             ${dashboardIcon(group.icon)}
             <span>${group.label}</span>
-            <b aria-hidden="true">›</b>
           </a>
         `).join("")}
       </section>` : ""}
@@ -759,17 +758,15 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
         const active = group.id === activeSection;
         return `
           <section class="os-nav-group os-nav-entry ${active ? "is-active" : ""}" data-nav-section="${group.id}">
-            <a class="os-nav-title" href="${group.href}">
+            <a class="os-nav-title${group.items.length ? " has-subnav" : ""}" href="${group.href}">
               ${dashboardIcon(iconBySection[group.id] || "info")}
               <span>${group.label}</span>
-              <b aria-hidden="true">›</b>
             </a>
             ${group.items.length && active ? `<div class="os-nav-items">
               ${group.items.map(item => `
                 <a href="${item[1]}"${item[1].endsWith(currentPath) ? ` aria-current="page"` : ""}>
                   ${dashboardIcon(iconForItem(item[1]))}
                   <span>${item[0]}</span>
-                  <b class="os-nav-item-chevron" aria-hidden="true">›</b>
                 </a>
               `).join("")}
             </div>` : ""}
