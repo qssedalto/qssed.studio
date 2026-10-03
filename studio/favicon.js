@@ -1,6 +1,6 @@
 export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-4" type="image/svg+xml">';
+export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-5" type="image/svg+xml">';
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
@@ -18,6 +18,7 @@ export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
 const PRODUCT_FAVICON_META = Object.freeze({
   work: {
     label: "AERTEX Work",
+    cutout: '<rect class="work-badge-cutout" x="40.2" y="40.2" width="20.4" height="20.4" rx="5.2"/>',
     badge: '<g class="aertex-product-badge aertex-work-badge" aria-hidden="true"><path class="work-edit-frame" d="M49.1 42.8h-3.6a3.2 3.2 0 0 0-3.2 3.2v8.9a3.2 3.2 0 0 0 3.2 3.2h8.9a3.2 3.2 0 0 0 3.2-3.2v-3.7"/><path class="work-edit-pencil" d="M47.6 53.2l1.05-4.05 7.3-7.3a2.15 2.15 0 0 1 3.05 3.05l-7.3 7.3-4.1 1z"/></g>'
   },
   intelligence: { label: "AERTEX Intelligence", glyph: '<path class="filled" d="m51.2 44.8 1.55 3.85 3.85 1.55-3.85 1.55-1.55 3.85-1.55-3.85-3.85-1.55 3.85-1.55z"/><path d="M55.2 44.7v2.2M54.1 45.8h2.2"/>' },
@@ -48,8 +49,16 @@ export function faviconSvgForProduct(product = "") {
     <circle class="badge-disc" cx="51.2" cy="51.2" r="11.1"/>
     <g class="badge-glyph">${meta.glyph}</g>
   </g>`;
+  const cutout = meta.cutout || '<circle class="product-badge-cutout" cx="51.2" cy="51.2" r="12"/>';
+  const knockout = `<defs>
+    <mask id="aertex-product-badge-knockout" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <rect x="0" y="0" width="64" height="64" fill="#fff"/>
+      <g fill="#000">${cutout}</g>
+    </mask>
+  </defs>`;
   return FAVICON_SVG
     .replace('aria-label="AERTEX"', 'aria-label="' + meta.label + '"')
+    .replace('<image class="aertex-reference-mark"', knockout + '\n  <image class="aertex-reference-mark" mask="url(#aertex-product-badge-knockout)"')
     .replace(
       "</style>",
       `.aertex-product-badge .badge-disc{fill:none;stroke:var(--edge);stroke-width:1.6}
