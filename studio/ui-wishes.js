@@ -40,11 +40,11 @@ export function wishesContent(locale = "en-us") {
           <div class="wishes-studio-label">${text.choose}</div>
           <div class="wishes-studio-choices" role="radiogroup" aria-label="${text.choose}">
             <button class="wishes-studio-choice is-active" type="button" data-kind="birthday" role="radio" aria-checked="true">
-              <span class="wishes-studio-choice-icon" aria-hidden="true">🎂</span>
+              <span class="wishes-studio-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="11" width="15" height="9" rx="1.5"/><path d="M4.5 15h15M12 11V7"/><path d="M12 4.2c1.15 1 1.15 1.9 0 2.8-1.15-.9-1.15-1.8 0-2.8Z"/></svg></span>
               <span><strong>${text.birthday}</strong><small>${text.birthdayNote}</small></span>
             </button>
             <button class="wishes-studio-choice" type="button" data-kind="mid-autumn" role="radio" aria-checked="false">
-              <span class="wishes-studio-choice-icon" aria-hidden="true">☾</span>
+              <span class="wishes-studio-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19.2 15.4A7.8 7.8 0 0 1 8.6 4.8 8.2 8.2 0 1 0 19.2 15.4z"/></svg></span>
               <span><strong>${text.midAutumn}</strong><small>${text.midAutumnNote}</small></span>
             </button>
           </div>
@@ -85,7 +85,7 @@ export function wishesContent(locale = "en-us") {
       .wishes-studio-choice{display:grid!important;grid-template-columns:44px minmax(0,1fr)!important;gap:13px!important;align-items:center!important;min-height:106px!important;margin:0!important;padding:16px!important;border:1px solid var(--border)!important;border-radius:18px!important;background:var(--surface)!important;color:var(--text)!important;text-align:left!important;box-shadow:none!important;cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease!important}
       .wishes-studio-choice:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--primary) 28%,var(--border))!important;background:color-mix(in srgb,var(--primary) 3%,var(--surface))!important}
       .wishes-studio-choice.is-active{border-color:color-mix(in srgb,var(--primary) 58%,var(--border))!important;background:color-mix(in srgb,var(--primary) 7%,var(--surface))!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 18%,transparent)!important}
-      .wishes-studio-choice-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:var(--fill);font-size:20px;line-height:1}
+      .wishes-studio-choice-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:var(--fill);color:var(--primary);line-height:1}.wishes-studio-choice-icon svg{width:22px;height:22px}
       .wishes-studio-choice strong,.wishes-studio-choice small{display:block}.wishes-studio-choice strong{font-size:16px;line-height:1.25;letter-spacing:-.02em}.wishes-studio-choice small{margin-top:6px;color:var(--muted);font-size:11px;line-height:1.45}
       .wishes-studio-name{width:100%!important;height:48px!important;min-height:48px!important;margin:0!important;padding:0 14px!important;border:1px solid var(--border)!important;border-radius:14px!important;background:var(--surface)!important;color:var(--text)!important;box-shadow:none!important;outline:none!important}
       .wishes-studio-name:focus{border-color:color-mix(in srgb,var(--primary) 56%,var(--border))!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 10%,transparent)!important}
