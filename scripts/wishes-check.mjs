@@ -38,7 +38,11 @@ assert(wishZh.includes('data-wishes-center') && wishZh.includes("生日快乐") 
 assert(wishEn.includes('data-wishes-center') && wishEn.includes("Happy Birthday") && wishEn.includes("/en-us/wish/birthday"), "English Wish Center must render localized shell content.");
 assert(wishZh.includes("history.replaceState") && wishZh.includes("navigator.clipboard.writeText"), "Wish Center must preserve route preview and copy-link behavior.");
 assert(shell.includes("function wishNavItems") && shell.includes('"/wishes#new-year"') && shell.includes('"/wishes#society"'), "Wish Center must expose categorized sidebar subnavigation.");
-assert(shell.includes('class="os-nav-item-chevron"') && shell.includes('aria-hidden="true">›</b>'), "Every sidebar subitem must render an explicit chevron.");
+assert(!shell.includes('class="os-nav-item-chevron"') && !shell.includes('aria-hidden="true">›</b>'), "Sidebar arrows must not use extra markup.");
+assert(shell.includes('class="os-nav-title${group.items.length ? " has-subnav" : ""}"'), "Expandable sidebar sections must expose a has-subnav state for the CSS arrow.");
+assert(dashboardStyle.includes('.os-nav-title::after') && dashboardStyle.includes('.os-nav-items a::after'), "Top-level and child sidebar arrows must be drawn with CSS ::after.");
+assert(dashboardStyle.includes('.os-nav-entry.is-active>.os-nav-title.has-subnav::after') && dashboardStyle.includes('transform:rotate(90deg)'), "An active expandable sidebar section must rotate its arrow downward.");
+assert(dashboardStyle.includes('justify-self:end') && dashboardStyle.includes('margin-left:auto'), "Sidebar arrows must stay pinned to the far right edge.");
 for (const category of ["新年与团圆","传统与节气","家庭与成长","关系与表达","社会与自然"]) {
   assert(wishZh.includes(category), "Chinese Wish Center is missing category: " + category);
 }
