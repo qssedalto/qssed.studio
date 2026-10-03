@@ -26,7 +26,7 @@ assert(favicon.includes('"content-type": "image/svg+xml;charset=UTF-8"'), "Favic
 assert(favicon.includes('"cache-control": "public, max-age=604800, immutable"'), "Favicon should be cacheable at the edge/browser");
 assert(favicon.includes('--paper:#ffffff') && favicon.includes('--ink:#121417'), "Favicon must preserve the monochrome light/dark palette");
 assert(favicon.includes("Broken angular orbit") && favicon.includes("Three-way core"), "Favicon must preserve the angular orbit and three-way core visual system");
-assert(favicon.includes("aertex-20261003-product-badge-11"), "Favicon cache key must use the current product-badge release.");
+assert(favicon.includes("aertex-20261003-product-badge-12"), "Favicon cache key must use the current product-badge release.");
 assert(brandLogo.includes('new Set(["/logo.svg"])') && brandLogo.includes("logoResponse(request)"), "Official wordmark must be exposed at /logo.svg.");
 assert(brandLogo.includes('viewBox="0 0 1027 198"'), "Official /logo.svg must use the AERTEX wordmark artwork.");
 
@@ -59,7 +59,8 @@ assert(workSvg.includes(".badge-disc{fill:none;stroke:var(--edge)"), "All shared
 assert(!workSvg.includes("work-window") && !workSvg.includes("#9bbcf5") && !workSvg.includes("#5f8fdf"), "Work branch logo must not reintroduce the old blue workspace panes.");
 const intelligenceSvg = faviconSvgForProduct("intelligence");
 assert((intelligenceSvg.match(/intelligence-star-(?:main|small)/g) || []).length === 2, "Intelligence badge must contain exactly one main star and one small star.");
-assert(intelligenceSvg.includes('class="filled intelligence-star-main"') && intelligenceSvg.includes('M-1-3.04-.10-.75 2.25.15'), "Intelligence main star must use the slightly enlarged two-star geometry.");
+assert(intelligenceSvg.includes('class="intelligence-stars" transform="scale(1.08)"'), "Intelligence must enlarge the two-star composition as one group.");
+assert(intelligenceSvg.includes('class="filled intelligence-star-main"') && intelligenceSvg.includes('M-1-3.04-.10-.75 2.25.15'), "Intelligence main star path geometry must remain unchanged inside the scaled group.");
 assert(intelligenceSvg.includes('class="filled intelligence-star-small"') && intelligenceSvg.includes('M2.8-3.7 3.1-3 3.8-2.7'), "Intelligence small star must remain separated in the upper-right.");
 assert(!intelligenceSvg.includes('M-.8-3.4L.25-.85 2.8.2'), "Intelligence must not contain the removed oversized star.");
 assert(!intelligenceSvg.includes('M-.8-3.7.5-.6 3.6.7'), "Intelligence must not contain the earlier oversized star geometry.");
@@ -76,8 +77,8 @@ for (const [source,name] of [[worker,"Main/Work"],[gptWorker,"Intelligence"],[au
   assert(source.includes("LOGO_PATHS") && source.includes("logoResponse(request)"), name + " Worker must serve /logo.svg from the shared wordmark source.");
   assert(source.includes("FAVICON_PATHS") && source.includes("faviconResponse(request)"), name + " Worker must serve the shared square icon routes.");
 }
-assert(cashIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-11"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261003-product-badge-11"'), "Cash must keep its unchanged square AERTEX logo cache reference.");
-assert(watchIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-11"'), "Watch must keep its unchanged square AERTEX favicon cache reference.");
+assert(cashIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-12"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261003-product-badge-12"'), "Cash must keep its unchanged square AERTEX logo cache reference.");
+assert(watchIndex.includes('href="/favicon.svg?v=aertex-20261003-product-badge-12"'), "Watch must keep its unchanged square AERTEX favicon cache reference.");
 assert(!cashWorker.includes('"/icon.svg"]') && !watchWorker.includes('"/icon.svg"'), "Cash and Watch must not serve legacy product-specific icon files.");
 
 console.log("AERTEX shared square icon and wordmark integration checks passed.");
