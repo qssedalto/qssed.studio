@@ -148,6 +148,8 @@ assert(shell.includes('title:"AERTEX Cash"'), "Compact main menu must list AERTE
 assert(shell.includes('id: "cash", label: "AERTEX Cash"'), "Desktop product navigation must list AERTEX Cash as an independent product.");
 assert(shell.includes('title:"AERTEX Watch"'), "Compact main menu must list AERTEX Watch as an independent product.");
 assert(shell.includes('id: "activitywatch", label: "AERTEX Watch"'), "Desktop product navigation must list AERTEX Watch as an independent product.");
+assert(shell.includes('(openInNewTab ? \' target="_blank" rel="noopener noreferrer"\' : \'\')'), "Compact independent-product cards must open in a new browser tab with opener isolation.");
+assert(shell.includes('href="${group.href}" target="_blank" rel="noopener noreferrer" data-product-link="${group.id}"'), "Desktop independent-product navigation must open each product in a new browser tab.");
 assert(shell.indexOf('title:"AERTEX Work"') < shell.indexOf('title:"AERTEX Cash"') && shell.indexOf('title:"AERTEX Cash"') < shell.indexOf('title:"AERTEX Watch"') && shell.indexOf('title:"AERTEX Watch"') < shell.indexOf('title:"AERTEX Intelligence"'), "Compact independent products must order AERTEX Work, AERTEX Cash, AERTEX Watch, then Intelligence.");
 assert(workWrangler.r2_buckets?.some(bucket => bucket.binding === "STORAGE" && bucket.bucket_name === "qsseda-studio-storage"), "Work Worker must share the protected main-site storage binding");
 

@@ -89,6 +89,16 @@ for (const root of QSS_DOMAIN_ROOTS) {
     if (!markup.includes(`href="${cashOrigin}/${fullLocale}"`)) {
       throw new Error(`Root SSR lost the matching Cash product for ${root} / ${fullLocale}`);
     }
+    for (const productHref of [
+      `${workOrigin}/${fullLocale}/tex`,
+      `${cashOrigin}/${fullLocale}`,
+      expectedAwOrigin,
+      `${gptOrigin}/${fullLocale}`
+    ]) {
+      if (!markup.includes(`href="${productHref}" target="_blank" rel="noopener noreferrer"`)) {
+        throw new Error(`Independent product must open in a new tab for ${root} / ${fullLocale}: ${productHref}`);
+      }
+    }
   }
 }
 
