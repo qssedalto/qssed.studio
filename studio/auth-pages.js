@@ -2,20 +2,91 @@ import { ZH_COUNTRIES, ADMIN_EMAILS, TEXT } from "./config.js";
 import { html, json } from "./routing.js";
 import { auditClientScript } from "./ui-audit.js";
 import { baseHead, supabaseScript, themeScript, topControls } from "./ui-page.js";
+import { localeDirection, normalizeSupportedLocale } from "./locale.js";
+
+const NOT_FOUND_COPY = Object.freeze({
+  "en-us": {
+    title: "Page not found",
+    detail: "This address does not exist, has moved, or uses an invalid route.",
+    action: host => `Return to ${host}`,
+    copyright: year => `Copyright © ${year} qsseda.com. All rights reserved.`
+  },
+  "en-gb": {
+    title: "Page not found",
+    detail: "This address does not exist, has moved, or uses an invalid route.",
+    action: host => `Return to ${host}`,
+    copyright: year => `Copyright © ${year} qsseda.com. All rights reserved.`
+  },
+  "en-au": {
+    title: "Page not found",
+    detail: "This address does not exist, has moved, or uses an invalid route.",
+    action: host => `Return to ${host}`,
+    copyright: year => `Copyright © ${year} qsseda.com. All rights reserved.`
+  },
+  "zh-cn": {
+    title: "找不到该网页",
+    detail: "这个地址不存在、已移动，或路由格式无效。",
+    action: host => `返回 ${host}`,
+    copyright: year => `Copyright © ${year} qsseda.com. 保留所有权利。`
+  },
+  "zh-tw": {
+    title: "找不到此網頁",
+    detail: "此網址不存在、已移動，或路由格式無效。",
+    action: host => `返回 ${host}`,
+    copyright: year => `Copyright © ${year} qsseda.com. 保留所有權利。`
+  },
+  "ja-jp": {
+    title: "ページが見つかりません",
+    detail: "このアドレスは存在しないか、移動したか、ルート形式が無効です。",
+    action: host => `${host} に戻る`,
+    copyright: year => `Copyright © ${year} qsseda.com. すべての権利を保有します。`
+  },
+  "ko-kr": {
+    title: "페이지를 찾을 수 없습니다",
+    detail: "이 주소가 존재하지 않거나 이동되었거나 경로 형식이 올바르지 않습니다.",
+    action: host => `${host}로 돌아가기`,
+    copyright: year => `Copyright © ${year} qsseda.com. 모든 권리 보유.`
+  },
+  "fr-fr": {
+    title: "Page introuvable",
+    detail: "Cette adresse n’existe pas, a été déplacée ou utilise un format de route non valide.",
+    action: host => `Retour à ${host}`,
+    copyright: year => `Copyright © ${year} qsseda.com. Tous droits réservés.`
+  },
+  "es-es": {
+    title: "Página no encontrada",
+    detail: "Esta dirección no existe, se ha movido o utiliza un formato de ruta no válido.",
+    action: host => `Volver a ${host}`,
+    copyright: year => `Copyright © ${year} qsseda.com. Todos los derechos reservados.`
+  },
+  "el-gr": {
+    title: "Η σελίδα δεν βρέθηκε",
+    detail: "Αυτή η διεύθυνση δεν υπάρχει, έχει μετακινηθεί ή χρησιμοποιεί μη έγκυρη μορφή διαδρομής.",
+    action: host => `Επιστροφή στο ${host}`,
+    copyright: year => `Copyright © ${year} qsseda.com. Με επιφύλαξη παντός δικαιώματος.`
+  },
+  "ar-sa": {
+    title: "لم يتم العثور على الصفحة",
+    detail: "هذا العنوان غير موجود، أو تم نقله، أو يستخدم مسارًا بتنسيق غير صالح.",
+    action: host => `العودة إلى ${host}`,
+    copyright: year => `Copyright © ${year} qsseda.com. جميع الحقوق محفوظة.`
+  }
+});
 
 export function notFoundPage(t, links, options = {}) {
-  const zh = t === TEXT.zh;
-  const title = zh ? "找不到该网页" : "Page not found";
-  const detail = zh
-    ? "这个地址不存在、已移动，或路由格式无效。"
-    : "This address does not exist, has moved, or uses an invalid route.";
+  const legacyLocale = t === TEXT.zh ? "zh-cn" : "en-us";
+  const locale = normalizeSupportedLocale(options.locale || links?.activeLocale || legacyLocale) || legacyLocale;
+  const copy = NOT_FOUND_COPY[locale] || NOT_FOUND_COPY["en-us"];
+  const direction = localeDirection(locale);
+  const title = copy.title;
+  const detail = copy.detail;
   const rawHost = String(options.host || "qsseda.com").trim().toLowerCase();
   const host = /^[a-z0-9.-]+$/.test(rawHost) ? rawHost : "qsseda.com";
   const rawPath = String(options.requestedPath || "").trim().slice(0, 700);
   const requestedPath = rawPath.startsWith("/") && !rawPath.startsWith("//") ? rawPath : "";
   const rawReturnHref = String(options.returnHref || "/").trim();
   const returnHref = rawReturnHref.startsWith("/") && !rawReturnHref.startsWith("//") ? rawReturnHref : "/";
-  const action = zh ? `返回 ${host}` : `Return to ${host}`;
+  const action = copy.action(host);
   const requestedLabel = requestedPath ? `${host}${requestedPath}` : host;
   const escapedRequestedLabel = requestedLabel.replace(/[&<>"']/g, character => ({
     "&": "&amp;",
@@ -25,19 +96,17 @@ export function notFoundPage(t, links, options = {}) {
     "'": "&#39;"
   }[character]));
   const year = new Date().getFullYear();
-  const copyright = zh
-    ? `Copyright © ${year} qsseda.com. 保留所有权利。`
-    : `Copyright © ${year} qsseda.com. All rights reserved.`;
+  const copyright = copy.copyright(year);
 
   return `
 <!DOCTYPE html>
-<html lang="${zh ? "zh-CN" : "en"}">
+<html lang="${locale}" dir="${direction}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <title>404 · ${t.studioName}</title>
+  <title>404 · ${t?.studioName || "AERTEX"}</title>
   <style>
     :root{
       color-scheme:light dark;
@@ -103,6 +172,8 @@ export function notFoundPage(t, links, options = {}) {
       border:1px solid color-mix(in srgb,var(--quiet) 34%,transparent);
       border-radius:10px;
       color:var(--quiet);
+      direction:ltr;
+      text-align:left;
       font:600 clamp(11px,2vw,14px)/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
       overflow-wrap:anywhere;
       word-break:break-word;
@@ -131,6 +202,7 @@ export function notFoundPage(t, links, options = {}) {
       transform:rotate(45deg);
       margin-left:.18em;
     }
+    html[dir="rtl"] .nf-chevron{transform:rotate(-135deg);margin-left:0;margin-right:.18em}
     .nf-footer{
       flex:0 0 auto;
       display:flex;
@@ -183,7 +255,7 @@ export function notFoundPage(t, links, options = {}) {
 <body>
   <main class="nf-page">
     <section class="nf-main" aria-labelledby="nf-title">
-      <svg class="nf-art" viewBox="0 0 260 170" role="img" aria-label="${zh ? "页面未找到" : "Page not found"}">
+      <svg class="nf-art" viewBox="0 0 260 170" role="img" aria-label="${title}">
         <defs>
           <filter id="nf-shadow" x="-25%" y="-25%" width="160%" height="170%">
             <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="var(--shadow)"/>
