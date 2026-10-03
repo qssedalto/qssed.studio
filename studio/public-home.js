@@ -10,6 +10,7 @@ const COPY = {
     lead: "Work、Intelligence、Watch 和个人工具都在这里。登录后继续使用；第一次来，可以先创建账号。",
     signIn: "登录",
     signUp: "创建账号",
+    questions: "问题与解答",
     products: "产品",
     work: "Work",
     workText: "文档、项目与工作区。",
@@ -28,6 +29,7 @@ const COPY = {
     lead: "Work、Intelligence、Watch 與個人工具都在這裡。登入後繼續使用；第一次來，可以先建立帳號。",
     signIn: "登入",
     signUp: "建立帳號",
+    questions: "問題與解答",
     products: "產品",
     work: "Work",
     workText: "文件、專案與工作區。",
@@ -46,6 +48,7 @@ const COPY = {
     lead: "Work, Intelligence, Watch, and personal tools live here. Sign in to continue, or create an account if you are new.",
     signIn: "Sign in",
     signUp: "Create account",
+    questions: "Questions",
     products: "Products",
     work: "Work",
     workText: "Documents, projects, and workspaces.",
@@ -101,7 +104,7 @@ footer{max-width:1120px;margin:0 auto;padding:0 22px 28px;color:var(--muted);fon
 </style>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="${prefix}">AERTEX</a><div class="spacer"></div><a class="toplink" href="${prefix}/login">${escapeHtml(text.signIn)}</a></header>
+<header class="topbar"><a class="brand" href="${prefix}">AERTEX</a><div class="spacer"></div><a class="toplink" href="${prefix}/q">${escapeHtml(text.questions)}</a><a class="toplink" href="${prefix}/login">${escapeHtml(text.signIn)}</a></header>
 <main>
 <section class="hero">
 <p class="eyebrow">${escapeHtml(text.eyebrow)}</p>
