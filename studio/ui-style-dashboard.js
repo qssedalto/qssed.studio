@@ -204,7 +204,7 @@ export function dashboardStyles() {
       box-sizing:border-box;
       min-height:52px!important;
       display:grid!important;
-      grid-template-columns:36px minmax(0,1fr) 18px!important;
+      grid-template-columns:36px minmax(0,1fr)!important;
       gap:10px!important;
       align-items:center!important;
       padding:7px 36px 7px 9px!important;
