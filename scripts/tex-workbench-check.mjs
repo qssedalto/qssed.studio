@@ -52,6 +52,9 @@ for (const zh of [true, false]) {
   assert(workMarkup.includes(".tex-start-surface>.tex-start-grid"), "Start grid must override the legacy placeholder direct-child sizing rule");
   assert(workMarkup.includes("width:min(100%,650px)!important"), "Start grid must retain a usable responsive width");
   assert(workMarkup.includes(".tex-start-surface>.tex-start-copy"), "Start copy must escape the legacy 52px placeholder box");
+  assert(workMarkup.includes("overflow-x:hidden!important") && workMarkup.includes("overflow-y:auto!important"), "TeX start surface must clip decorative horizontal overflow while keeping vertical scrolling.");
+  assert(workMarkup.includes("max-width:100%!important"), "TeX start surface must stay constrained to the visible editor column.");
+  assert(!workMarkup.includes("isolation:isolate;\n      overflow:auto!important;"), "TeX start decoration must not create a horizontal scroll range.");
   assert(workMarkup.includes("focus-within"), "TeX search focus styling must be explicitly controlled");
   assert(workMarkup.includes("appearance:none!important"), "TeX selectors must use the controlled arrow treatment");
   assert(workMarkup.includes('class="tex-panel-title"'), "Document count must sit beside the Documents label");
