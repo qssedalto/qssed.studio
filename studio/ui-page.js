@@ -427,16 +427,7 @@ export function baseHead(title) {
         --ease-standard:cubic-bezier(.2,.8,.2,1);
       }
 
-      :root[data-accent="sapphire"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#4964d8}
-      :root[data-accent="aqua"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#2a9d8f}
-      :root[data-accent="jade"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#3a9d72}
-      :root[data-accent="lime"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#86a93b;--primary-ink:#151515}
-      :root[data-accent="amber"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#d49a2a;--primary-ink:#151515}
-      :root[data-accent="coral"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#e26d5a}
-      :root[data-accent="rose"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#d95686}
-      :root[data-accent="magenta"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#b755c7}
-      :root[data-accent="violet"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#7559d9}
-      :root[data-accent="graphite"] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:#5a5d64}
+      :root[data-accent] body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){--primary:var(--aertex-accent);--primary-ink:var(--aertex-accent-ink)}
 
       body.os-shell:not(:has(.tex-work-app)):not(:has(#student-verification)){
         --primary-hover:color-mix(in srgb,var(--primary) 82%,#fff 18%);
