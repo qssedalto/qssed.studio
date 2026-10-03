@@ -18,6 +18,7 @@ import { isLegacyCookieApiPath, handleLegacyCookieApi } from "./studio/legacy-co
 import { hardenGlobalBrowserResponse } from "./studio/global-browser-security.js";
 import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
+import { LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
 import {
   handleMainWorkHandoff,
   isMainWorkHandoffPath,
@@ -70,6 +71,7 @@ async function routeStudioRequest(request, env, ctx) {
   const workHost = isWorkSubdomainRequest(request);
 
   if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
+  if (LOGO_PATHS.has(pathname)) return logoResponse(request);
 
   if (!workHost && isMainWorkHandoffPath(pathname)) return handleMainWorkHandoff(request);
   if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);

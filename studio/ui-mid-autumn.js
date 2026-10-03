@@ -650,7 +650,7 @@ export function midAutumnPage(locale = "en-us") {
   <main class="shell">
     <header class="topbar">
       <a class="brand" href="/${code}" aria-label="AERTEX">
-        <img class="brand-logo" src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true">
+        <img class="brand-logo" src="/favicon.svg?v=aertex-20261003-square-1" alt="" aria-hidden="true">
         <span class="brand-stack">
           <span class="brand-word">AERTEX</span>
           <span class="brand-sub">Mid-Autumn Greeting</span>
@@ -691,7 +691,7 @@ export function midAutumnPage(locale = "en-us") {
     <div class="opening-layer" id="opening-layer">
       <div class="opening-card">
         <div class="opening-brand" aria-label="AERTEX">
-          <img src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true">
+          <img src="/favicon.svg?v=aertex-20261003-square-1" alt="" aria-hidden="true">
           <span>AERTEX</span>
         </div>
         <div class="letter-mark" aria-hidden="true"><i class="letter-seal"></i></div>
@@ -707,7 +707,7 @@ export function midAutumnPage(locale = "en-us") {
     <div class="stage-cloud right" aria-hidden="true"></div>
 
     <div class="stage-brand" aria-label="AERTEX">
-      <img src="/favicon.svg?v=aertex-20260924-3" alt="" aria-hidden="true">
+      <img src="/favicon.svg?v=aertex-20261003-square-1" alt="" aria-hidden="true">
       <span>AERTEX</span>
     </div>
 

@@ -7,7 +7,7 @@ import { handleAiApi, handleAiAdminApi } from "./studio/ai-gateway.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
 import { gptOriginForRequest, mainOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
-import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
+import { injectBrandLogoRuntime, LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
 import { intelligenceThemeAttr, intelligenceThemeBootScript, intelligenceThemeFromRequest } from "./studio/intelligence-theme.js";
@@ -24,6 +24,7 @@ export default {
     const intelligenceTheme = intelligenceThemeFromRequest(request);
 
     if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
+    if (LOGO_PATHS.has(pathname)) return logoResponse(request);
 
     if (pathname === "/health") {
       return json({

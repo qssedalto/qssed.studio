@@ -5,8 +5,10 @@ import { watchSessionRedirect } from "./studio/watch-subdomain.js";
 import { awOriginForRequest } from "./studio/domain-family.js";
 import { localeFromPath, preferredLocaleFromRequest } from "./studio/locale.js";
 import { appearanceClientRuntime } from "./studio/appearance.js";
+import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
+import { LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
 
-const ASSET_PATHS = new Set(["/styles.css", "/app.js", "/icon.svg", "/aw-sync.mjs"]);
+const ASSET_PATHS = new Set(["/styles.css", "/app.js", "/aw-sync.mjs"]);
 const MAX_SYNC_BYTES = 8 * 1024 * 1024;
 const MAX_SYNC_EVENTS = 5000;
 const MAX_QUERY_DAYS = 400;
@@ -21,6 +23,9 @@ export default {
     const url = new URL(request.url);
     const pathname = normalizePath(url.pathname);
     const dataHost = isWatchDataHost(url.hostname);
+
+    if (!dataHost && FAVICON_PATHS.has(pathname)) return faviconResponse(request);
+    if (!dataHost && LOGO_PATHS.has(pathname)) return logoResponse(request);
 
     if (pathname === "/health") {
       return json({

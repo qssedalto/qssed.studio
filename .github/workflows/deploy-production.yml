@@ -30,6 +30,7 @@ on:
       - scripts/account-menu-check.mjs
       - scripts/r2-storage-audit-check.mjs
       - scripts/brand-check.mjs
+      - scripts/favicon-check.mjs
       - scripts/codex-bridge-check.mjs
       - scripts/billing-subscription-check.mjs
       - scripts/wishes-check.mjs
@@ -133,6 +134,8 @@ jobs:
           node scripts/codex-bridge-check.mjs
           node --check scripts/brand-check.mjs
           node scripts/brand-check.mjs
+          node --check scripts/favicon-check.mjs
+          node scripts/favicon-check.mjs
           node --check scripts/billing-subscription-check.mjs
           node scripts/billing-subscription-check.mjs
           node --check scripts/wishes-check.mjs
@@ -478,6 +481,28 @@ jobs:
           verify_work "https://work.qsseda.com/zh-cn/tex" "https://qsseda.com/work/handoff?next=%2Fzh-cn%2Ftex"
           verify_work "https://work.qsseda.online/zh-cn/tex" "https://qsseda.online/work/handoff?next=%2Fzh-cn%2Ftex"
           verify_work "https://work.qsseda.studio/zh-cn/tex" "https://qsseda.studio/work/handoff?next=%2Fzh-cn%2Ftex"
+
+          verify_brand_asset() {
+            origin="$1"
+            for path in /favicon.svg /icon.svg /logo.svg; do
+              headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-brand-asset.svg --dump-header - "$origin$path" || true)"
+              status="$(printf '%s\n' "$headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
+              type="$(printf '%s\n' "$headers" | awk 'BEGIN{IGNORECASE=1} /^content-type:/ {sub(/\r$/,""); sub(/^content-type:[[:space:]]*/,""); value=$0} END {print value}')"
+              if [ "$status" != "200" ] || ! printf '%s' "$type" | grep -qi '^image/svg+xml'; then
+                echo "Brand asset regression: $origin$path (HTTP ${status:-unknown}, content-type ${type:-none})"
+                sed -n '1,20p' /tmp/qsseda-brand-asset.svg || true
+                exit 1
+              fi
+            done
+          }
+
+          verify_brand_asset "https://qsseda.com"
+          verify_brand_asset "https://work.qsseda.com"
+          verify_brand_asset "https://gpt.qsseda.com"
+          verify_brand_asset "https://cash.qsseda.com"
+          verify_brand_asset "https://aw.qsseda.com"
+          verify_brand_asset "https://auth.qsseda.com"
+          verify_brand_asset "https://admin.qsseda.com"
 
       - name: Verify edge protection
         shell: bash

@@ -1,5 +1,6 @@
 import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
+import { LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
 import { adminOriginForRequest, mainOriginForRequest } from "./studio/domain-family.js";
 import { adminSessionRedirect } from "./studio/admin-subdomain.js";
 import { handleAuthorizedAccessAuditAdmin, recordAccessAudit } from "./studio/access-audit.js";
@@ -41,6 +42,7 @@ async function routeAdminRequest(request, env) {
   const pathname = normalizePath(url.pathname);
 
   if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
+  if (LOGO_PATHS.has(pathname)) return logoResponse(request);
 
   if (pathname === "/health") {
     return json({
