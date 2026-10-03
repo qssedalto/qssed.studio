@@ -1,5 +1,8 @@
 import fs from "node:fs";
 import { normalizeHandoffNext } from "../studio/auth-handoff.js";
+import { notFoundPage } from "../studio/auth-pages.js";
+import { TEXT } from "../studio/config.js";
+import { huaweiHarmonyGate } from "../studio/huawei-harmony-gate.js";
 import { SUPPORTED_LOCALES } from "../studio/locale.js";
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
@@ -40,6 +43,23 @@ assert(work.includes("parseWorkDocumentPath") && work.includes("parseShortWorkDo
 assert(work.includes("/d/"), "Work canonical document routes must use the /d/<uuid> namespace.");
 assert(work.includes("huawei-exempt/"), "Work document deep links must accept the existing Huawei exemption alias marker.");
 const TEST_DOCUMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
+
+const hwPreviewResponse = await huaweiHarmonyGate(new Request(
+  `https://work.qsseda.com/zh-cn/d/${TEST_DOCUMENT_ID}/hw`,
+  { method: "GET", headers: { Accept: "text/html" } }
+));
+assert(hwPreviewResponse?.status === 200, "A trailing /hw segment must force the Huawei preview page on a valid Work document URL.");
+const hwPreviewMarkup = await hwPreviewResponse.text();
+assert(hwPreviewMarkup.includes("检测到您使用华为手机"), "Trailing /hw must render the Huawei unsupported-device preview instead of Work 404.");
+
+const hostAware404 = notFoundPage(TEXT.zh, { dashboard: "/zh-cn/dashboard" }, {
+  host: "work.qsseda.com",
+  requestedPath: `/zh-cn/d/${TEST_DOCUMENT_ID}/unexpected`,
+  returnHref: "/zh-cn/tex"
+});
+assert(hostAware404.includes("返回 work.qsseda.com"), "Work 404 must name the complete prefixed hostname in its return action.");
+assert(hostAware404.includes('href="/zh-cn/tex"'), "Work 404 must return to the localized Work root instead of the main-site dashboard.");
+assert(hostAware404.includes(`work.qsseda.com/zh-cn/d/${TEST_DOCUMENT_ID}/unexpected`), "404 must show the rejected hostname and route for diagnosis.");
 for (const locale of SUPPORTED_LOCALES) {
   assert(
     normalizeHandoffNext(`/${locale}/d/${TEST_DOCUMENT_ID}`, locale, true, false) === `/${locale}/d/${TEST_DOCUMENT_ID}`,

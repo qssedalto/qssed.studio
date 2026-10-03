@@ -3,10 +3,27 @@ import { html, json } from "./routing.js";
 import { auditClientScript } from "./ui-audit.js";
 import { baseHead, supabaseScript, themeScript, topControls } from "./ui-page.js";
 
-export function notFoundPage(t, links) {
+export function notFoundPage(t, links, options = {}) {
   const zh = t === TEXT.zh;
   const title = zh ? "找不到该网页" : "Page not found";
-  const action = zh ? "返回 qsseda.com" : "Return to qsseda.com";
+  const detail = zh
+    ? "这个地址不存在、已移动，或路由格式无效。"
+    : "This address does not exist, has moved, or uses an invalid route.";
+  const rawHost = String(options.host || "qsseda.com").trim().toLowerCase();
+  const host = /^[a-z0-9.-]+$/.test(rawHost) ? rawHost : "qsseda.com";
+  const rawPath = String(options.requestedPath || "").trim().slice(0, 700);
+  const requestedPath = rawPath.startsWith("/") && !rawPath.startsWith("//") ? rawPath : "";
+  const rawReturnHref = String(options.returnHref || "/").trim();
+  const returnHref = rawReturnHref.startsWith("/") && !rawReturnHref.startsWith("//") ? rawReturnHref : "/";
+  const action = zh ? `返回 ${host}` : `Return to ${host}`;
+  const requestedLabel = requestedPath ? `${host}${requestedPath}` : host;
+  const escapedRequestedLabel = requestedLabel.replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  }[character]));
   const year = new Date().getFullYear();
   const copyright = zh
     ? `Copyright © ${year} qsseda.com. 保留所有权利。`
@@ -70,11 +87,31 @@ export function notFoundPage(t, links) {
       letter-spacing:-.045em;
       text-wrap:balance;
     }
+    .nf-detail{
+      max-width:680px;
+      margin:clamp(18px,3vw,26px) 0 0;
+      color:var(--muted);
+      font-size:clamp(15px,2.5vw,18px);
+      font-weight:500;
+      line-height:1.55;
+    }
+    .nf-route{
+      display:block;
+      max-width:min(100%,680px);
+      margin-top:12px;
+      padding:8px 12px;
+      border:1px solid color-mix(in srgb,var(--quiet) 34%,transparent);
+      border-radius:10px;
+      color:var(--quiet);
+      font:600 clamp(11px,2vw,14px)/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
     .nf-link{
       display:inline-flex;
       align-items:center;
       gap:.12em;
-      margin-top:clamp(28px,4vw,40px);
+      margin-top:clamp(24px,3.5vw,36px);
       color:var(--muted);
       font-size:clamp(19px,3vw,25px);
       font-weight:600;
@@ -164,7 +201,9 @@ export function notFoundPage(t, links) {
         </g>
       </svg>
       <h1 class="nf-title" id="nf-title">${title}</h1>
-      <a class="nf-link" href="${links.dashboard}">
+      <p class="nf-detail">${detail}</p>
+      <code class="nf-route">${escapedRequestedLabel}</code>
+      <a class="nf-link" href="${returnHref}">
         <span>${action}</span><span class="nf-chevron" aria-hidden="true"></span>
       </a>
     </section>

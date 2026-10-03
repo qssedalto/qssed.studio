@@ -216,7 +216,13 @@ function parseShortWorkDocumentPath(pathname) {
 export function workDocumentNotFound(request) {
   const { pathname, locale } = getRouteInfo(request);
   const t = TEXT[locale] || TEXT.en;
-  return html(notFoundPage(t, buildLinks(locale, pathname)), 404);
+  let host = "work.qsseda.com";
+  try { host = new URL(request.url).hostname.toLowerCase(); } catch {}
+  return html(notFoundPage(t, buildLinks(locale, pathname), {
+    host,
+    requestedPath: pathname,
+    returnHref: `/${locale}/tex`
+  }), 404);
 }
 
 function requestCookie(request, name) {
