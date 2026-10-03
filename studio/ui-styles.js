@@ -762,10 +762,10 @@ ${profileStyles()}    /* SETTINGS_GENERAL_ROUTE_V1 */
 
     /* MAIN_MENU_IA_2026 */
     .compact-main-menu{display:none}
-    .os-nav-entry>.os-nav-title{display:flex;align-items:center;gap:10px}
+    .os-nav-entry>.os-nav-title{position:relative;display:flex;align-items:center;gap:10px;flex-wrap:nowrap}
     .os-nav-entry>.os-nav-title .dashboard-icon{flex:0 0 auto}
     .os-nav-entry>.os-nav-title span{min-width:0;flex:1}
-    .os-nav-entry>.os-nav-title::after{margin-left:auto}
+    .os-nav-entry>.os-nav-title::after{margin-left:0}
     .os-nav-group:not(.is-active) .os-nav-title{color:var(--muted)}
     .os-nav-group:not(.is-active) .os-nav-title:hover{color:var(--text)}
     .os-nav-group.is-active>.os-nav-title{font-weight:760}
