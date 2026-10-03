@@ -493,12 +493,16 @@ jobs:
 
           sitemap_status="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-sitemap.xml --write-out '%{http_code}' 'https://qsseda.com/sitemap.xml' || true)"
           sitemap_count="$(grep -o '<url>' /tmp/qsseda-sitemap.xml | wc -l | tr -d ' ')"
-          if [ "$sitemap_status" != "200" ] || [ "$sitemap_count" != "56" ] \
+          if [ "$sitemap_status" != "200" ] || [ "$sitemap_count" != "114" ] \
              || ! grep -q '<loc>https://qsseda.com/</loc>' /tmp/qsseda-sitemap.xml \
              || ! grep -q '<loc>https://qsseda.com/zh-cn/aw/setup</loc>' /tmp/qsseda-sitemap.xml \
              || ! grep -q '<loc>https://qsseda.com/en-us/wishes</loc>' /tmp/qsseda-sitemap.xml \
              || ! grep -q '<loc>https://qsseda.com/ja-jp/birthday</loc>' /tmp/qsseda-sitemap.xml \
-             || ! grep -q '<loc>https://qsseda.com/ar-sa/mid-autumn</loc>' /tmp/qsseda-sitemap.xml; then
+             || ! grep -q '<loc>https://qsseda.com/ar-sa/mid-autumn</loc>' /tmp/qsseda-sitemap.xml \
+             || ! grep -q '<loc>https://qsseda.com/zh-cn/q</loc>' /tmp/qsseda-sitemap.xml \
+             || ! grep -q '<loc>https://qsseda.com/en-us/q</loc>' /tmp/qsseda-sitemap.xml \
+             || ! grep -q '<loc>https://qsseda.com/zh-cn/q/aef7f9a4-6830-4caa-81a8-89f247902103</loc>' /tmp/qsseda-sitemap.xml \
+             || ! grep -q '<loc>https://qsseda.com/en-us/q/048deced-42b8-414c-bc1a-103f6f76c116</loc>' /tmp/qsseda-sitemap.xml; then
             echo "SEO regression: canonical sitemap is incomplete."
             echo "HTTP status: ${sitemap_status:-unknown}; URL count: ${sitemap_count:-unknown}"
             cat /tmp/qsseda-sitemap.xml || true
@@ -524,6 +528,9 @@ jobs:
           verify_public_indexable "https://qsseda.com/en-us/wishes" "https://qsseda.com/en-us/wishes" "/tmp/qsseda-public-wishes.html"
           verify_public_indexable "https://qsseda.com/ja-jp/birthday" "https://qsseda.com/ja-jp/birthday" "/tmp/qsseda-public-birthday.html"
           verify_public_indexable "https://qsseda.com/ar-sa/mid-autumn" "https://qsseda.com/ar-sa/mid-autumn" "/tmp/qsseda-public-mid-autumn.html"
+          verify_public_indexable "https://qsseda.com/zh-cn/q" "https://qsseda.com/zh-cn/q" "/tmp/qsseda-public-q-index.html"
+          verify_public_indexable "https://qsseda.com/zh-cn/q/aef7f9a4-6830-4caa-81a8-89f247902103" "https://qsseda.com/zh-cn/q/aef7f9a4-6830-4caa-81a8-89f247902103" "/tmp/qsseda-public-q-detail.html"
+          verify_public_indexable "https://qsseda.com/en-us/q/048deced-42b8-414c-bc1a-103f6f76c116" "https://qsseda.com/en-us/q/048deced-42b8-414c-bc1a-103f6f76c116" "/tmp/qsseda-public-q-watch.html"
 
           home_headers="$(curl --silent --show-error --max-time 20 --output /tmp/qsseda-public-home.html --dump-header - -H 'User-Agent: Mozilla/5.0' -H 'Accept: text/html' -H 'Sec-Fetch-Mode: navigate' -H 'Sec-Fetch-Site: none' -H 'Sec-Fetch-Dest: document' 'https://qsseda.com/' || true)"
           home_status="$(printf '%s\n' "$home_headers" | awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}')"
