@@ -33,6 +33,7 @@ assert(storageApi.includes("resolveBillingEntitlements(request)"), "Storage API 
 assert(storageApi.includes("quota_bytes: quotaBytes"), "Storage API must report the resolved AERTEX Drive quota.");
 assert(storageApi.includes("prefix = storagePrefix(ownerId)"), "Quota accounting must stay scoped to the current user prefix.");
 assert(storageApi.includes('usage_scope: "own-user-files"'), "Product storage must identify current-account scope.");
+assert(storageApi.includes("user_id: auth.user.id"), "Drive list response must identify the authenticated account for client cache scoping.");
 assert(!storageApi.includes("auth.isAdmin"), "Product storage must never broaden file scope for administrators.");
 assert(!storageApi.includes("account_is_admin"), "Product storage responses must not expose administrator state.");
 
@@ -40,6 +41,8 @@ const storageUi = fs.readFileSync(new URL("../studio/ui-storage.js", import.meta
 assert(storageUi.includes("visible_used_bytes ?? data?.used_bytes"), "Storage cache fingerprint must prefer visible user-file bytes.");
 assert(storageUi.includes("data.used_bytes ?? data.visible_used_bytes"), "Storage UI must render complete Drive usage when quota data is available.");
 assert(storageUi.includes("data?.quota_bytes"), "Storage UI cache must include the account quota.");
+assert(storageUi.includes('const responseUserId = String(data?.user_id || "");'), "Drive UI must scope cache writes to the authenticated Drive response.");
+assert(!storageUi.includes('summaryResponse = await fetch("/api/account/security/summary"'), "Drive initialization must not misclassify account-summary failures as authentication failures.");
 assert(!storageUi.includes("adminDescription"), "Product storage UI must not contain an administrator mode.");
 assert(!storageUi.includes("isAdminView"), "Product storage UI must not switch into an administrator view.");
 

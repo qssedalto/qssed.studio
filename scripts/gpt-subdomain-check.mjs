@@ -17,6 +17,7 @@ const authOauth = read("auth-oauth.js");
 const appearance = read("studio/appearance.js");
 const intelligenceTheme = read("studio/intelligence-theme.js");
 const storageUi = read("studio/ui-storage.js");
+const uiStyles = read("studio/ui-styles.js");
 const uiPage = read("studio/ui-page.js");
 const uiShell = read("studio/ui-shell.js");
 const uiSettings = read("studio/ui-settings.js");
@@ -199,6 +200,10 @@ assert(!authHandoff.includes('id="handoff-retry"'), "Auth handoff must not rende
 assert(!storageUi.includes('id="storage-login-link"'), "AERTEX Drive must not render the obsolete re-login button.");
 assert(!storageUi.includes('supabaseClient.auth.getSession()'), "AERTEX Drive must trust the validated server cookie session instead of a second browser token.");
 assert(storageUi.includes('credentials: "same-origin"'), "AERTEX Drive must authenticate through the server session cookie.");
+assert(!storageUi.includes('fetch("/api/account/security/summary"'), "AERTEX Drive must not preflight account summary before its own authenticated API.");
+assert(storageUi.includes('await refreshFiles({ force: true });'), "AERTEX Drive must initialize directly from the Drive API.");
+assert(uiStyles.includes("minmax(200px,1.25fr)"), "Drive storage metric must reserve enough width for used/quota text.");
+assert(uiStyles.includes("@media (max-width:1180px){.storage-overview-panel{grid-template-columns:1fr"), "Drive overview must stack before narrow desktop layouts can overlap.");
 assert(uiSettings.includes('systemHint:"默认 · 跟随设备外观"'), "Theme Studio must label System as the default appearance mode.");
 assert(uiSettings.includes('49.5%,#111316 50.5% 100%'), "System preview must avoid a bright split seam on high-density displays.");
 assert(uiSettings.includes('.theme-mode[data-mode="system"] .theme-mode-visual{border-color:#45484d'), "System preview must use a stable neutral outer edge.");

@@ -415,6 +415,13 @@ export function storageClientScript(zh, loginUrl, locale = "") {
             const data = await response.json();
             if (sequence !== refreshSequence) return;
 
+            const responseUserId = String(data?.user_id || "");
+            if (responseUserId && responseUserId !== currentUserId) {
+              if (currentUserId) clearStorageCache();
+              currentUserId = responseUserId;
+              storageCacheFingerprint = "";
+            }
+
             const fingerprint = storageFingerprint(data);
             const changed = fingerprint !== storageCacheFingerprint;
             const refreshedAtValue = Date.now();
@@ -458,43 +465,9 @@ export function storageClientScript(zh, loginUrl, locale = "") {
         }
 
         async function initializeStorage() {
-          try {
-            const summaryResponse = await fetch("/api/account/security/summary", {
-              method: "GET",
-              credentials: "same-origin",
-              cache: "no-store",
-              headers: { Accept: "application/json" }
-            });
-            if (summaryResponse.status === 401) {
-              showSessionExpired();
-              return;
-            }
-            if (!summaryResponse.ok) throw new Error(copy.unavailable);
-            const summary = await summaryResponse.json();
-            if (!summary?.user?.id) {
-              showSessionExpired();
-              return;
-            }
-
-            currentUserId = String(summary.user.id);
-            const cached = readStorageCache(currentUserId);
-
-            if (cached?.data) {
-              storageCacheFingerprint = cached.fingerprint || storageFingerprint(cached.data);
-              applyStorageData(cached.data, cached.refreshedAt);
-              root.classList.remove("is-checking", "is-unavailable", "is-stale");
-              connection.textContent = copy.connected;
-              setApiStatus("", "");
-              void refreshFiles({ silent: true, preservePaint: true });
-              return;
-            }
-
-            root.classList.add("is-checking");
-            setApiStatus(copy.loading, "loading");
-            await refreshFiles({ force: true });
-          } catch {
-            showSessionExpired();
-          }
+          root.classList.add("is-checking");
+          setApiStatus(copy.loading, "loading");
+          await refreshFiles({ force: true });
         }
 
         async function uploadFiles(selected) {
