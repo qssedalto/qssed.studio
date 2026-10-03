@@ -884,7 +884,7 @@ export function dashboardStyles() {
     .dashboard-focus-card p{margin:6px 0 0;font-size:11.5px;line-height:1.46;color:var(--muted)}
     .dashboard-focus-swatches{display:flex;gap:6px;margin:14px 0 4px}
     .dashboard-focus-swatches i{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
-    .dashboard-focus-swatches i:nth-child(1){background:#4964d8}.dashboard-focus-swatches i:nth-child(2){background:#2a9d8f}.dashboard-focus-swatches i:nth-child(3){background:#3a9d72}.dashboard-focus-swatches i:nth-child(4){background:#d49a2a}.dashboard-focus-swatches i:nth-child(5){background:#7559d9}
+    .dashboard-focus-swatches i:nth-child(1){background:#222930}.dashboard-focus-swatches i:nth-child(2){background:#FC0324}.dashboard-focus-swatches i:nth-child(3){background:#9AADF6}.dashboard-focus-swatches i:nth-child(4){background:#A9B689}.dashboard-focus-swatches i:nth-child(5){background:#F77E2D}
     @media(hover:hover) and (pointer:fine){
       .dashboard-focus-primary:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--primary) 42%,var(--border));box-shadow:0 30px 72px rgba(0,0,0,.105)}
       .dashboard-focus-primary:hover .dashboard-focus-arrow{transform:rotate(8deg) scale(1.06);background:color-mix(in srgb,var(--primary) 12%,var(--fill))}
