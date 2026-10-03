@@ -14,6 +14,7 @@ const handoff = fs.readFileSync(new URL("../studio/auth-handoff.js", import.meta
 const sessionGate = fs.readFileSync(new URL("../studio/session-gate.js", import.meta.url), "utf8");
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
 const workTexUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
+const workTexPanels = fs.readFileSync(new URL("../studio/ui-work-tex-panels.js", import.meta.url), "utf8");
 const workTexCollaboration = fs.readFileSync(new URL("../studio/ui-work-tex-collaboration.js", import.meta.url), "utf8");
 const workUi = fs.readFileSync(new URL("../studio/ui-work.js", import.meta.url), "utf8");
 const bridge = fs.readFileSync(new URL("../local-bridge/server.mjs", import.meta.url), "utf8");
@@ -118,6 +119,7 @@ assert(workTexUi.includes('id="qsseda-work-tex-visual-system-v2"'), "Standalone 
 assert(workTexUi.includes(':root[data-accent="sapphire"] body.os-shell:has(.tex-work-app)'), "Work TeX must map Studio accent tokens into the standalone product.");
 assert(workTexUi.includes('.tex-mobile-tab[aria-selected="true"]'), "Work mobile navigation must expose an accent-aware selected state.");
 assert(workTexUi.includes('.tex-start-card::after'), "Work start templates must use the upgraded product-card treatment.");
+assert(workTexPanels.includes(".tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link"), "Collapsed Work document rail must hide the main-site link so the restore control cannot be crowded out.");
 assert(workTexCollaboration.includes("const requested=routeDocumentId();if(requested)await openDocument(requested,'replace');else renderEditor();"), "Work TeX root must stay on the start/recommendation surface unless a document deep link is explicitly requested.");
 assert(!workTexCollaboration.includes("else if(documents[0])await openDocument(documents[0].id,'replace')"), "Work TeX must not auto-open the first document on a fresh root visit.");
 assert(entry.includes("polishWorkTexVisualTheme(markup)"), "Work visual theme must be applied only after existing TeX behavior enhancements.");
