@@ -103,8 +103,7 @@ export function faviconSvgForProduct(product = "") {
   return productShell
     .replace(
       "</style>",
-      `.aertex-product-main .product-main-glyph{fill:none;stroke:var(--ink);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-      .aertex-product-main .product-main-glyph *{vector-effect:non-scaling-stroke}
+      `.aertex-product-main .product-main-glyph{fill:none;stroke:var(--ink);stroke-width:.52;stroke-linecap:round;stroke-linejoin:round}
       .aertex-product-main .product-main-glyph .filled{fill:var(--ink);stroke:none}
       .aertex-brand-badge .brand-badge-disc{fill:none;stroke:var(--edge);stroke-width:1.4}
       </style>`
