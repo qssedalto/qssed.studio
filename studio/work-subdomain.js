@@ -214,14 +214,15 @@ function parseShortWorkDocumentPath(pathname) {
 }
 
 export function workDocumentNotFound(request) {
-  const { pathname, locale } = getRouteInfo(request);
+  const { pathname, locale, fullLocale } = getRouteInfo(request);
   const t = TEXT[locale] || TEXT.en;
   let host = "work.qsseda.com";
   try { host = new URL(request.url).hostname.toLowerCase(); } catch {}
-  return html(notFoundPage(t, buildLinks(locale, pathname), {
+  return html(notFoundPage(t, buildLinks(locale, pathname, fullLocale), {
+    locale: fullLocale,
     host,
     requestedPath: pathname,
-    returnHref: `/${locale}/tex`
+    returnHref: `/${fullLocale}/tex`
   }), 404);
 }
 

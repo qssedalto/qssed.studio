@@ -86,11 +86,12 @@ function normalizeRouteSegment(segment) {
 }
 
 function brandedNotFound(request) {
-  const { pathname, locale } = getRouteInfo(request);
+  const { pathname, locale, fullLocale } = getRouteInfo(request);
   const t = TEXT[locale];
   let host = "qsseda.com";
   try { host = new URL(request.url).hostname.toLowerCase(); } catch {}
-  return html(notFoundPage(t, buildLinks(locale, pathname), {
+  return html(notFoundPage(t, buildLinks(locale, pathname, fullLocale), {
+    locale: fullLocale,
     host,
     requestedPath: pathname,
     returnHref: "/"

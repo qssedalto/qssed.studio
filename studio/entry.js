@@ -292,6 +292,7 @@ export default {
     let notFoundHost = "qsseda.com";
     try { notFoundHost = new URL(request.url).hostname.toLowerCase(); } catch {}
     return localizedPage(notFoundPage(t, links, {
+      locale: fullLocale,
       host: notFoundHost,
       requestedPath: pathname,
       returnHref: "/"
