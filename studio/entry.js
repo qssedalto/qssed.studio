@@ -31,12 +31,14 @@ import { getRouteInfo, buildLinks, html, localizedRedirect } from "./routing.js"
 import { osPage } from "./ui-shell.js";
 import { publicHomeMarkup } from "./public-home.js";
 import { injectPublicSeo } from "./public-indexing.js";
+import { isQuestionRoute, questionAlternateLocales, questionDetailDescription, questionDetailPage, questionDetailPath, questionHubDescription, questionHubPage, questionIndexPath, questionRouteId } from "./public-question-pages.js";
+import { questionRouteLocale } from "./public-questions.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
 import { watchSetupPage } from "./watch-setup-page.js";
 import { adminOriginForRequest, authOriginForRequest, awOriginForRequest, cashOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
-import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
+import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, localeFromPath, normalizeSupportedLocale } from "./locale.js";
 
 function safeLocalNext(value) {
   const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
@@ -279,6 +281,38 @@ export default {
 
     const wishRoute = wishRedirect(request, fullLocale, pathname);
     if (wishRoute) return wishRoute;
+
+    if (isQuestionRoute(pathname)) {
+      const sourceUrl = new URL(request.url);
+      const explicitLocale = localeFromPath(sourceUrl.pathname);
+      const routeLocale = questionRouteLocale(fullLocale);
+      const questionId = questionRouteId(pathname);
+      const targetPath = questionId ? questionDetailPath(routeLocale, questionId) : questionIndexPath(routeLocale);
+
+      if (!explicitLocale || explicitLocale !== routeLocale) {
+        sourceUrl.pathname = targetPath;
+        sourceUrl.search = "";
+        return Response.redirect(sourceUrl.toString(), 302);
+      }
+
+      const markup = questionId ? questionDetailPage(routeLocale, questionId) : questionHubPage(routeLocale);
+      if (markup) {
+        const canonicalHost = sourceUrl.hostname.toLowerCase() === "qsseda.com";
+        const publicPath = questionId ? "/q/" + questionId : "/q";
+        const description = questionId
+          ? questionDetailDescription(routeLocale, questionId)
+          : questionHubDescription(routeLocale);
+        return localizedPage(
+          injectPublicSeo(markup, routeLocale, publicPath, description, {
+            alternateLocales: questionAlternateLocales(),
+            xDefault: "https://qsseda.com/en-us" + publicPath
+          }),
+          locale,
+          200,
+          { indexable: canonicalHost }
+        );
+      }
+    }
 
     const t = TEXT[locale];
     const links = buildLinks(locale, pathname, fullLocale);
