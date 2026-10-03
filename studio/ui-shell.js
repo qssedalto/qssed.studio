@@ -635,7 +635,8 @@ function renderCompactMainMenu(copy, productLinks = {}) {
     ...(adminHref ? [{ title:zh ? "管理员控制台" : "Administration", description:zh ? "独立管理控制面" : "Isolated control plane", href:adminHref, icon:"admin" }] : [])
   ];
 
-  const card = item => '<a class="compact-menu-card" href="' + item.href + '">' +
+  const card = (item, openInNewTab = false) => '<a class="compact-menu-card" href="' + item.href + '"' +
+    (openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '') + '>' +
     '<span class="compact-menu-card-icon">' + dashboardIcon(item.icon) + '</span>' +
     '<span class="compact-menu-card-copy"><strong>' + item.title + '</strong><small>' + item.description + '</small></span>' +
     '<b aria-hidden="true">↗</b></a>';
@@ -651,7 +652,7 @@ function renderCompactMainMenu(copy, productLinks = {}) {
       ${products.length ? `
         <section class="compact-menu-products">
           <div class="compact-menu-section-label">${ui.products}</div>
-          <div class="compact-menu-product-grid">${products.map(card).join("")}</div>
+          <div class="compact-menu-product-grid">${products.map(item => card(item, true)).join("")}</div>
         </section>` : ""}
     </section>
   `;
@@ -712,7 +713,7 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
     <nav class="os-nav">
       ${productGroups.length ? `<section class="os-nav-group os-nav-products">
         ${productGroups.map(group => `
-          <a class="os-nav-title os-nav-product-link" href="${group.href}" data-product-link="${group.id}">
+          <a class="os-nav-title os-nav-product-link" href="${group.href}" target="_blank" rel="noopener noreferrer" data-product-link="${group.id}">
             ${dashboardIcon(group.icon)}
             <span>${group.label}</span>
             <b aria-hidden="true">›</b>
