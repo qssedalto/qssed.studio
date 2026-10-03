@@ -655,7 +655,7 @@ export function midAutumnPage(locale = "en-us") {
           <span class="brand-sub">Mid-Autumn Greeting</span>
         </span>
       </a>
-      <a class="lang" href="${otherHref}">${otherLabel}</a>
+      <select class="lang" id="mid-autumn-language" aria-label="Language">${languageOptions}</select>
     </header>
 
     <section class="hero">
