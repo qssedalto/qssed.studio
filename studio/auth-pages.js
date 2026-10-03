@@ -85,7 +85,20 @@ export function notFoundPage(t, links, options = {}) {
   const rawPath = String(options.requestedPath || "").trim().slice(0, 700);
   const requestedPath = rawPath.startsWith("/") && !rawPath.startsWith("//") ? rawPath : "";
   const rawReturnHref = String(options.returnHref || "/").trim();
-  const returnHref = rawReturnHref.startsWith("/") && !rawReturnHref.startsWith("//") ? rawReturnHref : "/";
+  let returnHref = "/";
+  if (rawReturnHref.startsWith("/") && !rawReturnHref.startsWith("//")) {
+    returnHref = rawReturnHref;
+  } else {
+    try {
+      const absoluteReturn = new URL(rawReturnHref);
+      if (
+        absoluteReturn.protocol === "https:"
+        && absoluteReturn.hostname.toLowerCase() === host
+        && !absoluteReturn.username
+        && !absoluteReturn.password
+      ) returnHref = absoluteReturn.toString();
+    } catch {}
+  }
   const action = copy.action(host);
   const requestedLabel = requestedPath ? `${host}${requestedPath}` : host;
   const escapedRequestedLabel = requestedLabel.replace(/[&<>"']/g, character => ({

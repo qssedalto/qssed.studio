@@ -52,6 +52,21 @@ export function rewriteWorkSubdomainRequest(request) {
   const workOrigin = workOriginForRequest(request);
   const mainOrigin = mainOriginForRequest(request);
 
+  // Backward compatibility for old Simplified Chinese Work links generated with
+  // the legacy bilingual locale token "/zh". Keep them on the Work hostname.
+  if (pathname === "/zh" || pathname.startsWith("/zh/")) {
+    const legacyRest = pathname.slice(3);
+    const normalizedPath = "/zh-cn" + (legacyRest || "/tex");
+    return {
+      request,
+      pageNext: "",
+      redirect: "",
+      canonical: `${workOrigin}${normalizedPath}${url.search}`,
+      documentId: "",
+      notFound: false
+    };
+  }
+
   if (pathname.startsWith("/api/") || pathname === "/auth/handoff" || pathname === "/robots.txt") {
     return { request, pageNext: "", redirect: "", canonical: "" };
   }
@@ -217,12 +232,19 @@ export function workDocumentNotFound(request) {
   const { pathname, locale, fullLocale } = getRouteInfo(request);
   const t = TEXT[locale] || TEXT.en;
   let host = "work.qsseda.com";
-  try { host = new URL(request.url).hostname.toLowerCase(); } catch {}
+  let requestedPath = pathname;
+  let returnHref = `https://work.qsseda.com/${fullLocale}/tex`;
+  try {
+    const requestUrl = new URL(request.url);
+    host = requestUrl.hostname.toLowerCase();
+    requestedPath = requestUrl.pathname || pathname;
+    returnHref = `${workOriginForRequest(request)}/${fullLocale}/tex`;
+  } catch {}
   return html(notFoundPage(t, buildLinks(locale, pathname, fullLocale), {
     locale: fullLocale,
     host,
-    requestedPath: pathname,
-    returnHref: `/${fullLocale}/tex`
+    requestedPath,
+    returnHref
   }), 404);
 }
 
