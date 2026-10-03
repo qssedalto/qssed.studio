@@ -75,6 +75,8 @@ export function questionHubPage(locale) {
   const routeLocale = questionRouteLocale(locale);
   const contentLocale = questionContentLocale(routeLocale);
   const ui = UI[contentLocale] || UI["en-us"];
+  const languageTarget = contentLocale === "zh-cn" ? "en-us" : "zh-cn";
+  const languageLabel = contentLocale === "zh-cn" ? "English" : "简体中文";
   const questions = publishedQuestions();
   const cards = questions.map(item => {
     const t = questionTranslation(item, routeLocale);
@@ -103,7 +105,7 @@ ${FAVICON_LINKS}
 ${styles()}
 </head>
 <body>
-<header class="topbar"><a class="brand" href="/${routeLocale}">${escapeHtml(ui.home)}</a><span class="product">Questions</span><div class="spacer"></div><a class="toplink" href="/${routeLocale}">${escapeHtml(ui.home)}</a></header>
+<header class="topbar"><a class="brand" href="/${routeLocale}">${escapeHtml(ui.home)}</a><span class="product">Questions</span><div class="spacer"></div><a class="toplink" href="/${languageTarget}/q">${escapeHtml(languageLabel)}</a><a class="toplink" href="/${routeLocale}">${escapeHtml(ui.home)}</a></header>
 <main class="shell">
 <section class="hero">
   <p class="eyebrow">AERTEX · QUESTIONS</p>
@@ -153,6 +155,8 @@ export function questionDetailPage(locale, id) {
   const routeLocale = questionRouteLocale(locale);
   const contentLocale = questionContentLocale(routeLocale);
   const ui = UI[contentLocale] || UI["en-us"];
+  const languageTarget = contentLocale === "zh-cn" ? "en-us" : "zh-cn";
+  const languageLabel = contentLocale === "zh-cn" ? "English" : "简体中文";
   const item = questionById(id);
   if (!item || item.status !== "published") return "";
   const t = questionTranslation(item, routeLocale);
@@ -197,7 +201,7 @@ ${FAVICON_LINKS}
 ${styles()}
 </head>
 <body>
-<header class="topbar"><a class="brand" href="/${routeLocale}">${escapeHtml(ui.home)}</a><span class="product">Questions</span><div class="spacer"></div><a class="toplink" href="${questionIndexPath(routeLocale)}">${escapeHtml(ui.back)}</a></header>
+<header class="topbar"><a class="brand" href="/${routeLocale}">${escapeHtml(ui.home)}</a><span class="product">Questions</span><div class="spacer"></div><a class="toplink" href="${questionDetailPath(languageTarget,item.id)}">${escapeHtml(languageLabel)}</a><a class="toplink" href="${questionIndexPath(routeLocale)}">${escapeHtml(ui.back)}</a></header>
 <main class="article-shell">
 <nav class="crumbs" aria-label="Breadcrumb"><a href="/${routeLocale}">${escapeHtml(ui.home)}</a><span>/</span><a href="${questionIndexPath(routeLocale)}">Questions</a><span>/</span><span>${escapeHtml(ui.categories[item.category] || item.category)}</span></nav>
 <article>
