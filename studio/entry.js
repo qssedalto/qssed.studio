@@ -315,7 +315,7 @@ export default {
       if (pathname === "/info/links/curated") markup = replaceOsContent(markup, polishLinksContent(curatedLinksPageContent(zh, fullLocale), pathname, zh));
       if (pathname === "/info/notes") markup = replaceOsContent(markup, researchNotesContent(zh, fullLocale));
       if (pathname === "/info/search") markup = replaceOsContent(markup, globalSearchContent(zh, fullLocale));
-      if (pathname === "/workspace/workbench") markup = replaceOsContent(markup, workbenchContent(zh));
+      if (pathname === "/workspace/workbench") markup = replaceOsContent(markup, workbenchContent(zh, fullLocale));
       if (pathname === "/workspace/projects") markup = replaceOsContent(markup, projectsWorkspaceContent(zh, fullLocale));
       if (pathname === "/workspace/tasks") markup = replaceOsContent(markup, tasksWorkspaceContent(zh, fullLocale));
       if (pathname === "/workspace/drafts") markup = replaceOsContent(markup, draftsWorkspaceContent(zh, fullLocale));
