@@ -119,6 +119,9 @@ assert(workTexUi.includes('id="qsseda-work-tex-visual-system-v2"'), "Standalone 
 assert(workTexUi.includes(':root[data-accent="sapphire"] body.os-shell:has(.tex-work-app)'), "Work TeX must map Studio accent tokens into the standalone product.");
 assert(workTexUi.includes('.tex-mobile-tab[aria-selected="true"]'), "Work mobile navigation must expose an accent-aware selected state.");
 assert(workTexUi.includes('.tex-start-card::after'), "Work start templates must use the upgraded product-card treatment.");
+assert(workTexUi.includes('.tex-start-card[data-tex-start-template="blank"]::before{content:"+"}') && workTexUi.includes('.tex-start-card[data-tex-start-template="math"]::before{content:"∑"'), "Work TeX start templates must keep the refined compact template symbols.");
+assert(workTexUi.includes('font-size:clamp(28px,3vw,36px)!important') && workTexUi.includes('width:min(100%,860px)!important'), "Work TeX start surface must keep the restrained hero scale and balanced card width.");
+assert(workTexUi.includes('white-space:nowrap!important'), "Work TeX template titles must not wrap like the old oversized start cards.");
 assert(workTexPanels.includes("order:1!important") && workTexPanels.includes("order:2!important") && workTexPanels.includes(".tex-panel-home-link>span") && workTexPanels.includes("width:28px!important"), "Collapsed Work document rail must keep the restore control first and a compact icon-only Home control beneath it.");
 assert(workTexCollaboration.includes("const requested=routeDocumentId();if(requested)await openDocument(requested,'replace');else renderEditor();"), "Work TeX root must stay on the start/recommendation surface unless a document deep link is explicitly requested.");
 assert(!workTexCollaboration.includes("else if(documents[0])await openDocument(documents[0].id,'replace')"), "Work TeX must not auto-open the first document on a fresh root visit.");

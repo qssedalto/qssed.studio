@@ -391,119 +391,161 @@ const WORK_TEX_VISUAL_STYLE = `
       max-width:100%!important;
       overflow-x:hidden!important;
       overflow-y:auto!important;
+      gap:16px!important;
+      padding:clamp(30px,4vw,52px) 34px!important;
       background:
-        radial-gradient(640px 400px at 92% 4%,color-mix(in srgb,var(--primary) 17%,transparent),transparent 70%),
-        radial-gradient(520px 340px at -6% 104%,color-mix(in srgb,var(--primary) 7%,transparent),transparent 72%),
+        linear-gradient(180deg,color-mix(in srgb,var(--primary) 3.5%,transparent),transparent 34%),
         var(--work-panel)!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-surface::before{
       content:"";
       position:absolute;
-      width:min(52vw,560px);
-      aspect-ratio:1;
-      right:-24%;
-      top:-44%;
+      width:420px;
+      height:220px;
+      left:50%;
+      top:-145px;
+      transform:translateX(-50%);
       border-radius:50%;
-      background:radial-gradient(circle,color-mix(in srgb,var(--primary) 11%,transparent),transparent 66%);
+      background:radial-gradient(ellipse,color-mix(in srgb,var(--primary) 11%,transparent),transparent 70%);
+      filter:blur(10px);
       pointer-events:none;
       z-index:-1;
+      opacity:.72;
     }
     body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-mark{
-      width:64px!important;
-      height:64px!important;
-      border-radius:20px!important;
-      background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 18%,var(--fill)),color-mix(in srgb,var(--primary) 8%,var(--fill)))!important;
+      width:48px!important;
+      height:48px!important;
+      border-radius:14px!important;
+      background:color-mix(in srgb,var(--primary) 8%,var(--fill))!important;
       color:var(--text)!important;
-      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 34%,var(--border)),0 14px 32px color-mix(in srgb,var(--primary) 10%,transparent)!important;
-      font-size:15px!important;
-      letter-spacing:-.04em!important;
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb,var(--primary) 24%,var(--border)),
+        0 10px 24px rgba(0,0,0,.055)!important;
+      font-size:13px!important;
+      font-weight:680!important;
+      letter-spacing:-.035em!important;
     }
-    body.os-shell:has(.tex-work-app) .tex-start-copy{gap:9px!important}
+    body.os-shell:has(.tex-work-app) .tex-start-copy{
+      gap:7px!important;
+      width:min(100%,760px)!important;
+    }
     body.os-shell:has(.tex-work-app) .tex-start-copy strong{
-      font-size:clamp(30px,4vw,46px)!important;
-      line-height:1!important;
-      letter-spacing:-.055em!important;
-      font-weight:760!important;
+      font-size:clamp(28px,3vw,36px)!important;
+      line-height:1.08!important;
+      letter-spacing:-.045em!important;
+      font-weight:730!important;
+      text-wrap:balance;
     }
     body.os-shell:has(.tex-work-app) .tex-start-copy span{
-      max-width:56ch!important;
-      font-size:14px!important;
-      line-height:1.62!important;
+      max-width:760px!important;
+      font-size:13px!important;
+      line-height:1.58!important;
       color:var(--muted)!important;
+      text-wrap:balance;
     }
     body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-grid{
-      gap:14px!important;
-      width:min(100%,900px)!important;
+      gap:12px!important;
+      width:min(100%,860px)!important;
+      margin-top:4px!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-card{
       position:relative!important;
       overflow:hidden!important;
-      min-height:132px!important;
-      padding:22px 22px 20px!important;
-      border:1px solid var(--work-line)!important;
-      border-radius:22px!important;
-      background:linear-gradient(155deg,color-mix(in srgb,var(--work-card) 99%,#fff 1%),var(--work-card))!important;
-      box-shadow:var(--work-shadow-soft)!important;
-      transition:transform .30s var(--work-ease),border-color .2s ease,box-shadow .30s var(--work-ease),background .2s ease!important;
+      display:grid!important;
+      grid-template-rows:auto auto 1fr!important;
+      align-content:start!important;
+      gap:0!important;
+      min-height:138px!important;
+      padding:18px 20px 19px!important;
+      border:1px solid color-mix(in srgb,var(--work-line) 92%,transparent)!important;
+      border-radius:18px!important;
+      background:
+        linear-gradient(155deg,color-mix(in srgb,var(--work-card) 98%,#fff 2%),var(--work-card))!important;
+      box-shadow:0 8px 24px rgba(0,0,0,.035)!important;
+      transition:transform .22s var(--work-ease),border-color .18s ease,box-shadow .22s var(--work-ease),background .18s ease!important;
     }
+    body.os-shell:has(.tex-work-app) .tex-start-card::before{
+      display:grid;
+      place-items:center;
+      width:34px;
+      height:34px;
+      border-radius:10px;
+      margin-bottom:14px;
+      background:color-mix(in srgb,var(--primary) 9%,var(--fill));
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 18%,var(--work-line));
+      color:var(--primary);
+      font-size:14px;
+      font-weight:720;
+      line-height:1;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-card[data-tex-start-template="blank"]::before{content:"+"}
+    body.os-shell:has(.tex-work-app) .tex-start-card[data-tex-start-template="article"]::before{content:"文"}
+    body.os-shell:has(.tex-work-app) .tex-start-card[data-tex-start-template="math"]::before{content:"∑";font-family:Georgia,serif;font-size:16px}
     body.os-shell:has(.tex-work-app) .tex-start-card::after{
       content:"↗";
       position:absolute;
       right:18px;
-      top:17px;
+      top:18px;
       display:grid;
       place-items:center;
-      width:30px;
-      height:30px;
-      border-radius:50%;
-      background:var(--fill);
+      width:22px;
+      height:22px;
       color:var(--quiet);
-      font-size:14px;
+      font-size:15px;
       font-weight:500;
-      transition:transform .28s var(--work-ease),background .2s ease,color .2s ease;
+      line-height:1;
+      opacity:.72;
+      transition:transform .22s var(--work-ease),color .18s ease,opacity .18s ease;
     }
     body.os-shell:has(.tex-work-app) .tex-start-card b{
-      max-width:calc(100% - 42px);
-      font-size:17px!important;
+      max-width:calc(100% - 24px);
+      font-size:15px!important;
       line-height:1.25!important;
-      letter-spacing:-.03em!important;
+      letter-spacing:-.025em!important;
+      white-space:nowrap!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-card span{
-      max-width:34ch;
+      max-width:none!important;
       margin-top:8px!important;
-      font-size:12px!important;
-      line-height:1.5!important;
+      font-size:11.5px!important;
+      line-height:1.48!important;
+      color:var(--muted)!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-card:focus-visible{
       outline:none!important;
-      border-color:color-mix(in srgb,var(--primary) 62%,var(--border))!important;
-      box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 13%,transparent),var(--work-shadow-soft)!important;
+      border-color:color-mix(in srgb,var(--primary) 55%,var(--border))!important;
+      box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 11%,transparent),0 12px 30px rgba(0,0,0,.055)!important;
     }
     @media(hover:hover) and (pointer:fine){
       body.os-shell:has(.tex-work-app) .tex-start-card:hover{
-        transform:translateY(-4px)!important;
-        border-color:color-mix(in srgb,var(--primary) 38%,var(--border))!important;
-        background:linear-gradient(155deg,color-mix(in srgb,var(--primary) 5%,var(--work-card)),var(--work-card))!important;
-        box-shadow:0 22px 46px rgba(0,0,0,.10)!important;
+        transform:translateY(-2px)!important;
+        border-color:color-mix(in srgb,var(--primary) 30%,var(--border))!important;
+        background:linear-gradient(155deg,color-mix(in srgb,var(--primary) 3.5%,var(--work-card)),var(--work-card))!important;
+        box-shadow:0 16px 34px rgba(0,0,0,.065)!important;
       }
       body.os-shell:has(.tex-work-app) .tex-start-card:hover::after{
-        transform:rotate(8deg) scale(1.06);
-        background:color-mix(in srgb,var(--primary) 11%,var(--fill));
+        transform:translate(2px,-2px);
         color:var(--primary);
+        opacity:1;
       }
     }
-    body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-features{gap:8px!important}
+    body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-features{
+      gap:14px!important;
+      margin-top:2px!important;
+    }
     body.os-shell:has(.tex-work-app) .tex-start-features span{
       display:inline-flex!important;
       align-items:center;
-      min-height:30px;
-      padding:0 10px;
-      border-radius:999px;
-      background:color-mix(in srgb,var(--fill) 82%,transparent);
-      color:var(--muted)!important;
-      box-shadow:inset 0 0 0 1px var(--work-line);
+      min-height:auto!important;
+      padding:0!important;
+      border-radius:0!important;
+      background:transparent!important;
+      color:var(--quiet)!important;
+      box-shadow:none!important;
       font-size:10px!important;
-      line-height:1!important;
+      line-height:1.35!important;
     }
 
     body.os-shell:has(.tex-work-app) .tex-panel-head,
