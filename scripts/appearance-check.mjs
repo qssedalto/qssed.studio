@@ -12,11 +12,11 @@ const assert = (condition, message) => {
 function browserHarness() {
   const cookieStore = new Map([
     ["qssed_theme_mode", "dark"],
-    ["qssed_accent", "jade"]
+    ["qssed_accent", "iphone-cad4c5"]
   ]);
   const storage = new Map([
     ["qssed-theme-mode", "light"],
-    ["qssed-accent", "violet"]
+    ["qssed-accent", "iphone-dfceea"]
   ]);
   const listeners = {};
   const media = {
@@ -79,23 +79,25 @@ const browser = browserHarness();
 new vm.Script(appearanceClientRuntime(), { filename: "appearance-runtime.js" }).runInContext(browser.context);
 
 assert(browser.window.AERTEXTheme, "Shared appearance runtime must initialize AERTEXTheme.");
+assert(browser.window.AERTEXTheme.palette.length === 43, "Shared appearance runtime must expose all 43 workbook HEX colors.");
+assert(browser.window.AERTEXTheme.colors["iphone-9aadf6"]?.hex === "#9AADF6", "Workbook HEX values must survive into the shared runtime exactly.");
 assert(browser.window.AERTEXTheme.getMode() === "system", "Existing users must migrate to System mode once.");
 assert(browser.document.documentElement.dataset.themeMode === "system", "System mode must be reflected on the document.");
 assert(browser.document.documentElement.dataset.theme === "dark", "System mode must initially follow the simulated dark device.");
 assert(browser.cookieStore.get("qssed_theme_mode") === "system", "System migration must be shared through the parent-domain mode cookie.");
 assert(browser.cookieStore.get("qssed_theme_generation") === APPEARANCE_GENERATION_VALUE, "System migration must be versioned so it only runs once.");
 assert(browser.cookieStore.get("qssed_locale") === "zh-cn", "Chinese route language must be shared with AERTEX ID.");
-assert(browser.window.AERTEXTheme.getAccent() === "jade", "Existing accent color should survive the one-time mode reset.");
+assert(browser.window.AERTEXTheme.getAccent() === "iphone-cad4c5", "Existing iPhone accent color should survive the one-time mode reset.");
 
 browser.window.AERTEXTheme.setMode("light");
 assert(browser.window.AERTEXTheme.getMode() === "light", "Users must be able to choose Light after the one-time System migration.");
 assert(browser.document.documentElement.dataset.theme === "light", "Light selection must update the rendered theme.");
 assert(browser.cookieStore.get("qssed_theme_mode") === "light", "Light selection must persist to the shared cookie.");
 
-browser.window.AERTEXTheme.setAccent("rose");
-assert(browser.window.AERTEXTheme.getAccent() === "rose", "Accent selection must update.");
-assert(browser.document.documentElement.dataset.accent === "rose", "Accent selection must update the document.");
-assert(browser.cookieStore.get("qssed_accent") === "rose", "Accent selection must persist to the shared cookie.");
+browser.window.AERTEXTheme.setAccent("iphone-f2adda");
+assert(browser.window.AERTEXTheme.getAccent() === "iphone-f2adda", "Accent selection must update.");
+assert(browser.document.documentElement.dataset.accent === "iphone-f2adda", "Accent selection must update the document.");
+assert(browser.cookieStore.get("qssed_accent") === "iphone-f2adda", "Accent selection must persist to the shared cookie.");
 
 new vm.Script(appearanceClientRuntime(), { filename: "appearance-runtime-second-load.js" }).runInContext(browser.context);
 assert(browser.window.AERTEXTheme.getMode() === "light", "The migration must not overwrite a later user choice on subsequent loads.");
