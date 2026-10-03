@@ -83,6 +83,37 @@ const hostAware404 = notFoundPage(TEXT.zh, { dashboard: "/zh-cn/dashboard" }, {
 assert(hostAware404.includes("返回 work.qsseda.com"), "Work 404 must name the complete prefixed hostname in its return action.");
 assert(hostAware404.includes('href="/zh-cn/tex"'), "Work 404 must return to the localized Work root instead of the main-site dashboard.");
 assert(hostAware404.includes(`work.qsseda.com/zh-cn/d/${TEST_DOCUMENT_ID}/unexpected`), "404 must show the rejected hostname and route for diagnosis.");
+
+const localized404Expectations = {
+  "en-us": { title: "Page not found", action: "Return to work.qsseda.com" },
+  "en-gb": { title: "Page not found", action: "Return to work.qsseda.com" },
+  "en-au": { title: "Page not found", action: "Return to work.qsseda.com" },
+  "zh-cn": { title: "找不到该网页", action: "返回 work.qsseda.com" },
+  "zh-tw": { title: "找不到此網頁", action: "返回 work.qsseda.com" },
+  "ja-jp": { title: "ページが見つかりません", action: "work.qsseda.com に戻る" },
+  "ko-kr": { title: "페이지를 찾을 수 없습니다", action: "work.qsseda.com로 돌아가기" },
+  "fr-fr": { title: "Page introuvable", action: "Retour à work.qsseda.com" },
+  "es-es": { title: "Página no encontrada", action: "Volver a work.qsseda.com" },
+  "el-gr": { title: "Η σελίδα δεν βρέθηκε", action: "Επιστροφή στο work.qsseda.com" },
+  "ar-sa": { title: "لم يتم العثور على الصفحة", action: "العودة إلى work.qsseda.com" }
+};
+for (const locale of SUPPORTED_LOCALES) {
+  const expected = localized404Expectations[locale];
+  const contentLanguage = locale === "zh-cn" ? TEXT.zh : TEXT.en;
+  const markup = notFoundPage(contentLanguage, { activeLocale: locale }, {
+    locale,
+    host: "work.qsseda.com",
+    requestedPath: `/${locale}/missing`,
+    returnHref: `/${locale}/tex`
+  });
+  assert(markup.includes(`<html lang="${locale}" dir="${locale === "ar-sa" ? "rtl" : "ltr"}">`), `404 document language/direction must match ${locale}.`);
+  assert(markup.includes(expected.title), `404 title must be localized for ${locale}.`);
+  assert(markup.includes(expected.action), `404 return action must be localized for ${locale}.`);
+  assert(markup.includes(`href="/${locale}/tex"`), `404 return target must preserve ${locale}.`);
+}
+assert(work.includes("locale: fullLocale"), "Work 404 must pass the full regional locale to the renderer.");
+assert(work.includes('returnHref: `/${fullLocale}/tex`'), "Work 404 must return to the same localized Work root.");
+assert(entry.includes("locale: fullLocale"), "Main-site 404 must pass the full regional locale to the renderer.");
 for (const locale of SUPPORTED_LOCALES) {
   assert(
     normalizeHandoffNext(`/${locale}/d/${TEST_DOCUMENT_ID}`, locale, true, false) === `/${locale}/d/${TEST_DOCUMENT_ID}`,
