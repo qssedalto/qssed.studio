@@ -66,7 +66,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
   </div>
   <div class="os-layout">
     <aside id="os-sidebar" class="os-sidebar">
-      <a class="os-brand" href="${links.dashboard}">
+      <a class="os-brand" href="${links.menu || links.dashboard}">
         <span class="os-brand-mark" aria-hidden="true"><img src="/favicon.svg?v=aertex-20261003-square-1" alt=""></span>
         <span>
           <strong>AERTEX</strong>
@@ -394,7 +394,7 @@ export function buildOsCopy(zh, activeLocale = "") {
       aiTitle: "实验与工具入口",
       aiHref: `${prefix}/workspace/experiments`,
       nav: [
-        { id: "dashboard", label: "首页", href: `${prefix}`, items: [] },
+        { id: "dashboard", label: "首页", href: `${prefix}/dashboard`, items: [] },
         { id: "wishes", label: "祝福中心", href: `${prefix}/wishes`, items: wishNavItems(prefix, "zh-cn") },
         { id: "info", label: "信息中心", href: `${prefix}/info`, items: [
           ["AERTEX Knowledge", `${prefix}/info/knowledge`],
@@ -439,7 +439,7 @@ export function buildOsCopy(zh, activeLocale = "") {
     aiTitle: "Experiments & tools",
     aiHref: `${prefix}/workspace/experiments`,
     nav: [
-      { id: "dashboard", label: "Home", href: `${prefix}`, items: [] },
+      { id: "dashboard", label: "Home", href: `${prefix}/dashboard`, items: [] },
       { id: "wishes", label: "Wish Center", href: `${prefix}/wishes`, items: wishNavItems(prefix, "en-us") },
       { id: "info", label: "Information", href: `${prefix}/info`, items: [
         ["AERTEX Knowledge", `${prefix}/info/knowledge`],
@@ -540,7 +540,7 @@ function buildLocalizedOsCopy(ui, prefix, locale) {
     aiHref: prefix + "/workspace/experiments",
     locale,
     nav: [
-      { id:"dashboard", label:n.home, href:prefix, items:[] },
+      { id:"dashboard", label:n.home, href:prefix + "/dashboard", items:[] },
       { id:"wishes", label:n.wishes, href:prefix + "/wishes", items:wishNavItems(prefix, locale) },
       { id:"info", label:n.info, href:prefix + "/info", items:[[n.knowledge,prefix+"/info/knowledge"],[n.links,prefix+"/info/links"],[n.notes,prefix+"/info/notes"],[n.summaries,prefix+"/info/summaries"],[n.search,prefix+"/info/search"]] },
       { id:"profile", label:n.profile, href:prefix + "/profile", items:[[n.personal,prefix+"/profile/details"],[n.account,prefix+"/profile/account"],[n.preferences,prefix+"/profile/preferences"]] },
