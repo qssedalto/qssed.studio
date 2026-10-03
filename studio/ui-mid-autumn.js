@@ -15,6 +15,7 @@ MID_AUTUMN_COPY["en-gb"]=MID_AUTUMN_COPY["en-us"]; MID_AUTUMN_COPY["en-au"]=MID_
 
 export function midAutumnPage(locale = "en-us") {
   const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
+  const zh = code.startsWith("zh");
   const copy = MID_AUTUMN_COPY[code] || MID_AUTUMN_COPY["en-us"];
   const lang = code;
   const title = copy.title;
@@ -655,7 +656,7 @@ export function midAutumnPage(locale = "en-us") {
           <span class="brand-sub">Mid-Autumn Greeting</span>
         </span>
       </a>
-      <a class="lang" href="${otherHref}">${otherLabel}</a>
+      <select class="lang" id="mid-autumn-language" aria-label="Language">${languageOptions}</select>
     </header>
 
     <section class="hero">

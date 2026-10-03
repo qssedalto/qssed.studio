@@ -15,6 +15,7 @@ BIRTHDAY_COPY["en-gb"]=BIRTHDAY_COPY["en-us"]; BIRTHDAY_COPY["en-au"]=BIRTHDAY_C
 
 export function birthdayPage(locale = "en-us") {
   const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
+  const zh = code.startsWith("zh");
   const copy = BIRTHDAY_COPY[code] || BIRTHDAY_COPY["en-us"];
   const lang = code;
   const title = copy.title;
