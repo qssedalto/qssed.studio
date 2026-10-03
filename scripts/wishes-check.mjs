@@ -34,6 +34,15 @@ assert(shell.includes('if (path === "/wishes" || path.startsWith("/wishes/")) re
 assert(shell.includes('"/wishes": { section: "wishes"') && shell.includes('"/wishes/new-year"') && shell.includes('"/wishes/society"'), "Wish Center must expose metadata for the hub and all category pages.");
 assert(!entry.includes("function wishesPage("), "Legacy standalone Wish Center page must be removed.");
 assert(!entry.includes('injectPublicSeo(wishesPage('), "Wish Center must not bypass the Studio shell as a public page.");
+assert(dashboardStyle.includes('.os-nav-title::after') && dashboardStyle.includes('.os-nav-items a::after'), "Sidebar arrows must be rendered through CSS ::after.");
+assert(dashboardStyle.includes('position:absolute') && dashboardStyle.includes('right:12px') && dashboardStyle.includes('right:8px'), "Top-level and child sidebar arrows must be pinned to the far-right edge.");
+assert(dashboardStyle.includes('transform:translateY(-50%) rotate(90deg)'), "Expanded sidebar sections must keep the arrow vertically centered while rotating downward.");
+assert(dashboardStyle.includes('transform:translate(1px,-50%)'), "Child arrow hover motion must preserve vertical centering.");
+assert(uiStyles.includes('flex-wrap:nowrap') && uiStyles.includes('.os-nav-entry>.os-nav-title::after{margin-left:0}'), "Shared sidebar rows must prevent arrows from wrapping onto a second line.");
+assert(!shell.includes('<b aria-hidden="true">↗</b></a>') && uiStyles.includes('.compact-menu-card::after'), "Compact menu arrows must also be CSS pseudo-elements instead of flow content.");
+assert(uiStyles.includes('right:20px') && uiStyles.includes('right:18px') && uiStyles.includes('transform:translateY(-50%)'), "Compact menu arrows must stay vertically centered at the far-right edge.");
+
+
 
 const wishZh = wishesContent("/wishes", "zh-cn");
 const wishEn = wishesContent("/wishes", "en-us");
