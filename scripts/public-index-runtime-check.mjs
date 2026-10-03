@@ -6,7 +6,6 @@ const cases = [
   ["/zh-cn/q", "https://qsseda.com/zh-cn/q"],
   ["/zh-cn/q/" + QUESTION_ID, "https://qsseda.com/zh-cn/q/" + QUESTION_ID],
   ["/ja-jp/birthday", "https://qsseda.com/ja-jp/birthday"],
-  ["/en-us/wishes", "https://qsseda.com/en-us/wishes"],
   ["/ar-sa/mid-autumn", "https://qsseda.com/ar-sa/mid-autumn"],
   ["/zh-cn/aw/setup", "https://qsseda.com/zh-cn/aw/setup"]
 ];

@@ -7,6 +7,7 @@ import { knowledgeSearchClientScript } from "./knowledge-search.js";
 import { compactBackHref, compactBackScript } from "./ui-navigation.js";
 import { knowledgePageMeta } from "./ui-knowledge.js";
 import { workspaceContent } from "./ui-workspace.js";
+import { wishesContent } from "./ui-wishes.js";
 import { aiSettingsContent, appearanceSettingsContent, languageSettingsContent, securityAuditContent, settingsFallbackContent, settingsGeneralContent, settingsHubContent, settingsStatusContent } from "./ui-settings.js";
 import { storageClientScript, storageSettingsContent } from "./ui-storage.js";
 import { billingSettingsContent } from "./ui-billing.js";
@@ -502,6 +503,7 @@ function buildLocalizedOsPages(ui) {
   const page=(section,title,description="")=>({section,title,description});
   return {
     "/dashboard":page("dashboard",p.dashboard[0],p.dashboard[1]),
+    "/wishes":page("wishes",n.wishes),
     "/info":page("info",p.info[0],p.info[1]), "/info/knowledge":page("info",n.knowledge), "/info/links":page("info",n.links), "/info/notes":page("info",n.notes), "/info/summaries":page("info",n.summaries), "/info/search":page("info",n.search),
     "/profile":page("profile",p.profile[0],p.profile[1]), "/profile/details":page("profile",n.personal), "/profile/account":page("profile",n.account), "/profile/preferences":page("profile",n.preferences),
     "/workspace":page("workspace",p.workspace[0],p.workspace[1]), "/workspace/workbench":page("workspace",n.workbench), "/workspace/projects":page("workspace",n.projects), "/workspace/experiments":page("workspace",n.experiments), "/workspace/drafts":page("workspace",n.drafts), "/workspace/tasks":page("workspace",n.tasks),
@@ -512,6 +514,7 @@ function buildLocalizedOsPages(ui) {
 export function buildOsPages(zh) {
   const z = {
     dashboard: ["首页", ""],
+    wishes: ["祝福中心", "生成生日与中秋祝福链接，并可为收件人附加姓名。"],
     info: ["信息中心", "知识模块尚未建立持久化数据表；当前仅保留清晰的模块入口。"],
     knowledge: ["AERTEX Knowledge", "整理值得长期保留的知识内容，方便持续积累、查找与回顾。"],
     links: ["收藏链接", "尚未接入收藏链接数据表。"],
@@ -541,6 +544,7 @@ export function buildOsPages(zh) {
   };
   const e = {
     dashboard: ["Home", ""],
+    wishes: ["Wish Center", "Create birthday and Mid-Autumn greeting links with an optional recipient name."],
     info: ["Information Center", "Persistent knowledge tables are not implemented yet; this area currently provides module entry points."],
     knowledge: ["AERTEX Knowledge", "Organize knowledge worth keeping so it stays easy to build on, find, and revisit."],
     links: ["Saved Links", "No saved-links table is connected yet."],
@@ -571,6 +575,7 @@ export function buildOsPages(zh) {
   const s = zh ? z : e;
   return {
     "/dashboard": { section: "dashboard", title: s.dashboard[0], description: s.dashboard[1] },
+    "/wishes": { section: "wishes", title: s.wishes[0], description: s.wishes[1] },
     "/info": { section: "info", title: s.info[0], description: s.info[1] },
     "/info/knowledge": { section: "info", title: s.knowledge[0], description: s.knowledge[1] },
     "/info/links": { section: "info", title: s.links[0], description: s.links[1] },
@@ -748,6 +753,7 @@ export function renderOsContent(path, copy, productLinks = {}) {
   const locale = productLinks.activeLocale || copy.locale || (copy.platform.includes("个人") ? "zh-cn" : "en-us");
   const zh = locale === "zh-cn";
   if (path === "/" || path === "/dashboard") return dashboardContent(zh, productLinks, locale);
+  if (path === "/wishes") return wishesContent(locale);
   if (path.startsWith("/info")) return informationContent(path, zh, locale);
   if (path === "/profile") return profileHubContent(zh, locale);
   if (path.startsWith("/profile/")) return profileContent(path, zh, locale);
