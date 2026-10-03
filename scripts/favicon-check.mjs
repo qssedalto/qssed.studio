@@ -26,7 +26,7 @@ assert(favicon.includes('"content-type": "image/svg+xml;charset=UTF-8"'), "Favic
 assert(favicon.includes('"cache-control": "public, max-age=604800, immutable"'), "Favicon should be cacheable at the edge/browser");
 assert(favicon.includes('--paper:#ffffff') && favicon.includes('--ink:#121417'), "Favicon must preserve the monochrome light/dark palette");
 assert(favicon.includes("Broken angular orbit") && favicon.includes("Three-way core"), "Favicon must preserve the angular orbit and three-way core visual system");
-assert(favicon.includes("aertex-20261003-product-role-swap-1"), "Favicon cache key must use the current product-badge release.");
+assert(favicon.includes("aertex-20261003-product-role-swap-2"), "Favicon cache key must use the current product-badge release.");
 assert(brandLogo.includes('new Set(["/logo.svg"])') && brandLogo.includes("logoResponse(request)"), "Official wordmark must be exposed at /logo.svg.");
 assert(brandLogo.includes('viewBox="0 0 1027 198"'), "Official /logo.svg must use the AERTEX wordmark artwork.");
 
@@ -38,6 +38,9 @@ const productIcons = {
   auth: "AERTEX ID",
   admin: "AERTEX Administration"
 };
+assert(favicon.includes('.aertex-product-main .product-main-glyph{fill:none;stroke:var(--ink);stroke-width:1.65'), "Enlarged product icons must keep the original 1.65 visual stroke weight instead of becoming heavier.");
+assert(favicon.includes('.aertex-product-main .product-main-glyph *{vector-effect:non-scaling-stroke}'), "Enlarged product icons must preserve non-scaling strokes so geometry can grow without thickening the lines.");
+
 for (const [product,label] of Object.entries(productIcons)) {
   const svg = faviconSvgForProduct(product);
   assert(svg.includes("aertex-product-main"), product + " favicon must promote the product glyph to the main icon.");
@@ -75,8 +78,8 @@ for (const [source,name] of [[worker,"Main/Work"],[gptWorker,"Intelligence"],[au
   assert(source.includes("LOGO_PATHS") && source.includes("logoResponse(request)"), name + " Worker must serve /logo.svg from the shared wordmark source.");
   assert(source.includes("FAVICON_PATHS") && source.includes("faviconResponse(request)"), name + " Worker must serve the shared square icon routes.");
 }
-assert(cashIndex.includes('href="/favicon.svg?v=aertex-20261003-product-role-swap-1"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261003-product-role-swap-1"'), "Cash must use the current shared product-role-swap favicon cache reference.");
-assert(watchIndex.includes('href="/favicon.svg?v=aertex-20261003-product-role-swap-1"'), "Watch must use the current shared product-role-swap favicon cache reference.");
+assert(cashIndex.includes('href="/favicon.svg?v=aertex-20261003-product-role-swap-2"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261003-product-role-swap-2"'), "Cash must use the current shared product-role-swap favicon cache reference.");
+assert(watchIndex.includes('href="/favicon.svg?v=aertex-20261003-product-role-swap-2"'), "Watch must use the current shared product-role-swap favicon cache reference.");
 assert(!cashWorker.includes('"/icon.svg"]') && !watchWorker.includes('"/icon.svg"'), "Cash and Watch must not serve legacy product-specific icon files.");
 
 console.log("AERTEX shared square icon and wordmark integration checks passed.");

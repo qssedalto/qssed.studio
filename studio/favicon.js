@@ -1,6 +1,6 @@
 export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-role-swap-1" type="image/svg+xml">';
+export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-role-swap-2" type="image/svg+xml">';
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
@@ -91,7 +91,7 @@ export function faviconSvgForProduct(product = "") {
   return productShell
     .replace(
       "</style>",
-      `.aertex-product-main .product-main-glyph{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+      `.aertex-product-main .product-main-glyph{fill:none;stroke:var(--ink);stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
       .aertex-product-main .product-main-glyph *{vector-effect:non-scaling-stroke}
       .aertex-product-main .product-main-glyph .filled{fill:var(--ink);stroke:none}
       .aertex-brand-badge .brand-badge-disc{fill:none;stroke:var(--edge);stroke-width:1.6}
