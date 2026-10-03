@@ -8,6 +8,7 @@ const work = fs.readFileSync(new URL("../studio/work-subdomain.js", import.meta.
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
 const shell = fs.readFileSync(new URL("../studio/ui-shell.js", import.meta.url), "utf8");
 const dashboardStyles = fs.readFileSync(new URL("../studio/ui-style-dashboard.js", import.meta.url), "utf8");
+const workspaceUi = fs.readFileSync(new URL("../studio/ui-workspace.js", import.meta.url), "utf8");
 const uiPage = fs.readFileSync(new URL("../studio/ui-page.js", import.meta.url), "utf8");
 const appearance = fs.readFileSync(new URL("../studio/appearance.js", import.meta.url), "utf8");
 const accountMenu = fs.readFileSync(new URL("../studio/account-menu.js", import.meta.url), "utf8");
@@ -157,12 +158,16 @@ assert(shell.includes('title:"AERTEX Cash"'), "Compact main menu must list AERTE
 assert(shell.includes('id: "cash", label: "AERTEX Cash"'), "Desktop product navigation must list AERTEX Cash as an independent product.");
 assert(shell.includes('title:"AERTEX Watch"'), "Compact main menu must list AERTEX Watch as an independent product.");
 assert(shell.includes('id: "activitywatch", label: "AERTEX Watch"'), "Desktop product navigation must list AERTEX Watch as an independent product.");
-assert(dashboardStyles.includes('WORKSPACE_NAV_V8'), "Workspace navigation must keep the dedicated refined module styling.");
+assert(dashboardStyles.includes('WORKSPACE_NAV_V9'), "Workspace navigation must keep the full-label layout.");
+assert(dashboardStyles.includes('display:flex!important') && dashboardStyles.includes('text-overflow:clip!important'), "Workspace child labels must render in full instead of collapsing to one character plus ellipsis.");
 assert(dashboardStyles.includes('.os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[aria-current="page"]'), "Workspace child routes must keep a compact current-page treatment.");
-assert(dashboardStyles.includes('grid-template-columns:30px minmax(0,1fr) 16px!important'), "Workspace child routes must keep balanced icon, label, and chevron columns.");
 for (const route of ["workbench","projects","experiments","drafts","tasks"]) {
   assert(dashboardStyles.includes('href*="/workspace/' + route + '"'), 'Workspace navigation must style ' + route + ' independently.');
+  assert(workspaceUi.includes('"/workspace/' + route + '"'), 'Workspace hub must link to ' + route + '.');
 }
+assert(workspaceUi.includes('data-workspace-hub') && workspaceUi.includes('osHubGrid(items,"workspace-hub-grid")'), "Workspace root must render a real five-module hub instead of a placeholder status card.");
+assert(!workspaceUi.includes('尚未开放') && !workspaceUi.includes("isn’t available yet"), "Workspace root must not retain stale unavailable placeholder copy.");
+assert(dashboardStyles.includes('WORKSPACE_SURFACES_V2'), "The five Workspace modules must share the refined visual system.");
 assert(shell.includes('(openInNewTab ? \' target="_blank" rel="noopener noreferrer"\' : \'\')'), "Compact independent-product cards must open in a new browser tab with opener isolation.");
 assert(shell.includes('href="${group.href}" target="_blank" rel="noopener noreferrer" data-product-link="${group.id}"'), "Desktop independent-product navigation must open each product in a new browser tab.");
 assert(shell.indexOf('title:"AERTEX Work"') < shell.indexOf('title:"AERTEX Cash"') && shell.indexOf('title:"AERTEX Cash"') < shell.indexOf('title:"AERTEX Watch"') && shell.indexOf('title:"AERTEX Watch"') < shell.indexOf('title:"AERTEX Intelligence"'), "Compact independent products must order AERTEX Work, AERTEX Cash, AERTEX Watch, then Intelligence.");
