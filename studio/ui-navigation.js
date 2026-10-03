@@ -9,6 +9,7 @@ const COMPACT_MENU_ROOTS = new Set([
   "/dashboard",
   "/info",
   "/profile",
+  "/wishes",
   "/workspace",
   "/admin",
   "/settings"
@@ -25,7 +26,7 @@ export function compactBackHref(path, zh) {
     return `${prefix}${KNOWLEDGE_ROOT}`;
   }
 
-  const sectionRoots = ["/info", "/profile", "/workspace", "/admin", "/settings"];
+  const sectionRoots = ["/info", "/profile", "/wishes", "/workspace", "/admin", "/settings"];
   for (const root of sectionRoots) {
     if (path.startsWith(root + "/")) return `${prefix}${root}`;
   }

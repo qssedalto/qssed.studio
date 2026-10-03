@@ -480,26 +480,54 @@ export function buildOsCopy(zh, activeLocale = "") {
 function wishNavItems(prefix, locale = "en-us") {
   const code = String(locale || "en-us").toLowerCase();
   if (code === "zh-cn") return [
-    ["新年与团圆", prefix + "/wishes#new-year"],
-    ["传统与节气", prefix + "/wishes#traditions"],
-    ["家庭与成长", prefix + "/wishes#family"],
-    ["关系与表达", prefix + "/wishes#relationships"],
-    ["社会与自然", prefix + "/wishes#society"]
+    ["新年与团圆", prefix + "/wishes/new-year"],
+    ["传统与节气", prefix + "/wishes/traditions"],
+    ["家庭与成长", prefix + "/wishes/family"],
+    ["关系与表达", prefix + "/wishes/relationships"],
+    ["社会与自然", prefix + "/wishes/society"]
   ];
   if (code === "zh-tw") return [
-    ["新年與團圓", prefix + "/wishes#new-year"],
-    ["傳統與節氣", prefix + "/wishes#traditions"],
-    ["家庭與成長", prefix + "/wishes#family"],
-    ["關係與表達", prefix + "/wishes#relationships"],
-    ["社會與自然", prefix + "/wishes#society"]
+    ["新年與團圓", prefix + "/wishes/new-year"],
+    ["傳統與節氣", prefix + "/wishes/traditions"],
+    ["家庭與成長", prefix + "/wishes/family"],
+    ["關係與表達", prefix + "/wishes/relationships"],
+    ["社會與自然", prefix + "/wishes/society"]
   ];
   return [
-    ["New Year & Reunion", prefix + "/wishes#new-year"],
-    ["Traditions & Seasons", prefix + "/wishes#traditions"],
-    ["Family & Growth", prefix + "/wishes#family"],
-    ["Relationships", prefix + "/wishes#relationships"],
-    ["Society & Nature", prefix + "/wishes#society"]
+    ["New Year & Reunion", prefix + "/wishes/new-year"],
+    ["Traditions & Seasons", prefix + "/wishes/traditions"],
+    ["Family & Growth", prefix + "/wishes/family"],
+    ["Relationships", prefix + "/wishes/relationships"],
+    ["Society & Nature", prefix + "/wishes/society"]
   ];
+}
+
+function wishPageLabels(locale = "en-us") {
+  const code = String(locale || "en-us").toLowerCase();
+  if (code === "zh-cn") return {
+    root:["祝福中心","选择一个分类进入独立页面；每个分类只展示自己的节日、用途和当前可用模板。"],
+    "new-year":["新年与团圆","跨年、团聚与传统年节祝福。"],
+    traditions:["传统与节气","传统节日与季节节点，适合更克制、贴合场景的表达。"],
+    family:["家庭与成长","面向家人、孩子与成长节点的祝福主题。"],
+    relationships:["关系与表达","用于爱意、亲密关系与轻松互动场景。"],
+    society:["社会与自然","公共纪念、劳动、自然与节日问候。"]
+  };
+  if (code === "zh-tw") return {
+    root:["祝福中心","選擇一個分類進入獨立頁面；每個分類只展示自己的節日、用途與目前可用範本。"],
+    "new-year":["新年與團圓","跨年、團聚與傳統年節祝福。"],
+    traditions:["傳統與節氣","傳統節日與季節節點，適合更克制、貼合情境的表達。"],
+    family:["家庭與成長","面向家人、孩子與成長節點的祝福主題。"],
+    relationships:["關係與表達","用於愛意、親密關係與輕鬆互動情境。"],
+    society:["社會與自然","公共紀念、勞動、自然與節日問候。"]
+  };
+  return {
+    root:["Wish Center","Choose a category and open its own page. Each page only contains its occasions, guidance, and currently available templates."],
+    "new-year":["New Year & Reunion","Greetings for year-end, reunion, and traditional new-year occasions."],
+    traditions:["Traditions & Seasons","Traditional and seasonal occasions with more context-specific wording."],
+    family:["Family & Growth","Greetings for family, childhood, and personal milestones."],
+    relationships:["Relationships","Affection, close relationships, and playful occasions."],
+    society:["Society & Nature","Public observances, work, nature, and holiday greetings."]
+  };
 }
 
 function buildLocalizedOsCopy(ui, prefix, locale) {
@@ -519,16 +547,21 @@ function buildLocalizedOsCopy(ui, prefix, locale) {
       { id:"workspace", label:n.workspace, href:prefix + "/workspace", items:[[n.workbench,prefix+"/workspace/workbench"],[n.projects,prefix+"/workspace/projects"],[n.experiments,prefix+"/workspace/experiments"],[n.drafts,prefix+"/workspace/drafts"],[n.tasks,prefix+"/workspace/tasks"]] },
       { id:"settings", label:n.settings, href:prefix + "/settings", items:[[n.general,prefix+"/settings/general"],[n.appearance,prefix+"/settings/appearance"],[n.language,prefix+"/settings/language"],[n.security,prefix+"/settings/security"],[n.notifications,prefix+"/settings/notifications"],[n.ai,prefix+"/settings/ai"],[n.integrations,prefix+"/settings/integrations"],[n.subscription,prefix+"/settings/subscription"],[n.student,prefix+"/settings/student"],[n.drive,prefix+"/settings/storage"]] }
     ],
-    pages: buildLocalizedOsPages(ui)
+    pages: buildLocalizedOsPages(ui, locale)
   };
 }
 
-function buildLocalizedOsPages(ui) {
-  const n=ui.nav,p=ui.pages;
+function buildLocalizedOsPages(ui, locale = "en-us") {
+  const n=ui.nav,p=ui.pages,w=wishPageLabels(locale);
   const page=(section,title,description="")=>({section,title,description});
   return {
     "/dashboard":page("dashboard",p.dashboard[0],p.dashboard[1]),
-    "/wishes":page("wishes",n.wishes),
+    "/wishes":page("wishes",w.root[0],w.root[1]),
+    "/wishes/new-year":page("wishes",w["new-year"][0],w["new-year"][1]),
+    "/wishes/traditions":page("wishes",w.traditions[0],w.traditions[1]),
+    "/wishes/family":page("wishes",w.family[0],w.family[1]),
+    "/wishes/relationships":page("wishes",w.relationships[0],w.relationships[1]),
+    "/wishes/society":page("wishes",w.society[0],w.society[1]),
     "/info":page("info",p.info[0],p.info[1]), "/info/knowledge":page("info",n.knowledge), "/info/links":page("info",n.links), "/info/notes":page("info",n.notes), "/info/summaries":page("info",n.summaries), "/info/search":page("info",n.search),
     "/profile":page("profile",p.profile[0],p.profile[1]), "/profile/details":page("profile",n.personal), "/profile/account":page("profile",n.account), "/profile/preferences":page("profile",n.preferences),
     "/workspace":page("workspace",p.workspace[0],p.workspace[1]), "/workspace/workbench":page("workspace",n.workbench), "/workspace/projects":page("workspace",n.projects), "/workspace/experiments":page("workspace",n.experiments), "/workspace/drafts":page("workspace",n.drafts), "/workspace/tasks":page("workspace",n.tasks),
@@ -539,7 +572,7 @@ function buildLocalizedOsPages(ui) {
 export function buildOsPages(zh) {
   const z = {
     dashboard: ["首页", ""],
-    wishes: ["祝福中心", "生成生日与中秋祝福链接，并可为收件人附加姓名。"],
+    wishes: ["祝福中心", "从分类进入对应节日页面；生日与中秋保留现有分享链接能力。"],
     info: ["信息中心", "知识模块尚未建立持久化数据表；当前仅保留清晰的模块入口。"],
     knowledge: ["AERTEX Knowledge", "整理值得长期保留的知识内容，方便持续积累、查找与回顾。"],
     links: ["收藏链接", "尚未接入收藏链接数据表。"],
@@ -569,7 +602,7 @@ export function buildOsPages(zh) {
   };
   const e = {
     dashboard: ["Home", ""],
-    wishes: ["Wish Center", "Create birthday and Mid-Autumn greeting links with an optional recipient name."],
+    wishes: ["Wish Center", "Open a dedicated category page for each group of occasions; Birthday and Mid-Autumn keep their existing share-link tools."],
     info: ["Information Center", "Persistent knowledge tables are not implemented yet; this area currently provides module entry points."],
     knowledge: ["AERTEX Knowledge", "Organize knowledge worth keeping so it stays easy to build on, find, and revisit."],
     links: ["Saved Links", "No saved-links table is connected yet."],
@@ -601,6 +634,11 @@ export function buildOsPages(zh) {
   return {
     "/dashboard": { section: "dashboard", title: s.dashboard[0], description: s.dashboard[1] },
     "/wishes": { section: "wishes", title: s.wishes[0], description: s.wishes[1] },
+    "/wishes/new-year": { section: "wishes", title: zh ? "新年与团圆" : "New Year & Reunion", description: zh ? "跨年、团聚与传统年节祝福。" : "Greetings for year-end, reunion, and traditional new-year occasions." },
+    "/wishes/traditions": { section: "wishes", title: zh ? "传统与节气" : "Traditions & Seasons", description: zh ? "传统节日与季节节点，适合更贴合场景的表达。" : "Traditional and seasonal occasions with context-specific wording." },
+    "/wishes/family": { section: "wishes", title: zh ? "家庭与成长" : "Family & Growth", description: zh ? "面向家人、孩子与成长节点的祝福主题。" : "Greetings for family, childhood, and personal milestones." },
+    "/wishes/relationships": { section: "wishes", title: zh ? "关系与表达" : "Relationships", description: zh ? "用于爱意、亲密关系与轻松互动场景。" : "Affection, close relationships, and playful occasions." },
+    "/wishes/society": { section: "wishes", title: zh ? "社会与自然" : "Society & Nature", description: zh ? "公共纪念、劳动、自然与节日问候。" : "Public observances, work, nature, and holiday greetings." },
     "/info": { section: "info", title: s.info[0], description: s.info[1] },
     "/info/knowledge": { section: "info", title: s.knowledge[0], description: s.knowledge[1] },
     "/info/links": { section: "info", title: s.links[0], description: s.links[1] },
@@ -706,11 +744,11 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
   };
   const iconForItem = href => {
     const value = String(href || "");
-    if (value.includes("/wishes#new-year")) return "gift";
-    if (value.includes("/wishes#traditions")) return "moon";
-    if (value.includes("/wishes#family")) return "profile";
-    if (value.includes("/wishes#relationships")) return "wishes";
-    if (value.includes("/wishes#society")) return "info";
+    if (value.includes("/wishes/new-year")) return "gift";
+    if (value.includes("/wishes/traditions")) return "moon";
+    if (value.includes("/wishes/family")) return "profile";
+    if (value.includes("/wishes/relationships")) return "wishes";
+    if (value.includes("/wishes/society")) return "info";
     if (value.includes("/knowledge")) return "knowledge";
     if (value.includes("/links")) return "links";
     if (value.includes("/notes")) return "notes";
@@ -781,7 +819,7 @@ export function renderOsContent(path, copy, productLinks = {}) {
   const locale = productLinks.activeLocale || copy.locale || (copy.platform.includes("个人") ? "zh-cn" : "en-us");
   const zh = locale === "zh-cn";
   if (path === "/" || path === "/dashboard") return dashboardContent(zh, productLinks, locale);
-  if (path === "/wishes") return wishesContent(locale);
+  if (path === "/wishes" || path.startsWith("/wishes/")) return wishesContent(path, locale);
   if (path.startsWith("/info")) return informationContent(path, zh, locale);
   if (path === "/profile") return profileHubContent(zh, locale);
   if (path.startsWith("/profile/")) return profileContent(path, zh, locale);

@@ -11,6 +11,11 @@ export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-
 export const OS_PATHS = new Set([
   "/dashboard",
   "/wishes",
+  "/wishes/new-year",
+  "/wishes/traditions",
+  "/wishes/family",
+  "/wishes/relationships",
+  "/wishes/society",
   "/info",
   ...KNOWLEDGE_PATHS,
   "/info/links",
