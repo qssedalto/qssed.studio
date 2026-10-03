@@ -3,11 +3,11 @@ import { SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./
 
 const COPY = {
   "zh-cn": {
-    title: "AERTEX — Work、Intelligence、Watch 与个人工具",
-    description: "AERTEX 把 Work、Intelligence、Watch 和个人工具放在一个账号里。登录后继续使用你的工作区、AI 对话、电脑使用记录和其他服务。",
+    title: "AERTEX — Work、Cash、Watch、Intelligence 与个人工具",
+    description: "AERTEX 把 Work、Cash、Watch、Intelligence 和个人工具放在一个账号里。登录后继续使用你的工作区、现金流工具、AI 对话、电脑使用记录和其他服务。",
     eyebrow: "AERTEX",
     heading: "一个账号，打开你的 AERTEX。",
-    lead: "Work、Intelligence、Watch 和个人工具都在这里。登录后继续使用；第一次来，可以先创建账号。",
+    lead: "Work、Cash、Watch、Intelligence 和个人工具都在这里。登录后继续使用；第一次来，可以先创建账号。",
     signIn: "登录",
     signUp: "创建账号",
     products: "产品",
@@ -25,11 +25,11 @@ const COPY = {
     accountText: "一个账号连接所有 AERTEX 服务."
   },
   "zh-tw": {
-    title: "AERTEX — Work、Intelligence、Watch 與個人工具",
-    description: "AERTEX 將 Work、Intelligence、Watch 與個人工具放在同一個帳號中。登入後繼續使用你的工作區、AI 對話、電腦使用記錄與其他服務。",
+    title: "AERTEX — Work、Cash、Watch、Intelligence 與個人工具",
+    description: "AERTEX 將 Work、Cash、Watch、Intelligence 與個人工具放在同一個帳號中。登入後繼續使用你的工作區、現金流工具、AI 對話、電腦使用記錄與其他服務。",
     eyebrow: "AERTEX",
     heading: "一個帳號，打開你的 AERTEX。",
-    lead: "Work、Intelligence、Watch 與個人工具都在這裡。登入後繼續使用；第一次來，可以先建立帳號。",
+    lead: "Work、Cash、Watch、Intelligence 與個人工具都在這裡。登入後繼續使用；第一次來，可以先建立帳號。",
     signIn: "登入",
     signUp: "建立帳號",
     products: "產品",
@@ -47,11 +47,11 @@ const COPY = {
     accountText: "一個帳號連接所有 AERTEX 服務。"
   },
   "en-us": {
-    title: "AERTEX — Work, Intelligence, Watch and personal tools",
-    description: "AERTEX brings Work, Intelligence, Watch, and personal tools together under one account. Sign in to continue to your workspace, AI conversations, synced computer activity, and more.",
+    title: "AERTEX — Work, Cash, Watch, Intelligence and personal tools",
+    description: "AERTEX brings Work, Cash, Watch, Intelligence, and personal tools together under one account. Sign in to continue to your workspace, cash-flow tools, AI conversations, synced computer activity, and more.",
     eyebrow: "AERTEX",
     heading: "One account for your AERTEX.",
-    lead: "Work, Intelligence, Watch, and personal tools live here. Sign in to continue, or create an account if you are new.",
+    lead: "Work, Cash, Watch, Intelligence, and personal tools live here. Sign in to continue, or create an account if you are new.",
     signIn: "Sign in",
     signUp: "Create account",
     products: "Products",
