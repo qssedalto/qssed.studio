@@ -188,17 +188,13 @@ export function appearanceSettingsContent(zh, locale = "") {
   if (APPEARANCE_COPY[activeLocale]) copy = { ...copy, ...APPEARANCE_COPY[activeLocale] };
   const colors = IPHONE_THEME_PALETTE;
   const colorMeta = Object.fromEntries(colors.map(color => [color.id, {
-    name: color.names[activeLocale] || color.names["en-us"],
-    hex: color.hex,
-    number: color.number
+    name: color.names[activeLocale] || color.names["en-us"]
   }]));
   const accentButtons = colors.map(color => {
     const name=color.names[activeLocale]||color.names["en-us"];
-    const number=String(color.number).padStart(2,"0");
-    return '<button class="theme-accent" type="button" data-accent="'+color.id+'" style="--swatch:'+color.hex+';--swatch-ink:'+color.ink+'" aria-label="'+name+' · '+color.hex+'">'+
+    return '<button class="theme-accent" type="button" data-accent="'+color.id+'" style="--swatch:'+color.hex+';--swatch-ink:'+color.ink+'" aria-label="'+name+'">'+
       '<span class="theme-accent-dot"><b aria-hidden="true">✓</b></span>'+
-      '<span class="theme-accent-copy"><strong>'+name+'</strong><code>'+color.hex+'</code></span>'+
-      '<em>#'+number+'</em></button>';
+      '<span class="theme-accent-copy"><strong>'+name+'</strong></span></button>';
   }).join("");
   return `
     <style>
@@ -219,7 +215,7 @@ export function appearanceSettingsContent(zh, locale = "") {
       .theme-studio-current{position:relative;z-index:1;display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:999px;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border);white-space:nowrap}
       .theme-studio-current i{width:14px;height:14px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 12%,transparent)}
       .theme-studio-current span{font-size:12px;color:var(--muted)}.theme-studio-current strong{font-size:12px}
-      .theme-studio-layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr);gap:18px;align-items:start}
+      .theme-studio-layout{display:grid;grid-template-columns:minmax(0,1.32fr) minmax(285px,.68fr);gap:16px;align-items:start}
       .theme-control-stack{display:grid;gap:18px}
       .theme-panel{padding:clamp(20px,2.4vw,28px);border:1px solid var(--border);border-radius:24px;background:var(--card);box-shadow:0 10px 30px rgba(0,0,0,.045)}
       .theme-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
@@ -234,38 +230,37 @@ export function appearanceSettingsContent(zh, locale = "") {
       .theme-mode-copy{display:grid;gap:3px}.theme-mode-copy strong{font-size:14px}.theme-mode-copy span{color:var(--muted);font-size:11px;line-height:1.4}
       .theme-mode.is-selected{border-color:color-mix(in srgb,var(--primary) 52%,var(--border));background:color-mix(in srgb,var(--primary) 8%,var(--surface-soft));box-shadow:0 10px 24px color-mix(in srgb,var(--primary) 10%,transparent)}
       .theme-mode.is-selected .theme-mode-copy strong{color:var(--primary)}
-      .theme-accent-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;max-height:min(66vh,720px);padding:2px;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
-      .theme-accent{appearance:none;position:relative;display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:70px;padding:10px 11px;margin:0;text-align:left;border:1px solid transparent;border-radius:16px;background:var(--surface-soft);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);cursor:pointer;transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease,background .2s ease}
-      .theme-accent-dot{display:grid;place-items:center;width:38px;height:38px;border-radius:13px;background:var(--swatch);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--swatch-ink) 20%,transparent),0 5px 12px color-mix(in srgb,var(--swatch) 20%,transparent)}
-      .theme-accent-dot b{color:var(--swatch-ink);font-size:14px;line-height:1;opacity:0}
-      .theme-accent-copy{min-width:0;display:grid;gap:3px}.theme-accent-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:1.25}.theme-accent-copy code{color:var(--muted);font:9.5px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.015em}
-      .theme-accent>em{align-self:start;padding-top:2px;color:var(--quiet);font-size:8.5px;font-style:normal;font-weight:700;letter-spacing:.05em}
+      .theme-accent-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-height:min(72vh,760px);padding:2px;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+      .theme-accent{appearance:none;position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);align-items:center;gap:12px;min-height:78px;padding:12px 13px;margin:0;text-align:left;border:1px solid transparent;border-radius:18px;background:var(--surface-soft);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);cursor:pointer;transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease,background .2s ease}
+      .theme-accent-dot{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:var(--swatch);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--swatch-ink) 20%,transparent),0 5px 14px color-mix(in srgb,var(--swatch) 20%,transparent)}
+      .theme-accent-dot b{color:var(--swatch-ink);font-size:15px;line-height:1;opacity:0}
+      .theme-accent-copy{min-width:0;display:grid;align-content:center}.theme-accent-copy strong{white-space:normal;overflow-wrap:anywhere;font-size:12.5px;line-height:1.32}
       .theme-accent.is-selected{background:color-mix(in srgb,var(--primary) 8%,var(--surface-soft));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 48%,transparent),0 8px 22px color-mix(in srgb,var(--primary) 8%,transparent)}
       .theme-accent.is-selected .theme-accent-dot b{opacity:1}.theme-accent.is-selected .theme-accent-copy strong{color:var(--text);font-weight:750}
-      .theme-preview-wrap{position:sticky;top:26px}
+      .theme-preview-wrap{position:sticky;top:26px;width:100%;max-width:400px;justify-self:end}
       .theme-preview-label{display:flex;align-items:center;justify-content:space-between;margin:0 2px 10px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-      .theme-preview{position:relative;overflow:hidden;min-height:500px;padding:16px;border:1px solid var(--border);border-radius:28px;background:radial-gradient(420px 280px at 90% -5%,color-mix(in srgb,var(--primary) 16%,transparent),transparent 72%),var(--bg-soft);box-shadow:0 22px 60px rgba(0,0,0,.10)}
-      .theme-preview-window{display:grid;grid-template-columns:88px minmax(0,1fr);gap:10px;height:466px;padding:10px;border:1px solid var(--border);border-radius:21px;background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.075)}
-      .theme-preview-side{display:flex;flex-direction:column;gap:8px;padding:8px;border-radius:14px;background:var(--fill)}
-      .theme-preview-brand{width:28px;height:28px;border-radius:9px;background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 70%,#fff 30%),var(--primary));box-shadow:0 7px 16px color-mix(in srgb,var(--primary) 18%,transparent)}
-      .theme-preview-nav{height:7px;border-radius:999px;background:var(--border-strong)}.theme-preview-nav.is-active{width:84%;background:var(--primary)}.theme-preview-nav:nth-child(3){width:70%}.theme-preview-nav:nth-child(4){width:76%}
-      .theme-preview-main{min-width:0;padding:14px 10px}
-      .theme-preview-kicker{display:block;width:54px;height:7px;border-radius:999px;background:var(--primary);opacity:.75}
-      .theme-preview-main h4{margin:12px 0 4px;font-size:28px;line-height:1;letter-spacing:-.055em}.theme-preview-main>p{font-size:10.5px}
-      .theme-preview-card{margin-top:22px;padding:17px;border:1px solid var(--border);border-radius:18px;background:var(--card);box-shadow:0 10px 24px rgba(0,0,0,.05)}
-      .theme-preview-card small{font-size:9px;color:var(--muted)}.theme-preview-card strong{display:block;margin-top:5px;font-size:18px;letter-spacing:-.04em}.theme-preview-card p{margin-top:5px;font-size:10px}
-      .theme-preview-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.theme-preview-stat{height:62px;border-radius:13px;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border)}.theme-preview-stat:first-child{background:color-mix(in srgb,var(--primary) 11%,var(--fill))}
-      .theme-preview-action{display:inline-flex;align-items:center;justify-content:center;min-height:34px;margin-top:14px;padding:0 12px;border-radius:10px;background:var(--primary);color:var(--primary-ink);font-size:10px;font-weight:750}
+      .theme-preview{position:relative;overflow:hidden;min-height:410px;padding:12px;border:1px solid var(--border);border-radius:24px;background:radial-gradient(360px 240px at 90% -5%,color-mix(in srgb,var(--primary) 16%,transparent),transparent 72%),var(--bg-soft);box-shadow:0 18px 46px rgba(0,0,0,.09)}
+      .theme-preview-window{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;height:382px;padding:8px;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 12px 28px rgba(0,0,0,.07)}
+      .theme-preview-side{display:flex;flex-direction:column;gap:7px;padding:7px;border-radius:12px;background:var(--fill)}
+      .theme-preview-brand{width:24px;height:24px;border-radius:8px;background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 70%,#fff 30%),var(--primary));box-shadow:0 6px 13px color-mix(in srgb,var(--primary) 18%,transparent)}
+      .theme-preview-nav{height:6px;border-radius:999px;background:var(--border-strong)}.theme-preview-nav.is-active{width:84%;background:var(--primary)}.theme-preview-nav:nth-child(3){width:70%}.theme-preview-nav:nth-child(4){width:76%}
+      .theme-preview-main{min-width:0;padding:11px 8px}
+      .theme-preview-kicker{display:block;width:46px;height:6px;border-radius:999px;background:var(--primary);opacity:.75}
+      .theme-preview-main h4{margin:10px 0 4px;font-size:23px;line-height:1;letter-spacing:-.05em}.theme-preview-main>p{font-size:9.5px}
+      .theme-preview-card{margin-top:17px;padding:14px;border:1px solid var(--border);border-radius:15px;background:var(--card);box-shadow:0 8px 20px rgba(0,0,0,.045)}
+      .theme-preview-card small{font-size:8.5px;color:var(--muted)}.theme-preview-card strong{display:block;margin-top:5px;font-size:15px;letter-spacing:-.035em}.theme-preview-card p{margin-top:5px;font-size:9px}
+      .theme-preview-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}.theme-preview-stat{height:52px;border-radius:11px;background:var(--fill);box-shadow:inset 0 0 0 1px var(--border)}.theme-preview-stat:first-child{background:color-mix(in srgb,var(--primary) 11%,var(--fill))}
+      .theme-preview-action{display:inline-flex;align-items:center;justify-content:center;min-height:31px;margin-top:12px;padding:0 10px;border-radius:9px;background:var(--primary);color:var(--primary-ink);font-size:9px;font-weight:750}
       .theme-feedback{min-height:18px;margin-top:10px;color:var(--muted);font-size:11px}
       @media(hover:hover) and (pointer:fine){.theme-mode:hover,.theme-accent:hover{transform:translateY(-2px)}.theme-accent:hover{box-shadow:inset 0 0 0 1px var(--border),0 10px 22px rgba(0,0,0,.06)}}
-      @media(max-width:1100px){.theme-studio-layout{grid-template-columns:1fr}.theme-preview-wrap{position:static}.theme-preview{min-height:390px}.theme-preview-window{height:360px}}
+      @media(max-width:1100px){.theme-studio-layout{grid-template-columns:1fr}.theme-preview-wrap{position:static;max-width:none;justify-self:stretch}.theme-preview{min-height:390px}.theme-preview-window{height:360px}}
       @media(max-width:680px){.theme-studio-intro{grid-template-columns:1fr;min-height:0;padding:22px 18px;border-radius:22px}.theme-studio-current{justify-self:start}.theme-panel{padding:18px 14px;border-radius:20px}.theme-mode-grid{grid-template-columns:1fr}.theme-mode{grid-template-columns:110px minmax(0,1fr);align-items:center;min-height:104px}.theme-mode-visual{height:74px}.theme-accent-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:none}.theme-preview{display:none}}
       @media(prefers-reduced-motion:reduce){.theme-mode,.theme-accent{transition:none!important;transform:none!important}}
     </style>
     <section class="theme-studio" data-theme-studio>
       <header class="theme-studio-intro">
         <div><small>${copy.eyebrow}</small><h2>${copy.title}</h2><p>${copy.intro}</p></div>
-        <div class="theme-studio-current"><i></i><span>${copy.current}</span><strong id="theme-current-accent">${colorMeta[IPHONE_THEME_DEFAULT].name} · ${colorMeta[IPHONE_THEME_DEFAULT].hex}</strong></div>
+        <div class="theme-studio-current"><i></i><span>${copy.current}</span><strong id="theme-current-accent">${colorMeta[IPHONE_THEME_DEFAULT].name}</strong></div>
       </header>
       <div class="theme-studio-layout">
         <div class="theme-control-stack">
@@ -284,7 +279,7 @@ export function appearanceSettingsContent(zh, locale = "") {
           </section>
         </div>
         <aside class="theme-preview-wrap" aria-label="${copy.preview}">
-          <div class="theme-preview-label"><span>${copy.preview}</span><span>01 / 01</span></div>
+          <div class="theme-preview-label"><span>${copy.preview}</span></div>
           <div class="theme-preview"><div class="theme-preview-window">
             <div class="theme-preview-side"><span class="theme-preview-brand"></span><span class="theme-preview-nav is-active"></span><span class="theme-preview-nav"></span><span class="theme-preview-nav"></span></div>
             <div class="theme-preview-main"><span class="theme-preview-kicker"></span><h4>${copy.previewTitle}</h4><p>${copy.previewSubtitle}</p><div class="theme-preview-card"><small>${copy.previewCard}</small><strong>${copy.previewMeta}</strong><div class="theme-preview-stats"><span class="theme-preview-stat"></span><span class="theme-preview-stat"></span></div><span class="theme-preview-action">${copy.previewButton}</span></div></div>
@@ -299,10 +294,10 @@ export function appearanceSettingsContent(zh, locale = "") {
         const accents=[...document.querySelectorAll("[data-accent]")];
         const current=document.getElementById("theme-current-accent");
         const feedback=document.getElementById("theme-feedback");
-        const colorMeta=${JSON.stringify(Object.fromEntries(IPHONE_THEME_PALETTE.map(color => [color.id, { name: color.names[activeLocale] || color.names["en-us"], hex: color.hex }])))};
+        const colorMeta=${JSON.stringify(Object.fromEntries(IPHONE_THEME_PALETTE.map(color => [color.id, { name: color.names[activeLocale] || color.names["en-us"] }])))};
         let feedbackTimer=0;
         const announce=()=>{if(!feedback)return;feedback.textContent=${JSON.stringify(copy.saved)};window.clearTimeout(feedbackTimer);feedbackTimer=window.setTimeout(()=>{feedback.textContent=""},1600)};
-        const refresh=()=>{const mode=api.getMode();const accent=api.getAccent();modes.forEach(button=>{const selected=button.dataset.mode===mode;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});accents.forEach(button=>{const selected=button.dataset.accent===accent;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});if(current){const meta=colorMeta[accent]||colorMeta[${JSON.stringify(IPHONE_THEME_DEFAULT)}];current.textContent=meta.name+" · "+meta.hex}};
+        const refresh=()=>{const mode=api.getMode();const accent=api.getAccent();modes.forEach(button=>{const selected=button.dataset.mode===mode;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});accents.forEach(button=>{const selected=button.dataset.accent===accent;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});if(current){const meta=colorMeta[accent]||colorMeta[${JSON.stringify(IPHONE_THEME_DEFAULT)}];current.textContent=meta.name}};
         modes.forEach(button=>button.addEventListener("click",()=>{document.documentElement.classList.add("theme-switching");api.setMode(button.dataset.mode);window.setTimeout(()=>document.documentElement.classList.remove("theme-switching"),260);refresh();announce()}));
         accents.forEach(button=>button.addEventListener("click",()=>{document.documentElement.classList.add("theme-switching");api.setAccent(button.dataset.accent);window.setTimeout(()=>document.documentElement.classList.remove("theme-switching"),260);refresh();announce()}));
         window.addEventListener("aertex-themechange",refresh);refresh();
