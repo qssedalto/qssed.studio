@@ -39,6 +39,9 @@ assert(dashboardStyle.includes('position:absolute') && dashboardStyle.includes('
 assert(dashboardStyle.includes('transform:translateY(-50%) rotate(90deg)'), "Expanded sidebar sections must keep the arrow vertically centered while rotating downward.");
 assert(dashboardStyle.includes('transform:translate(1px,-50%)'), "Child arrow hover motion must preserve vertical centering.");
 assert(uiStyles.includes('flex-wrap:nowrap') && uiStyles.includes('.os-nav-entry>.os-nav-title::after{margin-left:0}'), "Shared sidebar rows must prevent arrows from wrapping onto a second line.");
+assert(!shell.includes('<b aria-hidden="true">↗</b></a>') && uiStyles.includes('.compact-menu-card::after'), "Compact menu arrows must also be CSS pseudo-elements instead of flow content.");
+assert(uiStyles.includes('right:20px') && uiStyles.includes('right:18px') && uiStyles.includes('transform:translateY(-50%)'), "Compact menu arrows must stay vertically centered at the far-right edge.");
+
 
 
 const wishZh = wishesContent("/wishes", "zh-cn");
