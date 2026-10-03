@@ -391,139 +391,179 @@ const WORK_TEX_VISUAL_STYLE = `
       max-width:100%!important;
       overflow-x:hidden!important;
       overflow-y:auto!important;
-      gap:16px!important;
-      padding:clamp(30px,4vw,52px) 34px!important;
+      gap:18px!important;
+      padding:clamp(34px,4.5vw,60px) 34px 42px!important;
       background:
-        linear-gradient(180deg,color-mix(in srgb,var(--primary) 3.5%,transparent),transparent 34%),
+        radial-gradient(760px 330px at 50% -6%,color-mix(in srgb,var(--primary) 16%,transparent),transparent 68%),
+        radial-gradient(480px 300px at 9% 76%,color-mix(in srgb,var(--primary) 6%,transparent),transparent 74%),
+        radial-gradient(520px 320px at 91% 80%,color-mix(in srgb,var(--primary) 7%,transparent),transparent 74%),
+        linear-gradient(180deg,color-mix(in srgb,var(--primary) 3%,transparent),transparent 42%),
         var(--work-panel)!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-surface::before{
       content:"";
       position:absolute;
-      width:420px;
-      height:220px;
+      width:min(72vw,980px);
+      height:280px;
       left:50%;
-      top:-145px;
+      top:-178px;
       transform:translateX(-50%);
       border-radius:50%;
-      background:radial-gradient(ellipse,color-mix(in srgb,var(--primary) 11%,transparent),transparent 70%);
-      filter:blur(10px);
+      background:radial-gradient(ellipse,color-mix(in srgb,var(--primary) 17%,transparent),transparent 68%);
+      filter:blur(18px);
       pointer-events:none;
       z-index:-1;
-      opacity:.72;
+      opacity:.9;
+    }
+    body.os-shell:has(.tex-work-app) .tex-start-surface::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index:-1;
+      background:
+        linear-gradient(90deg,transparent 0%,rgba(255,255,255,.018) 48%,transparent 100%);
+      mask-image:linear-gradient(to bottom,#000 0%,transparent 64%);
+      opacity:.55;
     }
     body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-mark{
-      width:48px!important;
-      height:48px!important;
-      border-radius:14px!important;
-      background:color-mix(in srgb,var(--primary) 8%,var(--fill))!important;
+      width:52px!important;
+      height:52px!important;
+      border-radius:16px!important;
+      background:
+        linear-gradient(145deg,color-mix(in srgb,var(--primary) 18%,var(--fill)),color-mix(in srgb,var(--primary) 8%,var(--fill)))!important;
       color:var(--text)!important;
       box-shadow:
-        inset 0 0 0 1px color-mix(in srgb,var(--primary) 24%,var(--border)),
-        0 10px 24px rgba(0,0,0,.055)!important;
+        inset 0 1px 0 rgba(255,255,255,.07),
+        inset 0 0 0 1px color-mix(in srgb,var(--primary) 34%,var(--border)),
+        0 14px 34px color-mix(in srgb,var(--primary) 12%,transparent)!important;
       font-size:13px!important;
-      font-weight:680!important;
+      font-weight:700!important;
       letter-spacing:-.035em!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-copy{
-      gap:7px!important;
-      width:min(100%,760px)!important;
+      gap:8px!important;
+      width:min(100%,820px)!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-copy strong{
-      font-size:clamp(28px,3vw,36px)!important;
-      line-height:1.08!important;
-      letter-spacing:-.045em!important;
-      font-weight:730!important;
+      font-size:clamp(32px,3.4vw,44px)!important;
+      line-height:1.04!important;
+      letter-spacing:-.052em!important;
+      font-weight:760!important;
       text-wrap:balance;
     }
     body.os-shell:has(.tex-work-app) .tex-start-copy span{
-      max-width:760px!important;
+      max-width:820px!important;
       font-size:13px!important;
       line-height:1.58!important;
       color:var(--muted)!important;
       text-wrap:balance;
     }
     body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-grid{
-      gap:12px!important;
-      width:min(100%,860px)!important;
-      margin-top:4px!important;
+      display:grid!important;
+      grid-template-columns:repeat(3,minmax(0,1fr))!important;
+      align-items:stretch!important;
+      gap:16px!important;
+      width:min(100%,1080px)!important;
+      margin-top:10px!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-card{
       position:relative!important;
       overflow:hidden!important;
       display:grid!important;
-      grid-template-rows:auto auto 1fr!important;
+      grid-template-rows:46px auto minmax(40px,1fr)!important;
       align-content:start!important;
-      gap:0!important;
-      min-height:138px!important;
-      padding:18px 20px 19px!important;
-      border:1px solid color-mix(in srgb,var(--work-line) 92%,transparent)!important;
-      border-radius:18px!important;
+      align-items:start!important;
+      min-width:0!important;
+      min-height:172px!important;
+      padding:22px 22px 20px!important;
+      border:1px solid color-mix(in srgb,var(--work-line) 88%,transparent)!important;
+      border-radius:20px!important;
       background:
-        linear-gradient(155deg,color-mix(in srgb,var(--work-card) 98%,#fff 2%),var(--work-card))!important;
-      box-shadow:0 8px 24px rgba(0,0,0,.035)!important;
-      transition:transform .22s var(--work-ease),border-color .18s ease,box-shadow .22s var(--work-ease),background .18s ease!important;
+        linear-gradient(155deg,rgba(255,255,255,.025),transparent 34%),
+        linear-gradient(180deg,color-mix(in srgb,var(--primary) 2.5%,var(--work-card)),var(--work-card))!important;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.035),
+        0 16px 42px rgba(0,0,0,.07)!important;
+      text-align:left!important;
+      transition:transform .24s var(--work-ease),border-color .2s ease,box-shadow .24s var(--work-ease),background .2s ease!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-card::before{
       display:grid;
       place-items:center;
-      width:34px;
-      height:34px;
-      border-radius:10px;
-      margin-bottom:14px;
-      background:color-mix(in srgb,var(--primary) 9%,var(--fill));
-      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 18%,var(--work-line));
+      width:40px;
+      height:40px;
+      border-radius:12px;
+      margin:0;
+      background:
+        linear-gradient(145deg,color-mix(in srgb,var(--primary) 18%,var(--fill)),color-mix(in srgb,var(--primary) 8%,var(--fill)));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.055),
+        inset 0 0 0 1px color-mix(in srgb,var(--primary) 26%,var(--work-line)),
+        0 8px 20px color-mix(in srgb,var(--primary) 8%,transparent);
       color:var(--primary);
-      font-size:14px;
+      font-size:16px;
       font-weight:720;
       line-height:1;
     }
     body.os-shell:has(.tex-work-app) .tex-start-card[data-tex-start-template="blank"]::before{content:"+"}
     body.os-shell:has(.tex-work-app) .tex-start-card[data-tex-start-template="article"]::before{content:"文"}
-    body.os-shell:has(.tex-work-app) .tex-start-card[data-tex-start-template="math"]::before{content:"∑";font-family:Georgia,serif;font-size:16px}
+    body.os-shell:has(.tex-work-app) .tex-start-card[data-tex-start-template="math"]::before{content:"∑";font-family:Georgia,serif;font-size:18px}
     body.os-shell:has(.tex-work-app) .tex-start-card::after{
       content:"↗";
       position:absolute;
-      right:18px;
-      top:18px;
+      right:20px;
+      top:20px;
       display:grid;
       place-items:center;
-      width:22px;
-      height:22px;
+      width:24px;
+      height:24px;
       color:var(--quiet);
-      font-size:15px;
+      font-size:16px;
       font-weight:500;
       line-height:1;
       opacity:.72;
       transition:transform .22s var(--work-ease),color .18s ease,opacity .18s ease;
     }
     body.os-shell:has(.tex-work-app) .tex-start-card b{
-      max-width:calc(100% - 24px);
-      font-size:15px!important;
+      align-self:end!important;
+      max-width:calc(100% - 8px)!important;
+      margin-top:14px!important;
+      font-size:16px!important;
       line-height:1.25!important;
-      letter-spacing:-.025em!important;
+      letter-spacing:-.028em!important;
       white-space:nowrap!important;
       overflow:hidden!important;
       text-overflow:ellipsis!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-card span{
-      max-width:none!important;
-      margin-top:8px!important;
+      align-self:start!important;
+      max-width:30ch!important;
+      margin-top:9px!important;
       font-size:11.5px!important;
-      line-height:1.48!important;
+      line-height:1.5!important;
       color:var(--muted)!important;
+      text-align:left!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-card:focus-visible{
       outline:none!important;
-      border-color:color-mix(in srgb,var(--primary) 55%,var(--border))!important;
-      box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 11%,transparent),0 12px 30px rgba(0,0,0,.055)!important;
+      border-color:color-mix(in srgb,var(--primary) 58%,var(--border))!important;
+      box-shadow:
+        0 0 0 4px color-mix(in srgb,var(--primary) 11%,transparent),
+        inset 0 1px 0 rgba(255,255,255,.045),
+        0 20px 48px rgba(0,0,0,.085)!important;
     }
     @media(hover:hover) and (pointer:fine){
       body.os-shell:has(.tex-work-app) .tex-start-card:hover{
-        transform:translateY(-2px)!important;
-        border-color:color-mix(in srgb,var(--primary) 30%,var(--border))!important;
-        background:linear-gradient(155deg,color-mix(in srgb,var(--primary) 3.5%,var(--work-card)),var(--work-card))!important;
-        box-shadow:0 16px 34px rgba(0,0,0,.065)!important;
+        transform:translateY(-3px)!important;
+        border-color:color-mix(in srgb,var(--primary) 34%,var(--border))!important;
+        background:
+          linear-gradient(155deg,color-mix(in srgb,var(--primary) 7%,transparent),transparent 36%),
+          linear-gradient(180deg,color-mix(in srgb,var(--primary) 4%,var(--work-card)),var(--work-card))!important;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.05),
+          0 22px 52px rgba(0,0,0,.10),
+          0 0 34px color-mix(in srgb,var(--primary) 7%,transparent)!important;
       }
       body.os-shell:has(.tex-work-app) .tex-start-card:hover::after{
         transform:translate(2px,-2px);
@@ -532,8 +572,8 @@ const WORK_TEX_VISUAL_STYLE = `
       }
     }
     body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-features{
-      gap:14px!important;
-      margin-top:2px!important;
+      gap:16px!important;
+      margin-top:6px!important;
     }
     body.os-shell:has(.tex-work-app) .tex-start-features span{
       display:inline-flex!important;
@@ -546,6 +586,10 @@ const WORK_TEX_VISUAL_STYLE = `
       box-shadow:none!important;
       font-size:10px!important;
       line-height:1.35!important;
+    }
+    @media(max-width:900px){
+      body.os-shell:has(.tex-work-app) .tex-start-surface>.tex-start-grid{grid-template-columns:1fr!important;width:min(100%,620px)!important}
+      body.os-shell:has(.tex-work-app) .tex-start-card{min-height:150px!important}
     }
 
     body.os-shell:has(.tex-work-app) .tex-panel-head,
