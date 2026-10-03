@@ -41,6 +41,10 @@ for (const zh of [true, false]) {
     ".tex-runs-panel .tex-runs-head"
   ]) assert(workPageMarkup.includes(selector), "Work TeX home navigation is missing panel target: " + selector);
   assert(workPageMarkup.includes("https://qsseda.com/") && workPageMarkup.includes("AERTEX"), "Every Work TeX pane must receive an AERTEX Home destination");
+  assert(workPageMarkup.includes(".tex-panel-home-link>svg{width:14px;height:14px"), "Work TeX must size only the direct Home icon, not every nested brand SVG.");
+  assert(workPageMarkup.includes(".tex-panel-home-link .aertex-wordmark-token{"), "Work TeX must explicitly size the AERTEX wordmark.");
+  assert(workPageMarkup.includes("width:70px!important") && workPageMarkup.includes("height:13.5px!important"), "Work TeX AERTEX wordmark must remain visibly legible.");
+  assert(!workPageMarkup.includes(".tex-panel-home-link svg{width:13px;height:13px"), "Work TeX must not collapse the AERTEX wordmark into the Home icon dimensions.");
   assert(workMarkup.includes("tex-work-app"), "Work TeX route must render the dedicated app surface");
   assert(workMarkup.includes("tex-live-preview-switch"), "Live preview must use the custom switch instead of a native checkbox UI");
   assert(!workMarkup.includes('class="tex-live-switch"'), "Live preview switch class must match its CSS selector");
