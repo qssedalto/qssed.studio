@@ -52,6 +52,8 @@ for (const festival of ["元旦","除夕","春节","元宵节","妇女节","植�
 assert((wishZh.match(/class="wish-category"/g) || []).length === 5, "Wish Center must render five categorized festival sections.");
 assert(wishZh.includes('data-catalog-kind="birthday"') && wishZh.includes('data-catalog-kind="mid-autumn"'), "Birthday and Mid-Autumn catalog entries must connect to the existing builder.");
 assert(wishZh.includes('class="wish-festival is-planned"') && wishZh.includes("准备中"), "Future festivals must render as non-link planned entries.");
+assert(wishZh.includes("grid-auto-rows:72px") && wishZh.includes("margin:0!important") && wishZh.includes("height:100%"), "Wish Center festival cards must keep identical row height and reset global button spacing.");
+assert(wishZh.includes("button.wish-festival{appearance:none"), "Interactive festival cards must neutralize browser/global button appearance so available and planned cards keep the same proportions.");
 
 
 assert(birthday.includes('params.get("name")'), "Birthday page must support ?name=.");
