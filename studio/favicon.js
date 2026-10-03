@@ -1,6 +1,6 @@
 export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-5" type="image/svg+xml">';
+export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-badge-6" type="image/svg+xml">';
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
@@ -18,14 +18,28 @@ export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
 const PRODUCT_FAVICON_META = Object.freeze({
   work: {
     label: "AERTEX Work",
-    cutout: '<rect class="work-badge-cutout" x="40.2" y="40.2" width="20.4" height="20.4" rx="5.2"/>',
-    badge: '<g class="aertex-product-badge aertex-work-badge" aria-hidden="true"><path class="work-edit-frame" d="M49.1 42.8h-3.6a3.2 3.2 0 0 0-3.2 3.2v8.9a3.2 3.2 0 0 0 3.2 3.2h8.9a3.2 3.2 0 0 0 3.2-3.2v-3.7"/><path class="work-edit-pencil" d="M47.6 53.2l1.05-4.05 7.3-7.3a2.15 2.15 0 0 1 3.05 3.05l-7.3 7.3-4.1 1z"/></g>'
+    glyph: '<path d="M-1.4-4.6h-1.8A1.8 1.8 0 0 0-5-2.8v6A1.8 1.8 0 0 0-3.2 5h6A1.8 1.8 0 0 0 4.6 3.2V1.4"/><path d="M-1.8 2.2-.95-.9 3.8-5.65a1.35 1.35 0 0 1 1.9 1.9L.95 1l-2.75 1.2z"/>'
   },
-  intelligence: { label: "AERTEX Intelligence", glyph: '<path class="filled" d="m51.2 44.8 1.55 3.85 3.85 1.55-3.85 1.55-1.55 3.85-1.55-3.85-3.85-1.55 3.85-1.55z"/><path d="M55.2 44.7v2.2M54.1 45.8h2.2"/>' },
-  cash: { label: "AERTEX Cash", glyph: '<path d="M46.5 48.1h9.8v7.2h-9.8zM48 48.1v-1.8h6.6v1.8M53.2 51.7h3.1"/><circle class="filled" cx="53.6" cy="51.7" r=".75"/>' },
-  watch: { label: "AERTEX Watch", glyph: '<circle cx="51.2" cy="50.7" r="5.1"/><path d="M51.2 47.7v3.2l2.3 1.5"/>' },
-  auth: { label: "AERTEX ID", glyph: '<rect x="47.1" y="49.4" width="8.2" height="6.5" rx="1.6"/><path d="M48.8 49.4v-1.8a2.4 2.4 0 0 1 4.8 0v1.8"/><circle class="filled" cx="51.2" cy="52.3" r=".85"/>' },
-  admin: { label: "AERTEX Administration", glyph: '<path d="M51.2 44.9 55.5 47v3.6c0 2.8-1.7 4.7-4.3 5.8-2.6-1.1-4.3-3-4.3-5.8V47z"/><path d="m49.2 50.6 1.35 1.35 2.65-2.8"/>' }
+  intelligence: {
+    label: "AERTEX Intelligence",
+    glyph: '<path class="filled" d="M0-5.1 1.5-1.5 5.1 0 1.5 1.5 0 5.1-1.5 1.5-5.1 0-1.5-1.5z"/>'
+  },
+  cash: {
+    label: "AERTEX Cash",
+    glyph: '<rect x="-5.2" y="-2.6" width="10.4" height="6.6" rx="1.35"/><path d="M-3.5-2.6V-4h7v1.4M2 .7h3.2"/><circle class="filled" cx="2.8" cy=".7" r=".72"/>'
+  },
+  watch: {
+    label: "AERTEX Watch",
+    glyph: '<circle cx="0" cy="0" r="5"/><path d="M0-3.1V0l2.45 1.65"/>'
+  },
+  auth: {
+    label: "AERTEX ID",
+    glyph: '<rect x="-4.3" y="-.7" width="8.6" height="5.5" rx="1.5"/><path d="M-2.6-.7v-1.6a2.6 2.6 0 0 1 5.2 0v1.6"/><circle class="filled" cx="0" cy="2" r=".75"/>'
+  },
+  admin: {
+    label: "AERTEX Administration",
+    glyph: '<path d="M0-5 4.5-2.8V.4c0 2.55-1.65 4.25-4.5 5.4C-2.85 4.65-4.5 2.95-4.5.4v-3.2z"/><path d="m-2 0 1.35 1.35L2.25-1.7"/>'
+  }
 });
 
 export function faviconProductForRequest(request) {
@@ -45,11 +59,11 @@ export function faviconProductForRequest(request) {
 export function faviconSvgForProduct(product = "") {
   const meta = PRODUCT_FAVICON_META[product];
   if (!meta) return FAVICON_SVG;
-  const badge = meta.badge || `<g class="aertex-product-badge" aria-hidden="true">
+  const badge = `<g class="aertex-product-badge aertex-${product}-badge" aria-hidden="true">
     <circle class="badge-disc" cx="51.2" cy="51.2" r="11.1"/>
-    <g class="badge-glyph">${meta.glyph}</g>
+    <g class="badge-glyph" transform="translate(51.2 51.2)">${meta.glyph}</g>
   </g>`;
-  const cutout = meta.cutout || '<circle class="product-badge-cutout" cx="51.2" cy="51.2" r="12"/>';
+  const cutout = '<circle class="product-badge-cutout" cx="51.2" cy="51.2" r="12"/>';
   const knockout = `<defs>
     <mask id="aertex-product-badge-knockout" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
       <rect x="0" y="0" width="64" height="64" fill="#fff"/>
@@ -64,8 +78,6 @@ export function faviconSvgForProduct(product = "") {
       `.aertex-product-badge .badge-disc{fill:none;stroke:var(--edge);stroke-width:1.6}
       .aertex-product-badge .badge-glyph{fill:none;stroke:var(--ink);stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
       .aertex-product-badge .badge-glyph .filled{fill:var(--ink);stroke:none}
-      .aertex-work-badge .work-edit-frame{fill:none;stroke:var(--ink);stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
-      .aertex-work-badge .work-edit-pencil{fill:none;stroke:var(--ink);stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
       </style>`
     )
     .replace("</svg>", badge + "</svg>");
