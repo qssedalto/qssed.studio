@@ -1,79 +1,36 @@
-export function workbenchContent(zh) {
-  const copy = zh ? {
-    eyebrow: "工作区 · Workbench",
-    title: "工作台",
-    intro: "把进行中的项目、今天和逾期任务、最近草稿与最近研究笔记放到一个真正的工作入口。这里不保存第二份数据，只显示各模块的当前状态。",
-    refresh: "刷新",
-    loading: "正在整理工作区…",
-    unavailable: "工作台暂时不可用",
-    activeProjects: "进行中的项目",
-    activeProjectsIntro: "当前正在推进的项目与下一步行动。",
-    tasks: "今天与逾期任务",
-    tasksIntro: "优先处理已经逾期或今天到期的事项。",
-    drafts: "最近草稿",
-    draftsIntro: "按最近编辑时间排列。",
-    notes: "最近笔记",
-    notesIntro: "最近更新的研究笔记。",
-    projectsCount: "进行中项目",
-    openTasks: "未完成任务",
-    draftsCount: "草稿",
-    notesCount: "笔记",
-    viewAll: "查看全部",
-    noProjects: "没有进行中的项目",
-    noProjectsDetail: "把项目状态设为“进行中”后会出现在这里。",
-    noTasks: "今天没有到期或逾期任务",
-    noTasksDetail: "其他未完成任务仍可在任务中心查看。",
-    noDrafts: "还没有草稿",
-    noDraftsDetail: "新建草稿后，最近编辑内容会显示在这里。",
-    noNotes: "还没有研究笔记",
-    noNotesDetail: "最近更新的笔记会显示在这里。",
-    next: "下一步",
-    high: "高优先级",
-    normal: "普通",
-    low: "低",
-    overdue: "逾期",
-    today: "今天",
-    noProject: "无项目",
-    updated: "更新",
-    privateLabel: "当前账号工作区"
-  } : {
-    eyebrow: "Workspace · Workbench",
-    title: "Workbench",
-    intro: "Bring active projects, today's and overdue tasks, recent drafts, and recent research notes into one real working surface. Workbench stores no second copy; it reflects the current state of each module.",
-    refresh: "Refresh",
-    loading: "Organizing your workspace…",
-    unavailable: "Workbench is temporarily unavailable",
-    activeProjects: "Active Projects",
-    activeProjectsIntro: "Projects currently moving forward and their next actions.",
-    tasks: "Today & Overdue Tasks",
-    tasksIntro: "Prioritize items already overdue or due today.",
-    drafts: "Recent Drafts",
-    draftsIntro: "Sorted by the most recent edit.",
-    notes: "Recent Notes",
-    notesIntro: "Recently updated research notes.",
-    projectsCount: "active projects",
-    openTasks: "open tasks",
-    draftsCount: "drafts",
-    notesCount: "notes",
-    viewAll: "View all",
-    noProjects: "No active projects",
-    noProjectsDetail: "Projects with Active status will appear here.",
-    noTasks: "Nothing due today or overdue",
-    noTasksDetail: "Other open tasks are still available in Task Center.",
-    noDrafts: "No drafts yet",
-    noDraftsDetail: "Recently edited drafts will appear here after you create one.",
-    noNotes: "No research notes yet",
-    noNotesDetail: "Recently updated notes will appear here.",
-    next: "Next",
-    high: "High priority",
-    normal: "Normal",
-    low: "Low",
-    overdue: "Overdue",
-    today: "Today",
-    noProject: "No project",
-    updated: "Updated",
-    privateLabel: "Current account workspace"
-  };
+import { normalizeSupportedLocale } from "./locale.js";
+
+const WORKBENCH_EN = {
+  eyebrow:"Workspace · Workbench",title:"Workbench",
+  intro:"Bring active projects, today's and overdue tasks, recent drafts, and recent research notes into one real working surface. Workbench stores no second copy; it reflects the current state of each module.",
+  refresh:"Refresh",loading:"Organizing your workspace…",unavailable:"Workbench is temporarily unavailable",
+  activeProjects:"Active Projects",activeProjectsIntro:"Projects currently moving forward and their next actions.",
+  tasks:"Today & Overdue Tasks",tasksIntro:"Prioritize items already overdue or due today.",
+  drafts:"Recent Drafts",draftsIntro:"Sorted by the most recent edit.",notes:"Recent Notes",notesIntro:"Recently updated research notes.",
+  projectsCount:"active projects",openTasks:"open tasks",draftsCount:"drafts",notesCount:"notes",viewAll:"View all",
+  noProjects:"No active projects",noProjectsDetail:"Projects with Active status will appear here.",
+  noTasks:"Nothing due today or overdue",noTasksDetail:"Other open tasks are still available in Task Center.",
+  noDrafts:"No drafts yet",noDraftsDetail:"Recently edited drafts will appear here after you create one.",
+  noNotes:"No research notes yet",noNotesDetail:"Recently updated notes will appear here.",
+  next:"Next",high:"High priority",normal:"Normal",low:"Low",overdue:"Overdue",today:"Today",noProject:"No project",updated:"Updated",
+  privateLabel:"Current account workspace",untitledDraft:"Untitled draft",untitledNote:"Untitled note"
+};
+
+const WORKBENCH_COPY = {
+  "en-us":WORKBENCH_EN,"en-gb":WORKBENCH_EN,"en-au":WORKBENCH_EN,
+  "zh-cn":{eyebrow:"工作区 · Workbench",title:"工作台",intro:"把进行中的项目、今天和逾期任务、最近草稿与最近研究笔记放到一个真正的工作入口。这里不保存第二份数据，只显示各模块的当前状态。",refresh:"刷新",loading:"正在整理工作区…",unavailable:"工作台暂时不可用",activeProjects:"进行中的项目",activeProjectsIntro:"当前正在推进的项目与下一步行动。",tasks:"今天与逾期任务",tasksIntro:"优先处理已经逾期或今天到期的事项。",drafts:"最近草稿",draftsIntro:"按最近编辑时间排列。",notes:"最近笔记",notesIntro:"最近更新的研究笔记。",projectsCount:"进行中项目",openTasks:"未完成任务",draftsCount:"草稿",notesCount:"笔记",viewAll:"查看全部",noProjects:"没有进行中的项目",noProjectsDetail:"把项目状态设为“进行中”后会出现在这里。",noTasks:"今天没有到期或逾期任务",noTasksDetail:"其他未完成任务仍可在任务中心查看。",noDrafts:"还没有草稿",noDraftsDetail:"新建草稿后，最近编辑内容会显示在这里。",noNotes:"还没有研究笔记",noNotesDetail:"最近更新的笔记会显示在这里。",next:"下一步",high:"高优先级",normal:"普通",low:"低",overdue:"逾期",today:"今天",noProject:"无项目",updated:"更新",privateLabel:"当前账号工作区",untitledDraft:"未命名草稿",untitledNote:"未命名笔记"},
+  "zh-tw":{eyebrow:"工作區 · Workbench",title:"工作台",intro:"把進行中的專案、今天與逾期任務、最近草稿與研究筆記集中到一個工作入口。Workbench 不會儲存第二份資料，只反映各模組目前的狀態。",refresh:"重新整理",loading:"正在整理工作區…",unavailable:"Workbench 暫時無法使用",activeProjects:"進行中的專案",activeProjectsIntro:"目前正在推進的專案與下一步行動。",tasks:"今天與逾期任務",tasksIntro:"優先處理已逾期或今天到期的事項。",drafts:"最近草稿",draftsIntro:"依最近編輯時間排序。",notes:"最近筆記",notesIntro:"最近更新的研究筆記。",projectsCount:"進行中專案",openTasks:"未完成任務",draftsCount:"草稿",notesCount:"筆記",viewAll:"查看全部",noProjects:"沒有進行中的專案",noProjectsDetail:"把專案狀態設為「進行中」後會顯示在這裡。",noTasks:"今天沒有到期或逾期任務",noTasksDetail:"其他未完成任務仍可在任務中心查看。",noDrafts:"還沒有草稿",noDraftsDetail:"建立草稿後，最近編輯的內容會顯示在這裡。",noNotes:"還沒有研究筆記",noNotesDetail:"最近更新的筆記會顯示在這裡。",next:"下一步",high:"高優先級",normal:"一般",low:"低",overdue:"逾期",today:"今天",noProject:"無專案",updated:"更新",privateLabel:"目前帳號工作區",untitledDraft:"未命名草稿",untitledNote:"未命名筆記"},
+  "ja-jp":{eyebrow:"ワークスペース · Workbench",title:"ワークベンチ",intro:"進行中のプロジェクト、本日および期限超過のタスク、最近の下書き、研究ノートを1つの作業画面にまとめます。Workbench はデータを複製せず、各モジュールの現在の状態を反映します。",refresh:"更新",loading:"ワークスペースを整理中…",unavailable:"Workbench は一時的に利用できません",activeProjects:"進行中のプロジェクト",activeProjectsIntro:"現在進行中のプロジェクトと次のアクション。",tasks:"本日・期限超過のタスク",tasksIntro:"期限超過または本日期限の項目を優先します。",drafts:"最近の下書き",draftsIntro:"最近の編集順に並びます。",notes:"最近のノート",notesIntro:"最近更新された研究ノート。",projectsCount:"進行中のプロジェクト",openTasks:"未完了タスク",draftsCount:"下書き",notesCount:"ノート",viewAll:"すべて表示",noProjects:"進行中のプロジェクトはありません",noProjectsDetail:"プロジェクトを「進行中」にするとここに表示されます。",noTasks:"本日または期限超過のタスクはありません",noTasksDetail:"その他の未完了タスクはタスクセンターで確認できます。",noDrafts:"下書きはまだありません",noDraftsDetail:"下書きを作成すると最近の編集がここに表示されます。",noNotes:"研究ノートはまだありません",noNotesDetail:"最近更新されたノートがここに表示されます。",next:"次",high:"高優先度",normal:"通常",low:"低",overdue:"期限超過",today:"今日",noProject:"プロジェクトなし",updated:"更新",privateLabel:"現在のアカウントのワークスペース",untitledDraft:"無題の下書き",untitledNote:"無題のノート"},
+  "ko-kr":{eyebrow:"작업 공간 · Workbench",title:"워크벤치",intro:"진행 중인 프로젝트, 오늘 및 기한 초과 작업, 최근 초안과 연구 노트를 하나의 작업 화면에 모읍니다. Workbench는 데이터를 복제하지 않고 각 모듈의 현재 상태만 반영합니다.",refresh:"새로고침",loading:"작업 공간 정리 중…",unavailable:"Workbench를 일시적으로 사용할 수 없습니다",activeProjects:"진행 중인 프로젝트",activeProjectsIntro:"현재 진행 중인 프로젝트와 다음 작업입니다.",tasks:"오늘 및 기한 초과 작업",tasksIntro:"이미 기한이 지났거나 오늘 마감인 항목을 우선하세요.",drafts:"최근 초안",draftsIntro:"최근 편집 순으로 정렬됩니다.",notes:"최근 노트",notesIntro:"최근 업데이트된 연구 노트입니다.",projectsCount:"진행 중 프로젝트",openTasks:"미완료 작업",draftsCount:"초안",notesCount:"노트",viewAll:"모두 보기",noProjects:"진행 중인 프로젝트가 없습니다",noProjectsDetail:"프로젝트 상태를 ‘진행 중’으로 설정하면 여기에 표시됩니다.",noTasks:"오늘 마감이거나 기한이 지난 작업이 없습니다",noTasksDetail:"다른 미완료 작업은 작업 센터에서 확인할 수 있습니다.",noDrafts:"아직 초안이 없습니다",noDraftsDetail:"초안을 만들면 최근 편집 내용이 여기에 표시됩니다.",noNotes:"아직 연구 노트가 없습니다",noNotesDetail:"최근 업데이트된 노트가 여기에 표시됩니다.",next:"다음",high:"높은 우선순위",normal:"보통",low:"낮음",overdue:"기한 초과",today:"오늘",noProject:"프로젝트 없음",updated:"업데이트",privateLabel:"현재 계정 작업 공간",untitledDraft:"제목 없는 초안",untitledNote:"제목 없는 노트"},
+  "fr-fr":{eyebrow:"Espace de travail · Workbench",title:"Workbench",intro:"Réunissez les projets actifs, les tâches du jour et en retard, les brouillons récents et les notes de recherche sur une seule surface de travail. Workbench ne duplique aucune donnée ; il reflète l’état actuel de chaque module.",refresh:"Actualiser",loading:"Organisation de votre espace de travail…",unavailable:"Workbench est temporairement indisponible",activeProjects:"Projets actifs",activeProjectsIntro:"Les projets en cours et leurs prochaines actions.",tasks:"Tâches du jour et en retard",tasksIntro:"Donnez la priorité aux éléments déjà en retard ou à échéance aujourd’hui.",drafts:"Brouillons récents",draftsIntro:"Triés par dernière modification.",notes:"Notes récentes",notesIntro:"Notes de recherche récemment mises à jour.",projectsCount:"projets actifs",openTasks:"tâches ouvertes",draftsCount:"brouillons",notesCount:"notes",viewAll:"Tout afficher",noProjects:"Aucun projet actif",noProjectsDetail:"Les projets avec l’état Actif apparaîtront ici.",noTasks:"Aucune tâche à échéance aujourd’hui ou en retard",noTasksDetail:"Les autres tâches ouvertes restent disponibles dans le Centre des tâches.",noDrafts:"Aucun brouillon",noDraftsDetail:"Les brouillons récemment modifiés apparaîtront ici après leur création.",noNotes:"Aucune note de recherche",noNotesDetail:"Les notes récemment mises à jour apparaîtront ici.",next:"Suite",high:"Priorité élevée",normal:"Normale",low:"Faible",overdue:"En retard",today:"Aujourd’hui",noProject:"Aucun projet",updated:"Mis à jour",privateLabel:"Espace du compte actuel",untitledDraft:"Brouillon sans titre",untitledNote:"Note sans titre"},
+  "es-es":{eyebrow:"Espacio de trabajo · Workbench",title:"Workbench",intro:"Reúne proyectos activos, tareas de hoy y atrasadas, borradores recientes y notas de investigación en una única superficie de trabajo. Workbench no guarda copias duplicadas; refleja el estado actual de cada módulo.",refresh:"Actualizar",loading:"Organizando tu espacio de trabajo…",unavailable:"Workbench no está disponible temporalmente",activeProjects:"Proyectos activos",activeProjectsIntro:"Proyectos en curso y sus próximas acciones.",tasks:"Tareas de hoy y atrasadas",tasksIntro:"Prioriza los elementos atrasados o que vencen hoy.",drafts:"Borradores recientes",draftsIntro:"Ordenados por la edición más reciente.",notes:"Notas recientes",notesIntro:"Notas de investigación actualizadas recientemente.",projectsCount:"proyectos activos",openTasks:"tareas abiertas",draftsCount:"borradores",notesCount:"notas",viewAll:"Ver todo",noProjects:"No hay proyectos activos",noProjectsDetail:"Los proyectos con estado Activo aparecerán aquí.",noTasks:"No hay tareas que venzan hoy ni atrasadas",noTasksDetail:"Las demás tareas abiertas siguen disponibles en el Centro de tareas.",noDrafts:"Todavía no hay borradores",noDraftsDetail:"Los borradores editados recientemente aparecerán aquí después de crear uno.",noNotes:"Todavía no hay notas de investigación",noNotesDetail:"Las notas actualizadas recientemente aparecerán aquí.",next:"Siguiente",high:"Prioridad alta",normal:"Normal",low:"Baja",overdue:"Atrasada",today:"Hoy",noProject:"Sin proyecto",updated:"Actualizado",privateLabel:"Espacio de la cuenta actual",untitledDraft:"Borrador sin título",untitledNote:"Nota sin título"},
+  "el-gr":{eyebrow:"Χώρος εργασίας · Workbench",title:"Workbench",intro:"Συγκεντρώστε ενεργά έργα, σημερινές και εκπρόθεσμες εργασίες, πρόσφατα προσχέδια και ερευνητικές σημειώσεις σε μία επιφάνεια εργασίας. Το Workbench δεν δημιουργεί δεύτερα αντίγραφα· αντικατοπτρίζει την τρέχουσα κατάσταση κάθε ενότητας.",refresh:"Ανανέωση",loading:"Οργάνωση του χώρου εργασίας…",unavailable:"Το Workbench δεν είναι προσωρινά διαθέσιμο",activeProjects:"Ενεργά έργα",activeProjectsIntro:"Έργα που προχωρούν τώρα και οι επόμενες ενέργειές τους.",tasks:"Σημερινές και εκπρόθεσμες εργασίες",tasksIntro:"Δώστε προτεραιότητα σε όσα έχουν ήδη λήξει ή λήγουν σήμερα.",drafts:"Πρόσφατα προσχέδια",draftsIntro:"Ταξινομημένα με βάση την τελευταία επεξεργασία.",notes:"Πρόσφατες σημειώσεις",notesIntro:"Ερευνητικές σημειώσεις που ενημερώθηκαν πρόσφατα.",projectsCount:"ενεργά έργα",openTasks:"ανοιχτές εργασίες",draftsCount:"προσχέδια",notesCount:"σημειώσεις",viewAll:"Προβολή όλων",noProjects:"Δεν υπάρχουν ενεργά έργα",noProjectsDetail:"Τα έργα με κατάσταση Ενεργό θα εμφανίζονται εδώ.",noTasks:"Καμία εργασία δεν λήγει σήμερα ή είναι εκπρόθεσμη",noTasksDetail:"Οι άλλες ανοιχτές εργασίες παραμένουν διαθέσιμες στο Κέντρο εργασιών.",noDrafts:"Δεν υπάρχουν προσχέδια ακόμη",noDraftsDetail:"Τα πρόσφατα επεξεργασμένα προσχέδια θα εμφανίζονται εδώ.",noNotes:"Δεν υπάρχουν ερευνητικές σημειώσεις ακόμη",noNotesDetail:"Οι πρόσφατα ενημερωμένες σημειώσεις θα εμφανίζονται εδώ.",next:"Επόμενο",high:"Υψηλή προτεραιότητα",normal:"Κανονική",low:"Χαμηλή",overdue:"Εκπρόθεσμη",today:"Σήμερα",noProject:"Χωρίς έργο",updated:"Ενημερώθηκε",privateLabel:"Χώρος τρέχοντος λογαριασμού",untitledDraft:"Προσχέδιο χωρίς τίτλο",untitledNote:"Σημείωση χωρίς τίτλο"},
+  "ar-sa":{eyebrow:"مساحة العمل · Workbench",title:"منضدة العمل",intro:"اجمع المشاريع النشطة والمهام المستحقة اليوم والمتأخرة والمسودات الحديثة وملاحظات البحث في مساحة عمل واحدة. لا ينشئ Workbench نسخة ثانية من البيانات؛ بل يعكس الحالة الحالية لكل وحدة.",refresh:"تحديث",loading:"جارٍ تنظيم مساحة العمل…",unavailable:"Workbench غير متاح مؤقتًا",activeProjects:"المشاريع النشطة",activeProjectsIntro:"المشاريع التي يجري العمل عليها وخطواتها التالية.",tasks:"مهام اليوم والمهام المتأخرة",tasksIntro:"أعطِ الأولوية لما تأخر بالفعل أو يستحق اليوم.",drafts:"المسودات الحديثة",draftsIntro:"مرتبة حسب آخر تعديل.",notes:"الملاحظات الحديثة",notesIntro:"ملاحظات البحث التي تم تحديثها مؤخرًا.",projectsCount:"مشاريع نشطة",openTasks:"مهام مفتوحة",draftsCount:"مسودات",notesCount:"ملاحظات",viewAll:"عرض الكل",noProjects:"لا توجد مشاريع نشطة",noProjectsDetail:"ستظهر هنا المشاريع التي حالتها «نشط».",noTasks:"لا توجد مهام تستحق اليوم أو متأخرة",noTasksDetail:"تبقى المهام المفتوحة الأخرى متاحة في مركز المهام.",noDrafts:"لا توجد مسودات بعد",noDraftsDetail:"ستظهر هنا المسودات التي تم تعديلها مؤخرًا بعد إنشائها.",noNotes:"لا توجد ملاحظات بحث بعد",noNotesDetail:"ستظهر هنا الملاحظات التي تم تحديثها مؤخرًا.",next:"التالي",high:"أولوية مرتفعة",normal:"عادية",low:"منخفضة",overdue:"متأخرة",today:"اليوم",noProject:"بلا مشروع",updated:"آخر تحديث",privateLabel:"مساحة عمل الحساب الحالي",untitledDraft:"مسودة بلا عنوان",untitledNote:"ملاحظة بلا عنوان"}
+};
+
+export function workbenchContent(zh, locale = "") {
+  const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
+  const copy = WORKBENCH_COPY[activeLocale] || WORKBENCH_EN;
 
   return `
     <section class="workbench" data-workbench>
@@ -128,7 +85,7 @@ export function workbenchContent(zh) {
       (()=>{
         const start=()=>{
           const root=document.querySelector('[data-workbench]');if(!root)return;
-          const prefix=location.pathname.startsWith('/zh-cn/')?'/zh-cn':location.pathname.startsWith('/en/')?'/en':'';
+          const prefix=${JSON.stringify("/" + activeLocale)};
           document.querySelectorAll('[data-workbench-prefix]').forEach(link=>{const raw=link.getAttribute('href')||'';link.setAttribute('href',prefix+raw);});
           const message=document.getElementById('workbench-message');
           async function api(){const response=await fetch('/api/workbench/overview',{credentials:'same-origin',headers:{Accept:'application/json'},cache:'no-store'});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload?.error||${JSON.stringify(copy.unavailable)});return payload;}
@@ -140,8 +97,8 @@ export function workbenchContent(zh) {
           function emptyState(id,empty){document.getElementById(id).hidden=!empty;}
           function renderProjects(items){const target=document.getElementById('workbench-projects');target.replaceChildren();const list=Array.isArray(items)?items:[];emptyState('workbench-projects-empty',!list.length);list.forEach(project=>{const card=document.createElement('a');card.className='workbench-item';card.href=itemLink('/workspace/projects');const top=document.createElement('div');top.className='workbench-item-top';const title=document.createElement('strong');title.textContent=project.name||'—';const badge=document.createElement('span');badge.className='workbench-badge'+(project.priority==='high'?' is-danger':'');badge.textContent=project.priority==='high'?${JSON.stringify(copy.high)}:project.priority==='low'?${JSON.stringify(copy.low)}:${JSON.stringify(copy.normal)};top.append(title,badge);card.append(top);if(project.summary){const p=document.createElement('p');p.textContent=project.summary;card.append(p);}const meta=document.createElement('div');meta.className='workbench-item-meta';if(project.next_action){const next=document.createElement('span');next.textContent=${JSON.stringify(copy.next)}+' · '+project.next_action;meta.append(next);}const time=document.createElement('span');time.textContent=${JSON.stringify(copy.updated)}+' '+formatTime(project.updated_at);meta.append(time);card.append(meta);target.append(card);});}
           function renderTasks(items){const target=document.getElementById('workbench-tasks');target.replaceChildren();const relevant=(Array.isArray(items)?items:[]).map(task=>({...task,bucket:taskBucket(task)})).filter(task=>task.bucket).sort((a,b)=>{if(a.bucket!==b.bucket)return a.bucket==='overdue'?-1:1;return String(a.due_at||'').localeCompare(String(b.due_at||''));}).slice(0,10);emptyState('workbench-tasks-empty',!relevant.length);relevant.forEach(task=>{const card=document.createElement('a');card.className='workbench-item';card.href=itemLink('/workspace/tasks');const top=document.createElement('div');top.className='workbench-item-top';const title=document.createElement('strong');title.textContent=task.title||'—';const badge=document.createElement('span');badge.className='workbench-badge '+(task.bucket==='overdue'?'is-danger':'is-primary');badge.textContent=task.bucket==='overdue'?${JSON.stringify(copy.overdue)}:${JSON.stringify(copy.today)};top.append(title,badge);card.append(top);if(task.description){const p=document.createElement('p');p.textContent=task.description;card.append(p);}const meta=document.createElement('div');meta.className='workbench-item-meta';const project=document.createElement('span');project.textContent=task.project_name||${JSON.stringify(copy.noProject)};const due=document.createElement('span');due.textContent=formatTime(task.due_at);meta.append(project,due);card.append(meta);target.append(card);});}
-          function renderDrafts(items){const target=document.getElementById('workbench-drafts');target.replaceChildren();const list=Array.isArray(items)?items:[];emptyState('workbench-drafts-empty',!list.length);list.forEach(draft=>{const card=document.createElement('a');card.className='workbench-item';card.href=itemLink('/workspace/drafts');const top=document.createElement('div');top.className='workbench-item-top';const title=document.createElement('strong');title.textContent=draft.title||${JSON.stringify(zh?'未命名草稿':'Untitled draft')};top.append(title);card.append(top);if(draft.preview){const p=document.createElement('p');p.textContent=draft.preview;card.append(p);}const meta=document.createElement('div');meta.className='workbench-item-meta';const project=document.createElement('span');project.textContent=draft.project_name||${JSON.stringify(copy.noProject)};const time=document.createElement('span');time.textContent=formatTime(draft.updated_at);meta.append(project,time);card.append(meta);target.append(card);});}
-          function renderNotes(items){const target=document.getElementById('workbench-notes');target.replaceChildren();const list=Array.isArray(items)?items:[];emptyState('workbench-notes-empty',!list.length);list.forEach(note=>{const card=document.createElement('a');card.className='workbench-item';card.href=itemLink('/info/notes');const top=document.createElement('div');top.className='workbench-item-top';const title=document.createElement('strong');title.textContent=note.title||${JSON.stringify(zh?'未命名笔记':'Untitled note')};top.append(title);card.append(top);const meta=document.createElement('div');meta.className='workbench-item-meta';const time=document.createElement('span');time.textContent=${JSON.stringify(copy.updated)}+' '+formatTime(note.updated_at);meta.append(time);card.append(meta);target.append(card);});}
+          function renderDrafts(items){const target=document.getElementById('workbench-drafts');target.replaceChildren();const list=Array.isArray(items)?items:[];emptyState('workbench-drafts-empty',!list.length);list.forEach(draft=>{const card=document.createElement('a');card.className='workbench-item';card.href=itemLink('/workspace/drafts');const top=document.createElement('div');top.className='workbench-item-top';const title=document.createElement('strong');title.textContent=draft.title||${JSON.stringify(copy.untitledDraft)};top.append(title);card.append(top);if(draft.preview){const p=document.createElement('p');p.textContent=draft.preview;card.append(p);}const meta=document.createElement('div');meta.className='workbench-item-meta';const project=document.createElement('span');project.textContent=draft.project_name||${JSON.stringify(copy.noProject)};const time=document.createElement('span');time.textContent=formatTime(draft.updated_at);meta.append(project,time);card.append(meta);target.append(card);});}
+          function renderNotes(items){const target=document.getElementById('workbench-notes');target.replaceChildren();const list=Array.isArray(items)?items:[];emptyState('workbench-notes-empty',!list.length);list.forEach(note=>{const card=document.createElement('a');card.className='workbench-item';card.href=itemLink('/info/notes');const top=document.createElement('div');top.className='workbench-item-top';const title=document.createElement('strong');title.textContent=note.title||${JSON.stringify(copy.untitledNote)};top.append(title);card.append(top);const meta=document.createElement('div');meta.className='workbench-item-meta';const time=document.createElement('span');time.textContent=${JSON.stringify(copy.updated)}+' '+formatTime(note.updated_at);meta.append(time);card.append(meta);target.append(card);});}
           async function load(){setMessage(${JSON.stringify(copy.loading)},false);try{const data=await api();const counts=data?.counts||{};document.getElementById('workbench-project-count').textContent=String(counts.active_projects||0);document.getElementById('workbench-task-count').textContent=String(counts.open_tasks||0);document.getElementById('workbench-draft-count').textContent=String(counts.drafts||0);document.getElementById('workbench-note-count').textContent=String(counts.notes||0);renderProjects(data.projects);renderTasks(data.tasks);renderDrafts(data.drafts);renderNotes(data.notes);setMessage('',false);}catch(error){setMessage(error?.message||${JSON.stringify(copy.unavailable)},true);}}
           document.getElementById('workbench-refresh').addEventListener('click',()=>void load());void load();
         };window.setTimeout(start,0);

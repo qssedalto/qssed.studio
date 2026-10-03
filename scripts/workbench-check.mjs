@@ -24,8 +24,17 @@ for (const zh of [true, false]) {
 assert(worker.includes('pathname === "/api/workbench/overview"'), "Worker is missing the Workbench overview API route");
 assert(worker.includes("handleWorkbenchOverview(request, env)"), "Worker does not dispatch Workbench through its API boundary");
 assert(entry.includes('pathname === "/workspace/workbench"'), "Studio entry does not mount Workbench");
-assert(entry.includes("workbenchContent(zh)"), "Workbench renderer is not mounted");
+assert(entry.includes("workbenchContent(zh, fullLocale)"), "Workbench renderer must receive the full locale");
 assert(edge.includes('"/api/workbench/overview"'), "Workbench aggregation must remain behind the expensive-endpoint limiter");
+
+for (const [locale, expected] of [["zh-tw","工作台"],["ja-jp","ワークベンチ"],["ko-kr","워크벤치"],["fr-fr","Espace de travail · Workbench"],["es-es","Espacio de trabajo · Workbench"],["el-gr","Χώρος εργασίας · Workbench"],["ar-sa","منضدة العمل"]]) {
+  const markup = workbenchContent(false, locale);
+  assert(markup.includes(expected), "Workbench translation missing for " + locale);
+  assert(markup.includes('const prefix="' + "/" + locale + '";'), "Workbench must preserve locale prefix for " + locale);
+  assert(markup.includes("/api/workbench/overview"), "Workbench API must remain intact for " + locale);
+  const scripts = [...markup.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+  for (const code of scripts) new Function(code);
+}
 
 assert(api.includes('const PROJECT_ROOT = "_system/projects/"'), "Workbench must aggregate the project namespace");
 assert(api.includes('const TASK_ROOT = "_system/tasks/"'), "Workbench must aggregate the task namespace");
