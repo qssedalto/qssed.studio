@@ -140,6 +140,175 @@ export function dashboardStyles() {
     .os-nav-entry[data-nav-section="work"] .os-nav-title{font-weight:680}
 
 
+    /* WORKSPACE_NAV_V8 — compact workspace module with five balanced child routes */
+    .os-nav-entry[data-nav-section="workspace"]{
+      position:relative;
+      box-sizing:border-box;
+      padding:7px!important;
+      border-radius:20px!important;
+      background:
+        linear-gradient(180deg,color-mix(in srgb,var(--primary) 4%,var(--card)),color-mix(in srgb,var(--card) 96%,transparent))!important;
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb,var(--border) 74%,transparent),
+        0 10px 28px rgba(0,0,0,.035)!important;
+      overflow:hidden!important;
+    }
+    .os-nav-entry[data-nav-section="workspace"].is-active{
+      background:
+        linear-gradient(180deg,color-mix(in srgb,var(--primary) 6%,var(--card)),color-mix(in srgb,var(--card) 97%,transparent))!important;
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-title{
+      box-sizing:border-box;
+      min-height:54px!important;
+      grid-template-columns:38px minmax(0,1fr) 20px!important;
+      gap:10px!important;
+      padding:7px 9px!important;
+      border-radius:15px!important;
+      color:var(--text)!important;
+      background:transparent!important;
+      font-size:14px!important;
+      font-weight:700!important;
+      letter-spacing:-.015em;
+    }
+    .os-nav-entry[data-nav-section="workspace"].is-active>.os-nav-title{
+      color:var(--primary)!important;
+      background:
+        linear-gradient(135deg,color-mix(in srgb,var(--primary) 15%,transparent),color-mix(in srgb,var(--primary) 7%,transparent))!important;
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb,var(--primary) 18%,transparent),
+        0 8px 22px color-mix(in srgb,var(--primary) 7%,transparent)!important;
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-title .dashboard-icon{
+      width:38px!important;
+      height:38px!important;
+      border-radius:12px!important;
+      background:
+        linear-gradient(145deg,color-mix(in srgb,#7068ff 90%,#fff 10%),#5856d6)!important;
+      color:#fff!important;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.22),
+        inset 0 0 0 1px rgba(255,255,255,.16),
+        0 7px 18px rgba(88,86,214,.22)!important;
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-title .dashboard-icon svg{
+      width:19px!important;height:19px!important;stroke-width:1.85!important
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-title>b{
+      display:grid;
+      place-items:center;
+      width:20px;height:20px;
+      color:var(--quiet)!important;
+      font-size:18px!important;
+      line-height:1!important;
+      transition:transform .16s ease,color .16s ease;
+    }
+    .os-nav-entry[data-nav-section="workspace"].is-active>.os-nav-title>b{
+      transform:rotate(90deg);
+      color:var(--primary)!important;
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items{
+      display:grid!important;
+      gap:4px!important;
+      margin-top:6px!important;
+      padding:0!important;
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a{
+      position:relative;
+      box-sizing:border-box;
+      width:100%;
+      min-width:0;
+      min-height:43px!important;
+      grid-template-columns:30px minmax(0,1fr) 16px!important;
+      gap:9px!important;
+      align-items:center!important;
+      padding:6px 8px!important;
+      border-radius:12px!important;
+      color:var(--muted)!important;
+      background:transparent!important;
+      font-size:12.5px!important;
+      font-weight:560!important;
+      letter-spacing:-.01em;
+      overflow:hidden;
+      transition:background .14s ease,color .14s ease,box-shadow .14s ease,transform .1s ease!important;
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a::after{
+      content:"›";
+      display:grid;
+      place-items:center;
+      width:16px;height:16px;
+      color:var(--quiet);
+      font-size:16px;
+      line-height:1;
+      opacity:.62;
+      transition:transform .14s ease,color .14s ease,opacity .14s ease;
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a>span{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a .dashboard-icon{
+      width:30px!important;
+      height:30px!important;
+      border-radius:9px!important;
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 15%,transparent)!important;
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[href*="/workspace/workbench"] .dashboard-icon{
+      background:color-mix(in srgb,#0a84ff 13%,var(--fill))!important;color:#0a84ff!important
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[href*="/workspace/projects"] .dashboard-icon{
+      background:color-mix(in srgb,#ff9f0a 13%,var(--fill))!important;color:#ff9f0a!important
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[href*="/workspace/experiments"] .dashboard-icon{
+      background:color-mix(in srgb,#af52de 13%,var(--fill))!important;color:#af52de!important
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[href*="/workspace/drafts"] .dashboard-icon{
+      background:color-mix(in srgb,#8e8e93 14%,var(--fill))!important;color:#8e8e93!important
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[href*="/workspace/tasks"] .dashboard-icon{
+      background:color-mix(in srgb,#34c759 13%,var(--fill))!important;color:#34c759!important
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[aria-current="page"]{
+      color:var(--text)!important;
+      background:
+        linear-gradient(90deg,color-mix(in srgb,var(--primary) 12%,var(--fill)),color-mix(in srgb,var(--primary) 6%,var(--fill)))!important;
+      font-weight:680!important;
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 16%,transparent)!important;
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[aria-current="page"]::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:10px;
+      bottom:10px;
+      width:3px;
+      border-radius:0 3px 3px 0;
+      background:var(--primary);
+      box-shadow:0 0 12px color-mix(in srgb,var(--primary) 35%,transparent);
+    }
+    .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a[aria-current="page"]::after{
+      color:var(--primary);
+      opacity:.88;
+    }
+    @media(hover:hover) and (pointer:fine){
+      .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a:hover{
+        color:var(--text)!important;
+        background:color-mix(in srgb,var(--primary) 6%,var(--fill))!important;
+      }
+      .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a:hover::after{
+        transform:translateX(1px);
+        color:var(--primary);
+        opacity:.9;
+      }
+    }
+    @media(max-width:760px){
+      .os-nav-entry[data-nav-section="workspace"]{padding:6px!important;border-radius:18px!important}
+      .os-nav-entry[data-nav-section="workspace"]>.os-nav-title{min-height:50px!important}
+      .os-nav-entry[data-nav-section="workspace"]>.os-nav-items>a{min-height:41px!important}
+    }
+
+
     /* AWARD_DASHBOARD_PASS_2026 — editorial hierarchy + restrained motion */
     .dashboard-welcome{
       position:relative;
