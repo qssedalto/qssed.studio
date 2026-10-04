@@ -22,6 +22,66 @@ export function osStyles() {
     .os-sidebar{padding:18px;animation:panel-enter .55s cubic-bezier(.2,.8,.2,1) both;}
     .os-main{padding:30px;animation:panel-enter .62s cubic-bezier(.2,.8,.2,1) .08s both;}
     .compact-back-zone{display:none;}
+    @media (min-width:1051px) and (hover:hover) and (pointer:fine){
+      body.os-shell.os-hover-back>.compact-back-zone{
+        display:block;
+        position:fixed;
+        top:0;
+        left:0;
+        width:92px;
+        height:92px;
+        z-index:85;
+      }
+      body.os-shell.os-hover-back>.compact-back-zone .compact-back-button{
+        position:absolute;
+        top:14px;
+        left:14px;
+        display:grid;
+        place-items:center;
+        width:48px!important;
+        min-width:48px!important;
+        max-width:48px!important;
+        height:48px!important;
+        min-height:48px!important;
+        max-height:48px!important;
+        margin:0!important;
+        padding:0!important;
+        border:1px solid rgba(255,255,255,.58)!important;
+        border-radius:50%!important;
+        background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(255,255,255,.34))!important;
+        -webkit-backdrop-filter:blur(22px) saturate(180%);
+        backdrop-filter:blur(22px) saturate(180%);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.82),inset 0 -1px 0 rgba(255,255,255,.18),0 8px 24px rgba(15,23,42,.16)!important;
+        color:#111!important;
+        opacity:0;
+        transform:translateY(-6px) scale(.94);
+        pointer-events:none;
+        cursor:pointer;
+        transition:opacity .16s ease,transform .18s cubic-bezier(.2,.8,.2,1),background .18s ease,box-shadow .18s ease;
+      }
+      body.os-shell.os-hover-back>.compact-back-zone .compact-back-button span{display:none!important}
+      body.os-shell.os-hover-back>.compact-back-zone .compact-back-button svg{
+        width:24px;
+        height:24px;
+        fill:none;
+        stroke:#111;
+        stroke-width:2.35;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+      }
+      body.os-shell.os-hover-back>.compact-back-zone:hover .compact-back-button,
+      body.os-shell.os-hover-back>.compact-back-zone:focus-within .compact-back-button{
+        opacity:1;
+        transform:translateY(0) scale(1);
+        pointer-events:auto;
+      }
+      body.os-shell.os-hover-back>.compact-back-zone .compact-back-button:hover{
+        background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(255,255,255,.44))!important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(255,255,255,.22),0 10px 28px rgba(15,23,42,.2)!important;
+        transform:translateY(0) scale(1.04);
+      }
+      body.os-shell.os-hover-back>.compact-back-zone .compact-back-button:active{transform:translateY(0) scale(.94)}
+    }
     @media (min-width:901px){
       body.os-shell{height:100vh;overflow:hidden;box-sizing:border-box;}
       .os-layout{height:calc(100vh - 48px);min-height:0;}
