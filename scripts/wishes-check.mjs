@@ -102,7 +102,7 @@ assert(birthdayGlyph.includes('<rect x="4.5" y="11" width="15" height="9" rx="1.
 assert(dashboardStyle.includes("display:flex;align-items:center;justify-content:center"), "Dashboard icon containers must use deterministic flex centering.");
 assert(uiStyles.includes("width:48px!important;min-width:48px!important;max-width:48px!important"), "Compact back control must remain a true 48px circle.");
 assert(uiStyles.includes(".compact-back-button span{display:none!important}"), "Compact back control must not re-expand because of its text label.");
-assert(uiStyles.includes("@media (min-width:1051px) and (hover:hover) and (pointer:fine)") && uiStyles.includes("body.os-shell.os-hover-back>.compact-back-zone"), "Nested desktop pages must expose the top-left hover back hot zone.");
+assert(uiStyles.includes("@media (min-width:1051px)") && uiStyles.includes("body.os-shell.os-hover-back>.compact-back-zone") && uiStyles.includes("z-index:2147481900"), "Nested desktop pages must expose a high-layer top-left hover back hot zone without primary-pointer gating.");
 assert(shell.includes('desktopHoverBack = !isCompactMenuRoot(path)') && shell.includes('" os-hover-back"'), "Studio shell must enable desktop hover back only outside compact menu roots.");
 
 assert(!entry.includes("redirect_uri"), "Wish router must not become an arbitrary redirector.");
