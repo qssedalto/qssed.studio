@@ -4,7 +4,7 @@ import { profileClientScript, profileContent, profileHubContent } from "./ui-pro
 import { dashboardContent, dashboardIcon } from "./ui-dashboard.js";
 import { informationContent } from "./ui-information.js";
 import { knowledgeSearchClientScript } from "./knowledge-search.js";
-import { compactBackHref, compactBackScript } from "./ui-navigation.js";
+import { compactBackHref, compactBackScript, isCompactMenuRoot } from "./ui-navigation.js";
 import { knowledgePageMeta } from "./ui-knowledge.js";
 import { workspaceContent } from "./ui-workspace.js";
 import { wishesContent } from "./ui-wishes.js";
@@ -32,6 +32,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
   const dashboardPath = path === "/dashboard";
   const knowledgePath = path.startsWith("/info/knowledge");
   const compactBackUrl = compactBackHref(path, zh);
+  const desktopHoverBack = !isCompactMenuRoot(path);
 
   return `
 <!DOCTYPE html>
@@ -55,7 +56,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
     })();
   </script>
 </head>
-<body class="os-shell${rootMenuPath ? " os-root-menu" : ""}">
+<body class="os-shell${rootMenuPath ? " os-root-menu" : ""}${desktopHoverBack ? " os-hover-back" : ""}">
   ${topControls(links, t)}
   <div id="compact-back-zone" class="compact-back-zone">
     <button id="compact-back-button" class="compact-back-button" type="button" aria-label="${ui.backLevel}" data-fallback-href="${compactBackUrl}">
