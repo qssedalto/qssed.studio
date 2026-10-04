@@ -15,6 +15,10 @@ const COMPACT_MENU_ROOTS = new Set([
   "/settings"
 ]);
 
+export function isCompactMenuRoot(path) {
+  return COMPACT_MENU_ROOTS.has(path);
+}
+
 export function compactBackHref(path, zh) {
   const prefix = prefixFor(zh);
   if (path === "/") return prefix;
