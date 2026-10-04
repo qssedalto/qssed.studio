@@ -1,6 +1,22 @@
-export const FAVICON_PATHS = new Set(["/favicon.svg", "/favicon.ico", "/icon.svg"]);
+const FAVICON_VERSION = "aertex-20261004-safari-theme-1";
 
-export const FAVICON_LINKS = '<link rel="icon" href="/favicon.svg?v=aertex-20261003-product-role-swap-3" type="image/svg+xml">';
+export const FAVICON_PATHS = new Set([
+  "/favicon.svg",
+  "/favicon.ico",
+  "/icon.svg",
+  "/favicon-light.svg",
+  "/favicon-dark.svg",
+  "/apple-touch-icon.png"
+]);
+
+export const FAVICON_LINKS = [
+  '<link rel="icon" href="/favicon-dark.svg?v=' + FAVICON_VERSION + '" type="image/svg+xml">',
+  '<link rel="icon" href="/favicon-light.svg?v=' + FAVICON_VERSION + '" type="image/svg+xml" media="(prefers-color-scheme: light)">',
+  '<link rel="icon" href="/favicon-dark.svg?v=' + FAVICON_VERSION + '" type="image/svg+xml" media="(prefers-color-scheme: dark)">',
+  '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=' + FAVICON_VERSION + '">'
+].join("");
+
+const APPLE_TOUCH_ICON_PNG_BASE64 = "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";
 
 export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AERTEX">
   <style>
@@ -111,8 +127,36 @@ export function faviconSvgForProduct(product = "") {
     .replace("</svg>", knockout + mainGlyph + brandBadge + "</svg>");
 }
 
+function forcedFaviconTheme(svg, theme) {
+  const dark = theme === "dark";
+  const paper = dark ? "#121417" : "#ffffff";
+  const ink = dark ? "#ffffff" : "#121417";
+  const filter = dark ? "invert(1)" : "none";
+  const override = `
+    :root{--paper:${paper}!important;--ink:${ink}!important;--edge:${ink}!important}
+    .aertex-reference-mark,.aertex-badge-mark{filter:${filter}!important}
+  `;
+  return String(svg)
+    .replace("</style>", override + "</style>")
+    .replace("</style>", "</style>\n  <rect class=\"favicon-background\" x=\"0\" y=\"0\" width=\"64\" height=\"64\" rx=\"12\" fill=\"var(--paper)\"/>");
+}
+
+function faviconPathForRequest(request) {
+  try { return new URL(request?.url || "https://qsseda.com/favicon.svg").pathname; }
+  catch { return "/favicon.svg"; }
+}
+
 export function faviconSvgForRequest(request) {
-  return faviconSvgForProduct(faviconProductForRequest(request));
+  const svg = faviconSvgForProduct(faviconProductForRequest(request));
+  const pathname = faviconPathForRequest(request);
+  if (pathname === "/favicon-light.svg") return forcedFaviconTheme(svg, "light");
+  if (pathname === "/favicon-dark.svg") return forcedFaviconTheme(svg, "dark");
+  return svg;
+}
+
+function appleTouchIconBytes() {
+  const binary = atob(APPLE_TOUCH_ICON_PNG_BASE64);
+  return Uint8Array.from(binary, character => character.charCodeAt(0));
 }
 
 export function faviconResponse(request) {
@@ -121,6 +165,18 @@ export function faviconResponse(request) {
     return new Response("Method not allowed", {
       status: 405,
       headers: { "allow": "GET, HEAD", "cache-control": "public, max-age=86400" }
+    });
+  }
+
+  const pathname = faviconPathForRequest(request);
+  if (pathname === "/apple-touch-icon.png") {
+    return new Response(method === "HEAD" ? null : appleTouchIconBytes(), {
+      status: 200,
+      headers: {
+        "content-type": "image/png",
+        "cache-control": "public, max-age=604800, immutable",
+        "x-content-type-options": "nosniff"
+      }
     });
   }
 
