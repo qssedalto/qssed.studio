@@ -686,7 +686,6 @@ export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https
           <a class="os-nav-title" href="${mainOrigin}${prefix}/work">
             ${dashboardIcon("work")}
             <span>Work</span>
-            <b aria-hidden="true">›</b>
           </a>
           <div class="os-nav-items">
             <a href="${mainOrigin}${prefix}">${dashboardIcon("home")}<span>${activeLocale === "zh-cn" ? "AERTEX 主站" : "AERTEX Home"}</span></a>
