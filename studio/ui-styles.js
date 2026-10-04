@@ -22,15 +22,16 @@ export function osStyles() {
     .os-sidebar{padding:18px;animation:panel-enter .55s cubic-bezier(.2,.8,.2,1) both;}
     .os-main{padding:30px;animation:panel-enter .62s cubic-bezier(.2,.8,.2,1) .08s both;}
     .compact-back-zone{display:none;}
-    @media (min-width:1051px) and (hover:hover) and (pointer:fine){
+    @media (min-width:1051px){
       body.os-shell.os-hover-back>.compact-back-zone{
         display:block;
         position:fixed;
         top:0;
         left:0;
-        width:92px;
-        height:92px;
-        z-index:85;
+        width:104px;
+        height:104px;
+        z-index:2147481900;
+        pointer-events:auto;
       }
       body.os-shell.os-hover-back>.compact-back-zone .compact-back-button{
         position:absolute;
