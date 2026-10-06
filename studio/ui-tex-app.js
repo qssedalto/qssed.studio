@@ -1,3 +1,4 @@
+// 初学者导读：TeX 工作区应用壳与页面装配；把编辑器、预览、版本、协作等子模块组合起来，尽量不在这里重复各子模块算法。
 export function polishTexWorkbenchApp(markup, zh) {
   const copy = zh ? {
     startTitle: "开始一份 TeX 文档",
