@@ -1,3 +1,4 @@
+// 初学者导读：OAuth/OIDC 风格授权端点实现；redirect_uri、client、state/PKCE 等参数必须在服务端严格校验。
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 import { appearanceBootScript } from "./studio/appearance.js";
 
