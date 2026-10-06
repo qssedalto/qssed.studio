@@ -1,3 +1,4 @@
+// 初学者导读：向多个 SSR 页面统一注入浏览器安全策略；用于减少 CSP/安全头在不同页面之间漂移。
 import { hardenBrowserMarkup } from "./browser-security.js";
 import { hardenLegacyApiBrowserMarkup } from "./legacy-api-browser-security.js";
 import { injectAccountMenuRuntime } from "./account-menu.js";
