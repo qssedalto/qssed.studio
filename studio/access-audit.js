@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/access-audit.js
+ * AERTEX 主站共享业务模块：被 Worker 入口或其他 studio 模块调用，承载路由、数据、品牌、安全或业务逻辑。
+ * 阅读方法：先找本文件导出的入口，再沿调用的辅助函数向下读；遇到 API 路径时，再回到 Worker/路由入口确认是谁调用它。
+ * 数据流：重点观察“输入从哪里来 → 在哪里校验 → 读写了什么状态/存储 → 最后返回什么”。
+ * 修改注意：不要只为了缩短代码删除权限、边界检查或错误分支；如果业务规则变化，应同步更新 scripts/*-check.mjs。
+ * 调试建议：先构造最小可复现输入，再观察关键状态与响应，不要只凭页面现象猜后端原因。
+ */
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { json } from "./routing.js";
