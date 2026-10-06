@@ -1,3 +1,4 @@
+// 初学者导读：服务端运行时工具层：封装 Worker 环境中常用的请求上下文/响应能力，让上层模块少依赖平台细节。
 // 这里只放“服务端 Worker 运行时”辅助函数。任何返回给浏览器的模块都不应调用 getSupabaseSecret，
 // 更不能把 service-role secret 拼进 Watch/Cash/GPT 的 HTML 或静态 JS。
 export function getSupabaseSecret(env) {
