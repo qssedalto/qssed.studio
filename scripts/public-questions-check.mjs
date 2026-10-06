@@ -41,8 +41,11 @@ assert(privacyTraining?.short.includes("没有公开的正式 AI 数据训练政
 const accountDeletion = questionTranslation(questionById("7eb2c50f-3031-4e9e-90c4-a1e95bcbe037"), "zh-cn");
 assert(accountDeletion?.short.includes("没有公开的自助"), "Account deletion must not be described as an implemented self-service flow.");
 
+// Watch FAQ 也是技术边界回归：不能把通用 Bucket 同步说成固定 allowlist，也不能遗漏自动端口发现。
 const watchBuckets = questionTranslation(questionById("a9924bd6-b7e4-4416-a2e7-e82074121042"), "zh-cn");
 assert(watchBuckets?.short.includes("没有固定的官方 bucket allowlist"), "Watch bucket scope must remain technically accurate.");
+const watchSync = questionTranslation(questionById("87333a55-58bc-45e8-91cf-39012c988118"), "zh-cn");
+assert(watchSync?.answer.some(line => line.includes("5000–6000") && line.includes("自动")), "Watch FAQ must describe automatic local ActivityWatch port discovery.");
 
 assert(JSON.stringify(QUESTION_INDEX_LOCALES) === JSON.stringify(["zh-cn","en-us"]), "Questions sitemap must only publish locales with distinct first-party translations.");
 assert(questionHubPage("en-gb").includes('/en-us/q'), "en-gb Questions must canonicalize to the en-us question route.");
