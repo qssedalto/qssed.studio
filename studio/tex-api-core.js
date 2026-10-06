@@ -1,3 +1,4 @@
+// 初学者导读：TeX 工作区核心服务端逻辑：共享文件、项目和编译相关基础操作；上层 tex API/协作 API 复用这里的公共校验。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
