@@ -1,3 +1,4 @@
+// 初学者导读：Cash 的前端数据模型与计算规则；金额、预算和预测都应从这里的统一口径派生，避免不同卡片各算一套。
 (function (root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
