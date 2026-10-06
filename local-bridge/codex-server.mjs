@@ -1,3 +1,4 @@
+// 初学者导读：Codex 本机提供方桥接服务；负责启动/连接 Codex 并把请求包装成 Work 可消费的接口。命令执行和工作目录必须保持显式约束。
 import http from "node:http";
 import fs from "node:fs";
 import os from "node:os";
