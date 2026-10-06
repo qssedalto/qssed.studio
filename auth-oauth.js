@@ -18,6 +18,7 @@ const DEFAULT_SCOPE = "profile.read session.read";
 const CODE_CHALLENGE_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
 const STATE_PATTERN = /^[\x21-\x7E]{16,512}$/;
 
+// OAuth 2.0 总入口：按 authorize/token/revoke/introspect/metadata 分流。各分支共享 client/redirect/scope 校验，不能只在授权页校验一次。
 export async function handleOAuthRequest(request) {
   const url = new URL(request.url);
   const pathname = url.pathname.replace(/\/+$/, "") || "/";
@@ -68,6 +69,7 @@ async function handleAuthorizePage(request) {
   return html(authorizePage({ ...params, client }), 200);
 }
 
+// 用户授权决定：验证会话、client、redirect_uri、scope 和 state，再生成授权码或拒绝结果；redirect_uri 必须与注册值完全匹配。
 async function handleAuthorizeDecision(request) {
   let body;
   try {
@@ -123,6 +125,7 @@ async function handleAuthorizeDecision(request) {
   });
 }
 
+// Token 端点：处理 authorization_code/refresh 等 grant，并验证 PKCE/client 条件后返回 OAuth 标准响应。错误响应不能包含内部数据库详情。
 async function handleToken(request) {
   const form = await readForm(request);
   if (!form) return tokenError("invalid_request", "Expected application/x-www-form-urlencoded body", 400);
@@ -181,6 +184,7 @@ async function handleRevoke(request) {
   return new Response(null, { status: 200, headers: oauthHeaders("application/json;charset=UTF-8") });
 }
 
+// Token introspection：只允许受信任资源服务器/客户端查询 token 状态，返回最小 active/sub/scope 等字段。
 async function handleIntrospect(request) {
   const credentials = parseBasicCredentials(request.headers.get("Authorization") || "");
   if (!credentials) return introspectionUnauthorized();

@@ -15,6 +15,7 @@ const ACCESS_MAX_AGE = 60 * 60;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 const ACTIVE_STATUS = "active";
 
+// Auth 子域 identifier 登录：接受用户名或邮箱，解析成实际 Auth 账号并完成密码登录；失败提示保持模糊，避免枚举账户。
 export async function handleIdentifierLogin(request) {
   let body;
   try {

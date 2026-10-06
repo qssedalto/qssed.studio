@@ -111,6 +111,7 @@ export default {
   }
 };
 
+// Cash 数据读写入口：所有数据对象按 userId 隔离；GET 返回当前用户数据，写操作先校验 payload 再覆盖对应对象。
 async function handleCashData(request, env, userId) {
   if (!env?.STORAGE || !userId) return json({ error: "Cash storage is unavailable." }, 503);
   const key = `cash/users/${userId}/data.json`;
@@ -177,6 +178,7 @@ async function handleCashData(request, env, userId) {
   return json({ error: "Method not allowed." }, 405);
 }
 
+// Cash payload 最小结构校验：防止把任意 JSON/超大未知结构写入持久层。更细的财务字段规则由 cash-web/model.js normalizeData 负责。
 function validCashPayload(data) {
   if (!data || typeof data !== "object" || Array.isArray(data)) return false;
   if (![2, 3, 4].includes(Number(data.version))) return false;

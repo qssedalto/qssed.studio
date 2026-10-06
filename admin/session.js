@@ -14,6 +14,7 @@ import { adminCanonicalPath as localizedAdminPath, adminLocaleFromPath } from ".
 const ACCESS_COOKIE = "__Host-aertex-admin-access";
 const ACCESS_MAX_AGE = 55 * 60;
 
+// Admin 会话交接：从主站/认证站建立 admin 子域会话前再次验证用户确实拥有管理员权限。普通登录态不能直接转成管理员会话。
 export async function handleAdminHandoff(request) {
   if (request.method !== "POST") return text("Not found.", 404);
 
@@ -53,6 +54,7 @@ export async function handleAdminHandoff(request) {
   return new Response(null, { status: 302, headers });
 }
 
+// Admin 页面会话验证：同时检查 access token 有效和数据库管理员授权；仅 token 有效但无 admin role 仍视为无权限。
 export async function verifyAdminSession(request) {
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   const accessToken = cookies[ACCESS_COOKIE] || "";

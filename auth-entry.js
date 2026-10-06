@@ -37,6 +37,7 @@ export default {
   }
 };
 
+// Auth Worker 外层路由：在进入具体登录/OAuth/SSO 逻辑前先做边缘保护、return target 管理和路径归一化。
 async function routeAuthRequest(request, env, ctx) {
   const url = new URL(request.url);
   const pathname = normalizePath(url.pathname);
@@ -107,6 +108,7 @@ function normalizePath(pathname) {
   return pathname.replace(/\/+$/, "") || "/";
 }
 
+// Auth return/next 路径清洗：只允许本站相对路径，避免用户从登录流程被重定向到任意第三方站点。
 function safeNextPath(value) {
   const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "";

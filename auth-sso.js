@@ -22,6 +22,7 @@ export function isAuthSsoPath(pathname) {
   return SSO_PATHS.has(normalizePath(pathname));
 }
 
+// 多 AERTEX 域 SSO 同步入口：按 start/import/current 等阶段分流，把 auth.qsseda.com 会话同步到受信任同族域。
 export async function handleAuthSsoRequest(request) {
   const url = new URL(request.url);
   const pathname = normalizePath(url.pathname);
@@ -47,6 +48,7 @@ export async function handleAuthSsoRequest(request) {
   return text("Not found", 404);
 }
 
+// SSO 同步起点：计算还需要同步的受信任根域/产品并生成表单跳转链，不把 token 放到 URL。
 async function startSync(request) {
   const url = new URL(request.url);
   const root = rootDomainForHost(url.hostname);
@@ -67,6 +69,7 @@ async function startSync(request) {
   return finishUrl(url.origin, next);
 }
 
+// SSO 导入：只接受来自受信任 Auth 源的 POST，同步 access/refresh Cookie 后继续剩余目标；不能接受跨站任意表单。
 async function importSync(request) {
   const url = new URL(request.url);
   if (!trustedSyncSource(request)) return text("Invalid SSO origin", 403);

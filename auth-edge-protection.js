@@ -21,6 +21,7 @@ const OAUTH_PROTOCOL_PATHS = new Set([
   "/.well-known/oauth-authorization-server"
 ]);
 
+// Auth 专用边缘保护：在认证逻辑之前处理扫描器、请求体上限和速率限制。认证端点比普通页面更敏感，因此规则独立于主站。
 export async function protectAuthEdgeRequest(request, env) {
   const url = new URL(request.url);
   const pathname = normalizePath(url.pathname);
@@ -68,6 +69,7 @@ export function applyAuthEdgeHeaders(request, response) {
   });
 }
 
+// Auth 风险信号：提取用于审计/限流的机器人特征；这些信号用于辅助判断，不直接替代密码/会话认证。
 export function authBotSignals(request) {
   return botSignals(request);
 }

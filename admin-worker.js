@@ -60,6 +60,7 @@ export default {
   }
 };
 
+// Admin Worker 总路由：先验证 Admin 会话，再按 pathname 分发管理 API/页面/AI 管理代理；普通用户请求不会进入真实管理 handler。
 async function routeAdminRequest(request, env) {
   const url = new URL(request.url);
   const pathname = normalizePath(url.pathname);
@@ -160,6 +161,7 @@ async function routeAdminRequest(request, env) {
     : response;
 }
 
+// Intelligence 管理代理：把 admin 子域的 AI 管理请求转给内部 AI 管理 API，并保留管理员会话上下文；不暴露内部服务地址给浏览器。
 async function proxyAiAdmin(request, env, session, pathname) {
   if (!env?.GPT_CONTROL || !env?.ADMIN_BRIDGE_SECRET) {
     return json({ error: "Intelligence administration bridge is unavailable." }, 503);

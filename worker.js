@@ -88,6 +88,7 @@ export default {
   }
 };
 
+// 主站请求总路由：先处理全局特殊路径/产品交接，再进入 Studio 页面/API；这里决定了 qsseda.com 大多数请求最终由哪个模块接手。
 async function routeStudioRequest(request, env, ctx) {
   let url = new URL(request.url);
   let pathname = url.pathname;
@@ -176,6 +177,7 @@ async function routeStudioRequest(request, env, ctx) {
   return hardenGlobalBrowserResponse(response);
 }
 
+// TeX 协作专用路由：把实时/共享相关路径从普通 Studio API 中分离，便于独立做权限、升级连接和 Durable Object 处理。
 async function handleTexCollaborationRoute(request, env) {
   const primary = await handleTexCollaborationApi(request, env);
   if (request.method !== "GET" || primary.status !== 404) return primary;
@@ -217,6 +219,7 @@ async function allowed(limiter, key) {
   }
 }
 
+// 限流 key 生成：优先使用已认证用户身份，匿名请求回退到网络/请求特征；这样同一账号不会通过切换 IP 轻易绕过高成本接口限制。
 async function rateLimitKey(request, scope, preferAuthenticatedIdentity) {
   if (preferAuthenticatedIdentity) {
     const authorization = request.headers.get("Authorization") || "";

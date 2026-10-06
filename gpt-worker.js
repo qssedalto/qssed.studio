@@ -149,6 +149,7 @@ export default {
   }
 };
 
+// Intelligence 内部管理 API：仅供受信任 Admin Worker/内部调用，处理供应商/模型/成本等管理操作，不应暴露成普通用户公开入口。
 async function handleInternalAdminAi(request, env, pathname) {
   const expectedSecret = String(env?.ADMIN_BRIDGE_SECRET || "");
   const suppliedSecret = String(request.headers.get("X-AERTEX-Control-Secret") || "");
@@ -191,6 +192,7 @@ function renderShell(locale, bootstrap = {}) {
   return renderGptApp(locale, bootstrap);
 }
 
+// Intelligence 首屏 bootstrap：收集会话、配置、可用模型/会话摘要等必要数据，尽量让页面首屏一次拿到稳定初始状态。
 async function loadGptBootstrap(request, env, gate, conversationId = "") {
   const tasks = [
     handleAiApi(internalRequest(request, "/api/ai/config"), env, gate),
@@ -213,6 +215,7 @@ function internalRequest(request, path) {
   return new Request(url.toString(), { method: "GET", headers });
 }
 
+// 共享会话读取：token 是公开分享标识，不等于账户会话；只返回分享记录允许公开的消息/作者信息。
 async function loadSharedConversation(token) {
   try {
     const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/get_shared_ai_conversation", {
