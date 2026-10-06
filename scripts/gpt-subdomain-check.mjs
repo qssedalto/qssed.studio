@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Intelligence 独立 gpt.* 子域。
+//
+// 核对主站 -> AERTEX ID -> gpt.* handoff、Session、深链会话路径、Huawei 豁免和域族映射，
+// 防止跨产品登录时 refresh token 进入 URL、旧会话跨账号复活或 gpt.* 被当成主站普通页面。
 import fs from "node:fs";
 import { normalizeHandoffNext } from "../studio/auth-handoff.js";
 import { SUPPORTED_LOCALES } from "../studio/locale.js";
