@@ -1,3 +1,4 @@
+// 初学者导读：中秋祝福公开页面生成器；和 birthday 类似，重点是安全转义分享参数并保持移动端可读。
 import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
 
 const MID_AUTUMN_COPY = {
