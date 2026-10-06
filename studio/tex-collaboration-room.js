@@ -1,3 +1,4 @@
+// 初学者导读：TeX 协作房间模型：集中管理房间生命周期、参与者与共享状态，避免连接层各自保存不一致的房间状态。
 const MAX_MESSAGE_BYTES = 1024 * 1024;
 const MAX_PRESENCE_POSITION = 180000;
 const AUTH_LEASE_MS = 90 * 1000;
