@@ -9,7 +9,9 @@ fn main() {
 
     let icon = Path::new("assets/aertex-watch.ico");
     if !icon.exists() {
-        println!("cargo:warning=assets/aertex-watch.ico is missing; the Windows executable will use the default icon");
+        println!(
+            "cargo:warning=assets/aertex-watch.ico is missing; the Windows executable will use the default icon"
+        );
         return;
     }
 
@@ -19,5 +21,7 @@ fn main() {
     resource.set("FileDescription", "AERTEX Watch Sync");
     resource.set("CompanyName", "AERTEX");
     resource.set("LegalCopyright", "AERTEX");
-    resource.compile().expect("failed to compile Windows resources");
+    resource
+        .compile()
+        .expect("failed to compile Windows resources");
 }
