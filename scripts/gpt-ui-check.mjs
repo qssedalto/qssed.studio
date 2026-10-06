@@ -1,3 +1,4 @@
+// 初学者导读：Intelligence 渲染回归检查；覆盖桌面、移动和 Apple Watch 超小屏聊天 UI 的关键结构。
 import vm from "node:vm";
 import { renderGptApp, renderIntelligenceNotFound, renderSharedConversation } from "../studio/gpt-ui.js";
 
