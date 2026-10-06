@@ -1,3 +1,4 @@
+# 正式 Windows 同步客户端是一个单独的 Rust 二进制；不发布到 crates.io。
 [package]
 name = "aertex-watch-sync"
 version = "1.0.0"
@@ -9,12 +10,15 @@ publish = false
 name = "AERTEX-Watch-Sync"
 path = "src/main.rs"
 
+# reqwest 使用 blocking API 是有意的：网络工作全部发生在 Runtime 后台线程，
+# UI 线程不执行 HTTP，因此无需为这个小型常驻客户端引入 async runtime。
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 url = "2"
+# 这里只打开实际使用到的 Win32 API 族：凭据库、注册表、文件原子替换、托盘/窗口等。
 windows-sys = { version = "0.61", features = [
   "Win32_Foundation",
   "Win32_Graphics_Gdi",
@@ -31,6 +35,7 @@ windows-sys = { version = "0.61", features = [
 [build-dependencies]
 winres = "0.1"
 
+# 常驻托盘程序优先减小体积和依赖面；panic=abort 也避免 release 包携带展开支持。
 [profile.release]
 codegen-units = 1
 lto = "thin"
