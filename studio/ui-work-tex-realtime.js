@@ -1,3 +1,4 @@
+// 初学者导读：TeX 前端实时连接适配；把服务器推送的协作事件应用到当前页面，并负责重连/状态提示。
 export function enhanceWorkTexRealtime(markup, zh) {
   const copy = zh ? {
     live: "实时协作",
