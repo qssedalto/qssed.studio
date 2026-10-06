@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Drive/存储设置 UI；展示容量、文件与操作入口，真实存储读写和配额校验在 storage-api.js。
 import { MAX_STORAGE_FILE_BYTES } from "./config.js";
 
 const STORAGE_EN = {
