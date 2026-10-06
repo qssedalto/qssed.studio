@@ -1,3 +1,4 @@
+// 初学者导读：知识库的方法论/说明内容数据；属于声明式知识内容，不负责搜索或权限。
 export const METHODOLOGY_KNOWLEDGE = {
   "coding-standards": {
     zh: {
