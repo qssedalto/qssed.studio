@@ -1,3 +1,4 @@
+// 初学者导读：链接页面的视觉/交互增强层；只调整呈现，不应改变 favorites/user-links API 的数据语义。
 export function polishLinksContent(content, pathname, zh) {
   let output = String(content || "");
 
