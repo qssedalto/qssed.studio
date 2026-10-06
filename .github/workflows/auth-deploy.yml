@@ -1,3 +1,5 @@
+# 部署：AERTEX ID 独立 Auth Worker。
+# 只有通过仓库配置的生产环境/secrets 才能发布；这里负责部署与上线后最小健康验证，不在 workflow 文件中保存任何真实密钥。
 name: Deploy AERTEX ID
 
 on:
