@@ -1,3 +1,4 @@
+// 初学者导读：版本历史密度/时间轴视觉计算；只决定怎样压缩展示大量版本，不改变版本本身的顺序与内容。
 export function enhanceWorkTexVersionDensity(markup) {
   return String(markup || "") + `
     <style id="qsseda-work-tex-version-density">
