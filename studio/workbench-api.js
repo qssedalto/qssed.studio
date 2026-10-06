@@ -1,3 +1,4 @@
+// 初学者导读：Workbench 聚合 API：把项目、草稿、实验/任务等工作对象组合成统一工作台视图。聚合不应放宽底层权限。
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId, verifyStorageUser } from "./storage-api.js";
