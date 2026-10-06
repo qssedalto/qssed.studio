@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Drive/存储 API：处理文件元数据、对象存储与配额相关操作。对象 key 与用户身份必须严格绑定。
 import { SUPABASE_URL, SUPABASE_KEY, MAX_STORAGE_FILE_BYTES, DEFAULT_STORAGE_QUOTA_BYTES, MAX_STORAGE_LIST_OBJECTS, UUID_PATTERN } from "./config.js";
 import { getSupabaseSecret, workerLog } from "./server-runtime.js";
 import { json } from "./routing.js";
