@@ -1,3 +1,4 @@
+// 初学者导读：Work 本机桥回归检查；确认浏览器端只连接受控 localhost 服务，命令/文件能力仍受白名单与路径约束。
 import fs from "node:fs";
 import { workHubContent, workLocalBridgeContent } from "../studio/ui-work.js";
 import { enhanceWorkLocalBridgeNative } from "../studio/ui-work-native.js";
