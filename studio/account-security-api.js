@@ -1,3 +1,7 @@
+// 账号安全 API：向已登录用户提供设备/会话/登录历史等安全摘要，并处理与账号安全有关的操作。
+//
+// 这类接口会被主站、Intelligence 等多个产品复用，所以必须坚持同一套 Session Gate、owner 校验和最小化返回字段，
+// 不能因为某个产品 UI 需要更多信息就直接放宽整个账户安全接口。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { parseServerUserAgent } from "./account-api.js";
 import { json } from "./routing.js";
