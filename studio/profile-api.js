@@ -1,3 +1,4 @@
+// 初学者导读：个人资料 API：读取和更新当前用户公开/私有资料字段。字段可见性和当前会话身份必须由服务端决定。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
