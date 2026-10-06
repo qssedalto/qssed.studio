@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Intelligence 服务端渲染 HTML 与内联客户端脚本。
+//
+// 脚本会用 vm.Script 逐段解析生成的 inline JS，并检查模型选择、富文本、分享、输入和小屏布局。
+// 注意源码中的 watch* 在这里主要指 Apple Watch / 超小屏聊天 UI，不是 AERTEX Watch 活动数据产品。
 import vm from "node:vm";
 import { renderGptApp, renderIntelligenceNotFound, renderSharedConversation } from "../studio/gpt-ui.js";
 
