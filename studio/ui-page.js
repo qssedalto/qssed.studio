@@ -4,6 +4,8 @@ import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from ".
 import { LOCALE_META } from "./locale.js";
 import { appearanceBootScript } from "./appearance.js";
 
+// 共享页面 <head> 基座：favicon、viewport、外观首屏脚本、Supabase 浏览器 SDK 与基础 UI token。
+// Watch 的 auth handoff 会调用它，但 Watch 仪表盘自己的 HTML/CSS 不依赖这套卡片布局。
 export function baseHead(title) {
   return `
     <title>${title}</title>
@@ -545,6 +547,8 @@ export function baseHead(title) {
   `;
 }
 
+/// 创建浏览器 Supabase client，并把 auth storage 做成受控适配器。
+/// 产品 handoff（包括 Watch）先由服务端验证 token，再调用这个脚本让浏览器 SDK 恢复本地会话。
 export function supabaseScript() {
   return `
     <script>
@@ -595,6 +599,7 @@ export function supabaseScript() {
   `;
 }
 
+// 主站的外观设置 UI 只负责写共享 appearance 偏好；Watch 页面不会再渲染第二个主题切换器。
 export function themeToggle(locale = "en-us") {
   const copy = {
     "zh-cn": { title:"外观", system:"跟随系统", light:"浅色", dark:"深色" },
@@ -650,6 +655,7 @@ export function topControls(links, t) {
   `;
 }
 
+/// 主题菜单只调用 window.AERTEX_APPEARANCE；真正的 Cookie/localStorage 同步逻辑集中在 appearance.js。
 export function themeScript() {
   return `
     <script>
