@@ -1,3 +1,4 @@
+// 初学者导读：主站 SSR 根页面回归检查；确认多语言、产品链接和跨根域规范化保持一致。
 import { LEGACY_REDIRECTS, TEXT } from "../studio/config.js";
 import { buildLinks } from "../studio/routing.js";
 import { osPage } from "../studio/ui-shell.js";
