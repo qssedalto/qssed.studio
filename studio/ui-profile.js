@@ -1,3 +1,4 @@
+// 初学者导读：个人资料与账户中心 UI；负责表单和展示，实际资料读写通过 profile/account API 完成。
 import { osHubIcon } from "./ui-primitives.js";
 
 const PROFILE_COPY = {
