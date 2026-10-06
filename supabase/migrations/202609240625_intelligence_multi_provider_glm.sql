@@ -1,3 +1,10 @@
+-- 【初学者导读】
+-- 文件：supabase/migrations/202609240625_intelligence_multi_provider_glm.sql
+-- Intelligence 多供应商迁移：把 GLM 等非单一模型提供方纳入统一网关，扩展 provider/model 配置结构。
+-- 阅读顺序：先看新增/修改的数据结构，再看 RPC/FUNCTION，最后检查 GRANT/REVOKE、RLS 和索引；权限相关 migration 尤其要理解“谁能调用”。
+-- 安全提示：设备豁免、管理员 RPC、AI 配额都属于服务端权威状态，不能由前端本地值决定。
+-- 历史迁移原则：本轮只增加注释，不改变任何 SQL 语义；未来业务变化通过新的 migration 追加。
+
 -- AERTEX Intelligence multi-provider access and Zhipu GLM support.
 -- Applied to production on 2026-09-24.
 

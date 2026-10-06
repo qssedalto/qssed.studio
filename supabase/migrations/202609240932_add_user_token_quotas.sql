@@ -1,3 +1,10 @@
+-- 【初学者导读】
+-- 文件：supabase/migrations/202609240932_add_user_token_quotas.sql
+-- 用户 Token 配额迁移：建立按用户/套餐控制模型用量的额度字段或 RPC，避免只靠前端显示限制。
+-- 阅读顺序：先看新增/修改的数据结构，再看 RPC/FUNCTION，最后检查 GRANT/REVOKE、RLS 和索引；权限相关 migration 尤其要理解“谁能调用”。
+-- 安全提示：设备豁免、管理员 RPC、AI 配额都属于服务端权威状态，不能由前端本地值决定。
+-- 历史迁移原则：本轮只增加注释，不改变任何 SQL 语义；未来业务变化通过新的 migration 追加。
+
 -- Add first-class per-user token quotas to AERTEX Intelligence.
 -- Token quotas are independent from USD cost quotas so free/provider-credit usage can still be limited.
 

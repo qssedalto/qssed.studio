@@ -1,3 +1,10 @@
+-- 【初学者导读】
+-- 文件：supabase/migrations/20260925172204_admin_rpc_private_guard.sql
+-- Admin RPC 私有化加固：确保管理 RPC 只能由受信任管理员路径调用，减少直接暴露给普通 authenticated 用户的风险。
+-- 阅读顺序：先看新增/修改的数据结构，再看 RPC/FUNCTION，最后检查 GRANT/REVOKE、RLS 和索引；权限相关 migration 尤其要理解“谁能调用”。
+-- 安全提示：设备豁免、管理员 RPC、AI 配额都属于服务端权威状态，不能由前端本地值决定。
+-- 历史迁移原则：本轮只增加注释，不改变任何 SQL 语义；未来业务变化通过新的 migration 追加。
+
 begin;
 
 -- The administrator control plane keeps privileged implementation details out of
