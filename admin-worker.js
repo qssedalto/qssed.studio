@@ -1,3 +1,4 @@
+// 初学者导读：管理员控制面的 Cloudflare Worker 入口；负责把 admin.* 请求分发到管理 API、会话与静态 UI。修改路由顺序时要先确认鉴权分支仍然早于普通页面。
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
