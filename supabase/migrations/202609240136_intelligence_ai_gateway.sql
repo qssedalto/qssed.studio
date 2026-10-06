@@ -1,3 +1,10 @@
+-- 【初学者导读】
+-- 文件：supabase/migrations/202609240136_intelligence_ai_gateway.sql
+-- Intelligence AI Gateway 基础迁移：建立模型供应商、会话/调用、密钥或网关配置所需的数据结构和 RPC。
+-- 阅读顺序：先找本 migration 新增/修改了哪些表或函数，再看索引和 RLS/GRANT；最后确认它解决的是“结构、权限、性能还是兼容性”问题。
+-- 初学者提醒：SQL 里的函数和策略同样是后端业务代码；前端即使隐藏功能，也不能替代数据库权限检查。
+-- 历史迁移原则：这里只增加注释，不修改既有 SQL 行为；新的业务变化应通过新的 migration 向前演进。
+
 -- AERTEX Intelligence cloud AI gateway.
 -- Production schema was applied on 2026-09-24; this migration records the deployable state.
 
