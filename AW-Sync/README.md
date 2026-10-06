@@ -4,38 +4,60 @@ AERTEX Watch keeps ActivityWatch collection local while securely copying Activit
 
 ## Production Windows client
 
-`AERTEX-Watch-Sync.exe` is the supported client for ordinary Windows users. Download it from:
+Ordinary Windows users install AERTEX Watch Sync with the per-user installer:
 
-`https://aw.qsseda.com/AERTEX-Watch-Sync.exe`
+`https://aw.qsseda.com/AERTEX-Watch-Sync-Setup.exe`
 
-The client:
+The installer:
 
-- installs itself for the current user under `%LOCALAPPDATA%\AERTEX\Watch Sync`;
+- requires no administrator privileges;
+- installs the client under `%LOCALAPPDATA%\AERTEX\Watch Sync`;
+- stops any existing AERTEX Watch Sync process before replacement;
+- deletes the entire previous AERTEX Watch Sync install/state/log directory before copying the new build;
+- deletes the previous `AERTEX/WatchSync/DeviceToken` credential from Windows Credential Manager, so a fresh device token must be generated after reinstall;
+- registers `AERTEX Watch Sync` in `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`;
+- creates a Start-menu shortcut and an uninstall entry;
+- uses the current AERTEX Watch product icon for both the installed application and the installer.
+
+The installed client:
+
 - discovers ActivityWatch only on `127.0.0.1`, including non-default ports in the range 5000–6000;
-- stores the AERTEX device token in Windows Credential Manager, never in JSON or the registry;
+- stores the new AERTEX device token in Windows Credential Manager, never in JSON or the registry;
 - syncs the most recent 30 days on first use, then resumes incrementally with a two-second overlap;
 - uploads at most 2,000 events per request to `https://awd.qsseda.com/api/sync`;
 - runs in the Windows notification area and checks every ten minutes;
-- registers per-user startup through `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`;
-- requires neither administrator privileges nor Node.js, PowerShell, Python, .NET, or a terminal window.
+- requires neither Node.js, PowerShell, Python, .NET, nor a terminal window.
 
-Local state is stored at `%LOCALAPPDATA%\AERTEX\Watch Sync\state.json`. It contains only the discovered ActivityWatch endpoint and per-bucket progress. Rotating logs are stored in the adjacent `logs` directory.
+Local state is stored at `%LOCALAPPDATA%\AERTEX\Watch Sync\state.json`. Rotating logs are stored in the adjacent `logs` directory. Reinstalling intentionally clears both together with the old device credential.
+
+## Packaging
+
+The Rust GUI executable is an implementation detail of the installer and is not published as the ordinary-user download.
+
+CI:
+
+1. renders `AW-Sync/native/assets/aertex-watch.svg` into a Windows `.ico`;
+2. embeds that icon and version metadata into `AERTEX-Watch-Sync.exe`;
+3. runs formatting, Clippy, tests, and Watch cloud integration checks;
+4. builds the x86-64 MSVC release executable;
+5. packages it with Inno Setup as `AERTEX-Watch-Sync-Setup.exe`;
+6. uploads only the installer as the GitHub Actions artifact;
+7. on `main`, publishes only the installer to R2 at `watch/releases/windows/AERTEX-Watch-Sync-Setup.exe` and removes the legacy portable object.
+
+The public Watch Worker exposes the installer at the fixed URL above. Requests to the legacy `/AERTEX-Watch-Sync.exe` path redirect to the installer.
 
 ## Development
 
+From `AW-Sync/native`:
+
 ```text
-cd AW-Sync/native
 cargo fmt --check
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test
 cargo build --release
 ```
 
-The release executable is generated at:
-
-`AW-Sync/native/target/release/AERTEX-Watch-Sync.exe`
-
-CI publishes the executable as a GitHub Actions artifact. On `main`, the publish job uploads it to the existing private R2 bucket at the fixed object key `watch/releases/windows/AERTEX-Watch-Sync.exe`; the Watch Worker exposes only that object through the public download route.
+On Windows, the release workflow creates `assets/aertex-watch.ico` from the committed SVG before compiling so the GUI executable receives the production Watch icon.
 
 ## Legacy/debug implementation
 
