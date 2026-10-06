@@ -1,3 +1,4 @@
+// 初学者导读：草稿工作区 API：负责草稿的创建、读取、更新与删除。资源归属必须从当前会话校验，不能只凭草稿 id 操作。
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId, verifyStorageUser } from "./storage-api.js";
