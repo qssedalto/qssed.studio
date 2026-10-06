@@ -5,6 +5,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 
+// 日志是本机故障排查用：单文件 1 MiB、最多 3 份轮转，避免后台常驻后无限占用磁盘。
 const MAX_LOG_BYTES: u64 = 1024 * 1024;
 const ROTATED_FILES: usize = 3;
 
@@ -15,6 +16,7 @@ pub struct Logger {
     lock: Mutex<()>,
 }
 
+/// 创建日志目录并安装全局 Logger。后续 info/error 都通过同一把锁串行写入。
 pub fn initialize() -> io::Result<()> {
     let directory = state::app_dir()?.join("logs");
     fs::create_dir_all(&directory)?;
@@ -38,6 +40,7 @@ pub fn error(message: impl AsRef<str>) {
 }
 
 impl Logger {
+    /// 每次写入前先检查轮转，并把 CR/LF 清洗掉，保证一条调用只形成一行日志。
     fn write(&self, level: &str, message: &str) -> io::Result<()> {
         let _guard = self
             .lock
@@ -56,6 +59,7 @@ impl Logger {
         )
     }
 
+    /// 超过阈值后按 sync.log.1/.2/.3 向后轮转，最旧的一份被淘汰。
     fn rotate_if_needed(&self) -> io::Result<()> {
         if fs::metadata(&self.path)
             .map(|value| value.len())
@@ -82,6 +86,7 @@ impl Logger {
     }
 }
 
+/// 把换行替换为空格，避免外部错误文本伪造成多条日志记录。
 fn sanitize(message: &str) -> String {
     message
         .replace(['\r', '\n'], " ")
