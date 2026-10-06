@@ -1,3 +1,4 @@
+// 初学者导读：Lab/实验模块回归检查；确保实验入口、注册表和页面路由仍一致。
 import fs from "node:fs";
 import { LAB_TOOL_CATEGORIES, LAB_TOOLS, LAB_TOOL_LOCALIZATIONS } from "../studio/lab-tools.js";
 import { labContent } from "../studio/ui-lab.js";
