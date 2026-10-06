@@ -1,3 +1,4 @@
+// 初学者导读：常用 UI 原语与状态块生成函数；用于减少页面模块重复 HTML，并统一空状态/错误状态样式。
 import { researchNotesContent } from "./ui-notes.js";
 
 const STATUS_COPY = {
