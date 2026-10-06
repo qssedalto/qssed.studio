@@ -1,3 +1,4 @@
+// 初学者导读：R2 存储与访问审计回归检查；锁定对象 key、审计写入和减少无效存储读取的优化。
 import fs from "node:fs";
 import { shouldRecordAccessAudit, ACCESS_AUDIT_RETENTION_DAYS } from "../studio/access-audit.js";
 
