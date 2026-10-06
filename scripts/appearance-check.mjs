@@ -1,3 +1,7 @@
+// 回归检查：全站共享外观模式与主题色。
+//
+// browserHarness() 用内存模拟 cookie/localStorage/matchMedia，验证 system/light/dark、主题色、跨子域 Cookie
+// 和旧偏好迁移逻辑；这样无需真实浏览器也能检查 AERTEX Watch/Cash/Work/GPT 共用的 appearance runtime。
 import vm from "node:vm";
 import {
   APPEARANCE_GENERATION_VALUE,
