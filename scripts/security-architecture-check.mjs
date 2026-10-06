@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：scripts/security-architecture-check.mjs
+ * CI 回归检查主题：security architecture。
+ * 作用：把当前产品必须保持的路由、数据、界面或架构规则写成自动断言，让未来改动在合并前就暴露问题。
+ * 阅读顺序：先看加载了哪些源文件，再逐条读 assert；每条 assert 都可以理解为一条最小产品规格。
+ * 修改原则：先判断失败来自实现错误还是规格变化；只有规格确实调整时，才同时更新实现与检查。
+ * 初学者提示：字符串检查适合固定结构，算法应使用小型输入/输出样例验证，二者各有用途。
+ */
 import fs from "node:fs";
 
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
