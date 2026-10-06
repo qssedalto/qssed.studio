@@ -1,3 +1,4 @@
+// 初学者导读：旧 API 的浏览器安全兼容层；保留是为了历史客户端兼容，新功能不要继续依赖这条 legacy 路径。
 export function hardenLegacyApiBrowserMarkup(markup) {
   let output = String(markup || "");
   output = hardenStorageClient(output);
