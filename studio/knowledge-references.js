@@ -1,3 +1,4 @@
+// 初学者导读：知识库参考资料数据源；集中维护可引用来源与说明，避免不同页面复制不一致的参考信息。
 export const REFERENCE_KNOWLEDGE = {
   "github-projects": {
     zh: {
