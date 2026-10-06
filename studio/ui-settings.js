@@ -1,3 +1,4 @@
+// 初学者导读：设置中心 UI：组合外观、语言、安全、通知等设置页面；共享主题和语言规则应调用 appearance/locale 模块而不是重复实现。
 import { osHubGrid, osHubIcon } from "./ui-primitives.js";
 import { dashboardIcon } from "./ui-dashboard.js";
 import { IPHONE_THEME_DEFAULT, IPHONE_THEME_PALETTE } from "./iphone-theme-palette.js";
