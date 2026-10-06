@@ -297,14 +297,6 @@
     }
   }
 
-  function currentThemeMode() { return window.AERTEXTheme?.getMode?.() || document.documentElement.dataset.themeMode || "system"; }
-  function updateThemeButtons() {
-    const mode = currentThemeMode();
-    $$("[data-theme-value]").forEach(button=>button.classList.toggle("active",button.dataset.themeValue===mode));
-    $("themeButton").title = "主题：" + ({system:"跟随系统",light:"浅色",dark:"深色"}[mode] || mode);
-  }
-  function setTheme(mode) { window.AERTEXTheme?.setMode?.(mode); updateThemeButtons(); }
-
   function bind() {
     $("backHome").href = rootOrigin();
     $("setupGuide").href = rootOrigin() + "/" + locale + "/aw/setup";
@@ -316,9 +308,6 @@
     $("dateButton").addEventListener("click",()=>$("dateInput").showPicker?.());
     $("dateInput").addEventListener("change",event=>{const parts=event.target.value.split("-").map(Number);state.date=new Date(parts[0],parts[1]-1,parts[2]);load();});
     $$(".range-tabs button").forEach(button=>button.addEventListener("click",()=>{state.range=button.dataset.range;load();}));
-    $("themeButton").addEventListener("click",()=>{const order=["system","light","dark"],mode=currentThemeMode();setTheme(order[(order.indexOf(mode)+1)%order.length]);});
-    $$("[data-theme-value]").forEach(button=>button.addEventListener("click",()=>setTheme(button.dataset.themeValue)));
-    window.addEventListener("aertex-themechange",updateThemeButtons);
     $("showAllApps").addEventListener("click",()=>$("appsDialog").showModal());
     $("closeDialog").addEventListener("click",()=>$("appsDialog").close());
     $("appsDialog").addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close();});
@@ -347,7 +336,6 @@
   }
 
   bind();
-  updateThemeButtons();
   load();
   setInterval(()=>{const today=startOfDay(new Date());if(state.range==="day"&&state.date.getTime()===today.getTime())load();},60000);
 })();
