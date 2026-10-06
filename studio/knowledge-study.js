@@ -1,3 +1,4 @@
+// 初学者导读：学习/研究类知识内容数据源；保持声明式内容结构，渲染与搜索由独立模块处理。
 export const STUDY_KNOWLEDGE = {
   statistics: {
     zh: {
