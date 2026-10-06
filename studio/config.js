@@ -1,3 +1,4 @@
+// 初学者导读：Studio 的共享常量与文本配置；适合放稳定配置，不应承载依赖请求上下文的业务状态。
 import { KNOWLEDGE_PATHS } from "./knowledge-routes.js";
 
 // 共享配置只放“公开客户端常量 / 路由表 / UI 文案”，不能放服务端私密密钥。
