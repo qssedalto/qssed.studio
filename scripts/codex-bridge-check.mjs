@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Intelligence 本机 Codex Bridge。
+//
+// 同时读取本机 Node bridge、云端 GPT Worker、浏览器代理脚本、Windows 安装/启动脚本和 Wrangler 配置，
+// 锁定 loopback/Origin/token 边界以及 UI 接入方式，避免本地能力被误改成公网服务或任意命令代理。
 import fs from "node:fs";
 import { renderGptApp } from "../studio/gpt-ui.js";
 
