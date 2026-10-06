@@ -1,3 +1,4 @@
+// 初学者导读：Studio 主壳层：组合侧栏、产品导航、顶部控件与页面内容，是登录后大多数页面的共享框架。
 import { TEXT } from "./config.js";
 import { escapeHtmlText } from "./html-utils.js";
 import { profileClientScript, profileContent, profileHubContent } from "./ui-profile.js";
