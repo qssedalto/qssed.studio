@@ -90,6 +90,8 @@ async function routeStudioRequest(request, env, ctx) {
   if (!workHost && isMainWorkHandoffPath(pathname)) return handleMainWorkHandoff(request);
   if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);
   if (!workHost && isMainCashHandoffPath(pathname)) return handleMainCashHandoff(request);
+  // AERTEX Watch 的登录桥始终在主站 Worker 处理；aw.* 子域不会自己接受主站 handoff 路由。
+  // 这条分支必须早于普通 Studio 页面渲染，否则 access/refresh 凭据会被当成普通页面请求。
   if (!workHost && isMainWatchHandoffPath(pathname)) return handleMainWatchHandoff(request);
   if (!workHost && isMainAdminHandoffPath(pathname)) return handleMainAdminHandoff(request);
 
