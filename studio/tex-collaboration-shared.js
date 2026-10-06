@@ -1,3 +1,4 @@
+// 初学者导读：TeX 协作的共享常量、序列化和校验工具；REST、Realtime、Room 三层应复用这里以保持协议一致。
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
