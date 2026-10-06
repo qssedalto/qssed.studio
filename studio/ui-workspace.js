@@ -1,3 +1,4 @@
+// 初学者导读：Studio 通用 Workspace 页面：把项目、草稿、任务等个人工作对象组织成统一入口。
 import { osHubGrid } from "./ui-primitives.js";
 
 const WORKSPACE_COPY = {
