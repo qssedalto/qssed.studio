@@ -1,3 +1,4 @@
+// 初学者导读：知识库页面的 SSR 内容与元数据；搜索交互由 knowledge-search.js 负责，知识数据来自 knowledge-* 模块。
 import { KNOWLEDGE_CATEGORIES, KNOWLEDGE_ROOT, getKnowledgeRoute } from "./knowledge-routes.js";
 import { PROJECT_KNOWLEDGE } from "./knowledge-projects.js";
 import { TECHNOLOGY_KNOWLEDGE } from "./knowledge-technology.js";
