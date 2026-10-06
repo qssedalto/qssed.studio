@@ -39,8 +39,19 @@ async function writeState(state) {
 
 // 找出本批次最新事件时间，只有上传成功后才把它写回同步进度。
 function maxTimestamp(events, fallback) {
+  // RFC3339 文本不能可靠地直接做字典序比较：例如不同的时区偏移可能让“字符串更大”却代表更早的时刻。
+  // 和 Rust 正式客户端一样，这里先解析为毫秒时间戳；原始字符串只用于最终写回状态。
   let best = fallback || "";
-  for (const event of events) if (String(event.timestamp || "") > best) best = String(event.timestamp || "");
+  let bestMs = Date.parse(best);
+  if (!Number.isFinite(bestMs)) bestMs = Number.NEGATIVE_INFINITY;
+  for (const event of events) {
+    const raw = String(event.timestamp || "");
+    const value = Date.parse(raw);
+    if (Number.isFinite(value) && value > bestMs) {
+      best = raw;
+      bestMs = value;
+    }
+  }
   return best;
 }
 
