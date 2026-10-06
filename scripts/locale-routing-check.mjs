@@ -1,3 +1,7 @@
+// 回归检查：AERTEX 语言规范化与路由选择。
+//
+// 这是纯函数测试：覆盖 URL locale、Accept-Language 的 q 权重、地区英语/繁简中文映射和默认回退。
+// 任何产品想判断界面语言都应复用 studio/locale.js，而不是复制一份略有不同的语言表。
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
