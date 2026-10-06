@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：admin/content-api.js
+ * AERTEX Admin 后端/基础模块：负责管理员会话、内容管理、国际化或管理 API。
+ * 阅读顺序：从最外层入口开始，先看域名/path/method 判断，再看登录或令牌校验，最后追到具体 handler/模块；不要从某个深层函数孤立地理解整条请求链。
+ * 请求链思维：浏览器/客户端 → Worker → 会话/安全门禁 → 路由 → API/页面 → 数据源 → Response。
+ * 修改注意：入口文件的小改动可能影响整个产品域名，修改路由或响应头后要跑对应 CI。
+ * 调试方法：先记录“实际 host + pathname + method + 是否有会话”，通常可以快速判断请求为什么走错分支。
+ */
 import { SUPABASE_URL, SUPABASE_KEY } from "../studio/config.js";
 import { adminHeaders } from "./session.js";
 

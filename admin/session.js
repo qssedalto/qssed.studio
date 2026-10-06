@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：admin/session.js
+ * AERTEX Admin 后端/基础模块：负责管理员会话、内容管理、国际化或管理 API。
+ * 阅读顺序：从最外层入口开始，先看域名/path/method 判断，再看登录或令牌校验，最后追到具体 handler/模块；不要从某个深层函数孤立地理解整条请求链。
+ * 请求链思维：浏览器/客户端 → Worker → 会话/安全门禁 → 路由 → API/页面 → 数据源 → Response。
+ * 修改注意：这是认证/会话敏感区域；redirect、Cookie、PKCE/state、来源校验和权限判断必须保持最小权限原则。
+ * 调试方法：先记录“实际 host + pathname + method + 是否有会话”，通常可以快速判断请求为什么走错分支。
+ */
 import { SUPABASE_URL, SUPABASE_KEY } from "../studio/config.js";
 import { mainOriginForRequest, rootDomainForHost } from "../studio/domain-family.js";
 import { adminCanonicalPath as localizedAdminPath, adminLocaleFromPath } from "./i18n.js";
