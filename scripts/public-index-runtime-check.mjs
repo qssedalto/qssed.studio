@@ -1,3 +1,4 @@
+// 初学者导读：公开索引页面运行时回归检查；确认 canonical/robots/公开路由能实际渲染，而不是只检查源码字符串。
 import worker from "../studio/entry.js";
 
 const QUESTION_ID = "0e5f2ec8-99cf-4bd1-93a0-66ec12360f01";
