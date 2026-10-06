@@ -1,3 +1,6 @@
+// “用户名或邮箱 + 密码”登录适配层。
+// 浏览器提交 identifier 后，这里调用 Supabase Edge Function 统一解析用户名/邮箱，再把成功会话转换成 AERTEX 的安全 Cookie。
+// SUPABASE_KEY 是 publishable key；任何 service-role secret 都不能进入这个浏览器可达模块。
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 const ACCESS_COOKIE = "__Host-qsseda-access";
