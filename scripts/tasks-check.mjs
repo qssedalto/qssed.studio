@@ -1,3 +1,7 @@
+// 回归检查：任务中心。
+//
+// 从 UI -> /api/tasks -> tasks-api -> Edge Protection 检查任务的创建、完成、更新、删除和项目关联，
+// 并确保浏览器始终使用 same-origin HttpOnly Session，不自行持有 AERTEX access token。
 import fs from "node:fs";
 import { tasksWorkspaceContent } from "../studio/ui-tasks.js";
 
