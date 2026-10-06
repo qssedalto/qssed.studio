@@ -1,3 +1,4 @@
+// 初学者导读：TeX 移动端主适配层；组合布局、输入和面板行为，让同一文档模型在窄屏正常工作。
 export function enhanceWorkTexMobile(markup, zh) {
   const copy = zh ? {
     documents: "文档",
