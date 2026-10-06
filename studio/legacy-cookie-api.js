@@ -1,3 +1,7 @@
+// 历史 Cookie API 的兼容入口。
+//
+// 这类路由存在是为了平滑旧客户端/页面迁移，不代表可以继续新增依赖；
+// 所有读写都要限制为已知路径与安全 Cookie 语义，并尽量让新代码走当前 Session Gate/Account API。
 import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./storage-api.js";
 import { handleBillingState } from "./billing-api.js";
 import { handleStudentVerification } from "./student-verification-api.js";
