@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Intelligence 子域 handoff 与会话辅助；负责主站到 gpt.* 的安全跳转、locale 保持与回跳约束。
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 import { authOriginForRequest, gptOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 import { FAVICON_LINKS } from "./favicon.js";
