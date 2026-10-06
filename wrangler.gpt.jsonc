@@ -1,4 +1,5 @@
 {
+  // AERTEX Intelligence 部署清单：gpt.* 域与区域放置。migrations 记录历史 Durable Object 迁移，即使类已删除也不能随意抹掉迁移历史。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "qsseda-gpt",
   "main": "gpt-worker.js",
