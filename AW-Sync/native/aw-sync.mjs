@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * 【初学者导读】
  * 文件：AW-Sync/native/aw-sync.mjs
@@ -8,7 +9,7 @@
  * 安全原则：设备令牌只存 Windows Credential Manager；日志和 state.json 不应包含完整令牌。
  * 修改后至少运行 cargo fmt --check、cargo clippy、cargo test，并通过 scripts/watch-cloud-check.mjs。
  */
-#!/usr/bin/env node
+
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
