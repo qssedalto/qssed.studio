@@ -1,3 +1,4 @@
+// 初学者导读：Workbench 聚合回归检查；确保项目、草稿、任务等模块仍能被统一工作台正确发现。
 import fs from "node:fs";
 import { workbenchContent } from "../studio/ui-workbench.js";
 
