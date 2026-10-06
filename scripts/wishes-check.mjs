@@ -1,3 +1,4 @@
+// 初学者导读：祝福链接功能回归检查；确认生日/中秋短路由、可选姓名与公开页面安全转义。
 import fs from "node:fs";
 import { dashboardContent, dashboardIcon } from "../studio/ui-dashboard.js";
 import { wishesContent } from "../studio/ui-wishes.js";
