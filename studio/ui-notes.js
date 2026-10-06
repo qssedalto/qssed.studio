@@ -1,3 +1,4 @@
+// 初学者导读：笔记页面 UI 与客户端交互；服务端持久化由 notes-api.js 完成，页面负责编辑体验和状态反馈。
 import { normalizeSupportedLocale } from "./locale.js";
 
 const NOTES_EN = {
