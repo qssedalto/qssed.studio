@@ -1,3 +1,4 @@
+# 初学者导读：Windows 下启动通用本机桥的包装脚本；优先使用 PowerShell 7，并把启动参数集中传给 Node 服务。
 param(
   [string]$InstallRoot = $PSScriptRoot
 )
