@@ -73,6 +73,7 @@ assert(setupPage.includes('mainlandChina ? activityWatchChinaUrl : activityWatch
 assert(worker.includes('"/aw-sync.mjs"'), "Watch Worker must serve the first-party sync script asset.");
 assert(worker.includes('"/AERTEX-Watch-Sync.exe"') && worker.includes('"watch/releases/windows/AERTEX-Watch-Sync.exe"'), "Watch Worker must expose only the fixed native Windows release object.");
 assert(worker.includes("application/vnd.microsoft.portable-executable") && worker.includes('attachment; filename="AERTEX-Watch-Sync.exe"'), "Native Windows download headers are missing.");
+assert(worker.includes('"cache-control": "no-store, max-age=0"'), "Native Windows download must not be cached so updates replace stale executables immediately.");
 assert(nativeCargo.includes('name = "AERTEX-Watch-Sync"'), "Rust project must produce the required executable name.");
 assert(nativeMain.includes('windows_subsystem = "windows"'), "Release client must use the Windows GUI subsystem.");
 assert(nativeCredentials.includes("CredWriteW") && nativeCredentials.includes("CredReadW"), "Device tokens must use Windows Credential Manager.");
