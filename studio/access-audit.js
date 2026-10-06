@@ -1,3 +1,7 @@
+// 访问审计模块：记录“谁、何时、从什么入口访问了什么受保护能力”，并提供管理员查询/聚合接口。
+//
+// 初学者要注意：审计日志不是业务数据副本。这里只保存排错/安全需要的最小元数据，
+// 不应把 access token、设备令牌、文档正文、窗口标题等敏感内容直接写进日志。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { json } from "./routing.js";
