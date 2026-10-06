@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/lab-tools.js
+ * 实验室工具模块：集中承载 Lab 页面可调用的实验性工具或能力。
+ * 阅读顺序：先看对外导出和路由入口，再看参数归一化、权限/语言处理，最后追踪存储或模板渲染。
+ * 初学者重点：区分“数据来源”“业务规则”“展示格式”三层，不要把一个显示问题直接当成数据库问题。
+ * 修改注意：尽量保持现有路径、字段和返回结构兼容；规则改变时补充对应回归检查。
+ * 调试方法：先确认实际命中的路由和 locale，再检查 handler 输入，最后验证最终 Response。
+ */
 export const LAB_TOOL_CATEGORIES = {
   core: { zh: "AERTEX 工具", en: "AERTEX Tools" },
   tex: { zh: "TeX 与文档", en: "TeX & Documents" },

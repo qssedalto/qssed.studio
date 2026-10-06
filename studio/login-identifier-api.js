@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/login-identifier-api.js
+ * 服务端 API 模块：接收已路由的请求，校验身份与参数，并执行数据读写后返回 JSON/HTTP 响应。
+ * 阅读顺序：先看对外导出和路由入口，再看参数归一化、权限/语言处理，最后追踪存储或模板渲染。
+ * 初学者重点：区分“数据来源”“业务规则”“展示格式”三层，不要把一个显示问题直接当成数据库问题。
+ * 修改注意：此文件涉及兼容/身份/浏览器边界，改动前先确认旧调用者和安全假设。
+ * 调试方法：先确认实际命中的路由和 locale，再检查 handler 输入，最后验证最终 Response。
+ */
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { getWorkerRequestId, recordServerLoginEvent } from "./account-api.js";

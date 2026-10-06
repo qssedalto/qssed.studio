@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/legacy-api-browser-security.js
+ * 兼容层模块：保留旧 API/旧浏览器安全或 Cookie 行为，用来避免历史客户端/页面突然失效。
+ * 阅读顺序：先看对外导出和路由入口，再看参数归一化、权限/语言处理，最后追踪存储或模板渲染。
+ * 初学者重点：区分“数据来源”“业务规则”“展示格式”三层，不要把一个显示问题直接当成数据库问题。
+ * 修改注意：此文件涉及兼容/身份/浏览器边界，改动前先确认旧调用者和安全假设。
+ * 调试方法：先确认实际命中的路由和 locale，再检查 handler 输入，最后验证最终 Response。
+ */
 export function hardenLegacyApiBrowserMarkup(markup) {
   let output = String(markup || "");
   output = hardenStorageClient(output);
