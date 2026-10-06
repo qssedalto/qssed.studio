@@ -1,3 +1,10 @@
+-- 【初学者导读】
+-- 文件：supabase/migrations/202609151645_tex_collaboration_members.sql
+-- TeX 协作成员迁移：建立文档协作成员、权限与关系结构，使多人访问不再依赖单一 owner。
+-- 阅读顺序：先看 CREATE/ALTER 了解结构变化，再看 FUNCTION/RPC，最后看 GRANT/REVOKE/RLS POLICY 理解谁能做什么。
+-- 安全提示：数据库权限不是“前端隐藏按钮”；真正的边界来自角色权限、RLS、函数 SECURITY DEFINER/search_path 和 RPC 参数校验。
+-- 历史迁移原则：本轮只增加中文注释，不改变任何已执行 SQL 的语义；未来若要改变行为，应新建 migration，而不是重写这份历史账本。
+
 create table if not exists public.tex_document_collaborators (
   owner_id uuid not null references public.profiles(id) on delete cascade,
   document_id uuid not null,
