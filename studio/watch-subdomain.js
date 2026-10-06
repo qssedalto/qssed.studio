@@ -4,8 +4,14 @@ import { FAVICON_LINKS } from "./favicon.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
 import { localeDirection, localeFromPath as sharedLocaleFromPath, normalizeSupportedLocale, preferredLocaleFromRequest } from "./locale.js";
 
+// Watch UI 在独立 aw.* 子域运行，但用户首先在主站完成会话验证。
+//
+// 安全流程是：
+// 主站确认 Studio Session -> 生成一次自动 POST 表单 -> aw.* /auth/handoff 接收会话 ->
+// Watch 子域写入自己的安全 Cookie。这样不会把 access token 放进查询字符串、浏览器历史或 Referer。
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 
+// 同时接受无语言前缀 /aw/handoff 和 /<locale>/aw/handoff，供登录返回路径统一识别。
 export function isMainWatchHandoffPath(pathname) {
   const path = typeof pathname === "string" ? pathname.replace(/\/+$/, "") || "/" : "/";
   if (path === "/aw/handoff") return true;
@@ -15,6 +21,7 @@ export function isMainWatchHandoffPath(pathname) {
   return parts.length === 3 && parts[1] === "aw" && parts[2] === "handoff";
 }
 
+// 未登录的 Watch 页面先回主站 handoff。next 会先压缩成安全的 Watch 本地路径，禁止开放重定向。
 export function watchSessionRedirect(request, next = "/") {
   const locale = sharedLocaleFromPath(next) || preferredLocaleFromRequest(request);
   const safeNext = canonicalWatchPath(next, locale);
@@ -23,6 +30,7 @@ export function watchSessionRedirect(request, next = "/") {
   return redirect(target.toString());
 }
 
+// 主站 handoff 是“身份桥”，不是 Watch 数据 API：它只验证会话并把短生命周期凭据 POST 给 aw.*。
 export async function handleMainWatchHandoff(request) {
   if (request.method !== "GET") {
     return new Response("Method not allowed", {
@@ -37,6 +45,7 @@ export async function handleMainWatchHandoff(request) {
   const next = canonicalWatchPath(requestedNext, locale);
   const gate = await verifyStudioPageSession(request);
 
+  // session-gate 可能在本次验证时轮换 refresh token；若有新值，必须优先使用 Set-Cookie 中的新 token。
   let refreshToken = requestCookie(request, REFRESH_COOKIE);
   const rotatedRefresh = cookieValueFromSetCookies(gate.cookies || [], REFRESH_COOKIE);
   if (rotatedRefresh) refreshToken = rotatedRefresh;
@@ -63,6 +72,7 @@ export async function handleMainWatchHandoff(request) {
     "ar-sa":"جارٍ الدخول إلى AERTEX Watch…"
   }[locale] || "Entering AERTEX Watch…";
 
+  // 自动提交表单只存在于这个 no-store 的一次性过渡页。CSP 的 form-action 也被锁死到 Watch origin。
   const page = '<!doctype html><html lang="' + locale + '" dir="' + localeDirection(locale) + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AERTEX Watch</title>' + FAVICON_LINKS + '</head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif"><p>' + handoffText + '</p></main><form id="handoff" method="post" action="' + watchOrigin + '/auth/handoff"><input type="hidden" name="access_token" value="' + escapeHtml(gate.accessToken) + '">' + refreshField + '<input type="hidden" name="next" value="' + escapeHtml(next) + '"></form><script>document.getElementById("handoff").submit()</script></body></html>';
 
   const headers = new Headers({
@@ -76,12 +86,14 @@ export async function handleMainWatchHandoff(request) {
   return withStudioSessionCookies(new Response(injectBrandLogoRuntime(page), { status: 200, headers }), gate.cookies || []);
 }
 
+// 这里只允许站内绝对路径，并拒绝 // 和 NUL；Watch 当前最终只保留 locale 根路径。
 function safeWatchPath(value) {
   const path = typeof value === "string" ? value.trim() : "";
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "/";
   return path;
 }
 
+// Watch 首页没有任意深层登录落点需求，因此 handoff 后统一落到 /<locale>，减少重定向攻击面。
 function canonicalWatchPath(path, locale) {
   const normalizedLocale = normalizeSupportedLocale(locale) || "en-us";
   const candidate = safeWatchPath(path);
