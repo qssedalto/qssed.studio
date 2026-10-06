@@ -1,3 +1,4 @@
+// 初学者导读：即时协作功能的装配层；连接核心协作状态、UI 提示和实时通道，尽量把算法留在 instant-core。
 import { enhanceWorkTexCollaboration as enhanceCoreWorkTexCollaboration } from "./ui-work-tex-collaboration-instant-core.js";
 import { enhanceWorkTexVersionHistory } from "./ui-work-tex-version-history.js";
 import { enhanceWorkTexEditorTools } from "./ui-work-tex-editor-tools.js";
