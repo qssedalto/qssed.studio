@@ -3,7 +3,7 @@
  * 文件：scripts/beginner-comments-check.mjs
  * 这是“中文初学者注释覆盖率”回归检查：自动扫描仓库里大多数可维护源码/配置文件，确认至少存在一段【初学者导读】。
  * 为什么需要它：本轮不是只给几个核心文件加说明，而是希望以后新增代码时也继续保持对初学者友好的注释习惯。
- * 有意排除：历史 Supabase migrations（已执行账本不应为了注释重写）、生成/锁文件、二进制与严格 JSON 数据文件。
+ * 覆盖范围：包括历史 Supabase migrations 在内的可维护源码/配置文件；本轮只给历史 migration 增加 SQL 注释，不改变任何 SQL 语义。生成/锁文件、二进制与严格 JSON 数据文件仍排除。
  * 注意：这个检查只保证“存在模块级导读”，不能替代高质量的函数内注释；复杂算法仍应在关键分支旁解释为什么这样做。
  */
 
@@ -20,7 +20,6 @@ const EXCLUDED_DIRS = new Set([".git", "node_modules", ".wrangler-studio-check",
 
 function shouldSkip(relativePath) {
   const normalized = relativePath.replaceAll("\\", "/");
-  if (normalized.startsWith("supabase/migrations/")) return true;
   if (normalized.endsWith("/Cargo.lock") || normalized === "AW-Sync/native/Cargo.lock") return true;
   return false;
 }
