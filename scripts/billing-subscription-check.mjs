@@ -1,3 +1,4 @@
+// 初学者导读：订阅与权益基础回归检查；确认计费状态、entitlement 和页面入口仍按服务端结果工作。
 import fs from "node:fs";
 
 const read = path => fs.readFileSync(path, "utf8");
