@@ -1,3 +1,4 @@
+// 初学者导读：PKCE 辅助/测试逻辑，用于验证 code_verifier 与 code_challenge 处理是否符合预期；不要把测试便利逻辑当生产授权绕过。
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 
 const CLIENT_ID = "qsseda-pkce-browser-test";
