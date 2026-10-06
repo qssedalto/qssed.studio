@@ -1,5 +1,9 @@
 (() => {
   "use strict";
+  // AERTEX Watch 浏览器端数据流：
+  // API Bucket/Event -> AFK + flood -> 每台设备有效前台片段 -> 多设备去重 -> apps/windows/websites/KPI -> DOM。
+  //
+  // 这份文件故意不直接读取 ActivityWatch localhost；浏览器只访问当前 aw.* 的已认证云 API。
   const $ = id => document.getElementById(id);
   const $$ = selector => [...document.querySelectorAll(selector)];
   const locale = location.pathname.split("/").filter(Boolean)[0] || "en-us";
@@ -37,6 +41,7 @@
   };
   const state = { date:startOfDay(new Date()), range:"day", usageMode:"apps", buckets:{}, apps:[], usageSets:{apps:[],windows:[],websites:[]}, requestId:0 };
 
+  // 从 aw.<root> 推导主站 <root>，用于“返回 AERTEX”和 setup 教程；不把 qsseda.com 硬编码进所有别名域。
   function rootOrigin() {
     const host = location.hostname.toLowerCase();
     for (const root of ["qsseda.com","qsseda.online","qsseda.studio"]) {
@@ -46,6 +51,7 @@
   }
   function startOfDay(date) { const value = new Date(date); value.setHours(0,0,0,0); return value; }
   function addDays(date, days) { const value = new Date(date); value.setDate(value.getDate() + days); return value; }
+  // 日视图使用本地自然日；周视图逐日 addDays，避免 DST 周出现 23/25 小时日时被固定毫秒数切错。
   function period() {
     if (state.range === "day") return { start:startOfDay(state.date), end:addDays(startOfDay(state.date),1) };
     const start = startOfDay(state.date);
@@ -99,6 +105,7 @@
     return name.split(/\s+/).map(part=>part[0]).join("").slice(0,2).toUpperCase();
   }
   function appName(raw="Unknown") { const key=String(raw).toLowerCase(); return appLabels[key] || String(raw).replace(/\.exe$/i,""); }
+  // 所有浏览器数据请求保持 same-origin + Cookie；401/5xx 都统一抛错交给 load() 的通知 UI。
   async function api(path, options={}) {
     const response = await fetch(path,{credentials:"same-origin",cache:"no-store",...options});
     if (!response.ok) {
@@ -120,6 +127,7 @@ function mergeIntervals(intervals) {
     }
     return result;
   }
+  // flood 判断“是否同一 heartbeat”只比较 watcher data；duration 会增长，所以不能拿它判断事件身份。
   function sameEventData(left,right) {
     return JSON.stringify(left?.data||{}) === JSON.stringify(right?.data||{});
   }
@@ -172,6 +180,7 @@ function floodEvents(input,pulsetime=5) {
     return events.filter(event=>Number(event.duration||0)>0);
   }
 
+  // 把单事件裁剪到当前统计区间，后续求交/并集都只处理 [start,end) 毫秒区间。
   function eventInterval(event,start,end) {
     const originalStart = new Date(event.timestamp).getTime();
     return { start:Math.max(originalStart,start.getTime()), end:Math.min(originalStart+Number(event.duration||0)*1000,end.getTime()), event };
@@ -197,6 +206,7 @@ function activeWindowEvents(windowEvents,afkEvents,start,end) {
     return result;
   }
 
+  // 优先看标准 ActivityWatch type，再兼容历史 Bucket id/client 命名，避免只支持某一种 watcher 版本。
   function bucketKind(bucket,kind) {
     const type = String(bucket?.type||"").toLowerCase();
     const id = String(bucket?.id||"").toLowerCase();
@@ -206,6 +216,7 @@ function activeWindowEvents(windowEvents,afkEvents,start,end) {
     return false;
   }
 
+  // hostname 是“设备”维度的主键来源；缺失时退回 Bucket id，至少避免把所有未知主机混成同一组。
   function bucketHost(bucket) {
     const hostname = String(bucket?.hostname||"").trim();
     if (hostname) return hostname.toLowerCase();
@@ -219,6 +230,7 @@ function activeWindowEvents(windowEvents,afkEvents,start,end) {
     return id.toLowerCase();
   }
 
+  // 同一 hostname 的多个残留 Bucket 用 last_updated/created 等字段选最新一份。
   function bucketRecency(bucket) {
     return Date.parse(bucket?.last_sync||bucket?.last_event||"") || 0;
   }
@@ -234,6 +246,7 @@ function latestBucketsByHost(entries,kind) {
     return [...selected.values()].sort((left,right)=>bucketRecency(right)-bucketRecency(left) || bucketHost(left).localeCompare(bucketHost(right)));
   }
 
+  // 从一个设备片段中扣掉已经被更高优先级设备占用的时间，返回剩余非重叠小段。
   function subtractCoverage(segment,coverage) {
     let pieces = [{...segment}];
     for (const interval of coverage) {
@@ -381,6 +394,7 @@ function groupWindowUsage(segments) {
     return Boolean(family && browserFamilies[family]?.includes(normalized));
   }
 
+  // 网站聚合只展示 hostname；解析失败时回退原始值，避免一个坏 URL 让整批统计中断。
   function domainFromUrl(value) {
     try {
       const parsed = new URL(String(value||""));
@@ -461,6 +475,7 @@ async function loadWebsiteSegments(start,end,activeSegments) {
     return unionHostSegments(groups);
   }
 
+  // status 只展示同步健康度/最近主机，不参与统计计算；数据指标仍由 Bucket/Event 查询独立得出。
   function renderStatus(status) {
     const values = Object.values(status?.buckets||{});
     $("bucketCount").textContent = values.length;
@@ -534,6 +549,7 @@ async function loadWebsiteSegments(start,end,activeSegments) {
     $("dialogList").innerHTML = items.length ? items.map(item=>usageRow(item,maxSeconds)).join("") : '<div class="empty-state">' + (zh?"暂无活动":"No activity") + '</div>';
   }
 
+  // 一次准备三种 usage 数据集，切换 tab 只重绘，不重新发 API 请求。
   function renderUsageSets(apps,segments,websiteSegments) {
     state.apps = apps;
     state.usageSets = {
@@ -618,6 +634,7 @@ async function load() {
     }
   }
 
+  // 所有 DOM 事件集中绑定一次；日期/范围/tab 变化只更新 state 再触发 load/render，避免散落副作用。
   function bind() {
     $("backHome").href = rootOrigin();
     $("setupGuide").href = rootOrigin() + "/" + locale + "/aw/setup";
