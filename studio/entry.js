@@ -1,3 +1,7 @@
+// AERTEX 主站页面渲染入口。
+//
+// 它把 URL 解析成 locale + 规范 pathname，再决定公开页、登录/注册、受保护 OS 页面、Questions、Watch setup、祝福页等。
+// 新手修改路由时要同时考虑：是否公开可索引、是否需要 Session Gate、是否属于独立产品子域，以及旧路径是否应重定向。
 import { OS_PATHS, LEGACY_REDIRECTS, TEXT, SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { handleAuthHandoff } from "./auth-handoff.js";
 import {
