@@ -1,3 +1,4 @@
+// 初学者导读：整体安全架构回归检查；把会话门、API 分层和禁止绕过的关键关系写成可执行断言。
 import fs from "node:fs";
 
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
