@@ -1,3 +1,4 @@
+// 初学者导读：注册前检查接口：用于验证标识符/邀请码等注册条件。返回值要避免把内部账户存在性暴露得过细。
 import { SUPABASE_URL } from "./config.js";
 import { registrationUsernameRule } from "./account-api.js";
 import { json } from "./routing.js";
