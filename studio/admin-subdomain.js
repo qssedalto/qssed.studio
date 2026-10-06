@@ -1,3 +1,4 @@
+// 初学者导读：主站与 admin.* 之间的安全 handoff/域名逻辑；负责把已验证管理员会话导向独立控制面。
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 import { adminOriginForRequest, authOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 import { adminCanonicalPath as localizedAdminPath, adminLocaleFromPath } from "../admin/i18n.js";
