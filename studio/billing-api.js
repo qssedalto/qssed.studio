@@ -1,3 +1,7 @@
+// 订阅/权益服务端 API。
+//
+// 用户看到的套餐、有效期、配额和功能权限应以服务端 entitlement 结果为准，而不是相信浏览器传来的 plan 名称。
+// 管理员授权、学生权益和普通订阅最终都在这里/数据库契约中收敛成统一的“当前权益”视图。
 import { DEFAULT_STORAGE_QUOTA_BYTES, MAX_STORAGE_FILE_BYTES, SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
 import { workerLog } from "./server-runtime.js";
