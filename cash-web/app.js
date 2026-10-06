@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  // AERTEX Cash 浏览器控制器：负责表单、对话框、图表和与 /api/cash/data 的读写。
+  // 金额/预测公式不要在这里重复实现；真正的现金流计算集中在 model.js，UI 只把用户输入规范化后交给模型。
   const M = window.CashflowModel;
   const $ = id => document.getElementById(id);
   let data = M.createDefaultData();
