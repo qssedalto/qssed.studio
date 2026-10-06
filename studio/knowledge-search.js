@@ -37,7 +37,7 @@ function flattenSections(sections = []) {
   ]).filter(Boolean).join("\n");
 }
 
-export function buildStaticKnowledgeSearchIndex(zh) {
+// 静态知识索引：把内置知识章节拍平成轻量文档，给无后端/首屏搜索提供基础结果。个人知识仍通过 API 单独查询。\nexport function buildStaticKnowledgeSearchIndex(zh) {
   const lang = zh ? "zh" : "en";
   return KNOWLEDGE_CATEGORIES.flatMap(category => category.items.map(item => {
     const localized = CONTENT_BY_CATEGORY[category.slug]?.[item[0]]?.[lang];
@@ -72,7 +72,7 @@ export function knowledgeSearchPanel(zh) {
     </section>`;
 }
 
-export function knowledgeSearchClientScript(zh) {
+// Knowledge 浏览器搜索逻辑：先本地打分静态文档，再异步合并个人/服务器结果；单个来源失败不应让搜索框失效。\nexport function knowledgeSearchClientScript(zh) {
   const staticIndex = buildStaticKnowledgeSearchIndex(zh);
   return `<script>
     (() => {
@@ -185,7 +185,7 @@ export function knowledgeSearchClientScript(zh) {
         results.append(fragment);
       };
 
-      async function runSearch(raw) {
+      // 执行一次搜索：标准化 query → 本地匹配 → 请求远端个人知识 → 去重/排序 → 渲染。请求返回时要确认仍对应当前 query，避免旧结果覆盖新输入。\nasync function runSearch(raw) {
         const q = normalize(raw.trim());
         clear.hidden = !q;
         const current = ++sequence;

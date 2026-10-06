@@ -18,11 +18,11 @@ export const PUBLIC_INDEXABLE_ROUTES = Object.freeze([
   "/mid-autumn"
 ]);
 
-export function isPublicIndexableRoute(pathname) {
+// 可索引路由白名单：只有明确公开且稳定的路径才允许被搜索引擎索引；账户、工作区、私有分享等默认不进入索引。\nexport function isPublicIndexableRoute(pathname) {
   return PUBLIC_INDEXABLE_ROUTES.includes(normalizeRoute(pathname));
 }
 
-export function canonicalPublicUrl(locale, pathname) {
+// Canonical URL 生成：统一 locale 和规范 pathname，避免同一公开页面因为多种 URL 被搜索引擎当成重复内容。\nexport function canonicalPublicUrl(locale, pathname) {
   const code = normalizeSupportedLocale(locale) || "en-us";
   const route = normalizeRoute(pathname);
   if (route === "/") return "https://qsseda.com/" + code;
@@ -54,14 +54,14 @@ export function publicSeoHeadMarkup(locale, pathname, description = "", options 
   ].filter(Boolean).join("");
 }
 
-export function injectPublicSeo(markup, locale, pathname, description = "", options = {}) {
+// SEO 注入：只向公开页补 title/description/canonical/alternate 等元数据，不改变页面业务内容或登录状态。\nexport function injectPublicSeo(markup, locale, pathname, description = "", options = {}) {
   const source = String(markup || "");
   const meta = publicSeoHeadMarkup(locale, pathname, description, options);
   if (!source.includes("</head>")) return source;
   return source.replace("</head>", meta + "</head>");
 }
 
-export function publicSitemapUrls() {
+// Sitemap 源：从公开路由和语言组合生成 URL 列表。新增可索引页面时应同时考虑 canonical 与 sitemap。\nexport function publicSitemapUrls() {
   const urls = ["https://qsseda.com/"];
   for (const route of PUBLIC_INDEXABLE_ROUTES) {
     for (const locale of SUPPORTED_LOCALES) {

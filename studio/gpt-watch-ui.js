@@ -100,7 +100,7 @@ export function intelligenceWatchPortalMarkup(zh) {
 </div>`;
 }
 
-export function intelligenceWatchClientScript() {
+// Apple Watch/窄屏 Intelligence 客户端脚本：复用主聊天状态，只额外处理小屏 composer、模型选择和 viewport，不复制一套独立聊天协议。\nexport function intelligenceWatchClientScript() {
   return String.raw`
   const tinyWatchMedia=window.matchMedia("(max-width:320px) and (max-height:520px), (max-width:260px)");
   const draftStoragePrefix="aertex-intelligence-draft-v2:";
@@ -128,7 +128,7 @@ export function intelligenceWatchClientScript() {
     try{sessionStorage.setItem(key,draft)}catch{}
     try{localStorage.setItem(key,draft)}catch{}
   }
-  function persistComposerDraft(value,{allowEmpty=false}={}){
+  // 草稿持久化：按 conversationId 分开保存，防止在不同会话间串稿；空值是否覆盖由 allowEmpty 明确控制。\nfunction persistComposerDraft(value,{allowEmpty=false}={}){
     const input=$("composer");
     const draft=String(value??input?.value??composerDraftShadow??"");
     if(!draft.length&&!allowEmpty)return;
@@ -169,7 +169,7 @@ export function intelligenceWatchClientScript() {
     if(watchInput.value!==value)watchInput.value=value;
     watchInput.placeholder=localeBase.startsWith("/zh")?"发消息…":"Message…";
   }
-  function reconcileComposerDraft(){
+  // 草稿协调：主页面输入框与 Watch 专用输入框可能同时存在，这里确定哪一份更新、更可信，并同步到当前界面。\nfunction reconcileComposerDraft(){
     const input=$("composer");if(!input)return;
     const current=String(input.value??"");
     if(current.length){
@@ -256,7 +256,7 @@ export function intelligenceWatchClientScript() {
     if(provider.provider==="openai")return "OpenAI";
     return String(provider.provider||"");
   }
-  function renderWatchModels(){
+  // Watch 模型列表渲染：只展示主配置允许的 provider/model，不在小屏端另建一套可用模型来源。\nfunction renderWatchModels(){
     const list=$("watchModelList");if(!list)return;
     list.replaceChildren();
     const models=Array.isArray(state.config?.models)?state.config.models:[];

@@ -19,7 +19,7 @@ const ROUTES = new Map([
   ["/api/gpt/turn", { target: "/codex/turn", methods: ["POST"] }]
 ]);
 
-export async function handleRemoteCodexApi(request, env) {
+// 远程 Codex 桥接入口：把经过认证的网页请求转发给受控远端/本地桥接服务。目标 URL 必须经过 normalizeBridgeUrl，不能让客户端指定任意内网地址。\nexport async function handleRemoteCodexApi(request, env) {
   const url = new URL(request.url);
   const route = ROUTES.get(url.pathname);
   if (!route || !route.methods.includes(request.method)) {
@@ -94,7 +94,7 @@ export async function handleRemoteCodexApi(request, env) {
   }
 }
 
-function normalizeBridgeUrl(value) {
+// 桥接地址归一化：只接受允许的 http(s) 结构并去掉多余路径/尾斜杠；部署配置错误应被拒绝，而不是拼出不可预测的上游地址。\nfunction normalizeBridgeUrl(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
   try {
@@ -109,7 +109,7 @@ function normalizeBridgeUrl(value) {
   }
 }
 
-function isTunnelOfflineStatus(status) {
+// 把常见隧道离线状态统一归类，便于 UI 区分“桥接服务没上线”和“业务请求本身失败”。\nfunction isTunnelOfflineStatus(status) {
   return [502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 530].includes(status);
 }
 

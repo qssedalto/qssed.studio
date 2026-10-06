@@ -7,7 +7,7 @@
  * 修改注意：保持公开 API、DOM 标识和共享数据结构稳定；产品规则变化时同步更新自动检查。
  * 调试方法：先锁定调用链，再打印/检查最小必要状态，不要从最终页面表现反推所有中间步骤。
  */
-export function escapeHtmlText(value) {
+// HTML 文本转义基础 helper：仅用于文本上下文；属性、URL、JSON/JS 字符串有各自不同的编码规则，不能混用。\nexport function escapeHtmlText(value) {
   return String(value || "").replace(/[&<>"']/g, char => ({
     "&": "&amp;",
     "<": "&lt;",

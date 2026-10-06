@@ -7,11 +7,11 @@
  * 修改注意：公开 API 和路由应尽量向后兼容，改变规则时同时更新自动检查。
  * 调试方法：记录请求标识、用户/资源 ID 和关键分支结果，但不要把令牌、Cookie、私密内容写入日志。
  */
-export function getSupabaseSecret(env) {
+// 服务端密钥读取：只从 Worker env 获取，缺失时返回受控结果；任何 secret 都不能拼进页面 HTML 或客户端 JS。\nexport function getSupabaseSecret(env) {
   return env?.SUPABASE_SECRET_KEY || env?.SUPABASE_SERVICE_ROLE_KEY || "";
 }
 
-export function workerLog(level, event, details = {}) {
+// Worker 结构化日志：记录事件名和必要上下文，便于生产排查；调用方应避免把 token、Cookie、密码或完整私密正文放进 details。\nexport function workerLog(level, event, details = {}) {
   const payload = JSON.stringify({
     source: "qsseda-worker",
     event,

@@ -43,7 +43,7 @@ export const LOCALE_META = Object.freeze({
   "ar-sa": { label: "العربية", nativeName: "العربية", shortName: "ع", dir: "rtl" }
 });
 
-export function normalizeSupportedLocale(value) {
+// locale 归一化：把大小写/下划线/地区别名整理成站点支持的规范值；未知语言不会直接进入路由。\nexport function normalizeSupportedLocale(value) {
   const tag = String(value || "").trim().toLowerCase().replaceAll("_", "-");
   if (!tag) return "";
 
@@ -86,7 +86,7 @@ export function localeDirection(locale) {
   return LOCALE_META[normalizeSupportedLocale(locale) || DEFAULT_LOCALE]?.dir || "ltr";
 }
 
-export function localeFromAcceptLanguage(header, fallback = DEFAULT_LOCALE) {
+// Accept-Language 解析：按浏览器优先顺序寻找第一个本站支持的语言；header 只是偏好，不应覆盖 URL 中已明确指定的 locale。\nexport function localeFromAcceptLanguage(header, fallback = DEFAULT_LOCALE) {
   const normalizedFallback = normalizeSupportedLocale(fallback) || DEFAULT_LOCALE;
   const entries = String(header || "").split(",").map((raw, index) => {
     const parts = raw.trim().split(";").map(part => part.trim()).filter(Boolean);
@@ -114,6 +114,6 @@ export function preferredLocaleFromRequest(request, fallback = DEFAULT_LOCALE) {
   return localeFromAcceptLanguage(header, fallback);
 }
 
-export function preferredLocaleForPath(request, pathname, fallback = DEFAULT_LOCALE) {
+// 路径语言优先级：URL locale > 用户/请求偏好 > fallback，保证显式分享的语言链接不会被浏览器设置偷偷改掉。\nexport function preferredLocaleForPath(request, pathname, fallback = DEFAULT_LOCALE) {
   return localeFromPath(pathname) || preferredLocaleFromRequest(request, fallback);
 }

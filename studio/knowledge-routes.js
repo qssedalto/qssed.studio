@@ -121,11 +121,11 @@ export const KNOWLEDGE_PATHS = [
   ])
 ];
 
-export function getKnowledgeCategory(slug) {
+// Category 查找：把 URL slug 映射到预定义知识分类；不存在就返回空值，让上层生成 404，而不是猜一个相近分类。\nexport function getKnowledgeCategory(slug) {
   return KNOWLEDGE_CATEGORIES.find(category => category.slug === slug) || null;
 }
 
-export function getKnowledgeRoute(path) {
+// Knowledge 路由解析：把 pathname 解析为分类/文章/子页结构，页面层只依赖这里的规范化结果。\nexport function getKnowledgeRoute(path) {
   if (path === KNOWLEDGE_ROOT) return { type: "root" };
   if (!path.startsWith(KNOWLEDGE_ROOT + "/")) return null;
   const parts = path.slice(KNOWLEDGE_ROOT.length + 1).split("/").filter(Boolean);

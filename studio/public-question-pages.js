@@ -80,7 +80,7 @@ export function questionDetailDescription(locale, id) {
   return questionTranslation(item, locale)?.short || "";
 }
 
-export function questionHubPage(locale) {
+// Questions 列表页：从已发布问题数据生成可搜索/可索引的 FAQ hub，浏览器端过滤只影响显示，不改变发布状态。\nexport function questionHubPage(locale) {
   const routeLocale = questionRouteLocale(locale);
   const contentLocale = questionContentLocale(routeLocale);
   const ui = UI[contentLocale] || UI["en-us"];
@@ -160,7 +160,7 @@ ${styles()}
 </html>`;
 }
 
-export function questionDetailPage(locale, id) {
+// 单个 Question 公开页：先按 id 查已发布内容，再选择 locale 翻译和 fallback；未知 id 应返回 404 页面而不是空壳。\nexport function questionDetailPage(locale, id) {
   const routeLocale = questionRouteLocale(locale);
   const contentLocale = questionContentLocale(routeLocale);
   const ui = UI[contentLocale] || UI["en-us"];
@@ -235,7 +235,7 @@ function uiFor(locale) {
   return UI[questionContentLocale(locale)] || UI["en-us"];
 }
 
-function safeJson(value) {
+// 嵌入页面脚本的 JSON 安全编码：需要额外处理可能结束 script 标签的字符，不能只依赖普通 JSON.stringify。\nfunction safeJson(value) {
   return JSON.stringify(value).replace(/</g, "\\u003c");
 }
 

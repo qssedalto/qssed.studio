@@ -9,7 +9,7 @@
  */
 const RICH_STYLES = ".richMarkdown{white-space:normal;line-height:1.72;overflow-wrap:anywhere}.richMarkdown>*:first-child{margin-top:0!important}.richMarkdown>*:last-child{margin-bottom:0!important}.richMarkdown p{margin:0 0 1em}.richMarkdown h1,.richMarkdown h2,.richMarkdown h3,.richMarkdown h4,.richMarkdown h5,.richMarkdown h6{margin:1.35em 0 .55em;line-height:1.25;letter-spacing:-.02em}.richMarkdown h1{font-size:1.55em}.richMarkdown h2{font-size:1.35em}.richMarkdown h3{font-size:1.18em}.richMarkdown ul,.richMarkdown ol{margin:.55em 0 1em;padding-left:1.55em}.richMarkdown li{margin:.28em 0}.richMarkdown blockquote{margin:1em 0;padding:.1em 0 .1em 1em;border-left:3px solid color-mix(in srgb,var(--text) 18%,transparent);color:color-mix(in srgb,var(--text) 76%,var(--muted))}.richMarkdown hr{height:1px;border:0;background:var(--line);margin:1.4em 0}.richMarkdown a{color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent);text-underline-offset:3px}.richMarkdown strong{font-weight:720}.richMarkdown code.inlineCode{padding:.15em .38em;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font:500 .9em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.codeBlock{margin:1em 0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--panel2) 74%,var(--panel))}.codeBlockHead{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 13px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px}.codeBlockLang{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.codeCopy{height:28px;padding:0 9px;border:0;border-radius:8px;background:transparent;color:var(--muted);font:inherit;cursor:pointer}.codeCopy:hover{background:var(--panel);color:var(--text)}.codeBlock pre{margin:0;padding:14px 16px;overflow:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}.codeBlock pre code{display:block;min-width:max-content;color:var(--text);font:500 13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;tab-size:2}.tableScroll{max-width:100%;overflow-x:auto;margin:1em 0;border:1px solid var(--line);border-radius:12px;-webkit-overflow-scrolling:touch}.richMarkdown table{width:100%;min-width:440px;border-collapse:collapse;font-size:.94em}.richMarkdown th,.richMarkdown td{padding:9px 11px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:top}.richMarkdown th:last-child,.richMarkdown td:last-child{border-right:0}.richMarkdown tr:last-child td{border-bottom:0}.richMarkdown th{background:var(--panel2);font-weight:680;text-align:left}.mathInline{display:inline-block;max-width:100%;vertical-align:-.08em}.mathBlock{display:block;max-width:100%;margin:1em 0;padding:.2em 0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;text-align:center}.mathFallback{font-family:ui-serif,Georgia,serif}.hljs-keyword,.hljs-selector-tag,.hljs-literal,.hljs-section,.hljs-link{color:#9b4dca}.hljs-string,.hljs-title,.hljs-name,.hljs-type,.hljs-attribute,.hljs-symbol,.hljs-bullet,.hljs-addition,.hljs-variable,.hljs-template-tag,.hljs-template-variable{color:#087f5b}.hljs-comment,.hljs-quote,.hljs-deletion,.hljs-meta{color:#7b7b7b}.hljs-number,.hljs-regexp,.hljs-built_in,.hljs-builtin-name,.hljs-params{color:#b35c00}@media(prefers-color-scheme:dark){:root:not([data-theme]) .hljs-keyword,:root:not([data-theme]) .hljs-selector-tag,:root:not([data-theme]) .hljs-literal{color:#c792ea}:root:not([data-theme]) .hljs-string,:root:not([data-theme]) .hljs-title,:root:not([data-theme]) .hljs-name{color:#addb67}:root:not([data-theme]) .hljs-number,:root:not([data-theme]) .hljs-built_in{color:#f78c6c}}:root[data-theme=dark] .hljs-keyword,:root[data-theme=dark] .hljs-selector-tag,:root[data-theme=dark] .hljs-literal{color:#c792ea}:root[data-theme=dark] .hljs-string,:root[data-theme=dark] .hljs-title,:root[data-theme=dark] .hljs-name{color:#addb67}:root[data-theme=dark] .hljs-number,:root[data-theme=dark] .hljs-built_in{color:#f78c6c}";
 
-export function richMessageStyles() {
+// 富消息样式入口：只返回消息区域需要的 CSS，避免把 Intelligence 的 Markdown/数学/代码样式污染全站。\nexport function richMessageStyles() {
   return RICH_STYLES;
 }
 
@@ -168,7 +168,7 @@ function richMessageRuntime(copy) {
     }
   }
 
-  function safeHref(value) {
+  // 链接安全清洗：富文本中的 URL 来自模型输出，必须限制协议，避免 javascript:/data: 等危险 scheme 进入可点击链接。\nfunction safeHref(value) {
     const raw = String(value || "").trim();
     if (!raw) return "";
     try {
@@ -338,7 +338,7 @@ function richMessageRuntime(copy) {
     });
   }
 
-  function codeBlock(language, source) {
+  // 代码块渲染：代码正文始终作为文本节点/转义内容处理，高亮库只做展示增强，不允许代码本身执行。\nfunction codeBlock(language, source) {
     const shell = document.createElement("div");
     shell.className = "codeBlock";
     const head = document.createElement("div");
@@ -381,7 +381,7 @@ function richMessageRuntime(copy) {
     return false;
   }
 
-  function parseBlocks(source) {
+  // 块级解析器：把模型文本拆成标题、段落、列表、表格、代码块和数学块；解析失败时优先退回纯文本，而不是输出未经处理的 HTML。\nfunction parseBlocks(source) {
     const fragment = document.createDocumentFragment();
     const lines = String(source || "").replace(/\r\n?/g, "\n").split("\n");
     let i = 0;
@@ -551,7 +551,7 @@ function richMessageRuntime(copy) {
     });
   }
 
-  function render(target, source, options) {
+  // 最终渲染入口：先完成安全解析，再把结构写入 target；流式阶段和 finalize 阶段共享同一安全规则，避免“流式时安全、最终时不安全”或相反。\nfunction render(target, source, options) {
     if (!target) return;
     const final = options && options.final === false ? false : true;
     target.classList.add("richMarkdown");

@@ -15,7 +15,7 @@ import { intelligenceWatchClientScript, intelligenceWatchMarkup, intelligenceWat
 import { localeDirection } from "./locale.js";
 import { gptNotFoundCopy, gptSharedCopy, gptUiCopy } from "./gpt-i18n.js";
 
-export function renderGptApp(locale, bootstrap = {}) {
+// Intelligence 主页面生成器：服务端先输出稳定骨架和 bootstrap，浏览器脚本再加载会话、模型、会话列表和对话内容。\nexport function renderGptApp(locale, bootstrap = {}) {
   const zh = locale === "zh-cn";
   const themeAttr = intelligenceThemeAttr(bootstrap?.theme);
   const themeBoot = intelligenceThemeBootScript();
@@ -238,7 +238,7 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
     });
   }
 
-  async function req(path,opt={}){
+  // Intelligence 统一请求 helper：所有前端 API 请求从这里经过，统一凭据、JSON 解析和错误处理，避免每个按钮各写一套 fetch。\nasync function req(path,opt={}){
     const r=await fetch("/api/ai"+path,{...opt,credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json",...(opt.headers||{})}});
     const type=r.headers.get("content-type")||"";
     const d=type.includes("application/json")?await r.json():null;
@@ -291,7 +291,7 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
       meta.append(more);row.append(link,meta);root.append(row);
     }
   }
-  async function loadConversations(){
+  // 加载会话列表：读取服务端会话摘要后更新侧栏；这里不下载每段完整消息，避免首页请求过重。\nasync function loadConversations(){
     try{
       const data=await req("/conversations");
       state.conversations=Array.isArray(data)?data:[];
@@ -343,7 +343,7 @@ ${intelligenceWatchClientScript()}
     }
     showChat();renderCurrent();syncWatchModelButton();restoreComposerDraft();syncWatchViewport();
   }
-  async function checkStatus(force=false){
+  // 状态检查：确认账户、AI 配置/额度和设备能力是否可用，再决定显示聊天区还是引导页。force 用于用户主动刷新，避免频繁重复请求。\nasync function checkStatus(force=false){
     try{
       const cfg=!force&&state.config?state.config:await req("/config");
       hydrateConfig(cfg);return true;
@@ -351,7 +351,7 @@ ${intelligenceWatchClientScript()}
       setStatus(false,text.offline);gate(text.signedOut,e.message||text.connectHint);return false;
     }
   }
-  async function send(){
+  // 发送消息主流程：冻结当前输入 → 创建/选择会话 → 发起模型请求 → 处理流式输出 → 更新本地会话状态。任何失败都要恢复 composer 可用状态。\nasync function send(){
     const message=$("composer").value.trim();if(!message||state.busy)return;
     if(isTinyWatch()){
       watchInputSessionActive=false;
@@ -456,7 +456,7 @@ ${intelligenceWatchClientScript()}
       closeDeleteDialog();await loadConversations();
     }catch{}
   }
-  async function shareConversation(id){
+  // 分享会话：先让用户选择具名/匿名身份，再由服务端生成分享记录；前端不能自行构造“公开链接”假装已分享。\nasync function shareConversation(id){
     const shareAuthorName=await chooseShareIdentity();
     if(shareAuthorName===null)return;
     try{

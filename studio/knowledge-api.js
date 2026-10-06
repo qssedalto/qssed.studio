@@ -12,7 +12,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 
-export async function handleKnowledgeSearch(request) {
+// Knowledge 搜索 API：清洗 query/limit 后调用知识检索后端，并把内部字段收敛成前端需要的文档摘要。空查询应尽早返回，避免无意义全库扫描。\nexport async function handleKnowledgeSearch(request) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const session = await verifyStudioApiSession(request);
@@ -73,7 +73,7 @@ export async function handleKnowledgeSearch(request) {
   return withStudioSessionCookies(json({ data: Array.isArray(data) ? data : [] }), session.cookies);
 }
 
-function cleanSearchQuery(value) {
+// 搜索词清洗：去除多余空白并限制长度，防止异常超长查询拖慢数据库/搜索服务。\nfunction cleanSearchQuery(value) {
   return String(value || "")
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")

@@ -83,7 +83,7 @@ for (const locale of ["en-gb", "en-au", "ja-jp", "ko-kr", "fr-fr", "es-es", "el-
   COPY[locale] = COPY["en-us"];
 }
 
-export function publicHomeMarkup(locale, request) {
+// 公共首页生成器：根据 locale 输出无需登录即可访问的产品介绍/入口；这里不能读取或内嵌私人账户数据。\nexport function publicHomeMarkup(locale, request) {
   const code = normalizeSupportedLocale(locale) || "en-us";
   const text = COPY[code] || COPY["en-us"];
   const url = new URL(request.url);
@@ -147,7 +147,7 @@ footer{max-width:1120px;margin:0 auto;padding:0 22px 28px;color:var(--muted);fon
 </html>`;
 }
 
-function escapeHtml(value) {
+// 公共页文本转义：即使内容来自配置/请求参数，也按纯文本输出，避免公开首页成为 HTML 注入入口。\nfunction escapeHtml(value) {
   return String(value || "").replace(/[&<>"']/g, character => ({
     "&": "&amp;",
     "<": "&lt;",

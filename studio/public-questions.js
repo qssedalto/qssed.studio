@@ -802,7 +802,7 @@ export const QUESTIONS = Object.freeze([
 
 ]);
 
-export function publishedQuestions() {
+// 已发布问题统一出口：页面、搜索和 sitemap 都应从这里取发布集合，避免某处意外把草稿/未发布问题暴露出去。\nexport function publishedQuestions() {
   return QUESTIONS.filter(item => item.status === "published");
 }
 
@@ -824,7 +824,7 @@ export function questionContentLocale(locale) {
   return questionRouteLocale(locale) === "zh-cn" ? "zh-cn" : "en-us";
 }
 
-export function questionTranslation(item, locale) {
+// FAQ 翻译选择：优先目标语言，缺失时按定义好的 fallback 返回内容；不要让单个缺失翻译导致整页无法渲染。\nexport function questionTranslation(item, locale) {
   if (!item) return null;
   return item.translations?.[questionContentLocale(locale)] || null;
 }
