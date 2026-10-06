@@ -1,3 +1,4 @@
+// 初学者导读：TeX 协作 REST/API 边界：处理房间、成员和协作状态请求。协作身份与文档权限必须在服务端再次核验。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
