@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import vm from "node:vm";
 
 const read = path => fs.readFileSync(path, "utf8");
 const assert = (condition, message) => {
@@ -98,5 +99,61 @@ assert(nativeInstaller.includes("SetupIconFile=..\\assets\\aertex-watch.ico"), "
 assert(nativeBuild.includes('set_icon') && nativeBuild.includes("aertex-watch.ico"), "Windows executable must embed the AERTEX Watch icon.");
 assert(!nativeMain.includes("ensure_installed_and_relaunch"), "Production client must no longer use the portable self-install flow.");
 assert(setupPage.includes('"cache-control": "private, no-store"'), "Region-specific Watch setup responses must not be shared-cacheable.");
+
+
+const testAppSource = app.replace(
+  /\n  bind\(\);\n  load\(\);[\s\S]*?\n\}\)\(\);\s*$/,
+  '\n  globalThis.__watchTest = { activeWindowEvents, floodEvents, latestBucketsByHost, unionHostSegments, metrics, state };\n})();'
+);
+const testContext = {
+  location: { pathname: "/zh-cn", hostname: "aw.qsseda.com" },
+  console,
+  URLSearchParams,
+  Date,
+  Intl,
+  Math,
+  JSON,
+  Map,
+  Set,
+};
+vm.runInNewContext(testAppSource, testContext, { filename: "watch-web/app.js" });
+const watchTest = testContext.__watchTest;
+assert(watchTest, "Unable to expose Watch metric functions for regression tests.");
+
+const event = (timestamp, duration, data) => ({ timestamp, duration, data });
+const rangeStart = new Date("2026-10-06T00:00:00Z");
+const rangeEnd = new Date("2026-10-07T00:00:00Z");
+
+const flooded = watchTest.floodEvents([
+  event("2026-10-06T10:00:00Z", 2, { app: "same" }),
+  event("2026-10-06T10:00:05Z", 2, { app: "same" }),
+]);
+assert(flooded.length === 1 && Math.abs(flooded[0].duration - 7) < 0.001, "Five-second ActivityWatch flood regression failed.");
+
+const windowSample = [event("2026-10-06T10:00:00Z", 60, { app: "editor" })];
+assert(watchTest.activeWindowEvents(windowSample, [], rangeStart, rangeEnd).length === 0, "An existing AFK bucket with no not-afk interval must yield zero active window time.");
+assert(watchTest.activeWindowEvents(windowSample, null, rangeStart, rangeEnd).length === 1, "A missing AFK bucket must not erase otherwise valid window events.");
+
+const latest = watchTest.latestBucketsByHost([
+  { id: "old", type: "currentwindow", hostname: "pc", last_sync: "2026-10-06T10:00:00Z" },
+  { id: "new", type: "currentwindow", hostname: "pc", last_sync: "2026-10-06T11:00:00Z" },
+], "currentwindow");
+assert(latest.length === 1 && latest[0].id === "new", "Newest bucket per host selection regression failed.");
+
+const multiDevice = watchTest.unionHostSegments([
+  [{ start: 0, end: 10_000, event: { data: { app: "primary" } } }],
+  [{ start: 5_000, end: 15_000, event: { data: { app: "secondary" } } }],
+]);
+assert(multiDevice.reduce((sum, item) => sum + item.end - item.start, 0) === 15_000, "Cross-device overlap must be counted once.");
+
+watchTest.state.range = "day";
+const metricResult = watchTest.metrics([
+  { start: Date.parse("2026-10-06T10:00:00Z"), end: Date.parse("2026-10-06T10:15:00Z"), event: { data: { app: "a" } } },
+  { start: Date.parse("2026-10-06T10:15:00Z"), end: Date.parse("2026-10-06T10:30:00Z"), event: { data: { app: "b" } } },
+], rangeStart, rangeEnd);
+assert(metricResult.total === 1800, "Active duration must equal the union of actual active intervals.");
+assert(metricResult.deepSeconds <= metricResult.total, "Deep-focus duration must never exceed active duration.");
+assert(metricResult.focusScore >= 0 && metricResult.focusScore <= 100, "AERTEX focus score must remain within 0-100.");
+assert(metricResult.switches === 1 && metricResult.focusScore === 96, "Switch-rate focus penalty must use actual active hours.");
 
 console.log("AERTEX Watch cloud checks passed.");
