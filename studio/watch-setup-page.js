@@ -3,6 +3,7 @@ import { awOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 import { localeDirection, localeFromPath, normalizeSupportedLocale } from "./locale.js";
 import { injectPublicSeo } from "./public-indexing.js";
 
+// 设置教程属于主站公开页面，不在 aw.* 私有仪表盘里；这样未登录用户也能先完成电脑端准备。
 export function isWatchSetupPath(pathname) {
   const locale = localeFromPath(pathname);
   if (!locale) return false;
@@ -10,6 +11,7 @@ export function isWatchSetupPath(pathname) {
   return parts.length === 3 && parts[1] === "aw" && parts[2] === "setup";
 }
 
+// 生成地区感知的安装教程。页面本身不创建令牌，也不读取 Watch 数据，只提供下载和操作指引。
 export function watchSetupPage(request) {
   const url = new URL(request.url);
   const locale = normalizeSupportedLocale(localeFromPath(url.pathname)) || "en-us";
@@ -17,12 +19,17 @@ export function watchSetupPage(request) {
   const watchOrigin = awOriginForRequest(request);
   const mainOrigin = mainOriginForRequest(request);
   const watchHome = watchOrigin + "/" + locale;
+  // 中国大陆优先给可访问的 iCloud 中国镜像；CF country 不可用时，zh-cn 作为保守回退。
+  // 因为下载地址会随请求地区变化，响应必须 private/no-store，不能被 CDN 跨地区复用。
   const country = String(request.cf?.country || request.headers.get("CF-IPCountry") || "").toUpperCase();
   const mainlandChina = country === "CN" || locale === "zh-cn";
   const activityWatchOfficialUrl = "https://activitywatch.net/downloads/";
   const activityWatchChinaUrl = "https://www.icloud.com.cn/iclouddrive/0f1o93e_H_OyQJtlbDfArEeUQ";
+  // 安装器使用固定 canonical URL。它由 Watch Worker 从 R2 的固定 release key 返回，
+  // 因此教程不需要知道 CI 产物文件名或版本化对象路径。
   const windowsSyncUrl = "https://aw.qsseda.com/AERTEX-Watch-Sync-Setup.exe";
 
+  // 当前教程只维护“中文”和“英文基线”两套文案；其他语言会走英文基线，避免出现半翻译安装步骤。
   const copy = zh ? {
     title: "把电脑的使用记录同步到手机",
     intro: "电脑继续使用 ActivityWatch 记录应用和窗口活动，AERTEX Watch 负责把这些记录同步到你的账户。设置完成后，手机、平板和其他电脑都可以查看。",
