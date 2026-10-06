@@ -1,6 +1,10 @@
 import { FAVICON_LINKS } from "./favicon.js";
 import { SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
 
+// 公开首页只描述产品边界，不读取任何 Watch 私有数据。
+//
+// Watch 卡片写“已同步的 ActivityWatch 使用记录”是有意的：AERTEX Watch 不是系统级屏幕时间采集器，
+// 它展示的是用户电脑上的 ActivityWatch 经过同步后得到的数据。
 const COPY = {
   "zh-cn": {
     title: "AERTEX — Work、Cash、Watch、Intelligence 与个人工具",
@@ -126,6 +130,7 @@ footer{max-width:1120px;margin:0 auto;padding:0 22px 28px;color:var(--muted);fon
 <div class="grid">
 <div class="card"><strong>${escapeHtml(text.work)}</strong><p>${escapeHtml(text.workText)}</p></div>
 <div class="card"><strong>${escapeHtml(text.intelligence)}</strong><p>${escapeHtml(text.intelligenceText)}</p></div>
+<!-- Watch 在公开首页只是产品说明卡，不把未登录用户直接带进私有数据页。 -->
 <div class="card"><strong>${escapeHtml(text.watch)}</strong><p>${escapeHtml(text.watchText)}</p></div>
 <div class="card"><strong>${escapeHtml(text.cash)}</strong><p>${escapeHtml(text.cashText)}</p></div>
 <a class="card" href="${prefix}/q" style="text-decoration:none"><strong>${escapeHtml(text.questions)}</strong><p>${escapeHtml(text.questionsText)}</p></a>
