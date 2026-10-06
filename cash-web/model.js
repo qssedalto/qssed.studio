@@ -1,3 +1,5 @@
+// AERTEX Cash 的纯计算模型，采用 UMD 包装，既能在浏览器作为 window.CashflowModel 使用，也能被 Node 回归脚本 require。
+// 初学者修改预测逻辑时优先改这里，并保持函数“输入数据 -> 输出结果”尽量无 DOM/网络副作用，方便独立测试。
 (function (root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
