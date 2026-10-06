@@ -1,3 +1,4 @@
+// 初学者导读：认证审计入口：把登录/会话相关事件整理成可查询的审计记录，供安全中心显示。
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
