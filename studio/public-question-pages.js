@@ -10,6 +10,8 @@ import {
   questionTranslation
 } from "./public-questions.js";
 
+// Questions 是公开“产品事实层”。watch 分类里的内容应跟实际同步器/Worker 行为一致，
+ // 但页面本身不调用 Watch API，也不会因为 FAQ 渲染而读取用户活动记录。
 const UI = {
   "zh-cn":{
     site:"AERTEX Questions",
