@@ -1,3 +1,7 @@
+// 浏览器输出安全辅助：集中生成/检查前端页面需要的安全约束，避免每个页面手写一套容易漏项的策略。
+//
+// 这层关注 CSP、危险协议/属性、外部资源等“浏览器能执行什么”；
+// 它和 Session/API 权限是两条不同防线，页面 CSP 安全并不等于后端接口可以少做鉴权。
 export async function hardenBrowserResponse(response, pathname = "") {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return response;
