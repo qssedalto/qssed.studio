@@ -1,3 +1,6 @@
+// AERTEX Intelligence 的本机 Codex Bridge。
+// HTTP 只监听 loopback；内部再启动 codex app-server，并用 JSON-RPC id/pending Map 把浏览器请求与子进程回复配对。
+// CODEX_HOME/CHAT_ROOT 被隔离到专用目录，来源/Host/token 检查用于防止任意网页调用本机 Codex。
 import http from "node:http";
 import fs from "node:fs";
 import os from "node:os";
