@@ -1,3 +1,7 @@
+// AERTEX Administration 的主站 <-> admin.* 安全 handoff。
+//
+// 主站先验证普通 AERTEX 会话并确认管理员入口，再通过一次性 POST 把必要凭据交给独立 admin.*；
+// 深链 next 会被规范化为管理控制台允许的路径，避免开放重定向或把普通产品 URL 当管理员落点。
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 import { adminOriginForRequest, authOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 import { adminCanonicalPath as localizedAdminPath, adminLocaleFromPath } from "../admin/i18n.js";
