@@ -1,3 +1,11 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/curated-links-core.js
+ * 精选链接模块：把系统内置、用户、自定义/收藏等不同来源的链接数据拆分管理并组合输出。
+ * 阅读顺序：先确认本文件导出的数据/函数被谁使用，再看数据键、转换规则和失败/回退逻辑；数据型文件也要理解“谁消费它”。
+ * 修改注意：保持数据结构、公开函数和已有调用者兼容。
+ * 调试方法：优先验证输入 key/ID/locale/host 是否正确，再检查转换后的结构，不要一开始就改最终展示。
+ */
 export const CURATED_LINK_CATEGORIES = {"projects":{"zh":"项目与仓库","en":"Projects & Repositories"},"design":{"zh":"设计与界面","en":"Design & Interface"},"ai":{"zh":"AI 与图像/视频","en":"AI & Media"},"development":{"zh":"开发工具","en":"Development"},"cloud":{"zh":"云服务与协议","en":"Cloud & Protocols"},"apple":{"zh":"Apple 生态","en":"Apple Ecosystem"},"services":{"zh":"安全与常用服务","en":"Security & Services"},"research":{"zh":"研究与资讯","en":"Research & Media"}};
 
 export const CURATED_LINKS_CORE = [

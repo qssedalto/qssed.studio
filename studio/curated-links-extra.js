@@ -1,3 +1,11 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/curated-links-extra.js
+ * 精选链接模块：把系统内置、用户、自定义/收藏等不同来源的链接数据拆分管理并组合输出。
+ * 阅读顺序：先确认本文件导出的数据/函数被谁使用，再看数据键、转换规则和失败/回退逻辑；数据型文件也要理解“谁消费它”。
+ * 修改注意：保持数据结构、公开函数和已有调用者兼容。
+ * 调试方法：优先验证输入 key/ID/locale/host 是否正确，再检查转换后的结构，不要一开始就改最终展示。
+ */
 export const CURATED_LINKS_EXTRA = [
   {"title":"Cloudflare","url":"https://www.cloudflare.com/","category":"cloud","zh":"QssedA 域名、边缘服务与基础设施平台。","en":"Infrastructure platform behind QssedA domains and edge services.","origin":"chat","featured":true},
   {"title":"Cloudflare Dashboard","url":"https://dash.cloudflare.com/","category":"cloud","zh":"Workers、R2、DNS、Custom Domain 与日志管理入口。","en":"Dashboard for Workers, R2, DNS, custom domains, and logs.","origin":"chat","featured":true},

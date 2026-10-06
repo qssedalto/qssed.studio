@@ -1,3 +1,11 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/curated-links-favorites.js
+ * 精选链接模块：把系统内置、用户、自定义/收藏等不同来源的链接数据拆分管理并组合输出。
+ * 阅读顺序：先确认本文件导出的数据/函数被谁使用，再看数据键、转换规则和失败/回退逻辑；数据型文件也要理解“谁消费它”。
+ * 修改注意：保持数据结构、公开函数和已有调用者兼容。
+ * 调试方法：优先验证输入 key/ID/locale/host 是否正确，再检查转换后的结构，不要一开始就改最终展示。
+ */
 const FAVORITES_UI = {
   "en-us":{favorite:"Favorites",empty:"No favorites yet",hint:"Use the star on a link to add it here.",add:"Add favorite",remove:"Remove favorite",local:"This device only",syncing:"Syncing…",cloud:"Synced",error:"Sync failed · saved locally",count:n=>n+" favorites"},
   "zh-cn":{favorite:"星标",empty:"还没有星标",hint:"点击链接上的星标即可添加。",add:"添加星标",remove:"取消星标",local:"仅此设备",syncing:"正在同步…",cloud:"已同步",error:"同步失败 · 已保留本地",count:n=>n+" 个星标"},

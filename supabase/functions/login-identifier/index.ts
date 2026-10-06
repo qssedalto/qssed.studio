@@ -1,3 +1,11 @@
+/**
+ * 【初学者导读】
+ * 文件：supabase/functions/login-identifier/index.ts
+ * Supabase Edge Function：运行在服务端边缘环境，为登录标识等流程提供受控数据库/认证逻辑。
+ * 阅读顺序：先确认本文件导出的数据/函数被谁使用，再看数据键、转换规则和失败/回退逻辑；数据型文件也要理解“谁消费它”。
+ * 修改注意：不要把服务端密钥或敏感字段返回给浏览器；数据库/认证错误要区分可公开信息和内部信息。
+ * 调试方法：优先验证输入 key/ID/locale/host 是否正确，再检查转换后的结构，不要一开始就改最终展示。
+ */
 const INVALID_MESSAGE = "Invalid login credentials";
 
 function json(data: unknown, status = 200) {

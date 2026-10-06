@@ -1,3 +1,11 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/iphone-theme-palette.js
+ * 主题色数据模块：维护 iPhone/品牌配色到 AERTEX 外观变量的映射，属于数据驱动的视觉配置。
+ * 阅读顺序：先确认本文件导出的数据/函数被谁使用，再看数据键、转换规则和失败/回退逻辑；数据型文件也要理解“谁消费它”。
+ * 修改注意：保持数据结构、公开函数和已有调用者兼容。
+ * 调试方法：优先验证输入 key/ID/locale/host 是否正确，再检查转换后的结构，不要一开始就改最终展示。
+ */
 // Generated from iphone_colors_multilingual_hex(1).xlsx.
 // HEX values and non-Chinese locale names follow the workbook. Chinese display names are curated to avoid duplicate labels; only Natural Titanium keeps titanium wording as 钛原色 / 鈦原色.
 export const IPHONE_THEME_LOCALES = Object.freeze(["en-us","en-gb","en-au","zh-cn","zh-tw","ja-jp","ko-kr","fr-fr","es-es","el-gr","ar-sa"]);

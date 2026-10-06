@@ -1,3 +1,11 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/public-questions.js
+ * 公开 Questions/FAQ 内容模块：定义可被公开页面和索引使用的大量问答内容与元数据。
+ * 阅读顺序：先确认本文件导出的数据/函数被谁使用，再看数据键、转换规则和失败/回退逻辑；数据型文件也要理解“谁消费它”。
+ * 修改注意：保持数据结构、公开函数和已有调用者兼容。
+ * 调试方法：优先验证输入 key/ID/locale/host 是否正确，再检查转换后的结构，不要一开始就改最终展示。
+ */
 export const QUESTION_INDEX_LOCALES = Object.freeze(["zh-cn","en-us"]);
 
 export const QUESTION_CATEGORIES = Object.freeze([
