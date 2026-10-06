@@ -21,6 +21,7 @@ import (
 // Stop only a verified QssedA listener on the fixed loopback port before
 // installSelf replaces the installed EXE. This prevents an old Bridge process
 // from continuing to own 32145 after an upgrade.
+// Windows 自升级路由初始化：注册升级相关受控 handler；升级包来源/目标路径由程序固定，不允许网页指定任意下载 URL。
 func init() {
 	args := os.Args[1:]
 	if hasArg(args, "--background") || hasArg(args, "--uninstall") {
@@ -34,6 +35,7 @@ type upgradeHealth struct {
 	Protocol int    `json:"protocol"`
 }
 
+// 升级前停止旧 Bridge：先确认目标进程确实是受信任安装路径/监听端口的 AERTEX Bridge，再停止，避免误杀其他本机进程。
 func stopVerifiedBridgeForUpgrade() error {
 	if !verifiedBridgeForUpgrade() {
 		return nil
@@ -62,6 +64,7 @@ func stopVerifiedBridgeForUpgrade() error {
 	return fmt.Errorf("existing bridge did not release %s:%s", bridgeHost, bridgePort)
 }
 
+// 升级对象校验：通过监听 PID、可执行路径等条件确认当前 Bridge 身份，验证失败时拒绝自动升级。
 func verifiedBridgeForUpgrade() bool {
 	client := &http.Client{Timeout: 650 * time.Millisecond}
 	response, err := client.Get("http://" + net.JoinHostPort(bridgeHost, bridgePort) + "/health")

@@ -6,6 +6,7 @@
 // 调试方法：优先验证输入 key/ID/locale/host 是否正确，再检查转换后的结构，不要一开始就改最终展示。
 package main
 
+// Windows Work 允许来源初始化：把正式 AERTEX Work 域名加入本地桥接白名单。新增来源应逐个明确列出，不使用宽泛通配符。
 func init() {
 	allowedOrigins["https://work.qsseda.com"] = true
 	allowedOrigins["https://work.qsseda.online"] = true

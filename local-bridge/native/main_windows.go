@@ -237,6 +237,7 @@ func launchBackground(executable string) error {
 	return cmd.Start()
 }
 
+// 启动原生桥接服务：只监听 loopback，并注册固定 HTTP handler；任何监听到外网网卡的配置都应视为安全回归。
 func runBridge() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", handleHealth)
@@ -254,6 +255,7 @@ func runBridge() error {
 	return server.ListenAndServe()
 }
 
+// 每个请求的安全包装：检查 Host/Origin/方法等，再设置浏览器安全头；未通过检查的请求在进入业务 handler 前就拒绝。
 func secureHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		host := strings.ToLower(strings.TrimSpace(r.Host))
@@ -363,6 +365,7 @@ func handleTexStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// 本地 TeX 编译：只接受允许 engine + 源码内容，在临时目录运行固定 TeX 可执行文件并返回 PDF/清洗日志；不接受任意命令行。
 func handleTexCompile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		sendJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "Method not allowed."})
@@ -484,6 +487,7 @@ func detectLocalEngines() []string {
 	return engines
 }
 
+// TeX 可执行文件查找：engine 来自白名单，按 PATH/已知位置寻找；不会把用户输入直接当作可执行文件路径。
 func findTeXExecutable(engine string) string {
 	engine = strings.ToLower(strings.TrimSpace(engine))
 	if !allowedLocalEngines[engine] {

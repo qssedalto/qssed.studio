@@ -21,6 +21,7 @@ const NAV = [
   ["/system", "系统", "SY"]
 ];
 
+// Admin Console 页面总生成器：根据 route 选择用户、角色、日志、内容、存储、账单、学生认证、Intelligence 等管理视图，并共享一套请求/表格组件。
 export function renderAdminConsole(route, options = {}) {
   const current = NAV.some(([path]) => path === route) ? route : "/";
   const identity = escapeHtml(options.identity || "管理员");
@@ -337,7 +338,8 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     if(!r.ok)throw new Error(data.error||("HTTP "+r.status));
     return data;
   }
-  async function requestJson(path,options={}){
+  // Admin 前端统一请求：所有管理 API 从这里走，统一同源凭据、错误解析和 no-store；不要在单个按钮里重复手写 fetch。
+async function requestJson(path,options={}){
     const r=await fetch(path,{...options,credentials:"same-origin",cache:"no-store",headers:{accept:"application/json",...(options.headers||{})}});
     const data=await r.json().catch(()=>({}));
     if(!r.ok){
@@ -371,7 +373,8 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const data=result.data||{};
     view.innerHTML=objCards(data)+'<section class="section"><div class="sectionHead"><h2>原始管理概览</h2></div><pre>'+esc(JSON.stringify(localizeForDisplay(data),null,2))+'</pre></section>';
   }
-  async function users(){
+  // 用户管理视图：读取可管理用户摘要并渲染列表；敏感操作通过后端 RPC/Action 执行，不在前端直接修改数据库。
+async function users(){
     const result=await post("/api/admin/users");
     const rows=Array.isArray(result.data)?result.data:(result.data?.users||[]);
     if(!rows.length){view.innerHTML='<section class="section"><div class="state">暂无账户。</div></section>';return}
@@ -454,7 +457,8 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       }catch(error){alert(error.message)}
     });
   }
-  async function content(){
+  // 内容管理视图：聚合 Summaries/Links/Storage 等可管理内容摘要；列表只显示必要元数据，具体删除/下载仍走受控 Admin API。
+async function content(){
     const [summaries,links]=await Promise.all([
       get("/api/admin/content/summaries"),
       get("/api/admin/content/links")
@@ -700,7 +704,8 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     }));
   }
 
-  async function intelligence(){
+  // Intelligence 管理视图：加载供应商、模型、用户访问和用量配置。密钥只通过专门保存操作发送，页面不会读取已有完整明文密钥。
+async function intelligence(){
     if(window.__aertexAdminAiTimer){clearInterval(window.__aertexAdminAiTimer);window.__aertexAdminAiTimer=null;}
     const initialState=await get("/api/admin/ai/state");
     const initialProviders=Array.isArray(initialState.providers)?initialState.providers:[];

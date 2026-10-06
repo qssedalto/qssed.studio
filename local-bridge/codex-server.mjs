@@ -304,6 +304,7 @@ server.on("error", error => {
   process.exitCode = 1;
 });
 
+// Codex 流式对话桥接：校验请求体后调用本机 Codex SDK/CLI，把结构化事件转成 SSE；客户端断开时必须清理底层任务与监听器。
 async function streamTurn(request, response, origin) {
   await codex.ensureStarted();
   const body = await readJsonBody(request);
@@ -412,6 +413,7 @@ async function streamTurn(request, response, origin) {
   }
 }
 
+// 本地 Codex Bridge 授权：同时限制 Host、Origin、路径和 loopback 环境，确保普通网页无法借用户浏览器调用本机 Codex。
 function isAuthorizedBridgeRequest(request, pathname, origin, host) {
   const browserLocalRequest = ALLOWED_HOSTS.has(host) && Boolean(origin) && ALLOWED_ORIGINS.has(origin);
   if (browserLocalRequest) return true;
@@ -445,6 +447,7 @@ function sendJson(response, status, payload) {
   response.end(JSON.stringify(payload));
 }
 
+// 请求体读取：限制 JSON 大小/格式并在解析失败时返回明确 400，避免未受限 body 占用本机内存。
 async function readJsonBody(request) {
   let size = 0;
   const chunks = [];
@@ -466,6 +469,7 @@ async function readJsonBody(request) {
   }
 }
 
+// Codex 可用性探测：执行固定版本/账户探测并清洗输出，页面只能看到必要能力信息，不直接得到本机完整环境。
 async function probeCodex() {
   const result = await runProbe(CODEX_COMMAND, ["--version"], 2500);
   return {

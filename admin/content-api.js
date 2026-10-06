@@ -15,6 +15,7 @@ const USER_LINKS_ROOT = "_system/user-links/";
 const STORAGE_ROOT = "users/";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+// Admin 内容 API 总入口：按 resource 分派 summaries/links/storage 等管理读取或操作。resource 白名单之外统一隐藏为 404。
 export async function handleAdminContent(request, env, session, resource) {
   if (!env?.STORAGE) return json({ error: "Administrative storage is unavailable." }, 503);
 
@@ -111,6 +112,7 @@ async function listLinks(env, session) {
   return json({ rows, count: rows.length, partial: rows.length >= 1500 });
 }
 
+// 管理员链接操作：解析复合引用后只允许受支持的更新/删除动作；URL/文本仍需清洗，管理员输入也不能默认可信。
 async function mutateLink(request, env) {
   const url = new URL(request.url);
   const ownerId = cleanUuid(url.searchParams.get("owner"));
@@ -194,6 +196,7 @@ async function listStorageFiles(env, session) {
   });
 }
 
+// 管理员存储对象操作：先把公开 reference 解析成真实 owner/object key，再下载/删除；避免让浏览器直接提交原始 R2 key。
 async function storageObject(request, env) {
   const ref = compositeReference(new URL(request.url).searchParams.get("id"));
   if (!ref) return json({ error: "Invalid storage reference." }, 400);
