@@ -58,7 +58,7 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2800);
   }
   function setSaveStatus(text) { $('storageStatus').textContent = `${text}${meta.dataFilePath ? ` · ${meta.dataFilePath}` : ''}`; }
-  function persist(message = '已自动保存到云端') {
+  // 持久化入口：页面状态先 normalize，再交给云端/存储层保存。这里负责保存状态提示，不负责重新定义财务规则。\nfunction persist(message = '已自动保存到云端') {
     setSaveStatus('正在保存到云端…');
     const snapshot = M.normalizeData(data);
     saveChain = saveChain.then(async () => {
@@ -80,7 +80,7 @@
     }).catch(error => { setSaveStatus('保存失败'); showToast(`保存失败：${error.message}`, true); });
     return saveChain;
   }
-  function recalculate() { model = M.calculateFinancialModel(data, { asOf: meta.today }); }
+  // 重新计算：所有金额、日历和预测统一交给 model.js；UI 只保存结果引用，避免多处出现不一致的公式。\nfunction recalculate() { model = M.calculateFinancialModel(data, { asOf: meta.today }); }
   function mutate(message = '已自动保存') { data = M.normalizeData(data); recalculate(); render(); return persist(message); }
 
   function categoryOptions(type, selected) {
@@ -218,7 +218,7 @@
     document.querySelectorAll('[data-delete-tx]').forEach(button => button.addEventListener('click', () => deleteTransaction(button.dataset.deleteTx)));
   }
 
-  function renderCalendar() {
+  // 日历渲染：把 model 已计算好的每日现金流、计划/实际状态映射到格子；日期业务规则应放在 model.js 而不是这里。\nfunction renderCalendar() {
     const monthNames = [...new Set(model.dates.map(M.monthKey))], weekdays = ['日', '一', '二', '三', '四', '五', '六'];
     $('calendar').innerHTML = monthNames.map(month => {
       const days = model.forecast.daily.filter(day => day.month === month);
@@ -384,7 +384,7 @@
     $('settlementDialog').showModal();
   }
 
-  function saveRecurringSettlement(event) {
+  // 固定扣款结算：把“提前/实际支付”记录成真实交易并建立替代关系，保证计划日不会再次重复扣款。\nfunction saveRecurringSettlement(event) {
     event.preventDefault();
     const item = data.recurringExpenses.find(x => x.id === settlingRecurringId);
     if (!item) return;
@@ -720,7 +720,7 @@
     }
   }
 
-  async function initialize() {
+  // 页面启动：读取账户/数据文件 → normalize → calculateFinancialModel → render → 绑定自动保存。若初始化失败，应保留可诊断状态而不是静默覆盖数据。\nasync function initialize() {
     meta.today = localDateKey();
     meta.dataFilePath = 'AERTEX Cloud';
     const response = await fetch('/api/cash/data', {
