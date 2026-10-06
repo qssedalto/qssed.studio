@@ -1,5 +1,7 @@
 import { KNOWLEDGE_PATHS } from "./knowledge-routes.js";
 
+// 共享配置只放“公开客户端常量 / 路由表 / UI 文案”，不能放服务端私密密钥。
+// Watch 的 Device Token、R2 对象与用户活动数据都不应出现在这个模块。
 export const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 export const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 export const ZH_COUNTRIES = ["CN", "HK", "MO", "TW", "SG"];
@@ -8,6 +10,7 @@ export const MAX_STORAGE_FILE_BYTES = 50 * 1024 * 1024;
 export const DEFAULT_STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
 export const MAX_STORAGE_LIST_OBJECTS = 10000;
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// 主站受保护 OS 路由白名单。AERTEX Watch 自己运行在 aw.*，因此不会塞进这张主站路由表。
 export const OS_PATHS = new Set([
   "/dashboard",
   "/wishes",
@@ -48,6 +51,7 @@ export const OS_PATHS = new Set([
   "/settings/student",
   "/settings/storage"
 ]);
+// 只做历史页面路径迁移；独立产品域名迁移（例如 Watch 的 aw.*）由 domain-family / product Worker 处理。
 export const LEGACY_REDIRECTS = new Map([
   ["/general", "/dashboard"],
   ["/general/infohub", "/info"],
