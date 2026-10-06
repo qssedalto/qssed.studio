@@ -1,3 +1,4 @@
+// 初学者导读：用户链接 API：管理个人链接/书签数据。URL、标题等输入要规范化，资源 id 不能绕过当前用户边界。
 import { SUPABASE_URL } from "./config.js";
 import { hasStorageBinding, isStorageObjectId, verifyStorageUser } from "./storage-api.js";
 import { json } from "./routing.js";
