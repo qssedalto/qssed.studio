@@ -12,6 +12,9 @@
  * and is intentionally preserved across the workers that were later split from it.
  */
 
+// AERTEX Intelligence 独立产品 Worker。
+// 初学者先看三条主线：公开分享页、已登录 /api/ai/*、内部管理员 AI 控制面。
+// 模型供应商调用集中在 studio/ai-gateway.js；这个文件负责路由、会话边界、共享 UI 和安全响应。
 import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
 import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
