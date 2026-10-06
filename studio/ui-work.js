@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Work 产品页面生成与客户端入口；负责 Work 主页/工作区视觉，具体数据功能由独立 API 模块提供。
 import { dashboardIcon } from "./ui-dashboard.js";
 import { workText } from "./i18n-work.js";
 import { normalizeSupportedLocale } from "./locale.js";
