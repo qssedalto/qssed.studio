@@ -1,3 +1,6 @@
+// 管理员跨账户内容/R2 查看接口。
+// 这里能看到普通用户私有摘要、链接和文件，因此每个资源都必须先由 admin-worker 验证管理员 Session；
+// 对象 key 还会再次解析 owner/id，避免仅凭用户提供的路径直接访问任意 R2 对象。
 import { SUPABASE_URL, SUPABASE_KEY } from "../studio/config.js";
 import { adminHeaders } from "./session.js";
 
