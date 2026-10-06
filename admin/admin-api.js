@@ -73,14 +73,16 @@ const ACTIONS = {
   }
 };
 
-// 管理员访问检查：只回答“当前会话是否具备管理权限/基础信息”，不在这里执行具体管理操作。\nexport async function handleAdminAccess(request) {
+// 管理员访问检查：只回答“当前会话是否具备管理权限/基础信息”，不在这里执行具体管理操作。
+export async function handleAdminAccess(request) {
   const session = await verifyAdminApiSession(request);
   if (!session.ok) return withAdminSessionCookies(json({ is_admin: false, error: "Authentication required." }, 401), session.cookies);
 
   return withAdminSessionCookies(json({ is_admin: true, user_id: session.user.id }), session.cookies);
 }
 
-// 管理操作总入口：action 决定具体 RPC/管理任务；即使外层已确认管理员，也要继续限制 action、参数和上游错误内容。\nexport async function handleAdminAction(request, _env, action) {
+// 管理操作总入口：action 决定具体 RPC/管理任务；即使外层已确认管理员，也要继续限制 action、参数和上游错误内容。
+export async function handleAdminAction(request, _env, action) {
   const spec = ACTIONS[action];
   if (!spec) return json({ error: "Unknown administrator action." }, 404);
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -207,7 +209,8 @@ const ACTIONS = {
   return withAdminSessionCookies(json({ data: result.payload }), session.cookies);
 }
 
-// 调用受保护的 Supabase RPC：access token 只放 Authorization 头；响应错误会被清洗成适合管理员 UI 显示的信息。\nasync function callRpc(accessToken, rpc, params) {
+// 调用受保护的 Supabase RPC：access token 只放 Authorization 头；响应错误会被清洗成适合管理员 UI 显示的信息。
+async function callRpc(accessToken, rpc, params) {
   let upstream;
   try {
     upstream = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
