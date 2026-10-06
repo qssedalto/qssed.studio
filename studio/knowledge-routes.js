@@ -1,3 +1,4 @@
+// 初学者导读：知识页面路由表：把稳定 URL 映射到知识内容与页面元数据。路由定义应保持声明式，渲染逻辑放在页面模块。
 export const KNOWLEDGE_ROOT = "/info/knowledge";
 
 export const KNOWLEDGE_CATEGORIES = [
