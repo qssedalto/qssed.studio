@@ -401,7 +401,9 @@ async function mergeEvents(existing, incoming) {
     if (!normalized) continue;
     // ActivityWatch updates the duration of a heartbeat event without changing its
     // timestamp/data. Duration must therefore not be part of the deduplication key.
-    const identity = await sha256Hex(JSON.stringify([normalized.timestamp, normalized.data]));
+    const identity = normalized.id !== undefined
+      ? "id:" + normalized.id
+      : await sha256Hex(JSON.stringify([normalized.timestamp, normalized.data]));
     const previous = map.get(identity);
     if (!previous || normalized.duration >= previous.duration) map.set(identity, normalized);
   }
