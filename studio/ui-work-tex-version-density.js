@@ -7,7 +7,7 @@
  * 修改注意：保持已有 URL、查询参数、DOM 标识和登录交接兼容；如果产品边界变化，必须同步修改对应 CI 检查。
  * 调试方法：先确认 host/path 命中了哪个入口，再检查会话和内部状态，最后看具体 UI 或 API 结果。
  */
-export function enhanceWorkTexVersionDensity(markup) {
+// 版本历史密度增强：根据可用宽度调整时间线/版本项的显示密度，让大量版本在窄屏和桌面端都可读；只影响视觉，不改变版本保留算法。\nexport function enhanceWorkTexVersionDensity(markup) {
   return String(markup || "") + `
     <style id="qsseda-work-tex-version-density">
       /* The base run list is a CSS grid with a large minimum height. With only one

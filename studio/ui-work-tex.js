@@ -8,7 +8,7 @@
  * 调试方法：先确认 host/path 命中了哪个入口，再检查会话和内部状态，最后看具体 UI 或 API 结果。
  */
 // Work/TeX 导航增强：在现有 Work 页面上补充 TeX 入口、状态和导航，不重新实现整个页面骨架。
-export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "https://work.qsseda.com") {
+// Work/TeX 页面基础增强总入口：在现有 TeX 页面上补充导航、云端/本地状态和桥接入口，是后续细分增强模块的基础层。\nexport function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "https://work.qsseda.com") {
   let output = String(markup || "");
   const prefix = zh ? "/zh-cn" : "/en";
   const workTexUrl = `${workOrigin}${zh ? "/zh-cn/tex" : "/en/tex"}`;
@@ -295,7 +295,7 @@ export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "http
           }
 
           // 本地 TeX 能力探测：查询 local bridge 是否可用、具备哪些编译能力；失败只影响本地能力，不应阻断云端编辑。
-async function probeLocal() {
+// 探测本地桥接：读取用户电脑 localhost 服务的许可/能力；失败只表示本地编译不可用，不应把云端 TeX 整体标记为失败。\nasync function probeLocal() {
             for (const base of endpoints) {
               try {
                 const healthResponse = await loopbackFetch(base, '/health');
@@ -318,7 +318,7 @@ async function probeLocal() {
           }
 
           // 云端能力探测：确认 Work/TeX 云端服务和会话状态，用于决定页面展示“可用、受限还是需要登录”。
-async function probeCloud() {
+// 探测云端 TeX：请求云端状态/会话，更新“云端可用性”表面；本地和云端是两条独立能力链。\nasync function probeCloud() {
             try {
               const response = await fetch('/api/tex/status', {
                 credentials: 'same-origin',
@@ -817,7 +817,7 @@ const WORK_TEX_VISUAL_STYLE = `
   </style>
 `;
 
-export function polishWorkTexVisualTheme(markup) {
+// TeX 视觉主题增强：只调整 Work/TeX 页面样式与共享主题变量，不能自己持久化一套独立深浅色/主色设置。\nexport function polishWorkTexVisualTheme(markup) {
   const source = String(markup || "");
   return source.replace("</body>", WORK_TEX_VISUAL_STYLE + "</body>");
 }

@@ -87,7 +87,7 @@ const PRODUCT_FAVICON_META = Object.freeze({
   }
 });
 
-export function faviconProductForRequest(request) {
+// Favicon 产品识别：根据 host/path 判断当前产品，确保主站、Work、Watch、Cash、Intelligence 等得到各自分支图标。\nexport function faviconProductForRequest(request) {
   let hostname = "";
   try { hostname = new URL(request?.url || "https://qsseda.com/").hostname.toLowerCase(); }
   catch {}
@@ -101,7 +101,7 @@ export function faviconProductForRequest(request) {
   return "";
 }
 
-export function faviconSvgForProduct(product = "") {
+// 产品 favicon SVG 生成：从统一 AERTEX 主标识派生产品小角标，保持视觉一致且避免维护多份静态 SVG。\nexport function faviconSvgForProduct(product = "") {
   const meta = PRODUCT_FAVICON_META[product];
   if (!meta) return FAVICON_SVG;
 
@@ -168,7 +168,7 @@ function appleTouchIconBytes() {
   return Uint8Array.from(binary, character => character.charCodeAt(0));
 }
 
-export function faviconResponse(request) {
+// Favicon HTTP 响应：处理 SVG/Apple touch icon 等路径和缓存头。Safari 深浅色问题应在这里/资源层统一解决，不在页面逐个补丁。\nexport function faviconResponse(request) {
   const method = String(request?.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD") {
     return new Response("Method not allowed", {

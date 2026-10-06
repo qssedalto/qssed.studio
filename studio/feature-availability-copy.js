@@ -7,7 +7,7 @@
  * 修改注意：保持公开 API、DOM 标识和共享数据结构稳定；产品规则变化时同步更新自动检查。
  * 调试方法：先锁定调用链，再打印/检查最小必要状态，不要从最终页面表现反推所有中间步骤。
  */
-export function normalizeFeatureAvailabilityCopy(markup) {
+// 功能可用性文案归一化：把历史页面中不一致/过时的 availability 文案统一成当前产品口径；只改文案，不改变真实功能权限。\nexport function normalizeFeatureAvailabilityCopy(markup) {
   let output = String(markup || "");
   const replacements = [
     ["知识模块尚未建立持久化数据表；当前仅保留清晰的模块入口。","知识库、收藏链接、研究笔记、内容摘要和全局搜索均已接入账号数据与权限边界。"],

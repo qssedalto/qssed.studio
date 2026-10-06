@@ -16,7 +16,7 @@ const STATUS_COPY = {
   "Integrations": ["Integrations aren’t available yet", "User-level integrations are not available yet."]
 };
 
-export function statusContent(zh, zhTitle, zhBody, enTitle, enBody) {
+// 通用状态页 primitive：统一生成成功/错误/不可用等简单页面，调用方只提供文案，避免各模块复制结构。\nexport function statusContent(zh, zhTitle, zhBody, enTitle, enBody) {
   if (zhTitle === "笔记尚未开放" && enTitle === "Notes aren’t available yet") {
     return researchNotesContent(zh);
   }
@@ -62,7 +62,7 @@ export function osHubIcon(name) {
   return `<span class="os-hub-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${body}</svg></span>`;
 }
 
-export function osHubCard(item) {
+// Hub 卡片 primitive：集中处理图标、标题、描述和链接结构。item 中的可见文本应在生成前已经是可信/转义安全的数据。\nexport function osHubCard(item) {
   const classes = ["os-hub-card"];
   if (item.featured) classes.push("is-featured");
   if (item.tone) classes.push("tone-" + item.tone);

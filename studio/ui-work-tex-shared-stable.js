@@ -7,7 +7,7 @@
  * 修改注意：保持已有 URL、查询参数、DOM 标识和登录交接兼容；如果产品边界变化，必须同步修改对应 CI 检查。
  * 调试方法：先确认 host/path 命中了哪个入口，再检查会话和内部状态，最后看具体 UI 或 API 结果。
  */
-export function enhanceWorkTexSharedStable(markup, zh) {
+// 共享文档稳定层：在页面进入共享文档时读取成员角色、切换只读/可编辑状态，并修正 owner/协作者视图差异。它负责“稳定权限体验”，不负责真正授权。\nexport function enhanceWorkTexSharedStable(markup, zh) {
   let output = String(markup || "");
 
   const original = `            rememberSharedDocuments(shared);\n            const documents = [...(Array.isArray(ownData.documents) ? ownData.documents : []), ...shared]\n              .sort((a, b) => String(b?.updated_at || '').localeCompare(String(a?.updated_at || '')));\n            return responseJson({ ...ownData, documents, count: documents.length, scope: shared.length ? 'own-and-shared' : (ownData.scope || 'own') });`;
@@ -282,7 +282,7 @@ export function enhanceWorkTexSharedStable(markup, zh) {
           }
         };
 
-        const applyAccess = () => {
+        // 把当前共享访问角色应用到编辑器/按钮：viewer 只读、editor 可编辑。服务端仍会在写请求时重新检查权限，前端这里只是同步体验。\n  const applyAccess = () => {
           if (applying) return;
           applying = true;
           try {
@@ -345,7 +345,7 @@ export function enhanceWorkTexSharedStable(markup, zh) {
           }
         };
 
-        const loadAccess = async () => {
+        // 加载当前文档共享访问状态：文档切换后重新请求，避免沿用上一文档的角色。失败时默认保守为不可写。\n  const loadAccess = async () => {
           const documentId = activeDocumentId();
           const sequence = ++accessSequence;
           access = null;

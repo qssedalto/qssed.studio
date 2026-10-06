@@ -12,7 +12,7 @@ import { profileStyles } from "./ui-style-profile.js";
 import { knowledgeStyles } from "./ui-style-knowledge.js";
 import { html } from "./routing.js";
 
-export function osStyles() {
+// 主站共享样式入口：返回 AERTEX OS 壳与通用组件 CSS。修改全局变量/基础选择器会影响多个页面，应避免为单页问题加入过宽规则。\nexport function osStyles() {
   return `
   <style>
     body.os-shell{

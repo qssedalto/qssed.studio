@@ -7,7 +7,7 @@
  * 修改注意：保持已有 URL、查询参数、DOM 标识和登录交接兼容；如果产品边界变化，必须同步修改对应 CI 检查。
  * 调试方法：先确认 host/path 命中了哪个入口，再检查会话和内部状态，最后看具体 UI 或 API 结果。
  */
-export function enhanceWorkTexVersionHistory(markup, zh) {
+// 版本历史 UI：读取 /api/tex/versions，展示快照并支持查看/下载/编译历史版本。恢复历史内容前应与当前未保存编辑明确区分。\nexport function enhanceWorkTexVersionHistory(markup, zh) {
   let output = String(markup || "");
   const copy = zh ? {
     history: "版本历史",
@@ -158,7 +158,7 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
           window.setTimeout(() => URL.revokeObjectURL(url), 2000);
         };
 
-        async function getVersion(documentId, versionId) {
+        // 获取单个历史版本完整内容：列表页只持有摘要，需要用户查看/操作时再按 documentId + versionId 请求正文。\nasync function getVersion(documentId, versionId) {
           const data = await api('/api/tex/versions?document=' + encodeURIComponent(documentId) + '&version=' + encodeURIComponent(versionId));
           return data.version;
         }
@@ -176,7 +176,7 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
           } finally { window.clearTimeout(timer); }
         }
 
-        async function compileVersionPdf(version) {
+        // 编译历史版本 PDF：将快照源码送往受控编译路径，不会覆盖当前文档；用于核对旧版本输出。\nasync function compileVersionPdf(version) {
           let lastError = null;
           for (const base of endpoints) {
             try {
@@ -295,7 +295,7 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
           rendering = false;
         }
 
-        async function loadVersions() {
+        // 版本列表刷新：活动文档变化时重新读取对应版本；请求返回后确认 documentId 未改变，避免旧请求覆盖新文档面板。\nasync function loadVersions() {
           const list = document.getElementById('tex-run-list');
           const empty = document.getElementById('tex-runs-empty');
           if (!list || !empty) return;

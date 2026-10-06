@@ -14,7 +14,7 @@ export const AERTEX_WORDMARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" view
 export const AERTEX_WORDMARK_DATA_URI = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(AERTEX_WORDMARK_SVG);
 export const LOGO_PATHS = new Set(["/logo.svg"]);
 
-export function logoResponse(request) {
+// Logo 资源响应：根据请求返回站点品牌 SVG/缓存头。品牌资源是共享资产，不应由各子产品复制一份不同实现。\nexport function logoResponse(request) {
   const method = String(request?.method || "GET").toUpperCase();
   if (method !== "GET" && method !== "HEAD") {
     return new Response("Method not allowed", {
@@ -141,11 +141,11 @@ function replaceVisibleAertexText(markup) {
   return output;
 }
 
-export function brandLogoRuntime() {
+// 品牌 Logo 客户端运行时：扫描页面中符合条件的旧文字/图标并替换为统一 AERTEX Logo，用于兼容历史页面。\nexport function brandLogoRuntime() {
   return STYLE + SCRIPT;
 }
 
-export function injectBrandLogoRuntime(markup) {
+// 向 HTML 注入品牌运行时：应保证只注入一次，避免 MutationObserver/扫描器重复安装导致性能问题。\nexport function injectBrandLogoRuntime(markup) {
   const text = String(markup || "");
   if (!text) return text;
 

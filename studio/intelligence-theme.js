@@ -9,7 +9,7 @@
  */
 import { appearanceBootScript, appearanceThemeAttr, appearanceThemeFromRequest } from "./appearance.js";
 
-export function intelligenceThemeFromRequest(request) {
+// Intelligence 主题读取兼容层：从全站外观 Cookie/请求中解析当前主题，保持 gpt 子域与主站一致。\nexport function intelligenceThemeFromRequest(request) {
   return appearanceThemeFromRequest(request);
 }
 
@@ -17,6 +17,6 @@ export function intelligenceThemeAttr(theme) {
   return appearanceThemeAttr(theme);
 }
 
-export function intelligenceThemeBootScript() {
+// Intelligence 首屏主题脚本：在完整 JS 加载前尽早设置正确主题，减少浅/深色闪烁；真实偏好仍来自共享 appearance 规则。\nexport function intelligenceThemeBootScript() {
   return appearanceBootScript();
 }

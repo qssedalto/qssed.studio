@@ -13,7 +13,7 @@ import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from ".
 import { LOCALE_META } from "./locale.js";
 import { appearanceBootScript } from "./appearance.js";
 
-export function baseHead(title) {
+// 页面 <head> 基础模板：集中 favicon、viewport、基础 meta 等公共头部内容，页面 title 作为参数注入。\nexport function baseHead(title) {
   return `
     <title>${title}</title>
     ${FAVICON_LINKS}
@@ -604,7 +604,7 @@ export function supabaseScript() {
   `;
 }
 
-export function themeToggle(locale = "en-us") {
+// 主题切换控件：只是全站 AERTEXTheme 的 UI 入口；实际主题状态由 appearance.js 统一读取/持久化。\nexport function themeToggle(locale = "en-us") {
   const copy = {
     "zh-cn": { title:"外观", system:"跟随系统", light:"浅色", dark:"深色" },
     "zh-tw": { title:"外觀", system:"跟隨系統", light:"淺色", dark:"深色" },
@@ -631,7 +631,7 @@ export function themeToggle(locale = "en-us") {
   `;
 }
 
-export function languageToggle(links, t) {
+// 语言切换控件：links 应由路由层生成当前页面的各语言等价地址，避免用户切语言后被送回无关首页。\nexport function languageToggle(links, t) {
   const activeLocale = links.activeLocale || (t === TEXT.zh ? "zh-cn" : "en-us");
   const meta = LOCALE_META[activeLocale] || {};
   const label = meta.shortName || meta.nativeName || activeLocale;
@@ -659,7 +659,7 @@ export function topControls(links, t) {
   `;
 }
 
-export function themeScript() {
+// 主题菜单交互脚本：负责菜单开关、aria 状态和调用 AERTEXTheme；点击空白处/ESC 要正确关闭，且菜单打开时不应留下错误 overlay 状态。\nexport function themeScript() {
   return `
     <script>
       (function () {

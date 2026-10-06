@@ -7,7 +7,7 @@
  * 修改注意：已有 class/id/data-* 可能被其他模块和自动测试依赖；不要因为当前页面能显示就随意删除。动态用户内容继续保持转义。
  * 响应式：涉及布局的修改至少检查宽屏、普通笔记本、平板和手机，避免只在一个尺寸上看起来正确。
  */
-export function enhanceWorkLocalBridgeNative(markup, zh) {
+// Work 本地桥接原生客户端增强：显示本机 bridge 版本/升级状态并引导安装。网页只能请求受控升级动作，不能指定任意可执行文件。\nexport function enhanceWorkLocalBridgeNative(markup, zh) {
   let output = String(markup || "");
 
   output = output
@@ -43,7 +43,7 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
         download.hidden = !isWindows;
         if (installDetails) installDetails.hidden = !isWindows;
 
-        const syncUpgradeState = () => {
+        // 同步升级状态到 UI：安装中、已最新、需要更新等只是展示状态，真实版本判断来自本地桥接返回值。\n  const syncUpgradeState = () => {
           const versionText = String(version.textContent || "");
           const incompatible = incompatibleBuilds.some(build => versionText.includes(build));
           const connected = Boolean(statusCard?.classList.contains("is-online"));

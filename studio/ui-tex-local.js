@@ -7,7 +7,7 @@
  * 修改注意：已有 class/id/data-* 可能被其他模块和自动测试依赖；不要因为当前页面能显示就随意删除。动态用户内容继续保持转义。
  * 响应式：涉及布局的修改至少检查宽屏、普通笔记本、平板和手机，避免只在一个尺寸上看起来正确。
  */
-export function enhanceTexWorkbenchLocal(markup, zh) {
+// TeX 本地编译增强：探测 local bridge 的 XeLaTeX 等能力，并在可用时提供快速本地预览；云端保存仍是文档持久化来源。\nexport function enhanceTexWorkbenchLocal(markup, zh) {
   const copy = zh ? {
     localReady: "本机 TeX 已连接",
     localUnsupported: "本机不支持当前引擎",
@@ -262,7 +262,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             }
           }
 
-          async function probeLocal() {
+          // 本地能力探测：请求 loopback bridge 的固定 capability API，不允许用户输入任意命令。\nasync function probeLocal() {
             localBase = '';
             localEngines = [];
             for (const base of endpoints) {
@@ -363,7 +363,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             return { blob: await response.blob(), elapsed: performance.now() - started };
           }
 
-          async function compileLocal(previewOnly = false) {
+          // 本地编译：把当前 engine/source 送给本地桥接固定 TeX 编译接口，返回 PDF blob。previewOnly 控制是否只刷新预览而不追加运行记录。\nasync function compileLocal(previewOnly = false) {
             if (!supportsCurrentEngine() || localBusy || !hasDocument()) {
               if (previewOnly && localBusy) previewPending = true;
               return;
@@ -418,7 +418,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             }
           }
 
-          function schedulePreview(delay = 1500) {
+          // 预览防抖：用户连续输入时推迟本地编译，减少高频启动 TeX 进程；新输入会取消旧 timer。\nfunction schedulePreview(delay = 1500) {
             window.clearTimeout(previewTimer);
             if (!previewEnabled || !supportsCurrentEngine() || !hasDocument()) return;
             previewDirty = true;

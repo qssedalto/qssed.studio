@@ -7,7 +7,7 @@
  * 修改注意：已有 class/id/data-* 可能被其他模块和自动测试依赖；不要因为当前页面能显示就随意删除。动态用户内容继续保持转义。
  * 响应式：涉及布局的修改至少检查宽屏、普通笔记本、平板和手机，避免只在一个尺寸上看起来正确。
  */
-export function polishTexWorkbenchApp(markup, zh) {
+// TeX Workbench 应用级 UI 整理：在基础工作台上统一文案、布局和入口，保持底层 /api/tex 数据流不变。\nexport function polishTexWorkbenchApp(markup, zh) {
   const copy = zh ? {
     startTitle: "开始一份 TeX 文档",
     startDetail: "选择一种结构，直接进入写作与排版。",
