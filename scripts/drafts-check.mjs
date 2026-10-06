@@ -1,3 +1,4 @@
+// 初学者导读：草稿工作区回归检查；锁定 API 路由、权限约束和主要 UI 入口。
 import fs from "node:fs";
 import { draftsWorkspaceContent } from "../studio/ui-drafts.js";
 
