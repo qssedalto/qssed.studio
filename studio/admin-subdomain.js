@@ -26,7 +26,7 @@ export function adminSessionRedirect(request, next = "/") {
   return redirect(target.toString());
 }
 
-export async function handleMainAdminHandoff(request) {
+// 主站 → Admin 交接：除了有效登录态，还需要管理员权限；普通用户即使构造 admin URL 也不能建立管理会话。\nexport async function handleMainAdminHandoff(request) {
   if (request.method !== "GET") {
     return new Response("Method not allowed", {
       status: 405,
@@ -61,7 +61,7 @@ export async function handleMainAdminHandoff(request) {
   return withStudioSessionCookies(new Response(page, { status: 200, headers }), gate.cookies || []);
 }
 
-export function canonicalAdminPath(value) {
+// Admin 路径规范化：只允许管理站内已知结构，并统一语言/默认入口，避免错误路径进入敏感 handler。\nexport function canonicalAdminPath(value) {
   const path = typeof value === "string" ? value.trim() : "";
   const parsed = adminLocaleFromPath(path);
   if (!parsed.path) return "/";

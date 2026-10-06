@@ -33,7 +33,7 @@ export function isLegacyCookieApiPath(pathname) {
   return ROUTES.has(String(pathname || ""));
 }
 
-export async function handleLegacyCookieApi(request, env, pathname) {
+// 旧 Cookie API 兼容入口：只服务有限的历史路径，并把敏感写操作继续限制为同源请求。它是过渡层，不应承载新的业务功能。\nexport async function handleLegacyCookieApi(request, env, pathname) {
   const route = ROUTES.get(String(pathname || ""));
   if (!route) return json({ error: "Unknown API route." }, 404);
   if (!route.methods.has(request.method)) return json({ error: "Method not allowed" }, 405);
@@ -58,7 +58,7 @@ function isWriteMethod(method) {
   return method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
 }
 
-function sameOrigin(request) {
+// 同源判断：写操作要求 Origin 与请求站点一致，防止其他网站借用户浏览器携带 Cookie 调用旧接口。\nfunction sameOrigin(request) {
   const url = new URL(request.url);
   return (request.headers.get("Origin") || "") === url.origin;
 }

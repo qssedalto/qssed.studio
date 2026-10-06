@@ -17,7 +17,7 @@ const DOCUMENT_ROOT = "_system/tex-documents/";
 const ROLES = new Set(["viewer", "editor"]);
 const MAX_BODY_BYTES = 16 * 1024;
 
-export async function handleTexCollaborationApi(request, env) {
+// TeX 协作成员 API：先验证当前用户，再处理成员列表、搜索、邀请、改角色、移除和退出。所有写操作都必须同源。\nexport async function handleTexCollaborationApi(request, env) {
   const session = await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
 
@@ -92,7 +92,7 @@ async function searchCollaborators(rawQuery, accessToken) {
   return json({ query, results });
 }
 
-async function addCollaborator(request, env, user, accessToken) {
+// 添加协作者：只有文档 owner/具备权限的人可以邀请；被邀请用户和角色都要经过服务端清洗与 RPC 规则验证。\nasync function addCollaborator(request, env, user, accessToken) {
   const parsed = await parsePayload(request);
   if (parsed.error) return parsed.error;
   const documentId = cleanObjectId(parsed.value?.document_id);
@@ -130,7 +130,7 @@ async function addCollaborator(request, env, user, accessToken) {
   });
 }
 
-async function updateCollaborator(request, env, user, accessToken) {
+// 修改协作者角色：不能只信前端下拉框，最终权限变更由受保护 RPC 决定，并应防止非法角色/自我越权。\nasync function updateCollaborator(request, env, user, accessToken) {
   const parsed = await parsePayload(request);
   if (parsed.error) return parsed.error;
   const documentId = cleanObjectId(parsed.value?.document_id);
@@ -159,7 +159,7 @@ async function updateCollaborator(request, env, user, accessToken) {
   });
 }
 
-async function removeCollaborator(request, env, user, accessToken) {
+// 移除协作者：服务端确认文档、成员和操作者关系后执行；实时房间随后会根据成员状态拒绝已移除用户继续访问。\nasync function removeCollaborator(request, env, user, accessToken) {
   const url = new URL(request.url);
   if (url.searchParams.get("action") === "leave") {
     return leaveCollaboration(url, user, accessToken);

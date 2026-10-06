@@ -11,7 +11,7 @@ import { hardenBrowserMarkup } from "./browser-security.js";
 import { hardenLegacyApiBrowserMarkup } from "./legacy-api-browser-security.js";
 import { injectAccountMenuRuntime } from "./account-menu.js";
 
-export async function hardenGlobalBrowserResponse(response) {
+// 全站浏览器响应加固：对 HTML 统一施加客户端安全修补/头部策略；非 HTML、流式或二进制响应不应被错误重写。\nexport async function hardenGlobalBrowserResponse(response) {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return response;
 

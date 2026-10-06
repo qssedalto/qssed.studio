@@ -38,7 +38,7 @@ const EXPENSIVE_PATHS = new Set([
   "/api/admin/logs"
 ]);
 
-export async function protectEdgeRequest(request, env) {
+// 边缘请求保护入口：在业务路由前处理机器人/扫描器、请求体大小和速率限制。保护失败应尽量早返回，减少后端资源消耗。\nexport async function protectEdgeRequest(request, env) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   if (pathname === "/robots.txt") return robotsResponse(url.hostname);
@@ -74,7 +74,7 @@ export function applyEdgeProtectionHeaders(request, response) {
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
-export function botSignals(request) {
+// 机器人/自动化信号提取：组合请求头和平台信息形成风险提示。它只是一组信号，不应把单个普通浏览器特征直接当成恶意。\nexport function botSignals(request) {
   const management = request.cf?.botManagement || null;
   if (management?.verifiedBot === true) return { verified: true, score: 0 };
   let score = 0;
@@ -101,7 +101,7 @@ export function hasStudioSessionCookie(request) {
   return cookie.includes(`${ACCESS_COOKIE}=`) || cookie.includes(`${REFRESH_COOKIE}=`);
 }
 
-export function requestBodyLimit(pathname) {
+// 不同 API 的请求体上限：上传/富内容可更大，普通 JSON 保持较小。限制在读取 body 前判断，才能真正阻止超大请求消耗内存。\nexport function requestBodyLimit(pathname) {
   if (pathname === "/api/storage/upload") return 52 * MIB;
   if (pathname === "/api/profile/media") return 10 * MIB;
   if (pathname === "/api/auth/signup") return 6 * MIB;
@@ -114,7 +114,7 @@ function isExpensiveRequest(pathname, method) {
   return EXPENSIVE_PATHS.has(pathname);
 }
 
-async function consume(limiter, key) {
+// 速率限制计数：key 应按用户/IP/动作维度选择；限流器不可用时的 fallback 要保守，不能静默开放高成本接口。\nasync function consume(limiter, key) {
   if (!limiter?.limit) return true;
   try { const result = await limiter.limit({ key }); return result?.success !== false; } catch { return true; }
 }

@@ -25,7 +25,7 @@ const AUTOSAVE_WINDOW_MS = 2 * 60 * 1000;
 const legacyPdfPurged = new Set();
 const versionMemory = new Map();
 
-export async function handleTexVersionApi(request, env) {
+// TeX 版本历史入口：识别当前用户后处理版本列表、读取和创建快照；版本对象与当前文档分开存储。\nexport async function handleTexVersionApi(request, env) {
   const identity = await identifyTexVersionUser(request);
   if (!identity.ok) return identity.response;
   if (!hasStorageBinding(env)) {
@@ -177,7 +177,7 @@ async function handleVersionPost(request, env, userId) {
   return json({ error: "Unknown TeX version action." }, 404);
 }
 
-export async function snapshotDocumentVersion(env, userId, document, options = {}) {
+// 创建版本快照：先计算文档指纹，只有内容/关键元数据发生实质变化时才保存新版本，避免自动保存产生海量重复版本。\nexport async function snapshotDocumentVersion(env, userId, document, options = {}) {
   if (!hasStorageBinding(env) || !isStorageObjectId(userId) || !isStorageObjectId(document?.id) || document?.owner_id !== userId) {
     return { version: null, created: false, skipped: true };
   }
@@ -285,7 +285,7 @@ async function deletePrefix(env, prefix) {
   } while (cursor);
 }
 
-async function pruneSmartVersions(env, userId, documentId) {
+// 智能版本清理：保留近期密集版本和较老的代表性节点，在可恢复性与存储成本之间折中。修改算法时要保证不会误删唯一版本。\nasync function pruneSmartVersions(env, userId, documentId) {
   const objects = await listVersionObjects(env, userId, documentId);
   if (objects.length <= 90) return;
   const summaries = objects.map(object => versionSummary(object, userId, documentId)).filter(Boolean);
@@ -469,7 +469,7 @@ function versionSummaryFromValue(version) {
   };
 }
 
-function materialChange(document, remembered) {
+// “实质变化”判断：用于决定是否值得创建版本。不要把仅更新时间戳这种噪声当成正文变更。\nfunction materialChange(document, remembered) {
   if (!remembered) return true;
   if (document.title !== remembered.title || document.engine !== remembered.engine) return true;
   const before = Math.max(0, Number(remembered.sourceChars) || 0);

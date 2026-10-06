@@ -19,7 +19,7 @@ const MAX_SOURCE_CHARS = 180000;
 const MAX_PAYLOAD_BYTES = 512 * 1024;
 const MAX_SHARED_DOCUMENTS = 120;
 
-export async function handleTexSharedCollaboration(request, env) {
+// 共享文档读写入口：当前用户不是 owner 时，通过协作成员关系解析真实 owner，再按角色决定只读或可编辑。\nexport async function handleTexSharedCollaboration(request, env) {
   const session = await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
 
@@ -72,7 +72,7 @@ async function handleGet(request, env, auth, accessToken) {
   });
 }
 
-async function handleUpdate(request, env, auth, accessToken) {
+// 共享文档更新：只有具有编辑权限的成员可写；写入的是 owner 的原始文档对象，因此权限校验必须发生在生成对象键之前。\nasync function handleUpdate(request, env, auth, accessToken) {
   const url = new URL(request.url);
   const documentId = cleanObjectId(url.searchParams.get("document"));
   if (!documentId) return json({ error: "Invalid TeX document identifier." }, 400);
@@ -142,7 +142,7 @@ async function listSharedDocuments(env, userId, accessToken) {
   return json({ documents, count: documents.length, scope: "shared" });
 }
 
-async function resolveSharedAccess(userId, documentId, accessToken) {
+// 共享权限解析：把 membership 记录转成 ownerId + role + 状态，供读写逻辑统一使用，避免每个 handler 自己猜权限。\nasync function resolveSharedAccess(userId, documentId, accessToken) {
   const response = await supabaseRequest(
     `/rest/v1/tex_document_collaborators?select=owner_id,document_id,role&member_id=eq.${encodeURIComponent(userId)}&document_id=eq.${encodeURIComponent(documentId)}&limit=1`,
     accessToken

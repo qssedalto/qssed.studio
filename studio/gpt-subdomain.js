@@ -32,7 +32,7 @@ export function gptSessionRedirect(request, next = "/") {
   return redirect(target.toString());
 }
 
-export async function handleMainGptHandoff(request) {
+// 主站 → Intelligence 子域登录交接：读取主站会话并生成一次页面交接，目标路径必须先经过 safeGptPath/canonicalGptPath 清洗。\nexport async function handleMainGptHandoff(request) {
   if (request.method !== "GET") {
     return new Response("Method not allowed", {
       status: 405,
@@ -83,13 +83,13 @@ function localeFromPath(pathname) {
   return sharedLocaleFromPath(pathname);
 }
 
-function safeGptPath(value) {
+// Intelligence next 路径清洗：只接受站内相对路径，防止登录交接被利用成开放重定向。\nfunction safeGptPath(value) {
   const path = typeof value === "string" ? value.trim() : "";
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "/";
   return path;
 }
 
-function canonicalGptPath(path, locale) {
+// 规范 Intelligence 路径：统一 locale 前缀和默认入口，让不同来源的跳转最终落到同一 URL 结构。\nfunction canonicalGptPath(path, locale) {
   const normalizedLocale = normalizeSupportedLocale(locale) || "en-us";
   const candidate = safeGptPath(path);
   const parts = candidate.split("/").filter(Boolean);

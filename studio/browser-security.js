@@ -7,7 +7,7 @@
  * 修改注意：这是安全敏感区域；不要省略来源校验、权限判断、Cookie/redirect 限制或失败分支。
  * 调试方法：先使用最小请求复现，再逐步检查分支条件和中间状态，避免只根据最终 UI 猜原因。
  */
-export async function hardenBrowserResponse(response, pathname = "") {
+// 页面安全补丁总入口：只对特定页面 HTML 做结构化加固，保持服务端 API 为真实安全边界。这里的浏览器补丁是“纵深防御”，不能替代后端权限校验。\nexport async function hardenBrowserResponse(response, pathname = "") {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return response;
   if (!isRelevantPath(pathname)) return response;
@@ -23,7 +23,7 @@ export async function hardenBrowserResponse(response, pathname = "") {
   });
 }
 
-export function hardenBrowserMarkup(markup) {
+// HTML 加固编排：按功能逐步替换旧的客户端实现，例如把直接访问敏感数据的逻辑改成受控 API。每一步都应可重复执行而不重复注入。\nexport function hardenBrowserMarkup(markup) {
   let output = String(markup || "");
   output = hardenUsernameAvailability(output);
   output = hardenAuditDeviceWriter(output);
@@ -308,7 +308,7 @@ function replaceProfileHydration(markup) {
   return replaceRange(markup, start, end, replacement, false);
 }
 
-function replaceRange(source, startMarker, endMarker, replacement, consumeEnd) {
+// 标记区间替换工具：通过稳定 marker 精确替换旧页面脚本。marker 变化时 CI 应失败，而不是悄悄返回半加固页面。\nfunction replaceRange(source, startMarker, endMarker, replacement, consumeEnd) {
   const start = source.indexOf(startMarker);
   if (start < 0) return source;
   const endStart = source.indexOf(endMarker, start + startMarker.length);

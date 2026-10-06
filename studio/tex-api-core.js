@@ -23,7 +23,7 @@ const MAX_SOURCE_CHARS = 180000;
 const MAX_PAYLOAD_BYTES = 512 * 1024;
 const MAX_RESULT_BYTES = 16 * 1024 * 1024;
 
-export async function handleTexApi(request, env, action) {
+// TeX API 核心入口：验证当前用户后，按 action 分派文档、编译、运行记录和结果下载。这里是 Work/TeX 后端的数据主干。\nexport async function handleTexApi(request, env, action) {
   const session = await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
 
@@ -149,7 +149,7 @@ async function handleRuns(request, env, userId) {
   }
 }
 
-async function handleCompile(request, env, userId) {
+// 编译流程：读取文档源码 → 创建 run 记录 → 调用编译服务 → 保存 PDF/日志结果 → 更新 run 状态。任何一步失败都要留下可追踪的 run 状态。\nasync function handleCompile(request, env, userId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   if (!hasStorageBinding(env)) return json({ error: "TeX storage is temporarily unavailable." }, 503);
   const parsed = await parsePayload(request);
@@ -377,7 +377,7 @@ async function readDocument(env, userId, documentId) {
   }
 }
 
-function normalizeDocument(input, userId, documentId, previous) {
+// TeX 文档字段白名单：源码、标题、时间戳等统一在这里清洗。ownerId/documentId 由服务端决定，客户端不能覆盖。\nfunction normalizeDocument(input, userId, documentId, previous) {
   const source = input && typeof input === "object" ? input : {};
   const engine = cleanText(source.engine, 24) || previous?.engine || "xelatex";
   if (!ENGINES.has(engine)) return { ok: false, error: "Unsupported TeX engine." };
@@ -504,7 +504,7 @@ async function parsePayload(request) {
   }
 }
 
-function compilerConfig(env) {
+// 编译器配置集中读取环境变量/绑定：部署时缺少必要配置应明确报错，而不是静默切换到未知服务。\nfunction compilerConfig(env) {
   const rawUrl = String(env?.TEX_COMPILER_URL || "").trim();
   const token = String(env?.TEX_COMPILER_TOKEN || "").trim();
   if (!rawUrl || token.length < 16) return { available: false, url: "", token: "" };

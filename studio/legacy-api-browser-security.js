@@ -7,7 +7,7 @@
  * 修改注意：此文件涉及兼容/身份/浏览器边界，改动前先确认旧调用者和安全假设。
  * 调试方法：先确认实际命中的路由和 locale，再检查 handler 输入，最后验证最终 Response。
  */
-export function hardenLegacyApiBrowserMarkup(markup) {
+// 旧页面 API 客户端加固：把历史页面里直接访问旧 Cookie/API 的实现替换为新的受控接口，同时维持 DOM/UI 兼容。\nexport function hardenLegacyApiBrowserMarkup(markup) {
   let output = String(markup || "");
   output = hardenStorageClient(output);
   output = hardenNotesClient(output);
@@ -91,7 +91,7 @@ function hardenUserLinksClients(markup) {
     );
 }
 
-function replaceRange(source, startMarker, endMarker, replacement, consumeEnd) {
+// 旧页面脚本定点替换器：依赖明确 marker，避免正则大范围修改未知 JavaScript。marker 丢失应由测试提醒维护者。\nfunction replaceRange(source, startMarker, endMarker, replacement, consumeEnd) {
   const start = source.indexOf(startMarker);
   if (start < 0) return source;
   const endStart = source.indexOf(endMarker, start + startMarker.length);

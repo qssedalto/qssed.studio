@@ -32,7 +32,7 @@ export function cashSessionRedirect(request, next = "/") {
   return redirect(target.toString());
 }
 
-export async function handleMainCashHandoff(request) {
+// 主站 → Cash 会话交接：建立 cash.qsseda.com 所需会话，并把用户送到经过清洗的 Cash 内部路径。\nexport async function handleMainCashHandoff(request) {
   if (request.method !== "GET") {
     return new Response("Method not allowed", {
       status: 405,
@@ -84,7 +84,7 @@ export async function handleMainCashHandoff(request) {
   return withStudioSessionCookies(new Response(injectBrandLogoRuntime(page), { status: 200, headers }), gate.cookies || []);
 }
 
-function safeCashPath(value) {
+// Cash next 路径清洗：只允许本站相对路径，防止账户交接流程被当作外部重定向器。\nfunction safeCashPath(value) {
   const path = typeof value === "string" ? value.trim() : "";
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "/";
   return path;

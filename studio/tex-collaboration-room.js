@@ -21,11 +21,11 @@ function safeBase64(value) {
   return text;
 }
 
-function updateKey(sequence) {
+// 实时更新存储键：使用递增 sequence 保证房间内消息可按稳定顺序回放，而不是依赖客户端时间戳。\nfunction updateKey(sequence) {
   return `u:${String(sequence).padStart(12, "0")}`;
 }
 
-function sequenceFromKey(key) {
+// 从存储键恢复 sequence：用于房间重启/历史回放时继续排序，解析失败时应当作无效记录而不是默认覆盖最新状态。\nfunction sequenceFromKey(key) {
   const value = Number(String(key || "").slice(2));
   return Number.isSafeInteger(value) && value >= 0 ? value : 0;
 }
@@ -257,7 +257,7 @@ export class TexCollaborationRoom {
   }
 }
 
-function clampPosition(value) {
+// 光标/选区位置防御性裁剪：实时客户端传入的位置必须是有限的非负整数，避免异常值破坏协作状态。\nfunction clampPosition(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
   return Math.max(0, Math.min(MAX_PRESENCE_POSITION, Math.floor(parsed)));

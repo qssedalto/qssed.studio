@@ -16,7 +16,7 @@ import {
   snapshotDocumentVersion
 } from "./tex-version-api.js";
 
-export async function handleTexApi(request, env, action) {
+// TeX API 外层兼容入口：先尝试当前用户自己的文档；对于共享文档读取，再根据协作成员关系执行受限 fallback。\nexport async function handleTexApi(request, env, action) {
   if (action === "versions") return handleTexVersionApi(request, env);
 
   let deleteOwnerId = "";
@@ -76,7 +76,7 @@ export async function handleTexApi(request, env, action) {
   return response;
 }
 
-async function handleSharedDocumentFallback(request, env) {
+// 共享文档 fallback：只有成员关系确认后才能以 owner 的对象键读取；共享权限不能通过猜测 ownerId/documentId 绕过。\nasync function handleSharedDocumentFallback(request, env) {
   try {
     const url = new URL(request.url);
     const documentId = String(url.searchParams.get("id") || "").trim();
@@ -97,7 +97,7 @@ async function handleSharedDocumentFallback(request, env) {
   }
 }
 
-async function mergeSharedDocumentList(request, env, ownResponse) {
+// 合并“我的文档 + 与我共享的文档”：做展示层合并时仍保留 owner/权限信息，避免前端误把共享文档当作本人拥有。\nasync function mergeSharedDocumentList(request, env, ownResponse) {
   const url = new URL(request.url);
   if (url.searchParams.get("id")) return ownResponse;
 

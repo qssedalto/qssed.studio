@@ -32,7 +32,7 @@ export function watchSessionRedirect(request, next = "/") {
   return redirect(target.toString());
 }
 
-export async function handleMainWatchHandoff(request) {
+// 主站 → Watch 会话交接：把主站登录态安全带到 aw.qsseda.com，next 只能是 Watch 站内路径。\nexport async function handleMainWatchHandoff(request) {
   if (request.method !== "GET") {
     return new Response("Method not allowed", {
       status: 405,
@@ -85,7 +85,7 @@ export async function handleMainWatchHandoff(request) {
   return withStudioSessionCookies(new Response(injectBrandLogoRuntime(page), { status: 200, headers }), gate.cookies || []);
 }
 
-function safeWatchPath(value) {
+// Watch 跳转路径白名单：拒绝绝对 URL、协议相对地址和其他可逃逸到外站的值。\nfunction safeWatchPath(value) {
   const path = typeof value === "string" ? value.trim() : "";
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "/";
   return path;

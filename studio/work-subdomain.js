@@ -55,7 +55,7 @@ export function mainWorkRedirect(request, pathname) {
   return "";
 }
 
-export function rewriteWorkSubdomainRequest(request) {
+// Work 子域请求重写：把 work.qsseda.com 的公开路径映射到主 Worker 内部路由，同时保留必要 method/body/header。\nexport function rewriteWorkSubdomainRequest(request) {
   const url = new URL(request.url);
   const pathname = normalizePath(url.pathname);
   const workOrigin = workOriginForRequest(request);
@@ -151,7 +151,7 @@ export function workSessionRedirect(request, next = "/tex") {
   return redirect(target.toString());
 }
 
-export async function handleMainWorkHandoff(request) {
+// 主站 → Work 会话交接：只有安全的 Work 内部路径可以作为 next；主站 token 通过受控交接建立子域会话。\nexport async function handleMainWorkHandoff(request) {
   if (request.method !== "GET") return new Response("Method not allowed", { status: 405, headers: { "cache-control": "no-store" } });
 
   const requestUrl = new URL(request.url);
@@ -219,7 +219,7 @@ function canonicalWorkPath(path, locale) {
   return `/${normalizedLocale}/tex`;
 }
 
-function parseWorkDocumentPath(pathname) {
+// Work 文档 URL 解析：把公开短链/文档路径还原成 documentId 等结构。解析失败时应返回明确 404，而不是猜测资源。\nfunction parseWorkDocumentPath(pathname) {
   const path = String(pathname || "");
   const locale = sharedLocaleFromPath(path);
   if (!locale) return null;
