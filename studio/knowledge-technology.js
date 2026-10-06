@@ -1,3 +1,4 @@
+// 初学者导读：技术类知识内容数据源；只定义内容与元数据，避免在知识文档里嵌入请求时业务逻辑。
 export const TECHNOLOGY_KNOWLEDGE = {
   languages: {
     zh: {
