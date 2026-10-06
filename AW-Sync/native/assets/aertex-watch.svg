@@ -9,7 +9,11 @@
   .aertex-product-main .product-main-glyph{fill:none;stroke:var(--ink);stroke-width:.52;stroke-linecap:round;stroke-linejoin:round}
       .aertex-product-main .product-main-glyph .filled{fill:var(--ink);stroke:none}
       .aertex-brand-badge .brand-badge-disc{fill:none;stroke:var(--edge);stroke-width:1.4}
-      </style>
+      
+    :root{--paper:#ffffff!important;--ink:#121417!important;--edge:#121417!important}
+    .aertex-reference-mark,.aertex-badge-mark{filter:none!important}
+  </style>
+  <rect class="favicon-background" x="0" y="0" width="64" height="64" rx="12" fill="var(--paper)"/>
   <!-- Broken angular orbit / Three-way core: compatibility labels retained for the favicon regression check. -->
 <defs>
     <mask id="aertex-product-main-knockout" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
