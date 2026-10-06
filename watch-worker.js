@@ -26,6 +26,7 @@ const ASSET_PATHS = new Set(["/styles.css", "/app.js", "/aw-sync.mjs"]);
 const MAX_SYNC_BYTES = 8 * 1024 * 1024;
 const MAX_SYNC_EVENTS = 5000;
 const MAX_QUERY_DAYS = 400;
+const MAX_EVENT_DURATION_SECONDS = 86400 * 7;
 const TOKEN_PREFIX = "awd1";
 const WATCH_PREFIX = "watch/v1";
 const WINDOWS_SYNC_PATH = "/AERTEX-Watch-Sync-Setup.exe";
@@ -302,8 +303,13 @@ async function handleEventQuery(request, env, userId, bucketId) {
   const start = parseDate(url.searchParams.get("start")) || new Date(end.getTime() - 86400000);
   if (start > end) return json({ error: "start must be before end." }, 400);
 
-  const days = enumerateDays(start, end);
-  if (days.length > MAX_QUERY_DAYS) return json({ error: "Queries are limited to " + MAX_QUERY_DAYS + " days." }, 400);
+  const requestedDays = enumerateDays(start, end, MAX_QUERY_DAYS + 1);
+  if (requestedDays.length > MAX_QUERY_DAYS) return json({ error: "Queries are limited to " + MAX_QUERY_DAYS + " days." }, 400);
+
+  // Events are stored by their start date. Read the maximum allowed event duration
+  // before the requested start so events that cross midnight/range boundaries are not lost.
+  const storageStart = new Date(start.getTime() - MAX_EVENT_DURATION_SECONDS * 1000);
+  const days = enumerateDays(storageStart, end, MAX_QUERY_DAYS + 8);
 
   let events = [];
   try {
@@ -311,6 +317,7 @@ async function handleEventQuery(request, env, userId, bucketId) {
       const values = await readJson(env.STORAGE, dayObjectKey(userId, bucketId, day), []);
       if (Array.isArray(values)) events.push(...values);
     }
+    events = await mergeEvents([], events);
   } catch {
     return json({ error: "Unable to read events." }, 503);
   }
@@ -318,8 +325,12 @@ async function handleEventQuery(request, env, userId, bucketId) {
   const startMs = start.getTime();
   const endMs = end.getTime();
   events = events.filter(event => {
-    const ms = Date.parse(event.timestamp);
-    return Number.isFinite(ms) && ms >= startMs && ms <= endMs;
+    const eventStart = Date.parse(event.timestamp);
+    if (!Number.isFinite(eventStart)) return false;
+    const durationMs = Math.max(0, Number(event.duration || 0)) * 1000;
+    if (durationMs === 0) return eventStart >= startMs && eventStart < endMs;
+    const eventEnd = eventStart + durationMs;
+    return eventStart < endMs && eventEnd > startMs;
   }).sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
 
   const rawLimit = Number(url.searchParams.get("limit"));
@@ -360,9 +371,13 @@ function normalizeEvent(value) {
   const date = parseDate(value.timestamp);
   if (!date) return null;
   const duration = Number(value.duration || 0);
-  if (!Number.isFinite(duration) || duration < 0 || duration > 86400 * 7) return null;
+  if (!Number.isFinite(duration) || duration < 0 || duration > MAX_EVENT_DURATION_SECONDS) return null;
+  const rawId = Number(value.id);
+  const id = Number.isSafeInteger(rawId) && rawId >= 0 ? rawId : null;
   const data = value.data && typeof value.data === "object" && !Array.isArray(value.data) ? sanitizeData(value.data) : {};
-  return { timestamp: date.toISOString(), duration, data };
+  return id === null
+    ? { timestamp: date.toISOString(), duration, data }
+    : { id, timestamp: date.toISOString(), duration, data };
 }
 
 function sanitizeData(value) {
@@ -384,8 +399,11 @@ async function mergeEvents(existing, incoming) {
   for (const event of [...existing, ...incoming]) {
     const normalized = normalizeEvent(event);
     if (!normalized) continue;
-    const identity = await sha256Hex(JSON.stringify([normalized.timestamp, normalized.duration, normalized.data]));
-    map.set(identity, normalized);
+    // ActivityWatch updates the duration of a heartbeat event without changing its
+    // timestamp/data. Duration must therefore not be part of the deduplication key.
+    const identity = await sha256Hex(JSON.stringify([normalized.timestamp, normalized.data]));
+    const previous = map.get(identity);
+    if (!previous || normalized.duration >= previous.duration) map.set(identity, normalized);
   }
   return [...map.values()].sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
 }
@@ -411,11 +429,11 @@ function dayKey(value) {
   return date ? date.toISOString().slice(0, 10) : "";
 }
 
-function enumerateDays(start, end) {
+function enumerateDays(start, end, maxDays = MAX_QUERY_DAYS + 1) {
   const result = [];
   const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
   const last = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
-  while (cursor <= last && result.length <= MAX_QUERY_DAYS) {
+  while (cursor <= last && result.length < maxDays) {
     result.push(cursor.toISOString().slice(0, 10));
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
