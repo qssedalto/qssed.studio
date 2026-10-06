@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Work 的本机能力 UI 适配；负责展示本地桥状态和入口，真正命令/文件权限由 local-bridge 服务端限制。
 export function enhanceWorkLocalBridgeNative(markup, zh) {
   let output = String(markup || "");
 
