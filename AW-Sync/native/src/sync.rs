@@ -1,11 +1,8 @@
 // 【初学者导读】
 // 文件：AW-Sync/native/src/sync.rs
-// 同步核心：决定时间范围、批次、overlap、去重边界和上传顺序，是客户端正确性的关键算法文件。
-// 建议阅读链路：main.rs → runtime.rs → activitywatch.rs / sync.rs → state.rs / credentials.rs → ui.rs。
-// 数据流：ActivityWatch 本地 REST API → Rust 结构体 → 去重/游标/批处理 → AERTEX Watch Data API → 本地状态更新。
-// 错误处理：网络不可用、JSON 结构变化、重复事件和 ActivityWatch 未启动都应是可恢复错误，不能直接让后台线程崩溃。
-// 安全原则：设备令牌只存 Windows Credential Manager；日志和 state.json 不应包含完整令牌。
-// 修改后至少运行 cargo fmt --check、cargo clippy、cargo test，并通过 scripts/watch-cloud-check.mjs。
+// 同步核心：决定 ActivityWatch 增量范围、批次、overlap、上传顺序与本地游标更新。
+// 数据流：本机 ActivityWatch Event → 批次去重/时间边界 → AERTEX Watch Data API → 成功后推进本地同步状态。
+// 修改提醒：overlap 用来防止边界漏事件，因此云端必须继续去重；不要在上传失败时提前推进游标。
 use crate::activitywatch::{ActivityWatchClient, LocalApiErrorKind};
 use crate::model::{
     ActivityEvent, ActivityWatchEndpoint, BucketMetadata, BucketProgress, CLOUD_ORIGIN,

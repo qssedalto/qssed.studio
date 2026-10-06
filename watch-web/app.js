@@ -1,11 +1,9 @@
 /**
  * 【初学者导读】
  * 文件：watch-web/app.js
- * AERTEX Watch 网页端：把 ActivityWatch 云端 Bucket/Event 转换成统计、图表和设备连接界面。
- * 阅读顺序：先找入口/初始化函数，再看状态对象、事件监听或请求处理；随后沿 API、存储或本机调用追踪真正副作用。
- * 初学者重点：把“界面/请求入口”“业务规则”“数据读写”“错误处理”分层理解，排错会快很多。
- * 修改注意：保持已有接口、DOM 标识和数据格式兼容；重要规则变化时同步更新自动检查。
- * 调试方法：先复现最小输入，再观察中间状态；不要通过删除校验或异常处理来“修复”症状。
+ * AERTEX Watch 网页核心：把云端 ActivityWatch Bucket/Event 复原成应用、窗口、网站、专注与时间分布。
+ * 阅读顺序：先找入口/主函数，再沿状态、API、存储和错误分支向下；重要算法请优先理解“为什么这样算”。
+ * 修改注意：保持公开接口和数据结构兼容，业务规则变化时同步更新 scripts/*-check.mjs。
  */
 (() => {
   "use strict";
@@ -132,7 +130,7 @@
     return JSON.stringify(left?.data||{}) === JSON.stringify(right?.data||{});
   }
 
-  // 复现 ActivityWatch flood：watcher 以心跳方式写事件，短采样缝隙应视为同一段持续活动。这里补齐短间隔，但不会跨越明显的长空档。\nfunction floodEvents(input,pulsetime=5) {
+  // 复现 ActivityWatch flood：短心跳缝隙视为同一段持续活动，但不会跨越明显长空档。\nfunction floodEvents(input,pulsetime=5) {
     const events = (input||[]).map(event=>({...event,data:{...(event?.data||{})}})).sort((left,right)=>Date.parse(left.timestamp)-Date.parse(right.timestamp));
     const trimThresholdMs = 100;
     const pulseMs = pulsetime*1000;
@@ -183,7 +181,7 @@
     const originalStart = new Date(event.timestamp).getTime();
     return { start:Math.max(originalStart,start.getTime()), end:Math.min(originalStart+Number(event.duration||0)*1000,end.getTime()), event };
   }
-  // 原版桌面活动口径：currentwindow 与 not-afk 做时间交集；只有“用户人在电脑前且该窗口位于前台”的秒数才进入后续应用/窗口统计。\nfunction activeWindowEvents(windowEvents,afkEvents,start,end) {
+  // 原版桌面活动口径：currentwindow 与 not-afk 做时间交集，只统计用户在电脑前时的前台窗口。\nfunction activeWindowEvents(windowEvents,afkEvents,start,end) {
     const windows = floodEvents(windowEvents).map(event=>eventInterval(event,start,end)).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
     if (afkEvents === null) return windows;
     const activeIntervals = mergeIntervals(floodEvents(afkEvents).filter(event=>event.data?.status==="not-afk").map(event=>eventInterval(event,start,end)));
@@ -256,7 +254,7 @@
     return pieces;
   }
 
-  // 多 Bucket/多设备去重：较新的数据先占用时间区间，旧 Bucket 只补未覆盖部分，防止同一分钟被重复累计。\nfunction unionHostSegments(hostGroups) {
+  // 多 Bucket/多设备去重：新数据优先覆盖时间轴，旧数据只补未覆盖区间，避免同一分钟重复累计。\nfunction unionHostSegments(hostGroups) {
     const accepted = [];
     let coverage = [];
     for (const group of hostGroups) {
@@ -266,7 +264,7 @@
     return accepted.sort((left,right)=>left.start-right.start || left.end-right.end);
   }
 
-  // AERTEX 派生指标入口：总活跃时间来自非重叠前台片段；专注指数属于 AERTEX 启发式评分，不是 ActivityWatch 官方指标。\nfunction metrics(segments,start,end) {
+  // AERTEX 派生指标入口：总活跃时间来自非重叠窗口片段；专注指数不是 ActivityWatch 官方评分。\nfunction metrics(segments,start,end) {
     const ordered = [...segments].filter(segment=>segment.end>segment.start).sort((a,b)=>a.start-b.start);
     const activeIntervals = mergeIntervals(ordered.map(segment=>({start:segment.start,end:segment.end})));
     const total = activeIntervals.reduce((sum,interval)=>sum+(interval.end-interval.start)/1000,0);
@@ -428,7 +426,7 @@
     return [...grouped.values()].sort((left,right)=>right.seconds-left.seconds);
   }
 
-  // 网站时间按 ActivityWatch 原版思路计算：web.tab.current 事件必须与“匹配浏览器正在前台”的窗口片段相交，后台标签页不会计时。\nasync function loadWebsiteSegments(start,end,activeSegments) {
+  // 网站时间：web.tab.current 必须与匹配浏览器的前台窗口相交，后台标签页不计入网站使用时间。\nasync function loadWebsiteSegments(start,end,activeSegments) {
     const entries = Object.values(state.buckets||{});
     const browserBuckets = entries.filter(bucket=>bucketKind(bucket,"web"));
     if (!browserBuckets.length || !activeSegments.length) return [];

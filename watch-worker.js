@@ -1,11 +1,9 @@
 /**
  * 【初学者导读】
  * 文件：watch-worker.js
- * Cloudflare Worker 入口：请求首先进入这里，再按域名、路径、HTTP 方法和会话状态被分发到真正业务模块。
- * 阅读顺序：从最外层入口开始，先看域名/path/method 判断，再看登录或令牌校验，最后追到具体 handler/模块；不要从某个深层函数孤立地理解整条请求链。
- * 请求链思维：浏览器/客户端 → Worker → 会话/安全门禁 → 路由 → API/页面 → 数据源 → Response。
- * 修改注意：入口文件的小改动可能影响整个产品域名，修改路由或响应头后要跑对应 CI。
- * 调试方法：先记录“实际 host + pathname + method + 是否有会话”，通常可以快速判断请求为什么走错分支。
+ * AERTEX Watch Cloudflare Worker：设备上传、Bucket/Event 兼容查询、网页资源和 Windows 安装包都从这里进入。
+ * 阅读顺序：先找入口/主函数，再沿状态、API、存储和错误分支向下；重要算法请优先理解“为什么这样算”。
+ * 修改注意：保持公开接口和数据结构兼容，业务规则变化时同步更新 scripts/*-check.mjs。
  */
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
@@ -209,7 +207,7 @@ async function handleTokenCreate(request, env, userId) {
   return json({ token, name, created_at: record.created_at }, 201);
 }
 
-// 设备同步入口：验证设备令牌后接收 Bucket + Event 批次；事件会规范化、去重，并按用户/Bucket/日期写入 R2。这里是本机 ActivityWatch 数据进入云端的唯一正式入口。\nasync function handleDeviceSync(request, env) {
+// 设备同步入口：验证设备令牌后接收 Bucket/Event；规范化、去重并按用户/Bucket/日期写 R2。\nasync function handleDeviceSync(request, env) {
   if (!env || !env.STORAGE) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
@@ -302,7 +300,7 @@ async function handleBucketList(env, userId) {
   catch { return json({ error: "Unable to read buckets." }, 503); }
 }
 
-// ActivityWatch 兼容事件查询：网页按 start/end/limit 读取云端事件。查询跨日时需要枚举相关日期对象，并包含“开始时间在范围外但持续时间跨入范围内”的事件。\nasync function handleEventQuery(request, env, userId, bucketId) {
+// ActivityWatch 兼容事件查询：按日期对象读取并返回与查询区间相交的事件，包括从区间外跨入的长事件。\nasync function handleEventQuery(request, env, userId, bucketId) {
   if (!env || !env.STORAGE || !userId) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "Method not allowed." }, 405);
   if (!validBucketId(bucketId)) return json({ error: "Invalid bucket id." }, 400);
@@ -403,7 +401,7 @@ function sanitizeData(value) {
   return result;
 }
 
-// 事件合并/去重：同步客户端会故意保留少量 overlap 防止边界丢事件，因此服务端必须把重复 heartbeat 合并，否则总时长会膨胀。\nasync function mergeEvents(existing, incoming) {
+// 事件合并/去重：客户端会保留 overlap 防漏事件，因此服务端必须避免重复 heartbeat 让总时长膨胀。\nasync function mergeEvents(existing, incoming) {
   const map = new Map();
   for (const event of [...existing, ...incoming]) {
     const normalized = normalizeEvent(event);
