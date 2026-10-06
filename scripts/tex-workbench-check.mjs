@@ -1,3 +1,4 @@
+// 初学者导读：TeX Workbench 回归检查；覆盖编辑器、预览、版本和协作模块之间的关键接口，防止大型 UI 拆分后功能断链。
 import fs from "node:fs";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
