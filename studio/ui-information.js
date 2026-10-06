@@ -1,3 +1,4 @@
+// 初学者导读：信息中心 UI 聚合层：把知识、收藏链接、笔记/搜索状态等模块组合成一个页面，实际数据能力由对应 API 决定。
 import { statusContent } from "./ui-primitives.js";
 import { knowledgeContent } from "./ui-knowledge.js";
 import { curatedLinksContent } from "./curated-links.js";
