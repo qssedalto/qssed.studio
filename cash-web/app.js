@@ -1,3 +1,4 @@
+// 初学者导读：Cash 浏览器端主控制器：读取模型、绑定表单/按钮并刷新统计视图。新增计算时优先放进 model.js，app.js 负责协调和渲染。
 (() => {
   'use strict';
   const M = window.CashflowModel;
