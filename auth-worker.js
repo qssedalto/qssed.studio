@@ -12,6 +12,9 @@
  * and is intentionally preserved across the workers that were later split from it.
  */
 
+// AERTEX ID 的核心 Worker。
+// 公开职责：登录/注册页面、会话恢复、/continue 产品 handoff、OAuth 协议和账户入口。
+// access/refresh token 只能通过 HttpOnly Cookie 或受约束的 POST handoff 流转，不能出现在 query string。
 import { handleOAuthRequest } from "./auth-oauth.js";
 import { localeDirection, localeFromPath, normalizeSupportedLocale, preferredLocaleFromRequest } from "./studio/locale.js";
 import { awOriginForRequest, mainOriginForRequest, rootDomainForRequest, serviceOrigin } from "./studio/domain-family.js";
