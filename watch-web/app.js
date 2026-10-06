@@ -58,6 +58,7 @@
     start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
     return { start, end:addDays(start,7) };
   }
+  // 日期标签只负责展示，真正查询边界始终来自 period()，避免“显示一周”但 API 仍按一天请求。
   function formatDateLabel() {
     const now = startOfDay(new Date());
     const range = period();
@@ -96,14 +97,17 @@
     return String(value ?? "").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
   }
   function hash(value) { return [...String(value)].reduce((sum,char)=>((sum<<5)-sum+char.charCodeAt(0))|0,0); }
+  // 应用颜色是稳定哈希映射，只影响视觉；不能用颜色作为应用身份或聚合 key。
   function appStyle(name) {
     const color = palette[Math.abs(hash(name)) % palette.length];
     return { color, soft:"color-mix(in srgb, " + color + ", transparent 84%)" };
   }
+  // 没有图标资源时生成文本头像：中文取首字，拉丁词取最多两个首字母。
   function initials(name) {
     if (/^[\u4e00-\u9fa5]/.test(name)) return name.slice(0,1);
     return name.split(/\s+/).map(part=>part[0]).join("").slice(0,2).toUpperCase();
   }
+  // watcher 的进程名先过友好名称表；未知进程保留原名，仅移除常见 .exe 后缀。
   function appName(raw="Unknown") { const key=String(raw).toLowerCase(); return appLabels[key] || String(raw).replace(/\.exe$/i,""); }
   // 所有浏览器数据请求保持 same-origin + Cookie；401/5xx 都统一抛错交给 load() 的通知 UI。
   async function api(path, options={}) {
@@ -424,6 +428,7 @@ function intersectBrowserEvents(browserEvents,activeBrowserSegments,start,end,so
     return result;
   }
 
+  // 网站视图按 domain 聚合已经与前台浏览器相交后的片段，因此不会再次做 AFK 或窗口过滤。
   function groupWebsiteUsage(segments) {
     const grouped = new Map();
     for (const segment of segments) {
@@ -490,6 +495,7 @@ async function loadWebsiteSegments(start,end,activeSegments) {
     $("connectionStatus").classList.toggle("online",Boolean(values.length));
     $("connectionStatus").innerHTML = values.length ? "<i></i> 已连接" : "未连接";
   }
+  // 数据源列表展示原始 Bucket 身份，主要用于排错 watcher 是否同步；不影响“每主机选最新 Bucket”的统计选择。
   function renderBuckets() {
     const entries = Object.values(state.buckets||{}).sort((a,b)=>String(b.last_sync||"").localeCompare(String(a.last_sync||"")));
     if (!entries.length) {
@@ -502,6 +508,7 @@ async function loadWebsiteSegments(start,end,activeSegments) {
       '</small></div><small>' + formatTime(bucket.last_sync) + "</small></div>"
     ).join("");
   }
+  // 柱高按当前序列最大值归一化，图表表达“分布形状”而不是固定绝对刻度。
   function renderChart(values) {
     const chart = $("activityChart");
     const max = Math.max(1,...values);
@@ -514,6 +521,7 @@ async function loadWebsiteSegments(start,end,activeSegments) {
       return '<div class="bar-wrap"><div class="bar ' + (index===peak&&value?"peak":"") + '" style="--height:' + height + '%" data-label="' + tooltip + '"></div><span>' + labels[index] + "</span></div>";
     }).join("");
   }
+  // 同一个 row renderer 服务 apps/windows/websites，进度条只相对当前列表最大项。
   function usageRow(item,maxSeconds) {
     const style = appStyle(item.raw || item.name);
     const width = Math.max(4,Math.min(100,(item.seconds/Math.max(1,maxSeconds))*100));
@@ -524,12 +532,14 @@ async function loadWebsiteSegments(start,end,activeSegments) {
       '%;background:' + style.color + '"></i></span><span class="app-time">' + formatShort(item.seconds) + "</span></div>";
   }
 
+  // 每种 usage 模式显式说明统计口径，避免用户把窗口标题/网站聚合误认为第二套总屏幕时间。
   function usageCopy(mode) {
     if (mode === "windows") return {title:zh?"窗口时间":"Window time",subtitle:zh?"按应用 + 窗口标题聚合（ActivityWatch 原版 title_events 口径）":"Grouped by app + window title",dialog:zh?"全部窗口":"All windows"};
     if (mode === "websites") return {title:zh?"网站时间":"Website time",subtitle:zh?"仅统计浏览器位于前台且用户非 AFK 的网站时间":"Browser watcher intersected with active foreground browser windows",dialog:zh?"全部网站":"All websites"};
     return {title:zh?"应用时间":"Application time",subtitle:zh?"按前台应用聚合（ActivityWatch 原版 app_events 口径）":"Grouped by foreground application",dialog:zh?"全部应用":"All applications"};
   }
 
+  // tab 切换只从 state.usageSets 取已算好的结果；没有网络副作用。
   function renderUsageMode() {
     const mode = state.usageMode;
     const items = state.usageSets[mode] || [];
@@ -559,6 +569,7 @@ async function loadWebsiteSegments(start,end,activeSegments) {
     };
     renderUsageMode();
   }
+  // 时间线沿用最终有效前台片段，因此它与 KPI/应用排行共享 AFK、多设备去重后的同一事实源。
   function renderTimeline(segments) {
     const chronological = [...segments].sort((a,b)=>b.start-a.start).filter((segment,index,all)=>index===0 || segment.event.data?.app!==all[index-1].event.data?.app || all[index-1].start-segment.end>60000);
     $("eventCount").textContent = segments.length + " 条";
@@ -573,6 +584,7 @@ async function loadWebsiteSegments(start,end,activeSegments) {
         formatShort((segment.end-segment.start)/1000) + "</span></div>";
     }).join("") : '<div class="empty-state">这个时间段还没有活动记录</div>';
   }
+  // result 是 metrics() 的一次性派生结果；这里不重新计算指标，防止展示层与算法层口径漂移。
   function renderMetrics(result) {
     const total = result.total, switches = result.switches, longestSession = result.longestSession, deepSeconds = result.deepSeconds, away = result.away, focusScore = result.focusScore, apps = result.apps;
     $("activeTime").textContent = formatDuration(total);
@@ -592,12 +604,14 @@ async function loadWebsiteSegments(start,end,activeSegments) {
     $("awayTime").textContent = formatShort(away);
     renderChart(result.hourly);
   }
+  // 控件可用性由 state 决定，例如未来日期禁用 next；它不修改统计数据本身。
   function updateControls() {
     $("dateLabel").textContent = formatDateLabel();
     $("dateInput").value = state.date.getFullYear() + "-" + String(state.date.getMonth()+1).padStart(2,"0") + "-" + String(state.date.getDate()).padStart(2,"0");
     $$(".range-tabs button").forEach(button=>button.classList.toggle("active",button.dataset.range===state.range));
     $("activitySubtitle").textContent = state.range==="day" ? "每小时的有效使用时长" : "本周每天的有效使用时长";
   }
+  // 错误通知保持在页面内，不用 alert 阻塞交互；重试按钮统一再次调用 load()。
   function showNotice(message) { $("notice").querySelector("span").textContent = message; $("notice").classList.remove("hidden"); }
   function hideNotice() { $("notice").classList.add("hidden"); }
 
