@@ -1,3 +1,4 @@
+// 初学者导读：SSR/HTML 安全标记检查；确认 CSP、表单、外链等关键浏览器安全约束没有丢失。
 import { TEXT } from "../studio/config.js";
 import { buildLinks } from "../studio/routing.js";
 import { signUpPage } from "../studio/auth-pages.js";
