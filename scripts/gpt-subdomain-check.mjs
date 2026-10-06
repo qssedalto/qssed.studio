@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Intelligence 子域与认证 handoff 回归检查；锁定 gpt.* 路由、会话和共享主题/菜单集成。
 import fs from "node:fs";
 import { normalizeHandoffNext } from "../studio/auth-handoff.js";
 import { SUPPORTED_LOCALES } from "../studio/locale.js";
