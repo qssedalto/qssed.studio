@@ -1,3 +1,4 @@
+// 初学者导读：安全审计页面的前端交互脚本；负责把服务端已授权的审计数据渲染成可读列表，不在浏览器重新判定权限。
 export function auditClientScript(ipInfo) {
   return `
     <script>
