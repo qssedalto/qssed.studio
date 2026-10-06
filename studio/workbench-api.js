@@ -25,7 +25,7 @@ function prefix(root, userId) {
   return `${root}${userId}/`;
 }
 
-export async function handleWorkbenchOverview(request, env) {
+// Workbench 概览聚合：并行读取项目、任务、草稿和笔记的轻量元数据，再组合成首页需要的摘要；这里避免读取全部大正文以降低延迟。\nexport async function handleWorkbenchOverview(request, env) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
 
   const session = await verifyStudioApiSession(request);
@@ -95,7 +95,7 @@ export async function handleWorkbenchOverview(request, env) {
   }
 }
 
-async function listMetadata(env, storagePrefix, maximum, expectedKind, userId, convert) {
+// 通用元数据列表器：只扫描当前用户前缀并限制最大数量，再通过 convert 映射成不同类型的摘要对象。\nasync function listMetadata(env, storagePrefix, maximum, expectedKind, userId, convert) {
   const result = [];
   let cursor;
   do {

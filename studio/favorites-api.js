@@ -12,7 +12,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 
-export async function handleCuratedFavorites(request) {
+// 收藏 API 总入口：根据 HTTP 方法执行列表、合并或切换收藏。所有写操作都要求同源请求并使用当前会话 token。\nexport async function handleCuratedFavorites(request) {
   if (!["GET", "POST", "PUT"].includes(request.method)) return json({ error: "Method not allowed" }, 405);
 
   const session = await verifyStudioApiSession(request);
@@ -75,7 +75,7 @@ async function mergeFavorites(request, session) {
   return withStudioSessionCookies(json({ ok: true, merged: urls.length }), session.cookies);
 }
 
-async function toggleFavorite(request, session) {
+// 单项收藏切换：先清洗 URL，再调用用户侧存储/RPC。服务端只允许 https 且受支持的链接，避免把任意协议写入账户数据。\nasync function toggleFavorite(request, session) {
   let body;
   try { body = await request.json(); } catch { return badRequest(session, "Invalid request body."); }
   const url = cleanHttpsUrl(body?.url);

@@ -40,7 +40,7 @@ function normalizeUrl(value) {
   }
 }
 
-function normalizeLink(input, ownerId, linkId, previous = null) {
+// 链接归一化：清洗标题、描述和 URL，并强制 ownerId/ID 由服务端决定，防止客户端伪造归属。\nfunction normalizeLink(input, ownerId, linkId, previous = null) {
   const source = input && typeof input === "object" ? input : {};
   const now = new Date().toISOString();
   return {
@@ -124,7 +124,7 @@ async function attachOwnerLabels(items, auth) {
   return items;
 }
 
-async function listVisibleLinks(env, auth) {
+// 可见链接列表：同时考虑本人、公开/社区可见范围，再补充 owner 标签；读取规则和写入规则要分开理解。\nasync function listVisibleLinks(env, auth) {
   const result = [];
   const prefix = userLinksPrefix(auth.user.id);
   const maximum = MAX_OWN_LINKS;
@@ -193,7 +193,7 @@ function linkMetadata(link) {
   };
 }
 
-export async function handleUserLinks(request, env) {
+// 用户链接 API：支持个人链接和可见社区链接；读操作会附加 owner 展示信息，写操作始终绑定当前用户。\nexport async function handleUserLinks(request, env) {
   const auth = await verifyStorageUser(request, env);
   if (auth.error) return auth.error;
   if (!hasStorageBinding(env)) return json({ error: "Link storage is temporarily unavailable." }, 503);

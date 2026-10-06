@@ -13,7 +13,7 @@ import { json } from "./routing.js";
 const ALLOWED_HOSTS = new Set(["chsi.com.cn", "www.chsi.com.cn"]);
 const ALLOWED_PATH = /^\/xlcx\//i;
 
-export async function handleStudentVerification(request) {
+// 学生认证 API 总入口：把用户操作映射到受保护 RPC，并限制可提交的学校/官方目标等字段；认证结果属于账户权益依据，不能仅靠前端状态。\nexport async function handleStudentVerification(request) {
   if (request.method === "GET") {
     return callRpc(request, "get_my_student_verification", {});
   }
@@ -63,7 +63,7 @@ function normalizeOfficialTarget(value) {
   return url.toString();
 }
 
-async function callRpc(request, rpc, params) {
+// 认证 RPC 调用：使用当前会话凭据访问后端函数，服务端 RPC 再执行数据库权限与业务规则；浏览器不能自行决定认证成功。\nasync function callRpc(request, rpc, params) {
   const authorization = request.headers.get("Authorization") || "";
   if (!/^Bearer\s+\S+$/i.test(authorization)) {
     return json({ error: "Authentication required." }, 401);

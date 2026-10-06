@@ -12,7 +12,7 @@ import { registrationUsernameRule } from "./account-api.js";
 import { json } from "./routing.js";
 import { getSupabaseSecret, workerLog } from "./server-runtime.js";
 
-export async function handleRegistrationUsernameCheck(request, env) {
+// 用户名实时检查：前端输入先经过与正式注册相同的格式规则，再调用受控服务/RPC 检查占用情况；这里的结果只是提示，正式注册仍会再次校验。\nexport async function handleRegistrationUsernameCheck(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   if (!sameOrigin(request)) return json({ error: "Invalid origin" }, 403);
 

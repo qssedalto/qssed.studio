@@ -35,7 +35,7 @@ export function fallbackBillingState() {
   };
 }
 
-export async function fetchMyBillingState(request) {
+// 读取当前用户账单状态：优先从服务端/数据库获取真实订阅与套餐信息，异常时由上层决定是否使用保守的 fallback。\nexport async function fetchMyBillingState(request) {
   const authorization = request.headers.get("Authorization") || "";
   if (!/^Bearer\s+\S+$/i.test(authorization)) {
     const error = new Error("Authentication required.");
@@ -77,7 +77,7 @@ export async function fetchMyBillingState(request) {
   return state;
 }
 
-export async function resolveBillingEntitlements(request) {
+// 解析权限：把原始订阅状态转换成产品真正关心的“可用功能/额度”。业务代码应读取 entitlement，而不是到处判断套餐字符串。\nexport async function resolveBillingEntitlements(request) {
   try {
     const state = await fetchMyBillingState(request);
     const quota = positiveInteger(state?.entitlements?.drive_storage_bytes, DEFAULT_STORAGE_QUOTA_BYTES);

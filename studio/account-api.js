@@ -59,7 +59,7 @@ export async function recentFailedLoginCount(env, ipAddress, logContext) {
   }
 }
 
-export async function recordServerLoginEvent(env, request, ipInfo, user, success, deviceId, logContext) {
+// 登录审计：记录必要的设备/IP/结果信息，用于安全排查；不要把明文密码、完整令牌或其他敏感认证材料写进审计存储。\nexport async function recordServerLoginEvent(env, request, ipInfo, user, success, deviceId, logContext) {
   const secret = getSupabaseSecret(env);
   if (!secret) {
     workerLog("warn", "auth.audit.disabled", { ...logContext, reason: "missing_supabase_secret" });
@@ -183,7 +183,7 @@ export function registrationEmailValid(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
 }
 
-export function registrationPasswordChecks(password) {
+// 密码规则集中定义：UI 提示和服务端校验应共用同一组约束，不能只在前端“提示”而后端放任弱密码。\nexport function registrationPasswordChecks(password) {
   const value = String(password || "");
   return {
     length: value.length >= 8,
@@ -206,7 +206,7 @@ export function registrationInternationalNameValid(value) {
   return text.length > 0 && text.length <= 80;
 }
 
-export async function handleRegistrationSignup(request, env, ipInfo) {
+// 注册主流程：依次执行来源/输入校验、用户名与邮箱规则、失败频率控制、Supabase 创建用户、个人资料初始化和审计记录。任何一步失败都应返回可理解但不过度泄露内部细节的错误。\nexport async function handleRegistrationSignup(request, env, ipInfo) {
   const requestId = getWorkerRequestId(request);
   const secret = getSupabaseSecret(env);
   if (!secret) {
@@ -413,7 +413,7 @@ export async function handleRegistrationSignup(request, env, ipInfo) {
   });
   return json({ success: true, avatar_status: avatarStatus }, 200);
 }
-export async function handlePasswordLogin(request, env, ipInfo) {
+// 密码登录主流程：校验同源请求和账户输入，调用认证后端，记录成功/失败审计，再返回会话建立所需的最小结果。失败次数统计用于减缓暴力尝试。\nexport async function handlePasswordLogin(request, env, ipInfo) {
   const startedAt = Date.now();
   const logContext = {
     request_id: getWorkerRequestId(request),

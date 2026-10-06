@@ -27,7 +27,7 @@ function cleanText(value, maximum) {
   return String(value ?? "").replace(/\u0000/g, "").slice(0, maximum);
 }
 
-function normalizeNote(input, ownerId, noteId, previous = null) {
+// Note 归一化：集中处理标题、正文、标签/时间等字段的最大长度与默认值。UI 传入的数据始终视为不可信。\nfunction normalizeNote(input, ownerId, noteId, previous = null) {
   const source = input && typeof input === "object" ? input : {};
   const now = new Date().toISOString();
   return {
@@ -120,7 +120,7 @@ async function parsePayload(request) {
   }
 }
 
-export async function handleNotes(request, env) {
+// Notes API 总入口：根据 method/path 处理列表、创建、更新和删除；每条 Note 都绑定 ownerId，并通过服务端生成的 key 隔离账户。\nexport async function handleNotes(request, env) {
   const auth = await verifyStorageUser(request, env);
   if (auth.error) return auth.error;
   if (!hasStorageBinding(env)) return json({ error: "Notes service is temporarily unavailable." }, 503);

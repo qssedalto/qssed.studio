@@ -30,7 +30,7 @@ function projectKey(userId, projectId) {
   return `${PROJECT_ROOT}${userId}/${projectId}.json`;
 }
 
-export async function handleDrafts(request, env) {
+// Drafts API 总入口：先确定当前用户，再按 method/path 分派列表、创建、更新、删除；所有对象 key 都包含 ownerId，避免跨账户访问。\nexport async function handleDrafts(request, env) {
   const session = await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
 
@@ -100,7 +100,7 @@ async function getDrafts(request, env, userId) {
   }
 }
 
-async function createDraft(request, env, userId) {
+// 创建草稿：先解析并归一化输入，再校验关联 project 是否属于当前用户，最后写入对象存储。\nasync function createDraft(request, env, userId) {
   const parsed = await parsePayload(request);
   if (parsed.error) return parsed.error;
   const draftId = crypto.randomUUID();
@@ -120,7 +120,7 @@ async function createDraft(request, env, userId) {
   }
 }
 
-async function updateDraft(request, env, userId) {
+// 更新草稿：必须先读旧对象确认存在和归属，再在旧值基础上合并合法字段，防止客户端漏字段时意外清空内容。\nasync function updateDraft(request, env, userId) {
   const draftId = cleanDraftId(new URL(request.url).searchParams.get("id"));
   if (!draftId) return json({ error: "Invalid draft identifier." }, 400);
   const parsed = await parsePayload(request);
@@ -185,7 +185,7 @@ async function readDraft(env, userId, draftId) {
   }
 }
 
-function normalizeDraft(input, userId, draftId, previous) {
+// 草稿字段白名单：标题、正文、项目引用、时间戳等在这里统一清洗。新增字段应集中放这里，避免 create/update 规则分叉。\nfunction normalizeDraft(input, userId, draftId, previous) {
   const source = input && typeof input === "object" ? input : {};
   const projectIdRaw = cleanText(source.project_id, 64);
   const projectId = projectIdRaw ? cleanProjectId(projectIdRaw) : "";

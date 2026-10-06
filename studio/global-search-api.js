@@ -23,7 +23,7 @@ const MAX_RESULTS = 80;
 const MAX_NOTES = 240;
 const MAX_COMMUNITY_SCAN = 5000;
 
-export async function handleGlobalSearch(request, env) {
+// 全局搜索编排器：并行搜索 Knowledge、Notes、Summaries、用户链接和系统精选链接，再统一打分、排序和截断。单个数据源失败不应拖垮整个搜索。\nexport async function handleGlobalSearch(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const session = await verifyStudioApiSession(request);
@@ -59,7 +59,7 @@ export async function handleGlobalSearch(request, env) {
   }
 
   const warnings = [];
-  const safeRun = async (name, operation) => {
+  // 容错包装：某个搜索源报错时记录来源并返回空结果，让其余来源仍能提供答案；这是“部分可用”设计而不是吞掉所有错误。\n  const safeRun = async (name, operation) => {
     try {
       return await operation();
     } catch (error) {
@@ -336,7 +336,7 @@ function serviceHeaders(secret) {
   };
 }
 
-export function globalSearchMatchScore(query, ...values) {
+// 统一匹配评分入口：不同来源都使用同一评分函数，保证标题/正文/域名的命中权重在全局结果中可比较。\nexport function globalSearchMatchScore(query, ...values) {
   return matchScore(query, ...values);
 }
 

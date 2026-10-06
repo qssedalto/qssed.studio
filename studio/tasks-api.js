@@ -31,7 +31,7 @@ function projectKey(userId, projectId) {
   return `${PROJECT_ROOT}${userId}/${projectId}.json`;
 }
 
-export async function handleTasks(request, env) {
+// Tasks API 总入口：按用户隔离任务对象，并根据 HTTP 方法执行 CRUD；projectId 若存在，还要确认项目归属。\nexport async function handleTasks(request, env) {
   const session = await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
 
@@ -176,7 +176,7 @@ async function readTask(env, userId, taskId) {
   }
 }
 
-function normalizeTask(input, userId, taskId, previous) {
+// Task 字段白名单：标题、状态、优先级、截止时间、项目引用等都在这里清洗，create/update 共用一套规则。\nfunction normalizeTask(input, userId, taskId, previous) {
   const source = input && typeof input === "object" ? input : {};
   const title = cleanText(source.title, 180);
   if (!title) return { ok: false, error: "Task title is required." };
@@ -274,7 +274,7 @@ function parseTaskKey(key, expectedOwnerId) {
   return isStorageObjectId(taskId) ? { taskId } : null;
 }
 
-function compareTasks(a, b) {
+// 任务排序规则：先按状态/优先级/时间等稳定排序，让 Workbench 和 Tasks 页面看到一致顺序。\nfunction compareTasks(a, b) {
   const statusOrder = { in_progress: 0, todo: 1, done: 2 };
   const statusDiff = (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
   if (statusDiff) return statusDiff;

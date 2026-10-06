@@ -21,7 +21,7 @@ const IMAGE_TYPES = new Map([
   ["image/webp", "webp"]
 ]);
 
-export async function handleProfileApi(request, action) {
+// Profile API 总入口：按 action 处理主页资料、个性化设置、链接和媒体上传。所有写操作都依赖当前 session，而不是相信 body 中的 userId。\nexport async function handleProfileApi(request, action) {
   const methods = {
     home: new Set(["GET"]),
     personalization: new Set(["PUT"]),
@@ -75,7 +75,7 @@ async function getProfileHome(session) {
   });
 }
 
-async function savePersonalization(request, session) {
+// 保存个性化：只接收白名单字段，并把 userId 固定为当前会话用户。这样客户端无法替别人改资料。\nasync function savePersonalization(request, session) {
   let body;
   try { body = await request.json(); } catch { return json({ error: "Invalid request body." }, 400); }
   const payload = cleanPersonalization(body, session.user.id);
@@ -142,7 +142,7 @@ async function mutateLink(request, session) {
   return json({ link: row });
 }
 
-async function uploadProfileMedia(request, session) {
+// 媒体上传：校验文件类型/大小后写入受控存储，再返回用户可引用的 URL；不接受任意外部路径作为“已上传资源”。\nasync function uploadProfileMedia(request, session) {
   let form;
   try { form = await request.formData(); } catch { return json({ error: "Invalid media request." }, 400); }
   const kind = String(form.get("kind") || "");
