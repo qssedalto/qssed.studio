@@ -1,3 +1,4 @@
+// 初学者导读：个人资料页面专用样式；与 ui-profile.js 的 class 结构配套，重命名时要两边同步。
 export function profileStyles() {
   return `    /* PROFILE_HOME_V3 */
     .profile-home{display:grid;gap:14px}
