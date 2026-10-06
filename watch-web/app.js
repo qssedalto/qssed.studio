@@ -106,14 +106,65 @@
     }
     return result;
   }
+  function sameEventData(left,right) {
+    return JSON.stringify(left?.data||{}) === JSON.stringify(right?.data||{});
+  }
+
+  function floodEvents(input,pulsetime=5) {
+    const events = (input||[]).map(event=>({...event,data:{...(event?.data||{})}})).sort((left,right)=>Date.parse(left.timestamp)-Date.parse(right.timestamp));
+    const trimThresholdMs = 100;
+    const pulseMs = pulsetime*1000;
+
+    for (let index=0; index<events.length-1; index++) {
+      const first = events[index], second = events[index+1];
+      let firstStart = Date.parse(first.timestamp), secondStart = Date.parse(second.timestamp);
+      if (!Number.isFinite(firstStart) || !Number.isFinite(secondStart)) continue;
+      let firstDurationMs = Math.max(0,Number(first.duration||0))*1000;
+      let secondDurationMs = Math.max(0,Number(second.duration||0))*1000;
+      const firstEnd = firstStart+firstDurationMs;
+      const secondEnd = secondStart+secondDurationMs;
+      const gap = secondStart-firstEnd;
+      if (gap === 0) continue;
+
+      if (gap < 0 && sameEventData(first,second)) {
+        const start = Math.min(firstStart,secondStart);
+        const end = Math.max(firstEnd,secondEnd);
+        first.timestamp = new Date(start).toISOString();
+        first.duration = (end-start)/1000;
+        second.timestamp = new Date(end).toISOString();
+        second.duration = 0;
+      } else if (gap < -trimThresholdMs) {
+        continue;
+      } else if (gap > -trimThresholdMs && gap <= pulseMs) {
+        if (firstDurationMs >= secondDurationMs) {
+          if (sameEventData(first,second)) {
+            first.duration = (secondEnd-firstStart)/1000;
+            second.timestamp = new Date(secondEnd).toISOString();
+            second.duration = 0;
+          } else {
+            first.duration = (secondStart-firstStart)/1000;
+          }
+        } else if (sameEventData(first,second)) {
+          second.timestamp = new Date(firstStart).toISOString();
+          second.duration = (secondEnd-firstStart)/1000;
+          first.duration = 0;
+        } else {
+          second.timestamp = new Date(firstEnd).toISOString();
+          second.duration = (secondEnd-firstEnd)/1000;
+        }
+      }
+    }
+    return events.filter(event=>Number(event.duration||0)>0);
+  }
+
   function eventInterval(event,start,end) {
     const originalStart = new Date(event.timestamp).getTime();
     return { start:Math.max(originalStart,start.getTime()), end:Math.min(originalStart+Number(event.duration||0)*1000,end.getTime()), event };
   }
   function activeWindowEvents(windowEvents,afkEvents,start,end) {
-    const windows = windowEvents.map(event=>eventInterval(event,start,end)).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
+    const windows = floodEvents(windowEvents).map(event=>eventInterval(event,start,end)).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
     if (afkEvents === null) return windows;
-    const activeIntervals = mergeIntervals(afkEvents.filter(event=>event.data?.status==="not-afk").map(event=>eventInterval(event,start,end)));
+    const activeIntervals = mergeIntervals(floodEvents(afkEvents).filter(event=>event.data?.status==="not-afk").map(event=>eventInterval(event,start,end)));
     if (!activeIntervals.length) return [];
     const result = [];
     let cursor = 0;
