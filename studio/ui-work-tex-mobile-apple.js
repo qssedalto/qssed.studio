@@ -1,3 +1,4 @@
+// 初学者导读：Apple 移动设备上的 TeX 适配层；处理 iOS/iPadOS 输入、viewport 和安全区等差异。
 export function enhanceWorkTexMobileApple(markup, zh) {
   const labels = zh ? {
     creating: "正在创建",
