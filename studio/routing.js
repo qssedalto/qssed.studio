@@ -68,7 +68,8 @@ function htmlSecurityHeaders(options = {}) {
   return headers;
 }
 
-// 统一路由解析：把 URL 拆成 locale、规范 pathname 等信息。后续模块应尽量使用这里的结果，避免每个页面各自解析语言前缀造成规则漂移。\nexport function getRouteInfo(request) {
+// 统一路由解析：把 URL 拆成 locale、规范 pathname 等信息。后续模块应尽量使用这里的结果，避免每个页面各自解析语言前缀造成规则漂移。
+export function getRouteInfo(request) {
   const url = new URL(request.url);
   const ip = request.headers.get("CF-Connecting-IP") || "Unknown";
   const country = request.cf?.country || "Unknown";
@@ -119,7 +120,8 @@ export function localizedRedirect(request, locale, pathname) {
   return Response.redirect(url.toString(), 302);
 }
 
-// HTML 响应统一出口：集中附加 CSP/安全头和内容类型。新增页面时优先走这里，而不是手写 new Response 后漏掉安全头。\nexport function html(content, status = 200, options = {}) {
+// HTML 响应统一出口：集中附加 CSP/安全头和内容类型。新增页面时优先走这里，而不是手写 new Response 后漏掉安全头。
+export function html(content, status = 200, options = {}) {
   return new Response(injectBrandLogoRuntime(content), {
     status,
     headers: htmlSecurityHeaders(options)

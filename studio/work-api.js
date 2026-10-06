@@ -12,7 +12,8 @@ import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate
 
 const WINDOWS_BRIDGE_KEY = "_system/releases/local-bridge/windows-amd64/QssedA-Local-Bridge.exe";
 
-// Work API 单一入口：action 决定具体文档/工作区操作。阅读时先看 action 分支，再追到对应数据读写；新增 action 时要同时考虑身份、资源归属和冲突处理。\nexport async function handleWorkApi(request, env, action) {
+// Work API 单一入口：action 决定具体文档/工作区操作。阅读时先看 action 分支，再追到对应数据读写；新增 action 时要同时考虑身份、资源归属和冲突处理。
+export async function handleWorkApi(request, env, action) {
   const session = await verifyStudioApiSession(request);
   if (!session.ok) {
     return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);

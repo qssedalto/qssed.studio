@@ -130,7 +130,8 @@
     return JSON.stringify(left?.data||{}) === JSON.stringify(right?.data||{});
   }
 
-  // 复现 ActivityWatch flood：短心跳缝隙视为同一段持续活动，但不会跨越明显长空档。\nfunction floodEvents(input,pulsetime=5) {
+  // 复现 ActivityWatch flood：短心跳缝隙视为同一段持续活动，但不会跨越明显长空档。
+function floodEvents(input,pulsetime=5) {
     const events = (input||[]).map(event=>({...event,data:{...(event?.data||{})}})).sort((left,right)=>Date.parse(left.timestamp)-Date.parse(right.timestamp));
     const trimThresholdMs = 100;
     const pulseMs = pulsetime*1000;
@@ -181,7 +182,8 @@
     const originalStart = new Date(event.timestamp).getTime();
     return { start:Math.max(originalStart,start.getTime()), end:Math.min(originalStart+Number(event.duration||0)*1000,end.getTime()), event };
   }
-  // 原版桌面活动口径：currentwindow 与 not-afk 做时间交集，只统计用户在电脑前时的前台窗口。\nfunction activeWindowEvents(windowEvents,afkEvents,start,end) {
+  // 原版桌面活动口径：currentwindow 与 not-afk 做时间交集，只统计用户在电脑前时的前台窗口。
+function activeWindowEvents(windowEvents,afkEvents,start,end) {
     const windows = floodEvents(windowEvents).map(event=>eventInterval(event,start,end)).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
     if (afkEvents === null) return windows;
     const activeIntervals = mergeIntervals(floodEvents(afkEvents).filter(event=>event.data?.status==="not-afk").map(event=>eventInterval(event,start,end)));
@@ -254,7 +256,8 @@
     return pieces;
   }
 
-  // 多 Bucket/多设备去重：新数据优先覆盖时间轴，旧数据只补未覆盖区间，避免同一分钟重复累计。\nfunction unionHostSegments(hostGroups) {
+  // 多 Bucket/多设备去重：新数据优先覆盖时间轴，旧数据只补未覆盖区间，避免同一分钟重复累计。
+function unionHostSegments(hostGroups) {
     const accepted = [];
     let coverage = [];
     for (const group of hostGroups) {
@@ -264,7 +267,8 @@
     return accepted.sort((left,right)=>left.start-right.start || left.end-right.end);
   }
 
-  // AERTEX 派生指标入口：总活跃时间来自非重叠窗口片段；专注指数不是 ActivityWatch 官方评分。\nfunction metrics(segments,start,end) {
+  // AERTEX 派生指标入口：总活跃时间来自非重叠窗口片段；专注指数不是 ActivityWatch 官方评分。
+function metrics(segments,start,end) {
     const ordered = [...segments].filter(segment=>segment.end>segment.start).sort((a,b)=>a.start-b.start);
     const activeIntervals = mergeIntervals(ordered.map(segment=>({start:segment.start,end:segment.end})));
     const total = activeIntervals.reduce((sum,interval)=>sum+(interval.end-interval.start)/1000,0);
@@ -426,7 +430,8 @@
     return [...grouped.values()].sort((left,right)=>right.seconds-left.seconds);
   }
 
-  // 网站时间：web.tab.current 必须与匹配浏览器的前台窗口相交，后台标签页不计入网站使用时间。\nasync function loadWebsiteSegments(start,end,activeSegments) {
+  // 网站时间：web.tab.current 必须与匹配浏览器的前台窗口相交，后台标签页不计入网站使用时间。
+async function loadWebsiteSegments(start,end,activeSegments) {
     const entries = Object.values(state.buckets||{});
     const browserBuckets = entries.filter(bucket=>bucketKind(bucket,"web"));
     if (!browserBuckets.length || !activeSegments.length) return [];

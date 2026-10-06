@@ -7,7 +7,8 @@
  * 修改注意：保持已有 URL、查询参数、DOM 标识和登录交接兼容；如果产品边界变化，必须同步修改对应 CI 检查。
  * 调试方法：先确认 host/path 命中了哪个入口，再检查会话和内部状态，最后看具体 UI 或 API 结果。
  */
-// Work/TeX 导航增强：在现有 Work 页面上补充 TeX 入口、状态和导航，不重新实现整个页面骨架。\nexport function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "https://work.qsseda.com") {
+// Work/TeX 导航增强：在现有 Work 页面上补充 TeX 入口、状态和导航，不重新实现整个页面骨架。
+export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "https://work.qsseda.com") {
   let output = String(markup || "");
   const prefix = zh ? "/zh-cn" : "/en";
   const workTexUrl = `${workOrigin}${zh ? "/zh-cn/tex" : "/en/tex"}`;
@@ -293,7 +294,8 @@
             }
           }
 
-          // 本地 TeX 能力探测：查询 local bridge 是否可用、具备哪些编译能力；失败只影响本地能力，不应阻断云端编辑。\nasync function probeLocal() {
+          // 本地 TeX 能力探测：查询 local bridge 是否可用、具备哪些编译能力；失败只影响本地能力，不应阻断云端编辑。
+async function probeLocal() {
             for (const base of endpoints) {
               try {
                 const healthResponse = await loopbackFetch(base, '/health');
@@ -315,7 +317,8 @@
             return null;
           }
 
-          // 云端能力探测：确认 Work/TeX 云端服务和会话状态，用于决定页面展示“可用、受限还是需要登录”。\nasync function probeCloud() {
+          // 云端能力探测：确认 Work/TeX 云端服务和会话状态，用于决定页面展示“可用、受限还是需要登录”。
+async function probeCloud() {
             try {
               const response = await fetch('/api/tex/status', {
                 credentials: 'same-origin',

@@ -135,7 +135,8 @@
       linkedRecurringMonth: /^\d{4}-\d{2}$/.test(String(item?.linkedRecurringMonth || '')) ? String(item.linkedRecurringMonth) : null
     };
   }
-  // 数据归一化：任何导入/本地存储的旧数据都先经过这里补默认值、修正类型，再进入后续计算。这样计算函数可以假定输入结构稳定。\nfunction normalizeData(input) {
+  // 数据归一化：任何导入/本地存储的旧数据都先经过这里补默认值、修正类型，再进入后续计算。这样计算函数可以假定输入结构稳定。
+function normalizeData(input) {
     const base = createDefaultData(), source = input && typeof input === 'object' ? input : {};
     const settings = { ...base.settings, ...(source.settings || {}) };
     settings.periodStart = parseDateKey(settings.periodStart) ? settings.periodStart : PERIOD_START;
@@ -179,7 +180,8 @@
     if (value < start) return isoDate(addDays(parseDateKey(start), -1));
     return value > end ? end : value;
   }
-  // 固定计划替代关系：提前还款/手动交易可以替代原计划扣款。这里的结果决定某天是否还需要再次扣款，是现金流避免“双扣”的关键规则。\nfunction resolvePlanReplacements(plans, transactions) {
+  // 固定计划替代关系：提前还款/手动交易可以替代原计划扣款。这里的结果决定某天是否还需要再次扣款，是现金流避免“双扣”的关键规则。
+function resolvePlanReplacements(plans, transactions) {
     const replaced = new Set(), usedTransactions = new Set();
     for (const plan of plans) {
       const linked = transactions.find(tx => tx.linkedPlanId === plan.id && !usedTransactions.has(tx.id));
@@ -277,7 +279,8 @@
     return instances;
   }
 
-  // 展开固定收支：把“每月某日扣款”之类规则转换成具体日期实例，再与实际交易匹配。先展开、再匹配，比在 UI 中临时判断更容易保持一致。\nfunction buildRecurringInstances(data, periodTransactions, start, end, asOf) {
+  // 展开固定收支：把“每月某日扣款”之类规则转换成具体日期实例，再与实际交易匹配。先展开、再匹配，比在 UI 中临时判断更容易保持一致。
+function buildRecurringInstances(data, periodTransactions, start, end, asOf) {
     const instances = [];
     for (const recurring of data.recurringExpenses.filter(item => item.enabled)) {
       for (const month of monthKeys(start, end)) {
@@ -327,7 +330,8 @@
     return instances;
   }
 
-  // Cash 核心计算入口：统一生成日历、余额走势、计划/实际差异和分类汇总。界面需要新增财务指标时应优先从这个模型派生，而不是在组件里重复计算。\nfunction calculateFinancialModel(input, options = {}) {
+  // Cash 核心计算入口：统一生成日历、余额走势、计划/实际差异和分类汇总。界面需要新增财务指标时应优先从这个模型派生，而不是在组件里重复计算。
+function calculateFinancialModel(input, options = {}) {
     const data = normalizeData(input);
     const {
       periodStart: start,

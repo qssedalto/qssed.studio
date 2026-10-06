@@ -26,7 +26,8 @@ function projectKey(userId, projectId) {
   return `${projectPrefix(userId)}${projectId}.json`;
 }
 
-// Projects 总入口：从会话解析当前用户，再按 method/path 分派列表、创建、更新、删除。项目 ID 和 ownerId 都由服务端规则约束。\nexport async function handleProjects(request, env) {
+// Projects 总入口：从会话解析当前用户，再按 method/path 分派列表、创建、更新、删除。项目 ID 和 ownerId 都由服务端规则约束。
+export async function handleProjects(request, env) {
   const session = await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
 
@@ -85,7 +86,8 @@ async function getProjects(request, env, userId) {
   }
 }
 
-// 创建项目：先 parse/normalize 用户输入，再补齐服务端生成的 ID、时间戳和 owner；不要把整段客户端 JSON 原样写入存储。\nasync function createProject(request, env, userId) {
+// 创建项目：先 parse/normalize 用户输入，再补齐服务端生成的 ID、时间戳和 owner；不要把整段客户端 JSON 原样写入存储。
+async function createProject(request, env, userId) {
   const parsed = await parsePayload(request);
   if (parsed.error) return parsed.error;
   const projectId = crypto.randomUUID();
@@ -103,7 +105,8 @@ async function getProjects(request, env, userId) {
   }
 }
 
-// 更新项目：先读取旧项目并确认归属，再基于旧值归一化新字段；这样未提交的字段不会被意外清空。\nasync function updateProject(request, env, userId) {
+// 更新项目：先读取旧项目并确认归属，再基于旧值归一化新字段；这样未提交的字段不会被意外清空。
+async function updateProject(request, env, userId) {
   const url = new URL(request.url);
   const projectId = cleanProjectId(url.searchParams.get("id"));
   if (!projectId) return json({ error: "Invalid project identifier." }, 400);
@@ -158,7 +161,8 @@ async function readProject(env, userId, projectId) {
   }
 }
 
-// 项目归一化：这里是字段白名单与默认值的中心。新增字段时优先在这里定义，而不是让各 API 分支各自拼对象。\nfunction normalizeProject(input, userId, projectId, previous) {
+// 项目归一化：这里是字段白名单与默认值的中心。新增字段时优先在这里定义，而不是让各 API 分支各自拼对象。
+function normalizeProject(input, userId, projectId, previous) {
   const source = input && typeof input === "object" ? input : {};
   const name = cleanText(source.name, 160);
   if (!name) return { ok: false, error: "Project name is required." };

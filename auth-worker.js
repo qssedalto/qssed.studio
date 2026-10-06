@@ -107,7 +107,8 @@ function sameOrigin(request, url) {
   return origin === url.origin;
 }
 
-// 登录入口：接收认证表单并与 Supabase/Auth 服务交互。返回浏览器前只暴露必要状态，access/refresh token 最终通过安全 Cookie 管理。\nasync function handleLogin(request) {
+// 登录入口：接收认证表单并与 Supabase/Auth 服务交互。返回浏览器前只暴露必要状态，access/refresh token 最终通过安全 Cookie 管理。
+async function handleLogin(request) {
   let body;
   try {
     body = await request.json();
@@ -224,7 +225,8 @@ async function handleBrowserLogout(request) {
   return new Response(null, { status: 302, headers });
 }
 
-// 登录后交接：验证 next/目标 origin 后，把用户送回主站或子产品。任何用户提供的跳转地址都必须先通过安全白名单/同站规则。\nasync function handleContinue(request, env) {
+// 登录后交接：验证 next/目标 origin 后，把用户送回主站或子产品。任何用户提供的跳转地址都必须先通过安全白名单/同站规则。
+async function handleContinue(request, env) {
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   let accessToken = cookies[ACCESS_COOKIE] || "";
   let refreshToken = cookies[REFRESH_COOKIE] || "";
@@ -263,7 +265,8 @@ async function handleBrowserLogout(request) {
   return new Response(injectBrandLogoRuntime(handoffPage(handoff.origin, accessToken, refreshToken, handoff.next, intelligenceThemeFromRequest(request), handoffLocale)), { status: 200, headers });
 }
 
-// 防开放重定向：next 只能是站内安全路径，不能接受任意绝对 URL、协议相对地址或可逃逸的路径。\nfunction validatedNextPath(value) {
+// 防开放重定向：next 只能是站内安全路径，不能接受任意绝对 URL、协议相对地址或可逃逸的路径。
+function validatedNextPath(value) {
   const path = cleanText(value, 500);
   return path.startsWith("/") && !path.startsWith("//") && !path.includes("\u0000") ? path : "";
 }
@@ -363,7 +366,8 @@ async function fetchProfile(accessToken, userId) {
   }
 }
 
-// 会话刷新：refresh token 仅在服务端发送给认证后端；刷新失败时应清理旧会话，避免浏览器卡在“看似登录但 token 已失效”的状态。\nasync function refreshSession(refreshToken) {
+// 会话刷新：refresh token 仅在服务端发送给认证后端；刷新失败时应清理旧会话，避免浏览器卡在“看似登录但 token 已失效”的状态。
+async function refreshSession(refreshToken) {
   try {
     const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
       method: "POST",

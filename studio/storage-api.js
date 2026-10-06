@@ -101,7 +101,8 @@ export function encodeRfc8187Filename(value) {
   return encodeURIComponent(value).replace(/['()*]/g, character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`);
 }
 
-// Storage 身份校验：把当前请求映射到确定的用户 ID；后续对象键必须从这个可信 userId 派生，不能直接相信浏览器给出的 owner/path。\nexport async function verifyStorageUser(request, env) {
+// Storage 身份校验：把当前请求映射到确定的用户 ID；后续对象键必须从这个可信 userId 派生，不能直接相信浏览器给出的 owner/path。
+export async function verifyStorageUser(request, env) {
   const authorization = request.headers.get("Authorization") || "";
   if (!/^Bearer\s+\S+$/i.test(authorization)) {
     return { error: json({ error: "Authentication required." }, 401) };
@@ -156,7 +157,8 @@ export function encodeRfc8187Filename(value) {
   return { user, secret };
 }
 
-// 文件列表入口：只枚举当前用户前缀下的对象，并把底层 R2 key 转成安全的文件元数据返回给前端。\nexport async function handleStorageFiles(request, env) {
+// 文件列表入口：只枚举当前用户前缀下的对象，并把底层 R2 key 转成安全的文件元数据返回给前端。
+export async function handleStorageFiles(request, env) {
   const auth = await verifyStorageUser(request, env);
   if (auth.error) return auth.error;
   if (!hasStorageBinding(env)) return storageUnavailable();
@@ -240,7 +242,8 @@ export function encodeRfc8187Filename(value) {
   });
 }
 
-// 上传入口：校验文件名、类型、大小和用户配额后再写 R2；对象键由服务端生成，避免路径穿越或跨用户覆盖。\nexport async function handleStorageUpload(request, env) {
+// 上传入口：校验文件名、类型、大小和用户配额后再写 R2；对象键由服务端生成，避免路径穿越或跨用户覆盖。
+export async function handleStorageUpload(request, env) {
   const auth = await verifyStorageUser(request, env);
   if (auth.error) return auth.error;
   if (!hasStorageBinding(env)) return storageUnavailable();
@@ -309,7 +312,8 @@ export function encodeRfc8187Filename(value) {
   return json({ id, name, message: "File uploaded." }, 201);
 }
 
-// 单对象入口：下载/删除等动作都必须先把对象引用解析成当前用户自己的存储键，再执行底层操作。\nexport async function handleStorageObject(request, env) {
+// 单对象入口：下载/删除等动作都必须先把对象引用解析成当前用户自己的存储键，再执行底层操作。
+export async function handleStorageObject(request, env) {
   const auth = await verifyStorageUser(request, env);
   if (auth.error) return auth.error;
   if (!hasStorageBinding(env)) return storageUnavailable();

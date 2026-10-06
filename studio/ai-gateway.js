@@ -25,7 +25,8 @@ const KNOWN_PRICES = {
   "gpt-5.6-luna": { input: 0.2, output: 1.2 }
 };
 
-// Intelligence 用户 API 总入口：先按 action 分流，再执行用户配置/模型/聊天等逻辑。这里假定 session 已由外层验证，但仍要对 body、模型 ID 和供应商参数做二次校验。\nexport async function handleAiApi(request, env, session) {
+// Intelligence 用户 API 总入口：先按 action 分流，再执行用户配置/模型/聊天等逻辑。这里假定 session 已由外层验证，但仍要对 body、模型 ID 和供应商参数做二次校验。
+export async function handleAiApi(request, env, session) {
   const path = new URL(request.url).pathname;
   if (path === "/api/ai/config" && request.method === "GET") return userConfig(request, session);
   if (path === "/api/ai/conversations" && request.method === "GET") {
@@ -643,7 +644,8 @@ async function userConfig(request, session) {
   });
 }
 
-// 聊天主流程：解析请求 → 选择供应商/模型 → 检查配额与可用性 → 调上游模型 → 记录用量/成本 → 返回流式或普通响应。每一步都可能独立失败，所以错误分类不要合并成一个笼统 500。\nasync function chat(request, env, session) {
+// 聊天主流程：解析请求 → 选择供应商/模型 → 检查配额与可用性 → 调上游模型 → 记录用量/成本 → 返回流式或普通响应。每一步都可能独立失败，所以错误分类不要合并成一个笼统 500。
+async function chat(request, env, session) {
   if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
   if (!env.AI_CREDENTIAL_KEY) return json({ error: "AI service is not configured." }, 503);
 
@@ -1468,7 +1470,8 @@ async function cryptoKey(secret) {
   );
 }
 
-// 供应商密钥加密：数据库中只保存密文和随机 IV。加密密钥来自服务端 secret，绝不能下发给浏览器。\nasync function encrypt(value, secret) {
+// 供应商密钥加密：数据库中只保存密文和随机 IV。加密密钥来自服务端 secret，绝不能下发给浏览器。
+async function encrypt(value, secret) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await cryptoKey(secret);
   const output = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(value));

@@ -207,7 +207,8 @@ async function handleTokenCreate(request, env, userId) {
   return json({ token, name, created_at: record.created_at }, 201);
 }
 
-// 设备同步入口：验证设备令牌后接收 Bucket/Event；规范化、去重并按用户/Bucket/日期写 R2。\nasync function handleDeviceSync(request, env) {
+// 设备同步入口：验证设备令牌后接收 Bucket/Event；规范化、去重并按用户/Bucket/日期写 R2。
+async function handleDeviceSync(request, env) {
   if (!env || !env.STORAGE) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
@@ -300,7 +301,8 @@ async function handleBucketList(env, userId) {
   catch { return json({ error: "Unable to read buckets." }, 503); }
 }
 
-// ActivityWatch 兼容事件查询：按日期对象读取并返回与查询区间相交的事件，包括从区间外跨入的长事件。\nasync function handleEventQuery(request, env, userId, bucketId) {
+// ActivityWatch 兼容事件查询：按日期对象读取并返回与查询区间相交的事件，包括从区间外跨入的长事件。
+async function handleEventQuery(request, env, userId, bucketId) {
   if (!env || !env.STORAGE || !userId) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "Method not allowed." }, 405);
   if (!validBucketId(bucketId)) return json({ error: "Invalid bucket id." }, 400);
@@ -401,7 +403,8 @@ function sanitizeData(value) {
   return result;
 }
 
-// 事件合并/去重：客户端会保留 overlap 防漏事件，因此服务端必须避免重复 heartbeat 让总时长膨胀。\nasync function mergeEvents(existing, incoming) {
+// 事件合并/去重：客户端会保留 overlap 防漏事件，因此服务端必须避免重复 heartbeat 让总时长膨胀。
+async function mergeEvents(existing, incoming) {
   const map = new Map();
   for (const event of [...existing, ...incoming]) {
     const normalized = normalizeEvent(event);

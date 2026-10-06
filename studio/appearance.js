@@ -26,7 +26,8 @@ export function appearanceThemeAttr(theme) {
   return theme === "light" || theme === "dark" ? ` data-theme="${theme}"` : "";
 }
 
-// 浏览器端外观运行时：读取主站统一的主题/主色偏好，并通过 CSS 变量和事件广播给所有子产品。独立产品不应再实现自己的主题存储。\nexport function appearanceClientRuntime() {
+// 浏览器端外观运行时：读取主站统一的主题/主色偏好，并通过 CSS 变量和事件广播给所有子产品。独立产品不应再实现自己的主题存储。
+export function appearanceClientRuntime() {
   const roots = JSON.stringify(ROOT_DOMAINS);
   const modes = JSON.stringify(VALID_MODES);
   const accents = JSON.stringify(VALID_ACCENTS);
@@ -142,7 +143,8 @@ export function appearanceThemeAttr(theme) {
       }
       return nextTheme;
     }
-    // 设置主色：这里只改变“主色语义变量”，成功绿、警告色、内容分类色等语义颜色应由各产品保持独立。\nfunction setAccent(accent,options={}){
+    // 设置主色：这里只改变“主色语义变量”，成功绿、警告色、内容分类色等语义颜色应由各产品保持独立。
+function setAccent(accent,options={}){
       const next=VALID_ACCENTS.has(accent)?accent:DEFAULT_ACCENT;
       document.documentElement.dataset.accent=next;
       const meta=ACCENT_META[next]||ACCENT_META[DEFAULT_ACCENT];
