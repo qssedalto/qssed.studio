@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/ui-tex-workbench.js
+ * 这是 AERTEX 前端 UI 模块（tex-workbench）：负责页面结构、状态、事件和 API 数据的展示。
+ * 阅读顺序：先通过可见文字定位 render/模板，再追 state、事件监听和 fetch/API，最后去后端找同一路径。
+ * 初学者重点：把“结构、样式、交互、数据”分开理解；一个页面 bug 往往只属于其中一层。
+ * 修改注意：已有 class/id/data-* 可能被其他模块和自动测试依赖；不要因为当前页面能显示就随意删除。动态用户内容继续保持转义。
+ * 响应式：涉及布局的修改至少检查宽屏、普通笔记本、平板和手机，避免只在一个尺寸上看起来正确。
+ */
 export function texWorkbenchContent(zh) {
   const copy = zh ? {
     eyebrow: "实验室 · TeX",

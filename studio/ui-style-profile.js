@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/ui-style-profile.js
+ * 这是 AERTEX 前端样式模块（style-profile）：主要集中生成/维护页面 CSS、视觉变量和响应式规则。
+ * 阅读顺序：先按页面区域寻找选择器，再看 CSS 变量和媒体查询；最后确认这些 class 在哪个 UI 模块里生成。
+ * 初学者重点：把“结构、样式、交互、数据”分开理解；一个页面 bug 往往只属于其中一层。
+ * 修改注意：已有 class/id/data-* 可能被其他模块和自动测试依赖；不要因为当前页面能显示就随意删除。动态用户内容继续保持转义。
+ * 响应式：涉及布局的修改至少检查宽屏、普通笔记本、平板和手机，避免只在一个尺寸上看起来正确。
+ */
 export function profileStyles() {
   return `    /* PROFILE_HOME_V3 */
     .profile-home{display:grid;gap:14px}
