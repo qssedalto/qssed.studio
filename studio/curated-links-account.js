@@ -1,3 +1,4 @@
+// 初学者导读：账户相关精选链接定义；属于展示数据源，供 Links/知识页面统一消费。
 export function curatedLinksAccountContent(zh) {
   const copy = zh ? {
     add: "新增链接",
