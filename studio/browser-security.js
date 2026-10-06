@@ -1,3 +1,4 @@
+// 初学者导读：浏览器安全响应头与策略辅助模块；集中维护 CSP、frame、referrer 等防护，减少各页面自行拼接造成遗漏。
 export async function hardenBrowserResponse(response, pathname = "") {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return response;
