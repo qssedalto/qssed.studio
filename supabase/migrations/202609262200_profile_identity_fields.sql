@@ -1,3 +1,10 @@
+-- 【初学者导读】
+-- 文件：supabase/migrations/202609262200_profile_identity_fields.sql
+-- 个人资料身份字段迁移：为资料页增加真实姓名/身份展示等字段，并与账户隐私模型配合。
+-- 阅读顺序：先确认新增/修改了哪些列、表或默认值，再看索引/RLS/RPC；包含 backfill 时要理解“旧数据如何被安全地补成新结构”。
+-- 隐私提示：资料身份、学生认证、订阅状态都属于服务端权威/敏感数据，前端只负责展示，不能绕过数据库权限或自行伪造状态。
+-- 历史迁移原则：本轮仅增加中文注释，不改变任何 SQL 语义；后续功能变化继续通过新的 migration 追加。
+
 alter table public.profiles
   add column if not exists first_name text,
   add column if not exists last_name text,

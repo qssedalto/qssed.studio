@@ -1,3 +1,10 @@
+-- 【初学者导读】
+-- 文件：supabase/migrations/202609271530_billing_subscriptions_foundation.sql
+-- Billing 订阅基础迁移：建立订阅、套餐、状态或权益相关数据库结构，为后续计费逻辑提供权威数据源。
+-- 阅读顺序：先确认新增/修改了哪些列、表或默认值，再看索引/RLS/RPC；包含 backfill 时要理解“旧数据如何被安全地补成新结构”。
+-- 隐私提示：资料身份、学生认证、订阅状态都属于服务端权威/敏感数据，前端只负责展示，不能绕过数据库权限或自行伪造状态。
+-- 历史迁移原则：本轮仅增加中文注释，不改变任何 SQL 语义；后续功能变化继续通过新的 migration 追加。
+
 begin;
 
 create schema if not exists aertex_private;
