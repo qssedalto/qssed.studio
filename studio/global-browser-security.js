@@ -1,3 +1,7 @@
+// 主站所有浏览器响应的最后一层统一硬化。
+//
+// Worker 路由完成后，这里补/收紧 CSP、Permissions-Policy、Referrer-Policy、X-Content-Type-Options 等，
+// 让某个页面模板即使忘了部分头也不至于完全裸奔；但它不会替代页面/API 自己的鉴权和输入校验。
 import { hardenBrowserMarkup } from "./browser-security.js";
 import { hardenLegacyApiBrowserMarkup } from "./legacy-api-browser-security.js";
 import { injectAccountMenuRuntime } from "./account-menu.js";
