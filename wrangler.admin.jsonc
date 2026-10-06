@@ -1,4 +1,5 @@
 {
+  // AERTEX Administration 的 Cloudflare 部署清单：独立 admin.* 域、共享私有 R2、GPT_CONTROL service binding，以及管理员边缘限流。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "qsseda-admin",
   "main": "admin-worker.js",
