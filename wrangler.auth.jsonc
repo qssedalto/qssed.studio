@@ -1,4 +1,5 @@
 {
+  // AERTEX ID 部署清单：auth.* 域、登录/OAuth/边缘限流器和审计存储。这里声明的是绑定与路由，不保存任何 secret 值。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "qsseda-auth",
   "main": "studio/auth-audit-entry.js",
