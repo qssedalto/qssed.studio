@@ -1,3 +1,7 @@
+// 回归检查：AERTEX ID 边缘反滥用层。
+//
+// 使用假的 Cloudflare Rate Limiter binding 构造允许/拒绝场景，验证扫描路径、自动化 UA、超长请求、
+// OAuth 协议例外和响应安全头。这里检查的是“进入登录业务前”的防护，不替代密码/OAuth 本身的认证测试。
 import {
   protectAuthEdgeRequest,
   applyAuthEdgeHeaders,
