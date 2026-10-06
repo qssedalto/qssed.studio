@@ -1,3 +1,7 @@
+// 回归检查：草稿工作区。
+//
+// 从“页面标记 -> Worker 路由 -> drafts-api -> 边缘保护”整条链检查创建、更新、删除和项目关联，
+// 并明确浏览器只能用 same-origin HttpOnly Session，不能重新引入前端 Bearer Token。
 import fs from "node:fs";
 import { draftsWorkspaceContent } from "../studio/ui-drafts.js";
 
