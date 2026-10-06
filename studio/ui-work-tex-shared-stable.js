@@ -1,3 +1,4 @@
+// 初学者导读：TeX 前端共享稳定工具集；集中放多个编辑/预览模块都依赖的纯函数与常量，减少跨文件行为漂移。
 export function enhanceWorkTexSharedStable(markup, zh) {
   let output = String(markup || "");
 
