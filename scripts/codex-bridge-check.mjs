@@ -1,3 +1,4 @@
+// 初学者导读：Codex 本机桥架构检查；确认允许的命令/路径/协议和 Work 集成仍符合安全边界。
 import fs from "node:fs";
 import { renderGptApp } from "../studio/gpt-ui.js";
 
