@@ -1,3 +1,4 @@
+// 初学者导读：祝福中心 UI：生成生日/中秋分享链接与复制交互，名字是可选显示参数而不是账号身份。
 import { normalizeSupportedLocale } from "./locale.js";
 
 const WISHES_COPY = {
