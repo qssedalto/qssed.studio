@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Cash 的独立 Worker 入口；负责登录会话、Cash API、appearance 运行时和静态资源分流。
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
