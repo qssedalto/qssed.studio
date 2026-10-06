@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/ui-work-tex-preview-fastpath.js
+ * 这是 AERTEX Work/TeX 前端模块（work-tex-preview-fastpath）。这组文件把编辑器、预览、协作、移动端适配或性能优化拆成多个小模块，避免一个超大文件承担全部职责。
+ * 阅读顺序：先找本文件 export 的安装/初始化函数，再看它接收的 editor/state/session 参数；之后沿事件监听、缓存和 DOM 更新理解副作用。
+ * 初学者重点：编辑器状态、服务器版本、协作会话和预览缓存是不同层次的数据；修改其中一层时不要假设其他层会自动同步。
+ * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
+ * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
+ */
 function replaceExact(source, needle, replacement) {
   const index = source.indexOf(needle);
   if (index < 0) return source;
