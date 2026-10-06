@@ -1,3 +1,4 @@
+// 初学者导读：主站边缘防护回归检查；确认反爬、突发流量与关键安全分支仍存在。
 import {
   protectEdgeRequest,
   applyEdgeProtectionHeaders,
