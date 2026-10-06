@@ -1,3 +1,6 @@
+// AERTEX ID 的 OAuth 2.0 / PKCE 协议实现。
+// 新手先分清三类对象：client 注册信息、一次性 authorization code、最终 access token。
+// redirect_uri/scope/PKCE challenge 必须在签发 code 前锁定，token endpoint 只能消费一次 code，不能把浏览器 Session Cookie 当 OAuth client token。
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 import { appearanceBootScript } from "./studio/appearance.js";
 
