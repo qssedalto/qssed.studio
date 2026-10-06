@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Work TeX 主页面组合模块；汇集编辑器、预览、协作、版本和移动适配，是前端功能总装配层。
 export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "https://work.qsseda.com") {
   let output = String(markup || "");
   const prefix = zh ? "/zh-cn" : "/en";
