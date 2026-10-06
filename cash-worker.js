@@ -12,6 +12,9 @@
  * and is intentionally preserved across the workers that were later split from it.
  */
 
+// AERTEX Cash 独立产品 Worker。
+// 请求流：设备兼容 Gate -> 共享 AERTEX Session -> /api/cash/data 读写 -> cash-web 静态 UI。
+// Cash 数据和页面资源共用一个 Worker，但写数据必须经过 same-origin/会话/大小限制，不能把静态资源路由当 API。
 import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
 import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
