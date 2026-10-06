@@ -552,7 +552,7 @@ async function loadWebsiteSegments(start,end,activeSegments) {
     $("usageTotalLabel").textContent = zh ? "当前口径总计" : "Total";
     $("dialogTitle").textContent = copy.dialog;
     $("dialogEyebrow").textContent = mode === "websites" ? "WEBSITE BREAKDOWN" : mode === "windows" ? "WINDOW BREAKDOWN" : "APP BREAKDOWN";
-    $("[data-usage-mode]").forEach(button=>button.classList.toggle("active",button.dataset.usageMode===mode));
+    $$("[data-usage-mode]").forEach(button=>button.classList.toggle("active",button.dataset.usageMode===mode));
     $("appList").innerHTML = items.length ? items.slice(0,5).map(item=>usageRow(item,maxSeconds)).join("") : '<div class="empty-state">' +
       (mode === "websites" ? (zh?"没有可用的网站活动。需要安装 ActivityWatch 浏览器 watcher。":"No website activity. A browser watcher is required.") : (zh?"这个时间段还没有活动":"No activity in this period.")) +
       '</div>';
@@ -660,7 +660,7 @@ async function load() {
     $("dateButton").addEventListener("click",()=>$("dateInput").showPicker?.());
     $("dateInput").addEventListener("change",event=>{const parts=event.target.value.split("-").map(Number);state.date=new Date(parts[0],parts[1]-1,parts[2]);load();});
     $$(".range-tabs button").forEach(button=>button.addEventListener("click",()=>{state.range=button.dataset.range;load();}));
-    $("[data-usage-mode]").forEach(button=>button.addEventListener("click",()=>{
+    $$("[data-usage-mode]").forEach(button=>button.addEventListener("click",()=>{
       state.usageMode = button.dataset.usageMode;
       renderUsageMode();
     }));
