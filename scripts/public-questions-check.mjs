@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Questions 第一方事实库。
+//
+// 检查 UUID、分类、发布状态、双语内容、站点地图和关键产品事实（账号/Watch/隐私等）。
+// 这里的断言把 FAQ 当作“公开技术契约”，避免宣传文案与实际产品实现逐渐漂移。
 import {
   QUESTION_CATEGORIES,
   QUESTION_INDEX_LOCALES,
