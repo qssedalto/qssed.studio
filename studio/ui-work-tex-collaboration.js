@@ -1,3 +1,4 @@
+// 初学者导读：TeX 协作 UI 主模块：成员、连接状态和共享操作入口。权限最终仍由服务端 collaboration API/room 校验。
 export function enhanceWorkTexCollaboration(markup, zh) {
   const copy = zh ? {
     open: "协作",
