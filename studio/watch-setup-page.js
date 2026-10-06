@@ -21,7 +21,7 @@ export function watchSetupPage(request) {
   const mainlandChina = country === "CN" || locale === "zh-cn";
   const activityWatchOfficialUrl = "https://activitywatch.net/downloads/";
   const activityWatchChinaUrl = "https://www.icloud.com.cn/iclouddrive/0f1o93e_H_OyQJtlbDfArEeUQ";
-  const windowsSyncUrl = "https://aw.qsseda.com/AERTEX-Watch-Sync.exe";
+  const windowsSyncUrl = "https://aw.qsseda.com/AERTEX-Watch-Sync-Setup.exe";
 
   const copy = zh ? {
     title: "把电脑的使用记录同步到手机",
@@ -42,9 +42,9 @@ export function watchSetupPage(request) {
     tokenTip: "设备令牌只应该保存在你自己的电脑上，不要放进截图、聊天记录或公开仓库。",
     step3Eyebrow: "第 3 步 · Windows",
     step3Title: "安装 AERTEX Watch Sync",
-    step3Body: "下载后双击 AERTEX Watch Sync，粘贴设备令牌并点击连接。连接成功后会自动在后台运行，并在 Windows 登录后自动启动。",
+    step3Body: "下载并运行 AERTEX Watch Sync 安装程序。安装时会先停止旧版客户端、清空旧安装目录并删除旧设备令牌；安装完成后请重新生成设备令牌并连接。",
     downloadWindows: "下载 Windows 版",
-    syncNote: "第一次默认同步最近 30 天的数据，之后每 10 分钟自动检查新增记录。无需保持任何窗口打开。",
+    syncNote: "安装完成后客户端会自动启动。重新生成并粘贴设备令牌后，第一次默认同步最近 30 天的数据，之后每 10 分钟自动检查新增记录。",
     step4Eyebrow: "第 4 步 · 手机",
     step4Title: "回到 Watch 检查同步结果",
     step4Body: "成功后首页会从“等待电脑连接”变成“同步正常”，并显示最近同步时间、ActivityWatch 数据源和今天的应用使用记录。",
@@ -80,9 +80,9 @@ export function watchSetupPage(request) {
     tokenTip: "Keep the device token on your own computer. Do not put it in screenshots, messages, or public repositories.",
     step3Eyebrow: "Step 3 · Windows",
     step3Title: "Install AERTEX Watch Sync",
-    step3Body: "Download and double-click AERTEX Watch Sync, paste the device token, and select Connect. It then runs in the background and starts automatically when you sign in to Windows.",
+    step3Body: "Download and run the AERTEX Watch Sync installer. Setup stops the old client, clears the previous install directory, and removes the old device token. Create a new device token after installation and connect again.",
     downloadWindows: "Download for Windows",
-    syncNote: "The first run syncs the most recent 30 days. It then checks for new records every 10 minutes without keeping a window open.",
+    syncNote: "The client starts automatically after installation. After you create and paste a new device token, the first sync covers the most recent 30 days and then checks every 10 minutes.",
     step4Eyebrow: "Step 4 · Phone",
     step4Title: "Check the result in Watch",
     step4Body: "When syncing succeeds, the home page changes from Waiting for a computer to Sync active and shows the latest sync time, ActivityWatch data sources, and today's app usage.",
@@ -133,7 +133,7 @@ main{max-width:960px;margin:0 auto;padding:52px 22px 90px}.eyebrow{margin:0 0 9p
 <section class="steps">
 ${step(1,copy.step1Eyebrow,copy.step1Title,copy.step1Body,`<a class="action" href="${activityWatchDownloadUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(activityWatchDownloadLabel)}</a><div class="tip"><p>${escapeHtml(copy.step1Tip)}</p></div>`)}
 ${step(2,copy.step2Eyebrow,copy.step2Title,copy.step2Body,`<a class="action" href="${watchHome}">${escapeHtml(copy.tokenButton)}</a><div class="tip"><p>${escapeHtml(copy.tokenTip)}</p></div>`)}
-${step(3,copy.step3Eyebrow,copy.step3Title,copy.step3Body,`<a class="action primary" href="${windowsSyncUrl}" download="AERTEX-Watch-Sync.exe">${escapeHtml(copy.downloadWindows)}</a><div class="tip"><p>${escapeHtml(copy.syncNote)}</p></div>`)}
+${step(3,copy.step3Eyebrow,copy.step3Title,copy.step3Body,`<a class="action primary" href="${windowsSyncUrl}" download="AERTEX-Watch-Sync-Setup.exe">${escapeHtml(copy.downloadWindows)}</a><div class="tip"><p>${escapeHtml(copy.syncNote)}</p></div>`)}
 ${step(4,copy.step4Eyebrow,copy.step4Title,copy.step4Body,`<a class="action primary" href="${watchHome}">${escapeHtml(copy.openWatch)}</a>`)}
 </section>
 <section class="faq"><p class="eyebrow">${escapeHtml(copy.faq)}</p><h2>${escapeHtml(copy.faqTitle)}</h2>
