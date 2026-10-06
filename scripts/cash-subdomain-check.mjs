@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Cash 独立子域与登录链。
+//
+// 核对 Cash Worker、主站 handoff、session-gate、共享 appearance、静态 assets 和产品导航的结构约束，
+// 重点防止 token 出现在 URL、跨域 next 放宽、或 cash.* 绕过 AERTEX Session。
 import fs from "node:fs";
 import { normalizeHandoffNext } from "../studio/auth-handoff.js";
 import { SUPPORTED_LOCALES } from "../studio/locale.js";
