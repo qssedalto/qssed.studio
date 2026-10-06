@@ -95,6 +95,14 @@ on:
       - "studio/cash-subdomain.js"
       - "scripts/cash-subdomain-check.mjs"
       - "wrangler.cash.jsonc"
+      # push 到 main 时也要覆盖 Watch；此前这些路径只存在于 pull_request 过滤器，
+      # 导致 Watch-only merge 后 Studio Worker Check 不会再次运行。
+      - "watch-worker.js"
+      - "watch-web/**"
+      - "AW-Sync/**"
+      - "studio/watch-subdomain.js"
+      - "scripts/watch-cloud-check.mjs"
+      - "wrangler.watch.jsonc"
       - "wrangler.admin.jsonc"
       - ".github/workflows/studio-check.yml"
   workflow_dispatch:
@@ -156,6 +164,7 @@ jobs:
           node --check scripts/cash-model-check.mjs
           node --check watch-worker.js
           node --check watch-web/app.js
+          node --check watch-web/aw-sync.mjs
           node --check AW-Sync/native/aw-sync.mjs
           node --check scripts/watch-cloud-check.mjs
 
@@ -215,6 +224,7 @@ jobs:
           node scripts/cash-subdomain-check.mjs
           node scripts/cash-model-check.mjs
 
+      # 这里是静态架构 + VM 算法回归；不会访问生产用户数据。
       - name: Verify AERTEX Watch cloud architecture
         run: node scripts/watch-cloud-check.mjs
 
