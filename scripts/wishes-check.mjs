@@ -1,3 +1,6 @@
+// 回归检查：祝福链接（生日 / 中秋等）生成与短路由。
+//
+// 检查公开 UI、路由编码/解码、可选收件人姓名和不同语言渲染，确保分享链接不依赖登录态也不会把任意 HTML 注入页面。
 import fs from "node:fs";
 import { dashboardContent, dashboardIcon } from "../studio/ui-dashboard.js";
 import { wishesContent } from "../studio/ui-wishes.js";
