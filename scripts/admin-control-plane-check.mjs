@@ -1,3 +1,4 @@
+// 初学者导读：管理员控制面架构回归检查；防止 admin.* 鉴权、路由或隔离边界在重构时被弱化。
 import fs from "node:fs";
 import vm from "node:vm";
 import { renderAdminConsole } from "../admin/ui.js";
