@@ -1,3 +1,4 @@
+// 初学者导读：账户安全 API：设备、会话、登录历史等敏感信息的服务端接口。返回数据应遵循最小披露原则。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { parseServerUserAgent } from "./account-api.js";
 import { json } from "./routing.js";
