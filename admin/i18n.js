@@ -1,3 +1,4 @@
+// 初学者导读：管理员界面的文案与语言映射；这里尽量只放显示文本，不要把业务判断塞进翻译层。
 import { preferredLocaleFromRequest } from "../studio/locale.js";
 
 const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/billing", "/student-verification", "/intelligence", "/logs", "/system"];
