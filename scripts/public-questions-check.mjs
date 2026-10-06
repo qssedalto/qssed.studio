@@ -1,3 +1,4 @@
+// 初学者导读：公开 Questions 知识库回归检查；把产品事实和技术边界作为可测试契约，防止文案与实际实现脱节。
 import {
   QUESTION_CATEGORIES,
   QUESTION_INDEX_LOCALES,
