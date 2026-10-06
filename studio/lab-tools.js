@@ -1,3 +1,4 @@
+// 初学者导读：Lab 工具注册表与实验能力定义；集中描述可用实验工具，页面根据这里生成入口而不是硬编码多个列表。
 export const LAB_TOOL_CATEGORIES = {
   core: { zh: "AERTEX 工具", en: "AERTEX Tools" },
   tex: { zh: "TeX 与文档", en: "TeX & Documents" },
