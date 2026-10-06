@@ -1,3 +1,4 @@
+// 初学者导读：任务中心 API：管理任务的创建、状态、截止时间与排序。所有任务操作都要经过当前用户资源归属校验。
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId, verifyStorageUser } from "./storage-api.js";
