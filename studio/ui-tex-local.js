@@ -1,3 +1,4 @@
+// 初学者导读：TeX 本机桥接前端逻辑：连接 local-bridge 并把本机能力映射到编辑器操作。失败时应安全降级到纯云端能力。
 export function enhanceTexWorkbenchLocal(markup, zh) {
   const copy = zh ? {
     localReady: "本机 TeX 已连接",
