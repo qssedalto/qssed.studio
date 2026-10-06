@@ -1,3 +1,4 @@
+// 初学者导读：项目工作区 API：管理项目实体及其元数据。任何按 id 修改/删除都要先验证项目属于当前用户或其授权范围。
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId, verifyStorageUser } from "./storage-api.js";
