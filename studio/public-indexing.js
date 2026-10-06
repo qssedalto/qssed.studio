@@ -1,3 +1,4 @@
+// 初学者导读：公开页面 SEO/索引辅助：生成 canonical、robots、结构化信息等。这里描述公开内容，不能泄漏登录后资源。
 import { SUPPORTED_LOCALES, normalizeSupportedLocale } from "./locale.js";
 import { QUESTION_INDEX_LOCALES, publishedQuestionIds } from "./public-questions.js";
 
