@@ -1,3 +1,4 @@
+// 初学者导读：知识库 API：读取/搜索当前可见知识内容并返回统一结构。数据访问范围仍需经过会话与资源边界。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
