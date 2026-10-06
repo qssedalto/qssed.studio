@@ -9,9 +9,9 @@
   <link rel="icon" href="/favicon-light.svg?v=aertex-20261004-safari-theme-1" type="image/svg+xml" media="(prefers-color-scheme:light)">
   <link rel="icon" href="/favicon-dark.svg?v=aertex-20261004-safari-theme-1" type="image/svg+xml" media="(prefers-color-scheme:dark)">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=aertex-20261004-safari-theme-1">
-  <link rel="stylesheet" href="/styles.css?v=aw-redesign-20261006-1">
+  <link rel="stylesheet" href="/styles.css?v=aw-redesign-20261006-2">
   <script src="/appearance.js"></script>
-  <script defer src="/app.js?v=aw-redesign-20261006-1"></script>
+  <script defer src="/app.js?v=aw-redesign-20261006-2"></script>
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
@@ -48,7 +48,6 @@
         <button class="nav-item" data-target="apps"><svg><use href="#i-apps"/></svg><span>应用</span></button>
         <button class="nav-item" data-target="timeline"><svg><use href="#i-clock"/></svg><span>时间线</span></button>
         <button class="nav-item" data-target="source"><svg><use href="#i-database"/></svg><span>数据源</span></button>
-        <button class="nav-item" data-target="settings"><svg><use href="#i-settings"/></svg><span>设置</span></button>
       </nav>
       <div class="sidebar-bottom">
         <div class="sidebar-group-label">同步状态</div>
@@ -74,7 +73,6 @@
           </div>
           <div class="top-actions">
             <button class="icon-button" id="refreshButton" aria-label="刷新数据" title="刷新数据"><svg><use href="#i-refresh"/></svg></button>
-            <button class="theme-button" id="themeButton" aria-label="切换主题" title="主题：跟随系统"><svg class="theme-icon theme-auto"><use href="#i-monitor"/></svg><svg class="theme-icon theme-light"><use href="#i-sun"/></svg><svg class="theme-icon theme-dark"><use href="#i-moon"/></svg></button>
           </div>
         </div>
         <div class="hero-meta-row">
@@ -112,8 +110,6 @@
       </section>
 
       <section class="source-section section-anchor" id="source"><article class="panel source-card source-card-stack"><div class="source-card-head"><div><span class="source-icon"><svg><use href="#i-database"/></svg></span><div><h2>已连接的数据源</h2><p>保持 ActivityWatch 原版的 Bucket 结构，同时用新的 AERTEX Watch 视觉呈现。</p></div></div><div class="source-meta"><span><small>最近电脑</small><strong id="sourceHost">—</strong></span><span><small>最近同步</small><strong id="sourceLastSync">—</strong></span><span><small>状态</small><strong class="online" id="connectionStatus"><i></i> 已连接</strong></span></div></div><div id="buckets" class="bucket-list"><p class="muted">正在加载…</p></div></article></section>
-
-      <section class="settings-section section-anchor" id="settings"><article class="panel settings-card"><div class="panel-head"><div><h2>外观</h2><p>与 AERTEX 全站外观设置同步。</p></div></div><div class="theme-options" id="themeOptions"><button data-theme-value="system" class="active"><svg><use href="#i-monitor"/></svg><span>跟随系统</span><i><svg><use href="#i-check"/></svg></i></button><button data-theme-value="light"><svg><use href="#i-sun"/></svg><span>浅色</span><i><svg><use href="#i-check"/></svg></i></button><button data-theme-value="dark"><svg><use href="#i-moon"/></svg><span>深色</span><i><svg><use href="#i-check"/></svg></i></button></div></article></section>
       <footer><span>AERTEX Watch</span><span>ActivityWatch 数据 · 通过你的 AERTEX 账户同步</span></footer>
     </main>
   </div>
