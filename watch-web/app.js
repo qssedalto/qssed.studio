@@ -271,12 +271,12 @@
           cursor.setTime(boundary);
         }
       } else {
-        let cursor = interval.start;
-        while (cursor < interval.end) {
-          const dayIndex = Math.max(0,Math.min(6,Math.floor((cursor-start.getTime())/86400000)));
-          const dayEnd = Math.min(interval.end,start.getTime()+(dayIndex+1)*86400000);
-          hourly[dayIndex] += (dayEnd-cursor)/1000;
-          cursor = dayEnd;
+        for (let dayIndex=0; dayIndex<7; dayIndex++) {
+          const dayStart = addDays(start,dayIndex).getTime();
+          const dayEnd = addDays(start,dayIndex+1).getTime();
+          const from = Math.max(interval.start,dayStart);
+          const to = Math.min(interval.end,dayEnd);
+          if (to > from) hourly[dayIndex] += (to-from)/1000;
         }
       }
     }
