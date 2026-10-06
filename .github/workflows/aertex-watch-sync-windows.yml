@@ -1,3 +1,5 @@
+# CI/发布：AERTEX Watch Sync Windows 客户端。
+# 负责 Rust 格式/Lint/测试、安装器构建与 main 分支 R2 发布；Watch 网页 Worker 本身由 deploy-production.yml 部署。
 # 这条工作流只负责“原生 Windows 客户端 + 安装器 + 固定 R2 release 对象”。
 # Watch 网页 Worker 的生产部署由 deploy-production.yml 负责，二者不要混成同一发布事务。
 name: Build AERTEX Watch Sync for Windows
