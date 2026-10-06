@@ -1,3 +1,4 @@
+// 初学者导读：生日祝福页面生成器；处理公开分享页的文案与视觉，不应把接收者可控文本直接插入未转义 HTML。
 import { LOCALE_META, SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
 
 const BIRTHDAY_COPY = {
