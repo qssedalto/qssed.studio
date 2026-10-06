@@ -42,6 +42,7 @@ assert(sso.includes("<title>AERTEX ID</title>"), "SSO must be branded AERTEX ID"
 assert(work.includes("<title>AERTEX Work</title>"), "Work product must be AERTEX Work");
 assert(workUi.includes("AERTEX Work"), "Work UI must use AERTEX Work");
 assert(shell.includes('title:"AERTEX Cash"') && shell.includes('id: "cash", label: "AERTEX Cash"'), "Cash product must be AERTEX Cash.");
+// “ActivityWatch”只能作为底层兼容/数据来源出现，独立产品导航必须统一叫 AERTEX Watch。
 assert(shell.includes('title:"AERTEX Watch"') && shell.includes('id: "activitywatch", label: "AERTEX Watch"'), "Activity tracking product must be branded AERTEX Watch.");
 assert(!shell.includes('title:"ActivityWatch"') && !shell.includes('label: "ActivityWatch"'), "Legacy ActivityWatch must not remain as a rendered product name.");
 
