@@ -1,4 +1,5 @@
 {
+  // AERTEX Cash 部署清单：cash-web 静态 assets + Cash Worker + 私有 R2。run_worker_first 保证 API/鉴权先经过 Worker。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "qsseda-cash",
   "main": "cash-worker.js",
