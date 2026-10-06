@@ -50,7 +50,7 @@ export function withStudioSessionCookies(response, cookies = []) {
   });
 }
 
-export async function verifyStudioPageSession(request) {
+// 页面会话门禁：先读取 Cookie 中的 access token；失效时尝试 refresh token，成功后把新 Cookie 附加到响应。页面请求与 API 请求的失败表现不同，因此不要把两个入口合并成同一种返回。\nexport async function verifyStudioPageSession(request) {
   const url = new URL(request.url);
   const hostname = url.hostname.toLowerCase();
   const workHost = isServiceHost(hostname, "work");
@@ -105,7 +105,7 @@ export async function verifyStudioPageSession(request) {
   };
 }
 
-export async function verifyStudioApiSession(request) {
+// API 会话门禁：复用页面会话校验得到用户身份，但 API 调用者需要结构化的未登录错误，而不是 HTML 登录页。\nexport async function verifyStudioApiSession(request) {
   return verifyStudioPageSession(request);
 }
 
@@ -260,7 +260,7 @@ async function verifyAccessToken(accessToken) {
   return { ok: true, user };
 }
 
-async function refreshSession(refreshToken) {
+// 刷新会话：refresh token 只发送给认证服务；新 access/refresh token 只进入安全 Cookie，不能回填到页面脚本或普通日志。\nasync function refreshSession(refreshToken) {
   let response;
   try {
     response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {

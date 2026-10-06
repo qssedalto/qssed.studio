@@ -132,7 +132,7 @@
     return JSON.stringify(left?.data||{}) === JSON.stringify(right?.data||{});
   }
 
-  function floodEvents(input,pulsetime=5) {
+  // 复现 ActivityWatch flood：watcher 以心跳方式写事件，短采样缝隙应视为同一段持续活动。这里补齐短间隔，但不会跨越明显的长空档。\nfunction floodEvents(input,pulsetime=5) {
     const events = (input||[]).map(event=>({...event,data:{...(event?.data||{})}})).sort((left,right)=>Date.parse(left.timestamp)-Date.parse(right.timestamp));
     const trimThresholdMs = 100;
     const pulseMs = pulsetime*1000;
@@ -183,7 +183,7 @@
     const originalStart = new Date(event.timestamp).getTime();
     return { start:Math.max(originalStart,start.getTime()), end:Math.min(originalStart+Number(event.duration||0)*1000,end.getTime()), event };
   }
-  function activeWindowEvents(windowEvents,afkEvents,start,end) {
+  // 原版桌面活动口径：currentwindow 与 not-afk 做时间交集；只有“用户人在电脑前且该窗口位于前台”的秒数才进入后续应用/窗口统计。\nfunction activeWindowEvents(windowEvents,afkEvents,start,end) {
     const windows = floodEvents(windowEvents).map(event=>eventInterval(event,start,end)).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
     if (afkEvents === null) return windows;
     const activeIntervals = mergeIntervals(floodEvents(afkEvents).filter(event=>event.data?.status==="not-afk").map(event=>eventInterval(event,start,end)));
@@ -256,7 +256,7 @@
     return pieces;
   }
 
-  function unionHostSegments(hostGroups) {
+  // 多 Bucket/多设备去重：较新的数据先占用时间区间，旧 Bucket 只补未覆盖部分，防止同一分钟被重复累计。\nfunction unionHostSegments(hostGroups) {
     const accepted = [];
     let coverage = [];
     for (const group of hostGroups) {
@@ -266,7 +266,7 @@
     return accepted.sort((left,right)=>left.start-right.start || left.end-right.end);
   }
 
-  function metrics(segments,start,end) {
+  // AERTEX 派生指标入口：总活跃时间来自非重叠前台片段；专注指数属于 AERTEX 启发式评分，不是 ActivityWatch 官方指标。\nfunction metrics(segments,start,end) {
     const ordered = [...segments].filter(segment=>segment.end>segment.start).sort((a,b)=>a.start-b.start);
     const activeIntervals = mergeIntervals(ordered.map(segment=>({start:segment.start,end:segment.end})));
     const total = activeIntervals.reduce((sum,interval)=>sum+(interval.end-interval.start)/1000,0);
@@ -428,7 +428,7 @@
     return [...grouped.values()].sort((left,right)=>right.seconds-left.seconds);
   }
 
-  async function loadWebsiteSegments(start,end,activeSegments) {
+  // 网站时间按 ActivityWatch 原版思路计算：web.tab.current 事件必须与“匹配浏览器正在前台”的窗口片段相交，后台标签页不会计时。\nasync function loadWebsiteSegments(start,end,activeSegments) {
     const entries = Object.values(state.buckets||{});
     const browserBuckets = entries.filter(bucket=>bucketKind(bucket,"web"));
     if (!browserBuckets.length || !activeSegments.length) return [];

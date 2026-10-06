@@ -78,7 +78,7 @@ server.on("error", error => {
   process.exitCode = 1;
 });
 
-function applyCors(response, origin, request) {
+// CORS 是本地桥接的第一道边界：只有明确允许的 AERTEX 来源才能从网页调用 localhost 服务，不能为了调试直接放成 *。\nfunction applyCors(response, origin, request) {
   if (!origin || !ALLOWED_ORIGINS.has(origin)) return;
   response.setHeader("access-control-allow-origin", origin);
   response.setHeader("vary", "Origin");
@@ -98,7 +98,7 @@ function sendJson(response, status, payload) {
   response.end(JSON.stringify(payload));
 }
 
-async function detectXeLaTeX() {
+// 本机能力探测：只检查固定的 XeLaTeX 可执行路径/命令，不执行网页传入的任意命令。探测结果用于告诉 Work 当前电脑具备哪些 TeX 能力。\nasync function detectXeLaTeX() {
   const configured = String(process.env.QSSEDA_XELATEX || "").trim();
   const executable = configured || "xelatex";
   const result = await runFixedProbe(executable, ["--version"], 2200);
@@ -117,7 +117,7 @@ async function detectXeLaTeX() {
   };
 }
 
-function runFixedProbe(command, args, timeoutMs) {
+// 固定命令探测器：command/args 来自代码预定义而不是用户输入，并带超时，避免本地桥接退化成通用远程命令执行器。\nfunction runFixedProbe(command, args, timeoutMs) {
   return new Promise(resolve => {
     let stdout = "";
     let stderr = "";

@@ -209,7 +209,7 @@ async function handleTokenCreate(request, env, userId) {
   return json({ token, name, created_at: record.created_at }, 201);
 }
 
-async function handleDeviceSync(request, env) {
+// 设备同步入口：验证设备令牌后接收 Bucket + Event 批次；事件会规范化、去重，并按用户/Bucket/日期写入 R2。这里是本机 ActivityWatch 数据进入云端的唯一正式入口。\nasync function handleDeviceSync(request, env) {
   if (!env || !env.STORAGE) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
@@ -302,7 +302,7 @@ async function handleBucketList(env, userId) {
   catch { return json({ error: "Unable to read buckets." }, 503); }
 }
 
-async function handleEventQuery(request, env, userId, bucketId) {
+// ActivityWatch 兼容事件查询：网页按 start/end/limit 读取云端事件。查询跨日时需要枚举相关日期对象，并包含“开始时间在范围外但持续时间跨入范围内”的事件。\nasync function handleEventQuery(request, env, userId, bucketId) {
   if (!env || !env.STORAGE || !userId) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "Method not allowed." }, 405);
   if (!validBucketId(bucketId)) return json({ error: "Invalid bucket id." }, 400);
@@ -403,7 +403,7 @@ function sanitizeData(value) {
   return result;
 }
 
-async function mergeEvents(existing, incoming) {
+// 事件合并/去重：同步客户端会故意保留少量 overlap 防止边界丢事件，因此服务端必须把重复 heartbeat 合并，否则总时长会膨胀。\nasync function mergeEvents(existing, incoming) {
   const map = new Map();
   for (const event of [...existing, ...incoming]) {
     const normalized = normalizeEvent(event);
