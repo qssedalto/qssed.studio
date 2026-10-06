@@ -1,3 +1,4 @@
+// 初学者导读：笔记 API：负责当前用户笔记的 CRUD 与归属校验。页面只负责交互，持久化和权限在这里完成。
 import { hasStorageBinding, isStorageObjectId, verifyStorageUser } from "./storage-api.js";
 import { json } from "./routing.js";
 import { workerLog } from "./server-runtime.js";
