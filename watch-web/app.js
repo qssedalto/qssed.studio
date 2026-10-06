@@ -5,6 +5,23 @@
   const locale = location.pathname.split("/").filter(Boolean)[0] || "en-us";
   const zh = locale.toLowerCase().startsWith("zh");
   const palette = ["#ff654c","#5f8fe8","#38a67a","#8b73de","#e69a3b","#e05d8b","#4ca6b7","#7f8c9b"];
+  const appLabels = {
+    "msedge":"Microsoft Edge","msedge.exe":"Microsoft Edge","microsoft edge":"Microsoft Edge",
+    "microsoft-edge-stable":"Microsoft Edge","microsoft-edge":"Microsoft Edge","microsoft-edge-beta":"Microsoft Edge","microsoft-edge-dev":"Microsoft Edge",
+    "chrome":"Google Chrome","chrome.exe":"Google Chrome","google chrome":"Google Chrome","google-chrome":"Google Chrome","google-chrome-stable":"Google Chrome",
+    "chromium":"Chromium","chromium.exe":"Chromium","chromium-browser":"Chromium","chromium-browser-chromium":"Chromium",
+    "firefox":"Firefox","firefox.exe":"Firefox","firefox developer edition":"Firefox Developer Edition","firefoxdeveloperedition":"Firefox Developer Edition",
+    "librewolf":"LibreWolf","librewolf.exe":"LibreWolf","librewolf-portable.exe":"LibreWolf","waterfox":"Waterfox","waterfox.exe":"Waterfox",
+    "brave-browser":"Brave","brave browser":"Brave","brave.exe":"Brave","opera":"Opera","opera.exe":"Opera",
+    "arc":"Arc","arc.exe":"Arc","vivaldi":"Vivaldi","vivaldi-stable":"Vivaldi","vivaldi-snapshot":"Vivaldi","vivaldi.exe":"Vivaldi","orion":"Orion","yandex":"Yandex",
+    "chatgpt":"ChatGPT","chatgpt.exe":"ChatGPT","codex":"Codex","codex.exe":"Codex","code":"Visual Studio Code","code.exe":"Visual Studio Code",
+    "explorer":"文件资源管理器","explorer.exe":"文件资源管理器","windowsterminal":"Windows Terminal","windowsterminal.exe":"Windows Terminal",
+    "powershell":"PowerShell","powershell.exe":"PowerShell","cmd":"命令提示符","cmd.exe":"命令提示符",
+    "wechat":"微信","wechat.exe":"微信","qq":"QQ","qq.exe":"QQ",
+    "winword":"Microsoft Word","winword.exe":"Microsoft Word","excel":"Microsoft Excel","excel.exe":"Microsoft Excel",
+    "powerpnt":"Microsoft PowerPoint","powerpnt.exe":"Microsoft PowerPoint","notepad":"记事本","notepad.exe":"记事本",
+    "steamwebhelper":"Steam","steamwebhelper.exe":"Steam","snippingtool":"截图工具","snippingtool.exe":"截图工具"
+  };
   const state = { date:startOfDay(new Date()), range:"day", buckets:{}, apps:[], requestId:0 };
 
   function rootOrigin() {
@@ -68,7 +85,7 @@
     if (/^[\u4e00-\u9fa5]/.test(name)) return name.slice(0,1);
     return name.split(/\s+/).map(part=>part[0]).join("").slice(0,2).toUpperCase();
   }
-  function appName(raw="Unknown") { return String(raw).replace(/\.exe$/i,""); }
+  function appName(raw="Unknown") { const key=String(raw).toLowerCase(); return appLabels[key] || String(raw).replace(/\.exe$/i,""); }
   async function api(path, options={}) {
     const response = await fetch(path,{credentials:"same-origin",cache:"no-store",...options});
     if (!response.ok) {
@@ -89,14 +106,66 @@
     }
     return result;
   }
+  function sameEventData(left,right) {
+    return JSON.stringify(left?.data||{}) === JSON.stringify(right?.data||{});
+  }
+
+  function floodEvents(input,pulsetime=5) {
+    const events = (input||[]).map(event=>({...event,data:{...(event?.data||{})}})).sort((left,right)=>Date.parse(left.timestamp)-Date.parse(right.timestamp));
+    const trimThresholdMs = 100;
+    const pulseMs = pulsetime*1000;
+
+    for (let index=0; index<events.length-1; index++) {
+      const first = events[index], second = events[index+1];
+      let firstStart = Date.parse(first.timestamp), secondStart = Date.parse(second.timestamp);
+      if (!Number.isFinite(firstStart) || !Number.isFinite(secondStart)) continue;
+      let firstDurationMs = Math.max(0,Number(first.duration||0))*1000;
+      let secondDurationMs = Math.max(0,Number(second.duration||0))*1000;
+      const firstEnd = firstStart+firstDurationMs;
+      const secondEnd = secondStart+secondDurationMs;
+      const gap = secondStart-firstEnd;
+      if (gap === 0) continue;
+
+      if (gap < 0 && sameEventData(first,second)) {
+        const start = Math.min(firstStart,secondStart);
+        const end = Math.max(firstEnd,secondEnd);
+        first.timestamp = new Date(start).toISOString();
+        first.duration = (end-start)/1000;
+        second.timestamp = new Date(end).toISOString();
+        second.duration = 0;
+      } else if (gap < -trimThresholdMs) {
+        continue;
+      } else if (gap > -trimThresholdMs && gap <= pulseMs) {
+        if (firstDurationMs >= secondDurationMs) {
+          if (sameEventData(first,second)) {
+            first.duration = (secondEnd-firstStart)/1000;
+            second.timestamp = new Date(secondEnd).toISOString();
+            second.duration = 0;
+          } else {
+            first.duration = (secondStart-firstStart)/1000;
+          }
+        } else if (sameEventData(first,second)) {
+          second.timestamp = new Date(firstStart).toISOString();
+          second.duration = (secondEnd-firstStart)/1000;
+          first.duration = 0;
+        } else {
+          second.timestamp = new Date(firstEnd).toISOString();
+          second.duration = (secondEnd-firstEnd)/1000;
+        }
+      }
+    }
+    return events.filter(event=>Number(event.duration||0)>0);
+  }
+
   function eventInterval(event,start,end) {
     const originalStart = new Date(event.timestamp).getTime();
     return { start:Math.max(originalStart,start.getTime()), end:Math.min(originalStart+Number(event.duration||0)*1000,end.getTime()), event };
   }
   function activeWindowEvents(windowEvents,afkEvents,start,end) {
-    const activeIntervals = mergeIntervals(afkEvents.filter(event=>event.data?.status==="not-afk").map(event=>eventInterval(event,start,end)));
-    const windows = windowEvents.map(event=>eventInterval(event,start,end)).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
-    if (!activeIntervals.length) return windows;
+    const windows = floodEvents(windowEvents).map(event=>eventInterval(event,start,end)).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
+    if (afkEvents === null) return windows;
+    const activeIntervals = mergeIntervals(floodEvents(afkEvents).filter(event=>event.data?.status==="not-afk").map(event=>eventInterval(event,start,end)));
+    if (!activeIntervals.length) return [];
     const result = [];
     let cursor = 0;
     for (const window of windows) {
@@ -110,6 +179,67 @@
     }
     return result;
   }
+
+  function bucketKind(bucket,kind) {
+    const type = String(bucket?.type||"").toLowerCase();
+    const id = String(bucket?.id||"").toLowerCase();
+    if (kind === "currentwindow") return type === "currentwindow" || id.startsWith("aw-watcher-window_");
+    if (kind === "afkstatus") return type === "afkstatus" || id.startsWith("aw-watcher-afk_");
+    return false;
+  }
+
+  function bucketHost(bucket) {
+    const hostname = String(bucket?.hostname||"").trim();
+    if (hostname) return hostname.toLowerCase();
+    const id = String(bucket?.id||"");
+    for (const prefix of ["aw-watcher-window_","aw-watcher-afk_"]) {
+      if (id.toLowerCase().startsWith(prefix)) return id.slice(prefix.length).toLowerCase();
+    }
+    return id.toLowerCase();
+  }
+
+  function bucketRecency(bucket) {
+    return Date.parse(bucket?.last_sync||bucket?.last_event||"") || 0;
+  }
+
+  function latestBucketsByHost(entries,kind) {
+    const selected = new Map();
+    for (const bucket of entries.filter(item=>bucketKind(item,kind))) {
+      const host = bucketHost(bucket);
+      const current = selected.get(host);
+      if (!current || bucketRecency(bucket) > bucketRecency(current)) selected.set(host,bucket);
+    }
+    return [...selected.values()].sort((left,right)=>bucketRecency(right)-bucketRecency(left) || bucketHost(left).localeCompare(bucketHost(right)));
+  }
+
+  function subtractCoverage(segment,coverage) {
+    let pieces = [{...segment}];
+    for (const interval of coverage) {
+      if (!pieces.length) break;
+      const next = [];
+      for (const piece of pieces) {
+        if (interval.end <= piece.start || interval.start >= piece.end) {
+          next.push(piece);
+          continue;
+        }
+        if (interval.start > piece.start) next.push({...piece,end:Math.min(interval.start,piece.end)});
+        if (interval.end < piece.end) next.push({...piece,start:Math.max(interval.end,piece.start)});
+      }
+      pieces = next.filter(piece=>piece.end>piece.start);
+    }
+    return pieces;
+  }
+
+  function unionHostSegments(hostGroups) {
+    const accepted = [];
+    let coverage = [];
+    for (const group of hostGroups) {
+      for (const segment of group) accepted.push(...subtractCoverage(segment,coverage));
+      coverage = mergeIntervals([...coverage,...group.map(segment=>({start:segment.start,end:segment.end}))]);
+    }
+    return accepted.sort((left,right)=>left.start-right.start || left.end-right.end);
+  }
+
   function metrics(segments,start,end) {
     const ordered = [...segments].filter(segment=>segment.end>segment.start).sort((a,b)=>a.start-b.start);
     const activeIntervals = mergeIntervals(ordered.map(segment=>({start:segment.start,end:segment.end})));
@@ -141,12 +271,12 @@
           cursor.setTime(boundary);
         }
       } else {
-        let cursor = interval.start;
-        while (cursor < interval.end) {
-          const dayIndex = Math.max(0,Math.min(6,Math.floor((cursor-start.getTime())/86400000)));
-          const dayEnd = Math.min(interval.end,start.getTime()+(dayIndex+1)*86400000);
-          hourly[dayIndex] += (dayEnd-cursor)/1000;
-          cursor = dayEnd;
+        for (let dayIndex=0; dayIndex<7; dayIndex++) {
+          const dayStart = addDays(start,dayIndex).getTime();
+          const dayEnd = addDays(start,dayIndex+1).getTime();
+          const from = Math.max(interval.start,dayStart);
+          const to = Math.min(interval.end,dayEnd);
+          if (to > from) hourly[dayIndex] += (to-from)/1000;
         }
       }
     }
@@ -167,7 +297,8 @@
     const deepSeconds = sessions.filter(session=>session.activeSeconds>=25*60).reduce((sum,session)=>sum+session.activeSeconds,0);
     const elapsed = Math.max(0,Math.min(end.getTime(),Date.now())-start.getTime())/1000;
     const away = Math.max(0,elapsed-total);
-    const switchPenalty = total ? Math.min(25,switches/Math.max(1,total/3600)*1.8) : 0;
+    const switchesPerHour = total ? switches/Math.max(total/3600,1/3600) : 0;
+    const switchPenalty = Math.min(25,switchesPerHour*1.8);
     const focusRatio = total ? Math.min(1,deepSeconds/total) : 0;
     const focusScore = Math.round(Math.max(0,Math.min(100,focusRatio*60+40-switchPenalty)));
     return {total,hourly,switches,longestSession,deepSeconds,away,focusScore,apps:[...byApp.values()].sort((a,b)=>b.seconds-a.seconds),sessions};
@@ -175,22 +306,22 @@
 
   async function loadSegments(start,end) {
     const entries = Object.values(state.buckets||{});
-    const windows = entries.filter(bucket=>String(bucket.type||"").includes("currentwindow") || String(bucket.id||"").includes("window"));
-    const afks = entries.filter(bucket=>String(bucket.type||"").includes("afkstatus") || String(bucket.id||"").includes("afk"));
-    const all = [];
+    const windows = latestBucketsByHost(entries,"currentwindow");
+    const afks = latestBucketsByHost(entries,"afkstatus");
+    const afkByHost = new Map(afks.map(bucket=>[bucketHost(bucket),bucket]));
+    const groups = [];
     const query = new URLSearchParams({start:start.toISOString(),end:end.toISOString(),limit:"-1"}).toString();
+
     for (const bucket of windows) {
-      try {
-        const windowEvents = await api("/api/0/buckets/" + encodeURIComponent(bucket.id) + "/events?" + query);
-        const afk = afks.find(item=>item.hostname && bucket.hostname && item.hostname===bucket.hostname) || afks[0];
-        let afkEvents = [];
-        if (afk) {
-          try { afkEvents = await api("/api/0/buckets/" + encodeURIComponent(afk.id) + "/events?" + query); } catch {}
-        }
-        all.push(...activeWindowEvents(windowEvents,afkEvents,start,end));
-      } catch {}
+      const windowEvents = await api("/api/0/buckets/" + encodeURIComponent(bucket.id) + "/events?" + query);
+      const afk = afkByHost.get(bucketHost(bucket));
+      const afkEvents = afk
+        ? await api("/api/0/buckets/" + encodeURIComponent(afk.id) + "/events?" + query)
+        : null;
+      groups.push(activeWindowEvents(windowEvents,afkEvents,start,end));
     }
-    return all;
+
+    return unionHostSegments(groups);
   }
 
   function renderStatus(status) {
@@ -269,7 +400,7 @@
     $("longestSession").textContent = formatDuration(longestSession,true);
     $("sessionCaption").textContent = longestSession>=1500 ? "已达到一次深度专注" : "25 分钟以上计为深度专注";
     $("switchCount").textContent = switches.toLocaleString(zh?"zh-CN":"en-US");
-    $("switchCaption").textContent = total ? "平均每小时 " + Math.round(switches/Math.max(total/3600,1)) + " 次" : "应用间切换";
+    $("switchCaption").textContent = total ? "平均每小时 " + Math.round(switches/Math.max(total/3600,1/3600)) + " 次" : "应用间切换";
     const ratio = total ? Math.max(0,Math.min(100,Math.round(deepSeconds/total*100))) : 0;
     $("focusDonut").style.setProperty("--value",ratio);
     $("donutValue").textContent = ratio + "%";

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import vm from "node:vm";
 
 const read = path => fs.readFileSync(path, "utf8");
 const assert = (condition, message) => {
@@ -56,6 +57,15 @@ for (const legacyInstruction of ["node --version", "AERTEX_WATCH_TOKEN", "Invoke
 }
 assert(setupPage.includes("https://aw.qsseda.com/AERTEX-Watch-Sync-Setup.exe"), "Watch setup must use the public Windows installer URL.");
 assert(app.includes("/api/watch/tokens") && app.includes("/api/0/buckets/"), "Watch UI must use authenticated cloud APIs.");
+assert(app.includes("latestBucketsByHost") && app.includes("unionHostSegments"), "Watch metrics must select one current bucket per host and remove cross-device overlap.");
+assert(app.includes("afkEvents === null") && app.includes("if (!activeIntervals.length) return [];"), "Watch metrics must distinguish a missing AFK bucket from an all-AFK period.");
+assert(app.includes("function floodEvents") && app.includes("gap <= pulseMs"), "Watch metrics must reproduce ActivityWatch five-second flood behavior before AFK intersection.");
+assert(app.includes("for (let dayIndex=0; dayIndex<7; dayIndex++)") && app.includes("addDays(start,dayIndex+1)"), "Weekly Watch distribution must use local calendar-day boundaries instead of fixed 24-hour milliseconds.");
+assert(app.includes("appLabels") && app.includes('"msedge.exe":"Microsoft Edge"'), "Watch UI must preserve the uploaded custom dashboard app display names.");
+assert(worker.includes("MAX_EVENT_DURATION_SECONDS") && worker.includes("eventStart < endMs && eventEnd > startMs"), "Watch event reads must include events that overlap query boundaries.");
+assert(worker.includes('JSON.stringify([normalized.timestamp, normalized.data])'), "Watch heartbeat deduplication must ignore changing event duration.");
+assert(worker.includes('normalized.id !== undefined') && worker.includes('"id:" + normalized.id'), "Watch heartbeat deduplication must prefer stable ActivityWatch event IDs when present.");
+assert(worker.includes("events = await mergeEvents([], events)"), "Watch event reads must deduplicate legacy overlapping heartbeat copies.");
 assert(sync.includes("http://127.0.0.1:5600"), "Native sync must default to ActivityWatch localhost.");
 assert(sync.includes("https://awd.qsseda.com"), "Native sync must default to the short cloud data domain.");
 assert(sync.includes("limit:\"-1\""), "Native sync must request the complete incremental ActivityWatch event range.");
@@ -82,6 +92,7 @@ assert(nativeMain.includes('windows_subsystem = "windows"'), "Release client mus
 assert(nativeCredentials.includes("CredWriteW") && nativeCredentials.includes("CredReadW"), "Device tokens must use Windows Credential Manager.");
 assert(nativeAutostart.includes("HKEY_CURRENT_USER") && nativeAutostart.includes("--background"), "Native client must register per-user background startup.");
 assert(nativeDiscovery.includes("5000..=6000") && nativeDiscovery.includes("SCAN_CONCURRENCY"), "Native client must implement bounded localhost ActivityWatch discovery.");
+assert(read("AW-Sync/native/src/sync.rs").includes("DateTime::parse_from_rfc3339(&event.timestamp)"), "Native sync progress must compare RFC3339 timestamps as instants, not strings.");
 assert(nativeWorkflow.includes("windows-latest") && nativeWorkflow.includes("cargo clippy") && nativeWorkflow.includes("AERTEX-Watch-Sync-Setup.exe") && nativeWorkflow.includes("Inno Setup"), "Native Windows installer build workflow is incomplete.");
 assert(nativeWorkflow.includes("watch/releases/windows/AERTEX-Watch-Sync-Setup.exe"), "Windows installer must publish to the fixed R2 key.");
 assert(!nativeWorkflow.includes("path: AW-Sync/native/dist/AERTEX-Watch-Sync.exe"), "Portable executable must not be published as the user-facing artifact.");
@@ -91,5 +102,61 @@ assert(nativeInstaller.includes("SetupIconFile=..\\assets\\aertex-watch.ico"), "
 assert(nativeBuild.includes('set_icon') && nativeBuild.includes("aertex-watch.ico"), "Windows executable must embed the AERTEX Watch icon.");
 assert(!nativeMain.includes("ensure_installed_and_relaunch"), "Production client must no longer use the portable self-install flow.");
 assert(setupPage.includes('"cache-control": "private, no-store"'), "Region-specific Watch setup responses must not be shared-cacheable.");
+
+
+const testAppSource = app.replace(
+  /\n  bind\(\);\n  load\(\);[\s\S]*?\n\}\)\(\);\s*$/,
+  '\n  globalThis.__watchTest = { activeWindowEvents, floodEvents, latestBucketsByHost, unionHostSegments, metrics, state };\n})();'
+);
+const testContext = {
+  location: { pathname: "/zh-cn", hostname: "aw.qsseda.com" },
+  console,
+  URLSearchParams,
+  Date,
+  Intl,
+  Math,
+  JSON,
+  Map,
+  Set,
+};
+vm.runInNewContext(testAppSource, testContext, { filename: "watch-web/app.js" });
+const watchTest = testContext.__watchTest;
+assert(watchTest, "Unable to expose Watch metric functions for regression tests.");
+
+const event = (timestamp, duration, data) => ({ timestamp, duration, data });
+const rangeStart = new Date("2026-10-06T00:00:00Z");
+const rangeEnd = new Date("2026-10-07T00:00:00Z");
+
+const flooded = watchTest.floodEvents([
+  event("2026-10-06T10:00:00Z", 2, { app: "same" }),
+  event("2026-10-06T10:00:05Z", 2, { app: "same" }),
+]);
+assert(flooded.length === 1 && Math.abs(flooded[0].duration - 7) < 0.001, "Five-second ActivityWatch flood regression failed.");
+
+const windowSample = [event("2026-10-06T10:00:00Z", 60, { app: "editor" })];
+assert(watchTest.activeWindowEvents(windowSample, [], rangeStart, rangeEnd).length === 0, "An existing AFK bucket with no not-afk interval must yield zero active window time.");
+assert(watchTest.activeWindowEvents(windowSample, null, rangeStart, rangeEnd).length === 1, "A missing AFK bucket must not erase otherwise valid window events.");
+
+const latest = watchTest.latestBucketsByHost([
+  { id: "old", type: "currentwindow", hostname: "pc", last_sync: "2026-10-06T10:00:00Z" },
+  { id: "new", type: "currentwindow", hostname: "pc", last_sync: "2026-10-06T11:00:00Z" },
+], "currentwindow");
+assert(latest.length === 1 && latest[0].id === "new", "Newest bucket per host selection regression failed.");
+
+const multiDevice = watchTest.unionHostSegments([
+  [{ start: 0, end: 10_000, event: { data: { app: "primary" } } }],
+  [{ start: 5_000, end: 15_000, event: { data: { app: "secondary" } } }],
+]);
+assert(multiDevice.reduce((sum, item) => sum + item.end - item.start, 0) === 15_000, "Cross-device overlap must be counted once.");
+
+watchTest.state.range = "day";
+const metricResult = watchTest.metrics([
+  { start: Date.parse("2026-10-06T10:00:00Z"), end: Date.parse("2026-10-06T10:15:00Z"), event: { data: { app: "a" } } },
+  { start: Date.parse("2026-10-06T10:15:00Z"), end: Date.parse("2026-10-06T10:30:00Z"), event: { data: { app: "b" } } },
+], rangeStart, rangeEnd);
+assert(metricResult.total === 1800, "Active duration must equal the union of actual active intervals.");
+assert(metricResult.deepSeconds <= metricResult.total, "Deep-focus duration must never exceed active duration.");
+assert(metricResult.focusScore >= 0 && metricResult.focusScore <= 100, "AERTEX focus score must remain within 0-100.");
+assert(metricResult.switches === 1 && metricResult.focusScore === 96, "Switch-rate focus penalty must use actual active hours.");
 
 console.log("AERTEX Watch cloud checks passed.");

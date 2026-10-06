@@ -9,9 +9,9 @@
   <link rel="icon" href="/favicon-light.svg?v=aertex-20261004-safari-theme-1" type="image/svg+xml" media="(prefers-color-scheme:light)">
   <link rel="icon" href="/favicon-dark.svg?v=aertex-20261004-safari-theme-1" type="image/svg+xml" media="(prefers-color-scheme:dark)">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=aertex-20261004-safari-theme-1">
-  <link rel="stylesheet" href="/styles.css?v=aw-redesign-20261006-4">
+  <link rel="stylesheet" href="/styles.css?v=aw-redesign-20261006-5">
   <script src="/appearance.js"></script>
-  <script defer src="/app.js?v=aw-redesign-20261006-4"></script>
+  <script defer src="/app.js?v=aw-redesign-20261006-5"></script>
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
@@ -88,7 +88,7 @@
         <div class="notice hidden" id="notice" role="status"><svg><use href="#i-alert"/></svg><span></span><button id="retryButton">重试</button></div>
         <div class="metric-grid">
           <article class="metric-card primary-card"><div class="metric-heading"><span>活跃时长</span><span class="live-badge"><i></i> LIVE</span></div><div class="metric-value" id="activeTime">—</div><div class="metric-footer"><span id="activeCompare">正在计算</span><span class="metric-icon"><svg><use href="#i-bolt"/></svg></span></div></article>
-          <article class="metric-card"><div class="metric-heading"><span>专注指数</span><span class="metric-icon soft"><svg><use href="#i-focus"/></svg></span></div><div class="metric-value"><span id="focusScore">—</span><small>/100</small></div><div class="mini-progress"><i id="focusProgress"></i></div><div class="metric-footer"><span id="focusCaption">基于连续使用计算</span></div></article>
+          <article class="metric-card"><div class="metric-heading"><span title="AERTEX 估算指标：结合深度专注占比与应用切换频率，不是 ActivityWatch 官方评分">专注指数</span><span class="metric-icon soft"><svg><use href="#i-focus"/></svg></span></div><div class="metric-value"><span id="focusScore">—</span><small>/100</small></div><div class="mini-progress"><i id="focusProgress"></i></div><div class="metric-footer"><span id="focusCaption">基于连续使用计算</span></div></article>
           <article class="metric-card"><div class="metric-heading"><span>最长专注</span><span class="metric-icon soft lilac"><svg><use href="#i-clock"/></svg></span></div><div class="metric-value" id="longestSession">—</div><div class="metric-footer"><span id="sessionCaption">等待活动数据</span></div></article>
           <article class="metric-card"><div class="metric-heading"><span>切换次数</span><span class="metric-icon soft blue"><svg><use href="#i-apps"/></svg></span></div><div class="metric-value" id="switchCount">—</div><div class="metric-footer"><span id="switchCaption">应用间切换</span></div></article>
         </div>
@@ -96,7 +96,7 @@
 
       <div class="dashboard-grid">
         <article class="panel activity-panel"><div class="panel-head"><div><h2>活跃分布</h2><p id="activitySubtitle">每小时的有效使用时长</p></div><div class="legend"><i></i><span>活跃</span></div></div><div class="activity-chart" id="activityChart" aria-label="活跃分布图"></div></article>
-        <article class="panel balance-panel"><div class="panel-head"><div><h2>数字节奏</h2><p>专注与碎片时间</p></div></div><div class="balance-content"><div class="donut" id="focusDonut"><div><strong id="donutValue">—</strong><small>专注占比</small></div></div><div class="balance-legend"><div><i class="focus"></i><span>连续专注</span><strong id="deepTime">—</strong></div><div><i class="fragment"></i><span>碎片活动</span><strong id="fragmentTime">—</strong></div><div><i class="away"></i><span>离开间隔</span><strong id="awayTime">—</strong></div></div></div></article>
+        <article class="panel balance-panel"><div class="panel-head"><div><h2>数字节奏</h2><p>专注与碎片时间</p></div></div><div class="balance-content"><div class="donut" id="focusDonut"><div><strong id="donutValue">—</strong><small>专注占比</small></div></div><div class="balance-legend"><div><i class="focus"></i><span>连续专注</span><strong id="deepTime">—</strong></div><div><i class="fragment"></i><span>碎片活动</span><strong id="fragmentTime">—</strong></div><div><i class="away"></i><span title="当前时间段内没有检测到活跃窗口的时间，包含 AFK、睡眠、关机或未同步时间">未活动时间</span><strong id="awayTime">—</strong></div></div></div></article>
       </div>
 
       <section class="lower-grid section-anchor" id="apps">
