@@ -1,3 +1,6 @@
+// auth.qsseda.* 的部署入口。
+// 顺序很重要：edge protection -> 专用 PKCE/用户名登录/SSO 路由 -> auth-worker 主逻辑 -> 统一响应安全头。
+// RETURN_COOKIE 只暂存站内 next 路径，用来跨登录页面保留返回目标，不能保存 access/refresh token。
 import authWorker from "./auth-worker.js";
 import { handlePkceTestRequest } from "./auth-pkce-test.js";
 import { handleIdentifierLogin, rewriteIdentifierLoginPage } from "./auth-login-identifier.js";
