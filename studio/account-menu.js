@@ -1,5 +1,9 @@
 import { normalizeSupportedLocale, SUPPORTED_LOCALES } from "./locale.js";
 
+// 账号菜单是跨产品共享 UI。它通过根域推导 auth.*，而不是把 qsseda.com 写死在每个产品页面。
+//
+// 当前 AERTEX Watch 仪表盘没有直接渲染这套菜单；Watch 的身份切换主要走独立 handoff/session-gate。
+// 这里仍必须保持域族规则一致，因为 Auth/主站页面会和 Watch 共用同一账号标记。
 const DOMAIN_ROOTS = ["qsseda.com","qsseda.online","qsseda.studio"];
 
 export function accountMenuStyles() {
@@ -100,6 +104,7 @@ export function accountMenuMarkup(locale = "en-us") {
 </div>`;
 }
 
+/// 客户端菜单只调用 summary/logout 等同源 API，不在前端直接处理服务端 HttpOnly session Cookie。
 export function accountMenuClientScript(options = {}) {
   const config = {
     summaryUrl: options.summaryUrl || "/api/account/security/summary",
@@ -121,6 +126,7 @@ export function accountMenuClientScript(options = {}) {
   const localePattern=(config.supportedLocales||[]).join("|");
   const host=location.hostname.toLowerCase();
 
+  // 从当前 hostname 找根域，随后所有跨产品登录/管理入口都由这个根域派生。
   function domainRoot(){
     return roots.find(item=>host===item||host.endsWith("."+item))||"qsseda.com";
   }
@@ -139,6 +145,7 @@ export function accountMenuClientScript(options = {}) {
     }
     return location.pathname+location.search;
   }
+  // 兼容主站与 Auth 两种账户摘要形状，并收敛成菜单真正需要的少数字段。
   function normalizedIdentity(data){
     if(data&&data.authenticated&&data.user){
       return {
