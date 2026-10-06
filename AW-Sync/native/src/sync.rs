@@ -264,13 +264,18 @@ pub fn sync_start(last: &str, now: DateTime<Utc>) -> DateTime<Utc> {
 }
 
 pub fn max_timestamp(events: &[ActivityEvent], fallback: &str) -> String {
-    events.iter().fold(fallback.to_string(), |best, event| {
-        if event.timestamp > best {
-            event.timestamp.clone()
-        } else {
-            best
-        }
-    })
+    let fallback_parsed = DateTime::parse_from_rfc3339(fallback).ok();
+    events
+        .iter()
+        .filter_map(|event| {
+            DateTime::parse_from_rfc3339(&event.timestamp)
+                .ok()
+                .map(|timestamp| (timestamp, event.timestamp.as_str()))
+        })
+        .max_by_key(|(timestamp, _)| *timestamp)
+        .map(|(_, raw)| raw.to_string())
+        .or_else(|| fallback_parsed.map(|_| fallback.to_string()))
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -287,6 +292,26 @@ mod tests {
         assert_eq!(
             sync_start("", now),
             Utc.with_ymd_and_hms(2026, 9, 6, 12, 0, 0).unwrap()
+        );
+    }
+
+    #[test]
+    fn maximum_timestamp_compares_instants_not_rfc3339_text() {
+        let event = |timestamp: &str| ActivityEvent {
+            id: None,
+            timestamp: timestamp.to_string(),
+            duration: 1.0,
+            data: serde_json::Map::new(),
+        };
+        assert_eq!(
+            max_timestamp(
+                &[
+                    event("2026-10-06T12:00:00+08:00"),
+                    event("2026-10-06T05:00:00Z"),
+                ],
+                ""
+            ),
+            "2026-10-06T05:00:00Z"
         );
     }
 
