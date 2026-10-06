@@ -31,7 +31,7 @@ const GLOBAL_SEARCH_COPY = {
   "ar-sa":{eyebrow:"البحث الشامل",title:"ابحث في Studio بالكامل",intro:"ابحث في Knowledge وملاحظات البحث والملخصات وروابط الحساب وروابط المجتمع والروابط المختارة من مكان واحد. تظل قواعد ظهور المحتوى الخاص كما هي، ولا يوسّع البحث صلاحيات الوصول.",placeholder:"ابحث في المعرفة والملاحظات والروابط والملخصات…",hint:"أدخل كلمة مفتاحية واحدة على الأقل",searching:"جارٍ البحث…",empty:"لا توجد نتائج",emptyDetail:"جرّب كلمة أخرى أو عُد إلى «الكل».",error:"البحث غير متاح مؤقتًا",partial:"بعض الوحدات غير متاحة مؤقتًا. ما زالت النتائج المتاحة معروضة أدناه.",result:"نتائج",all:"الكل",knowledge:"Knowledge",note:"ملاحظات البحث",summary:"الملخصات",link:"روابط الحساب / الإدارة",community_link:"المجتمع",curated_link:"مختارة",private:"خاص",community:"المجتمع",curated:"مختارة",admin:"نطاق الإدارة",current:"الحساب الحالي",open:"فتح",external:"رابط خارجي",shortcut:"اضغط / للتركيز على البحث"}
 };
 
-export function globalSearchContent(zh, locale = "") {
+// 全局搜索页面：浏览器只负责输入、筛选和结果呈现；跨 Knowledge/Notes/Links 等多源检索与评分由 /api/search 后端统一完成。\nexport function globalSearchContent(zh, locale = "") {
   const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
   const copy = GLOBAL_SEARCH_COPY[activeLocale] || GLOBAL_SEARCH_EN;
 
@@ -122,7 +122,7 @@ export function globalSearchContent(zh, locale = "") {
           function filterResults(){return activeFilter==='all'?allResults:allResults.filter(item=>item.type===activeFilter);}
           function typeLabel(type){return labels[type]||type;}
           function scopeLabel(item){if(item.scope==='community')return labels.community;if(item.scope==='curated')return labels.curated;if(item.scope==='admin')return labels.admin;if(item.is_own||!item.owner_label)return labels.private;return labels.admin;}
-          function render(){
+          // 搜索结果渲染：基于当前 filter 选择结果，并用 DOM/textContent 输出标题与摘要；结果 URL 通过 internalHref 区分站内/外链。\nfunction render(){
             const visible=filterResults();
             results.replaceChildren();
             empty.hidden=visible.length>0;
@@ -144,7 +144,7 @@ export function globalSearchContent(zh, locale = "") {
           function updateCounts(payload){
             const counts=payload?.counts||{};document.querySelectorAll('[data-filter-count]').forEach(node=>{const key=node.dataset.filterCount;node.textContent=String(key==='all'?(payload?.returned||0):(counts[key]||0));});
           }
-          async function search(){
+          // 发起搜索：对输入做最小长度/状态控制，发送到统一 API；异步返回后替换 allResults 并更新类型计数。\nasync function search(){
             const query=input.value.trim();window.clearTimeout(timer);const current=++sequence;
             if(!query){allResults=[];toolbar.hidden=true;notice.hidden=true;results.replaceChildren();resetEmpty(${JSON.stringify(copy.hint)},${JSON.stringify(copy.intro)});setStatus(${JSON.stringify(copy.hint)});return;}
             setStatus(${JSON.stringify(copy.searching)});empty.hidden=true;

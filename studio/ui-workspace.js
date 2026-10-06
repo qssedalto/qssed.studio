@@ -39,7 +39,7 @@ const EN = {
   tasks:["Task Center","Tasks","Manage todo, in-progress, priority, due dates, and project relationships."]
 };
 
-export function workspaceContent(path, zh, locale = "") {
+// Workspace 页面分派：根据 path 把用户送到 Projects/Tasks/Drafts 等工作区模块。这里只负责选择子页面，不重复实现子模块的数据逻辑。\nexport function workspaceContent(path, zh, locale = "") {
   const c = WORKSPACE_COPY[locale] || (zh ? WORKSPACE_COPY["zh-cn"] : EN);
   const prefix = "/" + (locale || (zh ? "zh-cn" : "en-us"));
   const items = [

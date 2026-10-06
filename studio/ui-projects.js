@@ -116,7 +116,7 @@ const PROJECT_COPY = {
   }
 };
 
-export function projectsWorkspaceContent(zh, locale = "") {
+// Projects 工作区页面：提供项目筛选、统计、创建/编辑 dialog，并通过 /api/projects 持久化。\nexport function projectsWorkspaceContent(zh, locale = "") {
   const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
   const copy = PROJECT_COPY[activeLocale] || PROJECT_EN;
 
@@ -238,7 +238,7 @@ export function projectsWorkspaceContent(zh, locale = "") {
             document.getElementById('projects-done-count').textContent=String(projects.filter(item=>item.status==='done').length);
             document.querySelectorAll('[data-project-count]').forEach(node=>{const key=node.dataset.projectCount;node.textContent=String(key==='all'?projects.length:projects.filter(item=>item.status===key).length);});
           }
-          function matching(){
+          // 当前可见项目筛选：组合搜索词、状态等条件，只影响前端展示；真正的数据归属与权限仍由后端决定。\nfunction matching(){
             const query=(search?.value||'').trim().toLocaleLowerCase();
             return projects.filter(project=>{
               if(activeStatus!=='all'&&project.status!==activeStatus)return false;
@@ -249,7 +249,7 @@ export function projectsWorkspaceContent(zh, locale = "") {
           }
           function addText(parent,tag,className,text){const node=document.createElement(tag);if(className)node.className=className;node.textContent=text;parent.append(node);return node;}
           function addExternal(parent,label,url){if(!url)return;const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=label+' ↗';parent.append(link);}
-          function render(){
+          // 项目列表重绘：使用 textContent 创建用户字段，外部 URL 只通过专门 helper 生成链接，避免模板字符串直接注入 HTML。\nfunction render(){
             const visible=matching();list.replaceChildren();updateStats();
             if(!projects.length){empty.hidden=false;empty.querySelector('strong').textContent=${JSON.stringify(copy.empty)};empty.querySelector('span').textContent=${JSON.stringify(copy.emptyDetail)};return;}
             if(!visible.length){empty.hidden=false;empty.querySelector('strong').textContent=${JSON.stringify(copy.noMatch)};empty.querySelector('span').textContent=${JSON.stringify(copy.noMatchDetail)};return;}
@@ -276,7 +276,7 @@ export function projectsWorkspaceContent(zh, locale = "") {
           }
           function openEditor(project){editingId=project?.id||'';fill(project||null);document.getElementById('project-dialog-title').textContent=editingId?${JSON.stringify(copy.modalEdit)}:${JSON.stringify(copy.modalCreate)};deleteButton.hidden=!editingId;dialog.classList.add('is-open');dialog.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';window.setTimeout(()=>document.getElementById('project-name')?.focus(),30);}
           function closeEditor(){dialog.classList.remove('is-open');dialog.setAttribute('aria-hidden','true');document.body.style.overflow='';editingId='';fill(null);}
-          async function refresh(){showMessage('',false);try{const data=await api('/api/projects',{method:'GET'});projects=Array.isArray(data?.projects)?data.projects:[];render();}catch(error){projects=[];render();showMessage(error?.message||${JSON.stringify(copy.error)},true);empty.hidden=false;empty.querySelector('strong').textContent=${JSON.stringify(copy.error)};}}
+          // 项目刷新：重新获取当前用户项目并重绘统计/列表；失败时清空旧列表并显示错误，避免把过期缓存误当成最新状态。\nasync function refresh(){showMessage('',false);try{const data=await api('/api/projects',{method:'GET'});projects=Array.isArray(data?.projects)?data.projects:[];render();}catch(error){projects=[];render();showMessage(error?.message||${JSON.stringify(copy.error)},true);empty.hidden=false;empty.querySelector('strong').textContent=${JSON.stringify(copy.error)};}}
 
           document.getElementById('projects-create')?.addEventListener('click',()=>openEditor(null));
           document.querySelectorAll('[data-project-close]').forEach(button=>button.addEventListener('click',closeEditor));

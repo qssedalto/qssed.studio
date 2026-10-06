@@ -147,7 +147,7 @@ export function securityAuditContent(zh, locale = "") {
   `;
 }
 
-export function appearanceSettingsContent(zh, locale = "") {
+// 外观设置页面：只调用全站 AERTEXTheme 运行时修改主题和主色；其他产品页面应读取这些共享偏好，而不是再放一套独立设置。\nexport function appearanceSettingsContent(zh, locale = "") {
   let copy = zh ? {
     eyebrow:"THEME STUDIO",
     title:"主题与外观",
@@ -315,7 +315,7 @@ export function appearanceSettingsContent(zh, locale = "") {
   `;
 }
 
-export function languageSettingsContent(zh, activeLocale = "en-us") {
+// 语言设置页面：修改站点首选 locale，并尽量跳转到同一功能的对应语言路径；显式 URL locale 仍然具有最高优先级。\nexport function languageSettingsContent(zh, activeLocale = "en-us") {
   const localeCopy = {
     "zh-cn":["显示语言","AERTEX 默认跟随当前设备语言。你可以临时切换界面语言；重新从网站入口打开或下次登录时，会再次跟随设备语言。"],
     "zh-tw":["顯示語言","AERTEX 預設跟隨目前裝置語言。你可以暫時切換介面語言；重新從網站入口開啟或下次登入時，會再次跟隨裝置語言。"],
@@ -369,7 +369,7 @@ const AI_SETTINGS_COPY = {
 };
 AI_SETTINGS_COPY["en-gb"]=AI_SETTINGS_COPY["en-us"]; AI_SETTINGS_COPY["en-au"]=AI_SETTINGS_COPY["en-us"];
 
-export function aiSettingsContent(zh, locale = "") {
+// AI 设置：加载用户当前模型/供应商/额度，再保存首选模型。可用模型由服务端配置决定，前端不能自行解锁不存在的模型。\nexport function aiSettingsContent(zh, locale = "") {
   const activeLocale = locale || (zh ? "zh-cn" : "en-us");
   const copy = AI_SETTINGS_COPY[activeLocale] || AI_SETTINGS_COPY["en-us"];
   return `
@@ -441,7 +441,7 @@ export function aiSettingsContent(zh, locale = "") {
             document.cookie=preferenceKey+"="+encodeURIComponent(value)+"; Path=/; Max-Age=31536000; SameSite=Lax; Secure"+(domain?"; Domain="+domain:"");
           }catch{}
         };
-        async function load(){
+        // AI 设置加载：并行/顺序读取配置与用量，并把不可用、未配置、额度不足等状态区分显示，而不是都归成一个“失败”。\nasync function load(){
           try{
             const response=await fetch("/api/ai/config",{credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json"}});
             const cfg=await response.json().catch(()=>null);

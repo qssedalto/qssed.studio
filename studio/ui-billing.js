@@ -98,7 +98,7 @@ const BILLING_RUNTIME = {
 };
 BILLING_RUNTIME["en-gb"]=BILLING_RUNTIME["en-us"]; BILLING_RUNTIME["en-au"]=BILLING_RUNTIME["en-us"];
 
-export function billingSettingsContent(zh, view = "billing", locale = "") {
+// Billing/学生认证设置页面：展示当前订阅、权益、用量和学生认证流程。最终套餐/资格状态必须来自后端，不由前端按钮决定。\nexport function billingSettingsContent(zh, view = "billing", locale = "") {
   const activeLocale=locale||(zh?"zh-cn":"en-us");
   let text = zh ? {
     loading:"正在读取订阅…", current:"当前套餐", drive:"AERTEX Drive", renew:"有效期",
@@ -682,7 +682,7 @@ export function billingSettingsContent(zh, view = "billing", locale = "") {
           studentFileReplace.disabled=!canUseForm;
           studentSubmit.disabled=!canUseForm||!studentConsent.checked||!studentEvidence(studentTarget.value);
         }
-        async function loadStudent(){
+        // 学生认证状态加载：读取后端认证记录并渲染当前阶段，避免仅根据本地上传/扫码动作假设“已认证”。\nasync function loadStudent(){
           try{
             const response=await fetch("/api/student-verification",{credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json"}});
             if(!response.ok)throw new Error("HTTP "+response.status);
@@ -717,7 +717,7 @@ export function billingSettingsContent(zh, view = "billing", locale = "") {
           const jsQR=mod.default||mod;
           return String(jsQR(imageData.data,imageData.width,imageData.height,{inversionAttempts:"attemptBoth"})?.data||"");
         }
-        async function decodeQrLocally(file){
+        // 本地 QR 解码：仅用于从用户选择的图片提取官方验证目标，图片无需先上传服务器；解析结果仍会经过后端目标白名单校验。\nasync function decodeQrLocally(file){
           studentFeedback.textContent="";
           if(!file)return;
           if(file.size>5*1024*1024){clearStudentPreview();studentFeedback.textContent=copy.tooLarge;return}
@@ -759,7 +759,7 @@ export function billingSettingsContent(zh, view = "billing", locale = "") {
             syncStudentControls();
           }
         }
-        async function load(){
+        // Billing 主加载：读取账户 billing state/entitlements 后更新套餐、额度和学生优惠区域；失败时使用明确不可用状态而不是伪造免费/付费结果。\nasync function load(){
           try{
             const response=await fetch("/api/billing/state",{credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json"}});
             if(!response.ok)throw new Error("HTTP "+response.status);

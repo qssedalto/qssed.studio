@@ -97,7 +97,7 @@ export function storageSettingsContent(zh, locale = "") {
     </section>
   `;
 }
-export function storageClientScript(zh, loginUrl, locale = "") {
+// Storage 客户端：统一负责文件列表、配额、上传、下载和删除。所有对象操作只使用服务端返回的 object reference，不直接拼底层 R2 key。\nexport function storageClientScript(zh, loginUrl, locale = "") {
   const copy = STORAGE_COPY[locale] || STORAGE_COPY[zh ? "zh-cn" : "en-us"];
 
   return `
@@ -271,7 +271,7 @@ export function storageClientScript(zh, loginUrl, locale = "") {
           setApiStatus(copy.notAuthorized, "error");
         }
 
-        async function storageRequest(path, options) {
+        // Storage 请求 helper：统一凭据、错误解析和会话过期处理。401/403 与普通网络错误要分别反馈，避免用户误以为文件丢失。\nasync function storageRequest(path, options) {
           const headers = new Headers(options?.headers || {});
           let response;
           try {
@@ -402,7 +402,7 @@ export function storageClientScript(zh, loginUrl, locale = "") {
           hasStorageSnapshot = true;
         }
 
-        async function refreshFiles(options) {
+        // 刷新文件列表：支持缓存快速显示和强制刷新；真实服务端结果回来后再更新配额/文件指纹，避免频繁无意义重绘。\nasync function refreshFiles(options) {
           const config = options || {};
           const force = Boolean(config.force);
           const silent = Boolean(config.silent);
@@ -479,7 +479,7 @@ export function storageClientScript(zh, loginUrl, locale = "") {
           await refreshFiles({ force: true });
         }
 
-        async function uploadFiles(selected) {
+        // 批量上传：逐个/分批把用户选择的文件送到受控 Storage API，并在每个文件结束后更新状态。浏览器文件名不等于最终存储 key。\nasync function uploadFiles(selected) {
           const queue = Array.from(selected || []);
           if (!queue.length || isBusy) return;
 
@@ -559,7 +559,7 @@ export function storageClientScript(zh, loginUrl, locale = "") {
           }
         }
 
-        async function deleteFile(file, button) {
+        // 删除文件：使用服务端返回的对象引用执行 DELETE；删除前确认，成功后从当前列表移除并刷新配额。\nasync function deleteFile(file, button) {
           if (isBusy || !window.confirm(message(copy.deleteConfirm, { name: file.name }))) return;
 
           refreshSequence += 1;

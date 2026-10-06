@@ -28,7 +28,7 @@ export function isCompactMenuRoot(path) {
   return COMPACT_MENU_ROOTS.has(path);
 }
 
-export function compactBackHref(path, zh) {
+// 紧凑导航返回目标：根据当前页面层级决定“返回上一级还是回主菜单”，避免每个移动端页面自己硬编码返回地址。\nexport function compactBackHref(path, zh) {
   const prefix = prefixFor(zh);
   if (path === "/") return prefix;
 
@@ -47,7 +47,7 @@ export function compactBackHref(path, zh) {
   return `${prefix}`;
 }
 
-export function compactBackScript(path, zh) {
+// 移动/窄屏返回按钮脚本：只负责 UI 导航行为，不参与业务数据保存。需要在离开前保存状态的页面应由自身模块处理。\nexport function compactBackScript(path, zh) {
   const fallbackHref = compactBackHref(path, zh);
   const knowledgePath = path.startsWith(KNOWLEDGE_ROOT);
   const menuRoot = COMPACT_MENU_ROOTS.has(path);

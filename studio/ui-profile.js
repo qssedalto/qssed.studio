@@ -34,7 +34,7 @@ const PROFILE_STATUS_COPY = {
 };
 PROFILE_STATUS_COPY["en-gb"]=PROFILE_STATUS_COPY["en-us"]; PROFILE_STATUS_COPY["en-au"]=PROFILE_STATUS_COPY["en-us"];
 
-export function profileContent(path, zh, locale = "") {
+// Profile 页面路由渲染：根据 path 选择资料主页、审计、安全等内容，保持同一账户中心壳结构。\nexport function profileContent(path, zh, locale = "") {
   const activeLocale=locale||(zh?"zh-cn":"en-us");
   const pc=PROFILE_COPY[activeLocale]||PROFILE_COPY["en-us"];
   if (path.endsWith("/account")) return accountAuditContent(zh, activeLocale);
@@ -167,7 +167,7 @@ export function accountAuditContent(zh, locale = "") {
   `;
 }
 
-export function profileClientScript(locale = "en-us") {
+// Profile 客户端逻辑：负责资料 hydration、编辑 sheet、链接增删和头像/背景上传。所有写操作最终都走 /api/profile，由服务端确认用户身份。\nexport function profileClientScript(locale = "en-us") {
   const activeLocale = locale || "en-us";
   return `<script>
       /* PROFILE_HOME_V3 */
@@ -263,7 +263,7 @@ export function profileClientScript(locale = "en-us") {
       function closeProfileSheets() {
         document.documentElement.classList.remove("profile-sheet-open"); const backdrop=document.getElementById("profile-sheet-backdrop"); document.querySelectorAll(".profile-sheet.is-open").forEach(sheet=>{sheet.classList.remove("is-open");sheet.setAttribute("aria-hidden","true")}); if(backdrop){backdrop.classList.remove("is-visible");setTimeout(()=>{if(!document.querySelector(".profile-sheet.is-open")) backdrop.hidden=true},220);}
       }
-      async function saveProfilePersonalization() {
+      // 保存资料个性化：收集当前表单白名单字段发给服务端；成功后更新本地缓存与 UI，失败时不应先乐观覆盖服务器状态。\nasync function saveProfilePersonalization() {
         if(!profileHomeState.user) return;
         const button=document.getElementById("profile-save-button"); button.disabled=true; button.textContent=profileHomeIsZh()?"正在保存…":"Saving…";
         const interests=document.getElementById("profile-edit-interests").value.split(/[,，]/).map(x=>x.trim()).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).slice(0,12);
@@ -311,7 +311,7 @@ export function profileClientScript(locale = "en-us") {
         const map={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"};
         return map[file?.type] || "";
       }
-      async function uploadProfileMedia(file, kind) {
+      // 头像/背景上传：先做浏览器侧大小/类型体验校验，再由后端执行真正限制和存储。前端检查不能替代服务端检查。\nasync function uploadProfileMedia(file, kind) {
         if(!profileHomeState.user || !file) return null;
         const max=kind==="avatar"?5*1024*1024:8*1024*1024;
         const ext=profileMediaExtension(file);
@@ -372,7 +372,7 @@ export function profileClientScript(locale = "en-us") {
         document.querySelectorAll("[data-link-preset]").forEach(button=>button.addEventListener("click",()=>{document.getElementById("profile-link-title").value=button.dataset.linkPreset;}));
         window.addEventListener("keydown",event=>{if(event.key==="Escape")closeProfileSheets();});
       }
-      async function hydrateProfileHome(user) {
+      // Profile hydration：先恢复可用缓存，再请求最新 profile/links/audit 摘要并重绘；缓存键绑定 userId，避免不同账户串资料。\nasync function hydrateProfileHome(user) {
         if(!document.querySelector("[data-profile-home]") || !user) return;
         profileHomeState.user=user;
         const cached=readProfileHomeCache(user.id);

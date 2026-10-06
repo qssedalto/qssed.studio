@@ -175,7 +175,7 @@ const DASHBOARD_COPY = {
 DASHBOARD_COPY["en-gb"]=DASHBOARD_COPY["en-us"];
 DASHBOARD_COPY["en-au"]=DASHBOARD_COPY["en-us"];
 
-export function dashboardContent(zh, options = {}, locale = "") {
+// Dashboard 内容生成器：组合账户摘要、快捷入口、愿望/状态等卡片。这里主要负责展示编排，具体数据规则应留在 API/模型层。\nexport function dashboardContent(zh, options = {}, locale = "") {
   const activeLocale = locale || options?.activeLocale || (zh ? "zh-cn" : "en-us");
   const prefix = "/" + activeLocale;
   const ui = shellText(activeLocale);
@@ -368,7 +368,7 @@ export function dashboardContent(zh, options = {}, locale = "") {
         wishNameInput?.addEventListener("input", paintWish);
         paintWish();
 
-        const paint = () => {
+        // Dashboard 客户端重绘：从当前缓存/异步数据状态更新各卡片。重复调用必须是幂等的，不能每次重绘都重复绑定事件。\n  const paint = () => {
           const now = new Date();
           if (time) time.textContent = new Intl.DateTimeFormat(locale, { hour:"2-digit", minute:"2-digit", hour12:false }).format(now);
           if (date) date.textContent = new Intl.DateTimeFormat(locale, { year:"numeric", month:"long", day:"numeric", weekday:"short" }).format(now);

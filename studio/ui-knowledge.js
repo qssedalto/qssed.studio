@@ -153,7 +153,7 @@ export function knowledgePageMeta(path, zh, locale = "") {
   return { section:"info", title:itemLabel(route.item, locale, zh), description:content?.summary || categoryDescription(route.category, ui, zh) };
 }
 
-export function knowledgeContent(path, zh, locale = "") {
+// Knowledge 页面分派：根据解析后的知识路由选择首页、分类页或主题页；具体内容来自静态知识定义和共享 UI helper。\nexport function knowledgeContent(path, zh, locale = "") {
   const route = getKnowledgeRoute(path);
   if (!route) throw new Error("Unhandled knowledge path: " + path);
   if (route.type === "root") return knowledgeRootContent(zh, locale);
@@ -224,7 +224,7 @@ function topicSummary(category, item, zh, locale) {
   return CONTENT_BY_CATEGORY[category.slug]?.[item[0]]?.[zh ? "zh" : "en"]?.summary || categoryDescription(category, ui, zh);
 }
 
-function knowledgeTopicContent(category, item, zh, locale) {
+// 主题详情页：按 section 顺序渲染知识内容，并通过统一 renderer 处理代码/列表等结构，避免每篇文章手写页面 HTML。\nfunction knowledgeTopicContent(category, item, zh, locale) {
   const ui = knowledgeUi(locale, zh);
   const localized = CONTENT_BY_CATEGORY[category.slug]?.[item[0]]?.[zh ? "zh" : "en"];
   if (!localized) throw new Error(`Missing knowledge content: ${category.slug}/${item[0]}`);

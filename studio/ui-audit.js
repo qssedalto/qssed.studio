@@ -7,7 +7,7 @@
  * 修改注意：不要随意改掉已有 id/data-* 属性，它们可能被事件绑定、自动测试或别的模块引用；动态插入用户文本时要继续做转义。
  * 响应式注意：桌面布局正常并不代表窄屏正常，修改结构后至少检查大屏、平板和手机断点。
  */
-export function auditClientScript(ipInfo) {
+// 账户审计客户端：组合登录事件、设备和资料摘要，供 Profile/Security 页面展示。它只显示服务端已有审计数据，不自行判断账户是否“安全”。\nexport function auditClientScript(ipInfo) {
   return `
     <script>
       const auditRequestContext = ${JSON.stringify({
@@ -51,7 +51,7 @@ export function auditClientScript(ipInfo) {
         return { user_agent: ua, browser, os, device_type, device_name: browser + " on " + os };
       }
 
-      async function updateCurrentDevice(user) {
+      // 当前设备登记：根据稳定 device id + 解析后的 User-Agent 更新服务端设备记录；device id 用于区分设备，不是认证凭据。\nasync function updateCurrentDevice(user) {
         if (!user) return null;
         const device = parseAuditUserAgent();
         const device_id = getAuditDeviceId();
@@ -272,7 +272,7 @@ export function auditClientScript(ipInfo) {
         writeProfileCache(PROFILE_SUMMARY_CACHE_KEY, snapshot);
       }
 
-      async function hydrateProfileAudit(user) {
+      // 审计 hydration：并行读取事件/设备，分别记录错误，让其中一个来源失败时另一个仍可展示。\nasync function hydrateProfileAudit(user) {
         if (!document.getElementById("audit-created-at") && !document.getElementById("audit-current-device")) return;
 
         const cached = readProfileCache(PROFILE_AUDIT_CACHE_KEY);
@@ -326,7 +326,7 @@ export function auditClientScript(ipInfo) {
         }
       }, 0);
 
-      function renderAccountAudit(user, events, devices, eventsError, devicesError) {
+      // 审计总渲染：把事件/设备数据映射成统计、时间线和设备卡；errors 参数用于明确标注数据源不可用，而不是显示误导性的 0。\nfunction renderAccountAudit(user, events, devices, eventsError, devicesError) {
         const set = (id, value) => { const el = document.getElementById(id); if (el) el.innerText = value || "-"; };
         set("audit-created-at", formatAuditDate(user.created_at));
         set("audit-user-id", user.id);

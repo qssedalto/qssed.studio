@@ -145,7 +145,7 @@ const NOTES_COPY = {
   }
 };
 
-export function researchNotesContent(zh, locale = "") {
+// Research Notes 页面：左侧列表/搜索，右侧正文编辑，写操作全部通过 /api/notes。自动保存逻辑与 Drafts 类似但数据模型独立。\nexport function researchNotesContent(zh, locale = "") {
   const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
   const copy = NOTES_COPY[activeLocale] || NOTES_EN;
 
@@ -305,7 +305,7 @@ export function researchNotesContent(zh, locale = "") {
             return value;
           }
 
-          async function api(path, options) {
+          // Notes 请求 helper：统一获取会话 token/凭据、JSON 错误和缓存策略；页面其他函数不直接拼认证头。\nasync function api(path, options) {
             const access = await token();
             const headers = new Headers(options?.headers || {});
             headers.set('Authorization', 'Bearer ' + access);
@@ -504,7 +504,7 @@ export function researchNotesContent(zh, locale = "") {
             }
           }
 
-          async function saveNote(label) {
+          // 保存当前 Note：读取编辑器快照后 PUT，成功再更新列表摘要；失败时保留编辑内容并提示，不应清空用户正文。\nasync function saveNote(label) {
             if (!selectedId || loadingNote) return;
             const sequence = ++saveSequence;
             setState(copy.saving, false);
@@ -524,7 +524,7 @@ export function researchNotesContent(zh, locale = "") {
             }
           }
 
-          function queueSave() {
+          // 防抖自动保存：输入变化只排队一次短延迟保存，降低网络写入频率，同时保持关闭/切换前可显式 flush。\nfunction queueSave() {
             updateCharCount();
             if (!selectedId || loadingNote) return;
             window.clearTimeout(saveTimer);

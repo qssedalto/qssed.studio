@@ -28,7 +28,7 @@ import { osStyles } from "./ui-styles.js";
 import { shellText } from "./i18n-ui.js";
 import { localeDirection } from "./locale.js";
 
-export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", productLinks = {}) {
+// AERTEX 主壳页面生成器：统一输出侧栏、顶部区域、主内容容器、共享外观/账户状态脚本。具体功能页只提供 content，不应重复整个壳。\nexport function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", productLinks = {}) {
   const publicMode = Boolean(productLinks?.publicMode);
   const path = pathname;
   const zh = t === TEXT.zh;
@@ -156,7 +156,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
     const compactViewKey = "qssed-compact-view-v2";
     const compactMedia = window.matchMedia("(max-width:1050px)");
 
-    function applyCompactViewMode() {
+    // 窄屏模式切换：根据 viewport 给侧栏/主内容应用紧凑布局。这里仅控制布局状态，不改变当前路由和业务数据。\nfunction applyCompactViewMode() {
       if (!compactMedia.matches) {
         document.documentElement.classList.remove("compact-content-view", "compact-menu-view");
         return;
@@ -323,7 +323,7 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
       return { user: session.user, definiteSignedOut: false, transient: true };
     }
 
-    async function hydrateOsUser() {
+    // 用户信息 hydration：页面先用缓存快速绘制，再异步读取真实会话/资料覆盖；缓存只用于体验，不能当作权限依据。\nasync function hydrateOsUser() {
       const authState = await readStableOsUser();
       const data = { user: authState.user };
       if (!data.user) {
@@ -741,7 +741,7 @@ function renderCompactMainMenu(copy, productLinks = {}) {
   `;
 }
 
-export function renderOsNav(copy, activeSection, currentPath = "", productLinks = {}) {
+// 主导航渲染：根据 activeSection/currentPath 决定高亮和产品入口；导航项 URL 应来自统一配置/route helper，避免不同页面链接漂移。\nexport function renderOsNav(copy, activeSection, currentPath = "", productLinks = {}) {
   const locale = productLinks.activeLocale || copy.locale || (copy.platform.includes("个人") ? "zh-cn" : "en-us");
   const zh = locale === "zh-cn";
   const workHref = String(productLinks?.workHref || "");
