@@ -1,3 +1,4 @@
+// 初学者导读：管理员会话校验层；负责确认请求确实属于被授权的管理员。其他 admin API 应复用这里而不是各自实现一套鉴权。
 import { SUPABASE_URL, SUPABASE_KEY } from "../studio/config.js";
 import { mainOriginForRequest, rootDomainForHost } from "../studio/domain-family.js";
 import { adminCanonicalPath as localizedAdminPath, adminLocaleFromPath } from "./i18n.js";
