@@ -1,3 +1,13 @@
+/**
+ * 【初学者导读】
+ * 文件：AW-Sync/native/aw-sync.mjs
+ * 旧版/调试用 JavaScript 同步实现：用于协议对照和故障排查，不是普通用户当前安装的主客户端。
+ * 建议阅读链路：main.rs → runtime.rs → activitywatch.rs / sync.rs → state.rs / credentials.rs → ui.rs。
+ * 数据流：ActivityWatch 本地 REST API → Rust 结构体 → 去重/游标/批处理 → AERTEX Watch Data API → 本地状态更新。
+ * 错误处理：网络不可用、JSON 结构变化、重复事件和 ActivityWatch 未启动都应是可恢复错误，不能直接让后台线程崩溃。
+ * 安全原则：设备令牌只存 Windows Credential Manager；日志和 state.json 不应包含完整令牌。
+ * 修改后至少运行 cargo fmt --check、cargo clippy、cargo test，并通过 scripts/watch-cloud-check.mjs。
+ */
 #!/usr/bin/env node
 import fs from "node:fs/promises";
 import os from "node:os";

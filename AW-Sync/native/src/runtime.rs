@@ -1,3 +1,11 @@
+// 【初学者导读】
+// 文件：AW-Sync/native/src/runtime.rs
+// 后台运行时：协调 ActivityWatch 探测、云端连接、定时同步、重试与 UI 状态更新。
+// 建议阅读链路：main.rs → runtime.rs → activitywatch.rs / sync.rs → state.rs / credentials.rs → ui.rs。
+// 数据流：ActivityWatch 本地 REST API → Rust 结构体 → 去重/游标/批处理 → AERTEX Watch Data API → 本地状态更新。
+// 错误处理：网络不可用、JSON 结构变化、重复事件和 ActivityWatch 未启动都应是可恢复错误，不能直接让后台线程崩溃。
+// 安全原则：设备令牌只存 Windows Credential Manager；日志和 state.json 不应包含完整令牌。
+// 修改后至少运行 cargo fmt --check、cargo clippy、cargo test，并通过 scripts/watch-cloud-check.mjs。
 use crate::activitywatch::ActivityWatchClient;
 use crate::credentials;
 use crate::logging;

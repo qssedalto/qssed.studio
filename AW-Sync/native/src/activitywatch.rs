@@ -1,3 +1,11 @@
+// 【初学者导读】
+// 文件：AW-Sync/native/src/activitywatch.rs
+// ActivityWatch 本地 API 适配层：负责发现 127.0.0.1 上的 ActivityWatch、读取 Bucket 与 Event，并把异常分类。
+// 建议阅读链路：main.rs → runtime.rs → activitywatch.rs / sync.rs → state.rs / credentials.rs → ui.rs。
+// 数据流：ActivityWatch 本地 REST API → Rust 结构体 → 去重/游标/批处理 → AERTEX Watch Data API → 本地状态更新。
+// 错误处理：网络不可用、JSON 结构变化、重复事件和 ActivityWatch 未启动都应是可恢复错误，不能直接让后台线程崩溃。
+// 安全原则：设备令牌只存 Windows Credential Manager；日志和 state.json 不应包含完整令牌。
+// 修改后至少运行 cargo fmt --check、cargo clippy、cargo test，并通过 scripts/watch-cloud-check.mjs。
 use crate::model::{ActivityEvent, ActivityWatchEndpoint, BucketMetadata};
 use reqwest::blocking::Client;
 use serde_json::Value;
