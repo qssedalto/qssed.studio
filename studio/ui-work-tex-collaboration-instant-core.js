@@ -1,3 +1,4 @@
+// 初学者导读：TeX 即时协作的核心前端状态机；负责本地编辑与远端增量之间的协调，是避免回环更新和冲突的关键层。
 import { enhanceWorkTexCollaboration as enhanceWarmWorkTexCollaboration } from "./ui-work-tex-collaboration-performance.js";
 
 function replaceExact(source, needle, replacement) {
