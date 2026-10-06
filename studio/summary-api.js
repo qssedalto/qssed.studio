@@ -1,3 +1,4 @@
+// 初学者导读：摘要/聚合 API：把多个工作区来源整理成首页或概览需要的轻量数据，避免 UI 为了一个摘要发大量底层请求。
 import { hasStorageBinding, verifyStorageUser } from "./storage-api.js";
 import { json } from "./routing.js";
 import { workerLog } from "./server-runtime.js";
