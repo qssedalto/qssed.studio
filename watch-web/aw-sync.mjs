@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：watch-web/aw-sync.mjs
+ * AERTEX Watch 网页端：把 ActivityWatch 云端 Bucket/Event 转换成统计、图表和设备连接界面。
+ * 阅读顺序：先找入口/初始化函数，再看状态对象、事件监听或请求处理；随后沿 API、存储或本机调用追踪真正副作用。
+ * 初学者重点：把“界面/请求入口”“业务规则”“数据读写”“错误处理”分层理解，排错会快很多。
+ * 修改注意：保持已有接口、DOM 标识和数据格式兼容；重要规则变化时同步更新自动检查。
+ * 调试方法：先复现最小输入，再观察中间状态；不要通过删除校验或异常处理来“修复”症状。
+ */
 #!/usr/bin/env node
 import fs from "node:fs/promises";
 import os from "node:os";

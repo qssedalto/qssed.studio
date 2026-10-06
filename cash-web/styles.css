@@ -1,3 +1,10 @@
+/*
+ * 【初学者导读】
+ * 文件：cash-web/styles.css
+ * AERTEX Cash 网页端：负责现金页面的结构、样式、状态和交互。
+ * 阅读顺序：先按页面区域寻找选择器，再看 CSS 变量、布局和媒体查询；最后回到 HTML/JS 找这些 class 从哪里产生。
+ * 修改注意：主色/主题变量应复用全站共享变量；响应式改动至少检查桌面、平板和手机。
+ */
 :root{color-scheme:light dark;--bg:#f5f5f7;--panel:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#d2d2d7;--grid:#e8e8ed;--accent:#0071e3;--accent-soft:#e8f2ff;--accent-ink:#fff;--positive:#167445;--danger:#b42318;--warning:#9b6817;--actual:#167445;--budget:#8e67c8;--plan:#d47a20;--forecast:#3b7fc4;--actual-soft:#eaf7ef;--budget-soft:#f3edfb;--plan-soft:#fff3e6;--forecast-soft:#eaf3fc;--shadow:0 1px 3px rgba(0,0,0,.04)}
 @media(prefers-color-scheme:dark){:root{--bg:#101113;--panel:#1c1c1e;--text:#f5f5f7;--muted:#a1a1a6;--line:#3a3a3c;--grid:#2c2c2e;--accent:#4aa3ff;--accent-soft:#17324f;--positive:#58c68b;--danger:#ff6961;--warning:#f0b557;--actual:#58c68b;--budget:#b69ae0;--plan:#f0a45b;--forecast:#78afe3;--actual-soft:#183327;--budget-soft:#2d253a;--plan-soft:#392b1c;--forecast-soft:#1c3044;--shadow:none}}
 :root[data-theme="light"]{color-scheme:light;--bg:#f5f5f7;--panel:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#d2d2d7;--grid:#e8e8ed;--positive:#167445;--danger:#b42318;--warning:#9b6817;--actual:#167445;--budget:#8e67c8;--plan:#d47a20;--forecast:#3b7fc4;--actual-soft:#eaf7ef;--budget-soft:#f3edfb;--plan-soft:#fff3e6;--forecast-soft:#eaf3fc;--shadow:0 1px 3px rgba(0,0,0,.04)}
