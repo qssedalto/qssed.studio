@@ -1,3 +1,4 @@
+// 初学者导读：Studio 主壳层的大部分共享 CSS；响应式与主题变量集中在这里，避免页面内出现互相覆盖的重复规则。
 import { dashboardStyles } from "./ui-style-dashboard.js";
 import { profileStyles } from "./ui-style-profile.js";
 import { knowledgeStyles } from "./ui-style-knowledge.js";
