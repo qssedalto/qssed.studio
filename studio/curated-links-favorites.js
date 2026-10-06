@@ -1,3 +1,4 @@
+// 初学者导读：收藏/常用精选链接定义；保持声明式数据，具体读写收藏由 favorites API 负责。
 const FAVORITES_UI = {
   "en-us":{favorite:"Favorites",empty:"No favorites yet",hint:"Use the star on a link to add it here.",add:"Add favorite",remove:"Remove favorite",local:"This device only",syncing:"Syncing…",cloud:"Synced",error:"Sync failed · saved locally",count:n=>n+" favorites"},
   "zh-cn":{favorite:"星标",empty:"还没有星标",hint:"点击链接上的星标即可添加。",add:"添加星标",remove:"取消星标",local:"仅此设备",syncing:"正在同步…",cloud:"已同步",error:"同步失败 · 已保留本地",count:n=>n+" 个星标"},
