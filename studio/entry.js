@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/entry.js
+ * 路由/入口模块：负责把请求按域名、路径和产品边界分发到真正的页面或 API。
+ * 阅读顺序：先找 export/主入口，再沿事件、路由或 API 调用向下；看到共享 helper 时先确认它是否被多个产品复用。
+ * 数据流：输入通常来自 Request、会话或前端状态；重点跟踪校验、状态转换、存储读写以及最终 Response/DOM 输出。
+ * 修改注意：这是入口/安全敏感区域，域名、重定向、会话和设备判断都应保持最小权限原则。
+ * 调试方法：先锁定调用链，再打印/检查最小必要状态，不要从最终页面表现反推所有中间步骤。
+ */
 import { OS_PATHS, LEGACY_REDIRECTS, TEXT, SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { handleAuthHandoff } from "./auth-handoff.js";
 import {
