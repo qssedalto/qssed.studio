@@ -1,3 +1,4 @@
+// 初学者导读：全局搜索 API：聚合多个工作区来源并返回统一结果。搜索层只做授权后的可见数据聚合，不应越权跨用户读取。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { CURATED_LINK_CATEGORIES, CURATED_LINKS_CORE } from "./curated-links-core.js";
 import { CURATED_LINKS_EXTRA } from "./curated-links-extra.js";
