@@ -12,6 +12,9 @@
  * and is intentionally preserved across the workers that were later split from it.
  */
 
+// 管理后台 Cloudflare Worker 总入口。
+// 初学者阅读顺序：先看 fetch() 的边缘防护，再看 routeAdminRequest() 的“公开资源 -> handoff -> 管理 API -> 页面”分流，
+// 最后看 admin/session.js 如何验证管理员身份。这里本身不实现业务 CRUD，只负责把请求交给 admin/* 模块。
 import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
