@@ -60,9 +60,11 @@ assert(app.includes("/api/watch/tokens") && app.includes("/api/0/buckets/"), "Wa
 assert(app.includes("latestBucketsByHost") && app.includes("unionHostSegments"), "Watch metrics must select one current bucket per host and remove cross-device overlap.");
 assert(app.includes("afkEvents === null") && app.includes("if (!activeIntervals.length) return [];"), "Watch metrics must distinguish a missing AFK bucket from an all-AFK period.");
 assert(app.includes("function floodEvents") && app.includes("gap <= pulseMs"), "Watch metrics must reproduce ActivityWatch five-second flood behavior before AFK intersection.");
+assert(app.includes("for (let dayIndex=0; dayIndex<7; dayIndex++)") && app.includes("addDays(start,dayIndex+1)"), "Weekly Watch distribution must use local calendar-day boundaries instead of fixed 24-hour milliseconds.");
 assert(app.includes("appLabels") && app.includes('"msedge.exe":"Microsoft Edge"'), "Watch UI must preserve the uploaded custom dashboard app display names.");
 assert(worker.includes("MAX_EVENT_DURATION_SECONDS") && worker.includes("eventStart < endMs && eventEnd > startMs"), "Watch event reads must include events that overlap query boundaries.");
 assert(worker.includes('JSON.stringify([normalized.timestamp, normalized.data])'), "Watch heartbeat deduplication must ignore changing event duration.");
+assert(worker.includes('normalized.id !== undefined') && worker.includes('"id:" + normalized.id'), "Watch heartbeat deduplication must prefer stable ActivityWatch event IDs when present.");
 assert(worker.includes("events = await mergeEvents([], events)"), "Watch event reads must deduplicate legacy overlapping heartbeat copies.");
 assert(sync.includes("http://127.0.0.1:5600"), "Native sync must default to ActivityWatch localhost.");
 assert(sync.includes("https://awd.qsseda.com"), "Native sync must default to the short cloud data domain.");
@@ -90,6 +92,7 @@ assert(nativeMain.includes('windows_subsystem = "windows"'), "Release client mus
 assert(nativeCredentials.includes("CredWriteW") && nativeCredentials.includes("CredReadW"), "Device tokens must use Windows Credential Manager.");
 assert(nativeAutostart.includes("HKEY_CURRENT_USER") && nativeAutostart.includes("--background"), "Native client must register per-user background startup.");
 assert(nativeDiscovery.includes("5000..=6000") && nativeDiscovery.includes("SCAN_CONCURRENCY"), "Native client must implement bounded localhost ActivityWatch discovery.");
+assert(read("AW-Sync/native/src/sync.rs").includes("DateTime::parse_from_rfc3339(&event.timestamp)"), "Native sync progress must compare RFC3339 timestamps as instants, not strings.");
 assert(nativeWorkflow.includes("windows-latest") && nativeWorkflow.includes("cargo clippy") && nativeWorkflow.includes("AERTEX-Watch-Sync-Setup.exe") && nativeWorkflow.includes("Inno Setup"), "Native Windows installer build workflow is incomplete.");
 assert(nativeWorkflow.includes("watch/releases/windows/AERTEX-Watch-Sync-Setup.exe"), "Windows installer must publish to the fixed R2 key.");
 assert(!nativeWorkflow.includes("path: AW-Sync/native/dist/AERTEX-Watch-Sync.exe"), "Portable executable must not be published as the user-facing artifact.");
