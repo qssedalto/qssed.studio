@@ -1,3 +1,5 @@
+# 生产总部署：主站、Work、Intelligence、Cash、Watch、Administration。
+# 先运行整套仓库回归检查，再按独立 Wrangler 配置部署各 Worker，最后做真实域名健康检查；任何一个产品失败都应阻止“看似成功”的整站发布。
 name: Deploy AERTEX Production
 
 on:
