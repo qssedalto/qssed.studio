@@ -13,7 +13,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 
-export async function handleAccountSecurity(request, action) {
+// 账户安全 API 总入口：按 action 返回账户摘要/审计/设备，或更新当前设备。所有动作都基于当前 session，不读取客户端伪造的 userId。\nexport async function handleAccountSecurity(request, action) {
   if (!new Set(["summary", "audit", "device"]).has(action)) return json({ error: "Unknown account action." }, 404);
   const expectedMethod = action === "device" ? "POST" : "GET";
   if (request.method !== expectedMethod) return json({ error: "Method not allowed" }, 405);
@@ -47,7 +47,7 @@ async function accountSummary(session) {
   }), session.cookies);
 }
 
-async function accountAudit(session) {
+// 账户审计读取：组合登录事件、设备等安全记录，并只返回 UI 需要的字段；内部服务错误不应原样暴露。\nasync function accountAudit(session) {
   const eventsUrl = new URL(`${SUPABASE_URL}/rest/v1/login_events`);
   eventsUrl.searchParams.set("select", "id,event_type,success,provider,ip_address,country,region,city,browser,os,device_type,device_id,risk_level,created_at");
   eventsUrl.searchParams.set("user_id", `eq.${session.user.id}`);
@@ -87,7 +87,7 @@ async function accountAudit(session) {
   }), session.cookies);
 }
 
-async function updateDevice(request, session) {
+// 当前设备更新：清洗 deviceId、名称和 UA 派生信息后写后端。deviceId 是设备标识，不等于可用于登录的凭据。\nasync function updateDevice(request, session) {
   let body;
   try { body = await request.json(); } catch { return withStudioSessionCookies(json({ error: "Invalid request body." }, 400), session.cookies); }
   const deviceId = cleanDeviceId(body?.device_id);

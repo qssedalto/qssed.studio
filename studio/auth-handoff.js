@@ -15,7 +15,7 @@ import { studioSessionCookies, withStudioSessionCookies } from "./session-gate.j
 import { isServiceHost, rootDomainForHost, serviceOrigin } from "./domain-family.js";
 import { localeDirection, localeFromPath, normalizeSupportedLocale } from "./locale.js";
 
-export async function handleAuthHandoff(request, env, locale) {
+// 认证交接入口：验证请求来源/Fetch Metadata，再解析目标产品 next，最后把认证站产生的 token 安全交给受信任子域。\nexport async function handleAuthHandoff(request, env, locale) {
   const requestUrl = new URL(request.url);
   const hostname = requestUrl.hostname.toLowerCase();
   const root = rootDomainForHost(hostname) || "qsseda.com";
@@ -74,7 +74,7 @@ export async function handleAuthHandoff(request, env, locale) {
   return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken, undefined, request));
 }
 
-export function normalizeHandoffNext(value, locale, workTarget = false, gptTarget = false, cashTarget = false, watchTarget = false) {
+// 交接 next 规范化：根据目标产品只允许其站内路径，拒绝任意绝对 URL 和跨产品逃逸路径。\nexport function normalizeHandoffNext(value, locale, workTarget = false, gptTarget = false, cashTarget = false, watchTarget = false) {
   const candidate = typeof value === "string" ? value.trim() : "";
   const baseLocale = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
   const candidateLocale = localeFromPath(candidate) || baseLocale;
@@ -125,7 +125,7 @@ export function scriptLiteral(value) {
   return JSON.stringify(String(value || "")).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
 
-export function authHandoffHtml(accessToken, refreshToken, next, workTarget = false, gptTarget = false, cashTarget = false, watchTarget = false, authOrigin = "https://auth.qsseda.com", retryNext = next) {
+// 交接 HTML：页面只做一次受控 postMessage/fetch/跳转，把 token 传给指定 AERTEX 产品并尽快离开；不要在 DOM 可见文本或 URL 查询串中暴露 token。\nexport function authHandoffHtml(accessToken, refreshToken, next, workTarget = false, gptTarget = false, cashTarget = false, watchTarget = false, authOrigin = "https://auth.qsseda.com", retryNext = next) {
   const product = workTarget ? "AERTEX Work" : gptTarget ? "AERTEX Intelligence" : cashTarget ? "AERTEX Cash" : watchTarget ? "AERTEX Watch" : "AERTEX";
   const locale = localeFromPath(next) || "en-us";
   const copy = {

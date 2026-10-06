@@ -13,7 +13,7 @@ export const QSS_DOMAIN_ROOTS = Object.freeze([
   "qsseda.studio"
 ]);
 
-export function rootDomainForHost(hostname) {
+// 根域识别：把 qsseda.com / qsseda.online / qsseda.studio 等同族域名归一化，后续服务 host 都从这个根域派生。\nexport function rootDomainForHost(hostname) {
   const host = String(hostname || "").trim().toLowerCase().replace(/\.$/, "");
   for (const root of QSS_DOMAIN_ROOTS) {
     if (host === root || host.endsWith(`.${root}`)) return root;
@@ -32,7 +32,7 @@ export function serviceHost(root, service = "") {
   return label ? `${label}.${normalizedRoot}` : normalizedRoot;
 }
 
-export function serviceOrigin(root, service = "") {
+// 服务 Origin 构造：从可信 root + 固定 service 名生成 https Origin；不要用它拼用户输入的任意子域。\nexport function serviceOrigin(root, service = "") {
   return `https://${serviceHost(root, service)}`;
 }
 
@@ -74,7 +74,7 @@ export function adminOriginForRequest(request) {
   return serviceOrigin(rootDomainForRequest(request) || "qsseda.com", "admin");
 }
 
-export function isServiceHost(hostname, service) {
+// 服务域名判断：统一识别 auth/work/aw/gpt/cash/admin 等子域，避免不同 Worker 各写一套字符串比较。\nexport function isServiceHost(hostname, service) {
   const root = rootDomainForHost(hostname);
   return Boolean(root) && String(hostname || "").toLowerCase() === serviceHost(root, service);
 }

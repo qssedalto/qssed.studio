@@ -31,7 +31,7 @@ const LAB_COPY = {
   "ar-sa":{eyebrow:"مساحة العمل · Lab",title:"المختبر",intro:"حاوية موحدة لأدوات TeX والذكاء الاصطناعي ومعالجة الوسائط والهندسة. يمكن فتح قدرات Studio المتاحة مباشرة، بينما تُعرض الأدوات المستقبلية بوضوح على أنها مخطط لها.",search:"البحث في الأدوات أو القدرات أو التصنيفات…",all:"الكل",ready:"متاح",planned:"مخطط",tools:"أدوات",categories:"تصنيفات",readyCount:"أدوات متاحة",plannedCount:"أدوات مخططة",open:"فتح الأداة",plannedAction:"غير متاحة بعد",empty:"لا توجد أدوات مطابقة",emptyDetail:"جرّب كلمة أخرى أو تصنيفًا مختلفًا.",registry:"سجل الأدوات",registryIntro:"لا يخزن Lab بيانات العمل بنفسه؛ تحتفظ كل أداة ببيانات حسابها وحدود صلاحياتها الخاصة."}
 };
 
-export function labContent(zh, locale = "") {
+// Lab 页面：展示实验性功能目录并支持按状态/分类/关键词筛选。这里是实验入口目录，不承担实验工具本身的安全授权。\nexport function labContent(zh, locale = "") {
   const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
   const copy = LAB_COPY[activeLocale] || LAB_EN;
   const localizedRegistry = LAB_TOOL_LOCALIZATIONS[activeLocale] || null;
@@ -93,7 +93,7 @@ export function labContent(zh, locale = "") {
   `;
 }
 
-function renderTool(tool, localeKey, copy, localizedRegistry) {
+// 单个 Lab 工具卡渲染：从受控 registry 读取标题、描述、状态和链接；未知字段不会直接作为 HTML 注入。\nfunction renderTool(tool, localeKey, copy, localizedRegistry) {
   const localized = localizedRegistry?.tools?.[tool.id] || null;
   const category = localizedRegistry?.categories?.[tool.category] || LAB_TOOL_CATEGORIES[tool.category]?.[localeKey] || tool.category;
   const title = localized?.[0] || tool.title?.[localeKey] || tool.id;

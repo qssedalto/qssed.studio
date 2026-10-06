@@ -22,7 +22,7 @@ const BIRTHDAY_COPY = {
 };
 BIRTHDAY_COPY["en-gb"]=BIRTHDAY_COPY["en-us"]; BIRTHDAY_COPY["en-au"]=BIRTHDAY_COPY["en-us"];
 
-export function birthdayPage(locale = "en-us") {
+// 生日祝福独立页面：输出动画场景、文案和交互。它是纯展示页面，不读取账户隐私数据。\nexport function birthdayPage(locale = "en-us") {
   const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
   const zh = code.startsWith("zh");
   const copy = BIRTHDAY_COPY[code] || BIRTHDAY_COPY["en-us"];
@@ -701,7 +701,7 @@ export function birthdayPage(locale = "en-us") {
         ctx.setTransform(ratio,0,0,ratio,0,0);
       }
 
-      function burst(originY){
+      // 生日粒子爆发：仅更新 canvas/粒子数组，用于视觉效果；应限制粒子数量，避免长时间动画导致性能持续增长。\nfunction burst(originY){
         if(reduceMotion) return;
         resize();
         particles = [];

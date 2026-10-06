@@ -64,7 +64,7 @@ function sharedStyles() {
   `;
 }
 
-function accountLinksScript(zh, mode, locale = "") {
+// 账户链接客户端脚本：根据 mode 加载私人/社区链接，处理快速新增、搜索和状态提示；所有持久化仍走 User Links API。\nfunction accountLinksScript(zh, mode, locale = "") {
   const code = workspaceLocale(zh, locale);
   const prefix = localePrefix(zh, code);
   const mineHref = `${prefix}/info/links/mine`;
@@ -106,7 +106,7 @@ function accountLinksScript(zh, mode, locale = "") {
           return result?.data?.session || null;
         }
 
-        async function fetchLinks() {
+        // 获取当前模式链接：使用当前 Supabase session token，请求后端返回已按权限过滤的数据。前端不会自行猜哪些链接“应该可见”。\nasync function fetchLinks() {
           if (!session) return [];
           const response = await fetch('/api/user-links', { headers: { ...authHeaders(), Accept:'application/json' }, cache:'no-store' });
           if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -123,7 +123,7 @@ function accountLinksScript(zh, mode, locale = "") {
           el.classList.toggle('is-success', kind === 'success');
         }
 
-        async function createQuickLink(event) {
+        // 快速新增链接：前端先标准化 URL/标题用于体验，服务端仍会再次清洗并强制 ownerId 为当前用户。\nasync function createQuickLink(event) {
           event.preventDefault();
           const input = document.getElementById('links-quick-url');
           const button = document.getElementById('links-quick-submit');
@@ -217,7 +217,7 @@ function accountLinksScript(zh, mode, locale = "") {
   `;
 }
 
-export function linksHubContent(zh, locale = "") {
+// Links Hub：提供私人、精选、社区等入口和数量摘要，具体列表由各子页面独立加载。\nexport function linksHubContent(zh, locale = "") {
   const code=workspaceLocale(zh,locale),prefix=localePrefix(zh,code),all=LINKS_WORKSPACE_COPY[code]||LINKS_WORKSPACE_COPY["en-us"],copy=all.hub;
   return `${sharedStyles()}
     <div class="links-hub">

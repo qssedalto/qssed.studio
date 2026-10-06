@@ -23,7 +23,7 @@ const ROUTE_EXEMPTION_MAX_AGE = 60 * 60 * 24 * 30;
 const EXEMPTION_CODE = "AERTEX-HW-7K9Q-26";
 const ACCOUNT_MARKER_COOKIE = "__Secure-qsseda-account-id";
 
-export async function huaweiHarmonyGate(request) {
+// 华为/Harmony 访问门禁总入口：识别设备/路由标记、账户豁免与挑战状态，决定继续访问、跳转验证或返回不支持页面。\nexport async function huaweiHarmonyGate(request) {
   const invalidRoute = invalidHuaweiRouteResponse(request);
   if (invalidRoute) return invalidRoute;
   if (hasDeviceRouteMarker(request)) return handleHuaweiExemptionRoute(request);
@@ -107,7 +107,7 @@ function brandedNotFound(request) {
   }), 404);
 }
 
-async function huaweiAccountExemption(request) {
+// 账户豁免检查：根据已登录账户查询是否具备管理员授予的华为访问豁免；设备特征本身不能伪造账户豁免。\nasync function huaweiAccountExemption(request) {
   let session;
   try {
     session = await verifyStudioPageSession(request);
@@ -256,7 +256,7 @@ function hasDeviceRouteMarker(request) {
   }
 }
 
-async function handleHuaweiExemptionRoute(request) {
+// 豁免验证路由：处理明确的验证/预览路径并设置受控 Cookie；普通业务路径不会直接接受用户自带的“已豁免”参数。\nasync function handleHuaweiExemptionRoute(request) {
   if (hasHuaweiRouteExemptionCookie(request)) return null;
 
   const method = String(request?.method || "GET").toUpperCase();
@@ -530,7 +530,7 @@ function isExplicitPreviewRequest(request) {
   }
 }
 
-export function isHuaweiOrHarmonyRequest(request) {
+// 设备识别：综合 UA/Client Hints 等信号判断华为/Harmony 环境。识别结果用于路由策略，不等同于用户身份。\nexport function isHuaweiOrHarmonyRequest(request) {
   const headers = request?.headers;
   if (!headers) return false;
 

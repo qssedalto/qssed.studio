@@ -22,7 +22,7 @@ function cleanText(value, max) {
   return String(value ?? "").replace(/\u0000/g, "").slice(0, max);
 }
 
-function normalizeSummary(input, ownerId, updatedAt = new Date().toISOString()) {
+// 总结字段白名单：title/source/purpose/core/points/evidence/limits/actions/tags 等统一限长和补默认值，避免客户端写任意未知字段。\nfunction normalizeSummary(input, ownerId, updatedAt = new Date().toISOString()) {
   const source = input && typeof input === "object" ? input : {};
   return {
     owner_id: ownerId,
@@ -56,7 +56,7 @@ async function readSummaryObject(env, key, ownerId) {
   }
 }
 
-export async function handleSummaries(request, env) {
+// Summaries API：每个用户维护一份结构化总结对象，GET 读取、PUT 覆盖规范化后的字段。对象 key 由当前 userId 派生。\nexport async function handleSummaries(request, env) {
   const auth = await verifyStorageUser(request, env);
   if (auth.error) return auth.error;
   if (!hasStorageBinding(env)) return json({ error: "Summary storage is temporarily unavailable." }, 503);

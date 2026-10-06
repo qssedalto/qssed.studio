@@ -181,7 +181,7 @@ function wishStyles(){
   </style>`;
 }
 
-function wishBuilder(prefix,text,copy,availableKinds){
+// 祝福构建器：根据允许的 kind 生成预览/分享路径，kind 来自白名单，不接受用户自定义模板代码。\nfunction wishBuilder(prefix,text,copy,availableKinds){
   if(!availableKinds.length) return `<div class="wish-empty-builder">${copy.noBuilder}</div>`;
   const kind=availableKinds[0];
   const label=kind==="birthday"?text.birthday:text.midAutumn;
@@ -261,7 +261,7 @@ function wishesCategory(prefix,text,copy,id){
   `;
 }
 
-export function wishesContent(path = "/wishes", locale = "en-us") {
+// Wishes 路由总入口：根据路径生成愿望 Hub、分类页或单个祝福构建器；用户输入的姓名只作为文本/URL 参数处理。\nexport function wishesContent(path = "/wishes", locale = "en-us") {
   if (!String(path).startsWith("/wishes")) { locale=path || "en-us"; path="/wishes"; }
   const code=normalizeSupportedLocale(locale)||(locale==="zh"?"zh-cn":"en-us");
   const prefix="/"+code;

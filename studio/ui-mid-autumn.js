@@ -22,7 +22,7 @@ const MID_AUTUMN_COPY = {
 };
 MID_AUTUMN_COPY["en-gb"]=MID_AUTUMN_COPY["en-us"]; MID_AUTUMN_COPY["en-au"]=MID_AUTUMN_COPY["en-us"];
 
-export function midAutumnPage(locale = "en-us") {
+// 中秋祝福独立页面：生成信件/舞台/烟花动画和本地化文案，不依赖账户业务 API。\nexport function midAutumnPage(locale = "en-us") {
   const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
   const zh = code.startsWith("zh");
   const copy = MID_AUTUMN_COPY[code] || MID_AUTUMN_COPY["en-us"];
@@ -831,7 +831,7 @@ export function midAutumnPage(locale = "en-us") {
       }
     }
 
-    function scheduleBursts(){
+    // 烟花调度：用定时器安排随机爆发；关闭场景时必须配对 clearBursts，防止页面隐藏后定时器继续创建粒子。\nfunction scheduleBursts(){
       clearBursts();
       if(reduceMotion) return;
       var plan = [
@@ -850,7 +850,7 @@ export function midAutumnPage(locale = "en-us") {
       });
     }
 
-    function clearBursts(){
+    // 清理烟花定时器：场景关闭/离开时释放所有已安排 timeout，避免后台持续工作。\nfunction clearBursts(){
       burstTimers.forEach(clearTimeout);
       burstTimers = [];
     }

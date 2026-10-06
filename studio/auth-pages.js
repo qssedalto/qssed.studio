@@ -311,7 +311,7 @@ export function notFoundPage(t, links, options = {}) {
 `;
 }
 
-export function signUpPage(t, links, ipInfo) {
+// 注册页面生成器：前端分步收集用户名、姓名、生日、性别、邮箱、密码，并提供即时校验；最终注册规则仍由 account-api 服务端再次执行。\nexport function signUpPage(t, links, ipInfo) {
   const zh = t === TEXT.zh;
   const enforceChineseNameRules = ZH_COUNTRIES.includes(ipInfo?.country || "");
   const copy = zh ? {
@@ -734,7 +734,7 @@ export function signUpPage(t, links, ipInfo) {
       }
     }
 
-    async function checkUsernameAvailability() {
+    // 用户名即时可用性检查：做防抖/本地格式校验后请求服务端。结果只用于 UX；提交注册时必须再次检查，防止竞态。\nasync function checkUsernameAvailability() {
       const value = usernameInput.value.trim();
       usernameIsAvailable = false;
       setButtonState(usernameNextBtn, false);
@@ -1026,7 +1026,7 @@ export function signUpPage(t, links, ipInfo) {
       special: document.getElementById("password-rule-special")
     };
 
-    function passwordChecks(value) {
+    // 前端密码强度提示：与服务端 registrationPasswordChecks 规则对齐；前端提示不能成为唯一强制手段。\nfunction passwordChecks(value) {
       return {
         length: value.length >= 8,
         number: /\\d/.test(value),
@@ -1143,7 +1143,7 @@ export function signUpPage(t, links, ipInfo) {
 </html>
 `;
 }
-export function loginPage(t, links, ipInfo) {
+// 登录页面生成器：处理标识符、密码、错误文案和已登录重定向。真正认证由服务端 Auth API 完成。\nexport function loginPage(t, links, ipInfo) {
   return `
 <!DOCTYPE html>
 <html>
@@ -1229,7 +1229,7 @@ export function loginPage(t, links, ipInfo) {
       window.location.href = dashboardUrl;
     });
 
-    async function redirectIfLoggedIn() {
+    // 已登录快速跳转：页面加载后检查现有会话，避免已登录用户重复看到登录表单；跳转目标仍需经过安全 next 规则。\nasync function redirectIfLoggedIn() {
       const { data } = await supabaseClient.auth.getUser();
 
       if (data.user) {

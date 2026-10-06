@@ -13,7 +13,7 @@ import { getWorkerRequestId, recordServerLoginEvent } from "./account-api.js";
 import { studioSessionCookies, withStudioSessionCookies } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 
-export async function handleIdentifierPasswordLogin(request, env, ipInfo) {
+// “用户名/邮箱 + 密码”登录入口：把用户输入的 identifier 解析为真实认证邮箱/账户，再复用服务端密码登录逻辑。避免让前端自己查询账户映射。\nexport async function handleIdentifierPasswordLogin(request, env, ipInfo) {
   const startedAt = Date.now();
   const logContext = {
     request_id: getWorkerRequestId(request),
@@ -105,7 +105,7 @@ export async function handleIdentifierPasswordLogin(request, env, ipInfo) {
   );
 }
 
-export function identifierLoginPage(markup, t, zh) {
+// 登录页面增强：把原始邮箱输入改造成支持用户名/邮箱的 identifier UI，同时保持底层密码认证接口不变。\nexport function identifierLoginPage(markup, t, zh) {
   const placeholder = zh ? "用户名或邮箱" : "Username or email";
   const emptyMessage = zh ? "请输入用户名或邮箱和密码。" : "Please enter username or email and password.";
   return String(markup || "")

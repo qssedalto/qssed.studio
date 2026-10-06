@@ -109,7 +109,7 @@ export function accountMenuMarkup(locale = "en-us") {
 </div>`;
 }
 
-export function accountMenuClientScript(options = {}) {
+// 账户菜单客户端：读取当前会话/身份，渲染头像与账户状态，并处理退出/离开产品。菜单显示状态不是权限来源，真正权限仍由服务端会话决定。\nexport function accountMenuClientScript(options = {}) {
   const config = {
     summaryUrl: options.summaryUrl || "/api/account/security/summary",
     logoutUrl: options.logoutUrl || "/api/auth/logout",
@@ -199,12 +199,12 @@ export function accountMenuClientScript(options = {}) {
   document.addEventListener("click",event=>{if(!root.contains(event.target))closeMenu()});
   document.addEventListener("keydown",event=>{if(event.key==="Escape")closeMenu()});
 
-  async function localLogout(){
+  // 本地退出：调用当前产品的 logout/session 清理接口，再更新页面状态；不要只清前端变量而留下 HttpOnly 会话 Cookie。\nasync function localLogout(){
     try{
       await fetch(config.logoutUrl,{method:"POST",credentials:"same-origin",headers:{Accept:"application/json","Content-Type":"application/json"},body:"{}",cache:"no-store"});
     }catch{}
   }
-  async function leave(preserve){
+  // 离开当前产品：可选择是否保留全局账户会话，再跳回主站/认证站。preserve 只影响交接体验，不改变账号本身。\nasync function leave(preserve){
     closeMenu();
     await localLogout();
     if(config.authMode){

@@ -7,7 +7,7 @@
  * 修改注意：不要随意改掉已有 id/data-* 属性，它们可能被事件绑定、自动测试或别的模块引用；动态插入用户文本时要继续做转义。
  * 响应式注意：桌面布局正常并不代表窄屏正常，修改结构后至少检查大屏、平板和手机断点。
  */
-export function polishLinksContent(content, pathname, zh) {
+// Links 页面视觉/结构修整：在不改变底层链接数据源的前提下统一卡片、导航和当前路径高亮。\nexport function polishLinksContent(content, pathname, zh) {
   let output = String(content || "");
 
   if (pathname === "/info/links") {

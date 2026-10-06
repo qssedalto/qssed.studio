@@ -132,7 +132,7 @@ export function notesContent(zh, locale = "") {
   return '<section class="os-card is-large status-card"><h2>'+copy.notes[0]+'</h2><p>'+copy.notes[1]+'</p></section>';
 }
 
-export function summariesContent(zh, locale = "") {
+// Summaries 页面：提供结构化研究/资料总结表单并自动保存到 /api/summaries；本地旧草稿只在服务器为空时迁移一次。\nexport function summariesContent(zh, locale = "") {
   let text = zh ? {
     eyebrow: "摘要工作区",
     title: "开始写摘要",
@@ -308,9 +308,9 @@ export function summariesContent(zh, locale = "") {
           function fill(summary){const map={title:'summary-title',source:'summary-source',purpose:'summary-purpose',core:'summary-core',points:'summary-points',evidence:'summary-evidence',limits:'summary-limits',actions:'summary-actions',tags:'summary-tags'};Object.entries(map).forEach(([key,id])=>{const field=document.getElementById(id);if(field)field.value=summary?.[key]||''});count();}
           async function token(){const result=await supabaseClient.auth.getSession();const value=result?.data?.session?.access_token;if(!value)throw new Error(${JSON.stringify((INFO_COPY[locale]||INFO_COPY[zh?'zh-cn':'en-us']).sessionExpired)});return value;}
           async function api(path,options){const access=await token();const headers=new Headers(options?.headers||{});headers.set('Authorization','Bearer '+access);if(options?.body)headers.set('Content-Type','application/json;charset=UTF-8');const response=await fetch(path,{...options,headers,cache:'no-store'});if(!response.ok){const payload=await response.json().catch(()=>({}));throw new Error(payload?.error||${JSON.stringify(text.unavailable)});}return response.json();}
-          async function save(label){const sequence=++saveSequence;setState(${JSON.stringify(text.saving)},false);try{await api('/api/summaries',{method:'PUT',body:JSON.stringify(snapshot())});if(sequence!==saveSequence)return;setState(label||${JSON.stringify(text.saved)},false);}catch(error){if(sequence!==saveSequence)return;setState(error?.message||${JSON.stringify(text.unavailable)},true);}}
+          // Summary 自动保存：使用 saveSequence 丢弃过期响应，防止较慢的旧 PUT 把新编辑状态标记成已保存。\nasync function save(label){const sequence=++saveSequence;setState(${JSON.stringify(text.saving)},false);try{await api('/api/summaries',{method:'PUT',body:JSON.stringify(snapshot())});if(sequence!==saveSequence)return;setState(label||${JSON.stringify(text.saved)},false);}catch(error){if(sequence!==saveSequence)return;setState(error?.message||${JSON.stringify(text.unavailable)},true);}}
           function queueSave(){count();if(!ready)return;window.clearTimeout(timer);timer=window.setTimeout(()=>void save(${JSON.stringify(text.autosaved)}),700);}
-          async function migrateLocalDraftIfNeeded(serverSummary){if(serverSummary)return false;let local=null;try{local=JSON.parse(localStorage.getItem('qssed-summary-draft-v1')||'null');}catch{}if(!local||typeof local!=='object')return false;const migrated={title:local['summary-title']||'',source:local['summary-source']||'',purpose:local['summary-purpose']||'',core:local['summary-core']||'',points:local['summary-points']||'',evidence:local['summary-evidence']||'',limits:local['summary-limits']||'',actions:local['summary-actions']||'',tags:local['summary-tags']||''};if(!Object.values(migrated).some(value=>String(value||'').trim()))return false;fill(migrated);await api('/api/summaries',{method:'PUT',body:JSON.stringify(migrated)});try{localStorage.removeItem('qssed-summary-draft-v1')}catch{}setState(${JSON.stringify(text.migration)},false);return true;}
+          // 旧 localStorage 草稿迁移：只有云端尚无 summary 时才迁移，避免旧本地数据覆盖已经存在的服务器版本。\nasync function migrateLocalDraftIfNeeded(serverSummary){if(serverSummary)return false;let local=null;try{local=JSON.parse(localStorage.getItem('qssed-summary-draft-v1')||'null');}catch{}if(!local||typeof local!=='object')return false;const migrated={title:local['summary-title']||'',source:local['summary-source']||'',purpose:local['summary-purpose']||'',core:local['summary-core']||'',points:local['summary-points']||'',evidence:local['summary-evidence']||'',limits:local['summary-limits']||'',actions:local['summary-actions']||'',tags:local['summary-tags']||''};if(!Object.values(migrated).some(value=>String(value||'').trim()))return false;fill(migrated);await api('/api/summaries',{method:'PUT',body:JSON.stringify(migrated)});try{localStorage.removeItem('qssed-summary-draft-v1')}catch{}setState(${JSON.stringify(text.migration)},false);return true;}
           async function initialize(){setState(${JSON.stringify(text.loading)},false);try{const data=await api('/api/summaries',{method:'GET'});fill(data?.summary||null);const migrated=await migrateLocalDraftIfNeeded(data?.summary||null);if(!migrated)setState(data?.summary?${JSON.stringify(text.saved)}:${JSON.stringify(text.empty)},false);ready=true;}catch(error){ready=true;setState(error?.message||${JSON.stringify(text.unavailable)},true);}}
 
           fields.forEach(field=>field.addEventListener('input',queueSave));
@@ -329,7 +329,7 @@ export function searchContent(zh, locale = "") {
   return '<section class="os-card is-large status-card"><h2>'+copy.search[0]+'</h2><p>'+copy.search[1]+'</p></section>';
 }
 
-export function informationContent(path, zh, locale = "") {
+// Information 区路由分派：根据 path 选择 Links / Notes / Summaries / Search 等子页面，具体数据逻辑由各自模块负责。\nexport function informationContent(path, zh, locale = "") {
   const copy=INFO_COPY[locale]||INFO_COPY[zh?"zh-cn":"en-us"];
   if (path === "/info") return '<section class="os-card is-large status-card"><h2>'+copy.info[0]+'</h2><p>'+copy.info[1]+'</p></section>';
   if (path === "/info/knowledge" || path.startsWith("/info/knowledge/")) return knowledgeContent(path, zh, locale);
