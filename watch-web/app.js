@@ -1,9 +1,11 @@
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
+  const $$ = selector => [...document.querySelectorAll(selector)];
   const locale = location.pathname.split("/").filter(Boolean)[0] || "en-us";
   const zh = locale.toLowerCase().startsWith("zh");
-  let buckets = {};
+  const palette = ["#ff654c","#5f8fe8","#38a67a","#8b73de","#e69a3b","#e05d8b","#4ca6b7","#7f8c9b"];
+  const state = { date:startOfDay(new Date()), range:"day", buckets:{}, apps:[], requestId:0 };
 
   function rootOrigin() {
     const host = location.hostname.toLowerCase();
@@ -12,23 +14,63 @@
     }
     return "/";
   }
-
-  function fmtDuration(seconds) {
-    const value = Math.max(0, Number(seconds || 0));
-    const hours = Math.floor(value / 3600);
-    const minutes = Math.round((value % 3600) / 60);
-    return hours ? hours + "h " + minutes + "m" : minutes + "m";
+  function startOfDay(date) { const value = new Date(date); value.setHours(0,0,0,0); return value; }
+  function addDays(date, days) { const value = new Date(date); value.setDate(value.getDate() + days); return value; }
+  function period() {
+    if (state.range === "day") return { start:startOfDay(state.date), end:addDays(startOfDay(state.date),1) };
+    const start = startOfDay(state.date);
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    return { start, end:addDays(start,7) };
   }
-
-  function fmtTime(value) {
+  function formatDateLabel() {
+    const now = startOfDay(new Date());
+    const range = period();
+    if (state.range === "week") {
+      const endDate = addDays(range.end,-1);
+      return (range.start.getMonth()+1) + "月" + range.start.getDate() + "日 – " + (endDate.getMonth()+1) + "月" + endDate.getDate() + "日";
+    }
+    const offset = Math.round((startOfDay(state.date)-now)/86400000);
+    if (offset === 0) return zh ? "今天" : "Today";
+    if (offset === -1) return zh ? "昨天" : "Yesterday";
+    if (!zh) return state.date.toLocaleDateString("en-US",{month:"short",day:"numeric",weekday:"short"});
+    return (state.date.getMonth()+1) + "月" + state.date.getDate() + "日 · 周" + "日一二三四五六"[state.date.getDay()];
+  }
+  function formatDuration(seconds, compact=false) {
+    const value = Math.max(0,Number(seconds||0));
+    if (!Number.isFinite(value) || value <= 0) return zh ? (compact ? "0 分钟" : "0 小时 00 分") : (compact ? "0 min" : "0h 00m");
+    const minutes = Math.round(value/60), hours = Math.floor(minutes/60), mins = minutes%60;
+    if (!hours) return zh ? mins + " 分钟" : mins + " min";
+    if (compact && !mins) return zh ? hours + " 小时" : hours + "h";
+    return zh ? hours + " 小时 " + String(mins).padStart(2,"0") + " 分" : hours + "h " + String(mins).padStart(2,"0") + "m";
+  }
+  function formatShort(seconds) {
+    const value = Math.max(0,Number(seconds||0));
+    if (value < 60) return zh ? Math.max(1,Math.round(value)) + " 秒" : Math.max(1,Math.round(value)) + " sec";
+    if (value < 3600) return zh ? Math.round(value/60) + " 分钟" : Math.round(value/60) + " min";
+    const hours = value/3600;
+    return (hours >= 10 ? Math.round(hours) : hours.toFixed(1)) + (zh ? " 小时" : " h");
+  }
+  function formatTime(value) {
     if (!value) return "—";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";
-    return new Intl.DateTimeFormat(zh ? "zh-CN" : "en-US", { month:"short", day:"numeric", hour:"2-digit", minute:"2-digit" }).format(date);
+    return new Intl.DateTimeFormat(zh ? "zh-CN" : "en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(date);
   }
-
-  async function api(path, options = {}) {
-    const response = await fetch(path, { credentials:"same-origin", cache:"no-store", ...options });
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+  }
+  function hash(value) { return [...String(value)].reduce((sum,char)=>((sum<<5)-sum+char.charCodeAt(0))|0,0); }
+  function appStyle(name) {
+    const color = palette[Math.abs(hash(name)) % palette.length];
+    return { color, soft:"color-mix(in srgb, " + color + ", transparent 84%)" };
+  }
+  function initials(name) {
+    if (/^[\u4e00-\u9fa5]/.test(name)) return name.slice(0,1);
+    return name.split(/\s+/).map(part=>part[0]).join("").slice(0,2).toUpperCase();
+  }
+  function appName(raw="Unknown") { return String(raw).replace(/\.exe$/i,""); }
+  async function api(path, options={}) {
+    const response = await fetch(path,{credentials:"same-origin",cache:"no-store",...options});
     if (!response.ok) {
       let detail = "";
       try { detail = (await response.json())?.error || ""; } catch {}
@@ -37,118 +79,275 @@
     return response.json();
   }
 
-  async function load() {
-    $("backHome").href = rootOrigin();
-    const [status, bucketMap] = await Promise.all([
-      api("/api/watch/status"),
-      api("/api/0/buckets/")
-    ]);
-    buckets = bucketMap || {};
-    renderStatus(status);
-    renderBuckets();
-    await renderToday();
+  function mergeIntervals(intervals) {
+    const sorted = intervals.filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
+    const result = [];
+    for (const interval of sorted) {
+      const last = result.at(-1);
+      if (last && interval.start <= last.end + 1000) last.end = Math.max(last.end,interval.end);
+      else result.push({...interval});
+    }
+    return result;
+  }
+  function eventInterval(event,start,end) {
+    const originalStart = new Date(event.timestamp).getTime();
+    return { start:Math.max(originalStart,start.getTime()), end:Math.min(originalStart+Number(event.duration||0)*1000,end.getTime()), event };
+  }
+  function activeWindowEvents(windowEvents,afkEvents,start,end) {
+    const activeIntervals = mergeIntervals(afkEvents.filter(event=>event.data?.status==="not-afk").map(event=>eventInterval(event,start,end)));
+    const windows = windowEvents.map(event=>eventInterval(event,start,end)).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
+    if (!activeIntervals.length) return windows;
+    const result = [];
+    let cursor = 0;
+    for (const window of windows) {
+      while (cursor < activeIntervals.length && activeIntervals[cursor].end <= window.start) cursor++;
+      for (let index=cursor; index<activeIntervals.length; index++) {
+        const active = activeIntervals[index];
+        if (active.start >= window.end) break;
+        const from = Math.max(window.start,active.start), to = Math.min(window.end,active.end);
+        if (to > from) result.push({start:from,end:to,event:window.event});
+      }
+    }
+    return result;
+  }
+  function metrics(segments,start,end) {
+    const total = segments.reduce((sum,segment)=>sum+(segment.end-segment.start)/1000,0);
+    const byApp = new Map();
+    const hourly = Array(state.range === "day" ? 24 : 7).fill(0);
+    let switches = 0, previousApp = "";
+    for (const segment of segments) {
+      const raw = segment.event.data?.app || segment.event.data?.application || "Unknown";
+      const seconds = (segment.end-segment.start)/1000;
+      const item = byApp.get(raw) || {raw,name:appName(raw),seconds:0,count:0,lastTitle:""};
+      item.seconds += seconds;
+      item.count += 1;
+      item.lastTitle = segment.event.data?.title || "";
+      byApp.set(raw,item);
+      if (previousApp && previousApp !== raw) switches++;
+      previousApp = raw;
+      if (state.range === "day") {
+        const cursor = new Date(segment.start);
+        while (cursor.getTime() < segment.end) {
+          const hourEnd = new Date(cursor);
+          hourEnd.setMinutes(60,0,0);
+          const boundary = Math.min(segment.end,hourEnd.getTime());
+          hourly[cursor.getHours()] += (boundary-cursor.getTime())/1000;
+          cursor.setTime(boundary);
+        }
+      } else {
+        const index = Math.min(6,Math.floor((segment.start-start.getTime())/86400000));
+        hourly[Math.max(0,index)] += seconds;
+      }
+    }
+    const sessions = [];
+    for (const segment of [...segments].sort((a,b)=>a.start-b.start)) {
+      const last = sessions.at(-1);
+      if (last && segment.start-last.end <= 5*60*1000) last.end = Math.max(last.end,segment.end);
+      else sessions.push({start:segment.start,end:segment.end});
+    }
+    const longestSession = Math.max(0,...sessions.map(session=>(session.end-session.start)/1000));
+    const deepSeconds = sessions.filter(session=>session.end-session.start>=25*60*1000).reduce((sum,session)=>sum+(session.end-session.start)/1000,0);
+    const elapsed = Math.max(0,Math.min(end.getTime(),Date.now())-start.getTime())/1000;
+    const away = Math.max(0,elapsed-total);
+    const switchPenalty = total ? Math.min(25,switches/Math.max(1,total/3600)*1.8) : 0;
+    const focusScore = Math.round(Math.max(0,Math.min(100,(deepSeconds/Math.max(1,total))*60+40-switchPenalty)));
+    return {total,hourly,switches,longestSession,deepSeconds,away,focusScore,apps:[...byApp.values()].sort((a,b)=>b.seconds-a.seconds),sessions};
+  }
+
+  async function loadSegments(start,end) {
+    const entries = Object.values(state.buckets||{});
+    const windows = entries.filter(bucket=>String(bucket.type||"").includes("currentwindow") || String(bucket.id||"").includes("window"));
+    const afks = entries.filter(bucket=>String(bucket.type||"").includes("afkstatus") || String(bucket.id||"").includes("afk"));
+    const all = [];
+    const query = new URLSearchParams({start:start.toISOString(),end:end.toISOString(),limit:"-1"}).toString();
+    for (const bucket of windows) {
+      try {
+        const windowEvents = await api("/api/0/buckets/" + encodeURIComponent(bucket.id) + "/events?" + query);
+        const afk = afks.find(item=>item.hostname && bucket.hostname && item.hostname===bucket.hostname) || afks[0];
+        let afkEvents = [];
+        if (afk) {
+          try { afkEvents = await api("/api/0/buckets/" + encodeURIComponent(afk.id) + "/events?" + query); } catch {}
+        }
+        all.push(...activeWindowEvents(windowEvents,afkEvents,start,end));
+      } catch {}
+    }
+    return all;
   }
 
   function renderStatus(status) {
-    const values = Object.values(status?.buckets || {});
+    const values = Object.values(status?.buckets||{});
     $("bucketCount").textContent = values.length;
-    $("lastSync").textContent = fmtTime(status?.last_sync);
-    $("lastSyncHost").textContent = status?.last_host || (zh ? "尚未连接" : "Not connected yet");
+    $("lastSync").textContent = values.length ? (zh ? "最近同步 " + formatTime(status?.last_sync) : "Last sync " + formatTime(status?.last_sync)) : (zh ? "等待电脑连接" : "Waiting for computer");
+    $("lastSyncHost").textContent = status?.last_host || (zh ? "尚未连接电脑" : "Not connected");
+    $("deviceName").textContent = status?.last_host || (zh ? "未连接电脑" : "No computer");
     $("syncLabel").textContent = values.length ? (zh ? "同步正常" : "Sync active") : (zh ? "等待电脑连接" : "Waiting for a computer");
-    $("syncDetail").textContent = values.length ? (zh ? values.length + " 个数据源" : values.length + " data sources") : (zh ? "在电脑上使用设备令牌完成连接" : "Use a device token on your computer to connect");
-    $("syncDot").classList.toggle("ok", Boolean(values.length));
+    $("syncDetail").textContent = values.length ? (zh ? values.length + " 个数据源已连接" : values.length + " data sources connected") : (zh ? "生成设备令牌后连接 Windows 客户端" : "Create a token to connect Windows");
+    $("syncDot").classList.toggle("ok",Boolean(values.length));
+    $("sourceHost").textContent = status?.last_host || "—";
+    $("sourceLastSync").textContent = formatTime(status?.last_sync);
+    $("connectionStatus").classList.toggle("online",Boolean(values.length));
+    $("connectionStatus").innerHTML = values.length ? "<i></i> 已连接" : "未连接";
   }
-
   function renderBuckets() {
-    const entries = Object.values(buckets || {}).sort((a,b) => String(b.last_sync || "").localeCompare(String(a.last_sync || "")));
+    const entries = Object.values(state.buckets||{}).sort((a,b)=>String(b.last_sync||"").localeCompare(String(a.last_sync||"")));
     if (!entries.length) {
-      $("buckets").innerHTML = '<p class="muted">' + (zh ? "还没有同步数据。连接电脑后，这里会显示 ActivityWatch 的数据源。" : "No synced data yet. Connect a computer to see its ActivityWatch data sources here.") + "</p>";
+      $("buckets").innerHTML = '<p class="muted">' + (zh ? "还没有同步数据。连接电脑后，这里会显示 ActivityWatch 的 Bucket。" : "No synced data yet.") + "</p>";
       return;
     }
     $("buckets").innerHTML = entries.map(bucket =>
       '<div class="bucket"><div><strong>' + escapeHtml(bucket.id) + '</strong><small>' +
-      escapeHtml(bucket.type || "unknown") + " · " + escapeHtml(bucket.hostname || "unknown host") +
-      '</small></div><small>' + fmtTime(bucket.last_sync) + "</small></div>"
+      escapeHtml(bucket.type||"unknown") + " · " + escapeHtml(bucket.hostname||"unknown host") +
+      '</small></div><small>' + formatTime(bucket.last_sync) + "</small></div>"
     ).join("");
   }
-
-  async function renderToday() {
-    const windowBuckets = Object.values(buckets || {}).filter(bucket =>
-      String(bucket.type || "").includes("currentwindow") || String(bucket.id || "").includes("window")
-    );
-    if (!windowBuckets.length) {
-      $("todayDuration").textContent = "0m";
-      $("apps").innerHTML = '<p class="muted">' + (zh ? "还没有应用使用记录。" : "No app usage recorded yet.") + "</p>";
-      return;
-    }
-
-    const start = new Date();
-    start.setHours(0,0,0,0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-    const all = [];
-
-    for (const bucket of windowBuckets) {
-      const query = new URLSearchParams({ start:start.toISOString(), end:end.toISOString(), limit:"20000" });
-      try {
-        const events = await api("/api/0/buckets/" + encodeURIComponent(bucket.id) + "/events?" + query);
-        all.push(...events);
-      } catch {}
-    }
-
-    const byApp = new Map();
-    let total = 0;
-    for (const event of all) {
-      const duration = Math.max(0, Number(event.duration || 0));
-      const app = String(event?.data?.app || event?.data?.application || "Unknown");
-      total += duration;
-      byApp.set(app, (byApp.get(app) || 0) + duration);
-    }
-
-    $("todayDuration").textContent = fmtDuration(total);
-    const ranked = [...byApp.entries()].sort((a,b) => b[1]-a[1]).slice(0,10);
-    const max = ranked[0]?.[1] || 1;
-    $("apps").innerHTML = ranked.length ? ranked.map(([app,seconds]) =>
-      '<div class="app-row"><span>' + escapeHtml(app) + '</span><div class="bar"><i style="width:' +
-      Math.max(2, seconds/max*100).toFixed(1) + '%"></i></div><strong>' + fmtDuration(seconds) + "</strong></div>"
-    ).join("") : '<p class="muted">' + (zh ? "今天还没有应用使用记录。" : "No app usage recorded today.") + "</p>";
+  function renderChart(values) {
+    const chart = $("activityChart");
+    const max = Math.max(1,...values);
+    const peak = values.indexOf(max);
+    const labels = state.range === "day" ? values.map((_,i)=>i%3===0?String(i).padStart(2,"0"):"") : ["周一","周二","周三","周四","周五","周六","周日"];
+    chart.style.gridTemplateColumns = "repeat(" + values.length + ",1fr)";
+    chart.innerHTML = values.map((value,index)=>{
+      const height = value ? Math.max(4,(value/max)*100) : 2;
+      const tooltip = (state.range==="day" ? String(index).padStart(2,"0")+":00" : labels[index]) + " · " + formatShort(value);
+      return '<div class="bar-wrap"><div class="bar ' + (index===peak&&value?"peak":"") + '" style="--height:' + height + '%" data-label="' + tooltip + '"></div><span>' + labels[index] + "</span></div>";
+    }).join("");
   }
+  function appRow(app,total) {
+    const style = appStyle(app.raw);
+    const width = Math.max(2,(app.seconds/Math.max(1,total))*100);
+    return '<div class="app-row"><span class="app-logo" style="--logo-bg:' + style.soft + ';--logo-color:' + style.color + '">' +
+      initials(app.name) + '</span><span class="app-info"><strong title="' + escapeHtml(app.name) + '">' + escapeHtml(app.name) +
+      '</strong><small>' + app.count + ' 个片段</small></span><span class="app-progress"><i style="--width:' + width +
+      '%;--row-color:' + style.color + '"></i></span><span class="app-time">' + formatShort(app.seconds) + "</span></div>";
+  }
+  function renderApps(apps,total) {
+    state.apps = apps;
+    $("appList").innerHTML = apps.length ? apps.slice(0,5).map(app=>appRow(app,total)).join("") : '<div class="empty-state">这个时间段还没有应用活动</div>';
+    $("dialogList").innerHTML = apps.length ? apps.map(app=>appRow(app,total)).join("") : '<div class="empty-state">暂无活动</div>';
+  }
+  function renderTimeline(segments) {
+    const chronological = [...segments].sort((a,b)=>b.start-a.start).filter((segment,index,all)=>index===0 || segment.event.data?.app!==all[index-1].event.data?.app || all[index-1].start-segment.end>60000);
+    $("eventCount").textContent = segments.length + " 条";
+    $("timelineList").innerHTML = chronological.length ? chronological.slice(0,7).map(segment=>{
+      const raw = segment.event.data?.app || segment.event.data?.application || "Unknown";
+      const name = appName(raw);
+      const style = appStyle(raw);
+      const time = new Intl.DateTimeFormat(zh?"zh-CN":"en-US",{hour:"2-digit",minute:"2-digit",hour12:false}).format(segment.start);
+      return '<div class="timeline-item"><span class="timeline-time">' + time + '</span><i class="timeline-dot" style="--dot:' + style.color +
+        '"></i><span class="timeline-copy"><strong>' + escapeHtml(name) + '</strong><small title="' + escapeHtml(segment.event.data?.title||"") +
+        '">' + escapeHtml(segment.event.data?.title||"无窗口标题") + '</small></span><span class="timeline-duration">' +
+        formatShort((segment.end-segment.start)/1000) + "</span></div>";
+    }).join("") : '<div class="empty-state">这个时间段还没有活动记录</div>';
+  }
+  function renderMetrics(result) {
+    const total = result.total, switches = result.switches, longestSession = result.longestSession, deepSeconds = result.deepSeconds, away = result.away, focusScore = result.focusScore, apps = result.apps;
+    $("activeTime").textContent = formatDuration(total);
+    $("activeCompare").textContent = apps.length ? apps.length + " 个应用 · " + result.sessions.length + " 次使用时段" : "等待新的活动记录";
+    $("focusScore").textContent = focusScore;
+    $("focusProgress").style.width = focusScore + "%";
+    $("focusCaption").textContent = focusScore>=70 ? "节奏稳定，继续保持" : focusScore>=45 ? "保持一段连续专注" : "切换略多，试试减少打断";
+    $("longestSession").textContent = formatDuration(longestSession,true);
+    $("sessionCaption").textContent = longestSession>=1500 ? "已达到一次深度专注" : "25 分钟以上计为深度专注";
+    $("switchCount").textContent = switches.toLocaleString(zh?"zh-CN":"en-US");
+    $("switchCaption").textContent = total ? "平均每小时 " + Math.round(switches/Math.max(total/3600,1)) + " 次" : "应用间切换";
+    const ratio = total ? Math.round(deepSeconds/total*100) : 0;
+    $("focusDonut").style.setProperty("--value",ratio);
+    $("donutValue").textContent = ratio + "%";
+    $("deepTime").textContent = formatShort(deepSeconds);
+    $("fragmentTime").textContent = formatShort(Math.max(0,total-deepSeconds));
+    $("awayTime").textContent = formatShort(away);
+    renderChart(result.hourly);
+    renderApps(apps,total);
+  }
+  function updateControls() {
+    $("dateLabel").textContent = formatDateLabel();
+    $("dateInput").value = state.date.getFullYear() + "-" + String(state.date.getMonth()+1).padStart(2,"0") + "-" + String(state.date.getDate()).padStart(2,"0");
+    $$(".range-tabs button").forEach(button=>button.classList.toggle("active",button.dataset.range===state.range));
+    $("activitySubtitle").textContent = state.range==="day" ? "每小时的有效使用时长" : "本周每天的有效使用时长";
+  }
+  function showNotice(message) { $("notice").querySelector("span").textContent = message; $("notice").classList.remove("hidden"); }
+  function hideNotice() { $("notice").classList.add("hidden"); }
 
-  $("refreshButton").addEventListener("click", () => load().catch(showError));
-
-  $("createToken").addEventListener("click", async () => {
+  async function load() {
+    const requestId = ++state.requestId;
+    $("refreshButton").classList.add("loading");
+    hideNotice();
+    updateControls();
     try {
-      const result = await api("/api/watch/tokens", {
-        method:"POST",
-        headers:{ "content-type":"application/json" },
-        body:JSON.stringify({ name:navigator.platform || "ActivityWatch device" })
-      });
-      $("tokenValue").textContent = result.token;
-      $("tokenBox").hidden = false;
+      const [status,bucketMap] = await Promise.all([api("/api/watch/status"),api("/api/0/buckets/")]);
+      if (requestId !== state.requestId) return;
+      state.buckets = bucketMap || {};
+      renderStatus(status);
+      renderBuckets();
+      const range = period();
+      const segments = await loadSegments(range.start,range.end);
+      if (requestId !== state.requestId) return;
+      const result = metrics(segments,range.start,range.end);
+      renderMetrics(result);
+      renderTimeline(segments);
+      document.title = formatDuration(result.total,true) + " · AERTEX Watch";
     } catch (error) {
-      showError(error);
+      console.error(error);
+      showNotice((zh ? "无法读取 AERTEX Watch 数据：" : "Unable to load AERTEX Watch data: ") + (error?.message||String(error)));
+      $("syncLabel").textContent = zh ? "无法读取同步状态" : "Could not load sync status";
+      $("syncDetail").textContent = error?.message || String(error);
+      $("syncDot").classList.remove("ok");
+    } finally {
+      $("refreshButton").classList.remove("loading");
     }
-  });
-
-  $("copyToken").addEventListener("click", async () => {
-    const token = $("tokenValue").textContent;
-    if (!token) return;
-    await navigator.clipboard.writeText(token);
-    $("copyToken").textContent = zh ? "已复制" : "Copied";
-    setTimeout(() => $("copyToken").textContent = zh ? "复制" : "Copy", 1400);
-  });
-
-  function showError(error) {
-    $("syncLabel").textContent = zh ? "无法读取同步状态" : "Could not load sync status";
-    $("syncDetail").textContent = error?.message || String(error);
-    $("syncDot").classList.remove("ok");
   }
 
-  function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    })[char]);
+  function currentThemeMode() { return window.AERTEXTheme?.getMode?.() || document.documentElement.dataset.themeMode || "system"; }
+  function updateThemeButtons() {
+    const mode = currentThemeMode();
+    $$("[data-theme-value]").forEach(button=>button.classList.toggle("active",button.dataset.themeValue===mode));
+    $("themeButton").title = "主题：" + ({system:"跟随系统",light:"浅色",dark:"深色"}[mode] || mode);
+  }
+  function setTheme(mode) { window.AERTEXTheme?.setMode?.(mode); updateThemeButtons(); }
+
+  function bind() {
+    $("backHome").href = rootOrigin();
+    $("setupGuide").href = rootOrigin() + "/" + locale + "/aw/setup";
+    $("previousButton").addEventListener("click",()=>{state.date=addDays(state.date,state.range==="day"?-1:-7);load();});
+    $("nextButton").addEventListener("click",()=>{state.date=addDays(state.date,state.range==="day"?1:7);load();});
+    $("todayButton").addEventListener("click",()=>{state.date=startOfDay(new Date());load();});
+    $("refreshButton").addEventListener("click",load);
+    $("retryButton").addEventListener("click",load);
+    $("dateButton").addEventListener("click",()=>$("dateInput").showPicker?.());
+    $("dateInput").addEventListener("change",event=>{const parts=event.target.value.split("-").map(Number);state.date=new Date(parts[0],parts[1]-1,parts[2]);load();});
+    $$(".range-tabs button").forEach(button=>button.addEventListener("click",()=>{state.range=button.dataset.range;load();}));
+    $("themeButton").addEventListener("click",()=>{const order=["system","light","dark"],mode=currentThemeMode();setTheme(order[(order.indexOf(mode)+1)%order.length]);});
+    $$("[data-theme-value]").forEach(button=>button.addEventListener("click",()=>setTheme(button.dataset.themeValue)));
+    window.addEventListener("aertex-themechange",updateThemeButtons);
+    $("showAllApps").addEventListener("click",()=>$("appsDialog").showModal());
+    $("closeDialog").addEventListener("click",()=>$("appsDialog").close());
+    $("appsDialog").addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close();});
+    $$(".nav-item[data-target]").forEach(button=>button.addEventListener("click",()=>document.getElementById(button.dataset.target)?.scrollIntoView({behavior:"smooth",block:"start"})));
+    const observer = new IntersectionObserver(entries=>{
+      const visible = entries.filter(entry=>entry.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+      if (!visible) return;
+      $$(".nav-item[data-target]").forEach(button=>button.classList.toggle("active",button.dataset.target===visible.target.id));
+    },{rootMargin:"-15% 0px -65% 0px",threshold:[0,.2]});
+    $$(".section-anchor").forEach(section=>observer.observe(section));
+
+    $("createToken").addEventListener("click",async()=>{
+      try {
+        const result = await api("/api/watch/tokens",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name:navigator.platform||"ActivityWatch device"})});
+        $("tokenValue").textContent = result.token;
+        $("tokenBox").hidden = false;
+      } catch (error) { showNotice(error?.message||String(error)); }
+    });
+    $("copyToken").addEventListener("click",async()=>{
+      const token = $("tokenValue").textContent;
+      if (!token) return;
+      await navigator.clipboard.writeText(token);
+      $("copyToken").textContent = zh ? "已复制" : "Copied";
+      setTimeout(()=>$("copyToken").textContent=zh?"复制":"Copy",1400);
+    });
   }
 
-  load().catch(showError);
+  bind();
+  updateThemeButtons();
+  load();
+  setInterval(()=>{const today=startOfDay(new Date());if(state.range==="day"&&state.date.getTime()===today.getTime())load();},60000);
 })();
