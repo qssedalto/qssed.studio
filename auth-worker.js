@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX ID 的主 Worker；把会话 Cookie、登录/注册、OAuth、产品 handoff、品牌资源和安全响应头串成完整认证入口。任何新分支都要先判断是否可能绕过会话/Origin 校验。
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
