@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：scripts/tex-workbench-check.mjs
+ * CI 回归检查主题：tex workbench。
+ * 作用：把关键行为转成自动断言，让功能重构、UI 调整或部署配置变化在进入主分支前得到验证。
+ * 阅读顺序：先看脚本读取哪些源码/配置，再按 assert 的失败提示理解该模块必须继续满足的规则。
+ * 修改原则：测试失败时先定位真实原因；如果是实现偏离既有规则，应修实现；如果产品规则改变，则同时更新实现、测试和说明。
+ * 初学者提示：越接近路由、数据同步和本机桥接的检查，越应把“输入、边界条件、失败行为”写清楚。
+ */
 import fs from "node:fs";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
