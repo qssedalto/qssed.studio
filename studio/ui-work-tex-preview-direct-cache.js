@@ -1,3 +1,4 @@
+// 初学者导读：TeX 预览缓存策略：复用最近编译/预览结果以减少重复刷新。缓存只能优化显示，不能替代真实保存/版本记录。
 export function enhanceWorkTexPreviewDirectCache(markup) {
   return String(markup || "") + `
     <style id="qsseda-work-tex-mobile-pdf-scroll-fix">
