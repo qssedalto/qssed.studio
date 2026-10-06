@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/ui-billing.js
+ * 这是 AERTEX 前端 UI 模块（billing）：通常同时包含页面模板、局部状态、DOM 更新、事件绑定以及对后端 API 的调用。
+ * 阅读顺序：①先搜索页面上能看到的标题/按钮文字定位 render；②找 render 依赖的 state；③找 state 在哪里被 API/事件更新；④再去后端搜索相同 API 路径。
+ * 初学者提醒：HTML 字符串负责结构，CSS class 负责样式，事件监听负责交互，fetch/API 负责数据；这四层出现问题时要分别排查。
+ * 修改注意：不要随意改掉已有 id/data-* 属性，它们可能被事件绑定、自动测试或别的模块引用；动态插入用户文本时要继续做转义。
+ * 响应式注意：桌面布局正常并不代表窄屏正常，修改结构后至少检查大屏、平板和手机断点。
+ */
 const BILLING_CORE = {
   "zh-tw":{billingTitle:"訂閱與權益",billingIntro:"查看目前方案、有效期與 AERTEX Drive 權益。",progress:"學生驗證進度",pendingHelp:"你已提交學生驗證，目前正在等待審核。審核期間無法重複提交；如需重新提交，請先取消目前申請。",privacyTitle:"隱私提醒",studentPricingFootnote:"學生驗證通過後可使用學生價格；學生資格只影響價格，不改變方案容量與權益。",loading:"正在讀取訂閱…",current:"目前方案",renew:"有效期",free:"長期有效",plans:"可用方案",student:"學生資格",studentBenefitTitle:"學生價格",studentBenefitAction:"管理學生資格"},
   "ja-jp":{billingTitle:"サブスクリプションと特典",billingIntro:"現在のプラン、有効期間、AERTEX Drive の特典を確認します。",progress:"学生認証の進捗",pendingHelp:"学生認証はすでに提出され、審査待ちです。審査中は再提出できません。再提出する場合は現在の申請を取り消してください。",privacyTitle:"プライバシーに関する注意",studentPricingFootnote:"学生認証後は対応プランで学生価格を利用できます。学生資格は価格だけに影響し、容量や特典は変わりません。",loading:"サブスクリプションを読み込み中…",current:"現在のプラン",renew:"有効期限",free:"期限なし",plans:"利用可能なプラン",student:"学生資格",studentBenefitTitle:"学生価格",studentBenefitAction:"学生資格を管理"},

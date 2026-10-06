@@ -1,3 +1,12 @@
+/**
+ * 【初学者导读】
+ * 文件：studio/ui-lab.js
+ * 这是 AERTEX 前端 UI 模块（lab）：通常同时包含页面模板、局部状态、DOM 更新、事件绑定以及对后端 API 的调用。
+ * 阅读顺序：①先搜索页面上能看到的标题/按钮文字定位 render；②找 render 依赖的 state；③找 state 在哪里被 API/事件更新；④再去后端搜索相同 API 路径。
+ * 初学者提醒：HTML 字符串负责结构，CSS class 负责样式，事件监听负责交互，fetch/API 负责数据；这四层出现问题时要分别排查。
+ * 修改注意：不要随意改掉已有 id/data-* 属性，它们可能被事件绑定、自动测试或别的模块引用；动态插入用户文本时要继续做转义。
+ * 响应式注意：桌面布局正常并不代表窄屏正常，修改结构后至少检查大屏、平板和手机断点。
+ */
 import { LAB_TOOL_CATEGORIES, LAB_TOOLS, LAB_TOOL_LOCALIZATIONS } from "./lab-tools.js";
 import { normalizeSupportedLocale } from "./locale.js";
 import { escapeHtmlText } from "./html-utils.js";
