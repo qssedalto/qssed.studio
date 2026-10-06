@@ -6,12 +6,21 @@
   const zh = locale.toLowerCase().startsWith("zh");
   const palette = ["#ff654c","#5f8fe8","#38a67a","#8b73de","#e69a3b","#e05d8b","#4ca6b7","#7f8c9b"];
   const appLabels = {
-    "msedge.exe":"Microsoft Edge","chrome.exe":"Google Chrome","firefox.exe":"Firefox",
-    "chatgpt.exe":"ChatGPT","codex.exe":"Codex","code.exe":"Visual Studio Code",
-    "explorer.exe":"文件资源管理器","windowsterminal.exe":"Windows Terminal",
-    "powershell.exe":"PowerShell","cmd.exe":"命令提示符","wechat.exe":"微信","qq.exe":"QQ",
-    "winword.exe":"Microsoft Word","excel.exe":"Microsoft Excel","powerpnt.exe":"Microsoft PowerPoint",
-    "notepad.exe":"记事本","steamwebhelper.exe":"Steam","snippingtool.exe":"截图工具"
+    "msedge":"Microsoft Edge","msedge.exe":"Microsoft Edge","microsoft edge":"Microsoft Edge",
+    "microsoft-edge-stable":"Microsoft Edge","microsoft-edge":"Microsoft Edge","microsoft-edge-beta":"Microsoft Edge","microsoft-edge-dev":"Microsoft Edge",
+    "chrome":"Google Chrome","chrome.exe":"Google Chrome","google chrome":"Google Chrome","google-chrome":"Google Chrome","google-chrome-stable":"Google Chrome",
+    "chromium":"Chromium","chromium.exe":"Chromium","chromium-browser":"Chromium","chromium-browser-chromium":"Chromium",
+    "firefox":"Firefox","firefox.exe":"Firefox","firefox developer edition":"Firefox Developer Edition","firefoxdeveloperedition":"Firefox Developer Edition",
+    "librewolf":"LibreWolf","librewolf.exe":"LibreWolf","librewolf-portable.exe":"LibreWolf","waterfox":"Waterfox","waterfox.exe":"Waterfox",
+    "brave-browser":"Brave","brave browser":"Brave","brave.exe":"Brave","opera":"Opera","opera.exe":"Opera",
+    "arc":"Arc","arc.exe":"Arc","vivaldi":"Vivaldi","vivaldi-stable":"Vivaldi","vivaldi-snapshot":"Vivaldi","vivaldi.exe":"Vivaldi","orion":"Orion","yandex":"Yandex",
+    "chatgpt":"ChatGPT","chatgpt.exe":"ChatGPT","codex":"Codex","codex.exe":"Codex","code":"Visual Studio Code","code.exe":"Visual Studio Code",
+    "explorer":"文件资源管理器","explorer.exe":"文件资源管理器","windowsterminal":"Windows Terminal","windowsterminal.exe":"Windows Terminal",
+    "powershell":"PowerShell","powershell.exe":"PowerShell","cmd":"命令提示符","cmd.exe":"命令提示符",
+    "wechat":"微信","wechat.exe":"微信","qq":"QQ","qq.exe":"QQ",
+    "winword":"Microsoft Word","winword.exe":"Microsoft Word","excel":"Microsoft Excel","excel.exe":"Microsoft Excel",
+    "powerpnt":"Microsoft PowerPoint","powerpnt.exe":"Microsoft PowerPoint","notepad":"记事本","notepad.exe":"记事本",
+    "steamwebhelper":"Steam","steamwebhelper.exe":"Steam","snippingtool":"截图工具","snippingtool.exe":"截图工具"
   };
   const state = { date:startOfDay(new Date()), range:"day", buckets:{}, apps:[], requestId:0 };
 
