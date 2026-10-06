@@ -508,6 +508,38 @@ async function loadWebsiteSegments(start,end,activeSegments) {
       '</small></div><small>' + formatTime(bucket.last_sync) + "</small></div>"
     ).join("");
   }
+  // Watch 首页使用严格 CSP（style-src 'self'），因此不能把动态高度/颜色写进 innerHTML 的 style 属性。
+  // 先输出 data-*，插入 DOM 后再通过 CSSOM 设置样式；这也能避免浏览器把整张图退化成 4px 的默认柱。
+  function hydrateDynamicStyles(root) {
+    root.querySelectorAll("[data-bar-height]").forEach(bar=>{
+      const height = Math.max(0,Math.min(100,Number(bar.dataset.barHeight)||0));
+      bar.style.setProperty("--height",height + "%");
+      bar.removeAttribute("data-bar-height");
+    });
+    root.querySelectorAll(".app-row[data-progress-width]").forEach(row=>{
+      const color = row.dataset.toneColor || "var(--accent)";
+      const soft = row.dataset.toneSoft || "var(--accentSoft)";
+      const width = Math.max(0,Math.min(100,Number(row.dataset.progressWidth)||0));
+      const logo = row.querySelector(".app-logo");
+      const fill = row.querySelector(".app-progress > i");
+      if (logo) {
+        logo.style.setProperty("--logo-bg",soft);
+        logo.style.setProperty("--logo-color",color);
+      }
+      if (fill) {
+        fill.style.width = width + "%";
+        fill.style.background = color;
+      }
+      row.removeAttribute("data-progress-width");
+      row.removeAttribute("data-tone-color");
+      row.removeAttribute("data-tone-soft");
+    });
+    root.querySelectorAll(".timeline-dot[data-dot-color]").forEach(dot=>{
+      dot.style.setProperty("--dot",dot.dataset.dotColor || "var(--accent)");
+      dot.removeAttribute("data-dot-color");
+    });
+  }
+
   // 柱高按当前序列最大值归一化，图表表达“分布形状”而不是固定绝对刻度。
   function renderChart(values) {
     const chart = $("activityChart");
@@ -518,18 +550,19 @@ async function loadWebsiteSegments(start,end,activeSegments) {
     chart.innerHTML = values.map((value,index)=>{
       const height = value ? Math.max(4,(value/max)*100) : 2;
       const tooltip = (state.range==="day" ? String(index).padStart(2,"0")+":00" : labels[index]) + " · " + formatShort(value);
-      return '<div class="bar-wrap"><div class="bar ' + (index===peak&&value?"peak":"") + '" style="--height:' + height + '%" data-label="' + tooltip + '"></div><span>' + labels[index] + "</span></div>";
+      return '<div class="bar-wrap"><div class="bar ' + (index===peak&&value?"peak":"") + '" data-bar-height="' + height.toFixed(2) + '" data-label="' + escapeHtml(tooltip) + '"></div><span>' + labels[index] + "</span></div>";
     }).join("");
+    hydrateDynamicStyles(chart);
   }
   // 同一个 row renderer 服务 apps/windows/websites，进度条只相对当前列表最大项。
+  // data-* 只是渲染参数；真正的 CSS 在节点进入 DOM 后由 hydrateDynamicStyles() 设置，兼容严格 CSP。
   function usageRow(item,maxSeconds) {
     const style = appStyle(item.raw || item.name);
     const width = Math.max(4,Math.min(100,(item.seconds/Math.max(1,maxSeconds))*100));
     const subtitle = item.subtitle || (item.count + (zh ? " 个片段" : " segments"));
-    return '<div class="app-row"><span class="app-logo" style="--logo-bg:' + style.soft + ';--logo-color:' + style.color + '">' +
+    return '<div class="app-row" data-progress-width="' + width.toFixed(1) + '" data-tone-color="' + escapeHtml(style.color) + '" data-tone-soft="' + escapeHtml(style.soft) + '"><span class="app-logo">' +
       initials(item.name) + '</span><span class="app-info"><strong title="' + escapeHtml(item.name) + '">' + escapeHtml(item.name) +
-      '</strong><small title="' + escapeHtml(subtitle) + '">' + escapeHtml(subtitle) + '</small></span><span class="app-progress"><i style="width:' + width.toFixed(1) +
-      '%;background:' + style.color + '"></i></span><span class="app-time">' + formatShort(item.seconds) + "</span></div>";
+      '</strong><small title="' + escapeHtml(subtitle) + '">' + escapeHtml(subtitle) + '</small></span><span class="app-progress"><i></i></span><span class="app-time">' + formatShort(item.seconds) + "</span></div>";
   }
 
   // 每种 usage 模式显式说明统计口径，避免用户把窗口标题/网站聚合误认为第二套总屏幕时间。
@@ -557,6 +590,8 @@ async function loadWebsiteSegments(start,end,activeSegments) {
       (mode === "websites" ? (zh?"没有可用的网站活动。需要安装 ActivityWatch 浏览器 watcher。":"No website activity. A browser watcher is required.") : (zh?"这个时间段还没有活动":"No activity in this period.")) +
       '</div>';
     $("dialogList").innerHTML = items.length ? items.map(item=>usageRow(item,maxSeconds)).join("") : '<div class="empty-state">' + (zh?"暂无活动":"No activity") + '</div>';
+    hydrateDynamicStyles($("appList"));
+    hydrateDynamicStyles($("dialogList"));
   }
 
   // 一次准备三种 usage 数据集，切换 tab 只重绘，不重新发 API 请求。
@@ -578,11 +613,12 @@ async function loadWebsiteSegments(start,end,activeSegments) {
       const name = appName(raw);
       const style = appStyle(raw);
       const time = new Intl.DateTimeFormat(zh?"zh-CN":"en-US",{hour:"2-digit",minute:"2-digit",hour12:false}).format(segment.start);
-      return '<div class="timeline-item"><span class="timeline-time">' + time + '</span><i class="timeline-dot" style="--dot:' + style.color +
+      return '<div class="timeline-item"><span class="timeline-time">' + time + '</span><i class="timeline-dot" data-dot-color="' + escapeHtml(style.color) +
         '"></i><span class="timeline-copy"><strong>' + escapeHtml(name) + '</strong><small title="' + escapeHtml(segment.event.data?.title||"") +
         '">' + escapeHtml(segment.event.data?.title||"无窗口标题") + '</small></span><span class="timeline-duration">' +
         formatShort((segment.end-segment.start)/1000) + "</span></div>";
     }).join("") : '<div class="empty-state">这个时间段还没有活动记录</div>';
+    hydrateDynamicStyles($("timelineList"));
   }
   // result 是 metrics() 的一次性派生结果；这里不重新计算指标，防止展示层与算法层口径漂移。
   function renderMetrics(result) {
