@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Cash 子域登录 handoff 与域名辅助逻辑；负责在主站会话与独立 Cash 产品域之间建立受控跳转。
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 import { authOriginForRequest, cashOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 import { FAVICON_LINKS } from "./favicon.js";
