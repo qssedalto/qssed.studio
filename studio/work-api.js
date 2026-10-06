@@ -1,3 +1,4 @@
+// 初学者导读：主工作区 API 聚合入口：把 Workbench/项目/草稿/任务等请求映射到对应模块，路由层尽量不直接实现业务。
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 
