@@ -1,3 +1,7 @@
+// 回归检查：订阅、权益、学生认证与存储配额之间的一致性。
+//
+// 该脚本把数据库 migration、Billing/Student API、管理 UI、用户 UI 和 Storage API 放在一起做静态契约检查，
+// 防止只改一层后出现“数据库已有字段但界面/权限没有跟上”的半完成状态。
 import fs from "node:fs";
 
 const read = path => fs.readFileSync(path, "utf8");
