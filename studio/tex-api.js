@@ -1,3 +1,4 @@
+// 初学者导读：TeX 工作区主 API 路由：把编辑器请求分发到文件、编译、协作等具体逻辑，避免在路由层重复底层实现。
 import { handleTexApi as handleCoreTexApi } from "./tex-api-core.js";
 import { handleTexSharedCollaboration } from "./tex-collaboration-shared.js";
 import {
