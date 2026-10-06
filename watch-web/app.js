@@ -22,7 +22,20 @@
     "powerpnt":"Microsoft PowerPoint","powerpnt.exe":"Microsoft PowerPoint","notepad":"记事本","notepad.exe":"记事本",
     "steamwebhelper":"Steam","steamwebhelper.exe":"Steam","snippingtool":"截图工具","snippingtool.exe":"截图工具"
   };
-  const state = { date:startOfDay(new Date()), range:"day", buckets:{}, apps:[], requestId:0 };
+  // ActivityWatch 原版 aw-webui 会把浏览器 watcher 与“当前前台窗口”相交，避免把后台标签页误算成网站使用时间。
+  // 这里沿用原版 queries.ts 的浏览器识别名单，只把键名转成小写，便于比较 Windows / macOS / Linux 上不同的进程名。
+  const browserFamilies = {
+    chrome:["google chrome","google-chrome","chrome.exe","chrome","google-chrome-stable","chromium","chromium-browser","chromium-browser-chromium","chromium.exe"],
+    firefox:["firefox","firefox.exe","firefox developer edition","firefoxdeveloperedition","firefox-esr","firefox beta","nightly","librewolf","librewolf.exe","librewolf-portable.exe","waterfox","waterfox.exe"],
+    opera:["opera","opera.exe"],
+    brave:["brave-browser","brave browser","brave.exe"],
+    edge:["msedge","msedge.exe","microsoft edge","microsoft edge beta","microsoft-edge-stable","microsoft-edge","microsoft-edge-beta","microsoft-edge-dev"],
+    arc:["arc","arc.exe"],
+    vivaldi:["vivaldi-stable","vivaldi-snapshot","vivaldi.exe","vivaldi"],
+    orion:["orion"],
+    yandex:["yandex"]
+  };
+  const state = { date:startOfDay(new Date()), range:"day", usageMode:"apps", buckets:{}, apps:[], usageSets:{apps:[],windows:[],websites:[]}, requestId:0 };
 
   function rootOrigin() {
     const host = location.hostname.toLowerCase();
@@ -185,12 +198,16 @@
     const id = String(bucket?.id||"").toLowerCase();
     if (kind === "currentwindow") return type === "currentwindow" || id.startsWith("aw-watcher-window_");
     if (kind === "afkstatus") return type === "afkstatus" || id.startsWith("aw-watcher-afk_");
+    if (kind === "web") return type === "web.tab.current";
     return false;
   }
 
   function bucketHost(bucket) {
     const hostname = String(bucket?.hostname||"").trim();
     if (hostname) return hostname.toLowerCase();
+    // ActivityWatch 的浏览器 watcher 在一些版本里会把 hostname 记成 unknown，甚至留空；
+    // 原版 bucketsBrowser() 会回退到 unknown host，因此云端也采用同一规则。
+    if (bucketKind(bucket,"web")) return "unknown";
     const id = String(bucket?.id||"");
     for (const prefix of ["aw-watcher-window_","aw-watcher-afk_"]) {
       if (id.toLowerCase().startsWith(prefix)) return id.slice(prefix.length).toLowerCase();
@@ -318,9 +335,116 @@
       const afkEvents = afk
         ? await api("/api/0/buckets/" + encodeURIComponent(afk.id) + "/events?" + query)
         : null;
-      groups.push(activeWindowEvents(windowEvents,afkEvents,start,end));
+      groups.push(activeWindowEvents(windowEvents,afkEvents,start,end).map(segment=>({...segment,sourceHost:bucketHost(bucket)})));
     }
 
+    return unionHostSegments(groups);
+  }
+
+  // ActivityWatch 原版有三类很有用的“使用时间”视角：
+  // 1. app_events：按应用聚合；
+  // 2. title_events：按“应用 + 窗口标题”聚合；
+  // 3. browser_domains / browser_urls：浏览器 watcher 与前台浏览器窗口相交后再聚合。
+  // AERTEX Watch 在云端拿到的是原始 Bucket 事件，所以在浏览器里复现这些口径。
+  function groupWindowUsage(segments) {
+    const grouped = new Map();
+    for (const segment of segments) {
+      const rawApp = segment.event.data?.app || segment.event.data?.application || "Unknown";
+      const title = String(segment.event.data?.title || "").trim() || (zh ? "无窗口标题" : "Untitled window");
+      const key = rawApp + "\u0000" + title;
+      const seconds = Math.max(0,(segment.end-segment.start)/1000);
+      const item = grouped.get(key) || {raw:key,name:title,subtitle:appName(rawApp),seconds:0,count:0};
+      item.seconds += seconds;
+      item.count += 1;
+      grouped.set(key,item);
+    }
+    return [...grouped.values()].sort((left,right)=>right.seconds-left.seconds);
+  }
+
+  function browserFamilyForBucket(bucket) {
+    const haystack = (String(bucket?.id||"") + " " + String(bucket?.client||"") + " " + String(bucket?.name||"")).toLowerCase();
+    return Object.keys(browserFamilies).find(name=>haystack.includes(name)) || "";
+  }
+
+  function browserAppMatches(family,rawApp) {
+    const normalized = String(rawApp||"").trim().toLowerCase();
+    return Boolean(family && browserFamilies[family]?.includes(normalized));
+  }
+
+  function domainFromUrl(value) {
+    try {
+      const parsed = new URL(String(value||""));
+      return parsed.hostname.replace(/^www\./i,"") || parsed.hostname || String(value||"");
+    } catch {
+      return String(value||"").trim() || (zh ? "未知网站" : "Unknown website");
+    }
+  }
+
+  function intersectBrowserEvents(browserEvents,activeBrowserSegments,start,end,sourceHost="") {
+    const raw = floodEvents(browserEvents).map(event=>eventInterval(event,start,end)).filter(interval=>interval.end>interval.start);
+    const windows = [...activeBrowserSegments].sort((left,right)=>left.start-right.start);
+    const result = [];
+    let cursor = 0;
+    for (const browser of raw) {
+      while (cursor < windows.length && windows[cursor].end <= browser.start) cursor++;
+      for (let index=cursor; index<windows.length; index++) {
+        const window = windows[index];
+        if (window.start >= browser.end) break;
+        const from = Math.max(browser.start,window.start);
+        const to = Math.min(browser.end,window.end);
+        if (to > from) result.push({start:from,end:to,event:browser.event,sourceHost});
+      }
+    }
+    return result;
+  }
+
+  function groupWebsiteUsage(segments) {
+    const grouped = new Map();
+    for (const segment of segments) {
+      const url = segment.event.data?.url || "";
+      const domain = domainFromUrl(url);
+      const seconds = Math.max(0,(segment.end-segment.start)/1000);
+      const item = grouped.get(domain) || {
+        raw:domain,
+        name:domain,
+        subtitle:String(segment.event.data?.title || "").trim() || (zh ? "浏览器活动" : "Browser activity"),
+        seconds:0,
+        count:0
+      };
+      item.seconds += seconds;
+      item.count += 1;
+      if (segment.event.data?.title) item.subtitle = String(segment.event.data.title);
+      grouped.set(domain,item);
+    }
+    return [...grouped.values()].sort((left,right)=>right.seconds-left.seconds);
+  }
+
+  async function loadWebsiteSegments(start,end,activeSegments) {
+    const entries = Object.values(state.buckets||{});
+    const browserBuckets = entries.filter(bucket=>bucketKind(bucket,"web"));
+    if (!browserBuckets.length || !activeSegments.length) return [];
+
+    const query = new URLSearchParams({start:start.toISOString(),end:end.toISOString(),limit:"-1"}).toString();
+    const groups = [];
+    for (const bucket of browserBuckets.sort((left,right)=>bucketRecency(right)-bucketRecency(left))) {
+      const family = browserFamilyForBucket(bucket);
+      if (!family) continue;
+      const host = bucketHost(bucket);
+      const matchingWindows = activeSegments.filter(segment=>{
+        const sameHost = !host || host === "unknown" || !segment.sourceHost || segment.sourceHost === host;
+        const rawApp = segment.event.data?.app || segment.event.data?.application || "";
+        return sameHost && browserAppMatches(family,rawApp);
+      });
+      if (!matchingWindows.length) continue;
+      try {
+        const browserEvents = await api("/api/0/buckets/" + encodeURIComponent(bucket.id) + "/events?" + query);
+        groups.push(intersectBrowserEvents(browserEvents,matchingWindows,start,end,host));
+      } catch (error) {
+        console.warn("Unable to load ActivityWatch browser bucket",bucket.id,error);
+      }
+    }
+    // 每个 browser Bucket 自己的事件先经过 flood；不同 Bucket 之间再按新旧顺序执行 union_no_overlap。
+    // 这样旧 profile / 重复 watcher 不会把同一分钟网站时间重复累加。
     return unionHostSegments(groups);
   }
 
@@ -362,19 +486,49 @@
       return '<div class="bar-wrap"><div class="bar ' + (index===peak&&value?"peak":"") + '" style="--height:' + height + '%" data-label="' + tooltip + '"></div><span>' + labels[index] + "</span></div>";
     }).join("");
   }
-  function appRow(app,maxSeconds) {
-    const style = appStyle(app.raw);
-    const width = Math.max(4,Math.min(100,(app.seconds/Math.max(1,maxSeconds))*100));
+  function usageRow(item,maxSeconds) {
+    const style = appStyle(item.raw || item.name);
+    const width = Math.max(4,Math.min(100,(item.seconds/Math.max(1,maxSeconds))*100));
+    const subtitle = item.subtitle || (item.count + (zh ? " 个片段" : " segments"));
     return '<div class="app-row"><span class="app-logo" style="--logo-bg:' + style.soft + ';--logo-color:' + style.color + '">' +
-      initials(app.name) + '</span><span class="app-info"><strong title="' + escapeHtml(app.name) + '">' + escapeHtml(app.name) +
-      '</strong><small>' + app.count + ' 个片段</small></span><span class="app-progress"><i style="width:' + width.toFixed(1) +
-      '%;background:' + style.color + '"></i></span><span class="app-time">' + formatShort(app.seconds) + "</span></div>";
+      initials(item.name) + '</span><span class="app-info"><strong title="' + escapeHtml(item.name) + '">' + escapeHtml(item.name) +
+      '</strong><small title="' + escapeHtml(subtitle) + '">' + escapeHtml(subtitle) + '</small></span><span class="app-progress"><i style="width:' + width.toFixed(1) +
+      '%;background:' + style.color + '"></i></span><span class="app-time">' + formatShort(item.seconds) + "</span></div>";
   }
-  function renderApps(apps) {
+
+  function usageCopy(mode) {
+    if (mode === "windows") return {title:zh?"窗口时间":"Window time",subtitle:zh?"按应用 + 窗口标题聚合（ActivityWatch 原版 title_events 口径）":"Grouped by app + window title",dialog:zh?"全部窗口":"All windows"};
+    if (mode === "websites") return {title:zh?"网站时间":"Website time",subtitle:zh?"仅统计浏览器位于前台且用户非 AFK 的网站时间":"Browser watcher intersected with active foreground browser windows",dialog:zh?"全部网站":"All websites"};
+    return {title:zh?"应用时间":"Application time",subtitle:zh?"按前台应用聚合（ActivityWatch 原版 app_events 口径）":"Grouped by foreground application",dialog:zh?"全部应用":"All applications"};
+  }
+
+  function renderUsageMode() {
+    const mode = state.usageMode;
+    const items = state.usageSets[mode] || [];
+    const copy = usageCopy(mode);
+    const maxSeconds = items[0]?.seconds || 1;
+    const total = items.reduce((sum,item)=>sum+Number(item.seconds||0),0);
+    $("usageTitle").textContent = copy.title;
+    $("usageSubtitle").textContent = copy.subtitle;
+    $("usageTotal").textContent = formatShort(total);
+    $("usageTotalLabel").textContent = zh ? "当前口径总计" : "Total";
+    $("dialogTitle").textContent = copy.dialog;
+    $("dialogEyebrow").textContent = mode === "websites" ? "WEBSITE BREAKDOWN" : mode === "windows" ? "WINDOW BREAKDOWN" : "APP BREAKDOWN";
+    $("[data-usage-mode]").forEach(button=>button.classList.toggle("active",button.dataset.usageMode===mode));
+    $("appList").innerHTML = items.length ? items.slice(0,5).map(item=>usageRow(item,maxSeconds)).join("") : '<div class="empty-state">' +
+      (mode === "websites" ? (zh?"没有可用的网站活动。需要安装 ActivityWatch 浏览器 watcher。":"No website activity. A browser watcher is required.") : (zh?"这个时间段还没有活动":"No activity in this period.")) +
+      '</div>';
+    $("dialogList").innerHTML = items.length ? items.map(item=>usageRow(item,maxSeconds)).join("") : '<div class="empty-state">' + (zh?"暂无活动":"No activity") + '</div>';
+  }
+
+  function renderUsageSets(apps,segments,websiteSegments) {
     state.apps = apps;
-    const maxSeconds = apps[0]?.seconds || 1;
-    $("appList").innerHTML = apps.length ? apps.slice(0,5).map(app=>appRow(app,maxSeconds)).join("") : '<div class="empty-state">这个时间段还没有应用活动</div>';
-    $("dialogList").innerHTML = apps.length ? apps.map(app=>appRow(app,maxSeconds)).join("") : '<div class="empty-state">暂无活动</div>';
+    state.usageSets = {
+      apps,
+      windows:groupWindowUsage(segments),
+      websites:groupWebsiteUsage(websiteSegments)
+    };
+    renderUsageMode();
   }
   function renderTimeline(segments) {
     const chronological = [...segments].sort((a,b)=>b.start-a.start).filter((segment,index,all)=>index===0 || segment.event.data?.app!==all[index-1].event.data?.app || all[index-1].start-segment.end>60000);
@@ -408,7 +562,6 @@
     $("fragmentTime").textContent = formatShort(Math.max(0,total-deepSeconds));
     $("awayTime").textContent = formatShort(away);
     renderChart(result.hourly);
-    renderApps(apps);
   }
   function updateControls() {
     $("dateLabel").textContent = formatDateLabel();
@@ -433,8 +586,11 @@
       const range = period();
       const segments = await loadSegments(range.start,range.end);
       if (requestId !== state.requestId) return;
+      const websiteSegments = await loadWebsiteSegments(range.start,range.end,segments);
+      if (requestId !== state.requestId) return;
       const result = metrics(segments,range.start,range.end);
       renderMetrics(result);
+      renderUsageSets(result.apps,segments,websiteSegments);
       renderTimeline(segments);
       document.title = formatDuration(result.total,true) + " · AERTEX Watch";
     } catch (error) {
@@ -459,6 +615,10 @@
     $("dateButton").addEventListener("click",()=>$("dateInput").showPicker?.());
     $("dateInput").addEventListener("change",event=>{const parts=event.target.value.split("-").map(Number);state.date=new Date(parts[0],parts[1]-1,parts[2]);load();});
     $$(".range-tabs button").forEach(button=>button.addEventListener("click",()=>{state.range=button.dataset.range;load();}));
+    $("[data-usage-mode]").forEach(button=>button.addEventListener("click",()=>{
+      state.usageMode = button.dataset.usageMode;
+      renderUsageMode();
+    }));
     $("showAllApps").addEventListener("click",()=>$("appsDialog").showModal());
     $("closeDialog").addEventListener("click",()=>$("appsDialog").close());
     $("appsDialog").addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close();});

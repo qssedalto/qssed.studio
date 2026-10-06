@@ -10,6 +10,7 @@ const worker = read("watch-worker.js");
 const wrangler = read("wrangler.watch.jsonc");
 const app = read("watch-web/app.js");
 const index = read("watch-web/index.html");
+const styles = read("watch-web/styles.css");
 const sync = read("AW-Sync/native/aw-sync.mjs");
 const nativeCargo = read("AW-Sync/native/Cargo.toml");
 const nativeMain = read("AW-Sync/native/src/main.rs");
@@ -62,6 +63,9 @@ assert(app.includes("afkEvents === null") && app.includes("if (!activeIntervals.
 assert(app.includes("function floodEvents") && app.includes("gap <= pulseMs"), "Watch metrics must reproduce ActivityWatch five-second flood behavior before AFK intersection.");
 assert(app.includes("for (let dayIndex=0; dayIndex<7; dayIndex++)") && app.includes("addDays(start,dayIndex+1)"), "Weekly Watch distribution must use local calendar-day boundaries instead of fixed 24-hour milliseconds.");
 assert(app.includes("appLabels") && app.includes('"msedge.exe":"Microsoft Edge"'), "Watch UI must preserve the uploaded custom dashboard app display names.");
+assert(index.includes('data-usage-mode="apps"') && index.includes('data-usage-mode="windows"') && index.includes('data-usage-mode="websites"'), "Watch UI must expose ActivityWatch-style application, window-title, and website time views.");
+assert(app.includes('type === "web.tab.current"') && app.includes("intersectBrowserEvents") && app.includes("browserFamilies"), "Website time must be derived from ActivityWatch browser buckets intersected with foreground browser windows.");
+assert(styles.includes("grid-template-rows:minmax(0,1fr)"), "Hourly activity chart must reserve a real vertical grid track so percentage-height bars cannot collapse.");
 assert(worker.includes("MAX_EVENT_DURATION_SECONDS") && worker.includes("eventStart < endMs && eventEnd > startMs"), "Watch event reads must include events that overlap query boundaries.");
 assert(worker.includes('JSON.stringify([normalized.timestamp, normalized.data])'), "Watch heartbeat deduplication must ignore changing event duration.");
 assert(worker.includes('normalized.id !== undefined') && worker.includes('"id:" + normalized.id'), "Watch heartbeat deduplication must prefer stable ActivityWatch event IDs when present.");
@@ -106,12 +110,13 @@ assert(setupPage.includes('"cache-control": "private, no-store"'), "Region-speci
 
 const testAppSource = app.replace(
   /\n  bind\(\);\n  load\(\);[\s\S]*?\n\}\)\(\);\s*$/,
-  '\n  globalThis.__watchTest = { activeWindowEvents, floodEvents, latestBucketsByHost, unionHostSegments, metrics, state };\n})();'
+  '\n  globalThis.__watchTest = { activeWindowEvents, floodEvents, latestBucketsByHost, unionHostSegments, metrics, groupWindowUsage, groupWebsiteUsage, intersectBrowserEvents, browserFamilyForBucket, browserAppMatches, state };\n})();'
 );
 const testContext = {
   location: { pathname: "/zh-cn", hostname: "aw.qsseda.com" },
   console,
   URLSearchParams,
+  URL,
   Date,
   Intl,
   Math,
@@ -158,5 +163,25 @@ assert(metricResult.total === 1800, "Active duration must equal the union of act
 assert(metricResult.deepSeconds <= metricResult.total, "Deep-focus duration must never exceed active duration.");
 assert(metricResult.focusScore >= 0 && metricResult.focusScore <= 100, "AERTEX focus score must remain within 0-100.");
 assert(metricResult.switches === 1 && metricResult.focusScore === 96, "Switch-rate focus penalty must use actual active hours.");
+
+const windowUsage = watchTest.groupWindowUsage([
+  { start: Date.parse("2026-10-06T10:00:00Z"), end: Date.parse("2026-10-06T10:10:00Z"), event: { data: { app: "msedge.exe", title: "AERTEX Watch" } } },
+  { start: Date.parse("2026-10-06T10:10:00Z"), end: Date.parse("2026-10-06T10:15:00Z"), event: { data: { app: "msedge.exe", title: "AERTEX Watch" } } },
+]);
+assert(windowUsage.length === 1 && windowUsage[0].seconds === 900, "Window-title time must merge the same app/title and preserve total duration.");
+
+assert(watchTest.browserFamilyForBucket({ id: "aw-watcher-web-edge_unknown", type: "web.tab.current" }) === "edge", "Edge browser bucket identification must match ActivityWatch.");
+assert(watchTest.browserAppMatches("edge", "msedge.exe"), "Foreground Edge process must match the Edge browser watcher.");
+
+const browserSegments = watchTest.intersectBrowserEvents(
+  [event("2026-10-06T10:00:00Z", 600, { url: "https://example.com/a", title: "Example" })],
+  [{ start: Date.parse("2026-10-06T10:02:00Z"), end: Date.parse("2026-10-06T10:07:00Z"), event: { data: { app: "msedge.exe" } } }],
+  rangeStart,
+  rangeEnd,
+  "pc"
+);
+assert(browserSegments.length === 1 && browserSegments[0].end-browserSegments[0].start === 300000, "Website time must count only the browser-event portion while the matching browser is foreground.");
+const websiteUsage = watchTest.groupWebsiteUsage(browserSegments);
+assert(websiteUsage.length === 1 && websiteUsage[0].name === "example.com" && websiteUsage[0].seconds === 300, "Website time must aggregate active browser time by domain.");
 
 console.log("AERTEX Watch cloud checks passed.");

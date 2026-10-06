@@ -87,7 +87,7 @@
         </section>
         <div class="notice hidden" id="notice" role="status"><svg><use href="#i-alert"/></svg><span></span><button id="retryButton">重试</button></div>
         <div class="metric-grid">
-          <article class="metric-card primary-card"><div class="metric-heading"><span>活跃时长</span><span class="live-badge"><i></i> LIVE</span></div><div class="metric-value" id="activeTime">—</div><div class="metric-footer"><span id="activeCompare">正在计算</span><span class="metric-icon"><svg><use href="#i-bolt"/></svg></span></div></article>
+          <article class="metric-card primary-card"><div class="metric-heading"><span title="ActivityWatch 原版口径：currentwindow 事件经过 AFK 过滤后的总时长">窗口活跃时长</span><span class="live-badge"><i></i> LIVE</span></div><div class="metric-value" id="activeTime">—</div><div class="metric-footer"><span id="activeCompare">正在计算</span><span class="metric-icon"><svg><use href="#i-bolt"/></svg></span></div></article>
           <article class="metric-card"><div class="metric-heading"><span title="AERTEX 估算指标：结合深度专注占比与应用切换频率，不是 ActivityWatch 官方评分">专注指数</span><span class="metric-icon soft"><svg><use href="#i-focus"/></svg></span></div><div class="metric-value"><span id="focusScore">—</span><small>/100</small></div><div class="mini-progress"><i id="focusProgress"></i></div><div class="metric-footer"><span id="focusCaption">基于连续使用计算</span></div></article>
           <article class="metric-card"><div class="metric-heading"><span>最长专注</span><span class="metric-icon soft lilac"><svg><use href="#i-clock"/></svg></span></div><div class="metric-value" id="longestSession">—</div><div class="metric-footer"><span id="sessionCaption">等待活动数据</span></div></article>
           <article class="metric-card"><div class="metric-heading"><span>切换次数</span><span class="metric-icon soft blue"><svg><use href="#i-apps"/></svg></span></div><div class="metric-value" id="switchCount">—</div><div class="metric-footer"><span id="switchCaption">应用间切换</span></div></article>
@@ -100,7 +100,7 @@
       </div>
 
       <section class="lower-grid section-anchor" id="apps">
-        <article class="panel apps-panel"><div class="panel-head"><div><h2>最常使用</h2><p>按活跃时长排序</p></div><button class="text-button" id="showAllApps">查看全部 <svg><use href="#i-arrow"/></svg></button></div><div class="app-list" id="appList"><div class="skeleton-list"></div></div></article>
+        <article class="panel apps-panel"><div class="panel-head usage-panel-head"><div><h2 id="usageTitle">应用时间</h2><p id="usageSubtitle">按前台应用聚合（ActivityWatch 原版 app_events 口径）</p></div><button class="text-button" id="showAllApps">查看全部 <svg><use href="#i-arrow"/></svg></button></div><div class="usage-toolbar"><div class="usage-tabs" role="tablist" aria-label="使用时间统计口径"><button class="active" data-usage-mode="apps" role="tab">应用</button><button data-usage-mode="windows" role="tab">窗口</button><button data-usage-mode="websites" role="tab">网站</button></div><div class="usage-total"><span id="usageTotalLabel">当前口径总计</span><strong id="usageTotal">—</strong></div></div><div class="app-list" id="appList"><div class="skeleton-list"></div></div></article>
         <article class="panel timeline-panel section-anchor" id="timeline"><div class="panel-head"><div><h2>最近活动</h2><p>当前时间段内的活动片段</p></div><span class="event-count" id="eventCount">—</span></div><div class="timeline-list" id="timelineList"><div class="skeleton-list"></div></div></article>
       </section>
 
@@ -114,6 +114,6 @@
     </main>
   </div>
 
-  <dialog id="appsDialog"><div class="dialog-head"><div><p class="eyebrow">APP BREAKDOWN</p><h2>全部应用</h2></div><button id="closeDialog" aria-label="关闭">×</button></div><div class="dialog-list" id="dialogList"></div></dialog>
+  <dialog id="appsDialog"><div class="dialog-head"><div><p class="eyebrow" id="dialogEyebrow">APP BREAKDOWN</p><h2 id="dialogTitle">全部应用</h2></div><button id="closeDialog" aria-label="关闭">×</button></div><div class="dialog-list" id="dialogList"></div></dialog>
 </body>
 </html>
