@@ -1,3 +1,4 @@
+// 初学者导读：Studio 页面公共 head、主题启动脚本和顶栏控件；多个页面共享，修改 meta/安全相关结构时要考虑全站影响。
 import { SUPABASE_URL, SUPABASE_KEY, TEXT } from "./config.js";
 import { FAVICON_LINKS } from "./favicon.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
