@@ -1,3 +1,4 @@
+// 初学者导读：共享账户菜单的 HTML/CSS/客户端脚本生成器；多个产品复用，因此修改 DOM 结构时要同步考虑 Work/Intelligence/Cash/Watch。
 import { normalizeSupportedLocale, SUPPORTED_LOCALES } from "./locale.js";
 
 // 账号菜单是跨产品共享 UI。它通过根域推导 auth.*，而不是把 qsseda.com 写死在每个产品页面。
