@@ -1,4 +1,5 @@
 {
+  // AERTEX Work 部署清单：work.* 域、TeX 协作 Durable Object、R2 与共享限流器。Durable Object migration tag 属于持久化历史。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "qsseda-work",
   "main": "studio/worker-audit.js",
