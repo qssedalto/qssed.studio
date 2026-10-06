@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Work 独立 work.* 子域。
+//
+// 覆盖主站重写、文档深链、登录 handoff、Session account marker、Huawei 豁免、产品导航和共享 appearance。
+// Work 的路由最复杂，所以这里既检查源码契约也锁定跨根域 URL，防止旧路径兼容逻辑破坏安全边界。
 import fs from "node:fs";
 import { normalizeHandoffNext } from "../studio/auth-handoff.js";
 import { notFoundPage } from "../studio/auth-pages.js";
