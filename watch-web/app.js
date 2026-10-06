@@ -205,6 +205,9 @@
   function bucketHost(bucket) {
     const hostname = String(bucket?.hostname||"").trim();
     if (hostname) return hostname.toLowerCase();
+    // ActivityWatch 的浏览器 watcher 在一些版本里会把 hostname 记成 unknown，甚至留空；
+    // 原版 bucketsBrowser() 会回退到 unknown host，因此云端也采用同一规则。
+    if (bucketKind(bucket,"web")) return "unknown";
     const id = String(bucket?.id||"");
     for (const prefix of ["aw-watcher-window_","aw-watcher-afk_"]) {
       if (id.toLowerCase().startsWith(prefix)) return id.slice(prefix.length).toLowerCase();
@@ -422,8 +425,8 @@
     if (!browserBuckets.length || !activeSegments.length) return [];
 
     const query = new URLSearchParams({start:start.toISOString(),end:end.toISOString(),limit:"-1"}).toString();
-    const collected = [];
-    for (const bucket of browserBuckets) {
+    const groups = [];
+    for (const bucket of browserBuckets.sort((left,right)=>bucketRecency(right)-bucketRecency(left))) {
       const family = browserFamilyForBucket(bucket);
       if (!family) continue;
       const host = bucketHost(bucket);
@@ -435,14 +438,14 @@
       if (!matchingWindows.length) continue;
       try {
         const browserEvents = await api("/api/0/buckets/" + encodeURIComponent(bucket.id) + "/events?" + query);
-        collected.push(...intersectBrowserEvents(browserEvents,matchingWindows,start,end,host));
+        groups.push(intersectBrowserEvents(browserEvents,matchingWindows,start,end,host));
       } catch (error) {
         console.warn("Unable to load ActivityWatch browser bucket",bucket.id,error);
       }
     }
-    // 前台窗口已经做过跨设备去重；网站片段仍可能因为旧/重复 browser bucket 相交而重叠，
-    // 因此按时间顺序裁掉已经覆盖的部分，保证网站总时长不会大于浏览器前台时间。
-    return unionHostSegments([collected.sort((left,right)=>left.start-right.start)]);
+    // 每个 browser Bucket 自己的事件先经过 flood；不同 Bucket 之间再按新旧顺序执行 union_no_overlap。
+    // 这样旧 profile / 重复 watcher 不会把同一分钟网站时间重复累加。
+    return unionHostSegments(groups);
   }
 
   function renderStatus(status) {
