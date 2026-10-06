@@ -1,3 +1,6 @@
+// 管理后台使用独立的 __Host-aertex-admin-* Session，不复用普通 AERTEX 产品 Cookie。
+// handoff 先验证主站来源 + Supabase access token + 数据库管理员身份，之后才写管理员 host-only Cookie；
+// 这样普通登录态本身不会自动获得管理权限。
 import { SUPABASE_URL, SUPABASE_KEY } from "../studio/config.js";
 import { mainOriginForRequest, rootDomainForHost } from "../studio/domain-family.js";
 import { adminCanonicalPath as localizedAdminPath, adminLocaleFromPath } from "./i18n.js";
