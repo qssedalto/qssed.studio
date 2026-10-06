@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX 公开首页生成器；只展示公开产品介绍和登录入口，不读取登录后的私人工作区数据。
 import { FAVICON_LINKS } from "./favicon.js";
 import { SUPPORTED_LOCALES, localeDirection, normalizeSupportedLocale } from "./locale.js";
 
