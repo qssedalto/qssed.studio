@@ -67,7 +67,11 @@ impl Default for PersistedState {
 pub struct BucketMetadata {
     #[serde(default, deserialize_with = "deserialize_nullable_string")]
     pub id: String,
-    #[serde(default, rename = "type", deserialize_with = "deserialize_nullable_string")]
+    #[serde(
+        default,
+        rename = "type",
+        deserialize_with = "deserialize_nullable_string"
+    )]
     pub bucket_type: String,
     #[serde(default, deserialize_with = "deserialize_nullable_string")]
     pub client: String,
