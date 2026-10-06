@@ -1,3 +1,4 @@
+// 初学者导读：SSO 登录/回跳页面与流程协调；负责在主站和产品域之间安全传递经过验证的会话状态。
 import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
 import { QSS_DOMAIN_ROOTS, authOrigins, rootDomainForHost, serviceOrigin } from "./studio/domain-family.js";
 import { FAVICON_LINKS } from "./studio/favicon.js";
