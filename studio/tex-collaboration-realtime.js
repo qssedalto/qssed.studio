@@ -14,7 +14,7 @@ import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 
-export async function handleTexCollaborationRealtime(request, env) {
+// TeX 实时协作入口：先确认用户有文档访问权，再把连接升级/交给协作房间。实时通道不能绕过普通 API 的成员权限模型。\nexport async function handleTexCollaborationRealtime(request, env) {
   if (request.method !== "GET" || request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
     return json({ error: "WebSocket upgrade required." }, 426);
   }
@@ -50,7 +50,7 @@ export async function handleTexCollaborationRealtime(request, env) {
   return room.fetch(new Request("https://tex-collaboration-room.internal/connect", { method: "GET", headers }));
 }
 
-async function resolveDocumentAccess(env, userId, documentId, accessToken) {
+// 文档权限解析：把“本人拥有”“协作成员”“无权限”归一成一个访问结果，后续实时层只依赖这个结果，不重复猜测权限。\nasync function resolveDocumentAccess(env, userId, documentId, accessToken) {
   try {
     const own = await env.STORAGE.head(documentKey(userId, documentId));
     if (own) return { owner_id: userId, role: "owner" };

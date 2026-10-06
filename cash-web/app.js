@@ -107,7 +107,7 @@
     return known?.id || value;
   }
 
-  function render() {
+  // Cash 主渲染：只负责把 calculateFinancialModel 的结果映射到页面。若金额/日期算错，优先检查 model.js，而不是在 DOM 层“修正”数值。\nfunction render() {
     recalculate(); renderKpis(); renderForecastBreakdown(); renderBalanceChart(); renderBudget(); renderReserve(); renderTransactions(); renderCalendar(); renderRules(); renderRecurring(); renderPlans(); renderExpected(); renderMonthly();
     if ($('periodSummary')) $('periodSummary').textContent = `${data.settings.periodStart.replaceAll('-', '/')}—${data.settings.periodEnd.replaceAll('-', '/')} · ${model.dates.length} 天 · 真实账本、预算、计划与预测分层`;
     if ($('calendarTitle')) $('calendarTitle').textContent = `${model.dates.length} 天日历`;

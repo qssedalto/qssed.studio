@@ -66,7 +66,7 @@ type compileRequest struct {
 	Title  string `json:"title,omitempty"`
 }
 
-func main() {
+// Windows 原生桥接入口：启动本机 HTTP 服务前先建立单实例/来源/监听边界；本程序的目标是提供最小必要本机能力，而不是通用命令服务器。\nfunc main() {
 	args := os.Args[1:]
 	if hasArg(args, "--background") {
 		_ = runBridge()

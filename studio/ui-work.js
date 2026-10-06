@@ -309,7 +309,7 @@ function workIcon(kind) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 2.8 8.2 7 10 4.2-1.8 7-5.6 7-10V6z"></path><path d="m9.2 12 1.8 1.8 3.8-4"></path></svg>`;
 }
 
-export function workHubContent(zh, workOrigin = "https://work.qsseda.com", locale = "", mainOrigin = "https://qsseda.com") {
+// Work 首页内容生成器：服务器端先拼出稳定 HTML，浏览器脚本再负责读取本地快照、探测桥接能力并更新状态。\nexport function workHubContent(zh, workOrigin = "https://work.qsseda.com", locale = "", mainOrigin = "https://qsseda.com") {
   const activeLocale = normalizeSupportedLocale(locale) || (zh ? "zh-cn" : "en-us");
   const prefix = "/" + activeLocale;
   const workTexUrl = `${workOrigin}/${activeLocale}/tex`;
@@ -596,7 +596,7 @@ export function workLocalBridgeContent(zh, locale = "", mainOrigin = "https://qs
           }
         }
 
-        async function probe() {
+        // 本地桥接探测：依次检查 localhost 服务、版本和能力列表。失败时只把 Work 标记为不可用，不应触发任意本机命令或静默放宽来源限制。\nasync function probe() {
           if (!button || button.disabled) return;
           button.disabled = true;
           setState("checking", text.checking, text.checkingDetail);

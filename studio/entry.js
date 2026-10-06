@@ -49,7 +49,7 @@ import { watchSetupPage } from "./watch-setup-page.js";
 import { adminOriginForRequest, authOriginForRequest, awOriginForRequest, cashOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 import { localeFromPath, normalizeSupportedLocale } from "./locale.js";
 
-function safeLocalNext(value) {
+// 站内跳转清洗：只允许本地 pathname，避免用户构造 next 参数把登录/操作结果跳到外部站点。\nfunction safeLocalNext(value) {
   const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "";
   return path;
@@ -85,7 +85,7 @@ function hardenSessionClientMarkup(markup) {
   );
 }
 
-function localizedPage(markup, locale, status = 200, options = {}) {
+// 页面统一包装：把 locale、共享品牌/外观和安全响应头组合起来。新增主站页面时优先复用这里，避免各页面初始化不一致。\nfunction localizedPage(markup, locale, status = 200, options = {}) {
   const label = locale === "zh" ? "ZH" : "EN";
   const currentFeatureMarkup = normalizeFeatureAvailabilityCopy(markup);
   const privacySafeMarkup = normalizePublicPrivacyCopy(currentFeatureMarkup);
