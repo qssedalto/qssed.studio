@@ -1,3 +1,6 @@
+// AERTEX Work 本机桥：只监听 127.0.0.1:32145，当前提供健康检查和 XeLaTeX 能力探测。
+// 浏览器来源必须在 ALLOWED_ORIGINS，Host 也限制为 localhost/127.0.0.1，避免局域网或恶意网页把本地桥当开放代理。
+// 这个进程不接收 Work 文档内容，也不执行任意用户命令。
 import http from "node:http";
 import { spawn } from "node:child_process";
 
