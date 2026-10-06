@@ -10,10 +10,13 @@
   <link rel="icon" href="/favicon-dark.svg?v=aertex-20261004-safari-theme-1" type="image/svg+xml" media="(prefers-color-scheme:dark)">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=aertex-20261004-safari-theme-1">
   <link rel="stylesheet" href="/styles.css?v=aw-redesign-20261006-5">
+  <!-- appearance.js 由 Watch Worker 动态提供：它把主站的浅/深色与主题色写进 CSS 变量。
+       Watch 页面自己不再维护第二套“跟随系统/固定橙色”等外观设置。 -->
   <script src="/appearance.js"></script>
   <script defer src="/app.js?v=aw-redesign-20261006-5"></script>
 </head>
 <body>
+  <!-- SVG 图标集中定义成 sprite，下面所有按钮只通过 <use> 引用，避免重复内联同一份路径。 -->
   <svg class="svg-sprite" aria-hidden="true">
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8v9.7a.5.5 0 0 1-.5.5h-5.7a.5.5 0 0 1-.5-.5v-5.7H9.7v5.7a.5.5 0 0 1-.5.5H3.5a.5.5 0 0 1-.5-.5z"/></symbol>
     <symbol id="i-apps" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
@@ -36,6 +39,7 @@
   </svg>
 
   <div class="page-glow" aria-hidden="true"></div>
+  <!-- 页面结构分成固定/移动侧栏 + 主内容。真正的数据绑定都在 app.js，HTML 只提供稳定的 id/容器。 -->
   <div class="app-shell">
     <aside class="sidebar">
       <a id="backHome" class="brand" href="#" aria-label="返回 AERTEX">
@@ -86,6 +90,8 @@
           <button class="today-button" id="todayButton">回到今天</button>
         </section>
         <div class="notice hidden" id="notice" role="status"><svg><use href="#i-alert"/></svg><span></span><button id="retryButton">重试</button></div>
+        <!-- KPI 全部来自同一批 AFK 过滤后的前台窗口片段。
+             “专注指数”是 AERTEX 派生指标；“窗口活跃时长”才是 ActivityWatch 原始口径的总量。 -->
         <div class="metric-grid">
           <article class="metric-card primary-card"><div class="metric-heading"><span title="ActivityWatch 原版口径：currentwindow 事件经过 AFK 过滤后的总时长">窗口活跃时长</span><span class="live-badge"><i></i> LIVE</span></div><div class="metric-value" id="activeTime">—</div><div class="metric-footer"><span id="activeCompare">正在计算</span><span class="metric-icon"><svg><use href="#i-bolt"/></svg></span></div></article>
           <article class="metric-card"><div class="metric-heading"><span title="AERTEX 估算指标：结合深度专注占比与应用切换频率，不是 ActivityWatch 官方评分">专注指数</span><span class="metric-icon soft"><svg><use href="#i-focus"/></svg></span></div><div class="metric-value"><span id="focusScore">—</span><small>/100</small></div><div class="mini-progress"><i id="focusProgress"></i></div><div class="metric-footer"><span id="focusCaption">基于连续使用计算</span></div></article>
@@ -99,16 +105,20 @@
         <article class="panel balance-panel"><div class="panel-head"><div><h2>数字节奏</h2><p>专注与碎片时间</p></div></div><div class="balance-content"><div class="donut" id="focusDonut"><div><strong id="donutValue">—</strong><small>专注占比</small></div></div><div class="balance-legend"><div><i class="focus"></i><span>连续专注</span><strong id="deepTime">—</strong></div><div><i class="fragment"></i><span>碎片活动</span><strong id="fragmentTime">—</strong></div><div><i class="away"></i><span title="当前时间段内没有检测到活跃窗口的时间，包含 AFK、睡眠、关机或未同步时间">未活动时间</span><strong id="awayTime">—</strong></div></div></div></article>
       </div>
 
+      <!-- 应用 / 窗口 / 网站三种标签只是对同一时间轴做不同聚合，不代表三套独立“屏幕时间”。 -->
       <section class="lower-grid section-anchor" id="apps">
         <article class="panel apps-panel"><div class="panel-head usage-panel-head"><div><h2 id="usageTitle">应用时间</h2><p id="usageSubtitle">按前台应用聚合（ActivityWatch 原版 app_events 口径）</p></div><button class="text-button" id="showAllApps">查看全部 <svg><use href="#i-arrow"/></svg></button></div><div class="usage-toolbar"><div class="usage-tabs" role="tablist" aria-label="使用时间统计口径"><button class="active" data-usage-mode="apps" role="tab">应用</button><button data-usage-mode="windows" role="tab">窗口</button><button data-usage-mode="websites" role="tab">网站</button></div><div class="usage-total"><span id="usageTotalLabel">当前口径总计</span><strong id="usageTotal">—</strong></div></div><div class="app-list" id="appList"><div class="skeleton-list"></div></div></article>
         <article class="panel timeline-panel section-anchor" id="timeline"><div class="panel-head"><div><h2>最近活动</h2><p>当前时间段内的活动片段</p></div><span class="event-count" id="eventCount">—</span></div><div class="timeline-list" id="timelineList"><div class="skeleton-list"></div></div></article>
       </section>
 
+      <!-- 连接电脑区只负责生成一次性可见的 Device Token 和跳转教程。
+           浏览器不会把 token 持久化到页面脚本状态，真正长期保存由 Windows Credential Manager 完成。 -->
       <section class="lower-grid connect-grid">
         <article class="panel connect-panel"><div class="panel-head"><div><p class="eyebrow">SYNC</p><h2>连接电脑</h2></div><span class="source-icon"><svg><use href="#i-link"/></svg></span></div><p class="muted">重新安装 AERTEX Watch Sync 后，需要重新生成设备令牌。令牌只显示一次。</p><div class="actions-row"><button id="createToken" class="primary-action" type="button">生成设备令牌</button><a id="setupGuide" class="secondary-action" href="https://qsseda.com/zh-cn/aw/setup">查看设置教程</a></div><div id="tokenBox" class="token-box" hidden><label>设备令牌（仅显示一次）</label><code id="tokenValue"></code><button id="copyToken" type="button">复制</button></div><p class="hint">设备令牌只用于你自己的 AERTEX Watch Sync 客户端。</p></article>
         <article class="panel source-summary"><div class="panel-head"><div><p class="eyebrow">DATA SERVICE</p><h2>AERTEX Watch Data</h2></div><span class="source-icon"><svg><use href="#i-database"/></svg></span></div><div class="summary-list"><div><span>短数据域名</span><strong>awd.qsseda.com</strong></div><div><span>语义别名</span><strong>aw.data.qsseda.com</strong></div><div><span>同步接口</span><strong>/api/sync</strong></div></div></article>
       </section>
 
+      <!-- 数据源区直接展示 ActivityWatch Bucket 元数据，方便用户判断 window/afk/browser watcher 是否真的同步上来。 -->
       <section class="source-section section-anchor" id="source"><article class="panel source-card source-card-stack"><div class="source-card-head"><div><span class="source-icon"><svg><use href="#i-database"/></svg></span><div><h2>已连接的数据源</h2><p>保持 ActivityWatch 原版的 Bucket 结构，同时用新的 AERTEX Watch 视觉呈现。</p></div></div><div class="source-meta"><span><small>最近电脑</small><strong id="sourceHost">—</strong></span><span><small>最近同步</small><strong id="sourceLastSync">—</strong></span><span><small>状态</small><strong class="online" id="connectionStatus"><i></i> 已连接</strong></span></div></div><div id="buckets" class="bucket-list"><p class="muted">正在加载…</p></div></article></section>
       <footer><span>AERTEX Watch</span><span>ActivityWatch 数据 · 通过你的 AERTEX 账户同步</span></footer>
     </main>
