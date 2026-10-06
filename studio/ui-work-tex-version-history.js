@@ -1,3 +1,4 @@
+// 初学者导读：TeX 版本历史 UI：加载版本、显示差异/快照并触发恢复；实际版本读写权限由服务端 version API 控制。
 export function enhanceWorkTexVersionHistory(markup, zh) {
   let output = String(markup || "");
   const copy = zh ? {
