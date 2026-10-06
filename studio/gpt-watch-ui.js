@@ -1,3 +1,4 @@
+// 初学者导读：这里的 watch 指 Apple Watch/超小屏 Intelligence 布局，不是 AERTEX Watch 活动产品。文件只负责小屏聊天交互与样式适配。
 export function intelligenceWatchStyles() {
   return String.raw`
 .watchModelButton,.watchModelPortal,.watchComposerForm,.sendGlyph{display:none}
