@@ -1,3 +1,4 @@
+// 初学者导读：共享主题系统回归检查；锁定浅/深色、system 模式、accent 和各产品继承关系。
 import vm from "node:vm";
 import {
   APPEARANCE_GENERATION_VALUE,
