@@ -1,3 +1,4 @@
+// 初学者导读：登录标识符处理逻辑：规范化邮箱/用户名等输入并决定后续认证路径。这里应保持纯粹、可预测，避免把 UI 状态带入。
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
 const ACCESS_COOKIE = "__Host-qsseda-access";
