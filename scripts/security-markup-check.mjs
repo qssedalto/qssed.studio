@@ -1,3 +1,7 @@
+// 回归检查：浏览器输出的安全标记。
+//
+// 扫描生成 HTML/脚本中的 CSP、noindex、表单/链接和敏感字段模式，防止服务端已经安全但模板又把 token、危险脚本
+// 或不受约束的外链重新暴露到浏览器。它与 security-architecture-check 分别守“页面标记”和“后端结构”。
 import { TEXT } from "../studio/config.js";
 import { buildLinks } from "../studio/routing.js";
 import { signUpPage } from "../studio/auth-pages.js";
