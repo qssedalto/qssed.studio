@@ -1,3 +1,4 @@
+// 初学者导读：移动端 TeX 工具条与紧凑操作面板；只负责小屏交互，不复制桌面端业务算法。
 export function enhanceWorkTexMobileTools(markup, zh) {
   const copy = zh ? {
     toolbar: "TeX 快捷输入",
