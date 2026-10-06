@@ -1,3 +1,8 @@
+// AERTEX Intelligence 云端模型网关。
+//
+// 这里统一处理服务商配置、模型选择、用户权限、预算/用量、流式响应和上游错误，
+// 让浏览器永远只调用 AERTEX 自己的 /api/ai/*，而不是直接拿 OpenAI/其他服务商密钥。
+// 修改时优先保持“凭据只在服务端、模型能力由配置决定、用户权限先于上游调用”这三条边界。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 
 const enc = new TextEncoder();
