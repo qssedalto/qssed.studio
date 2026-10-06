@@ -1,3 +1,4 @@
+// 初学者导读：Studio 与 AERTEX Intelligence 之间的桥接逻辑；负责把受控上下文/跳转交给独立 GPT 产品，而不是在主站复制 AI 网关。
 const ROUTES = new Map([
   ["/api/gpt/status", { target: "/health", methods: ["GET"] }],
   ["/api/gpt/account", { target: "/codex/account", methods: ["GET"] }],
