@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Work TeX 工作台。
+//
+// 这是仓库里覆盖面较大的 UI/协作契约检查之一：编辑器、预览、版本历史、实时协作、本机桥和移动端模块都会被读取。
+// 修改 TeX 拆分模块时应让这里继续证明“功能仍接线完整”，而不是只让单个文件语法通过。
 import fs from "node:fs";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
