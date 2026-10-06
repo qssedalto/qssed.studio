@@ -1,3 +1,4 @@
+// 初学者导读：Studio 导航/返回逻辑工具；集中处理桌面、紧凑模式和层级返回，避免每个页面自己猜上一页。
 import { KNOWLEDGE_ROOT } from "./knowledge-routes.js";
 
 function prefixFor(zh) {
