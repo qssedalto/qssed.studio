@@ -1,3 +1,7 @@
+// 回归检查：公开可索引页面的真实 Worker 响应。
+//
+// 直接调用 studio/entry.js，而不是只搜源码字符串，验证 Questions、祝福页、AERTEX Watch setup 等公开路由的
+// canonical、hreflang、robots 和 Content-Language，确保私有页面不会因为 SEO 改动意外变成可索引。
 import worker from "../studio/entry.js";
 
 const QUESTION_ID = "0e5f2ec8-99cf-4bd1-93a0-66ec12360f01";
