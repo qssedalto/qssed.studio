@@ -1,3 +1,5 @@
+// 管理后台的轻量国际化层。
+// 管理 UI 以中文模板为源，EN 表负责逐项替换；路径语言解析与普通产品共享 locale.js，避免后台自造另一套 locale 规则。
 import { preferredLocaleFromRequest } from "../studio/locale.js";
 
 const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/billing", "/student-verification", "/intelligence", "/logs", "/system"];
