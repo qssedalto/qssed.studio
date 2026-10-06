@@ -1,3 +1,4 @@
+// 初学者导读：仪表盘专用 CSS 字符串模块；只定义视觉规则，避免把业务状态写进样式选择器。
 export function dashboardStyles() {
   return `    /* GLOBAL_TOP_CONTROLS_HOVER */
     @media (hover:hover) and (pointer:fine){
