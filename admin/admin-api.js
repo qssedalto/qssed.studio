@@ -1,3 +1,6 @@
+// 管理控制面的 RPC 适配层。
+// ACTIONS 是“允许调用的 RPC 白名单”：前端传 action 只能映射到这里列出的函数/参数，不能把任意 Supabase RPC 名称透传给数据库。
+// write=true 的动作还会走管理员会话、same-origin 和审计记录。
 import { SUPABASE_URL, SUPABASE_KEY } from "../studio/config.js";
 import { json } from "../studio/routing.js";
 import { verifyAdminApiSession, withAdminSessionCookies } from "./session.js";
