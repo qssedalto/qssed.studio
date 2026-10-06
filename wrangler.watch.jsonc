@@ -1,4 +1,5 @@
 {
+  // AERTEX Watch 部署清单；更详细的 UI/data host 说明见下方已有注释。
   // 一个 Worker 同时承载两种角色：
   // - aw.*：登录后的 Watch UI 与浏览器读 API；
   // - awd.* / aw.data.*：设备上传数据面。
