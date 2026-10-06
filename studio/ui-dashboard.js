@@ -1,3 +1,4 @@
+// 初学者导读：Studio 首页/仪表盘内容与共享图标；负责把多个模块入口组织成概览，不直接执行底层 API 写操作。
 import { shellText } from "./i18n-ui.js";
 export function dashboardIcon(name) {
   const icons = {
