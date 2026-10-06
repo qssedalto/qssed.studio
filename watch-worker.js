@@ -28,8 +28,9 @@ const MAX_SYNC_EVENTS = 5000;
 const MAX_QUERY_DAYS = 400;
 const TOKEN_PREFIX = "awd1";
 const WATCH_PREFIX = "watch/v1";
-const WINDOWS_SYNC_PATH = "/AERTEX-Watch-Sync.exe";
-const WINDOWS_SYNC_KEY = "watch/releases/windows/AERTEX-Watch-Sync.exe";
+const WINDOWS_SYNC_PATH = "/AERTEX-Watch-Sync-Setup.exe";
+const LEGACY_WINDOWS_SYNC_PATH = "/AERTEX-Watch-Sync.exe";
+const WINDOWS_SYNC_KEY = "watch/releases/windows/AERTEX-Watch-Sync-Setup.exe";
 
 export default {
   async fetch(request, env) {
@@ -54,6 +55,10 @@ export default {
     }
 
     if (pathname === "/robots.txt") return text("User-agent: *\nDisallow: /\n", 200, "text/plain;charset=UTF-8");
+
+    if (url.hostname.toLowerCase() === "aw.qsseda.com" && pathname === LEGACY_WINDOWS_SYNC_PATH) {
+      return redirect(url.origin + WINDOWS_SYNC_PATH);
+    }
 
     if (pathname === WINDOWS_SYNC_PATH && url.hostname.toLowerCase() === "aw.qsseda.com") {
       return handleWindowsSyncDownload(request, env);
@@ -146,8 +151,8 @@ async function handleWindowsSyncDownload(request, env) {
     if (!object) return text("Not found", 404);
     const headers = new Headers({
       "content-type": "application/vnd.microsoft.portable-executable",
-      "content-disposition": 'attachment; filename="AERTEX-Watch-Sync.exe"',
-      "cache-control": "public, max-age=3600",
+      "content-disposition": 'attachment; filename="AERTEX-Watch-Sync-Setup.exe"',
+      "cache-control": "no-store, max-age=0",
       "x-content-type-options": "nosniff"
     });
     if (Number.isFinite(Number(object.size))) headers.set("content-length", String(object.size));
