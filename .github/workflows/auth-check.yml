@@ -1,3 +1,5 @@
+# CI：AERTEX ID / Auth 静态与打包检查。
+# 修改登录、OAuth、SSO、共享会话或 Auth Wrangler 配置时都会触发；目标是在合并前同时验证语法、安全契约和 Worker 可打包性。
 name: Auth Worker Check
 
 on:
