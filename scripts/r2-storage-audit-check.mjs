@@ -1,3 +1,7 @@
+// 回归检查：R2 私有存储与访问审计优化。
+//
+// 通过源码/迁移契约检查用户对象 key、列表分页、配额、访问审计与管理读取路径，
+// 防止为了性能优化而放松 owner 隔离、把私有对象变成公开 URL，或让列表扫描无上限增长。
 import fs from "node:fs";
 import { shouldRecordAccessAudit, ACCESS_AUDIT_RETENTION_DAYS } from "../studio/access-audit.js";
 
