@@ -1,3 +1,4 @@
+# 初学者导读：Windows 下启动 Codex 本机桥的包装脚本；负责定位 PowerShell 7、环境变量和服务入口，不应在这里复制服务端业务逻辑。
 param(
   [string]$InstallRoot = $PSScriptRoot
 )
