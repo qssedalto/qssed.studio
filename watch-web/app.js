@@ -111,11 +111,14 @@
     return result;
   }
   function metrics(segments,start,end) {
-    const total = segments.reduce((sum,segment)=>sum+(segment.end-segment.start)/1000,0);
+    const ordered = [...segments].filter(segment=>segment.end>segment.start).sort((a,b)=>a.start-b.start);
+    const activeIntervals = mergeIntervals(ordered.map(segment=>({start:segment.start,end:segment.end})));
+    const total = activeIntervals.reduce((sum,interval)=>sum+(interval.end-interval.start)/1000,0);
     const byApp = new Map();
     const hourly = Array(state.range === "day" ? 24 : 7).fill(0);
     let switches = 0, previousApp = "";
-    for (const segment of segments) {
+
+    for (const segment of ordered) {
       const raw = segment.event.data?.app || segment.event.data?.application || "Unknown";
       const seconds = (segment.end-segment.start)/1000;
       const item = byApp.get(raw) || {raw,name:appName(raw),seconds:0,count:0,lastTitle:""};
@@ -125,32 +128,48 @@
       byApp.set(raw,item);
       if (previousApp && previousApp !== raw) switches++;
       previousApp = raw;
+    }
+
+    for (const interval of activeIntervals) {
       if (state.range === "day") {
-        const cursor = new Date(segment.start);
-        while (cursor.getTime() < segment.end) {
+        const cursor = new Date(interval.start);
+        while (cursor.getTime() < interval.end) {
           const hourEnd = new Date(cursor);
           hourEnd.setMinutes(60,0,0);
-          const boundary = Math.min(segment.end,hourEnd.getTime());
+          const boundary = Math.min(interval.end,hourEnd.getTime());
           hourly[cursor.getHours()] += (boundary-cursor.getTime())/1000;
           cursor.setTime(boundary);
         }
       } else {
-        const index = Math.min(6,Math.floor((segment.start-start.getTime())/86400000));
-        hourly[Math.max(0,index)] += seconds;
+        let cursor = interval.start;
+        while (cursor < interval.end) {
+          const dayIndex = Math.max(0,Math.min(6,Math.floor((cursor-start.getTime())/86400000)));
+          const dayEnd = Math.min(interval.end,start.getTime()+(dayIndex+1)*86400000);
+          hourly[dayIndex] += (dayEnd-cursor)/1000;
+          cursor = dayEnd;
+        }
       }
     }
+
     const sessions = [];
-    for (const segment of [...segments].sort((a,b)=>a.start-b.start)) {
+    for (const interval of activeIntervals) {
+      const seconds = (interval.end-interval.start)/1000;
       const last = sessions.at(-1);
-      if (last && segment.start-last.end <= 5*60*1000) last.end = Math.max(last.end,segment.end);
-      else sessions.push({start:segment.start,end:segment.end});
+      if (last && interval.start-last.end <= 5*60*1000) {
+        last.end = Math.max(last.end,interval.end);
+        last.activeSeconds += seconds;
+      } else {
+        sessions.push({start:interval.start,end:interval.end,activeSeconds:seconds});
+      }
     }
-    const longestSession = Math.max(0,...sessions.map(session=>(session.end-session.start)/1000));
-    const deepSeconds = sessions.filter(session=>session.end-session.start>=25*60*1000).reduce((sum,session)=>sum+(session.end-session.start)/1000,0);
+
+    const longestSession = Math.max(0,...sessions.map(session=>session.activeSeconds));
+    const deepSeconds = sessions.filter(session=>session.activeSeconds>=25*60).reduce((sum,session)=>sum+session.activeSeconds,0);
     const elapsed = Math.max(0,Math.min(end.getTime(),Date.now())-start.getTime())/1000;
     const away = Math.max(0,elapsed-total);
     const switchPenalty = total ? Math.min(25,switches/Math.max(1,total/3600)*1.8) : 0;
-    const focusScore = Math.round(Math.max(0,Math.min(100,(deepSeconds/Math.max(1,total))*60+40-switchPenalty)));
+    const focusRatio = total ? Math.min(1,deepSeconds/total) : 0;
+    const focusScore = Math.round(Math.max(0,Math.min(100,focusRatio*60+40-switchPenalty)));
     return {total,hourly,switches,longestSession,deepSeconds,away,focusScore,apps:[...byApp.values()].sort((a,b)=>b.seconds-a.seconds),sessions};
   }
 
@@ -212,18 +231,19 @@
       return '<div class="bar-wrap"><div class="bar ' + (index===peak&&value?"peak":"") + '" style="--height:' + height + '%" data-label="' + tooltip + '"></div><span>' + labels[index] + "</span></div>";
     }).join("");
   }
-  function appRow(app,total) {
+  function appRow(app,maxSeconds) {
     const style = appStyle(app.raw);
-    const width = Math.max(2,(app.seconds/Math.max(1,total))*100);
+    const width = Math.max(4,Math.min(100,(app.seconds/Math.max(1,maxSeconds))*100));
     return '<div class="app-row"><span class="app-logo" style="--logo-bg:' + style.soft + ';--logo-color:' + style.color + '">' +
       initials(app.name) + '</span><span class="app-info"><strong title="' + escapeHtml(app.name) + '">' + escapeHtml(app.name) +
-      '</strong><small>' + app.count + ' 个片段</small></span><span class="app-progress"><i style="--width:' + width +
-      '%;--row-color:' + style.color + '"></i></span><span class="app-time">' + formatShort(app.seconds) + "</span></div>";
+      '</strong><small>' + app.count + ' 个片段</small></span><span class="app-progress"><i style="width:' + width.toFixed(1) +
+      '%;background:' + style.color + '"></i></span><span class="app-time">' + formatShort(app.seconds) + "</span></div>";
   }
-  function renderApps(apps,total) {
+  function renderApps(apps) {
     state.apps = apps;
-    $("appList").innerHTML = apps.length ? apps.slice(0,5).map(app=>appRow(app,total)).join("") : '<div class="empty-state">这个时间段还没有应用活动</div>';
-    $("dialogList").innerHTML = apps.length ? apps.map(app=>appRow(app,total)).join("") : '<div class="empty-state">暂无活动</div>';
+    const maxSeconds = apps[0]?.seconds || 1;
+    $("appList").innerHTML = apps.length ? apps.slice(0,5).map(app=>appRow(app,maxSeconds)).join("") : '<div class="empty-state">这个时间段还没有应用活动</div>';
+    $("dialogList").innerHTML = apps.length ? apps.map(app=>appRow(app,maxSeconds)).join("") : '<div class="empty-state">暂无活动</div>';
   }
   function renderTimeline(segments) {
     const chronological = [...segments].sort((a,b)=>b.start-a.start).filter((segment,index,all)=>index===0 || segment.event.data?.app!==all[index-1].event.data?.app || all[index-1].start-segment.end>60000);
@@ -250,14 +270,14 @@
     $("sessionCaption").textContent = longestSession>=1500 ? "已达到一次深度专注" : "25 分钟以上计为深度专注";
     $("switchCount").textContent = switches.toLocaleString(zh?"zh-CN":"en-US");
     $("switchCaption").textContent = total ? "平均每小时 " + Math.round(switches/Math.max(total/3600,1)) + " 次" : "应用间切换";
-    const ratio = total ? Math.round(deepSeconds/total*100) : 0;
+    const ratio = total ? Math.max(0,Math.min(100,Math.round(deepSeconds/total*100))) : 0;
     $("focusDonut").style.setProperty("--value",ratio);
     $("donutValue").textContent = ratio + "%";
     $("deepTime").textContent = formatShort(deepSeconds);
     $("fragmentTime").textContent = formatShort(Math.max(0,total-deepSeconds));
     $("awayTime").textContent = formatShort(away);
     renderChart(result.hourly);
-    renderApps(apps,total);
+    renderApps(apps);
   }
   function updateControls() {
     $("dateLabel").textContent = formatDateLabel();
