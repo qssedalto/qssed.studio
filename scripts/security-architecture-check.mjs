@@ -1,3 +1,7 @@
+// 回归检查：AERTEX 服务端安全架构。
+//
+// 它关注“凭据应该在哪一层存在”：浏览器只能依赖 HttpOnly Session，同源 Worker 再去访问 Supabase/R2/内部服务。
+// 源码字符串检查用于禁止重新出现前端 service-role key、任意 Authorization 透传或绕过 Session Gate 的 API。
 import fs from "node:fs";
 
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
