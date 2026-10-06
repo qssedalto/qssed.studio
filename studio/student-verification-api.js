@@ -1,3 +1,4 @@
+// 初学者导读：学生验证 API：处理学校/身份材料相关验证状态。敏感材料和资格判断必须由服务端控制，前端只能展示结果。
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
 
