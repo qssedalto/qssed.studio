@@ -1,3 +1,4 @@
+// 初学者导读：Worker 侧审计辅助：统一记录关键请求/错误或运行状态，便于排障而不把敏感凭据写入日志。
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
