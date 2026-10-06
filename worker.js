@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX 主站/Studio Worker 总入口；负责主站路由、产品 handoff、API 和 SSR 页面。它是共享平台的总调度层，具体业务尽量下沉到 studio/* 模块。
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
