@@ -1,3 +1,4 @@
+// 初学者导读：项目工作区回归检查；确认项目 API、页面入口和基础资源边界。
 import fs from "node:fs";
 import { projectsWorkspaceContent } from "../studio/ui-projects.js";
 
