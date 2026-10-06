@@ -1,3 +1,7 @@
+// AERTEX Account 服务端 API 聚合层。
+//
+// 这里负责读取/更新账户资料并把浏览器请求转换成受约束的 Supabase 调用；
+// 浏览器只使用 same-origin Session，真正访问数据库所需的身份/权限判断必须留在 Worker 侧。
 import { SUPABASE_URL, SUPABASE_KEY, ZH_COUNTRIES } from "./config.js";
 import { json } from "./routing.js";
 import { getSupabaseSecret, workerLog } from "./server-runtime.js";
