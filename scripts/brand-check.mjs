@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX 产品命名回归检查；防止共享导航、页面标题和产品名在重构时退回旧品牌或底层项目名。
 import fs from "node:fs";
 
 const read = path => fs.readFileSync(path, "utf8");
