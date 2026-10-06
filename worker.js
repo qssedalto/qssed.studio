@@ -12,6 +12,9 @@
  * and is intentionally preserved across the workers that were later split from it.
  */
 
+// AERTEX 主站/Work 兼容入口 Worker。
+// 它像“总路由器”：先做边缘防护，再处理 favicon/logo、各独立产品 handoff、主站 API、Work 特殊路由，最后交给 studio/entry.js 渲染页面。
+// 新功能应尽量放进对应 studio/* 模块，而不是继续把业务逻辑堆到这个入口文件。
 import studio from "./studio/entry.js";
 import { handleKnowledgeSearch } from "./studio/knowledge-api.js";
 import { handleGlobalSearch } from "./studio/global-search-api.js";
