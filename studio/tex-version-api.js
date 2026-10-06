@@ -1,3 +1,4 @@
+// 初学者导读：TeX 版本历史 API：负责快照、版本列表与恢复相关服务端操作。恢复版本前仍要验证项目归属和版本来源。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
