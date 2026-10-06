@@ -1,3 +1,7 @@
+// 回归检查：AERTEX 全局搜索。
+//
+// 既测试纯排序函数（精确标题、前缀、正文命中），也检查搜索 UI、Worker API 与可搜索模块接线。
+// 目的不是模拟完整搜索引擎，而是锁住结果排序规则和“浏览器不直接拿服务端凭据”的边界。
 import fs from "node:fs";
 import { globalSearchMatchScore } from "../studio/global-search-api.js";
 import { globalSearchContent } from "../studio/ui-global-search.js";
