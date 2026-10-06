@@ -13,7 +13,7 @@ function replaceExact(source, needle, replacement) {
   return source.slice(0, index) + replacement + source.slice(index + needle.length);
 }
 
-export function enhanceWorkTexCodeMirror(markup, zh) {
+// CodeMirror 增强入口：把基础 textarea 编辑器升级成 CodeMirror，并保持原有 source 元素作为兼容/保存桥梁。任何编辑器状态都必须最终同步回原始文档模型。\nexport function enhanceWorkTexCodeMirror(markup, zh) {
   const copy = zh ? {
     loading: "正在加载高级编辑器…",
     failed: "高级编辑器加载失败，已继续使用基础编辑器。",
@@ -245,7 +245,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           if (notify) source.dispatchEvent(new Event('select', { bubbles: true }));
         }
 
-        function publishViewToBridge(update) {
+        // 编辑器 → 协作桥接：把当前文本/选区变化发布给实时模块。这里传递的是编辑状态，不直接负责网络协议。\nfunction publishViewToBridge(update) {
           if (!view || syncingFromSource) return;
           resetHistoryIfDocumentChanged();
           if (update.docChanged) recordUndo(update.startState);
@@ -369,7 +369,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           }
         }
 
-        function renderRemotePresence() {
+        // 远端光标/选区渲染：根据协作参与者的 selection 在 CodeMirror 上绘制可视层，不修改真实文档内容。\nfunction renderRemotePresence() {
           remoteFrame = 0;
           if (!view || !host || !remoteLayer) return;
           remoteLayer.replaceChildren();
@@ -463,7 +463,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           return applyHistorySnapshot(snapshot, undoStack);
         }
 
-        async function mount() {
+        // 挂载 CodeMirror：加载依赖、恢复文档/历史、设置只读和协作监听；若增强失败，应保留原 textarea 可用，而不是让编辑器整体失效。\nasync function mount() {
           let cm;
           let language;
           let latex;

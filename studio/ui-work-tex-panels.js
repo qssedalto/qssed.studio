@@ -13,7 +13,7 @@ import { enhanceWorkTexMobileApple } from "./ui-work-tex-mobile-apple.js";
 import { enhanceWorkTexDesktopTypography } from "./ui-work-tex-desktop-type.js";
 import { enhanceWorkTexCollaboration } from "./ui-work-tex-collaboration-instant.js";
 
-export function enhanceWorkTexCollapsiblePanels(markup, zh) {
+// 可折叠面板增强：管理左/右辅助区域、用户偏好和 PDF 缩放。折叠只影响布局，不应卸载编辑器或丢失文档状态。\nexport function enhanceWorkTexCollapsiblePanels(markup, zh) {
   const copy = zh ? {
     collapseDocuments: "隐藏文档栏",
     expandDocuments: "展开文档栏",
@@ -254,7 +254,7 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
           state.right = saved?.right === true;
         } catch {}
 
-        const persist = () => {
+        // 保存面板偏好：只持久化 UI 尺寸/折叠状态等非敏感设置，不保存文档正文或认证信息。\n  const persist = () => {
           try { window.localStorage.setItem(storageKey, JSON.stringify(state)); } catch {}
         };
 
@@ -336,7 +336,7 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
           if (event.key === 'Escape' && previewCard.classList.contains('is-expanded')) setExpanded(false);
         });
 
-        const normalizePdfZoom = () => {
+        // PDF 缩放归一化：限制最小/最大比例并同步显示值，防止异常存储值把预览缩放到不可用。\n  const normalizePdfZoom = () => {
           const src = previewFrame.getAttribute('src') || '';
           if (!src.startsWith('blob:') || src.includes('#zoom=page-width')) return;
           const base = src.split('#')[0];

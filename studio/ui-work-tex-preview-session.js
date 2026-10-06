@@ -7,7 +7,7 @@
  * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
  * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
  */
-export function enhanceWorkTexPreviewSession(markup, zh) {
+// 预览会话缓存：把 PDF blob 与对应用户/文档/engine/source 元数据绑定，支持同一会话恢复并验证是否仍匹配当前源码。\nexport function enhanceWorkTexPreviewSession(markup, zh) {
   const restoredLabel = zh ? "已立即恢复上次预览" : "Last preview restored instantly";
   return String(markup || "") + `
     <script id="qsseda-work-tex-preview-session">
@@ -118,7 +118,7 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           return new Blob([bytes], { type });
         };
 
-        const restoreImmediately = async () => {
+        // 立即恢复：页面初始化时先尝试从 session/cache 展示 PDF；只有 metadata 与当前上下文匹配才使用。\n  const restoreImmediately = async () => {
           const userId = await currentUserId();
           if (!userId) {
             clearPreviewCache();
@@ -168,7 +168,7 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           }
         };
 
-        const persistSessionData = async (blob, meta, userId, token) => {
+        // 持久化预览：同时保存 blob 与校验元数据；token/用户上下文只用于确定隔离范围，不应写入普通可读缓存值。\n  const persistSessionData = async (blob, meta, userId, token) => {
           if (!(blob instanceof Blob) || blob.size <= 0 || blob.size > MAX_SESSION_PDF_BYTES || !userId) return;
           try {
             const reader = new FileReader();
@@ -201,7 +201,7 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           } catch {}
         };
 
-        const validateRestoredPreview = async () => {
+        // 校验已恢复预览：重新比较当前文档/源码/编译元数据，发现不一致就清缓存，避免用户看到旧 PDF 还以为是最新结果。\n  const validateRestoredPreview = async () => {
           const userId = await currentUserId();
           if (!userId) {
             clearPreviewCache();

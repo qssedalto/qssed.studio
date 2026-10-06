@@ -15,7 +15,7 @@ function replaceExact(source, needle, replacement) {
   return source.slice(0, index) + replacement + source.slice(index + needle.length);
 }
 
-export function enhanceWorkTexCollaboration(markup, zh) {
+// 协作性能增强：对频繁 DOM/网络操作做缓存、合并或预热，但不改变权限和协作数据的真实性判断。性能层不能绕过正确性层。\nexport function enhanceWorkTexCollaboration(markup, zh) {
   let output = enhanceBaseWorkTexCollaboration(markup, zh);
 
   output = replaceExact(

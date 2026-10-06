@@ -7,7 +7,7 @@
  * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
  * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
  */
-export function enhanceWorkTexMobileApple(markup, zh) {
+// Apple 风格移动端过渡增强：处理面板打开/关闭动画和过渡遮罩，仅影响视觉状态，不持有文档业务数据。\nexport function enhanceWorkTexMobileApple(markup, zh) {
   const labels = zh ? {
     creating: "正在创建",
     preparing: "正在准备编辑器…",
@@ -309,7 +309,7 @@ export function enhanceWorkTexMobileApple(markup, zh) {
         let lastPointerButton = null;
         let lastPointerAt = 0;
 
-        const ensureTransition = () => {
+        // 确保转场层只创建一次；重复进入页面或重新初始化时复用现有节点，避免叠加多个全屏遮罩。\n  const ensureTransition = () => {
           if (transition || !panel) return transition;
           transition = document.createElement('div');
           transition.className = 'tex-mobile-create-transition';

@@ -15,7 +15,7 @@ function replaceExact(source, needle, replacement) {
   return source.slice(0, index) + replacement + source.slice(index + needle.length);
 }
 
-export function enhanceWorkTexCollaboration(markup, zh) {
+// 协作即时核心增强：监听活动文档变化，把已缓存的协作/预览状态快速恢复到新文档，减少切换时的空白等待。\nexport function enhanceWorkTexCollaboration(markup, zh) {
   let output = enhanceWarmWorkTexCollaboration(markup, zh);
 
   output = replaceExact(
@@ -222,7 +222,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             return button;
           });
 
-          const sync = () => {
+          // 同步当前协作快照到页面：只处理“当前活动文档”的状态，避免后台文档更新错误覆盖前台 UI。\n  const sync = () => {
             const current = select.value === 'viewer' ? 'viewer' : 'editor';
             for (const button of buttons) {
               const active = button.dataset.roleValue === current;
@@ -242,7 +242,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           sync();
         };
 
-        const scan = () => {
+        // 扫描 DOM/状态变化并触发必要同步；属于兼容型观察器，要求重复运行幂等，不能每次 scan 都重复创建监听器。\n  const scan = () => {
           const drawer = document.querySelector('.tex-collaboration-drawer');
           if (!drawer) return false;
           enhanceSelect(drawer.querySelector('#tex-collaboration-role'));

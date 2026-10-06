@@ -230,7 +230,7 @@ function optimizeCollaborationSwitching(markup) {
           }
         };
 
-        const publish = (id, data, persist = true) => {
+        // 发布协作快照：按 documentId 保存，避免不同文档的成员/权限状态串用；persist=false 仅用于短生命周期 UI 更新。\n  const publish = (id, data, persist = true) => {
           const key = String(id || data?.document_id || '');
           if (!key || !data || !Array.isArray(data.participants)) return;
           if (persist) {
@@ -269,7 +269,7 @@ function optimizeCollaborationSwitching(markup) {
           return request;
         };
 
-        const hydrateActive = () => {
+        // 恢复当前文档协作快照：优先使用刚缓存的数据快速绘制，随后实时/API 模块会用服务器最新状态校正。\n  const hydrateActive = () => {
           const id = String(root.dataset.texCollaborationDocumentId || '').trim();
           if (!id) return;
           const cached = readCached(id);
@@ -316,7 +316,7 @@ function optimizeCollaborationSwitching(markup) {
   return output;
 }
 
-export function enhanceWorkTexCollaboration(markup, zh) {
+// 协作即时体验总装配：把邀请状态、移动端细节、文档切换缓存和核心协作增强依次注入到 Work/TeX 页面。\nexport function enhanceWorkTexCollaboration(markup, zh) {
   const output = enhanceWorkTexSharedStable(
     enhanceWorkTexCodeMirror(
       enhanceWorkTexRealtime(

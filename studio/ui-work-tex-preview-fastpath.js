@@ -13,7 +13,7 @@ function replaceExact(source, needle, replacement) {
   return source.slice(0, index) + replacement + source.slice(index + needle.length);
 }
 
-export function enhanceWorkTexPreviewFastPath(markup) {
+// 预览 fast path：在完整页面逻辑启动前尽早恢复可验证缓存，减少白屏；后续正式编译仍会覆盖/校验缓存。\nexport function enhanceWorkTexPreviewFastPath(markup) {
   let output = String(markup || "");
 
   output = replaceExact(

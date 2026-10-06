@@ -7,7 +7,7 @@
  * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
  * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
  */
-export function enhanceWorkTexMobile(markup, zh) {
+// Work/TeX 移动布局主增强：在窄屏下把编辑器、预览和辅助面板改成单面板切换，同时保留桌面端 DOM 作为同一份状态来源。\nexport function enhanceWorkTexMobile(markup, zh) {
   const copy = zh ? {
     documents: "文档",
     edit: "编辑",
@@ -451,7 +451,7 @@ export function enhanceWorkTexMobile(markup, zh) {
 
         const buttons = [...tabs.querySelectorAll('[data-mobile-pane]')];
 
-        function setPane(next, persist = true) {
+        // 切换移动端当前面板：只改变可见区域；persist=true 时记住用户上次选择，重新加载后恢复。\nfunction setPane(next, persist = true) {
           if (!panes.includes(next)) next = 'editor';
           pane = next;
           shell.dataset.mobilePane = pane;
@@ -482,7 +482,7 @@ export function enhanceWorkTexMobile(markup, zh) {
           window.setTimeout(() => setPane('editor'), 120);
         });
 
-        function updateViewport() {
+        // 根据 visualViewport/键盘高度更新可用空间，避免 iOS 软键盘弹出后编辑器或底部工具栏被遮挡。\nfunction updateViewport() {
           if (!media.matches) {
             document.documentElement.style.removeProperty('--tex-mobile-vh');
             document.body.classList.remove('tex-mobile-keyboard-open');
@@ -497,7 +497,7 @@ export function enhanceWorkTexMobile(markup, zh) {
           document.body.classList.toggle('tex-mobile-keyboard-open', keyboardOpen);
         }
 
-        function syncMode() {
+        // 响应媒体查询：进入/离开移动模式时统一恢复 pane、滚动和 aria 状态，避免桌面/移动样式同时生效。\nfunction syncMode() {
           if (media.matches) {
             setPane(pane, false);
             updateViewport();

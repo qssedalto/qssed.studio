@@ -7,7 +7,7 @@
  * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
  * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
  */
-export function enhanceWorkTexEditorTools(markup, zh) {
+// 编辑器工具栏增强：提供手动保存、另存、命令按钮等快捷操作；所有文档写入仍走正式 TeX API。\nexport function enhanceWorkTexEditorTools(markup, zh) {
   const output = String(markup || "");
   const copy = zh ? {
     save: "保存",
@@ -290,7 +290,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         document.body.append(dialog);
         const saveAsInput = dialog.querySelector('input');
 
-        async function saveNow() {
+        // 立即保存：读取当前 title/engine/source 快照并 PUT 当前文档；保存成功后再更新“已保存”状态。\nasync function saveNow() {
           const id = activeDocumentId();
           if (!id) return;
           saveButton.disabled = true;
@@ -317,7 +317,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           } finally { saveButton.disabled = false; }
         }
 
-        async function saveAs(name) {
+        // 另存为云端新文档：以当前源码创建新的 documentId，而不是改名覆盖原文档，便于保留原版本/协作关系。\nasync function saveAs(name) {
           const nextTitle = String(name || '').trim();
           if (!nextTitle) return;
           saveAsButton.disabled = true;

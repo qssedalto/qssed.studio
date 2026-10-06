@@ -7,7 +7,7 @@
  * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
  * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
  */
-export function enhanceWorkTexDesktopTypography(markup) {
+// 桌面端视觉/运行时增强：除了字体排版，还包含预览缓存与协作预热，用于降低重新打开文档时的等待。所有缓存都必须绑定文档/用户/源码指纹。\nexport function enhanceWorkTexDesktopTypography(markup) {
   return String(markup || "") + `
     <style id="qsseda-work-tex-desktop-type">
       @media (min-width:761px){
@@ -326,7 +326,7 @@ export function enhanceWorkTexDesktopTypography(markup) {
           return (hash >>> 0).toString(16);
         }
 
-        async function previewCacheKey(engine, source) {
+        // PDF 预览缓存键：编译引擎 + 源码摘要共同决定缓存身份；只按 documentId 缓存会错误复用旧源码 PDF。\nasync function previewCacheKey(engine, source) {
           return previewPrefix + await digestText(String(engine || '').toLowerCase() + String.fromCharCode(10) + String(source || ''));
         }
 
@@ -451,7 +451,7 @@ export function enhanceWorkTexDesktopTypography(markup) {
           }
         }
 
-        async function prefetchCollaboration(root, documentList) {
+        // 协作预热：在用户真正打开成员面板前读取当前文档轻量协作数据，缩短首开延迟；失败不应影响编辑器本身。\nasync function prefetchCollaboration(root, documentList) {
           const id = activeDocumentId(root, documentList);
           if (!id) return;
           const cached = readCollaborationSnapshot(id);
@@ -469,7 +469,7 @@ export function enhanceWorkTexDesktopTypography(markup) {
           } catch {}
         }
 
-        async function restorePreview(root) {
+        // 预览恢复：检查当前 engine/source 对应的缓存 PDF，命中时先展示，再由后续编译结果校验/替换。\nasync function restorePreview(root) {
           const source = document.getElementById('tex-source');
           const engine = document.getElementById('tex-engine');
           const editor = document.getElementById('tex-editor');

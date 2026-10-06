@@ -7,7 +7,7 @@
  * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
  * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
  */
-export function enhanceWorkTexMobileTools(markup, zh) {
+// 移动端 TeX 快捷工具：提供常用符号/片段插入，直接修改当前编辑位置并触发标准 input 流程，让自动保存/协作仍能感知变化。\nexport function enhanceWorkTexMobileTools(markup, zh) {
   const copy = zh ? {
     toolbar: "TeX 快捷输入",
     slash: "反斜杠",
@@ -107,7 +107,7 @@ export function enhanceWorkTexMobileTools(markup, zh) {
           ['\\\\item', '\\\\item ', 6, ${JSON.stringify(copy.item)}]
         ];
 
-        const insert = (text, cursorOffset) => {
+        // 在当前光标插入 TeX 片段：更新 selection 后主动派发输入事件，不能只改 DOM value，否则协作/保存层可能不知道内容变了。\n  const insert = (text, cursorOffset) => {
           const start = Number.isFinite(source.selectionStart) ? source.selectionStart : source.value.length;
           const end = Number.isFinite(source.selectionEnd) ? source.selectionEnd : start;
           const selected = source.value.slice(start, end);

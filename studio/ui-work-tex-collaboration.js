@@ -7,7 +7,7 @@
  * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
  * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
  */
-export function enhanceWorkTexCollaboration(markup, zh) {
+// 协作成员面板主模块：负责成员列表、搜索、邀请、角色编辑与保存草稿；最终权限变更全部交给 /api/tex/collaboration。\nexport function enhanceWorkTexCollaboration(markup, zh) {
   const copy = zh ? {
     open: "协作",
     title: "协作设置",
@@ -627,7 +627,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           updateSaveState();
         }
 
-        async function loadSnapshot(showLoading = true) {
+        // 加载协作快照：读取当前文档成员/权限，并把服务器状态复制成可编辑 draft；打开面板前先有 snapshot，避免编辑基于过期数据。\nasync function loadSnapshot(showLoading = true) {
           const id = activeDocumentId();
           const sequence = ++requestSequence;
           if (!id) {
@@ -704,7 +704,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           }
         });
 
-        async function saveDraft() {
+        // 保存成员草稿：比较 snapshot 与 draft，逐项执行新增/改角色/移除。中途失败时重新加载服务器状态，避免 UI 假装全部成功。\nasync function saveDraft() {
           const id = activeDocumentId();
           if (!id || saving || !snapshot || !hasDraftChanges()) return;
           saving = true;
@@ -780,7 +780,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           openButton.focus();
         }
 
-        function syncDocument() {
+        // 文档切换同步：活动 documentId 改变时清空旧成员状态并重新加载，防止 A 文档成员显示在 B 文档上。\nfunction syncDocument() {
           const id = activeDocumentId();
           openButton.disabled = !id;
           openButton.title = id ? labels.open : labels.noDocument;

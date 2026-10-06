@@ -7,7 +7,7 @@
  * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
  * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
  */
-export function enhanceWorkTexPreviewDirectCache(markup) {
+// 直接预览缓存增强：根据当前用户 + 文档等信息读取本地缓存，目标是秒开最近 PDF；缓存命中不代表云端文档一定没变。\nexport function enhanceWorkTexPreviewDirectCache(markup) {
   return String(markup || "") + `
     <style id="qsseda-work-tex-mobile-pdf-scroll-fix">
       @media (max-width:760px), (max-width:950px) and (pointer:coarse){
@@ -87,7 +87,7 @@ export function enhanceWorkTexPreviewDirectCache(markup) {
           return (hash >>> 0).toString(36);
         };
 
-        const currentUserId = async () => {
+        // 获取当前用户 ID 用于缓存隔离；匿名/未知用户不应复用其他账户的预览缓存。\n  const currentUserId = async () => {
           try {
             if (typeof supabaseClient === 'undefined') return '';
             const result = await supabaseClient.auth.getSession();

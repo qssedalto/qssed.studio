@@ -7,7 +7,7 @@
  * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
  * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
  */
-export function enhanceWorkTexRealtime(markup, zh) {
+// 实时协作前端总模块：负责连接文档房间、Yjs 状态、presence、访问角色和断线重连，并把远端变化安全同步到现有编辑器。\nexport function enhanceWorkTexRealtime(markup, zh) {
   const copy = zh ? {
     live: "实时协作",
     connecting: "正在连接",
@@ -234,7 +234,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           button?.classList.toggle('is-live', kind === 'live' || kind === 'readonly');
         }
 
-        function applyAccessRole(role) {
+        // 应用协作角色：viewer/editor 等权限会影响编辑器只读状态和可用按钮；前端限制只是体验层，服务端仍必须再次验证。\nfunction applyAccessRole(role) {
           const { root, source, title, engine, deleteButton } = activeElements();
           const normalized = role === 'viewer' ? 'viewer' : role === 'editor' ? 'editor' : 'owner';
           if (root) root.dataset.texCollaborationAccessRole = normalized;
@@ -305,7 +305,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           }
         }
 
-        function syncText(ytext, nextValue, origin) {
+        // 本地文本 → Yjs：仅在内容真正变化时写入 shared text，并标记 origin，防止远端回放再次被当成本地修改形成循环。\nfunction syncText(ytext, nextValue, origin) {
           const current = ytext.toString();
           const next = String(nextValue ?? '');
           if (current === next) return;
@@ -334,7 +334,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           element.dispatchEvent(new Event(type, { bubbles: true }));
         }
 
-        function renderYState(current) {
+        // Yjs → 页面：把共享文本/元数据渲染回当前文档控件，并区分远端更新与本地输入，避免重复触发保存/协作事件。\nfunction renderYState(current) {
           if (!current?.ready || !current?.ytext || !current?.ymeta) return;
           const { source, title, engine } = activeElements();
           current.applyingRemote = true;
@@ -403,7 +403,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           } catch {}
         }
 
-        function closeConnection() {
+        // 关闭实时连接：移除定时器/监听器/网络通道并清空 presence，确保切换文档或离开页面后不会继续发送旧文档更新。\nfunction closeConnection() {
           documentGeneration += 1;
           window.clearTimeout(reconnectTimer);
           reconnectTimer = 0;
@@ -416,7 +416,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           setStatus('', '');
         }
 
-        async function connectDocument(id) {
+        // 连接当前文档实时房间：先关闭旧连接、解析访问权限、加载 Yjs，再建立实时通道和 presence。文档 ID 变化必须彻底隔离旧连接状态。\nasync function connectDocument(id) {
           const generation = ++documentGeneration;
           window.clearTimeout(reconnectTimer);
           const elements = activeElements();

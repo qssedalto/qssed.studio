@@ -7,7 +7,7 @@
  * 修改注意：协作/实时模块尤其要考虑乱序消息、重复消息、断线重连和旧版本客户端；性能优化模块不能以牺牲正确性为代价。
  * 调试方法：先区分“编辑器内容错”“预览错”“协作同步错”“移动布局错”，再进入对应模块，不要在整个 Work 链路里盲查。
  */
-export function enhanceWorkTexEditorRefine(markup, zh) {
+// 编辑器细节增强：补充下载/另存等非核心能力，依赖主编辑器已存在。增强失败时不应影响正文编辑与保存。\nexport function enhanceWorkTexEditorRefine(markup, zh) {
   const copy = zh ? {
     savedLocal: "已另存到本机",
     chooserUnavailable: "当前浏览器不支持系统另存为窗口，已改用普通下载。",
@@ -128,7 +128,7 @@ export function enhanceWorkTexEditorRefine(markup, zh) {
             window.setTimeout(() => URL.revokeObjectURL(url), 1500);
           };
 
-          const saveAsLocal = async () => {
+          // 本地另存：把当前编辑器源码导出给用户电脑；这是“下载副本”，不会改变云端文档 ID 或覆盖云端版本历史。\n  const saveAsLocal = async () => {
             saveAsButton.disabled = true;
             try {
               if (typeof window.showSaveFilePicker === 'function') {
