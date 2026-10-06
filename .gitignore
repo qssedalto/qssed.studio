@@ -6,3 +6,5 @@ node_modules/
 *.log
 AW-Sync/native/target/
 AW-Sync/native/*.exe
+AW-Sync/native/assets/*.ico
+AW-Sync/native/dist/
