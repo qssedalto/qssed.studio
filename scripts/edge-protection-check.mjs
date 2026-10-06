@@ -1,3 +1,7 @@
+// 回归检查：主站/产品共享的 Cloudflare Edge Protection。
+//
+// 使用内存 limiter 与伪造请求验证速率限制、Bot 信号、公开索引例外、请求体上限和安全响应头。
+// 这里的目标是保证边缘防护不会误伤合法公开页，同时也不能因“有 Cookie/Authorization”就盲目信任请求。
 import {
   protectEdgeRequest,
   applyEdgeProtectionHeaders,
