@@ -1,3 +1,7 @@
+// 主站与产品共用的 Cloudflare 边缘防护层。
+//
+// 这里在业务路由之前处理请求长度、方法、扫描器路径、匿名/可疑/昂贵操作限流和 Bot 信号，
+// 同时给最终响应补安全头。Cookie 或 Authorization 只能算“请求特征”，不能直接当可信身份；身份必须交给 Session/API 层验证。
 import { publicSitemapUrls } from "./public-indexing.js";
 const ACCESS_COOKIE = "__Host-qsseda-studio-access";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
