@@ -3,6 +3,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
+// 这是早期 Node.js 同步脚本，仍保留作兼容/诊断入口；正式 Windows 客户端已经使用 Rust。
+// 它仍遵循同一核心思路：枚举 Bucket、增量读取事件、上传成功后再推进进度。
 const localOrigin = (process.env.ACTIVITYWATCH_ORIGIN || "http://127.0.0.1:5600").replace(/\/$/, "");
 const cloudOrigin = (process.env.AERTEX_WATCH_DATA_ORIGIN || "https://awd.qsseda.com").replace(/\/$/, "");
 const token = String(process.env.AERTEX_WATCH_TOKEN || "").trim();
@@ -15,29 +17,34 @@ if (!token) {
   process.exit(2);
 }
 
+// 统一 JSON 请求封装：非 2xx 直接抛错，避免把错误响应继续当数据处理。
 async function jsonFetch(url, options = {}) {
   const response = await fetch(url, options);
   if (!response.ok) throw new Error(response.status + " " + response.statusText + ": " + await response.text());
   return response.status === 204 ? null : response.json();
 }
 
+// 状态只保存各 Bucket 的同步位置；读取失败时从空状态恢复。
 async function readState() {
   try { return JSON.parse(await fs.readFile(statePath, "utf8")); }
   catch { return { version:1, buckets:{} }; }
 }
 
+// 同样采用“写临时文件 -> rename”的方式，减少进程中断造成状态文件损坏的概率。
 async function writeState(state) {
   const tmp = statePath + ".tmp";
   await fs.writeFile(tmp, JSON.stringify(state, null, 2), "utf8");
   await fs.rename(tmp, statePath);
 }
 
+// 找出本批次最新事件时间，只有上传成功后才把它写回同步进度。
 function maxTimestamp(events, fallback) {
   let best = fallback || "";
   for (const event of events) if (String(event.timestamp || "") > best) best = String(event.timestamp || "");
   return best;
 }
 
+// 一轮同步：读取所有 Bucket -> 按各自断点拉事件 -> 上传 -> 成功后推进断点。
 async function syncOnce() {
   const buckets = await jsonFetch(localOrigin + "/api/0/buckets/");
   const state = await readState();
@@ -81,6 +88,7 @@ async function syncOnce() {
   console.log("[" + new Date().toISOString() + "] synced " + uploaded + " events across " + Object.keys(buckets || {}).length + " buckets");
 }
 
+// --watch 模式常驻循环；单轮异常只记录并退出/等待下一次，由启动方式决定是否重试。
 async function main() {
   await syncOnce();
   if (!watchMode) return;
