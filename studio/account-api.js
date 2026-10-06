@@ -1,3 +1,4 @@
+// 初学者导读：账户资料 API：处理当前用户自己的账户信息读取与更新。所有用户 id 应从已验证会话派生，而不是信任请求体。
 import { SUPABASE_URL, SUPABASE_KEY, ZH_COUNTRIES } from "./config.js";
 import { json } from "./routing.js";
 import { getSupabaseSecret, workerLog } from "./server-runtime.js";
