@@ -1,3 +1,7 @@
+// AERTEX Watch 全链路回归检查。
+//
+// 这份脚本同时守云端数据面、ActivityWatch 统计口径、Windows 同步器、登录 handoff、域名与安装器发布契约；
+// 后半段还用 VM 跑纯算法样例。它是 Watch 代码修改后的首要检查入口。
 import fs from "node:fs";
 import vm from "node:vm";
 
