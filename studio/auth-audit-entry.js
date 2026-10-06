@@ -1,3 +1,7 @@
+// Auth Worker 的审计包装入口。
+//
+// 真正登录/OAuth 路由在 auth-entry.js；本文件负责在其外层记录访问结果与必要的安全遥测，
+// 并保证审计失败不会把用户凭据或完整请求体打印出来，也不应改变正常 Auth 响应语义。
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
