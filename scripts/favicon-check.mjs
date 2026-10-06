@@ -1,3 +1,7 @@
+// 回归检查：全产品 favicon / Apple touch icon / Safari 深浅色资源。
+//
+// 通过共享 favicon 生成器和各 Worker/HTML 的引用关系，确保产品分支图标、暗色/亮色图标和旧图标淘汰保持一致；
+// 这类断言专门防止某个子域单独回退到白底或过期图标。
 import { faviconSvgForProduct } from "../studio/favicon.js";
 import fs from "node:fs";
 
