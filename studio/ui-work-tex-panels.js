@@ -1,3 +1,4 @@
+// 初学者导读：TeX 多面板布局控制：管理编辑器、预览、文件/日志等面板显隐和尺寸。面板状态不等于文档持久化状态。
 import { enhanceWorkTexMobile } from "./ui-work-tex-mobile.js";
 import { enhanceWorkTexMobileTools } from "./ui-work-tex-mobile-tools.js";
 import { enhanceWorkTexMobileApple } from "./ui-work-tex-mobile-apple.js";
