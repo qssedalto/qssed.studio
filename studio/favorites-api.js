@@ -1,3 +1,4 @@
+// 初学者导读：收藏 API：维护当前用户自己的收藏记录与排序。写操作要同时验证会话、资源归属和输入格式。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
