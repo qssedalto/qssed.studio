@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Intelligence 主 UI 生成器；组合桌面/移动/Watch 小屏布局、消息区与模型选择。业务数据通过网关/API 获取，UI 不持有服务端密钥。
 import { FAVICON_LINKS } from "./favicon.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
 import { intelligenceThemeAttr, intelligenceThemeBootScript } from "./intelligence-theme.js";
