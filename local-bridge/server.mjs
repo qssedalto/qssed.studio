@@ -1,3 +1,4 @@
+// 初学者导读：Work 本机桥接服务：把浏览器允许的本机请求转换成受控文件/工具操作。边界重点是只暴露明确允许的能力，并限制路径和来源。
 import http from "node:http";
 import { spawn } from "node:child_process";
 
