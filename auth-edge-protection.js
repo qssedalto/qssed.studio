@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX ID 的边缘防护规则：在真正登录逻辑前处理异常请求、速率与可疑流量。不要把它与用户密码验证逻辑混为一层。
 const MAX_PATH_LENGTH = 2048;
 const MAX_QUERY_LENGTH = 4096;
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
