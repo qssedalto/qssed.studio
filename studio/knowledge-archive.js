@@ -1,3 +1,4 @@
+// 初学者导读：知识库归档类内容数据源；用于保存历史/归档知识条目，不负责搜索、权限或页面路由。
 export const ARCHIVE_KNOWLEDGE = {
   "version-history": {
     zh: {
