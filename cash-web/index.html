@@ -13,6 +13,8 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+<!-- Cash 的 HTML 只提供界面骨架和稳定 id；业务状态由 app.js 管理，金额/预测由 model.js 计算。
+     appearance.js 在首屏加载共享 AERTEX 主题，因此这里不要再增加产品私有的浅/深色设置。 -->
 <main class="app">
   <header class="topbar">
     <div class="brand-block"><a id="cashHomeBrand" class="brand-row brand-home-link" href="/" aria-label="返回 AERTEX 主站"><img src="/favicon.svg?v=aertex-20261004-safari-theme-1" class="app-logo" alt=""><div><h1>学期现金流</h1><p id="periodSummary">正在读取规划周期…</p></div></a><small id="storageStatus">正在读取本地账本…</small></div>
