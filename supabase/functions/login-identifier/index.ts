@@ -1,3 +1,6 @@
+// Supabase Edge Function：把“用户名或邮箱”统一转换成 Supabase password grant。
+// 如果输入不是邮箱，会先用 service-role 查询 profiles.username，再从 auth admin API 取对应邮箱；
+// service-role 只存在函数运行环境，最终浏览器仍只收到普通用户 access/refresh token。
 const INVALID_MESSAGE = "Invalid login credentials";
 
 function json(data: unknown, status = 200) {
