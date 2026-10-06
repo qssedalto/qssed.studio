@@ -1,4 +1,5 @@
 {
+  // AERTEX 主站 Worker 部署清单：主域/通配子域、R2、全局 API/边缘限流以及定时审计任务。绑定名称必须和代码中的 env.* 一致。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "restless-boat-f553",
   "main": "studio/worker-audit.js",
