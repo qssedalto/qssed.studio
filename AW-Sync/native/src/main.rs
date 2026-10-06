@@ -14,6 +14,7 @@ mod ui;
 use crate::single_instance::InstanceOutcome;
 use std::sync::{Arc, Mutex};
 
+// GUI 程序入口尽量保持很薄：初始化失败统一交给 run() 返回，再用 MessageBox 告诉用户。
 fn main() {
     if let Err(error) = run() {
         logging::error(format!("Fatal startup error: {error}"));
@@ -21,6 +22,8 @@ fn main() {
     }
 }
 
+/// 启动顺序：日志 -> 单实例 -> 本地状态 -> 后台 Runtime -> Win32 UI。
+/// Runtime 负责发现 ActivityWatch 与同步，UI 主要展示状态并发出控制信号。
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     logging::initialize()?;
     logging::info("AERTEX Watch Sync starting");
@@ -40,6 +43,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Release 版是 windows_subsystem=windows，没有控制台，所以致命启动错误必须弹窗可见。
 fn show_fatal(message: &str) {
     use windows_sys::Win32::UI::WindowsAndMessaging::{MB_ICONERROR, MB_OK, MessageBoxW};
     let message = message.encode_utf16().chain(Some(0)).collect::<Vec<_>>();

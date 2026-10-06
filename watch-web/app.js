@@ -109,7 +109,8 @@
     return response.json();
   }
 
-  function mergeIntervals(intervals) {
+  // 把重叠/相邻时间段合并成不重叠区间；总活跃时长、多设备去重和专注 Session 都依赖这个基础操作。
+function mergeIntervals(intervals) {
     const sorted = intervals.filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
     const result = [];
     for (const interval of sorted) {
@@ -123,7 +124,8 @@
     return JSON.stringify(left?.data||{}) === JSON.stringify(right?.data||{});
   }
 
-  function floodEvents(input,pulsetime=5) {
+  // 复现 ActivityWatch flood：同一事件相邻 heartbeat 间隔不超过 5 秒时补齐小缝隙，但不会把真正的离开时间无限延长。
+function floodEvents(input,pulsetime=5) {
     const events = (input||[]).map(event=>({...event,data:{...(event?.data||{})}})).sort((left,right)=>Date.parse(left.timestamp)-Date.parse(right.timestamp));
     const trimThresholdMs = 100;
     const pulseMs = pulsetime*1000;
@@ -174,7 +176,9 @@
     const originalStart = new Date(event.timestamp).getTime();
     return { start:Math.max(originalStart,start.getTime()), end:Math.min(originalStart+Number(event.duration||0)*1000,end.getTime()), event };
   }
-  function activeWindowEvents(windowEvents,afkEvents,start,end) {
+  // 先 flood 前台窗口事件，再和 not-afk 时间求交集。
+// 特别区分“没有 AFK Bucket”和“有 AFK Bucket 但整段都是 AFK”：后者必须得到 0 活跃时间。
+function activeWindowEvents(windowEvents,afkEvents,start,end) {
     const windows = floodEvents(windowEvents).map(event=>eventInterval(event,start,end)).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
     if (afkEvents === null) return windows;
     const activeIntervals = mergeIntervals(floodEvents(afkEvents).filter(event=>event.data?.status==="not-afk").map(event=>eventInterval(event,start,end)));
@@ -219,7 +223,8 @@
     return Date.parse(bucket?.last_sync||bucket?.last_event||"") || 0;
   }
 
-  function latestBucketsByHost(entries,kind) {
+  // 同一台设备可能残留多个旧 watcher Bucket；按 hostname 只取最近的一份，避免重复计算同一台电脑。
+function latestBucketsByHost(entries,kind) {
     const selected = new Map();
     for (const bucket of entries.filter(item=>bucketKind(item,kind))) {
       const host = bucketHost(bucket);
@@ -247,7 +252,8 @@
     return pieces;
   }
 
-  function unionHostSegments(hostGroups) {
+  // 多设备可能在同一时刻同时活跃。按“新数据优先”的组顺序做 union_no_overlap，保证总活跃时间不会重复累计。
+function unionHostSegments(hostGroups) {
     const accepted = [];
     let coverage = [];
     for (const group of hostGroups) {
@@ -257,7 +263,9 @@
     return accepted.sort((left,right)=>left.start-right.start || left.end-right.end);
   }
 
-  function metrics(segments,start,end) {
+  // 把最终的“有效前台片段”一次性派生成 KPI、应用排行、小时/周分布、切换次数和专注指标。
+// 这样所有卡片共享同一个时间口径，不会出现应用总和和屏幕总时间来自不同数据集的问题。
+function metrics(segments,start,end) {
     const ordered = [...segments].filter(segment=>segment.end>segment.start).sort((a,b)=>a.start-b.start);
     const activeIntervals = mergeIntervals(ordered.map(segment=>({start:segment.start,end:segment.end})));
     const total = activeIntervals.reduce((sum,interval)=>sum+(interval.end-interval.start)/1000,0);
@@ -321,7 +329,8 @@
     return {total,hourly,switches,longestSession,deepSeconds,away,focusScore,apps:[...byApp.values()].sort((a,b)=>b.seconds-a.seconds),sessions};
   }
 
-  async function loadSegments(start,end) {
+  // 主数据管线：找每台设备最新 window/AFK Bucket -> 拉事件 -> flood + AFK 过滤 -> 多设备去重。
+async function loadSegments(start,end) {
     const entries = Object.values(state.buckets||{});
     const windows = latestBucketsByHost(entries,"currentwindow");
     const afks = latestBucketsByHost(entries,"afkstatus");
@@ -346,7 +355,8 @@
   // 2. title_events：按“应用 + 窗口标题”聚合；
   // 3. browser_domains / browser_urls：浏览器 watcher 与前台浏览器窗口相交后再聚合。
   // AERTEX Watch 在云端拿到的是原始 Bucket 事件，所以在浏览器里复现这些口径。
-  function groupWindowUsage(segments) {
+  // “窗口”视图不是第二套屏幕时间，而是把同一批有效前台片段按 app+title 聚合。
+function groupWindowUsage(segments) {
     const grouped = new Map();
     for (const segment of segments) {
       const rawApp = segment.event.data?.app || segment.event.data?.application || "Unknown";
@@ -380,7 +390,9 @@
     }
   }
 
-  function intersectBrowserEvents(browserEvents,activeBrowserSegments,start,end,sourceHost="") {
+  // 网站时间 = browser watcher 事件 ∩ 匹配浏览器的前台窗口。
+// 这样后台标签页即使 watcher 仍有记录，也不会被算作用户正在浏览的网站。
+function intersectBrowserEvents(browserEvents,activeBrowserSegments,start,end,sourceHost="") {
     const raw = floodEvents(browserEvents).map(event=>eventInterval(event,start,end)).filter(interval=>interval.end>interval.start);
     const windows = [...activeBrowserSegments].sort((left,right)=>left.start-right.start);
     const result = [];
@@ -419,7 +431,8 @@
     return [...grouped.values()].sort((left,right)=>right.seconds-left.seconds);
   }
 
-  async function loadWebsiteSegments(start,end,activeSegments) {
+  // 逐个 browser Bucket 读取 URL 事件，只和同设备、同浏览器家族的前台窗口求交，再对重复 watcher 做时间并集。
+async function loadWebsiteSegments(start,end,activeSegments) {
     const entries = Object.values(state.buckets||{});
     const browserBuckets = entries.filter(bucket=>bucketKind(bucket,"web"));
     if (!browserBuckets.length || !activeSegments.length) return [];
@@ -572,7 +585,8 @@
   function showNotice(message) { $("notice").querySelector("span").textContent = message; $("notice").classList.remove("hidden"); }
   function hideNotice() { $("notice").classList.add("hidden"); }
 
-  async function load() {
+  // 页面每次日期/日周切换都重新走完整数据管线。requestId 用来丢弃较慢的旧请求，避免快速切换时旧结果覆盖新界面。
+async function load() {
     const requestId = ++state.requestId;
     $("refreshButton").classList.add("loading");
     hideNotice();

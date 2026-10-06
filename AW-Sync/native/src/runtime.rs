@@ -11,6 +11,7 @@ use std::thread;
 use std::time::Duration;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// RuntimeStatus 是后台状态机对 UI 暴露的稳定状态；UI 不需要理解网络/端口扫描的内部细节。
 pub enum RuntimeStatus {
     Starting,
     Detecting,
@@ -25,6 +26,7 @@ pub enum RuntimeStatus {
 }
 
 #[derive(Debug, Clone)]
+/// UI 每次收到变更通知后读取一份 Snapshot；用 clone 快照避免 UI 长时间持有后台锁。
 pub struct RuntimeSnapshot {
     pub status: RuntimeStatus,
     pub detail: String,
@@ -46,6 +48,7 @@ impl Default for RuntimeSnapshot {
 }
 
 #[derive(Default)]
+/// UI -> 后台线程的控制位。Condvar 负责唤醒后台线程，避免为了“立即同步”而轮询。
 struct Control {
     sync_now: bool,
     redetect: bool,
@@ -77,6 +80,7 @@ impl Runtime {
         })
     }
 
+    /// Runtime 使用独立线程运行，Win32 消息循环因此不会被端口扫描或网络请求阻塞。
     pub fn start(self: &Arc<Self>) {
         let runtime = Arc::clone(self);
         thread::spawn(move || runtime.run());
@@ -89,6 +93,7 @@ impl Runtime {
             .unwrap_or_default()
     }
 
+    /// 请求立即同步：只设置标志并唤醒线程，真正网络操作不在 UI 线程执行。
     pub fn request_sync(&self) {
         if let Ok(mut control) = self.control.lock() {
             control.sync_now = true;
@@ -96,6 +101,7 @@ impl Runtime {
         }
     }
 
+    /// 请求丢弃当前端点并重新扫描 ActivityWatch，用于端口变化或本机服务重启后的恢复。
     pub fn request_redetect(&self) {
         if let Ok(mut control) = self.control.lock() {
             control.redetect = true;
@@ -110,6 +116,7 @@ impl Runtime {
         }
     }
 
+    /// 修改公开快照后调用 on_change，让 Win32 UI 投递一条自定义消息刷新界面。
     fn update(
         &self,
         status: RuntimeStatus,
@@ -128,6 +135,7 @@ impl Runtime {
         (self.on_change)();
     }
 
+    /// 后台状态机主循环：发现 ActivityWatch -> 等待令牌 -> 同步 -> 按结果决定重试、重新发现或等待用户操作。
     fn run(self: Arc<Self>) {
         let activitywatch = match ActivityWatchClient::new() {
             Ok(client) => client,

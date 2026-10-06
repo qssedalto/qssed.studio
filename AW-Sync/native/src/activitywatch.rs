@@ -7,18 +7,22 @@ use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::Duration;
 
+// ActivityWatch 默认使用 5600，但用户机器上可能因为版本、代理或手动配置落到别的端口。
+// 发现顺序会先查上次成功端口、默认端口和少数常见端口，再并发扫描 5000..=6000。
 pub const DEFAULT_PORT: u16 = 5600;
 pub const PRIORITY_PORTS: [u16; 2] = [5666, 5667];
 pub const PORT_RANGE: std::ops::RangeInclusive<u16> = 5000..=6000;
 pub const SCAN_CONCURRENCY: usize = 32;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// 从 /api/0/info 提取出的最小身份信息，用来确认目标确实是 ActivityWatch，而不是碰巧返回 JSON 的其他本机服务。
 pub struct ActivityWatchInfo {
     pub version: String,
     pub hostname: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// 单个端口探测结果。把“端口关闭 / 超时 / 其他 HTTP 服务 / 真正 ActivityWatch”分开，UI 才能给出准确提示。
 pub enum ProbeResult {
     ActivityWatch(ActivityWatchInfo),
     OtherHttpService,
@@ -61,6 +65,7 @@ pub struct ActivityWatchClient {
 }
 
 impl ActivityWatchClient {
+    /// 普通 API 请求允许更长超时；端口探测使用单独的短超时 Client，避免扫描 1001 个端口时卡很久。
     pub fn new() -> Result<Self, reqwest::Error> {
         Ok(Self {
             http: Client::builder()
@@ -80,6 +85,7 @@ impl ActivityWatchClient {
         probe_port_with_client(&self.probe_http, port)
     }
 
+    /// 自动发现本机 ActivityWatch。若 5600 被别的程序占用，会立刻通过回调通知 UI，然后继续扫描其他端口。
     pub fn discover_with_progress(
         &self,
         last_port: Option<u16>,
@@ -95,6 +101,8 @@ impl ActivityWatchClient {
         )
     }
 
+    /// 读取 ActivityWatch Bucket 列表，并把对象字典的 key 回填到 BucketMetadata.id。
+    /// 这样后续上传不依赖 watcher 是否在对象内部重复写 id 字段。
     pub fn buckets(
         &self,
         endpoint: &ActivityWatchEndpoint,
@@ -119,6 +127,7 @@ impl ActivityWatchClient {
         Ok(buckets)
     }
 
+    /// 按 Bucket 增量读取事件。limit=-1 表示让 ActivityWatch 返回时间范围内全部事件，之后由上传端分批。
     pub fn events(
         &self,
         endpoint: &ActivityWatchEndpoint,
@@ -154,6 +163,8 @@ fn local_transport_error(error: reqwest::Error) -> LocalApiError {
     }
 }
 
+/// 探测分两步：先看 /api/0/info 的身份特征，再确认 /api/0/buckets/ 是对象。
+/// 只做“端口能连上”会把其他本机 Web 服务误判成 ActivityWatch，所以这里故意更严格。
 fn probe_port_with_client(client: &Client, port: u16) -> ProbeResult {
     let origin = format!("http://127.0.0.1:{port}");
     let info_response = match client.get(format!("{origin}/api/0/info")).send() {
@@ -188,6 +199,7 @@ fn probe_port_with_client(client: &Client, port: u16) -> ProbeResult {
     }
 }
 
+/// 对 /api/0/info 做保守身份校验：至少要有 version，并且有 hostname 或 ActivityWatch 特征字段。
 fn activitywatch_info(value: &Value) -> Option<ActivityWatchInfo> {
     let object = value.as_object()?;
     let version = object.get("version")?.as_str()?.trim();
@@ -220,6 +232,7 @@ pub fn discover_with_probe(
     discover_with_probe_progress(last_port, cancelled, probe, None)
 }
 
+/// 发现算法的可测试核心。测试时可以注入假的 probe，不需要真的扫描本机端口。
 fn discover_with_probe_progress(
     last_port: Option<u16>,
     cancelled: Arc<AtomicBool>,
@@ -268,6 +281,7 @@ fn discover_with_probe_progress(
     }
 }
 
+/// 对剩余端口做有限并发扫描。任一 worker 找到目标后用 AtomicBool 通知其他 worker 尽快停止。
 fn scan_ports_with_probe(
     ports: &[u16],
     concurrency: usize,

@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// 同步错误分类决定 Runtime 接下来怎么处理：鉴权错误等待用户，网络错误稍后重试，本机 ActivityWatch 错误则触发重新发现。
 pub enum SyncErrorKind {
     ActivityWatchUnavailable,
     Unauthorized,
@@ -35,6 +36,7 @@ impl std::fmt::Display for SyncError {
 impl std::error::Error for SyncError {}
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+/// 一轮同步的统计摘要。只在整轮成功时用于 UI/日志；任一 Bucket 失败不会把它伪装成完全成功。
 pub struct SyncSummary {
     pub discovered_buckets: usize,
     pub uploaded_events: usize,
@@ -53,6 +55,7 @@ pub trait CloudUploader: Send + Sync {
 }
 
 #[derive(Clone)]
+/// 负责把已经从本机读取到的事件批次上传到 AERTEX Watch 数据端。
 pub struct HttpCloudUploader {
     client: Client,
     origin: String,
@@ -148,6 +151,8 @@ impl<U: CloudUploader> SyncEngine<U> {
         }
     }
 
+    /// 执行一整轮 Bucket 同步。
+    /// 先枚举当前 ActivityWatch 的全部 Bucket，再逐个同步；Unauthorized 立即终止，其余错误记录首个原因并在轮末统一返回。
     pub fn run_once(
         &self,
         token: &str,
@@ -201,6 +206,8 @@ impl<U: CloudUploader> SyncEngine<U> {
         Ok(summary)
     }
 
+    /// 单个 Bucket 的事务边界：读取断点 -> 拉取事件 -> 所有批次上传成功 -> 最后才保存新断点。
+    /// 如果中途任何上传失败，断点不前移，下一轮会利用 2 秒重叠重新读取并由云端去重。
     fn sync_bucket(
         &self,
         token: &str,
@@ -257,12 +264,15 @@ fn lock_error<T>(_: std::sync::PoisonError<T>) -> SyncError {
     }
 }
 
+/// 把持久化断点转换成下一次查询起点；断点缺失或损坏时退回首次 30 天窗口。
 pub fn sync_start(last: &str, now: DateTime<Utc>) -> DateTime<Utc> {
     DateTime::parse_from_rfc3339(last)
         .map(|value| incremental_start(value.with_timezone(&Utc)))
         .unwrap_or_else(|_| first_sync_start(now))
 }
 
+/// 找出真实时间意义上的最新事件，而不是直接比较 RFC3339 文本。
+/// 不同时区偏移的两个字符串，字典序不一定等于时间先后。
 pub fn max_timestamp(events: &[ActivityEvent], fallback: &str) -> String {
     let fallback_parsed = DateTime::parse_from_rfc3339(fallback).ok();
     events

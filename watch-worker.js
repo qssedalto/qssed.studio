@@ -141,6 +141,7 @@ export default {
   }
 };
 
+// Windows 安装包从受控存储读取并透传，HEAD 只返回元数据，GET 才返回文件体。
 async function handleWindowsSyncDownload(request, env) {
   if (request.method !== "GET" && request.method !== "HEAD") return text("Method not allowed", 405);
   if (!env || !env.STORAGE) return text("Watch download is unavailable.", 503);
@@ -164,6 +165,7 @@ async function handleWindowsSyncDownload(request, env) {
   }
 }
 
+// 浏览器侧 API 必须先经过主站会话验证；设备同步 API 则走独立 Device Token，不混用两套身份。
 async function withSession(request, handler) {
   const gate = await verifyStudioPageSession(request);
   if (!gate.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), gate.cookies || []);
@@ -171,6 +173,7 @@ async function withSession(request, handler) {
   return withStudioSessionCookies(response, gate.cookies || []);
 }
 
+// 创建设备令牌：浏览器只收到一次明文 token；云端持久化的是 SHA-256 哈希和绑定用户信息。
 async function handleTokenCreate(request, env, userId) {
   if (!env || !env.STORAGE || !userId) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
@@ -200,6 +203,7 @@ async function handleTokenCreate(request, env, userId) {
   return json({ token, name, created_at: record.created_at }, 201);
 }
 
+// 设备上传入口：先限制请求大小/事件数，再校验 token、规范化 Bucket/事件，最后按 UTC 日期分片写入 R2。
 async function handleDeviceSync(request, env) {
   if (!env || !env.STORAGE) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
@@ -274,6 +278,7 @@ async function handleDeviceSync(request, env) {
   }
 }
 
+// 状态接口只读 Bucket 索引，不扫描全部日分片，因此首页可以低成本显示数据源数和最近同步时间。
 async function handleStatus(env, userId) {
   if (!env || !env.STORAGE || !userId) return json({ error: "Watch storage is unavailable." }, 503);
   try {
@@ -287,12 +292,14 @@ async function handleStatus(env, userId) {
   }
 }
 
+// ActivityWatch 兼容的 Bucket 列表接口。前端先拿元数据，再按需请求具体 Bucket 的事件。
 async function handleBucketList(env, userId) {
   if (!env || !env.STORAGE || !userId) return json({ error: "Watch storage is unavailable." }, 503);
   try { return json(await readJson(env.STORAGE, bucketIndexKey(userId), {})); }
   catch { return json({ error: "Unable to read buckets." }, 503); }
 }
 
+// ActivityWatch 风格事件查询：按 start/end 读取可能相关的日分片，并保留“开始在范围外、但持续时间跨入范围”的事件。
 async function handleEventQuery(request, env, userId, bucketId) {
   if (!env || !env.STORAGE || !userId) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "Method not allowed." }, 405);
@@ -306,8 +313,8 @@ async function handleEventQuery(request, env, userId, bucketId) {
   const requestedDays = enumerateDays(start, end, MAX_QUERY_DAYS + 1);
   if (requestedDays.length > MAX_QUERY_DAYS) return json({ error: "Queries are limited to " + MAX_QUERY_DAYS + " days." }, 400);
 
-  // Events are stored by their start date. Read the maximum allowed event duration
-  // before the requested start so events that cross midnight/range boundaries are not lost.
+  // 事件按“开始时间所在 UTC 日期”分片。查询 start 之前还要额外回看最多 7 天，
+  // 因为一个长事件可能开始在前一分片，却持续进入当前查询范围；否则跨午夜/跨边界事件会丢失。
   const storageStart = new Date(start.getTime() - MAX_EVENT_DURATION_SECONDS * 1000);
   const days = enumerateDays(storageStart, end, MAX_QUERY_DAYS + 8);
 
@@ -338,6 +345,7 @@ async function handleEventQuery(request, env, userId, bucketId) {
   return request.method === "HEAD" ? new Response(null, { status: 200, headers: jsonHeaders() }) : json(events);
 }
 
+// 设备鉴权只比较 token 哈希；服务端不需要也不会保存可还原的 token 原文。
 async function verifyDeviceToken(request, env) {
   const header = request.headers.get("Authorization") || "";
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
@@ -353,6 +361,7 @@ async function verifyDeviceToken(request, env) {
   }
 }
 
+// Bucket 元数据做长度/类型清洗后再落盘，避免异常 watcher 把任意大字符串写入索引。
 function normalizeBucket(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const id = cleanText(value.id, 220);
@@ -366,6 +375,7 @@ function normalizeBucket(value) {
   };
 }
 
+// 事件规范化同时限制 duration 最大 7 天；data 只允许简单 JSON 标量，避免深层对象无限膨胀。
 function normalizeEvent(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const date = parseDate(value.timestamp);
@@ -380,6 +390,7 @@ function normalizeEvent(value) {
     : { id, timestamp: date.toISOString(), duration, data };
 }
 
+// watcher 的 data 字段是开放结构，这里保留前 100 个简单字段，并限制 key/value 长度。
 function sanitizeData(value) {
   const result = {};
   let count = 0;
@@ -394,13 +405,14 @@ function sanitizeData(value) {
   return result;
 }
 
+// 合并同一 Bucket 日分片里的 heartbeat。优先用 ActivityWatch event id；没有 id 时退化为 timestamp+data 指纹。
 async function mergeEvents(existing, incoming) {
   const map = new Map();
   for (const event of [...existing, ...incoming]) {
     const normalized = normalizeEvent(event);
     if (!normalized) continue;
-    // ActivityWatch updates the duration of a heartbeat event without changing its
-    // timestamp/data. Duration must therefore not be part of the deduplication key.
+    // ActivityWatch heartbeat 会不断延长同一事件的 duration，而 timestamp/data 不变。
+    // 所以 duration 绝不能进入去重 key；重复版本中保留 duration 更长的一份。
     const identity = normalized.id !== undefined
       ? "id:" + normalized.id
       : await sha256Hex(JSON.stringify([normalized.timestamp, normalized.data]));
@@ -414,6 +426,8 @@ function bucketIndexKey(userId) {
   return WATCH_PREFIX + "/users/" + encodeKey(userId) + "/buckets/index.json";
 }
 
+// R2 结构：watch/v1/users/<user>/buckets/<bucket>/days/YYYY-MM-DD.json。
+// 用户和 Bucket 都编码进路径，确保不同账户/数据源完全隔离。
 function dayObjectKey(userId, bucketId, day) {
   return WATCH_PREFIX + "/users/" + encodeKey(userId) + "/buckets/" + encodeKey(bucketId) + "/days/" + day + ".json";
 }

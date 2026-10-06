@@ -37,12 +37,14 @@ const ID_EXIT: usize = 205;
 static MAIN_HWND: AtomicIsize = AtomicIsize::new(0);
 static APP: OnceLock<Arc<UiApp>> = OnceLock::new();
 
+// Win32 UI 自己不做同步：只保存 Runtime 引用和 exe 路径，把用户操作转成后台控制请求。
 struct UiApp {
     runtime: Arc<Runtime>,
     executable: PathBuf,
     last_notification: Mutex<Option<RuntimeStatus>>,
 }
 
+/// Runtime 状态变化时调用这个回调；它只 PostMessage，不跨线程直接操作窗口控件。
 pub fn runtime_callback() -> Arc<dyn Fn() + Send + Sync> {
     Arc::new(|| {
         let raw = MAIN_HWND.load(Ordering::Acquire);
@@ -52,6 +54,8 @@ pub fn runtime_callback() -> Arc<dyn Fn() + Send + Sync> {
     })
 }
 
+/// 创建 Win32 窗口、托盘图标和消息循环。
+/// show_initially=false 用于开机自启且已经配置令牌的情况，此时只驻留托盘。
 pub fn run(runtime: Arc<Runtime>, executable: PathBuf, show_initially: bool) -> io::Result<()> {
     APP.set(Arc::new(UiApp {
         runtime: Arc::clone(&runtime),
@@ -165,6 +169,7 @@ unsafe extern "system" fn window_proc(
     }
 }
 
+/// 创建设置窗口里的原生控件。这里故意保持系统控件，减少 WebView 依赖和启动成本。
 fn create_controls(hwnd: HWND, instance: HINSTANCE) {
     create_control(
         hwnd,
@@ -326,6 +331,8 @@ fn create_control(
     control
 }
 
+/// 处理按钮/复选框命令：保存令牌、重新探测、立即同步、开关自启等。
+/// 耗时动作都转交 Runtime，不在窗口消息线程里直接发网络请求。
 fn handle_command(hwnd: HWND, id: i32) {
     let Some(app) = APP.get() else { return };
     match id {
@@ -383,6 +390,7 @@ fn handle_command(hwnd: HWND, id: i32) {
     }
 }
 
+/// 根据 RuntimeSnapshot 一次性刷新状态文字、端点、按钮可用性和托盘提示。
 fn update_window(hwnd: HWND) {
     let Some(app) = APP.get() else { return };
     let snapshot = app.runtime.snapshot();
@@ -406,6 +414,7 @@ fn update_window(hwnd: HWND) {
     }
 }
 
+/// 托盘 tooltip 使用更短的状态描述，避免 Win32 tooltip 长度限制导致截断。
 fn tray_status(snapshot: &RuntimeSnapshot) -> String {
     match snapshot.status {
         RuntimeStatus::Normal => "AERTEX Watch Sync · 正常".to_string(),
@@ -418,6 +427,7 @@ fn tray_status(snapshot: &RuntimeSnapshot) -> String {
     }
 }
 
+/// 构造托盘右键菜单；菜单状态每次打开时重新读取，保证“开机启动”等选项是最新值。
 fn show_tray_menu(hwnd: HWND) {
     let Some(app) = APP.get() else { return };
     let snapshot = app.runtime.snapshot();
@@ -541,6 +551,7 @@ fn update_tray_tooltip(hwnd: HWND, tooltip: &str) {
     unsafe { Shell_NotifyIconW(NIM_MODIFY, &data) };
 }
 
+/// 只对需要用户注意的状态弹系统通知，避免每次后台同步都打扰用户。
 fn show_important_notification(
     hwnd: HWND,
     status: &RuntimeStatus,

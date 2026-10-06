@@ -6,6 +6,12 @@ const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
 
+// 这份脚本不是浏览器端单元测试，而是 Watch 的“架构回归检查清单”。
+//
+// 初学者阅读方式：
+// 1. 第一段确认安全边界、域名和安装器入口没有被改坏；
+// 2. 第二段确认 ActivityWatch 算法口径（AFK、flood、多设备去重、网站前台交集）；
+// 3. 最后一段把 watch-web/app.js 装进 VM，用小型事件样本验证关键纯函数的结果。
 const worker = read("watch-worker.js");
 const wrangler = read("wrangler.watch.jsonc");
 const app = read("watch-web/app.js");
@@ -28,6 +34,7 @@ const domains = read("studio/domain-family.js");
 const setupPage = read("studio/watch-setup-page.js");
 const entry = read("studio/entry.js");
 
+// —— 安全边界与云端存储结构 ——
 assert(worker.includes('const TOKEN_PREFIX = "awd1"'), "Watch device tokens need an explicit prefix.");
 assert(worker.includes('sha256Hex(token)'), "Raw device tokens must not be used as storage keys.");
 assert(worker.includes('WATCH_PREFIX = "watch/v1"'), "Watch data must have an isolated storage namespace.");
@@ -49,6 +56,7 @@ for (const root of ["qsseda.com","qsseda.online","qsseda.studio"]) {
 assert(!wrangler.includes('"pattern": "aw.qsseda.studio'), "Legacy aw.qsseda.studio must stay outside the cloud Worker configuration.");
 
 assert(wrangler.includes('"bucket_name": "qsseda-studio-storage"'), "Watch must use the existing private R2 binding until a dedicated bucket is provisioned.");
+// —— UI、设置教程与认证跳转 ——
 assert(index.includes("AERTEX Watch") && index.includes("生成设备令牌") && index.includes("连接电脑"), "Watch UI must expose product identity and device onboarding.");
 assert(index.includes("https://qsseda.com/zh-cn/aw/setup") && index.includes("查看设置教程"), "Watch UI must link to the computer setup tutorial.");
 assert(entry.includes('pathname === "/aw/setup"') && entry.includes("watchSetupPage(request)"), "Studio must route the localized Watch setup tutorial.");
@@ -58,6 +66,7 @@ for (const legacyInstruction of ["node --version", "AERTEX_WATCH_TOKEN", "Invoke
 }
 assert(setupPage.includes("https://aw.qsseda.com/AERTEX-Watch-Sync-Setup.exe"), "Watch setup must use the public Windows installer URL.");
 assert(app.includes("/api/watch/tokens") && app.includes("/api/0/buckets/"), "Watch UI must use authenticated cloud APIs.");
+// —— ActivityWatch 统计口径：同设备选最新 Bucket，多设备时间做并集，AFK/heartbeat 与原版保持一致 ——
 assert(app.includes("latestBucketsByHost") && app.includes("unionHostSegments"), "Watch metrics must select one current bucket per host and remove cross-device overlap.");
 assert(app.includes("afkEvents === null") && app.includes("if (!activeIntervals.length) return [];"), "Watch metrics must distinguish a missing AFK bucket from an all-AFK period.");
 assert(app.includes("function floodEvents") && app.includes("gap <= pulseMs"), "Watch metrics must reproduce ActivityWatch five-second flood behavior before AFK intersection.");
@@ -70,9 +79,11 @@ assert(worker.includes("MAX_EVENT_DURATION_SECONDS") && worker.includes("eventSt
 assert(worker.includes('JSON.stringify([normalized.timestamp, normalized.data])'), "Watch heartbeat deduplication must ignore changing event duration.");
 assert(worker.includes('normalized.id !== undefined') && worker.includes('"id:" + normalized.id'), "Watch heartbeat deduplication must prefer stable ActivityWatch event IDs when present.");
 assert(worker.includes("events = await mergeEvents([], events)"), "Watch event reads must deduplicate legacy overlapping heartbeat copies.");
+// —— 同步客户端与 Windows 安装器 ——
 assert(sync.includes("http://127.0.0.1:5600"), "Native sync must default to ActivityWatch localhost.");
 assert(sync.includes("https://awd.qsseda.com"), "Native sync must default to the short cloud data domain.");
 assert(sync.includes("limit:\"-1\""), "Native sync must request the complete incremental ActivityWatch event range.");
+assert(sync.includes("Date.parse(raw)") && sync.includes("bestMs"), "Legacy Node sync progress must compare RFC3339 timestamps as instants, not strings.");
 assert(sync.includes("--watch"), "Native sync must support continuous operation.");
 assert(handoff.includes("/aw/handoff") && handoff.includes("/auth/handoff"), "Watch must support the secure main-site session handoff.");
 assert(studioWorker.includes("isMainWatchHandoffPath") && studioWorker.includes("handleMainWatchHandoff"), "Main Studio worker must route Watch handoffs.");
@@ -108,6 +119,7 @@ assert(!nativeMain.includes("ensure_installed_and_relaunch"), "Production client
 assert(setupPage.includes('"cache-control": "private, no-store"'), "Region-specific Watch setup responses must not be shared-cacheable.");
 
 
+// —— 纯算法样例：把 app.js 的内部函数暴露给 VM，验证真实数值而不仅仅是“源码里有这个函数名” ——
 const testAppSource = app.replace(
   /\n  bind\(\);\n  load\(\);[\s\S]*?\n\}\)\(\);\s*$/,
   '\n  globalThis.__watchTest = { activeWindowEvents, floodEvents, latestBucketsByHost, unionHostSegments, metrics, groupWindowUsage, groupWebsiteUsage, intersectBrowserEvents, browserFamilyForBucket, browserAppMatches, state };\n})();'
