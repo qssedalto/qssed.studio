@@ -1,3 +1,6 @@
+// 这是浏览器内的 PKCE 联调页，不是生产业务页面。
+// 它演示“生成 verifier/challenge -> /authorize -> callback -> /oauth/token”的完整流程，方便验证 AERTEX OAuth 协议。
+// 测试页仍只能使用公开 client_id，不能放 client secret。
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
 
 const CLIENT_ID = "qsseda-pkce-browser-test";
