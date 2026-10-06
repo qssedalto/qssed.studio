@@ -1,3 +1,4 @@
+// 初学者导读：知识库前端搜索运行时：对已加载/授权的知识条目做筛选、排序和高亮，不负责扩大服务端可见范围。
 import { KNOWLEDGE_CATEGORIES, KNOWLEDGE_ROOT } from "./knowledge-routes.js";
 import { PROJECT_KNOWLEDGE } from "./knowledge-projects.js";
 import { TECHNOLOGY_KNOWLEDGE } from "./knowledge-technology.js";
