@@ -1,3 +1,9 @@
+-- 【初学者导读】
+-- 文件：supabase_audit_tables.sql
+-- Supabase 审计基础 SQL：定义审计记录相关表、索引或权限结构，供服务器侧审计逻辑使用。
+-- 阅读顺序：先看表结构与主键，再看索引、外键和权限/RLS；理解每张表由哪个 API 写入、由哪个角色读取。
+-- 修改注意：这是数据库基础结构，不要用破坏性语句覆盖已有数据；结构变化优先通过新的 migration 演进。
+-- 初学者提示：配置文件同样是“代码的一部分”，它决定运行环境；出现“本地正常、线上异常”时要优先核对这里。
 create table if not exists public.login_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade,

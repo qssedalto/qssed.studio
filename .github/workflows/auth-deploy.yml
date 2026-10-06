@@ -1,3 +1,9 @@
+# 【初学者导读】
+# 文件：.github/workflows/auth-deploy.yml
+# GitHub Actions 工作流：定义何时触发检查/构建/部署、各 job 的依赖关系、使用的 secrets 和最终产物/生产目标。
+# 阅读顺序：先看 on 触发条件，再看 jobs / needs 依赖，最后逐步检查 checkout、测试、构建、artifact 和部署步骤。
+# 修改注意：不要把 secrets 写进仓库；部署步骤的目标 bucket/Worker/域名改变前，应确认 staging/production 边界和 job 条件。
+# 初学者提示：配置文件同样是“代码的一部分”，它决定运行环境；出现“本地正常、线上异常”时要优先核对这里。
 name: Deploy AERTEX ID
 
 on:
