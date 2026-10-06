@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX ID 入口路由；把登录、注册、SSO、OAuth 等请求交给对应模块。路由优先级错误可能造成认证回路。
 import authWorker from "./auth-worker.js";
 import { handlePkceTestRequest } from "./auth-pkce-test.js";
 import { handleIdentifierLogin, rewriteIdentifierLoginPage } from "./auth-login-identifier.js";
