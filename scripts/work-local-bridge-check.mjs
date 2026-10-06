@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Work 本机桥。
+//
+// 核对浏览器 UI、Worker CSP/local-network 权限和 local-bridge/server.mjs 的 loopback/Origin 约束，
+// 确保 XeLaTeX 探测等本机能力只能由允许的 AERTEX 页面调用，不能演变成任意命令执行接口。
 import fs from "node:fs";
 import { workHubContent, workLocalBridgeContent } from "../studio/ui-work.js";
 import { enhanceWorkLocalBridgeNative } from "../studio/ui-work-native.js";
