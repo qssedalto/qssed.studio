@@ -456,6 +456,7 @@ function validBucketId(value) {
   return typeof value === "string" && value.length >= 1 && value.length <= 220 && !/[\u0000-\u001f]/.test(value);
 }
 
+// 把任意可解析时间归一成 UTC YYYY-MM-DD，必须和 dayObjectKey 的分片规则使用同一时区。
 function dayKey(value) {
   const date = parseDate(value);
   return date ? date.toISOString().slice(0, 10) : "";
@@ -500,6 +501,7 @@ function isWatchDataHost(hostname) {
   return host.startsWith("awd.") || host.startsWith("aw.data.");
 }
 
+// 使用 Web Crypto CSPRNG 生成 URL-safe base64，不依赖 Math.random；Device Token 明文只返回给创建它的浏览器一次。
 function randomToken(bytes) {
   const data = new Uint8Array(bytes);
   crypto.getRandomValues(data);
@@ -508,12 +510,14 @@ function randomToken(bytes) {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
+// R2 token 索引使用 SHA-256(token) 作为 key；即使对象列表泄露，也不能直接拿到可用 Bearer token。
 async function sha256Hex(value) {
   const bytes = new TextEncoder().encode(String(value));
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   return [...digest].map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
+// 清理名称类自由文本：去控制字符、trim、限制长度。事件 data 有独立 sanitizeData，不走这个简化函数。
 function cleanText(value, max) {
   return typeof value === "string" ? value.replace(/[\u0000-\u001f]/g, "").trim().slice(0, max) : "";
 }
@@ -551,6 +555,7 @@ function normalizePath(pathname) {
   return pathname.replace(/\/+$/, "") || "/";
 }
 
+// 内部跳转统一 no-store + no-referrer，避免登录/安装器迁移 URL 被不必要地缓存或带出 Referer。
 function redirect(location) {
   return new Response(null, {
     status: 302,
@@ -558,6 +563,7 @@ function redirect(location) {
   });
 }
 
+// Watch API 全部 no-store；活动数据和令牌状态不应该被浏览器/CDN 公共缓存。
 function jsonHeaders() {
   return {
     "content-type": "application/json;charset=UTF-8",
@@ -566,10 +572,12 @@ function jsonHeaders() {
   };
 }
 
+// 小型 JSON helper 只负责序列化与安全头，业务函数自己决定状态码和错误语义。
 function json(payload, status = 200) {
   return new Response(JSON.stringify(payload), { status, headers: jsonHeaders() });
 }
 
+// 文本/脚本/错误响应同样默认 no-store；静态 assets 的缓存策略由 serveAsset 保留或覆盖。
 function text(value, status = 200, contentType = "text/plain;charset=UTF-8") {
   return new Response(value, {
     status,
