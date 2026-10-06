@@ -1,3 +1,4 @@
+// 初学者导读：订阅、权益与计费状态 API；金额和 entitlement 判断必须以服务端数据为准，前端展示不能成为授权依据。
 import { DEFAULT_STORAGE_QUOTA_BYTES, MAX_STORAGE_FILE_BYTES, SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
 import { workerLog } from "./server-runtime.js";
