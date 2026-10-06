@@ -1,3 +1,4 @@
+// 初学者导读：主站侧登录标识符 API 包装；负责把用户输入安全转交认证逻辑并限制返回信息，避免账户枚举。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { getWorkerRequestId, recordServerLoginEvent } from "./account-api.js";
