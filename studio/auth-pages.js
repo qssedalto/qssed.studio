@@ -1,3 +1,4 @@
+// 初学者导读：认证相关 SSR 页面生成器；负责登录/注册/继续页面的可见结构，真正的凭据验证仍在 Auth Worker/API 完成。
 import { ZH_COUNTRIES, ADMIN_EMAILS, TEXT } from "./config.js";
 import { html, json } from "./routing.js";
 import { auditClientScript } from "./ui-audit.js";
