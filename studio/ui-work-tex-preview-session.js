@@ -1,3 +1,4 @@
+// 初学者导读：TeX 预览会话管理：控制预览生命周期、刷新与会话级状态，避免旧预览覆盖较新的编译结果。
 export function enhanceWorkTexPreviewSession(markup, zh) {
   const restoredLabel = zh ? "已立即恢复上次预览" : "Last preview restored instantly";
   return String(markup || "") + `
