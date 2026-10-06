@@ -1,3 +1,4 @@
+// 初学者导读：Supabase Edge Function 的登录标识符辅助入口；在边缘环境处理与账号标识相关的受控查询，返回内容要避免泄漏额外账户信息。
 const INVALID_MESSAGE = "Invalid login credentials";
 
 function json(data: unknown, status = 200) {
