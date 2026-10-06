@@ -1,3 +1,4 @@
+// 初学者导读：Studio SSR 的主要页面路由入口；负责把规范化 pathname 交给具体 UI/API 模块。新增页面应优先接到独立模块而不是继续扩大单文件。
 import { OS_PATHS, LEGACY_REDIRECTS, TEXT, SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { handleAuthHandoff } from "./auth-handoff.js";
 import {
