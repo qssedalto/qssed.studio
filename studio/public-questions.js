@@ -1,3 +1,9 @@
+// 这份数据是公开产品契约，不只是营销文案。
+//
+// 对 Watch 尤其要避免三类误导：
+// 1. 不把 AERTEX Watch 说成 ActivityWatch 官方产品；
+// 2. 不把“同步 ActivityWatch 已记录事件”缩窄成只上传 app/title；
+// 3. 不暗示统一 AERTEX Account 会让 Intelligence 自动读取 Watch 时间线。
 export const QUESTION_INDEX_LOCALES = Object.freeze(["zh-cn","en-us"]);
 
 export const QUESTION_CATEGORIES = Object.freeze([
@@ -254,12 +260,12 @@ export const QUESTIONS = Object.freeze([
     id:"87333a55-58bc-45e8-91cf-39012c988118", category:"watch", product:"AERTEX Watch", status:"published", updated:"2026-10-03",
     translations:{
       "zh-cn":{question:"AERTEX Watch Sync 是怎么工作的？",short:"同步工具从电脑本机的 ActivityWatch API 读取事件，再使用设备令牌通过 HTTPS 把批次上传到 AERTEX Watch。",answer:[
-        "当前 AERTEX Watch Sync 默认从 http://127.0.0.1:5600 读取 ActivityWatch 的 bucket 与事件。用户先在 AERTEX Watch 生成只显示一次的设备令牌，再在自己的电脑上把令牌交给同步工具。",
+        "当前 AERTEX Watch Sync 会先尝试 ActivityWatch 默认端口 http://127.0.0.1:5600，也会自动检查上次成功端口、常见端口并在 5000–6000 范围内发现本机 ActivityWatch。用户先在 AERTEX Watch 生成只显示一次的设备令牌，再在自己的电脑上把令牌交给同步工具。",
         "首次同步默认读取最近 30 天；持续运行时会定期检查新增事件。同步工具会保存本地进度，并轻微重叠上一段时间范围；云端会按事件内容去重，以便中断后继续同步。",
         "ActivityWatch 本机服务仍保持在 localhost。AERTEX Watch 并不会把用户的本机 ActivityWatch Server 直接暴露到公网。"
       ]},
       "en-us":{question:"How does AERTEX Watch Sync work?",short:"The sync tool reads events from the computer's local ActivityWatch API, then uploads authenticated batches to AERTEX Watch over HTTPS using a device token.",answer:[
-        "AERTEX Watch Sync currently reads ActivityWatch buckets and events from http://127.0.0.1:5600 by default. The user first creates a one-time-visible device token in AERTEX Watch and then provides that token to the sync tool on their own computer.",
+        "AERTEX Watch Sync first tries ActivityWatch's default http://127.0.0.1:5600 endpoint, but it can also reuse the last working port, try common alternatives, and discover a local ActivityWatch instance across ports 5000–6000. The user first creates a one-time-visible device token in AERTEX Watch and then provides that token to the sync tool on their own computer.",
         "The first sync defaults to the most recent 30 days. In watch mode it periodically checks for new events. The tool saves local progress and slightly overlaps the previous time range; the cloud side deduplicates event content so an interrupted sync can resume safely.",
         "The local ActivityWatch service remains on localhost. AERTEX Watch does not directly expose the user's ActivityWatch Server to the public internet."
       ]}
