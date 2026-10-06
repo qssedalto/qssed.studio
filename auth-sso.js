@@ -1,3 +1,6 @@
+// AERTEX ID 跨根域/子域会话同步（SSO）辅助路由。
+// /sso/start 负责发起，/sso/import 只接受受约束的会话传递，/sso/complete 再回到普通 /continue 流程。
+// 这里的目标是同步同一个 AERTEX 账号，不是让任意 URL 接收 token，因此 origin/root/next 都必须白名单化。
 import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
 import { QSS_DOMAIN_ROOTS, authOrigins, rootDomainForHost, serviceOrigin } from "./studio/domain-family.js";
 import { FAVICON_LINKS } from "./studio/favicon.js";
