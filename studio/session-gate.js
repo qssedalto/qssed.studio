@@ -1,3 +1,4 @@
+// 初学者导读：Studio 会话门：验证 access/refresh Cookie、刷新会话并向页面/API提供可信用户身份。它是多数私有页面的核心安全边界。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { html, json } from "./routing.js";
 import { baseHead, supabaseScript } from "./ui-page.js";
