@@ -3,7 +3,6 @@ use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::BTreeMap;
 
 pub const APP_NAME: &str = "AERTEX Watch Sync";
-pub const EXE_NAME: &str = "AERTEX-Watch-Sync.exe";
 pub const CLOUD_ORIGIN: &str = "https://awd.qsseda.com";
 pub const WATCH_ORIGIN: &str = "https://aw.qsseda.com";
 pub const ACTIVITYWATCH_DOWNLOAD: &str = "https://activitywatch.net/downloads/";
