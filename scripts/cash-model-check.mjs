@@ -1,3 +1,4 @@
+// 初学者导读：Cash 数据模型回归检查；用确定样例验证金额、预算/预测等核心计算没有被 UI 重构带偏。
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
