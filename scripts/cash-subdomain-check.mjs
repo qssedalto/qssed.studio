@@ -1,3 +1,4 @@
+// 初学者导读：Cash 子域回归检查；覆盖独立域名、认证 handoff、共享菜单/主题和页面静态结构。
 import fs from "node:fs";
 import { normalizeHandoffNext } from "../studio/auth-handoff.js";
 import { SUPPORTED_LOCALES } from "../studio/locale.js";
