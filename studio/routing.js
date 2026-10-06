@@ -2,9 +2,12 @@ import { SUPABASE_URL } from "./config.js";
 import { localeContentLanguage, localeFromPath, localePrefix, preferredLocaleFromRequest, SUPPORTED_LOCALES } from "./locale.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
 
+// routing.js 是主站/共享页面的 HTTP 外壳：安全响应头、locale 路由和统一 HTML/JSON Response 都在这里。
+// Watch 私有 Worker大多自己做 API 响应，但登录 handoff 与 setup 页面仍会经过这些共享能力。
 const SUPABASE_ORIGIN = new URL(SUPABASE_URL).origin;
 const SUPABASE_WS_ORIGIN = SUPABASE_ORIGIN.replace(/^https:/, "wss:");
 
+// 默认拒绝摄像头、麦克风、地理位置等高权限能力；需要额外能力的页面必须显式 opt-in，而不是全站开放。
 function securityHeaders(contentType) {
   const headers = new Headers();
   headers.set("content-type", contentType);
@@ -19,6 +22,7 @@ function securityHeaders(contentType) {
   return headers;
 }
 
+// allowLoopback 只给确实需要本机桥接的页面；普通页面（包括 Watch setup/handoff）默认禁止本地网络连接。
 function htmlSecurityHeaders(options = {}) {
   const headers = securityHeaders("text/html;charset=UTF-8");
   const allowLoopback = options?.allowLoopback === true;
@@ -59,6 +63,8 @@ function htmlSecurityHeaders(options = {}) {
   return headers;
 }
 
+/// 把“完整地区 locale”与旧双语 renderer 的 zh/en 内容语言拆开。
+/// 这样 /zh-tw、/ja-jp 等仍能保持正确 URL/方向，即使部分旧页面只维护中文/英文正文。
 export function getRouteInfo(request) {
   const url = new URL(request.url);
   const ip = request.headers.get("CF-Connecting-IP") || "Unknown";
@@ -110,6 +116,7 @@ export function localizedRedirect(request, locale, pathname) {
   return Response.redirect(url.toString(), 302);
 }
 
+/// 统一 HTML Response：品牌 runtime + CSP/permissions/no-store 一次完成，减少页面模板漏安全头。
 export function html(content, status = 200, options = {}) {
   return new Response(injectBrandLogoRuntime(content), {
     status,
@@ -117,6 +124,7 @@ export function html(content, status = 200, options = {}) {
   });
 }
 
+/// JSON API 默认继承相同的基础硬化头，但不带 HTML 专用 CSP。
 export function json(data, status = 200) {
   const headers = securityHeaders("application/json;charset=UTF-8");
   headers.set("cache-control", "no-store");

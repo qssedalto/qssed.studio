@@ -1,10 +1,13 @@
 import { IPHONE_THEME_DEFAULT, IPHONE_THEME_PALETTE } from "./iphone-theme-palette.js";
 
+// 外观偏好是“根域家族共享”的，而不是每个产品各存一份。
+// 因此用户在主站改主题色/浅深色后，aw.* AERTEX Watch 只要加载 /appearance.js 就会得到同一偏好。
 const ROOT_DOMAINS = Object.freeze(["qsseda.com","qsseda.online","qsseda.studio"]);
 const VALID_MODES = Object.freeze(["system","light","dark"]);
 const VALID_ACCENTS = Object.freeze(IPHONE_THEME_PALETTE.map(color => color.id));
 const APPEARANCE_GENERATION = "20261002-system-v2";
 
+/// SSR 只读取显式 light/dark；system 必须由浏览器 matchMedia 解析，因为 Worker 不知道设备实时外观。
 export function appearanceThemeFromRequest(request) {
   const cookie = String(request?.headers?.get?.("Cookie") || "");
   if (cookieValue(cookie, "qssed_theme_generation") !== APPEARANCE_GENERATION) return "";
@@ -17,6 +20,8 @@ export function appearanceThemeAttr(theme) {
   return theme === "light" || theme === "dark" ? ` data-theme="${theme}"` : "";
 }
 
+/// 返回给产品子域执行的轻量浏览器 runtime。
+/// Watch Worker 把它暴露为 /appearance.js，用共享 Cookie + localStorage 同步 mode、resolved theme 和 accent。
 export function appearanceClientRuntime() {
   const roots = JSON.stringify(ROOT_DOMAINS);
   const modes = JSON.stringify(VALID_MODES);
@@ -42,6 +47,7 @@ export function appearanceClientRuntime() {
     const GENERATION=${generation};
     const media=window.matchMedia("(prefers-color-scheme: light)");
 
+    // 找出当前 qsseda 根域并把偏好 Cookie 写到 .<root>，这样 main/aw/gpt/cash/work 可以看到同一设置。
     function preferenceDomain(){
       const host=String(location.hostname||"").toLowerCase();
       return ROOTS.find(domain=>host===domain||host.endsWith("."+domain))||"";
@@ -117,6 +123,7 @@ export function appearanceClientRuntime() {
       }catch{}
       return DEFAULT_ACCENT;
     }
+    // mode 保存用户意图（system/light/dark）；resolved theme 保存当前真正渲染的 light/dark。
     function setMode(mode,options={}){
       const nextMode=VALID_MODES.has(mode)?mode:"system";
       const nextTheme=resolvedTheme(nextMode);
@@ -133,6 +140,7 @@ export function appearanceClientRuntime() {
       }
       return nextTheme;
     }
+    // 主色只保存 palette id，再从静态表映射 hex/ink；避免各产品自己持久化任意 CSS 值。
     function setAccent(accent,options={}){
       const next=VALID_ACCENTS.has(accent)?accent:DEFAULT_ACCENT;
       document.documentElement.dataset.accent=next;
@@ -170,6 +178,7 @@ export function appearanceClientRuntime() {
   })();`;
 }
 
+/// 放进 <head> 的首屏脚本，尽量在 CSS/正文绘制前设置 data-theme，减少浅深色闪烁。
 export function appearanceBootScript() {
   return `<script>${appearanceClientRuntime()}<\/script>`;
 }

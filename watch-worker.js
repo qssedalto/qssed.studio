@@ -12,6 +12,15 @@
  * and is intentionally preserved across the workers that were later split from it.
  */
 
+// AERTEX Watch Cloud Worker 入口。
+//
+// 请求面分三类：
+// 1. aw.*：浏览器 UI、会话、读 API、令牌管理；
+// 2. awd.* / aw.data.*：设备上传数据面；
+// 3. aw.qsseda.com/AERTEX-Watch-Sync-Setup.exe：公开安装器下载。
+//
+// 关键安全原则：浏览器数据读取必须走 AERTEX Session；电脑上传只认 Device Token；
+// 两种身份绝不能互相替代。R2 中所有 Watch 对象都放在 watch/v1/ 命名空间。
 import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
 import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
@@ -34,6 +43,7 @@ const LEGACY_WINDOWS_SYNC_PATH = "/AERTEX-Watch-Sync.exe";
 const WINDOWS_SYNC_KEY = "watch/releases/windows/AERTEX-Watch-Sync-Setup.exe";
 
 export default {
+  // 路由顺序本身就是安全边界：先设备兼容 Gate，再区分 dataHost，最后才允许静态资产/私有页面。
   async fetch(request, env) {
     const deviceGate = await huaweiHarmonyGate(request);
     if (deviceGate) return deviceGate;
@@ -82,6 +92,7 @@ export default {
       return handleStudioSessionLogout(request);
     }
 
+    // /api/sync 是唯一允许数据域直接写入的业务接口，它不使用浏览器 Session，而在函数内部验证 Bearer Device Token。
     if (pathname === "/api/sync") return handleDeviceSync(request, env);
 
     if (pathname === "/api/watch/tokens") {
@@ -105,6 +116,7 @@ export default {
       return withSession(request, async gate => handleEventQuery(request, env, gate.user && gate.user.id || "", decodeURIComponent(eventsMatch[1])));
     }
 
+    // 数据域不提供仪表盘、Session 页面或浏览器读 API；根路径只暴露无敏感信息的服务自描述。
     if (dataHost) {
       if (pathname === "/" && (request.method === "GET" || request.method === "HEAD")) {
         return json({
@@ -130,6 +142,7 @@ export default {
     const parts = pathname.split("/").filter(Boolean);
     if (!locale || parts.length !== 1) return text("Not found", 404);
 
+    // 真正返回 index.html 前再次验证服务端会话；仅仅能下载 app.js/styles.css 不等于能读取任何用户活动数据。
     const gate = await verifyStudioPageSession(request);
     if (!gate.ok) return withStudioSessionCookies(watchSessionRedirect(request, pathname), gate.cookies || []);
 
@@ -422,6 +435,7 @@ async function mergeEvents(existing, incoming) {
   return [...map.values()].sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
 }
 
+// 用户级 Bucket 索引只存元数据/最近同步时间，不放事件正文；首页状态和数据源列表因此无需扫描全部日分片。
 function bucketIndexKey(userId) {
   return WATCH_PREFIX + "/users/" + encodeKey(userId) + "/buckets/index.json";
 }
@@ -432,19 +446,23 @@ function dayObjectKey(userId, bucketId, day) {
   return WATCH_PREFIX + "/users/" + encodeKey(userId) + "/buckets/" + encodeKey(bucketId) + "/days/" + day + ".json";
 }
 
+// R2 key 里的用户输入统一 percent-encode，避免 Bucket ID 中的斜杠/特殊字符改变对象层级。
 function encodeKey(value) {
   return encodeURIComponent(String(value || "")).replace(/%/g, "_");
 }
 
+// Bucket ID 是外部 watcher 提供的，所以即使最终会 encode，仍先限制长度与控制字符，减少异常 key/日志污染。
 function validBucketId(value) {
   return typeof value === "string" && value.length >= 1 && value.length <= 220 && !/[\u0000-\u001f]/.test(value);
 }
 
+// 把任意可解析时间归一成 UTC YYYY-MM-DD，必须和 dayObjectKey 的分片规则使用同一时区。
 function dayKey(value) {
   const date = parseDate(value);
   return date ? date.toISOString().slice(0, 10) : "";
 }
 
+// 把查询区间展开成 UTC 日期分片；maxDays 是第二层保险，防止用户构造超大时间范围导致 R2 fan-out。
 function enumerateDays(start, end, maxDays = MAX_QUERY_DAYS + 1) {
   const result = [];
   const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
@@ -456,12 +474,14 @@ function enumerateDays(start, end, maxDays = MAX_QUERY_DAYS + 1) {
   return result;
 }
 
+// URL 日期参数统一转成毫秒；非法/空值返回 NaN，让调用方显式决定默认值或 400。
 function parseDate(value) {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+// R2 读取失败时返回 fallback，让“某天尚无对象”和“索引未建立”都能按空数据处理；写路径仍会显式报错。
 async function readJson(storage, key, fallback) {
   const object = await storage.get(key);
   if (!object) return fallback;
@@ -469,16 +489,19 @@ async function readJson(storage, key, fallback) {
   catch { return fallback; }
 }
 
+// 会修改账户状态的浏览器 POST 额外要求 Origin === 当前 origin，补上 Cookie 会话天然存在的 CSRF 风险。
 function sameOrigin(request) {
   const origin = request.headers.get("Origin") || "";
   return origin === new URL(request.url).origin;
 }
 
+// 只按明确前缀识别数据面；aw.* 永远是 UI 面，防止路径相同但 host 不同的 API 被混淆。
 function isWatchDataHost(hostname) {
   const host = String(hostname || "").toLowerCase();
   return host.startsWith("awd.") || host.startsWith("aw.data.");
 }
 
+// 使用 Web Crypto CSPRNG 生成 URL-safe base64，不依赖 Math.random；Device Token 明文只返回给创建它的浏览器一次。
 function randomToken(bytes) {
   const data = new Uint8Array(bytes);
   crypto.getRandomValues(data);
@@ -487,16 +510,19 @@ function randomToken(bytes) {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
+// R2 token 索引使用 SHA-256(token) 作为 key；即使对象列表泄露，也不能直接拿到可用 Bearer token。
 async function sha256Hex(value) {
   const bytes = new TextEncoder().encode(String(value));
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   return [...digest].map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
+// 清理名称类自由文本：去控制字符、trim、限制长度。事件 data 有独立 sanitizeData，不走这个简化函数。
 function cleanText(value, max) {
   return typeof value === "string" ? value.replace(/[\u0000-\u001f]/g, "").trim().slice(0, max) : "";
 }
 
+// 静态文件仍通过 Worker 转发，统一补 nosniff/cache 等头；index.html 由调用方覆盖成 private,no-store。
 async function serveAsset(request, env, assetPath, extraHeaders = {}) {
   if (!env || !env.ASSETS || !env.ASSETS.fetch) return text("Watch assets are unavailable.", 503);
   const source = new URL(request.url);
@@ -523,11 +549,13 @@ async function serveAsset(request, env, assetPath, extraHeaders = {}) {
   });
 }
 
+// 路由比较前折叠尾部斜杠，但保留根路径 /。
 function normalizePath(pathname) {
   if (!pathname || pathname === "/") return "/";
   return pathname.replace(/\/+$/, "") || "/";
 }
 
+// 内部跳转统一 no-store + no-referrer，避免登录/安装器迁移 URL 被不必要地缓存或带出 Referer。
 function redirect(location) {
   return new Response(null, {
     status: 302,
@@ -535,6 +563,7 @@ function redirect(location) {
   });
 }
 
+// Watch API 全部 no-store；活动数据和令牌状态不应该被浏览器/CDN 公共缓存。
 function jsonHeaders() {
   return {
     "content-type": "application/json;charset=UTF-8",
@@ -543,10 +572,12 @@ function jsonHeaders() {
   };
 }
 
+// 小型 JSON helper 只负责序列化与安全头，业务函数自己决定状态码和错误语义。
 function json(payload, status = 200) {
   return new Response(JSON.stringify(payload), { status, headers: jsonHeaders() });
 }
 
+// 文本/脚本/错误响应同样默认 no-store；静态 assets 的缓存策略由 serveAsset 保留或覆盖。
 function text(value, status = 200, contentType = "text/plain;charset=UTF-8") {
   return new Response(value, {
     status,

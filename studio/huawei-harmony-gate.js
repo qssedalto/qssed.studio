@@ -14,6 +14,8 @@ const ROUTE_EXEMPTION_MAX_AGE = 60 * 60 * 24 * 30;
 const EXEMPTION_CODE = "AERTEX-HW-7K9Q-26";
 const ACCOUNT_MARKER_COOKIE = "__Secure-qsseda-account-id";
 
+// 设备兼容 Gate 在各产品 Worker 的最前面运行（包括 AERTEX Watch UI）。
+// 它只决定“这个请求是否需要兼容拦截/豁免页”，不读取或修改 Watch 的 ActivityWatch/R2 数据。
 export async function huaweiHarmonyGate(request) {
   const invalidRoute = invalidHuaweiRouteResponse(request);
   if (invalidRoute) return invalidRoute;
@@ -45,6 +47,7 @@ export async function huaweiHarmonyGate(request) {
   return withStudioSessionCookies(blocked, accountExemption.cookies);
 }
 
+// 先验证 /hw 与 /huawei-exempt 标记的位置和次数，避免构造奇怪路径绕过普通路由规则。
 function invalidHuaweiRouteResponse(request) {
   try {
     const url = new URL(request.url);
@@ -98,6 +101,8 @@ function brandedNotFound(request) {
   }), 404);
 }
 
+// 已登录用户的豁免来自账户侧 device_access_exemptions；会话验证仍复用 session-gate，
+ // 因而 aw.* Watch 也遵守同一个账号身份边界。
 async function huaweiAccountExemption(request) {
   let session;
   try {
@@ -521,6 +526,7 @@ function isExplicitPreviewRequest(request) {
   }
 }
 
+/// 统一识别需要兼容处理的 Huawei/Harmony 请求特征，产品 Worker 不应各自复制一套 UA 判断。
 export function isHuaweiOrHarmonyRequest(request) {
   const headers = request?.headers;
   if (!headers) return false;

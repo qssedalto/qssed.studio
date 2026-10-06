@@ -4,6 +4,11 @@ import { baseHead, supabaseScript } from "./ui-page.js";
 import { workerLog } from "./server-runtime.js";
 import { authOriginForRequest, isServiceHost, rootDomainForHost } from "./domain-family.js";
 
+// AERTEX 的浏览器会话分成两层：
+// 1. __Host-* access/refresh Cookie 只属于当前 host，防止一个子域伪造另一个子域的会话；
+// 2. __Secure-qsseda-account-id 是整个根域共享的“当前账号标记”，用于确认独立产品子域上的 host 会话仍属于同一账号。
+//
+// AERTEX Watch 的 aw.* 和 Work/GPT/Cash 一样属于独立产品 host，因此也必须同时满足这两层身份检查。
 const ACCESS_COOKIE = "__Host-qsseda-studio-access";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const ACCOUNT_COOKIE = "__Secure-qsseda-account-id";
@@ -11,6 +16,8 @@ const ACCOUNT_SIGNED_OUT = "signed-out";
 const ACCESS_MAX_AGE = 60 * 60;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
+/// 生成服务端会话 Cookie。
+/// access/refresh 使用 __Host- 前缀（不能设置 Domain），account marker 则显式共享到当前 qsseda 根域。
 export function studioSessionCookies(accessToken, refreshToken, expiresIn = ACCESS_MAX_AGE, requestOrHost = "qsseda.com") {
   const accessAge = Math.max(60, Math.min(Number(expiresIn) || ACCESS_MAX_AGE, ACCESS_MAX_AGE));
   const cookieDomain = sessionRoot(requestOrHost);
@@ -41,13 +48,16 @@ export function withStudioSessionCookies(response, cookies = []) {
   });
 }
 
+/// 验证页面/API 共用的 AERTEX 会话。
+/// 对独立产品子域（Work / Intelligence / Cash / Watch）除了验证 JWT，还要求域级 account marker 与 JWT subject 一致。
 export async function verifyStudioPageSession(request) {
   const url = new URL(request.url);
   const hostname = url.hostname.toLowerCase();
   const workHost = isServiceHost(hostname, "work");
   const gptHost = isServiceHost(hostname, "gpt");
   const cashHost = isServiceHost(hostname, "cash");
-  const isolatedAppHost = workHost || gptHost || cashHost;
+  const watchHost = isServiceHost(hostname, "aw");
+  const isolatedAppHost = workHost || gptHost || cashHost || watchHost;
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   const accessToken = cookies[ACCESS_COOKIE] || "";
   const refreshToken = cookies[REFRESH_COOKIE] || "";
@@ -58,8 +68,8 @@ export async function verifyStudioPageSession(request) {
   const identityMatches = userId => {
     if (!isUuid(userId) || markerBlocksSession) return false;
     if (accountId && accountId !== userId) return false;
-    // Work is a separate host. It must never trust a legacy host-only session
-    // unless a domain-wide identity marker confirms the same account.
+    // 独立产品 host 不能只信任自己本地残留的 __Host 会话。
+    // 用户可能已经在同一 qsseda 根域的另一个产品切换账号；account marker 是防止旧会话“复活”的第二道校验。
     if (isolatedAppHost && !accountId) return false;
     return true;
   };
@@ -100,6 +110,8 @@ export async function verifyStudioApiSession(request) {
   return verifyStudioPageSession(request);
 }
 
+/// 把浏览器 Supabase session 同步进 HttpOnly 服务端 Cookie。
+/// 该接口要求 same-origin POST；独立产品若有更严格的账号切换规则，应在写 Cookie 前做 identity marker 校验。
 export async function handleStudioSessionBootstrap(request) {
   const url = new URL(request.url);
   const origin = request.headers.get("Origin") || "";
@@ -141,6 +153,7 @@ export async function handleStudioSessionBootstrap(request) {
   return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken, undefined, request));
 }
 
+/// 登出不仅清当前 host 的 __Host Cookie，还把域级 account marker 写成 signed-out，通知其他产品拒绝旧会话。
 export function handleStudioSessionLogout(request) {
   const url = new URL(request.url);
   const origin = request.headers.get("Origin") || "";
@@ -209,6 +222,7 @@ export function studioSessionBootstrapPage(locale, request) {
   return html(page, 401);
 }
 
+/// 通过 Supabase /auth/v1/user 校验 access token，而不是只在边缘端解码 JWT 后盲目信任 payload。
 async function verifyAccessToken(accessToken) {
   let userResponse;
   try {
@@ -251,6 +265,7 @@ async function verifyAccessToken(accessToken) {
   return { ok: true, user };
 }
 
+/// access token 过期时用 refresh token 换新会话；成功后上层会同时轮换浏览器 Cookie。
 async function refreshSession(refreshToken) {
   let response;
   try {

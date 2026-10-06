@@ -1,6 +1,9 @@
-// Centralized UI locale detection.
-// UI language comes from explicit locale routes and the browser/device
-// Accept-Language preference. Network geography must never choose interface language.
+// 统一 UI 语言解析。
+//
+// 初学者要区分两个概念：
+// - URL 语言（例如 /zh-cn）是用户明确选择，优先级最高；
+// - Accept-Language 只在 URL 没有语言时做回退。
+// Cloudflare 的国家/地区信息绝不能自动改变界面语言；Watch 的 setup 页可以用国家信息选择“下载源”，但不能因此偷偷改语言。
 
 export const DEFAULT_LOCALE = "en-us";
 
@@ -34,6 +37,8 @@ export const LOCALE_META = Object.freeze({
   "ar-sa": { label: "العربية", nativeName: "العربية", shortName: "ع", dir: "rtl" }
 });
 
+/// 把浏览器常见语言标签归一到 AERTEX 支持的 11 个 locale。
+/// 例如 zh-Hant-HK -> zh-tw，en-CA -> en-us；不认识的语言返回空字符串。
 export function normalizeSupportedLocale(value) {
   const tag = String(value || "").trim().toLowerCase().replaceAll("_", "-");
   if (!tag) return "";
@@ -58,6 +63,7 @@ export function normalizeSupportedLocale(value) {
   return "";
 }
 
+/// 只读取路径第一段，避免把正文或资源名里的语言样式字符串误当 locale。
 export function localeFromPath(pathname) {
   const path = typeof pathname === "string" ? pathname.trim().toLowerCase() : "";
   const first = path.split("/").filter(Boolean)[0] || "";
@@ -77,6 +83,7 @@ export function localeDirection(locale) {
   return LOCALE_META[normalizeSupportedLocale(locale) || DEFAULT_LOCALE]?.dir || "ltr";
 }
 
+/// 按 RFC 风格的 q 权重读取 Accept-Language，并保持原始顺序作为同权重时的 tie-break。
 export function localeFromAcceptLanguage(header, fallback = DEFAULT_LOCALE) {
   const normalizedFallback = normalizeSupportedLocale(fallback) || DEFAULT_LOCALE;
   const entries = String(header || "").split(",").map((raw, index) => {
@@ -99,6 +106,7 @@ export function localeFromAcceptLanguage(header, fallback = DEFAULT_LOCALE) {
   return normalizedFallback;
 }
 
+/// Worker 侧默认语言入口。Watch / Cash / GPT 等独立产品都复用这里，避免各自实现不同的语言推断。
 export function preferredLocaleFromRequest(request, fallback = DEFAULT_LOCALE) {
   let header = "";
   try { header = request?.headers?.get?.("Accept-Language") || ""; } catch {}

@@ -33,6 +33,7 @@ const authWorker = read("auth-worker.js");
 const authHandoff = read("studio/auth-handoff.js");
 const domains = read("studio/domain-family.js");
 const setupPage = read("studio/watch-setup-page.js");
+const sessionGate = read("studio/session-gate.js");
 const entry = read("studio/entry.js");
 
 // —— 安全边界与云端存储结构 ——
@@ -45,6 +46,7 @@ assert(worker.includes('url.hostname.startsWith("awd.")') && worker.includes('ur
 assert(worker.includes('handleEventQuery') && worker.includes('/api/0/buckets/'), "Cloud UI must expose ActivityWatch-compatible bucket reads.");
 assert(worker.includes('mergeEvents') && worker.includes('dayObjectKey'), "Cloud ingestion must deduplicate and shard events.");
 assert(worker.includes('verifyStudioPageSession'), "Watch browser reads must remain behind the AERTEX session gate.");
+assert(sessionGate.includes('const watchHost = isServiceHost(hostname, "aw");') && sessionGate.includes("workHost || gptHost || cashHost || watchHost"), "Watch host sessions must require the same domain-wide account marker as other isolated products.");
 
 for (const root of ["qsseda.com","qsseda.online"]) {
   assert(wrangler.includes("aw." + root), "Missing Watch UI domain for aw." + root);

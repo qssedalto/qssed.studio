@@ -4,6 +4,9 @@ import { auditClientScript } from "./ui-audit.js";
 import { baseHead, supabaseScript, themeScript, topControls } from "./ui-page.js";
 import { localeDirection, normalizeSupportedLocale } from "./locale.js";
 
+// 共享 404 文案由 Huawei/路由 Gate 等多个入口复用。
+//
+// 对 Watch 来说，这个页面只用于“非法兼容路由”的公开错误显示，不会读取 ActivityWatch 数据或 Watch R2。
 const NOT_FOUND_COPY = Object.freeze({
   "en-us": {
     title: "Page not found",
@@ -73,6 +76,7 @@ const NOT_FOUND_COPY = Object.freeze({
   }
 });
 
+/// 生成跨产品统一 404。host、requestedPath、returnHref 都会重新校验/转义，不能把请求值直接塞进 HTML。
 export function notFoundPage(t, links, options = {}) {
   const legacyLocale = t === TEXT.zh ? "zh-cn" : "en-us";
   const locale = normalizeSupportedLocale(options.locale || links?.activeLocale || legacyLocale) || legacyLocale;
