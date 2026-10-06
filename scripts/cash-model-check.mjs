@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Cash 纯计算模型。
+//
+// 直接 require cash-web/model.js，对默认数据、预算、周期支出、计划/预期、余额和预测结果做数值断言。
+// 因为模型没有 DOM/网络依赖，这里可以精确验证公式，而不需要启动 Cash Worker 或浏览器。
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
