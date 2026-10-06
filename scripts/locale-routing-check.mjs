@@ -1,3 +1,4 @@
+// 初学者导读：多语言路由回归检查；锁定 locale 规范化、路径前缀、RTL/LTR 和跨产品跳转的一致性。
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
