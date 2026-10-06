@@ -87,6 +87,9 @@ AERTEX Watch 使用：
 - 早期多 Bucket / 多设备情况下会把重叠窗口时间重复相加；已按原版 `union_no_overlap` 思路去重。
 - 早期找不到 AFK 活跃片段时会错误回退成“全部窗口都活跃”；现在只有“AFK Bucket 确实缺失”才回退，AFK Bucket 存在但没有 `not-afk` 时返回 0 活跃时间。
 - ZIP 里的自定义 UI 有友好应用名映射（例如 `msedge.exe -> Microsoft Edge`），曾在改版时遗漏，现已恢复。
+- 旧 Node.js 兼容同步脚本曾直接按 RFC3339 字符串比较“最新时间”；遇到不同时区偏移时文本顺序不等于真实时间顺序。现在两份兼容脚本都统一改为 `Date.parse(...)` 后比较时刻。
+- 仓库曾存在两份 `aw-sync.mjs` 漂移：`AW-Sync/native/aw-sync.mjs` 已修复而 `watch-web/aw-sync.mjs` 仍是旧代码。现在公开资产与审计副本保持完全一致，并由回归检查锁定。
+- `studio-check.yml` 原先只在 Pull Request 的路径过滤器里包含 Watch 文件，Watch-only 变更合并到 `main` 后不会再次触发 Studio Check。现在 push 路径也补齐了 Watch。
 
 ## 与原版相比仍未复制的功能
 
@@ -126,7 +129,12 @@ AERTEX Watch 使用：
 
 ## 给初学者的阅读顺序
 
-1. 先看 `watch-web/app.js`：理解“原始 Bucket -> 活跃片段 -> 指标 -> UI”的数据流。
-2. 再看 `watch-worker.js`：理解浏览器如何从 R2 读取 Bucket / 事件。
-3. 再看 `AW-Sync/native/src/sync.rs`：理解本地 ActivityWatch 如何上传到云端。
-4. 最后看 `scripts/watch-cloud-check.mjs`：这里把关键算法假设写成了回归检查，适合用来确认“你改了算法以后有没有破坏原口径”。
+1. 先看 `AW-Sync/native/src/model.rs`：认识同步器的数据结构和几个核心常量。
+2. 看 `AW-Sync/native/src/activitywatch.rs`：理解 localhost 自动发现与 ActivityWatch REST API。
+3. 看 `AW-Sync/native/src/sync.rs`：理解断点、2 秒重叠、分批上传以及失败时为什么不推进进度。
+4. 看 `watch-worker.js`：理解 Device Token、R2 分片、事件去重和浏览器查询边界。
+5. 看 `watch-web/app.js`：理解“原始 Bucket -> AFK/flood -> 有效前台片段 -> 指标 -> UI”的数据流。
+6. 看 `studio/watch-subdomain.js` 与 `studio/auth-handoff.js`：理解主站账号怎样安全进入独立 aw.* 产品域。
+7. 最后看 `scripts/watch-cloud-check.mjs`：这里把关键算法、安全边界和部署假设写成回归检查。
+
+本轮还给 Watch 相关代码补了面向初学者的中文注释，包括原生客户端、Worker、网页算法、登录 handoff、设置教程、域名族、安装器、Wrangler 与 CI。刻意没有把“名字里含 watch 但实际是 Apple Watch 小屏 Intelligence UI”的代码混进 AERTEX Watch 注释范围。

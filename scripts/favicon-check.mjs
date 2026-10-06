@@ -82,6 +82,7 @@ for (const [source,name] of [[worker,"Main/Work"],[gptWorker,"Intelligence"],[au
   assert(source.includes("FAVICON_PATHS") && source.includes("faviconResponse(request)"), name + " Worker must serve the shared square icon routes.");
 }
 assert(cashIndex.includes('href="/favicon-dark.svg?v=aertex-20261004-safari-theme-1"') && cashIndex.includes('rel="apple-touch-icon"') && cashIndex.includes('src="/favicon.svg?v=aertex-20261004-safari-theme-1"'), "Cash must use the current Safari-safe favicon references.");
+// Watch 使用共享的深/浅色 favicon 路由，不再维护容易在 Safari 深色模式出现白底的旧产品图标。
 assert(watchIndex.includes('href="/favicon-dark.svg?v=aertex-20261004-safari-theme-1"') && watchIndex.includes('rel="apple-touch-icon"'), "Watch must use the current Safari-safe favicon references.");
 assert(!cashWorker.includes('"/icon.svg"]') && !watchWorker.includes('"/icon.svg"'), "Cash and Watch must not serve legacy product-specific icon files.");
 

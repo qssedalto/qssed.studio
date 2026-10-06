@@ -15,6 +15,8 @@ export async function handleAuthHandoff(request, env, locale) {
   const workTarget = isServiceHost(hostname, "work");
   const gptTarget = isServiceHost(hostname, "gpt");
   const cashTarget = isServiceHost(hostname, "cash");
+  // aw.* 和 Work/GPT/Cash 一样是独立产品会话边界。识别为 watchTarget 后，
+  // Origin/Referer、next 路径和错误重试都会按 Watch 专用规则收紧。
   const watchTarget = isServiceHost(hostname, "aw");
   const isolatedTarget = workTarget || gptTarget || cashTarget || watchTarget;
   const origin = request.headers.get("Origin") || "";
@@ -65,6 +67,7 @@ export async function handleAuthHandoff(request, env, locale) {
   return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken, undefined, request));
 }
 
+// 规范登录成功后的站内落点。不同产品允许的深链范围不同；Watch 当前只允许语言根页。
 export function normalizeHandoffNext(value, locale, workTarget = false, gptTarget = false, cashTarget = false, watchTarget = false) {
   const candidate = typeof value === "string" ? value.trim() : "";
   const baseLocale = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
@@ -95,6 +98,7 @@ export function normalizeHandoffNext(value, locale, workTarget = false, gptTarge
     return prefix;
   }
 
+  // Cash/Watch 暂不接受任意深层 next：即便表单里传了别的路径，也只回 /<locale>。
   if (cashTarget || watchTarget) return prefix;
 
   if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\u0000")) return prefix;
@@ -102,6 +106,7 @@ export function normalizeHandoffNext(value, locale, workTarget = false, gptTarge
   return candidate === "/" ? prefix : prefix + candidate;
 }
 
+// 会话校验失败时回到主站对应产品 handoff，而不是直接把用户丢回产品子域造成登录循环。
 export function authRetryPath(next, locale, workTarget = false, gptTarget = false, cashTarget = false, watchTarget = false) {
   const code = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");
   const prefix = "/" + code;
@@ -116,6 +121,7 @@ export function scriptLiteral(value) {
   return JSON.stringify(String(value || "")).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
 
+// 最终页面只负责把已验证会话写入产品域并显示短暂过渡状态；Watch 会使用独立产品名和本地化文案。
 export function authHandoffHtml(accessToken, refreshToken, next, workTarget = false, gptTarget = false, cashTarget = false, watchTarget = false, authOrigin = "https://auth.qsseda.com", retryNext = next) {
   const product = workTarget ? "AERTEX Work" : gptTarget ? "AERTEX Intelligence" : cashTarget ? "AERTEX Cash" : watchTarget ? "AERTEX Watch" : "AERTEX";
   const locale = localeFromPath(next) || "en-us";

@@ -55,6 +55,7 @@ const PRODUCT_FAVICON_META = Object.freeze({
     mainScale: 3.1,
     glyph: '<rect x="-5.2" y="-2.6" width="10.4" height="6.6" rx="1.35"/><path d="M-3.5-2.6V-4h7v1.4M2 .7h3.2"/><circle class="filled" cx="2.8" cy=".7" r=".72"/>'
   },
+  // Watch 使用“主 AERTEX 标志 + 小型活动波形”分支图标；aw.* UI 与 awd.* 数据域共用这一产品身份。
   watch: {
     label: "AERTEX Watch",
     mainX: 27.2,
@@ -86,6 +87,7 @@ export function faviconProductForRequest(request) {
   if (subdomain === "work") return "work";
   if (subdomain === "gpt") return "intelligence";
   if (subdomain === "cash") return "cash";
+  // aw 是可视化产品域，awd 是短数据域；两者仍属于同一个 AERTEX Watch 品牌分支。
   if (subdomain === "aw" || subdomain === "awd") return "watch";
   if (subdomain === "auth") return "auth";
   if (subdomain === "admin") return "admin";

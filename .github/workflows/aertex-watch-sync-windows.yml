@@ -1,3 +1,5 @@
+# 这条工作流只负责“原生 Windows 客户端 + 安装器 + 固定 R2 release 对象”。
+# Watch 网页 Worker 的生产部署由 deploy-production.yml 负责，二者不要混成同一发布事务。
 name: Build AERTEX Watch Sync for Windows
 
 on:
@@ -5,6 +7,8 @@ on:
     paths:
       - "AW-Sync/**"
       - "watch-worker.js"
+      # watch-cloud-check 会校验公开 /aw-sync.mjs 与审计副本完全一致，因此这个资产变更也必须触发 CI。
+      - "watch-web/aw-sync.mjs"
       - "studio/watch-setup-page.js"
       - "scripts/watch-cloud-check.mjs"
       - ".github/workflows/aertex-watch-sync-windows.yml"
@@ -14,6 +18,7 @@ on:
     paths:
       - "AW-Sync/**"
       - "watch-worker.js"
+      - "watch-web/aw-sync.mjs"
       - "studio/watch-setup-page.js"
       - "scripts/watch-cloud-check.mjs"
       - ".github/workflows/aertex-watch-sync-windows.yml"
@@ -85,6 +90,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  # PR 只构建/测试；只有 main push 才把已验证安装器覆盖到固定 R2 key。
   publish-r2:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build-windows

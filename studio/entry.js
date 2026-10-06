@@ -219,6 +219,7 @@ export default {
       const shellProductLinks = {
         workHref: `${workOrigin}/${fullLocale}/tex`,
         cashHref: `${cashOrigin}/${fullLocale}`,
+        // Watch URL 不直接拼 hostname，统一走 domain-family，才能正确处理 .com/.online 与旧 .studio 规范化。
         awHref: awOriginForRequest(request),
         gptHref: `${gptOrigin}/${fullLocale}`,
         adminHref: await isAdminAccount(gate.accessToken) ? adminOriginForRequest(request) + "/" : "",
@@ -262,6 +263,7 @@ export default {
       );
     }
 
+    // Watch 安装教程是主站的公开帮助页；真正的活动仪表盘仍由独立 aw.* Worker 提供。
     if (pathname === "/aw/setup") return watchSetupPage(request);
     if (pathname === "/birthday") {
       const canonicalHost = new URL(request.url).hostname.toLowerCase() === "qsseda.com";

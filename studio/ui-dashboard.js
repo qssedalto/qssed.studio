@@ -30,6 +30,7 @@ export function dashboardIcon(name) {
     computer: '<rect x="3" y="4" width="18" height="13" rx="2.5"/><path d="M8 21h8M12 17v4"/>',
     tex: '<path d="M5 5h14M8 5l3.8 7L8 19M13 9h6M13 15h6"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    // AERTEX Watch 的导航图标沿用“活动波形”语义；这里只是通用 Studio 图标库，不参与 Watch 数据计算。
     activitywatch: '<circle cx="12" cy="12" r="8.5"/><path d="M7 12h2.2l1.5-3.2 2.1 6.4 1.6-3.2H17"/>',
     cash: '<rect x="3.5" y="6" width="17" height="13" rx="3"/><path d="M3.5 9.5h17"/><path d="M7.5 14h4M16.5 14h.01"/>',
     intelligence: '<path d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v6a2.5 2.5 0 0 1-2.5 2.5H11l-4 3v-3.2A2.5 2.5 0 0 1 5 13.5z"/><path d="M9 9.5h6M9 12.5h4"/>',

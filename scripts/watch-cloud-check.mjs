@@ -18,6 +18,7 @@ const app = read("watch-web/app.js");
 const index = read("watch-web/index.html");
 const styles = read("watch-web/styles.css");
 const sync = read("AW-Sync/native/aw-sync.mjs");
+const publicSync = read("watch-web/aw-sync.mjs");
 const nativeCargo = read("AW-Sync/native/Cargo.toml");
 const nativeMain = read("AW-Sync/native/src/main.rs");
 const nativeCredentials = read("AW-Sync/native/src/credentials.rs");
@@ -84,6 +85,7 @@ assert(sync.includes("http://127.0.0.1:5600"), "Native sync must default to Acti
 assert(sync.includes("https://awd.qsseda.com"), "Native sync must default to the short cloud data domain.");
 assert(sync.includes("limit:\"-1\""), "Native sync must request the complete incremental ActivityWatch event range.");
 assert(sync.includes("Date.parse(raw)") && sync.includes("bestMs"), "Legacy Node sync progress must compare RFC3339 timestamps as instants, not strings.");
+assert(publicSync === sync, "The public /aw-sync.mjs asset must stay byte-for-byte aligned with the audited legacy sync script.");
 assert(sync.includes("--watch"), "Native sync must support continuous operation.");
 assert(handoff.includes("/aw/handoff") && handoff.includes("/auth/handoff"), "Watch must support the secure main-site session handoff.");
 assert(studioWorker.includes("isMainWatchHandoffPath") && studioWorker.includes("handleMainWatchHandoff"), "Main Studio worker must route Watch handoffs.");

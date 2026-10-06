@@ -6,6 +6,9 @@ import { polishWorkTexNavigation } from "../studio/ui-work-tex.js";
 import { LOCALE_META, SUPPORTED_LOCALES, localeContentLanguage } from "../studio/locale.js";
 import { QSS_DOMAIN_ROOTS, awOriginForRequest } from "../studio/domain-family.js";
 
+// Watch 在根域切换上有特殊兼容规则：.com/.online 保持同根，旧 .studio UI 必须规范到 aw.qsseda.com。
+// 下面既检查 SSR 链接，也检查不会把另一个根域的 Watch 地址泄漏进当前页面。
+
 const ipInfo = { ip:"127.0.0.1", country:"US", region:"", city:"", locale:"en-us" };
 
 if (LEGACY_REDIRECTS.has("/dashboard")) {

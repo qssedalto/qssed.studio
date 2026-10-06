@@ -273,6 +273,8 @@ function resolveHandoffTarget(request, next, mainSite) {
     const service = parts[offset];
     const action = parts[offset + 1];
     const nested = service && action === "handoff" ? validatedNextPath(parsed.searchParams.get("next")) : "";
+    // /continue?next=/<locale>/aw/handoff?... 是 AERTEX ID -> 主站 -> Watch 的登录链。
+    // Watch 的目标 origin 必须通过 domain-family 计算，不能信任 next 中用户可控的 hostname。
     if (service === "aw" && nested) {
       return { origin: awOriginForRequest(request), next: nested };
     }

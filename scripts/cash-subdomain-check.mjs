@@ -78,6 +78,7 @@ assert(wrangler.r2_buckets?.some(item => item.binding === "STORAGE" && item.buck
 assert(entry.includes('cashHref: `${cashOrigin}/${fullLocale}`'), "Main shell must expose Cash as an independent product.");
 assert(shell.includes('title:"AERTEX Cash"'), "Compact product menu must list AERTEX Cash.");
 assert(shell.includes('id: "cash", label: "AERTEX Cash"'), "Desktop product navigation must list AERTEX Cash.");
+// Cash 也复用独立产品菜单；这里防止某次 Cash UI 修改把 Watch 品牌倒退成底层项目名 ActivityWatch。
 assert(shell.includes('title:"AERTEX Watch"'), "Compact product menu must use the AERTEX Watch brand.");
 assert(shell.includes('id: "activitywatch", label: "AERTEX Watch"'), "Desktop product navigation must use the AERTEX Watch brand.");
 assert(!shell.includes('title:"ActivityWatch"') && !shell.includes('label: "ActivityWatch"'), "Legacy ActivityWatch must not remain as a rendered product name.");
