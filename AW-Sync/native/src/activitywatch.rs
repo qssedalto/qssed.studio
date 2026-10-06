@@ -107,8 +107,9 @@ impl ActivityWatchClient {
                 message: format!("ActivityWatch returned HTTP {}", response.status()),
             });
         }
+        let body = response.text().map_err(local_transport_error)?;
         let mut buckets: BTreeMap<String, BucketMetadata> =
-            response.json().map_err(|error| LocalApiError {
+            serde_json::from_str(&body).map_err(|error| LocalApiError {
                 kind: LocalApiErrorKind::InvalidResponse,
                 message: format!("ActivityWatch returned invalid bucket data: {error}"),
             })?;
@@ -138,7 +139,8 @@ impl ActivityWatchClient {
                 message: format!("ActivityWatch returned HTTP {}", response.status()),
             });
         }
-        response.json().map_err(|error| LocalApiError {
+        let body = response.text().map_err(local_transport_error)?;
+        serde_json::from_str(&body).map_err(|error| LocalApiError {
             kind: LocalApiErrorKind::InvalidResponse,
             message: format!("ActivityWatch returned invalid event data: {error}"),
         })

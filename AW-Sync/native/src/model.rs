@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::BTreeMap;
 
 pub const APP_NAME: &str = "AERTEX Watch Sync";
@@ -65,16 +65,23 @@ impl Default for PersistedState {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct BucketMetadata {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_nullable_string")]
     pub id: String,
-    #[serde(default, rename = "type")]
+    #[serde(default, rename = "type", deserialize_with = "deserialize_nullable_string")]
     pub bucket_type: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_nullable_string")]
     pub client: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_nullable_string")]
     pub hostname: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_nullable_string")]
     pub name: String,
+}
+
+fn deserialize_nullable_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Ok(Option::<String>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -159,5 +166,23 @@ mod tests {
             serde_json::from_str::<PersistedState>(&json).unwrap(),
             PersistedState::default()
         );
+    }
+
+    #[test]
+    fn bucket_metadata_accepts_null_optional_strings() {
+        let bucket: BucketMetadata = serde_json::from_value(serde_json::json!({
+            "id": null,
+            "type": "currentwindow",
+            "client": null,
+            "hostname": "pc",
+            "name": null
+        }))
+        .unwrap();
+
+        assert_eq!(bucket.id, "");
+        assert_eq!(bucket.bucket_type, "currentwindow");
+        assert_eq!(bucket.client, "");
+        assert_eq!(bucket.hostname, "pc");
+        assert_eq!(bucket.name, "");
     }
 }
