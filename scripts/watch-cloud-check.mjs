@@ -56,6 +56,12 @@ for (const legacyInstruction of ["node --version", "AERTEX_WATCH_TOKEN", "Invoke
 }
 assert(setupPage.includes("https://aw.qsseda.com/AERTEX-Watch-Sync-Setup.exe"), "Watch setup must use the public Windows installer URL.");
 assert(app.includes("/api/watch/tokens") && app.includes("/api/0/buckets/"), "Watch UI must use authenticated cloud APIs.");
+assert(app.includes("latestBucketsByHost") && app.includes("unionHostSegments"), "Watch metrics must select one current bucket per host and remove cross-device overlap.");
+assert(app.includes("afkEvents === null") && app.includes("if (!activeIntervals.length) return [];"), "Watch metrics must distinguish a missing AFK bucket from an all-AFK period.");
+assert(app.includes("appLabels") && app.includes('"msedge.exe":"Microsoft Edge"'), "Watch UI must preserve the uploaded custom dashboard app display names.");
+assert(worker.includes("MAX_EVENT_DURATION_SECONDS") && worker.includes("eventStart < endMs && eventEnd > startMs"), "Watch event reads must include events that overlap query boundaries.");
+assert(worker.includes('JSON.stringify([normalized.timestamp, normalized.data])'), "Watch heartbeat deduplication must ignore changing event duration.");
+assert(worker.includes("events = await mergeEvents([], events)"), "Watch event reads must deduplicate legacy overlapping heartbeat copies.");
 assert(sync.includes("http://127.0.0.1:5600"), "Native sync must default to ActivityWatch localhost.");
 assert(sync.includes("https://awd.qsseda.com"), "Native sync must default to the short cloud data domain.");
 assert(sync.includes("limit:\"-1\""), "Native sync must request the complete incremental ActivityWatch event range.");
