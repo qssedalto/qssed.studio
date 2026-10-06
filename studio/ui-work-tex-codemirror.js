@@ -1,3 +1,4 @@
+// 初学者导读：TeX 编辑器 CodeMirror 集成层：创建编辑器实例、同步文档内容和编辑器状态。不要在这里混入版本/协作服务端逻辑。
 function replaceExact(source, needle, replacement) {
   const index = source.indexOf(needle);
   if (index < 0) return source;
