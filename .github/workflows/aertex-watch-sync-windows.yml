@@ -38,6 +38,16 @@ jobs:
           targets: x86_64-pc-windows-msvc
           components: rustfmt, clippy
 
+      - name: Prepare AERTEX Watch icon
+        shell: pwsh
+        run: |
+          if (-not (Get-Command magick -ErrorAction SilentlyContinue)) {
+            choco install imagemagick --yes --no-progress
+            $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+          }
+          magick -background none -density 512 assets/aertex-watch.svg -define icon:auto-resize=256,128,64,48,32,16 assets/aertex-watch.ico
+          if (-not (Test-Path -LiteralPath assets/aertex-watch.ico)) { throw "AERTEX Watch icon was not created." }
+
       - name: Check formatting
         run: cargo fmt --check
 
@@ -54,18 +64,24 @@ jobs:
       - name: Build release executable
         run: cargo build --release --target x86_64-pc-windows-msvc
 
-      - name: Stage release executable
+      - name: Build Windows installer
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item -LiteralPath target/x86_64-pc-windows-msvc/release/AERTEX-Watch-Sync.exe -Destination dist/AERTEX-Watch-Sync.exe
-          if (-not (Test-Path -LiteralPath dist/AERTEX-Watch-Sync.exe)) { throw "Release executable was not created." }
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path -LiteralPath $iscc)) {
+            choco install innosetup --yes --no-progress
+            $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          }
+          if (-not (Test-Path -LiteralPath $iscc)) { throw "Inno Setup compiler is unavailable." }
+          & $iscc "installer\AERTEX-Watch-Sync.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE." }
+          if (-not (Test-Path -LiteralPath "dist\AERTEX-Watch-Sync-Setup.exe")) { throw "Installer was not created." }
 
-      - name: Upload workflow artifact
+      - name: Upload Windows installer artifact
         uses: actions/upload-artifact@v7
         with:
-          name: aertex-watch-sync-windows-amd64
-          path: AW-Sync/native/dist/AERTEX-Watch-Sync.exe
+          name: aertex-watch-sync-windows-installer-amd64
+          path: AW-Sync/native/dist/AERTEX-Watch-Sync-Setup.exe
           if-no-files-found: error
           retention-days: 30
 
@@ -78,19 +94,28 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
-      - name: Download Windows artifact
+      - name: Download Windows installer artifact
         uses: actions/download-artifact@v7
         with:
-          name: aertex-watch-sync-windows-amd64
+          name: aertex-watch-sync-windows-installer-amd64
           path: dist
 
-      - name: Publish executable to private R2
+      - name: Publish installer to private R2
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: >-
           npx --yes wrangler@4.136.3 r2 object put
-          qsseda-studio-storage/watch/releases/windows/AERTEX-Watch-Sync.exe
-          --file dist/AERTEX-Watch-Sync.exe
+          qsseda-studio-storage/watch/releases/windows/AERTEX-Watch-Sync-Setup.exe
+          --file dist/AERTEX-Watch-Sync-Setup.exe
           --content-type application/vnd.microsoft.portable-executable
           --remote
+
+      - name: Remove legacy portable executable
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: >-
+          npx --yes wrangler@4.136.3 r2 object delete
+          qsseda-studio-storage/watch/releases/windows/AERTEX-Watch-Sync.exe
+          --remote || true
