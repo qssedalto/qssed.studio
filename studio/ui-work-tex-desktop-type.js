@@ -1,3 +1,4 @@
+// 初学者导读：TeX 桌面端排版/交互微调层；只针对桌面输入和布局，不应改变文档数据模型。
 export function enhanceWorkTexDesktopTypography(markup) {
   return String(markup || "") + `
     <style id="qsseda-work-tex-desktop-type">
