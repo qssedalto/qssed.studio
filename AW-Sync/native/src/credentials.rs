@@ -4,8 +4,10 @@ use windows_sys::Win32::Security::Credentials::{
     CredWriteW,
 };
 
+// 设备令牌是敏感凭据：使用 Windows Credential Manager，而不是 state.json 或明文配置文件。
 const TARGET: &str = "AERTEX/WatchSync/DeviceToken";
 
+/// 保存设备令牌。写入后立即把临时 byte buffer 清零，尽量缩短明文留在进程内存里的时间。
 pub fn save_token(token: &str) -> io::Result<()> {
     let target = wide(TARGET);
     let mut blob = token.as_bytes().to_vec();
@@ -25,6 +27,7 @@ pub fn save_token(token: &str) -> io::Result<()> {
     }
 }
 
+/// 读取设备令牌。Windows 错误 1168 表示“目标不存在”，这里把它视为尚未配置，而不是故障。
 pub fn load_token() -> io::Result<Option<String>> {
     let target = wide(TARGET);
     let mut pointer = std::ptr::null_mut();
@@ -53,6 +56,7 @@ pub fn load_token() -> io::Result<Option<String>> {
 }
 
 #[allow(dead_code)]
+/// 删除已保存令牌；如果本来就不存在，同样视为成功，方便 UI 做幂等的“断开设备”。
 pub fn delete_token() -> io::Result<()> {
     let target = wide(TARGET);
     let result = unsafe { CredDeleteW(target.as_ptr(), CRED_TYPE_GENERIC, 0) };
