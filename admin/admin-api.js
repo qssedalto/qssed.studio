@@ -1,3 +1,4 @@
+// 初学者导读：管理员核心 API：处理需要高权限的账户/系统操作。这里的输入校验和权限判断属于安全边界，不要把前端隐藏按钮当成授权。
 import { SUPABASE_URL, SUPABASE_KEY } from "../studio/config.js";
 import { json } from "../studio/routing.js";
 import { verifyAdminApiSession, withAdminSessionCookies } from "./session.js";
