@@ -1,3 +1,5 @@
+# CI：主站与各产品共享 Studio 代码的总回归检查。
+# 这里会运行大量 scripts/* 架构契约并 dry-run 打包多个 Worker，是“跨模块改动没有把别的产品弄坏”的主防线。
 name: Studio Worker Check
 
 on:
