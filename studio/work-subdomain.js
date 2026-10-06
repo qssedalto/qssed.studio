@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Work 子域的登录 handoff、路径规范化和主站回跳逻辑；用于保持独立产品会话边界。
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 import { authOriginForRequest, isServiceHost, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 import { FAVICON_LINKS } from "./favicon.js";
