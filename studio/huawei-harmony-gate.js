@@ -1,3 +1,4 @@
+// 初学者导读：华为/鸿蒙特定拦截与豁免路由规则；顺序和重复标记有明确语义，修改前要同时核对 404/豁免组合约束。
 import { authOriginForRequest, isServiceHost, rootDomainForHost } from "./domain-family.js";
 import { SUPABASE_URL, SUPABASE_KEY, TEXT } from "./config.js";
 import { buildLinks, getRouteInfo, html } from "./routing.js";
