@@ -1,3 +1,4 @@
+// 初学者导读：全产品 favicon/Apple touch icon 回归检查；避免 Safari 深色模式或产品分支图标再次退化。
 import { faviconSvgForProduct } from "../studio/favicon.js";
 import fs from "node:fs";
 
