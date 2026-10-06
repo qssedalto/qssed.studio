@@ -1,3 +1,4 @@
+// 初学者导读：用户自定义链接的整理层；把账户自己的链接记录转换成 UI/搜索可消费结构，避免展示层直接依赖数据库字段。
 export function curatedLinksUserEnhancer(zh) {
   const copy = zh ? {
     add: "新增链接",
