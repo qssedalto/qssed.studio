@@ -14,6 +14,8 @@ const MAX_SYNC_EVENTS = 5000;
 const MAX_QUERY_DAYS = 400;
 const TOKEN_PREFIX = "awd1";
 const WATCH_PREFIX = "watch/v1";
+const WINDOWS_SYNC_PATH = "/AERTEX-Watch-Sync.exe";
+const WINDOWS_SYNC_KEY = "watch/releases/windows/AERTEX-Watch-Sync.exe";
 
 export default {
   async fetch(request, env) {
@@ -38,6 +40,10 @@ export default {
     }
 
     if (pathname === "/robots.txt") return text("User-agent: *\nDisallow: /\n", 200, "text/plain;charset=UTF-8");
+
+    if (pathname === WINDOWS_SYNC_PATH && url.hostname.toLowerCase() === "aw.qsseda.com") {
+      return handleWindowsSyncDownload(request, env);
+    }
 
     if (pathname === "/appearance.js") {
       if (dataHost) return text("Not found", 404);
@@ -114,6 +120,29 @@ export default {
     return withStudioSessionCookies(response, gate.cookies || []);
   }
 };
+
+async function handleWindowsSyncDownload(request, env) {
+  if (request.method !== "GET" && request.method !== "HEAD") return text("Method not allowed", 405);
+  if (!env || !env.STORAGE) return text("Watch download is unavailable.", 503);
+
+  try {
+    const object = request.method === "HEAD"
+      ? await env.STORAGE.head(WINDOWS_SYNC_KEY)
+      : await env.STORAGE.get(WINDOWS_SYNC_KEY);
+    if (!object) return text("Not found", 404);
+    const headers = new Headers({
+      "content-type": "application/vnd.microsoft.portable-executable",
+      "content-disposition": 'attachment; filename="AERTEX-Watch-Sync.exe"',
+      "cache-control": "public, max-age=3600",
+      "x-content-type-options": "nosniff"
+    });
+    if (Number.isFinite(Number(object.size))) headers.set("content-length", String(object.size));
+    if (object.httpEtag) headers.set("etag", object.httpEtag);
+    return new Response(request.method === "HEAD" ? null : object.body, { status: 200, headers });
+  } catch {
+    return text("Watch download is unavailable.", 503);
+  }
+}
 
 async function withSession(request, handler) {
   const gate = await verifyStudioPageSession(request);

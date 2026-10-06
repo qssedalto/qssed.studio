@@ -1,0 +1,96 @@
+name: Build AERTEX Watch Sync for Windows
+
+on:
+  pull_request:
+    paths:
+      - "AW-Sync/**"
+      - "watch-worker.js"
+      - "studio/watch-setup-page.js"
+      - "scripts/watch-cloud-check.mjs"
+      - ".github/workflows/aertex-watch-sync-windows.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "AW-Sync/**"
+      - "watch-worker.js"
+      - "studio/watch-setup-page.js"
+      - "scripts/watch-cloud-check.mjs"
+      - ".github/workflows/aertex-watch-sync-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: AW-Sync/native
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt, clippy
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Lint
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Test
+        run: cargo test --all-features
+
+      - name: Verify Watch cloud integration
+        working-directory: .
+        run: node scripts/watch-cloud-check.mjs
+
+      - name: Build release executable
+        run: cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Stage release executable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item -LiteralPath target/x86_64-pc-windows-msvc/release/AERTEX-Watch-Sync.exe -Destination dist/AERTEX-Watch-Sync.exe
+          if (-not (Test-Path -LiteralPath dist/AERTEX-Watch-Sync.exe)) { throw "Release executable was not created." }
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: aertex-watch-sync-windows-amd64
+          path: AW-Sync/native/dist/AERTEX-Watch-Sync.exe
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-r2:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-windows
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: aertex-watch-sync-windows-amd64
+          path: dist
+
+      - name: Publish executable to private R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: >-
+          npx --yes wrangler@4.136.3 r2 object put
+          qsseda-studio-storage/watch/releases/windows/AERTEX-Watch-Sync.exe
+          --file dist/AERTEX-Watch-Sync.exe
+          --content-type application/vnd.microsoft.portable-executable
+          --remote

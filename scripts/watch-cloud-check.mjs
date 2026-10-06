@@ -10,6 +10,12 @@ const wrangler = read("wrangler.watch.jsonc");
 const app = read("watch-web/app.js");
 const index = read("watch-web/index.html");
 const sync = read("AW-Sync/native/aw-sync.mjs");
+const nativeCargo = read("AW-Sync/native/Cargo.toml");
+const nativeMain = read("AW-Sync/native/src/main.rs");
+const nativeCredentials = read("AW-Sync/native/src/credentials.rs");
+const nativeAutostart = read("AW-Sync/native/src/autostart.rs");
+const nativeDiscovery = read("AW-Sync/native/src/activitywatch.rs");
+const nativeWorkflow = read(".github/workflows/aertex-watch-sync-windows.yml");
 const handoff = read("studio/watch-subdomain.js");
 const studioWorker = read("worker.js");
 const authWorker = read("auth-worker.js");
@@ -42,7 +48,11 @@ assert(wrangler.includes('"bucket_name": "qsseda-studio-storage"'), "Watch must 
 assert(index.includes("AERTEX Watch") && index.includes("生成设备令牌") && index.includes("连接电脑"), "Watch UI must expose product identity and device onboarding.");
 assert(index.includes("https://qsseda.com/zh-cn/aw/setup") && index.includes("查看设置教程"), "Watch UI must link to the computer setup tutorial.");
 assert(entry.includes('pathname === "/aw/setup"') && entry.includes("watchSetupPage(request)"), "Studio must route the localized Watch setup tutorial.");
-assert(setupPage.includes("ActivityWatch") && setupPage.includes("127.0.0.1:5600") && setupPage.includes("PowerShell"), "Watch setup tutorial must cover ActivityWatch, the local service, and Windows setup.");
+assert(setupPage.includes("ActivityWatch") && setupPage.includes("AERTEX-Watch-Sync.exe"), "Watch setup tutorial must cover ActivityWatch and the native Windows client.");
+for (const legacyInstruction of ["node --version", "AERTEX_WATCH_TOKEN", "Invoke-WebRequest", "保持 PowerShell", "Keep the PowerShell"]) {
+  assert(!setupPage.includes(legacyInstruction), "Watch setup must not expose legacy command-line instructions: " + legacyInstruction);
+}
+assert(setupPage.includes("https://aw.qsseda.com/AERTEX-Watch-Sync.exe"), "Watch setup must use the public native Windows download URL.");
 assert(app.includes("/api/watch/tokens") && app.includes("/api/0/buckets/"), "Watch UI must use authenticated cloud APIs.");
 assert(sync.includes("http://127.0.0.1:5600"), "Native sync must default to ActivityWatch localhost.");
 assert(sync.includes("https://awd.qsseda.com"), "Native sync must default to the short cloud data domain.");
@@ -60,8 +70,15 @@ assert(domains.includes('root === "qsseda.studio" ? "qsseda.com" : root'), "The 
 assert(setupPage.includes('country === "CN" || locale === "zh-cn"'), "Watch setup must use Mainland country detection with a zh-cn fallback for the China download source.");
 assert(setupPage.includes("https://www.icloud.com.cn/iclouddrive/0f1o93e_H_OyQJtlbDfArEeUQ"), "Mainland China ActivityWatch download must use the iCloud China link.");
 assert(setupPage.includes('mainlandChina ? activityWatchChinaUrl : activityWatchOfficialUrl'), "ActivityWatch download must switch between iCloud China and the official site by request country.");
-assert(setupPage.includes("https://aw.qsseda.com/aw-sync.mjs"), "Watch setup must download AERTEX Watch Sync from the first-party Watch domain.");
 assert(worker.includes('"/aw-sync.mjs"'), "Watch Worker must serve the first-party sync script asset.");
+assert(worker.includes('"/AERTEX-Watch-Sync.exe"') && worker.includes('"watch/releases/windows/AERTEX-Watch-Sync.exe"'), "Watch Worker must expose only the fixed native Windows release object.");
+assert(worker.includes("application/vnd.microsoft.portable-executable") && worker.includes('attachment; filename="AERTEX-Watch-Sync.exe"'), "Native Windows download headers are missing.");
+assert(nativeCargo.includes('name = "AERTEX-Watch-Sync"'), "Rust project must produce the required executable name.");
+assert(nativeMain.includes('windows_subsystem = "windows"'), "Release client must use the Windows GUI subsystem.");
+assert(nativeCredentials.includes("CredWriteW") && nativeCredentials.includes("CredReadW"), "Device tokens must use Windows Credential Manager.");
+assert(nativeAutostart.includes("HKEY_CURRENT_USER") && nativeAutostart.includes("--background"), "Native client must register per-user background startup.");
+assert(nativeDiscovery.includes("5000..=6000") && nativeDiscovery.includes("SCAN_CONCURRENCY"), "Native client must implement bounded localhost ActivityWatch discovery.");
+assert(nativeWorkflow.includes("windows-latest") && nativeWorkflow.includes("cargo clippy") && nativeWorkflow.includes("watch/releases/windows/AERTEX-Watch-Sync.exe"), "Native Windows build and R2 publish workflow is incomplete.");
 assert(setupPage.includes('"cache-control": "private, no-store"'), "Region-specific Watch setup responses must not be shared-cacheable.");
 
 console.log("AERTEX Watch cloud checks passed.");
