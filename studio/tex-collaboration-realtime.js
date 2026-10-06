@@ -1,3 +1,4 @@
+// 初学者导读：TeX 实时协作消息处理：协调增量更新、连接状态和广播。实时通道只传授权房间内的数据。
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
