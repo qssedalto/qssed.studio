@@ -253,6 +253,7 @@ for (const [host, zone] of [["work.qsseda.com","qsseda.com"],["work.qsseda.onlin
 assert(!workAuditWrapper.includes("canonicalQssedaAlias"), "Work .online/.studio hosts must stay on their own domains");
 assert(entry.includes('workHref: `${workOrigin}/${fullLocale}/tex`'), "Studio shell must preserve the complete locale in the AERTEX Work product URL.");
 assert(entry.includes('cashHref: `${cashOrigin}/${fullLocale}`'), "Studio shell must expose AERTEX Cash as an independent product.");
+// Work 的共享产品导航也承担 Watch 跨产品入口，因此这里顺便锁定 Watch 的 canonical 域名推导与菜单顺序。
 assert(entry.includes('awHref: awOriginForRequest(request)'), "Studio shell must derive AERTEX Watch from the active qsseda root instead of hard-coding one domain.");
 assert(shell.includes('title:"AERTEX Work"'), "Compact main menu must list AERTEX Work as an independent product.");
 assert(shell.includes('id: "work", label: "AERTEX Work"'), "Desktop product navigation must list AERTEX Work as an independent product.");
