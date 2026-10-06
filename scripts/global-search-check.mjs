@@ -1,3 +1,4 @@
+// 初学者导读：全局搜索回归检查；确认聚合来源、权限边界和 UI 接口没有因重构丢失。
 import fs from "node:fs";
 import { globalSearchMatchScore } from "../studio/global-search-api.js";
 import { globalSearchContent } from "../studio/ui-global-search.js";
