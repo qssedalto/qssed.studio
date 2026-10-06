@@ -1,3 +1,6 @@
+// AERTEX ID 的最外层滥用防护。
+// 这不是登录密码校验，而是先挡掉扫描器、超长请求、危险方法和异常高频流量；真正的账号/OAuth 校验在后面的 Auth 路由完成。
+// OAuth token/revoke/introspect 等协议端点允许合法 SDK/curl，因此不能用“自动化 UA”一刀切。
 const MAX_PATH_LENGTH = 2048;
 const MAX_QUERY_LENGTH = 4096;
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
