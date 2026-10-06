@@ -1,3 +1,4 @@
+// 初学者导读：AI 网关核心：规范化模型请求、选择提供方并管理服务端凭据。不要把上游 API key 暴露给浏览器。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 
 const enc = new TextEncoder();
