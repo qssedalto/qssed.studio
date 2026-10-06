@@ -1,3 +1,4 @@
+// 初学者导读：TeX 编辑器细节优化层：处理选择、滚动、焦点等交互修正，原则上不改变文档内容语义。
 export function enhanceWorkTexEditorRefine(markup, zh) {
   const copy = zh ? {
     savedLocal: "已另存到本机",
