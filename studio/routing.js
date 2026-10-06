@@ -1,3 +1,4 @@
+// 初学者导读：Studio 通用响应/路由辅助函数；集中处理 HTML/JSON/redirect 等基础响应，业务模块不应重复实现。
 import { SUPABASE_URL } from "./config.js";
 import { localeContentLanguage, localeFromPath, localePrefix, preferredLocaleFromRequest, SUPPORTED_LOCALES } from "./locale.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
