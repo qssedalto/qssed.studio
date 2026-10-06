@@ -6,12 +6,15 @@ use windows_sys::Win32::System::Registry::{
     RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegOpenKeyExW, RegQueryValueExW, RegSetValueExW,
 };
 
+// 使用 HKCU 的 Run：不需要管理员权限，而且只影响当前 Windows 用户。
 const RUN_KEY: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 
+/// 登录自启命令始终给 exe 路径加引号，并带 --background，避免开机后弹出主窗口。
 pub fn command_for(executable: &Path) -> String {
     format!("\"{}\" --background", executable.display())
 }
 
+/// 开关自启只增删 AERTEX Watch Sync 自己的注册表值，不会触碰其他软件的启动项。
 pub fn set_enabled(executable: &Path, enabled: bool) -> io::Result<()> {
     let mut key: HKEY = std::ptr::null_mut();
     let run_key = wide(RUN_KEY);
@@ -55,6 +58,7 @@ pub fn set_enabled(executable: &Path, enabled: bool) -> io::Result<()> {
     }
 }
 
+/// 读取固定注册表值是否存在，供设置窗口刷新“开机启动”复选框。
 pub fn is_enabled() -> bool {
     let mut key: HKEY = std::ptr::null_mut();
     let run_key = wide(RUN_KEY);
