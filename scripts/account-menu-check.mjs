@@ -1,3 +1,7 @@
+// 回归检查：共享 AERTEX 账号菜单。
+//
+// 这不是端到端浏览器测试，而是把 Worker、账号安全 API 和菜单源码作为“结构契约”检查：
+// 确认登出、切换账号、身份摘要、跨产品跳转与渲染标记仍然存在，防止某个产品改 UI 时破坏共享账号体验。
 import fs from "node:fs";
 import vm from "node:vm";
 import { renderGptApp } from "../studio/gpt-ui.js";
