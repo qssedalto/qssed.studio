@@ -1,3 +1,7 @@
+// 回归检查：Workspace Workbench 聚合页。
+//
+// 确认项目、草稿、任务、实验等模块通过统一 API/链接聚合到工作台，同时保持各模块自己的数据接口和权限边界。
+// 这个脚本主要防止导航/聚合层重构后出现“入口还在但实际模块断线”。
 import fs from "node:fs";
 import { workbenchContent } from "../studio/ui-workbench.js";
 
