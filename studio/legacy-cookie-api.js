@@ -1,3 +1,4 @@
+// 初学者导读：旧 Cookie API 兼容层；用于迁移历史会话/接口，修改时要避免降低当前 __Host/__Secure Cookie 的安全属性。
 import { handleStorageFiles, handleStorageUpload, handleStorageObject } from "./storage-api.js";
 import { handleBillingState } from "./billing-api.js";
 import { handleStudentVerification } from "./student-verification-api.js";
