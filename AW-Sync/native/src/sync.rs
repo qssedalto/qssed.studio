@@ -48,6 +48,7 @@ pub struct SyncSummary {
 }
 
 pub trait CloudUploader: Send + Sync {
+    // 云端上传实现：把一个 Bucket 的一批事件连同设备令牌发送到 AERTEX Watch Data API；HTTP 状态会转换成可重试/未授权等明确错误类型。
     fn upload(
         &self,
         token: &str,
@@ -153,6 +154,7 @@ impl<U: CloudUploader> SyncEngine<U> {
         }
     }
 
+    // 单次同步总入口：读取当前 Bucket 列表，逐个决定增量起点并同步；成功后只更新对应 Bucket 的游标，失败 Bucket 保留旧游标以便重试。
     pub fn run_once(
         &self,
         token: &str,
@@ -206,6 +208,7 @@ impl<U: CloudUploader> SyncEngine<U> {
         Ok(summary)
     }
 
+    // 单 Bucket 同步：从 sync_start 计算查询窗口，分批获取事件并上传；只有服务端确认成功后才推进 last_timestamp，防止网络中断造成永久漏数据。
     fn sync_bucket(
         &self,
         token: &str,
@@ -262,12 +265,14 @@ fn lock_error<T>(_: std::sync::PoisonError<T>) -> SyncError {
     }
 }
 
+// 增量起点：首次/非法游标回看最近 30 天；已有游标会向前保留少量 overlap，让跨边界 heartbeat 有机会再次上传，由服务端去重保证不重复计时。
 pub fn sync_start(last: &str, now: DateTime<Utc>) -> DateTime<Utc> {
     DateTime::parse_from_rfc3339(last)
         .map(|value| incremental_start(value.with_timezone(&Utc)))
         .unwrap_or_else(|_| first_sync_start(now))
 }
 
+// 游标推进依据：按真实时间点比较事件 timestamp，而不是直接比较 RFC3339 字符串，避免不同偏移/格式造成字典序误判。
 pub fn max_timestamp(events: &[ActivityEvent], fallback: &str) -> String {
     let fallback_parsed = DateTime::parse_from_rfc3339(fallback).ok();
     events

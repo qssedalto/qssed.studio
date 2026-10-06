@@ -88,6 +88,7 @@ impl ActivityWatchClient {
         probe_port_with_client(&self.probe_http, port)
     }
 
+    // 自动发现 ActivityWatch：优先检查上次成功端口和默认 5600，再并发扫描本地候选端口；progress 回调用于 UI 显示扫描状态。
     pub fn discover_with_progress(
         &self,
         last_port: Option<u16>,
@@ -103,6 +104,7 @@ impl ActivityWatchClient {
         )
     }
 
+    // 读取 Bucket 列表：ActivityWatch /api/0/buckets/ 返回的字段可能缺失或为 null，模型层会做兼容解析；非 2xx/非 JSON 会分类成可诊断错误。
     pub fn buckets(
         &self,
         endpoint: &ActivityWatchEndpoint,
@@ -127,6 +129,7 @@ impl ActivityWatchClient {
         Ok(buckets)
     }
 
+    // 读取指定 Bucket 的事件：start/end/limit 直接对应 ActivityWatch API；这里只负责传输/反序列化，不在本地改变事件语义。
     pub fn events(
         &self,
         endpoint: &ActivityWatchEndpoint,
@@ -196,6 +199,7 @@ fn probe_port_with_client(client: &Client, port: u16) -> ProbeResult {
     }
 }
 
+// ActivityWatch 身份识别：不能仅凭“某端口返回 JSON”就认定是 ActivityWatch，必须检查预期版本/服务字段，避免误连其他本地 HTTP 服务。
 fn activitywatch_info(value: &Value) -> Option<ActivityWatchInfo> {
     let object = value.as_object()?;
     let version = object.get("version")?.as_str()?.trim();
@@ -276,6 +280,7 @@ fn discover_with_probe_progress(
     }
 }
 
+// 端口扫描：限制并发数量并在找到第一个可信 ActivityWatch 后尽早停止，避免 1..65535 无限制并发造成本机资源压力。
 fn scan_ports_with_probe(
     ports: &[u16],
     concurrency: usize,

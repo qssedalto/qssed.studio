@@ -22,6 +22,7 @@ mod ui;
 use crate::single_instance::InstanceOutcome;
 use std::sync::{Arc, Mutex};
 
+// Windows GUI 进程入口：捕获顶层错误并用原生消息框提示，防止无控制台模式下发生致命错误却完全无反馈。
 fn main() {
     if let Err(error) = run() {
         logging::error(format!("Fatal startup error: {error}"));
@@ -29,6 +30,7 @@ fn main() {
     }
 }
 
+// 应用初始化顺序：单实例 → 日志/状态 → Runtime → UI。顺序很重要：如果多个实例同时启动，不能在抢锁前先开始同步或覆盖状态。
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     logging::initialize()?;
     logging::info("AERTEX Watch Sync starting");

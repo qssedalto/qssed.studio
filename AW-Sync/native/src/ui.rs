@@ -60,6 +60,7 @@ pub fn runtime_callback() -> Arc<dyn Fn() + Send + Sync> {
     })
 }
 
+// Win32 UI 主循环：创建窗口/托盘、注册 runtime 回调并处理消息泵。网络同步始终在 Runtime 后台线程，UI 线程只读 snapshot 和发控制请求。
 pub fn run(runtime: Arc<Runtime>, executable: PathBuf, show_initially: bool) -> io::Result<()> {
     APP.set(Arc::new(UiApp {
         runtime: Arc::clone(&runtime),
@@ -334,6 +335,7 @@ fn create_control(
     control
 }
 
+// 按钮/菜单命令分发：保存令牌、立即同步、重新探测、开机自启等操作都在这里转换成明确 runtime/系统调用。
 fn handle_command(hwnd: HWND, id: i32) {
     let Some(app) = APP.get() else { return };
     match id {
@@ -391,6 +393,7 @@ fn handle_command(hwnd: HWND, id: i32) {
     }
 }
 
+// 根据 RuntimeSnapshot 刷新窗口：这是单向“状态 → UI”渲染，不在渲染函数里发网络请求，避免重绘产生副作用。
 fn update_window(hwnd: HWND) {
     let Some(app) = APP.get() else { return };
     let snapshot = app.runtime.snapshot();
@@ -549,6 +552,7 @@ fn update_tray_tooltip(hwnd: HWND, tooltip: &str) {
     unsafe { Shell_NotifyIconW(NIM_MODIFY, &data) };
 }
 
+// 关键托盘通知：只在需要用户注意的状态变化时展示，避免每次重试都弹通知造成骚扰。
 fn show_important_notification(
     hwnd: HWND,
     status: &RuntimeStatus,

@@ -85,6 +85,7 @@ impl Runtime {
         })
     }
 
+    // 启动后台同步线程：Runtime 本身放在 Arc 中供 UI/托盘共享状态；这里只启动一次主循环，不在 UI 线程做网络阻塞操作。
     pub fn start(self: &Arc<Self>) {
         let runtime = Arc::clone(self);
         thread::spawn(move || runtime.run());
@@ -97,6 +98,7 @@ impl Runtime {
             .unwrap_or_default()
     }
 
+    // 用户主动“立即同步”：设置唤醒信号，让后台循环尽快执行一次，不直接在按钮回调里调用网络请求。
     pub fn request_sync(&self) {
         if let Ok(mut control) = self.control.lock() {
             control.sync_now = true;
@@ -104,6 +106,7 @@ impl Runtime {
         }
     }
 
+    // 请求重新探测 ActivityWatch：清除当前端点信任并唤醒后台线程，适用于端口变化或 ActivityWatch 重启。
     pub fn request_redetect(&self) {
         if let Ok(mut control) = self.control.lock() {
             control.redetect = true;
@@ -136,6 +139,7 @@ impl Runtime {
         (self.on_change)();
     }
 
+    // Runtime 主循环：加载凭据/端点 → 探测 ActivityWatch → 执行云端同步 → 根据结果更新 UI 状态和重试等待。错误应被分类并进入重试，而不是终止线程。
     fn run(self: Arc<Self>) {
         let activitywatch = match ActivityWatchClient::new() {
             Ok(client) => client,
@@ -346,6 +350,7 @@ impl Runtime {
             .unwrap_or(true)
     }
 
+    // 可中断等待：后台线程休眠期间仍能响应“立即同步、重新探测、退出”等控制信号，避免 UI 操作必须等完整重试周期。
     fn wait(&self) -> WaitAction {
         let control = match self.control.lock() {
             Ok(value) => value,

@@ -24,6 +24,7 @@ pub fn state_path() -> io::Result<PathBuf> {
     Ok(app_dir()?.join("state.json"))
 }
 
+// 读取非敏感本地状态：文件不存在/损坏时回退默认值，让客户端可自愈启动；设备令牌不在此文件中保存。
 pub fn load(path: &Path) -> PersistedState {
     fs::read_to_string(path)
         .ok()
@@ -31,6 +32,7 @@ pub fn load(path: &Path) -> PersistedState {
         .unwrap_or_default()
 }
 
+// 原子保存：先写临时文件并 flush，再用 Windows 原子替换覆盖正式 state.json，避免进程崩溃/断电留下半截 JSON。
 pub fn save_atomic(path: &Path, state: &PersistedState) -> io::Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;

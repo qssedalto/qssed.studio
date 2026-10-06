@@ -14,6 +14,7 @@ use windows_sys::Win32::Security::Credentials::{
 
 const TARGET: &str = "AERTEX/WatchSync/DeviceToken";
 
+// 保存设备令牌到 Windows Credential Manager：令牌不会写入 state.json/注册表明文，凭据目标名固定为 AERTEX Watch Sync 专用条目。
 pub fn save_token(token: &str) -> io::Result<()> {
     let target = wide(TARGET);
     let mut blob = token.as_bytes().to_vec();
@@ -33,6 +34,7 @@ pub fn save_token(token: &str) -> io::Result<()> {
     }
 }
 
+// 读取设备令牌：Credential 不存在属于正常“尚未配置”状态；其他 Windows API 错误才向上返回。
 pub fn load_token() -> io::Result<Option<String>> {
     let target = wide(TARGET);
     let mut pointer = std::ptr::null_mut();
@@ -61,6 +63,7 @@ pub fn load_token() -> io::Result<Option<String>> {
 }
 
 #[allow(dead_code)]
+// 删除旧设备令牌：安装器重装/用户重新配对时调用；不存在时应视为已删除而不是报致命错误。
 pub fn delete_token() -> io::Result<()> {
     let target = wide(TARGET);
     let result = unsafe { CredDeleteW(target.as_ptr(), CRED_TYPE_GENERIC, 0) };
