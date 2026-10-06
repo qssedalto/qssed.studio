@@ -1,3 +1,4 @@
+// 初学者导读：共享外观系统：统一浅/深色、跟随系统和主色调，并生成客户端运行时代码。独立产品应继承这里而不是各存一套主题。
 import { IPHONE_THEME_DEFAULT, IPHONE_THEME_PALETTE } from "./iphone-theme-palette.js";
 
 // 外观偏好是“根域家族共享”的，而不是每个产品各存一份。
