@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Lab 工具注册表与页面渲染。
+//
+// 检查工具 id 唯一、分类有效、本地化完整，以及 Lab 页面确实从统一 registry 渲染；
+// 新增实验工具时应先补 registry 元数据，再让 UI 消费，而不是把工具列表硬编码进页面。
 import fs from "node:fs";
 import { LAB_TOOL_CATEGORIES, LAB_TOOLS, LAB_TOOL_LOCALIZATIONS } from "../studio/lab-tools.js";
 import { labContent } from "../studio/ui-lab.js";
