@@ -1,3 +1,4 @@
+// 初学者导读：TeX 编辑器工具栏与快捷操作；把用户意图转换为编辑器命令，底层文档状态仍由编辑器模块管理。
 export function enhanceWorkTexEditorTools(markup, zh) {
   const output = String(markup || "");
   const copy = zh ? {
