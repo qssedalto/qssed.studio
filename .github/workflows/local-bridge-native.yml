@@ -1,3 +1,5 @@
+# 构建/检查 Windows 本机桥相关产物。
+# 本机桥属于用户电脑侧能力，CI 只构建与验证安装/启动脚本和可执行文件；生产 Cloudflare Worker 不直接包含这些本机二进制。
 name: Build AERTEX Bridge
 
 on:
