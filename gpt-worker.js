@@ -1,3 +1,4 @@
+// 初学者导读：AERTEX Intelligence 的独立 Worker；负责会话门、模型网关/API、静态 UI 与共享品牌/主题资源。模型调用凭据只能在服务端处理。
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
