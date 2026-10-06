@@ -1,3 +1,4 @@
+// 初学者导读：访问审计模块：记录/读取关键访问事件，供安全页面和管理员排查使用。审计数据应尽量不可伪造、不可由前端直接决定。
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { json } from "./routing.js";
