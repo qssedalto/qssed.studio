@@ -1,3 +1,7 @@
+// 旧版 API 浏览器兼容安全层。
+//
+// 仅用于仍需维持的历史浏览器调用路径：把旧响应补齐当前安全头/缓存策略，并阻止明显危险的浏览器使用方式。
+// 新 API 不应继续依赖“legacy”规则扩张；应直接采用当前 Session/CSRF/CSP 约定。
 export function hardenLegacyApiBrowserMarkup(markup) {
   let output = String(markup || "");
   output = hardenStorageClient(output);
