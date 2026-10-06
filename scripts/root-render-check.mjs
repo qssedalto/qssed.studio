@@ -1,3 +1,7 @@
+// 回归检查：主站根页面与跨产品导航的服务端渲染。
+//
+// 对每个 qsseda 根域和支持语言渲染页面，确认 Work/Cash/Watch/Intelligence 链接来自 domain-family，
+// 并检查不会把其他根域的产品 URL 混进当前页面；这也是旧域名/别名迁移的重要保护。
 import { LEGACY_REDIRECTS, TEXT } from "../studio/config.js";
 import { buildLinks } from "../studio/routing.js";
 import { osPage } from "../studio/ui-shell.js";
