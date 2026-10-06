@@ -1,3 +1,4 @@
+// 初学者导读：主站边缘防护策略：在业务路由前识别异常访问与高风险请求。应保持轻量，避免把正常业务逻辑塞进防护层。
 import { publicSitemapUrls } from "./public-indexing.js";
 const ACCESS_COOKIE = "__Host-qsseda-studio-access";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
