@@ -28,6 +28,9 @@ windows-sys = { version = "0.61", features = [
   "Win32_UI_WindowsAndMessaging",
 ] }
 
+[build-dependencies]
+winres = "0.1"
+
 [profile.release]
 codegen-units = 1
 lto = "thin"
