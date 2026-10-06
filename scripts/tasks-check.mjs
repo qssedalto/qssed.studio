@@ -1,3 +1,4 @@
+// 初学者导读：任务中心回归检查；确认任务 API、状态流和页面入口仍完整。
 import fs from "node:fs";
 import { tasksWorkspaceContent } from "../studio/ui-tasks.js";
 
