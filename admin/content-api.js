@@ -1,3 +1,4 @@
+// 初学者导读：管理员内容管理 API：负责读取/修改可管理内容。写操作应始终在服务端验证管理员会话与请求结构。
 import { SUPABASE_URL, SUPABASE_KEY } from "../studio/config.js";
 import { adminHeaders } from "./session.js";
 
