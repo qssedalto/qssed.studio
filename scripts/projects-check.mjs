@@ -1,3 +1,7 @@
+// 回归检查：项目工作区。
+//
+// 同时检查 UI 标记、/api/projects Worker 路由、projects-api 与 Edge Protection，
+// 并锁定 same-origin HttpOnly Session、创建/更新/删除及与其他工作区模块共享的数据契约。
 import fs from "node:fs";
 import { projectsWorkspaceContent } from "../studio/ui-projects.js";
 
