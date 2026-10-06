@@ -1,3 +1,7 @@
+// AERTEX Cash 的主站 <-> cash.* 登录 handoff 与路径规范化。
+//
+// Cash 当前没有复杂深链登录落点：handoff 最终只回到语言根页。
+// 这样可以把跨域 Session 传递做得更窄，避免用户可控 next 变成开放重定向；真正 Cash 数据仍由 cash-worker 再做会话校验。
 import { verifyStudioPageSession, withStudioSessionCookies } from "./session-gate.js";
 import { authOriginForRequest, cashOriginForRequest, mainOriginForRequest } from "./domain-family.js";
 import { FAVICON_LINKS } from "./favicon.js";
