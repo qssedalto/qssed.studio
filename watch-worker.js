@@ -147,7 +147,7 @@ async function handleWindowsSyncDownload(request, env) {
     const headers = new Headers({
       "content-type": "application/vnd.microsoft.portable-executable",
       "content-disposition": 'attachment; filename="AERTEX-Watch-Sync.exe"',
-      "cache-control": "public, max-age=3600",
+      "cache-control": "no-store, max-age=0",
       "x-content-type-options": "nosniff"
     });
     if (Number.isFinite(Number(object.size))) headers.set("content-length", String(object.size));
