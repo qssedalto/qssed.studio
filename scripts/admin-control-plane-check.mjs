@@ -1,3 +1,7 @@
+// 回归检查：AERTEX Administration 独立控制面。
+//
+// 同时核对 Admin Worker 路由、独立管理员 Session、RPC/API 白名单、管理 UI 与主站入口。
+// 这里大量使用源码包含检查 + VM 渲染检查，是为了锁住“管理面必须与普通用户产品隔离”的架构约束。
 import fs from "node:fs";
 import vm from "node:vm";
 import { renderAdminConsole } from "../admin/ui.js";
