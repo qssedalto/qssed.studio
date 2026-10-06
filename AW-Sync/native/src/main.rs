@@ -3,7 +3,6 @@
 mod activitywatch;
 mod autostart;
 mod credentials;
-mod install;
 mod logging;
 mod model;
 mod runtime;
@@ -23,9 +22,6 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    if install::ensure_installed_and_relaunch()? {
-        return Ok(());
-    }
     logging::initialize()?;
     logging::info("AERTEX Watch Sync starting");
 
@@ -37,7 +33,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let state_path = state::state_path()?;
     let persisted = Arc::new(Mutex::new(state::load(&state_path)));
     let runtime = runtime::Runtime::new(persisted, state_path, ui::runtime_callback());
-    let executable = install::installed_executable()?;
+    let executable = std::env::current_exe()?;
     let background = std::env::args().any(|argument| argument == "--background");
     let has_token = credentials::load_token().ok().flatten().is_some();
     ui::run(runtime, executable, !background || !has_token)?;
