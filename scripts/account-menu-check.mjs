@@ -1,3 +1,4 @@
+// 初学者导读：共享账户菜单的静态回归检查；确认各产品仍注入统一菜单、退出逻辑和必要安全标记。
 import fs from "node:fs";
 import vm from "node:vm";
 import { renderGptApp } from "../studio/gpt-ui.js";
