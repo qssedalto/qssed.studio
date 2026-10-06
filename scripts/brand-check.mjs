@@ -1,3 +1,7 @@
+// 回归检查：AERTEX 产品命名与品牌边界。
+//
+// 通过读取各产品 UI/Worker/导航源码，确保 Work、Cash、Watch、Intelligence、Administration 使用当前名称，
+// 并阻止旧产品名或底层项目名重新出现在用户可见位置。它检查的是品牌契约，不修改资源本身。
 import fs from "node:fs";
 
 const read = path => fs.readFileSync(path, "utf8");
