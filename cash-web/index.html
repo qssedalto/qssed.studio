@@ -41,6 +41,7 @@
     <span>起始余额、规划日期、预算规则、真实账本、周期支出、计划和预期都可以编辑；上方余额与预测属于自动计算结果，不直接修改。</span>
   </section>
 
+  <!-- KPI 只显示 calculateFinancialModel 的结果；这些 strong 不允许直接编辑，避免用户把“计算结果”当成原始数据。 -->
   <section class="kpis six">
     <article><span>现金余额</span><strong id="kCash">—</strong><small>仅真实账本</small></article>
     <article><span>当前已覆盖预留</span><strong id="kReserve">—</strong><small id="kReserveDetail">按现有现金实际覆盖</small></article>
@@ -50,6 +51,7 @@
     <article><span>本月预算执行</span><strong id="kBudget">—</strong><small id="kBudgetDetail">—</small></article>
   </section>
 
+  <!-- 四层财务模型是理解 Cash 的关键：真实账本、预算、明确日期计划、预测必须分开，不能把预算直接当真实支出。 -->
   <section class="layer-strip" aria-label="四层财务模型">
     <div><b class="dot actual"></b><strong>真实账本</strong><span>只记录已发生收支</span></div>
     <div><b class="dot budget"></b><strong>预算</strong><span>目标，不是交易</span></div>
@@ -85,6 +87,7 @@
     <div id="emptyLedger" class="empty">尚无真实交易。预算和预测不会出现在这里。</div>
   </section>
 
+  <!-- 日历展示“某一天会发生什么”；固定扣款只有拥有明确扣费日时才落到具体日期，未知日期预留不会伪造扣款日。 -->
   <section class="card">
     <div class="section-head"><div><h2 id="calendarTitle">日历</h2><p>明确扣费日的周期支出会直接展开到每个月对应日期，并单独显示固定支出金额；当天净额仍同时计算实际、计划与预算。</p></div><div class="status-legend"><span class="badge actual-badge">实际</span><span class="badge plan-badge">计划</span><span class="badge forecast-badge">预测 / 周期</span></div></div>
     <div id="calendar" class="calendar"></div>
@@ -152,6 +155,7 @@
   </form>
 </dialog>
 
+<!-- 提前结算：保存后会生成真实交易，并标记对应周期实例已被替代，从而保证原扣款日不再重复扣款。 -->
 <dialog id="settlementDialog">
   <form id="settlementForm">
     <div class="dialog-head"><div><div class="title-line"><h2 id="settlementTitle">提前结算周期支出</h2><span class="editable-badge">真实支出</span></div><p id="settlementHelp">记录实际提前支付，并让原扣款日不再重复扣款。</p></div><button type="button" class="icon-button close-settlement" aria-label="关闭">×</button></div>
