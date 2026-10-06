@@ -1,3 +1,4 @@
+// 初学者导读：认证边缘防护回归检查；确认高风险认证入口仍经过必要的速率/反滥用保护。
 import {
   protectAuthEdgeRequest,
   applyAuthEdgeHeaders,
