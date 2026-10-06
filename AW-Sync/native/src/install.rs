@@ -51,7 +51,8 @@ fn replace_installed_executable(current: &Path, installed: &Path) -> io::Result<
         thread::sleep(UPDATE_RETRY_DELAY);
     }
 
-    let error = last_error.unwrap_or_else(|| io::Error::other("Unable to update installed executable"));
+    let error =
+        last_error.unwrap_or_else(|| io::Error::other("Unable to update installed executable"));
     Err(io::Error::new(
         error.kind(),
         format!(
