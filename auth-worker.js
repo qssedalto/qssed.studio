@@ -49,6 +49,27 @@ export default {
 
     if (OAUTH_PATHS.has(pathname)) return handleOAuthRequest(request);
 
+    // Native AERTEX clients use JSON/Bearer-token endpoints instead of the browser cookie session.
+    if (pathname === "/api/app/login") {
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+      return handleAppLogin(request);
+    }
+
+    if (pathname === "/api/app/refresh") {
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+      return handleAppRefresh(request);
+    }
+
+    if (pathname === "/api/app/session") {
+      if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
+      return handleAppSession(request);
+    }
+
+    if (pathname === "/api/app/logout") {
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+      return handleAppLogout(request);
+    }
+
     if (pathname === "/api/login") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
       if (!sameOrigin(request, url)) return json({ error: "Invalid origin" }, 403);
@@ -96,6 +117,151 @@ function normalizePath(pathname) {
 function sameOrigin(request, url) {
   const origin = request.headers.get("Origin") || "";
   return origin === url.origin;
+}
+
+function bearerToken(request) {
+  const authorization = request.headers.get("Authorization") || "";
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : "";
+}
+
+function appTokenPayload(payload, user) {
+  return {
+    authenticated: true,
+    authorized: true,
+    token_type: "bearer",
+    access_token: payload.access_token,
+    refresh_token: payload.refresh_token,
+    expires_in: Number(payload.expires_in) > 0 ? Number(payload.expires_in) : ACCESS_MAX_AGE,
+    user
+  };
+}
+
+function inactiveAppAccount(user) {
+  return json({
+    authenticated: true,
+    authorized: false,
+    user,
+    error: "This AERTEX account is not active for application access.",
+    code: "account_inactive"
+  }, 403);
+}
+
+async function handleAppLogin(request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid request body", code: "invalid_request" }, 400);
+  }
+
+  const email = cleanText(body?.email, 180);
+  const password = typeof body?.password === "string" ? body.password : "";
+  if (!email || !password) {
+    return json({ error: "Email and password are required", code: "invalid_request" }, 400);
+  }
+
+  let upstream;
+  try {
+    upstream = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+  } catch {
+    return json({ error: "Authentication service unavailable", code: "service_unavailable" }, 503);
+  }
+
+  let payload;
+  try {
+    payload = await upstream.json();
+  } catch {
+    return json({ error: "Authentication service returned an invalid response", code: "invalid_upstream_response" }, 502);
+  }
+
+  if (!upstream.ok || !payload?.access_token || !payload?.refresh_token || !payload?.user) {
+    return json({
+      error: friendlyAuthError(payload, preferredAuthLocale(request)),
+      code: payload?.error_code || payload?.code || "invalid_credentials"
+    }, upstream.status === 400 ? 401 : upstream.status);
+  }
+
+  const profile = await fetchProfile(payload.access_token, payload.user.id);
+  const user = publicUser(payload.user, profile);
+  if (!profile || user.status !== ACTIVE_STATUS) {
+    await revokeAccessToken(payload.access_token);
+    return inactiveAppAccount(user);
+  }
+
+  return json(appTokenPayload(payload, user));
+}
+
+async function handleAppRefresh(request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid request body", code: "invalid_request" }, 400);
+  }
+
+  const refreshToken = cleanText(body?.refresh_token, 4096);
+  if (!refreshToken) {
+    return json({ error: "refresh_token is required", code: "invalid_request" }, 400);
+  }
+
+  const refreshed = await refreshSession(refreshToken);
+  if (!refreshed) {
+    return json({ authenticated: false, authorized: false, error: "Session expired", code: "invalid_refresh_token" }, 401);
+  }
+
+  const profile = await fetchProfile(refreshed.access_token, refreshed.user.id);
+  const user = publicUser(refreshed.user, profile);
+  if (!profile || user.status !== ACTIVE_STATUS) {
+    await revokeAccessToken(refreshed.access_token);
+    return inactiveAppAccount(user);
+  }
+
+  return json(appTokenPayload(refreshed, user));
+}
+
+async function handleAppSession(request) {
+  const accessToken = bearerToken(request);
+  if (!accessToken) {
+    return json({ authenticated: false, authorized: false, error: "Bearer token required", code: "missing_token" }, 401);
+  }
+
+  const authUser = await fetchUser(accessToken);
+  if (!authUser) {
+    return json({ authenticated: false, authorized: false, error: "Session expired", code: "invalid_token" }, 401);
+  }
+
+  const profile = await fetchProfile(accessToken, authUser.id);
+  const user = publicUser(authUser, profile);
+  if (!profile || user.status !== ACTIVE_STATUS) return inactiveAppAccount(user);
+  return json(sessionPayload(user));
+}
+
+async function revokeAccessToken(accessToken) {
+  if (!accessToken) return;
+  try {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout?scope=local`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+  } catch {
+    // A local client still clears Keychain state even when upstream revocation is temporarily unavailable.
+  }
+}
+
+async function handleAppLogout(request) {
+  await revokeAccessToken(bearerToken(request));
+  return json({ success: true });
 }
 
 async function handleLogin(request) {
