@@ -19,6 +19,7 @@ import { FAVICON_LINKS, FAVICON_PATHS, faviconResponse } from "./studio/favicon.
 import { injectBrandLogoRuntime, LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
 import { intelligenceThemeAttr, intelligenceThemeBootScript, intelligenceThemeFromRequest } from "./studio/intelligence-theme.js";
+import { IPHONE_THEME_DEFAULT, IPHONE_THEME_PALETTE } from "./studio/iphone-theme-palette.js";
 
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
@@ -30,6 +31,7 @@ const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 const ACTIVE_STATUS = "active";
 const ACCOUNT_COOKIE = "__Secure-qsseda-account-id";
 const ACCOUNT_SIGNED_OUT = "signed-out";
+const VALID_AERTEX_ACCENTS = new Set(IPHONE_THEME_PALETTE.map(color => color.id));
 const OAUTH_PATHS = new Set([
   "/authorize",
   "/api/oauth/authorize",
@@ -559,6 +561,8 @@ function publicUser(user, profile) {
     120
   );
   const username = cleanText(profile?.username || metadata.username, 80);
+  const requestedAccent = cleanText(metadata.aertex_accent, 64);
+  const accentId = VALID_AERTEX_ACCENTS.has(requestedAccent) ? requestedAccent : IPHONE_THEME_DEFAULT;
 
   return {
     id: String(user?.id || ""),
@@ -567,7 +571,8 @@ function publicUser(user, profile) {
     username,
     avatarUrl: safeAvatarUrl(profile?.avatar_url || metadata.avatar_url || metadata.picture),
     role: cleanText(profile?.role, 32) || "user",
-    status: cleanText(profile?.status, 32) || ACTIVE_STATUS
+    status: cleanText(profile?.status, 32) || ACTIVE_STATUS,
+    accentId
   };
 }
 
