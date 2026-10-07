@@ -152,7 +152,7 @@ export function appearanceSettingsContent(zh, locale = "") {
     dark:"深色",
     darkHint:"始终使用深色",
     accentTitle:"强调色",
-    accentHint:"只用于交互焦点、选中状态和品牌点缀，不会把整个界面染色。",
+    accentHint:"用于交互焦点、选中状态和品牌点缀；登录状态下会同步到使用同一 AERTEX 账号的 App。",
     preview:"实时预览",
     previewTitle:"AERTEX",
     previewSubtitle:"Personal Workspace",
@@ -160,7 +160,7 @@ export function appearanceSettingsContent(zh, locale = "") {
     previewMeta:"3 个项目正在进行",
     previewButton:"打开工作台",
     current:"当前强调色",
-    saved:"已保存到当前浏览器"
+    saved:"强调色已同步到 AERTEX 账户"
   } : {
     eyebrow:"THEME STUDIO",
     title:"Theme & Appearance",
@@ -174,7 +174,7 @@ export function appearanceSettingsContent(zh, locale = "") {
     dark:"Dark",
     darkHint:"Always use dark",
     accentTitle:"Accent color",
-    accentHint:"Used for interaction focus, selected states, and restrained brand accents—not as an all-over tint.",
+    accentHint:"Used for interaction focus, selected states, and restrained brand accents. When signed in, it also syncs to AERTEX apps.",
     preview:"Live preview",
     previewTitle:"AERTEX",
     previewSubtitle:"Personal Workspace",
@@ -182,7 +182,7 @@ export function appearanceSettingsContent(zh, locale = "") {
     previewMeta:"3 projects in progress",
     previewButton:"Open Workbench",
     current:"Current accent",
-    saved:"Saved in this browser"
+    saved:"Accent synced to your AERTEX account"
   };
   const activeLocale = locale || (zh ? "zh-cn" : "en-us");
   if (APPEARANCE_COPY[activeLocale]) copy = { ...copy, ...APPEARANCE_COPY[activeLocale] };
@@ -296,11 +296,35 @@ export function appearanceSettingsContent(zh, locale = "") {
         const feedback=document.getElementById("theme-feedback");
         const colorMeta=${JSON.stringify(Object.fromEntries(IPHONE_THEME_PALETTE.map(color => [color.id, { name: color.names[activeLocale] || color.names["en-us"] }])))};
         let feedbackTimer=0;
-        const announce=()=>{if(!feedback)return;feedback.textContent=${JSON.stringify(copy.saved)};window.clearTimeout(feedbackTimer);feedbackTimer=window.setTimeout(()=>{feedback.textContent=""},1600)};
-        const refresh=()=>{const mode=api.getMode();const accent=api.getAccent();modes.forEach(button=>{const selected=button.dataset.mode===mode;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});accents.forEach(button=>{const selected=button.dataset.accent===accent;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});if(current){const meta=colorMeta[accent]||colorMeta[${JSON.stringify(IPHONE_THEME_DEFAULT)}];current.textContent=meta.name}};
+        const announce=()=>{if(!feedback)return;feedback.textContent=\${JSON.stringify(copy.saved)};window.clearTimeout(feedbackTimer);feedbackTimer=window.setTimeout(()=>{feedback.textContent=""},1600)};
+        const refresh=()=>{const mode=api.getMode();const accent=api.getAccent();modes.forEach(button=>{const selected=button.dataset.mode===mode;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});accents.forEach(button=>{const selected=button.dataset.accent===accent;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});if(current){const meta=colorMeta[accent]||colorMeta[\${JSON.stringify(IPHONE_THEME_DEFAULT)}];current.textContent=meta.name}};
+        const syncAccentToAccount=async accent=>{
+          try{
+            if(typeof supabaseClient==="undefined")return;
+            const {data:{user}}=await supabaseClient.auth.getUser();
+            if(!user)return;
+            const currentAccent=String(user.user_metadata?.aertex_accent||"");
+            if(currentAccent===accent)return;
+            await supabaseClient.auth.updateUser({data:{aertex_accent:accent}});
+          }catch{}
+        };
+        const hydrateAccentFromAccount=async()=>{
+          try{
+            if(typeof supabaseClient==="undefined")return;
+            const {data:{user}}=await supabaseClient.auth.getUser();
+            if(!user)return;
+            const accountAccent=String(user.user_metadata?.aertex_accent||"");
+            if(colorMeta[accountAccent]){
+              if(api.getAccent()!==accountAccent)api.setAccent(accountAccent);
+              refresh();
+            }else{
+              await syncAccentToAccount(api.getAccent());
+            }
+          }catch{}
+        };
         modes.forEach(button=>button.addEventListener("click",()=>{document.documentElement.classList.add("theme-switching");api.setMode(button.dataset.mode);window.setTimeout(()=>document.documentElement.classList.remove("theme-switching"),260);refresh();announce()}));
-        accents.forEach(button=>button.addEventListener("click",()=>{document.documentElement.classList.add("theme-switching");api.setAccent(button.dataset.accent);window.setTimeout(()=>document.documentElement.classList.remove("theme-switching"),260);refresh();announce()}));
-        window.addEventListener("aertex-themechange",refresh);refresh();
+        accents.forEach(button=>button.addEventListener("click",()=>{document.documentElement.classList.add("theme-switching");const accent=button.dataset.accent;api.setAccent(accent);void syncAccentToAccount(accent);window.setTimeout(()=>document.documentElement.classList.remove("theme-switching"),260);refresh();announce()}));
+        window.addEventListener("aertex-themechange",refresh);refresh();void hydrateAccentFromAccount();
       })();
     </script>
   `;
