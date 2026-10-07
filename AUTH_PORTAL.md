@@ -82,6 +82,19 @@ code_verifier=<original verifier>
 
 Refreshing uses the same endpoint with `grant_type=refresh_token`. A successful refresh returns a replacement refresh token; the previous refresh token is immediately revoked.
 
+## Native application JSON API
+
+AERTEX ID also exposes a first-party JSON session API for trusted native AERTEX clients that render their own login UI instead of opening the browser authorization page.
+
+- `POST /api/app/login` — accepts `email` and `password`, verifies the credentials through Supabase Auth, requires an existing profile whose `status` is `active`, and returns an access token, rotating refresh token, expiry, and public account profile.
+- `POST /api/app/refresh` — accepts `refresh_token`, rotates the Supabase session, re-checks the AERTEX profile and returns replacement tokens.
+- `GET /api/app/session` — accepts `Authorization: Bearer <access-token>` and returns the current authenticated/authorized profile.
+- `POST /api/app/logout` — accepts the current bearer token and revokes the local upstream session.
+
+Native clients must never persist the user's password. On Apple platforms the refresh token belongs in Keychain; access tokens should remain in process memory when practical. These endpoints intentionally do not use the browser `__Host-qsseda-*` cookies and do not require same-origin browser headers.
+
+The browser cookie API (`/api/login`, `/api/session`, `/api/logout`) remains separate and unchanged.
+
 ## Client registry and database model
 
 OAuth state is stored in Supabase PostgreSQL:
