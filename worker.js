@@ -131,12 +131,23 @@ async function routeStudioRequest(request, env, ctx) {
   if (pathname === "/api/projects") return handleProjects(request, env);
   if (pathname === "/api/tasks") return handleTasks(request, env);
   if (pathname === "/api/drafts") return handleDrafts(request, env);
-  // Native client: reuse the exact Studio R2 workbench aggregator without browser cookies.
-  if (pathname === "/api/native/studio/overview" && !workHost && isMainHost(url.hostname)) {
-    if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
+  // First-party mobile Studio reuses the real owner-prefixed R2 CRUD engines.
+  // Only the verified Bearer subject may select R2 keys; client ids are filters
+  // inside that subject, not permission grants.
+  if (pathname.startsWith("/api/native/studio/") && !workHost && isMainHost(url.hostname)) {
+    const resource = pathname.slice("/api/native/studio/".length);
+    const methods = resource === "overview" ? ["GET"]
+      : resource === "projects" || resource === "tasks" ? ["GET", "POST", "PUT", "DELETE"]
+      : null;
+    if (!methods) return nativeJson({ error: "Native Studio route not found." }, 404);
+    if (!methods.includes(request.method)) return nativeJson({ error: "Method not allowed." }, 405);
     const session = await verifyNativeAppSession(request);
     if (!session.ok) return session.response;
-    const result = await handleWorkbenchOverview(request, env, session);
+    const result = resource === "overview"
+      ? await handleWorkbenchOverview(request, env, session)
+      : resource === "projects"
+        ? await handleProjects(request, env, session)
+        : await handleTasks(request, env, session);
     return nativeApiResponse(result);
   }
   if (pathname === "/api/workbench/overview") return handleWorkbenchOverview(request, env);
