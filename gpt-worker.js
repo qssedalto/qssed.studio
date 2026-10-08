@@ -18,6 +18,7 @@ import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp, renderSharedConversation, renderIntelligenceNotFound } from "./studio/gpt-ui.js";
 import { handleAiApi, handleAiAdminApi } from "./studio/ai-gateway.js";
+import { verifyNativeAppSession, nativeJson, nativeApiResponse } from "./studio/native-mobile-auth.js";
 import { handleAccountSecurity } from "./studio/account-security-api.js";
 import { gptOriginForRequest, mainOriginForRequest } from "./studio/domain-family.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
@@ -82,6 +83,24 @@ export default {
 
     if (pathname.startsWith("/api/ai/admin/")) {
       return json({ error: "Not found." }, 404);
+    }
+
+    // Read-only native conversation browser. Never repurpose the browser cookie
+    // identity or expose admin/provider secrets to public mobile clients.
+    if (pathname.startsWith("/api/native/intelligence/")) {
+      if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
+      const root = "/api/native/intelligence/conversations";
+      const suffix = pathname.startsWith(root) ? pathname.slice(root.length) : null;
+      if (suffix === null || (suffix !== "" && !/^\\/[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(suffix))) {
+        return nativeJson({ error: "Native intelligence route not found." }, 404);
+      }
+      const session = await verifyNativeAppSession(request);
+      if (!session.ok) return session.response;
+      const internal = new URL(request.url);
+      internal.pathname = "/api/ai/conversations" + suffix;
+      internal.search = "";
+      const response = await handleAiApi(new Request(internal, { method: "GET" }), env, session);
+      return nativeApiResponse(response);
     }
 
     if (pathname.startsWith("/api/ai/")) {
