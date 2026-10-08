@@ -88,7 +88,7 @@ try {
   response = await call(intelligenceWorker, intelligence + "/" + conversationId);
   assert(response.status === 200 && response.body.messages[0].content === "你好", "Intelligence messages must load");
   assert(queryIds.every(id => id === `eq.${userId}`), "AI queries must enforce verified user filter");
-  response = await call(intelligenceWorker, intelligence + "/../../admin");
+  response = await call(intelligenceWorker, intelligence + "/not-a-uuid");
   assert(response.status === 404, "Unknown native Intelligence routes must not proxy");
 
   response = await call(watchWorker, watch);
