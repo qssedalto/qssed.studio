@@ -90,7 +90,8 @@ export default {
     if (pathname.startsWith("/api/native/intelligence/")) {
       const prefix = "/api/native/intelligence";
       const tail = pathname.slice(prefix.length);
-      const conversation = /^\\/conversations\\/([0-9a-f-]{36})$/i.exec(tail);
+      const conversationId = tail.startsWith("/conversations/") ? tail.slice("/conversations/".length) : "";
+      const conversation = /^[0-9a-f-]{36}$/i.test(conversationId);
       const allowed = tail === "/config" ? ["GET"]
         : tail === "/chat" ? ["POST"]
         : tail === "/conversations" ? ["GET"]
@@ -104,11 +105,7 @@ export default {
       const target = new URL(request.url);
       target.pathname = "/api/ai" + tail;
       target.search = "";
-      const internalRequest = new Request(target, {
-        method: request.method,
-        headers: request.headers,
-        ...(request.method === "GET" ? {} : { body: request.body, duplex: "half" })
-      });
+      const internalRequest = new Request(target, request);
       return nativeApiResponse(await handleAiApi(internalRequest, env, nativeSession));
     }
 
