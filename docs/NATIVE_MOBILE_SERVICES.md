@@ -72,3 +72,33 @@ Outstanding work: native Intelligence message creation/streaming, native
 Studio project/task mutations, and Watch event-analytics algorithms in Swift.
 Keep those features labeled as unimplemented until their contracts and tests
 exist; do not silently use WebView.
+
+## AERTEX iOS 2.2.0 native interaction expansion (2026-10-08)
+
+### Intelligence (gpt.qsseda.com)
+
+- `GET /api/native/intelligence/config`: same authorized account model/provider configuration as the browser, including region/availability and usage limits. No encrypted provider keys.
+- `POST /api/native/intelligence/chat`: takes the existing browser JSON contract `{message, conversation_id, provider_id, model}` and returns **real server-sent events** `meta`, `delta`, `done`, or `error`, preserving the main gateway's quota, model permissions, RLS, persistence and provider settings.
+- `PATCH /api/native/intelligence/conversations/:uuid` (title, pin/archive) and `DELETE /api/native/intelligence/conversations/:uuid`: run through the same owner-filtered browser gateway; arbitrary user ids cannot be passed.
+- Browser cookie routes still require the same-origin anti-CSRF check. Native POST/PATCH/DELETE are allowed only when **both** `verifyNativeAppSession()` has validated the Bearer subject and `session.native === true`. The native client never uses the browser cookies.
+- Per-user billing/quota is **not bypassed** by this adapter. Server errors must be surfaced instead of being interpreted as a completed response. An SSE `done` is the success marker.
+
+### Studio (qsseda.com)
+
+- `GET/POST/PUT/DELETE /api/native/studio/projects`
+- `GET/POST/PUT/DELETE /api/native/studio/tasks`
+
+These routes reuse the production `handleProjects` / `handleTasks` engines and their existing owner-prefixed R2 IDs, field validators, resource limits and project-reference checks. `PUT/DELETE` require a query `id`. The mobile UI initially exposes **project creation, task creation and task completion toggles**; it does not silently delete user data.
+
+### Watch (aw.qsseda.com only)
+
+- `GET /api/native/watch/buckets`: authenticated account's ActivityWatch bucket index.
+- `GET /api/native/watch/buckets/:bucketId/events?start=<ISO>&end=<ISO>&limit=800`: real bounded, date-sharded R2 events using the existing Watch query handler; `awd.*` device-upload hosts deny access.
+
+The 2.2 native chart intentionally shows **single-bucket raw event duration** instead of pretending to reproduce the website's multi-device de-duplication, AFK filtering and effective-focus algorithms. This is clearly disclosed in the UI.
+
+### Renderer parity and rollout
+
+The SwiftUI iOS app bundles a copied snapshot of the existing `studio/gpt-rich-renderer.js` source in `Resources/AERTEXRichMessage.js` and uses a **sandboxed, nonpersistent, non-scrolling WKWebView solely as a message text renderer**. AERTEX app navigation, composer, conversation list, chat model selection and chat bubbles remain native SwiftUI. The message renderer uses exactly the website's KaTeX 0.16.11 and highlight.js CDN assets, and therefore enhanced LaTeX typography may require CDN availability; the source has website-equivalent math fallbacks.
+
+Do not merge the iOS 2.2 PR until iOS SDK compilation and iPhone verification pass. Back-end production should be merged and validated before distributing the app. If deployment, quota, or model choice is unavailable, the UI must show an explicit error.
