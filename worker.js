@@ -19,6 +19,7 @@ import { handleProjects } from "./studio/projects-api.js";
 import { handleTasks } from "./studio/tasks-api.js";
 import { handleDrafts } from "./studio/drafts-api.js";
 import { handleWorkbenchOverview } from "./studio/workbench-api.js";
+import { verifyNativeAppSession, nativeJson, nativeApiResponse } from "./studio/native-mobile-auth.js";
 import { handleTexApi } from "./studio/tex-api.js";
 import { handleTexCollaborationApi } from "./studio/tex-collaboration-api.js";
 import { handleTexSharedCollaboration } from "./studio/tex-collaboration-shared.js";
@@ -130,6 +131,14 @@ async function routeStudioRequest(request, env, ctx) {
   if (pathname === "/api/projects") return handleProjects(request, env);
   if (pathname === "/api/tasks") return handleTasks(request, env);
   if (pathname === "/api/drafts") return handleDrafts(request, env);
+  // Native client: reuse the exact Studio R2 workbench aggregator without browser cookies.
+  if (pathname === "/api/native/studio/overview" && !workHost && isMainHost(url.hostname)) {
+    if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
+    const session = await verifyNativeAppSession(request);
+    if (!session.ok) return session.response;
+    const result = await handleWorkbenchOverview(request, env, session);
+    return nativeApiResponse(result);
+  }
   if (pathname === "/api/workbench/overview") return handleWorkbenchOverview(request, env);
   if (pathname === "/api/tex/collaboration/realtime") return handleTexCollaborationRealtime(request, env);
   if (pathname === "/api/tex/collaboration/shared") return handleTexSharedCollaboration(request, env);
