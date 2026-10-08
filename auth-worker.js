@@ -67,6 +67,13 @@ export default {
       return handleAppSession(request);
     }
 
+    if (pathname === "/api/app/profile") {
+      if (request.method !== "GET" && request.method !== "PATCH") {
+        return json({ error: "Method not allowed", code: "method_not_allowed" }, 405);
+      }
+      return handleAppProfile(request);
+    }
+
     if (pathname === "/api/app/logout") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
       return handleAppLogout(request);
@@ -244,6 +251,88 @@ async function handleAppSession(request) {
   const user = publicUser(authUser, profile);
   if (!profile || user.status !== ACTIVE_STATUS) return inactiveAppAccount(user);
   return json(sessionPayload(user));
+}
+
+/**
+ * Native, bearer-authenticated self-service profile endpoint.
+ * Only display_name may be changed; privileged profile columns are never
+ * accepted from client JSON. The verified Supabase subject and RLS enforce
+ * the target user, rather than trusting caller-supplied ids.
+ */
+async function handleAppProfile(request) {
+  const accessToken = bearerToken(request);
+  if (!accessToken) {
+    return json({ error: "Bearer token required", code: "missing_token" }, 401);
+  }
+
+  const authUser = await fetchUser(accessToken);
+  if (!authUser?.id) {
+    return json({ error: "Session expired", code: "invalid_token" }, 401);
+  }
+
+  const profile = await fetchProfile(accessToken, authUser.id);
+  if (!profile || profile.status !== ACTIVE_STATUS) {
+    return json({ error: "Account unavailable", code: "account_inactive" }, 403);
+  }
+
+  if (request.method === "GET") {
+    return json(sessionPayload(publicUser(authUser, profile)));
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON", code: "invalid_request" }, 400);
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body) ||
+      Object.keys(body).length !== 1 || typeof body.displayName !== "string") {
+    return json({ error: "Only displayName may be updated", code: "invalid_fields" }, 400);
+  }
+
+  const displayName = body.displayName.trim();
+  if (!displayName || Array.from(displayName).length > 120 || /[\u0000-\u001f\u007f]/u.test(displayName)) {
+    return json({ error: "Display name must contain 1-120 valid characters", code: "invalid_display_name" }, 400);
+  }
+
+  const url = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
+  url.searchParams.set("id", `eq.${authUser.id}`);
+  url.searchParams.set("select", "id,display_name");
+
+  let response;
+  try {
+    response = await fetch(url.toString(), {
+      method: "PATCH",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${accessToken}`,
+        "content-type": "application/json",
+        Prefer: "return=representation"
+      },
+      body: JSON.stringify({ display_name: displayName })
+    });
+  } catch {
+    return json({ error: "Profile service unavailable", code: "service_unavailable" }, 503);
+  }
+
+  if (!response.ok) {
+    return json({
+      error: "Profile update was rejected",
+      code: response.status === 401 || response.status === 403 ? "profile_forbidden" : "profile_update_failed"
+    }, response.status === 401 || response.status === 403 ? 403 : 502);
+  }
+
+  const rows = await response.json().catch(() => null);
+  if (!Array.isArray(rows) || rows.length !== 1 ||
+      rows[0]?.id !== authUser.id || rows[0]?.display_name !== displayName) {
+    return json({ error: "Profile update was not confirmed", code: "profile_update_unconfirmed" }, 409);
+  }
+
+  const refreshedProfile = await fetchProfile(accessToken, authUser.id);
+  if (!refreshedProfile || refreshedProfile.status !== ACTIVE_STATUS) {
+    return json({ error: "Unable to verify updated profile", code: "profile_refresh_failed" }, 503);
+  }
+  return json(sessionPayload(publicUser(authUser, refreshedProfile)));
 }
 
 async function revokeAccessToken(accessToken) {

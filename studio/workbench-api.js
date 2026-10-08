@@ -16,10 +16,12 @@ function prefix(root, userId) {
   return `${root}${userId}/`;
 }
 
-export async function handleWorkbenchOverview(request, env) {
+export async function handleWorkbenchOverview(request, env, nativeSession = null) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
 
-  const session = await verifyStudioApiSession(request);
+  // Native requests have already passed the Bearer + active-profile gate.
+  // Browser requests retain the existing strict host-only cookie session gate.
+  const session = nativeSession || await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
 
   const authRequest = new Request(request.url, {

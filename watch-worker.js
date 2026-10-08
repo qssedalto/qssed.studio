@@ -24,6 +24,7 @@
 import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
 import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
+import { verifyNativeAppSession, nativeJson, nativeApiResponse } from "./studio/native-mobile-auth.js";
 import { watchSessionRedirect } from "./studio/watch-subdomain.js";
 import { awOriginForRequest } from "./studio/domain-family.js";
 import { localeFromPath, preferredLocaleFromRequest } from "./studio/locale.js";
@@ -98,6 +99,16 @@ export default {
     if (pathname === "/api/watch/tokens") {
       if (dataHost) return json({ error: "Use aw.* to manage device tokens." }, 404);
       return withSession(request, async gate => handleTokenCreate(request, env, gate.user && gate.user.id || ""));
+    }
+
+    // Native read API: AERTEX ID/Supabase Bearer token, not a Watch Device Token
+    // or the browser's host-only cookie session.
+    if (pathname === "/api/native/watch/status") {
+      if (dataHost) return nativeJson({ error: "Not found." }, 404);
+      if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
+      const session = await verifyNativeAppSession(request);
+      if (!session.ok) return session.response;
+      return nativeApiResponse(await handleStatus(env, session.user.id));
     }
 
     if (pathname === "/api/watch/status") {

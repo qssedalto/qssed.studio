@@ -19,6 +19,7 @@ on:
       - scripts/tasks-check.mjs
       - scripts/drafts-check.mjs
       - scripts/workbench-check.mjs
+      - scripts/native-mobile-services-check.mjs
       - scripts/lab-check.mjs
       - scripts/tex-workbench-check.mjs
       - scripts/work-local-bridge-check.mjs
@@ -44,6 +45,7 @@ on:
       - auth-pkce-test.js
       - auth-edge-protection.js
       - scripts/auth-edge-protection-check.mjs
+      - scripts/native-app-profile-api-check.mjs
       - wrangler.jsonc
       - wrangler.work.jsonc
       - wrangler.auth.jsonc
@@ -109,6 +111,8 @@ jobs:
           node --check scripts/drafts-check.mjs
           node scripts/drafts-check.mjs
           node --check scripts/workbench-check.mjs
+          node --check scripts/native-mobile-services-check.mjs
+          node scripts/native-mobile-services-check.mjs
           node scripts/workbench-check.mjs
           node --check scripts/lab-check.mjs
           node scripts/lab-check.mjs
@@ -147,6 +151,8 @@ jobs:
           node --check auth-entry.js
           node --check auth-sso.js
           node --check auth-worker.js
+          node --check scripts/native-app-profile-api-check.mjs
+          node scripts/native-app-profile-api-check.mjs
           node --check auth-login-identifier.js
           node --check auth-oauth.js
           node --check auth-pkce-test.js

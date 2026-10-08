@@ -90,6 +90,12 @@ AERTEX ID also exposes a first-party JSON session API for trusted native AERTEX 
 - `POST /api/app/refresh` — accepts `refresh_token`, rotates the Supabase session, re-checks the AERTEX profile and returns replacement tokens.
 - `GET /api/app/session` — accepts `Authorization: Bearer <access-token>` and returns the current authenticated/authorized profile.
 - `POST /api/app/logout` — accepts the current bearer token and revokes the local upstream session.
+- `GET /api/app/profile` — requires a valid Bearer access token and active AERTEX account; returns the same public user profile as `/api/app/session`, without browser cookies.
+- `PATCH /api/app/profile` — requires Bearer access token and active account; accepts **only** `{"displayName":"new name"}` (1–120 Unicode characters), updates the current user's `profiles.display_name`, and returns the refreshed public session profile. The request **must not** accept a user ID, role, status, email, or other arbitrary columns.
+
+The profile write derives the row ID from Supabase's verified `/auth/v1/user` response and uses the user's Bearer access token for the PostgREST PATCH. Database RLS remains the final authorization boundary. Neither this route nor the native UI has elevated service-role credentials. All native JSON responses use `Cache-Control: no-store`. A 200 response confirms one updated row; an update with no matching row is not reported as success.
+
+**Deployment order:** deploy and test the Auth Worker endpoint before using it from a released iOS build. The mobile client should gracefully show a save failure if the route is not yet deployed.
 
 Native clients must never persist the user's password. On Apple platforms the refresh token belongs in Keychain; access tokens should remain in process memory when practical. These endpoints intentionally do not use the browser `__Host-qsseda-*` cookies and do not require same-origin browser headers.
 
