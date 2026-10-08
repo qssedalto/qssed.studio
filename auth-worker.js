@@ -291,7 +291,7 @@ async function handleAppProfile(request) {
   }
 
   const displayName = body.displayName.trim();
-  if (!displayName || Array.from(displayName).length > 120 || /[\\u0000-\\u001f\\u007f]/u.test(displayName)) {
+  if (!displayName || Array.from(displayName).length > 120 || /[\u0000-\u001f\u007f]/u.test(displayName)) {
     return json({ error: "Display name must contain 1-120 valid characters", code: "invalid_display_name" }, 400);
   }
 
