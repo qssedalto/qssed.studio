@@ -129,7 +129,7 @@ export async function handleAiApi(request, env, session) {
       return json({ conversation: row, messages: Array.isArray(messages.data) ? messages.data : [] });
     }
     if (request.method === "PATCH") {
-      if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+      if (!session.native && !sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
       const b = await body(request);
       const patch = { updated_at: new Date().toISOString() };
       if (Object.prototype.hasOwnProperty.call(b, "title")) {
@@ -164,7 +164,7 @@ export async function handleAiApi(request, env, session) {
       return json({ ok: true, conversation: updated.data[0] });
     }
     if (request.method === "DELETE") {
-      if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+      if (!session.native && !sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
       const removed = await restData(
         session,
         "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id),
@@ -191,7 +191,7 @@ export async function handleAiAdminApi(request, env, session) {
   }
 
   if (path === "/api/ai/admin/validate-project-key" && request.method === "POST") {
-    if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+    if (!session.native && !sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
     const b = await body(request);
     const key = cleanApiKey(b.api_key);
     const provider = cleanProvider(b.provider);
@@ -245,7 +245,7 @@ export async function handleAiAdminApi(request, env, session) {
 
   const providerMatch = path.match(/^\/api\/ai\/admin\/provider\/([0-9a-f-]{36})$/i);
   if (providerMatch && request.method === "PATCH") {
-    if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+    if (!session.native && !sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
     if (!env.AI_CREDENTIAL_KEY) return json({ error: "AI credential encryption is not configured." }, 503);
     const providerId = providerMatch[1];
     if (!uuid(providerId)) return json({ error: "Invalid provider." }, 400);
@@ -345,7 +345,7 @@ export async function handleAiAdminApi(request, env, session) {
   }
 
   if (providerMatch && request.method === "DELETE") {
-    if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+    if (!session.native && !sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
     const providerId = providerMatch[1];
     if (!uuid(providerId)) return json({ error: "Invalid provider." }, 400);
 
@@ -394,7 +394,7 @@ export async function handleAiAdminApi(request, env, session) {
   }
 
   if (path === "/api/ai/admin/provider" && request.method === "POST") {
-    if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+    if (!session.native && !sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
     if (!env.AI_CREDENTIAL_KEY) return json({ error: "AI credential encryption is not configured." }, 503);
 
     const b = await body(request);
@@ -481,7 +481,7 @@ export async function handleAiAdminApi(request, env, session) {
   }
 
   if (path === "/api/ai/admin/access" && request.method === "POST") {
-    if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+    if (!session.native && !sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
     const b = await body(request);
     if (!uuid(b.user_id)) return json({ error: "Invalid user." }, 400);
 
@@ -635,7 +635,7 @@ async function userConfig(request, session) {
 }
 
 async function chat(request, env, session) {
-  if (!sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
+  if (!session.native && !sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
   if (!env.AI_CREDENTIAL_KEY) return json({ error: "AI service is not configured." }, 503);
 
   const b = await body(request);

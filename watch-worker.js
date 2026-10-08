@@ -111,6 +111,31 @@ export default {
       return nativeApiResponse(await handleStatus(env, session.user.id));
     }
 
+    // Native Watch: drill down into actual ActivityWatch bucket events, keeping
+    // user-prefixed R2 storage and existing bounded date windows/limits.
+    if (pathname === "/api/native/watch/buckets" ||
+        pathname.startsWith("/api/native/watch/buckets/")) {
+      if (dataHost) return nativeJson({ error: "Not found." }, 404);
+      if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
+      const gate = await verifyNativeAppSession(request);
+      if (!gate.ok) return gate.response;
+      if (pathname === "/api/native/watch/buckets") {
+        return nativeApiResponse(await handleBucketList(env, gate.user.id));
+      }
+      const bucketPath = pathname.slice("/api/native/watch/buckets/".length);
+      if (!bucketPath.endsWith("/events")) {
+        return nativeJson({ error: "Invalid Watch event endpoint." }, 404);
+      }
+      const encodedBucketId = bucketPath.slice(0, -"/events".length);
+      let bucketId;
+      try { bucketId = decodeURIComponent(encodedBucketId); }
+      catch { return nativeJson({ error: "Invalid bucket identifier." }, 400); }
+      if (!bucketId || bucketId.includes("/")) {
+        return nativeJson({ error: "Invalid bucket identifier." }, 400);
+      }
+      return nativeApiResponse(await handleEventQuery(request, env, gate.user.id, bucketId));
+    }
+
     if (pathname === "/api/watch/status") {
       if (dataHost) return json({ error: "Not found." }, 404);
       return withSession(request, async gate => handleStatus(env, gate.user && gate.user.id || ""));

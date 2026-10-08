@@ -17,8 +17,10 @@ function projectKey(userId, projectId) {
   return `${projectPrefix(userId)}${projectId}.json`;
 }
 
-export async function handleProjects(request, env) {
-  const session = await verifyStudioApiSession(request);
+export async function handleProjects(request, env, nativeSession = null) {
+  // The native gateway authenticates Supabase Bearer + active account first;
+  // the website keeps its existing HttpOnly cookie session verification.
+  const session = nativeSession || await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
 
   const authRequest = new Request(request.url, {
