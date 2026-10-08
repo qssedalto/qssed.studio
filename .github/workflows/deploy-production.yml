@@ -19,6 +19,7 @@ on:
       - scripts/tasks-check.mjs
       - scripts/drafts-check.mjs
       - scripts/workbench-check.mjs
+      - scripts/native-mobile-services-check.mjs
       - scripts/lab-check.mjs
       - scripts/tex-workbench-check.mjs
       - scripts/work-local-bridge-check.mjs
@@ -110,6 +111,8 @@ jobs:
           node --check scripts/drafts-check.mjs
           node scripts/drafts-check.mjs
           node --check scripts/workbench-check.mjs
+          node --check scripts/native-mobile-services-check.mjs
+          node scripts/native-mobile-services-check.mjs
           node scripts/workbench-check.mjs
           node --check scripts/lab-check.mjs
           node scripts/lab-check.mjs
