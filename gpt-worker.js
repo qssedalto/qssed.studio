@@ -85,22 +85,31 @@ export default {
       return json({ error: "Not found." }, 404);
     }
 
-    // Read-only native conversation browser. Never repurpose the browser cookie
-    // identity or expose admin/provider secrets to public mobile clients.
+    // Native AERTEX Intelligence uses the same audited AI gateway as the web,
+    // but its identity is an independently verified Bearer session, never cookies.
     if (pathname.startsWith("/api/native/intelligence/")) {
-      if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
-      const root = "/api/native/intelligence/conversations";
-      const suffix = pathname.startsWith(root) ? pathname.slice(root.length) : null;
-      if (suffix === null || (suffix !== "" && !(suffix.startsWith("/") && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(suffix.slice(1))))) {
-        return nativeJson({ error: "Native intelligence route not found." }, 404);
-      }
-      const session = await verifyNativeAppSession(request);
-      if (!session.ok) return session.response;
-      const internal = new URL(request.url);
-      internal.pathname = "/api/ai/conversations" + suffix;
-      internal.search = "";
-      const response = await handleAiApi(new Request(internal, { method: "GET" }), env, session);
-      return nativeApiResponse(response);
+      const prefix = "/api/native/intelligence";
+      const tail = pathname.slice(prefix.length);
+      const conversation = /^\\/conversations\\/([0-9a-f-]{36})$/i.exec(tail);
+      const allowed = tail === "/config" ? ["GET"]
+        : tail === "/chat" ? ["POST"]
+        : tail === "/conversations" ? ["GET"]
+        : conversation ? ["GET", "PATCH", "DELETE"] : null;
+      if (!allowed) return nativeJson({ error: "Native intelligence route not found." }, 404);
+      if (!allowed.includes(request.method)) return nativeJson({ error: "Method not allowed." }, 405);
+
+      const gate = await verifyNativeAppSession(request);
+      if (!gate.ok) return gate.response;
+      const nativeSession = { ...gate, native: true };
+      const target = new URL(request.url);
+      target.pathname = "/api/ai" + tail;
+      target.search = "";
+      const internalRequest = new Request(target, {
+        method: request.method,
+        headers: request.headers,
+        ...(request.method === "GET" ? {} : { body: request.body, duplex: "half" })
+      });
+      return nativeApiResponse(await handleAiApi(internalRequest, env, nativeSession));
     }
 
     if (pathname.startsWith("/api/ai/")) {
