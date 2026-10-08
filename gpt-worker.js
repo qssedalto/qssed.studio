@@ -91,7 +91,7 @@ export default {
       if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
       const root = "/api/native/intelligence/conversations";
       const suffix = pathname.startsWith(root) ? pathname.slice(root.length) : null;
-      if (suffix === null || (suffix !== "" && !/^\\/[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(suffix))) {
+      if (suffix === null || (suffix !== "" && !(suffix.startsWith("/") && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(suffix.slice(1))))) {
         return nativeJson({ error: "Native intelligence route not found." }, 404);
       }
       const session = await verifyNativeAppSession(request);
