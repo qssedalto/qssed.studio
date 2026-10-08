@@ -66,8 +66,8 @@ begin
   Exec(ExpandConstant('{sys}\cmdkey.exe'), '/delete:AERTEX/WatchSync/DeviceToken', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;
 
-; 安装升级当前采用“干净替换”而不是保留旧目录：先停客户端、删除旧文件、删除旧 token。
-; 因此 setup 页面会明确提示用户安装后重新生成设备令牌。
+// 安装升级当前采用“干净替换”而不是保留旧目录：先停客户端、删除旧文件、删除旧 token。
+// 因此 setup 页面会明确提示用户安装后重新生成设备令牌。
 procedure ResetExistingInstall();
 var
   TargetDir: String;
