@@ -254,10 +254,9 @@ async function handleAppSession(request) {
 }
 
 /**
- * Native, bearer-authenticated self-service profile endpoint.
- * Only display_name may be changed; privileged profile columns are never
- * accepted from client JSON. The verified Supabase subject and RLS enforce
- * the target user, rather than trusting caller-supplied ids.
+ * Native bearer-only self-service profile endpoint.
+ * Exactly one of displayName or accentId is accepted. No privileged
+ * profile columns or auth metadata keys may be modified by this API.
  */
 async function handleAppProfile(request) {
   const accessToken = bearerToken(request);
@@ -286,8 +285,46 @@ async function handleAppProfile(request) {
     return json({ error: "Invalid JSON", code: "invalid_request" }, 400);
   }
   if (!body || typeof body !== "object" || Array.isArray(body) ||
-      Object.keys(body).length !== 1 || typeof body.displayName !== "string") {
-    return json({ error: "Only displayName may be updated", code: "invalid_fields" }, 400);
+      Object.keys(body).length !== 1) {
+    return json({ error: "Exactly one profile field is required", code: "invalid_fields" }, 400);
+  }
+
+  // Colors are always user_metadata on the authenticated Supabase user,
+  // never privileged profile columns. Only IDs from our main-site palette
+  // are accepted; reject arbitrary hex, user IDs and metadata objects.
+  if (Object.hasOwn(body, "accentId")) {
+    if (typeof body.accentId !== "string" || !VALID_AERTEX_ACCENTS.has(body.accentId)) {
+      return json({ error: "Unknown AERTEX theme color", code: "invalid_accent" }, 400);
+    }
+    let response;
+    try {
+      response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: "PUT",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${accessToken}`,
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({ data: { aertex_accent: body.accentId } })
+      });
+    } catch {
+      return json({ error: "Theme service unavailable", code: "service_unavailable" }, 503);
+    }
+    if (!response.ok) {
+      return json({ error: "Theme update was rejected", code: "theme_update_failed" },
+        response.status === 401 ? 401 : 502);
+    }
+    let confirmed;
+    try { confirmed = await response.json(); } catch { confirmed = null; }
+    if (confirmed?.id !== authUser.id ||
+        confirmed?.user_metadata?.aertex_accent !== body.accentId) {
+      return json({ error: "Theme update could not be confirmed", code: "theme_unconfirmed" }, 409);
+    }
+    return json(sessionPayload(publicUser(confirmed, profile)));
+  }
+
+  if (typeof body.displayName !== "string") {
+    return json({ error: "Only displayName or accentId may be updated", code: "invalid_fields" }, 400);
   }
 
   const displayName = body.displayName.trim();

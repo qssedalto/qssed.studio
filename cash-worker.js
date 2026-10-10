@@ -21,6 +21,7 @@ import { localeFromPath, preferredLocaleFromRequest } from "./studio/locale.js";
 import { appearanceClientRuntime } from "./studio/appearance.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
+import { verifyNativeAppSession, nativeJson } from "./studio/native-mobile-auth.js";
 
 const MAX_DATA_BYTES = 2 * 1024 * 1024;
 const ASSET_PATHS = new Set(["/styles.css", "/model.js", "/app.js"]);
@@ -64,6 +65,12 @@ export default {
       return handleStudioSessionLogout(request);
     }
 
+    if (pathname === "/api/native/cash/data" || pathname === "/api/native/cash/transactions") {
+      const session = await verifyNativeAppSession(request);
+      if (!session.ok) return session.response;
+      return handleNativeCash(request, env, session.user.id, pathname);
+    }
+
     if (pathname === "/api/cash/data") {
       const gate = await verifyStudioPageSession(request);
       if (!gate.ok) {
@@ -101,6 +108,89 @@ export default {
     return withStudioSessionCookies(response, gate.cookies || []);
   }
 };
+
+// Native Cash uses exactly the same R2 per-user document as cash.qsseda.com.
+// POST adds ONE validated transaction server-side, preserving plans/settings,
+// so the iOS client never round-trips or overwrites unknown Cash schema fields.
+async function handleNativeCash(request, env, userId, path) {
+  if (!env?.STORAGE || !userId) return nativeJson({ error: "Cash storage unavailable." }, 503);
+  const key = `cash/users/${userId}/data.json`;
+  if (path === "/api/native/cash/data") {
+    if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
+    try {
+      const object = await env.STORAGE.get(key);
+      if (!object) return nativeJson({
+        data: { version: 4, settings: {}, transactions: [], plannedEvents: [],
+          expectedEvents: [], recurringExpenses: [] },
+        updated_at: null, initialized: false
+      });
+      return nativeJson({ data: JSON.parse(await object.text()),
+        updated_at: object.uploaded?.toISOString?.() || null, initialized: true });
+    } catch {
+      return nativeJson({ error: "Could not load Cash data." }, 503);
+    }
+  }
+  if (request.method !== "POST") return nativeJson({ error: "Method not allowed." }, 405);
+  let tx;
+  try { tx = await request.json(); } catch { return nativeJson({ error: "Invalid JSON." }, 400); }
+  const type = tx?.type;
+  const allowedCategories = type === "income"
+    ? ["tutoringIncome", "familyRepayment", "salary", "otherIncome"]
+    : ["food", "socialTransport", "tutoringTransport", "installment", "electronics",
+      "electricity", "water", "phone", "chatgpt", "otherExpense"];
+  const amount = tx?.amount;
+  const note = tx?.note;
+  const date = tx?.date;
+  const dateValid = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)
+    && !Number.isNaN(Date.parse(date)) && new Date(date + "T00:00:00.000Z").toISOString().slice(0, 10) === date;
+  if ((type !== "income" && type !== "expense") || !dateValid ||
+      typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0 || amount > 1e9 ||
+      Math.round(amount * 100) / 100 !== amount ||
+      typeof tx?.category !== "string" || !allowedCategories.includes(tx.category) ||
+      typeof note !== "string" || note.length > 300 ||
+      Object.keys(tx || {}).some(k => !["type","amount","category","note","date"].includes(k))) {
+    return nativeJson({ error: "Invalid Cash transaction." }, 400);
+  }
+  try {
+    const object = await env.STORAGE.get(key);
+    const data = object ? JSON.parse(await object.text()) : {
+      version: 4, settings: {
+        periodStart: "2026-10-01", periodEnd: "2027-01-13",
+        manualEntryEnd: "2026-10-07", oddMondayAnchor: "2026-10-12",
+        openingCash: 0, emergencyCredit: 0
+      },
+      transactions: [], plannedEvents: [], expectedEvents: [],
+      recurringExpenses: [], budgetRules: {
+        foodByDayType: { classDay: 0, oddMonday: 0, evenMonday: 0, saturday: 0, sunday: 0 },
+        socialTransport: { weeklyVisits: 0, medianPerVisit: 0, minPerVisit: 0, maxPerVisit: 0 }
+      }
+    };
+    if (!validCashPayload(data)) return nativeJson({ error: "Cash storage schema mismatch." }, 409);
+    const today = new Date().toISOString().slice(0,10);
+    const start = data.settings?.periodStart || "2026-10-01";
+    const end = data.settings?.periodEnd || "2027-01-13";
+    if (date < start || date > end || date > today) {
+      return nativeJson({ error: "Transaction date outside allowed Cash period." }, 400);
+    }
+    if (data.transactions.length >= 20000) return nativeJson({ error: "Ledger limit reached." }, 409);
+    data.transactions.push({
+      id: "tx-" + crypto.randomUUID(), date, type, amount,
+      huabeiAmount: 0, category: tx.category, note: note.trim(),
+      linkedPlanId: null, linkedRecurringId: null, linkedRecurringMonth: null
+    });
+    const onlyIf = object
+      ? { etagMatches: object.etag }
+      : { etagDoesNotMatch: "*" };
+    const saved = await env.STORAGE.put(key, JSON.stringify(data), {
+      onlyIf, httpMetadata: { contentType: "application/json;charset=UTF-8" },
+      customMetadata: { ownerId: userId, product: "aertex-cash", schemaVersion: String(data.version) }
+    });
+    if (!saved) return nativeJson({ error: "Cash changed on another device. Refresh and retry." }, 409);
+    return nativeJson({ ok: true, transaction: data.transactions.at(-1) }, 201);
+  } catch {
+    return nativeJson({ error: "Could not save Cash transaction." }, 503);
+  }
+}
 
 async function handleCashData(request, env, userId) {
   if (!env?.STORAGE || !userId) return json({ error: "Cash storage is unavailable." }, 503);

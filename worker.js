@@ -19,6 +19,7 @@ import { handleProjects } from "./studio/projects-api.js";
 import { handleTasks } from "./studio/tasks-api.js";
 import { handleDrafts } from "./studio/drafts-api.js";
 import { handleWorkbenchOverview } from "./studio/workbench-api.js";
+import { handleNativeWorkDocuments } from "./studio/native-work-documents.js";
 import { verifyNativeAppSession, nativeJson, nativeApiResponse } from "./studio/native-mobile-auth.js";
 import { handleTexApi } from "./studio/tex-api.js";
 import { handleTexCollaborationApi } from "./studio/tex-collaboration-api.js";
@@ -134,6 +135,9 @@ async function routeStudioRequest(request, env, ctx) {
   // First-party mobile Studio reuses the real owner-prefixed R2 CRUD engines.
   // Only the verified Bearer subject may select R2 keys; client ids are filters
   // inside that subject, not permission grants.
+  if (pathname === "/api/native/work/documents" && !workHost && isMainHost(url.hostname)) {
+    return handleNativeWorkDocuments(request, env);
+  }
   if (pathname.startsWith("/api/native/studio/") && !workHost && isMainHost(url.hostname)) {
     const resource = pathname.slice("/api/native/studio/".length);
     const methods = resource === "overview" ? ["GET"]
