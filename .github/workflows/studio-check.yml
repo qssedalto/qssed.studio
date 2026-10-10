@@ -21,6 +21,7 @@ on:
       - "scripts/drafts-check.mjs"
       - "scripts/workbench-check.mjs"
       - "scripts/native-mobile-services-check.mjs"
+      - "scripts/native-work-cash-check.mjs"
       - "scripts/native-intelligence-chat-check.mjs"
       - "scripts/lab-check.mjs"
       - "scripts/tex-workbench-check.mjs"
@@ -75,6 +76,7 @@ on:
       - "scripts/drafts-check.mjs"
       - "scripts/workbench-check.mjs"
       - "scripts/native-mobile-services-check.mjs"
+      - "scripts/native-work-cash-check.mjs"
       - "scripts/native-intelligence-chat-check.mjs"
       - "scripts/lab-check.mjs"
       - "scripts/tex-workbench-check.mjs"
@@ -147,6 +149,8 @@ jobs:
           node --check scripts/workbench-check.mjs
           node --check scripts/native-mobile-services-check.mjs
           node scripts/native-mobile-services-check.mjs
+          node --check scripts/native-work-cash-check.mjs
+          node scripts/native-work-cash-check.mjs
           node --check scripts/native-intelligence-chat-check.mjs
           node scripts/native-intelligence-chat-check.mjs
           node --check scripts/lab-check.mjs
