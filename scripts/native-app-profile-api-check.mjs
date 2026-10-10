@@ -31,7 +31,16 @@ globalThis.fetch = async (input, options = {}) => {
   if (headers.get("authorization") !== `Bearer ${accessToken}`) {
     return upstream({ error: "invalid_token" }, 401);
   }
-  if (url.pathname === "/auth/v1/user") return upstream(authUser);
+  if (url.pathname === "/auth/v1/user") {
+    if (options.method === "PUT") {
+      const body = JSON.parse(options.body);
+      assert(Object.keys(body).join(",") === "data", "Only Supabase user_metadata can be updated");
+      assert(Object.keys(body.data).join(",") === "aertex_accent", "Only accent metadata can change");
+      authUser.user_metadata.aertex_accent = body.data.aertex_accent;
+      mutations += 1;
+    }
+    return upstream(authUser);
+  }
   if (url.pathname === "/rest/v1/profiles") {
     assert(url.searchParams.get("id") === `eq.${userId}`, "Profile query must target verified subject");
     if (options.method === "PATCH") {
@@ -83,6 +92,11 @@ try {
   result = await call("PATCH", accessToken, { displayName: "新显示名" });
   assert(result.response.status === 200 && result.json.user.displayName === "新显示名", "Native profile update should succeed");
   assert(mutations === 1, "Expected one narrow profile mutation");
+  result = await call("PATCH", accessToken, { accentId: "iphone-f77e2d" });
+  assert(result.response.status === 200 &&
+    result.json.user.accentId === "iphone-f77e2d", "Native accent must round-trip through AERTEX ID");
+  assert(mutations === 2, "Expected one color metadata mutation");
+
 
   for (const bad of [
     {}, { role: "admin" }, { status: "active" },
@@ -90,18 +104,20 @@ try {
     { displayName: "", role: "admin" },
     { displayName: "" }, { displayName: " ".repeat(10) },
     { displayName: "x".repeat(121) },
-    { displayName: "hello\nworld" }
+    { displayName: "hello\nworld" },
+    { accentId: "#000000" }, { accentId: "iphone-not-in-palette" },
+    { accentId: "iphone-9aadf6", role: "admin" }
   ]) {
     result = await call("PATCH", accessToken, bad);
     assert(result.response.status === 400, "Invalid profile payload must be rejected");
   }
-  assert(mutations === 1, "Rejected fields may not reach Supabase");
+  assert(mutations === 2, "Rejected fields may not reach Supabase");
 
   profile.status = "suspended";
   result = await call("GET", accessToken);
   assert(result.response.status === 403, "Suspended account must fail closed");
   result = await call("PATCH", accessToken, { displayName: "Bypass" });
-  assert(result.response.status === 403 && mutations === 1, "Suspended user cannot mutate profile");
+  assert(result.response.status === 403 && mutations === 2, "Suspended user cannot mutate profile");
 
   result = await call("DELETE", accessToken);
   assert(result.response.status === 405, "Unsupported HTTP method must be rejected");
