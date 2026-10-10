@@ -141,7 +141,7 @@ async function handleNativeCash(request, env, userId, path) {
   const amount = tx?.amount;
   const note = tx?.note;
   const date = tx?.date;
-  const dateValid = typeof date === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(date)
+  const dateValid = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)
     && !Number.isNaN(Date.parse(date)) && new Date(date + "T00:00:00.000Z").toISOString().slice(0, 10) === date;
   if ((type !== "income" && type !== "expense") || !dateValid ||
       typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0 || amount > 1e9 ||
