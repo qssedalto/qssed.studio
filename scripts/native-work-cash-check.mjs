@@ -94,6 +94,7 @@ try {
   assert(result.status === 200 && result.body.initialized === false, "Cash empty account read must be safe");
   const tx = { date:"2026-10-10",type:"expense",amount:12.50,category:"food",note:"lunch" };
   result = await request(cashWorker,cashTx,"POST",tx);
+  if (result.status !== 201) console.log("Cash create diagnostic:", JSON.stringify(result));
   assert(result.status === 201 && result.body.transaction.amount === 12.5, "Cash real transaction must be saved");
   result = await request(cashWorker,cash);
   assert(result.status === 200 && result.body.data.transactions.length === 1, "Cash ledger must persist");
