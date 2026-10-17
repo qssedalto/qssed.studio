@@ -22,6 +22,8 @@ import { appearanceClientRuntime } from "./studio/appearance.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
 import { verifyNativeAppSession, nativeJson } from "./studio/native-mobile-auth.js";
+// Use the exact canonical website model; never recalculate forecasts differently on iOS.
+import "./cash-web/model.js";
 
 const MAX_DATA_BYTES = 2 * 1024 * 1024;
 const ASSET_PATHS = new Set(["/styles.css", "/model.js", "/app.js"]);
@@ -65,7 +67,7 @@ export default {
       return handleStudioSessionLogout(request);
     }
 
-    if (pathname === "/api/native/cash/data" || pathname === "/api/native/cash/transactions" || pathname === "/api/native/cash/planning") {
+    if (pathname === "/api/native/cash/data" || pathname === "/api/native/cash/transactions" || pathname === "/api/native/cash/planning" || pathname === "/api/native/cash/forecast") {
       const session = await verifyNativeAppSession(request);
       if (!session.ok) return session.response;
       return handleNativeCash(request, env, session.user.id, pathname);
@@ -118,6 +120,62 @@ async function handleNativeCash(request, env, userId, path) {
   // A device-safe, read-only projection of the same owner-scoped Cash R2
   // document used by cash.qsseda.com. Preserve source fields without
   // pretending to run the website's complete forecast model on the device.
+  if (path === "/api/native/cash/forecast") {
+    if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
+    try {
+      const source = await env.STORAGE.get(key);
+      if (!source) return nativeJson({ initialized: false, forecast: null, updated_at: null });
+      const data = JSON.parse(await source.text());
+      if (!validCashPayload(data)) return nativeJson({ error: "Cash storage schema mismatch." }, 409);
+      const canonicalModel = globalThis.CashflowModel;
+      if (!canonicalModel?.calculateFinancialModel) {
+        return nativeJson({ error: "Cash model temporarily unavailable." }, 503);
+      }
+      const result = canonicalModel.calculateFinancialModel(data);
+      if (!Number.isFinite(result.forecast.endBalance) ||
+          !Number.isFinite(result.ledger.cashBalance)) {
+        return nativeJson({ error: "Cash model produced invalid output." }, 503);
+      }
+      return nativeJson({
+        initialized: true,
+        as_of: result.asOf,
+        period_start: result.data.settings.periodStart,
+        period_end: result.data.settings.periodEnd,
+        updated_at: source.uploaded?.toISOString?.() || null,
+        actual_cash: result.ledger.cashBalance,
+        disposable_cash: result.disposableBalance,
+        funded_reserve: result.reserve.amount,
+        reserve_shortfall: result.reserve.shortfall,
+        projected_end_balance: result.forecast.endBalance,
+        components: {
+          current_cash: result.forecast.components.currentCash,
+          planned_income: result.forecast.components.plannedIncome,
+          planned_expense: result.forecast.components.plannedExpense,
+          recurring_expense: result.forecast.components.knownRecurringExpense,
+          future_food_budget: result.forecast.components.futureFoodBudget,
+          social_budget_reserve: result.forecast.components.socialBudgetReserve,
+          fixed_reserve: result.forecast.components.fixedReserve,
+          expected_net: result.forecast.components.expectedNet
+        },
+        monthly: result.monthly.map(item => ({
+          month: item.month, actual_income: item.actualIncome,
+          actual_expense: item.actualExpense,
+          planned_income: item.plannedIncome, planned_expense: item.plannedExpense,
+          food_forecast: item.foodForecast,
+          social_remaining: item.socialRemaining,
+          scheduled_recurring: item.scheduledRecurring,
+          reserved: item.reserved, expected: item.expected
+        })),
+        daily: result.forecast.daily.map(item => ({
+          date: item.key, projected_cash: item.projectedCashBeforeReserve,
+          actual_cash: item.actualCashBalance,
+          is_future: item.key > result.asOf
+        }))
+      });
+    } catch {
+      return nativeJson({ error: "Could not calculate Cash forecast." }, 503);
+    }
+  }
   if (path === "/api/native/cash/planning") {
     if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
     try {

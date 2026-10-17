@@ -1,0 +1,37 @@
+name: AERTEX canonical Cash forecast parity
+
+on:
+  push:
+    branches:
+      - feat/aertex-native-cash-forecast
+    paths:
+      - "cash-worker.js"
+      - "cash-web/model.js"
+      - "scripts/native-work-cash-check.mjs"
+      - ".github/workflows/native-cash-forecast-check.yml"
+  pull_request:
+    paths:
+      - "cash-worker.js"
+      - "cash-web/model.js"
+      - "scripts/native-work-cash-check.mjs"
+      - ".github/workflows/native-cash-forecast-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  canonical-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Validate Cash Worker modules
+        run: |
+          node --check cash-worker.js
+          node --check cash-web/model.js
+      - name: Verify canonical Cash model invariants
+        run: node scripts/cash-model-check.mjs
+      - name: Verify native forecast identity and authorization
+        run: node scripts/native-work-cash-check.mjs
