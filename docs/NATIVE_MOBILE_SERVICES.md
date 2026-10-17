@@ -127,3 +127,27 @@ The website still handles advanced forecast charts and mutations until then.
 Rollout order: deploy the Cash Worker and verify authenticated API behavior
 before shipping an iOS build that expects the new native planning endpoint.
 The iOS view may otherwise show an error with a link to the existing website.
+
+
+## Work TeX version history / native iOS 27
+
+Host: `https://qsseda.com`.
+
+`GET /api/native/work/documents?id=<owned UUID>&view=versions` verifies the
+device Bearer session, reads the document under the verified user's R2 prefix
+and refuses unknown or cross-owner identifiers. It lists existing website
+version metadata from `_system/tex-versions/<user>/<document>/`, validates
+every object's owner, document, kind and version UUID, sorts newest-first and
+returns a maximum of 80 summaries including title, timestamp, preview,
+reason, engine and source character count. Source bytes, PDFs and result
+artifacts are **not** returned.
+
+Other methods remain governed by the existing Work document API, with no
+native route capable of restoring historic source; browser collaboration,
+conflict-aware version restore and TeX compilation remain on Work until
+separately tested native contracts are implemented. The client shows cached
+read-only version summaries while refreshing behind the scenes.
+
+The native Work version endpoint and Cash planning endpoint must be deployed
+in the main Studio and Cash Workers, respectively, before shipping the
+corresponding iOS client.
