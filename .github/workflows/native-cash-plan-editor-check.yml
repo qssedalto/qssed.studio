@@ -1,4 +1,4 @@
-name: Native Cash plan mutations
+name: Native Cash plans and Work source viewer
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
     paths:
       - cash-worker.js
       - studio/native-cash-plans.js
+      - studio/native-work-documents.js
       - scripts/native-work-cash-check.mjs
       - cash-web/model.js
       - .github/workflows/native-cash-plan-editor-check.yml
@@ -13,6 +14,7 @@ on:
     paths:
       - cash-worker.js
       - studio/native-cash-plans.js
+      - studio/native-work-documents.js
       - scripts/native-work-cash-check.mjs
       - cash-web/model.js
       - .github/workflows/native-cash-plan-editor-check.yml
@@ -35,5 +37,5 @@ jobs:
           node --check scripts/native-work-cash-check.mjs
       - name: Real Cash model parity
         run: node scripts/cash-model-check.mjs
-      - name: Native ETag and ownership integration
+      - name: Native Cash edit and Work source authorization
         run: node scripts/native-work-cash-check.mjs
