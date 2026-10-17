@@ -68,7 +68,8 @@ try {
   const work = "https://qsseda.com/api/native/work/documents";
   const cash = "https://cash.qsseda.com/api/native/cash/data";
   const cashTx = "https://cash.qsseda.com/api/native/cash/transactions";
-  for (const [worker,path] of [[workWorker,work],[cashWorker,cash]]) {
+  const cashPlanning = "https://cash.qsseda.com/api/native/cash/planning";
+  for (const [worker,path] of [[workWorker,work],[cashWorker,cash],[cashWorker,cashPlanning]]) {
     assert((await request(worker,path,"GET",null,"")).status === 401, "Missing bearer must fail");
     assert((await request(worker,path,"GET",null,"fake")).status === 401, "Invalid bearer must fail");
   }
@@ -85,6 +86,17 @@ try {
   assert(result.status === 200 && result.body.document.source === "Updated source", "Work edit should persist");
   assert((await request(workWorker,work+"?id="+id,"PUT",draft,bearer,{"If-Match":etag})).status === 409,
     "Stale document version must not overwrite other editors");
+result = await request(workWorker, work+"?id="+id+"&view=versions");
+  assert(result.status === 200 && result.body.document_id === id &&
+    result.body.versions.length >= 1,
+    "Native Work should return real version summaries for owned documents");
+  assert(result.body.versions.every(v => v.document_id === id &&
+    !("source" in v) && !("pdf" in v)),
+    "Native Work versions cannot expose source or binary result blobs");
+  assert((await request(workWorker,work+"?id=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee&view=versions")).status === 404,
+    "Work versions must not reveal another user's documents");
+  assert((await request(workWorker,work+"?id="+id+"&view=versions","DELETE")).status === 405,
+    "Version-history endpoint must remain read-only");
   assert((await request(workWorker,work+"?id=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")).status === 404,
     "Work cannot access arbitrary identifiers");
   assert((await request(workWorker,work,"POST",{...draft,engine:"unsafe"})).status === 400,
@@ -101,18 +113,31 @@ try {
   const cashKey = "cash/users/" + userId + "/data.json";
   const stored = JSON.parse(dataStore.get(cashKey).body);
   stored.plannedEvents = [{ id:"plan-1",amount:100,type:"expense",date:"2026-10-11" }];
+  stored.expectedEvents = [{ id:"expected-1",type:"income",amount:500,expectedMonth:"2026-11",enabled:true }];
+  stored.recurringExpenses = [{ id:"recurring-1",name:"云服务",amount:38,category:"otherExpense",frequency:"monthly",dayOfMonth:17,enabled:true }];
   dataStore.get(cashKey).body = JSON.stringify(stored);
   assert((await request(cashWorker,cashTx,"POST",{...tx,type:"income",category:"salary"})).status === 201,
     "Cash income records must be added");
   assert(JSON.parse(dataStore.get(cashKey).body).plannedEvents.length === 1,
     "Native transactions must preserve existing plans");
+  result = await request(cashWorker, cashPlanning);
+  assert(result.status === 200 && result.body.plannedEvents[0].amount === 100,
+    "Native planning API must expose only the authenticated user's dated plans");
+  assert(result.body.expectedEvents[0].amount === 500 &&
+    result.body.recurringExpenses[0].name === "云服务",
+    "Native planning must preserve undated and monthly plans");
+  assert(!("transactions" in result.body), "Planning endpoint must not return unrelated full ledger");
+  assert((await request(cashWorker,cashPlanning,"POST",{id:"bad"})).status === 405,
+    "Planning API must reject writes");
+  assert((await request(cashWorker,cashPlanning,"GET",null,"fake")).status === 401,
+    "Planning API must reject forged bearer tokens");
   assert((await request(cashWorker,cashTx,"POST",{...tx,amount:-5})).status === 400,
     "Negative Cash amount must be rejected");
   assert((await request(cashWorker,cashTx,"POST",{...tx,date:"2031-01-01"})).status === 400,
     "Cash future/out-of-range transactions must be rejected");
 
   accountActive = false;
-  for (const [worker,path] of [[workWorker,work],[cashWorker,cash]]) {
+  for (const [worker,path] of [[workWorker,work],[cashWorker,cash],[cashWorker,cashPlanning]]) {
     assert((await request(worker,path)).status === 403, "Suspended AERTEX account must fail closed");
   }
   assert([...dataStore.keys()].every(key => key.includes(userId)),

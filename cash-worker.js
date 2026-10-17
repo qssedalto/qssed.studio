@@ -65,7 +65,7 @@ export default {
       return handleStudioSessionLogout(request);
     }
 
-    if (pathname === "/api/native/cash/data" || pathname === "/api/native/cash/transactions") {
+    if (pathname === "/api/native/cash/data" || pathname === "/api/native/cash/transactions" || pathname === "/api/native/cash/planning") {
       const session = await verifyNativeAppSession(request);
       if (!session.ok) return session.response;
       return handleNativeCash(request, env, session.user.id, pathname);
@@ -115,6 +115,32 @@ export default {
 async function handleNativeCash(request, env, userId, path) {
   if (!env?.STORAGE || !userId) return nativeJson({ error: "Cash storage unavailable." }, 503);
   const key = `cash/users/${userId}/data.json`;
+  // A device-safe, read-only projection of the same owner-scoped Cash R2
+  // document used by cash.qsseda.com. Preserve source fields without
+  // pretending to run the website's complete forecast model on the device.
+  if (path === "/api/native/cash/planning") {
+    if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
+    try {
+      const object = await env.STORAGE.get(key);
+      if (!object) return nativeJson({
+        plannedEvents: [], expectedEvents: [], recurringExpenses: [],
+        budgetRules: {}, settings: {}, updated_at: null, initialized: false
+      });
+      const data = JSON.parse(await object.text());
+      if (!validCashPayload(data)) return nativeJson({ error: "Cash storage schema mismatch." }, 409);
+      return nativeJson({
+        plannedEvents: data.plannedEvents || [],
+        expectedEvents: data.expectedEvents || [],
+        recurringExpenses: data.recurringExpenses || [],
+        budgetRules: data.budgetRules || {},
+        settings: data.settings || {},
+        updated_at: object.uploaded?.toISOString?.() || null,
+        initialized: true
+      });
+    } catch {
+      return nativeJson({ error: "Could not load Cash planning data." }, 503);
+    }
+  }
   if (path === "/api/native/cash/data") {
     if (request.method !== "GET") return nativeJson({ error: "Method not allowed." }, 405);
     try {
