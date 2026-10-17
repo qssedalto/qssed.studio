@@ -95,6 +95,19 @@ result = await request(workWorker, work+"?id="+id+"&view=versions");
   assert(result.body.versions.every(v => v.document_id === id &&
     !("source" in v) && !("pdf" in v)),
     "Native Work versions cannot expose source or binary result blobs");
+  const inspected = await request(workWorker,
+    work+"?id="+id+"&view=versions&version="+result.body.versions[0].id);
+  assert(inspected.status === 200 && inspected.body.readonly === true &&
+    typeof inspected.body.version.source === "string" &&
+    inspected.body.version.source.includes("documentclass"),
+    "Native Work must safely expose owned historical source in read-only detail");
+  assert((await request(workWorker,
+    work+"?id="+id+"&view=versions&version=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")).status === 404,
+    "Native Work must refuse another or unknown historical version");
+  assert((await request(workWorker,
+    work+"?id="+id+"&view=versions&version=unsafe")).status === 400,
+    "Native Work must validate historical version IDs");
+
   assert((await request(workWorker,work+"?id=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee&view=versions")).status === 404,
     "Work versions must not reveal another user's documents");
   assert((await request(workWorker,work+"?id="+id+"&view=versions","DELETE")).status === 405,
