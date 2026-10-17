@@ -69,7 +69,8 @@ try {
   const cash = "https://cash.qsseda.com/api/native/cash/data";
   const cashTx = "https://cash.qsseda.com/api/native/cash/transactions";
   const cashPlanning = "https://cash.qsseda.com/api/native/cash/planning";
-  for (const [worker,path] of [[workWorker,work],[cashWorker,cash],[cashWorker,cashPlanning]]) {
+  const cashForecast = "https://cash.qsseda.com/api/native/cash/forecast";
+  for (const [worker,path] of [[workWorker,work],[cashWorker,cash],[cashWorker,cashPlanning],[cashWorker,cashForecast]]) {
     assert((await request(worker,path,"GET",null,"")).status === 401, "Missing bearer must fail");
     assert((await request(worker,path,"GET",null,"fake")).status === 401, "Invalid bearer must fail");
   }
@@ -131,13 +132,35 @@ result = await request(workWorker, work+"?id="+id+"&view=versions");
     "Planning API must reject writes");
   assert((await request(cashWorker,cashPlanning,"GET",null,"fake")).status === 401,
     "Planning API must reject forged bearer tokens");
+
+  result = await request(cashWorker, cashForecast);
+  const canonical = globalThis.CashflowModel.calculateFinancialModel(
+    JSON.parse(dataStore.get(cashKey).body)
+  );
+  assert(result.status === 200 &&
+    result.body.actual_cash === canonical.ledger.cashBalance &&
+    result.body.projected_end_balance === canonical.forecast.endBalance,
+    "Native forecast must EXACTLY match the live Cash website model");
+  assert(result.body.components.expected_net === canonical.forecast.components.expectedNet &&
+    result.body.components.fixed_reserve === canonical.forecast.components.fixedReserve,
+    "Native forecast must match website reserve and undated expectations");
+  assert(result.body.daily.length === canonical.forecast.daily.length &&
+    result.body.monthly.length === canonical.monthly.length,
+    "Native forecast must preserve website daily/monthly trajectories");
+  assert(!("transactions" in result.body) && !("data" in result.body),
+    "Native forecast response must omit the full private ledger");
+  assert((await request(cashWorker,cashForecast,"POST",{foo:1})).status === 405,
+    "Forecast endpoint must reject mutations");
+  assert((await request(cashWorker,cashForecast,"GET",null,"fake")).status === 401,
+    "Forecast endpoint must reject invalid bearer tokens");
+
   assert((await request(cashWorker,cashTx,"POST",{...tx,amount:-5})).status === 400,
     "Negative Cash amount must be rejected");
   assert((await request(cashWorker,cashTx,"POST",{...tx,date:"2031-01-01"})).status === 400,
     "Cash future/out-of-range transactions must be rejected");
 
   accountActive = false;
-  for (const [worker,path] of [[workWorker,work],[cashWorker,cash],[cashWorker,cashPlanning]]) {
+  for (const [worker,path] of [[workWorker,work],[cashWorker,cash],[cashWorker,cashPlanning],[cashWorker,cashForecast]]) {
     assert((await request(worker,path)).status === 403, "Suspended AERTEX account must fail closed");
   }
   assert([...dataStore.keys()].every(key => key.includes(userId)),
