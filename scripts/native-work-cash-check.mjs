@@ -233,6 +233,11 @@ result = await request(workWorker, work+"?id="+id+"&view=versions");
     updatedLedger.expectedEvents.some(item => item.id === createdExpected.body.item.id) &&
     updatedLedger.recurringExpenses.some(item => item.id === createdRecurring.body.item.id && !item.enabled),
     "Native edits must preserve actual transactions and unrelated financial lists");
+  const nativeForecastAfterEdits = await request(cashWorker, cashForecast);
+  const canonicalForecastAfterEdits = globalThis.CashflowModel.calculateFinancialModel(updatedLedger);
+  assert(nativeForecastAfterEdits.status === 200 &&
+    nativeForecastAfterEdits.body.projected_end_balance === canonicalForecastAfterEdits.forecast.endBalance,
+    "Native plan edits must immediately change the SAME canonical website forecast");
   assert((await request(cashWorker,cashPlans+"?kind=dated","POST",dated,"fake",
     {"If-Match":removed.body.etag})).status === 401,
     "Plan write must reject forged Bearer tokens");
