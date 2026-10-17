@@ -102,3 +102,28 @@ The 2.2 native chart intentionally shows **single-bucket raw event duration** in
 The SwiftUI iOS app bundles a copied snapshot of the existing `studio/gpt-rich-renderer.js` source in `Resources/AERTEXRichMessage.js` and uses a **sandboxed, nonpersistent, non-scrolling WKWebView solely as a message text renderer**. AERTEX app navigation, composer, conversation list, chat model selection and chat bubbles remain native SwiftUI. The message renderer uses exactly the website's KaTeX 0.16.11 and highlight.js CDN assets, and therefore enhanced LaTeX typography may require CDN availability; the source has website-equivalent math fallbacks.
 
 Do not merge the iOS 2.2 PR until iOS SDK compilation and iPhone verification pass. Back-end production should be merged and validated before distributing the app. If deployment, quota, or model choice is unavailable, the UI must show an explicit error.
+
+
+## Cash planning / native iOS 27
+
+Host: `https://cash.qsseda.com`.
+
+`GET /api/native/cash/planning` reads the authenticated account's existing
+`cash/users/<verified user id>/data.json` from R2. It returns the original
+`plannedEvents`, `expectedEvents`, `recurringExpenses`, `budgetRules`,
+`settings`, `initialized` and `updated_at` fields without transaction
+history. It does not change any plan. `POST`, `PUT`, `DELETE` and methods
+other than `GET` return 405. Missing/forged Bearer tokens and suspended
+accounts are rejected by `verifyNativeAppSession`. All native responses
+remain `private, no-store` and contain no session cookies.
+
+The iOS view shows dated plans, expected monthly items and recurring expenses
+without claiming to reproduce the website's computed balance forecast. The
+full forecast uses the canonical `cash-web/model.js` and must not be
+approximated by a different client-side formula. Native changes to plans
+must wait for explicitly validated, atomic, conflict-aware mutation APIs.
+The website still handles advanced forecast charts and mutations until then.
+
+Rollout order: deploy the Cash Worker and verify authenticated API behavior
+before shipping an iOS build that expects the new native planning endpoint.
+The iOS view may otherwise show an error with a link to the existing website.
