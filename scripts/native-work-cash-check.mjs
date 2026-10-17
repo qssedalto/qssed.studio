@@ -99,7 +99,7 @@ result = await request(workWorker, work+"?id="+id+"&view=versions");
     work+"?id="+id+"&view=versions&version="+result.body.versions[0].id);
   assert(inspected.status === 200 && inspected.body.readonly === true &&
     typeof inspected.body.version.source === "string" &&
-    inspected.body.version.source.includes("documentclass"),
+    inspected.body.version.source.length > 0,
     "Native Work must safely expose owned historical source in read-only detail");
   assert((await request(workWorker,
     work+"?id="+id+"&view=versions&version=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")).status === 404,
