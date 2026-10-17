@@ -175,3 +175,47 @@ zero forecast.
 All mutations return 405. The endpoint has no session cookies or public
 caching, and does not expose private transactions. It must be deployed to
 the Cash Worker before the iOS forecast tab is distributed.
+
+
+## Native Cash plan editor (iOS 27)
+
+The Cash Worker adds `POST /api/native/cash/plans?kind=dated|expected|recurring`,
+`PUT /api/native/cash/plans?kind=<kind>&id=<plan id>` and
+`DELETE /api/native/cash/plans?kind=<kind>&id=<plan id>`.
+
+These are **authenticated, account-scoped mutations**. Every call passes the
+same `verifyNativeAppSession` bearer check as other native APIs. The verified
+user ID, not caller-controlled input, determines the R2 key. Mutations require
+`If-Match` equal to the exact current R2 `etag` (newly exposed in
+`GET /api/native/cash/planning`). No wildcard or blind overwrites are
+allowed. Conditional R2 writes return HTTP 409 on concurrent edits.
+Missing precondition returns 428.
+
+Payload allowlists cover date/month, type, amount, free-form category, note
+and enabled flag; recurring plans support name, day of month and reserve flag.
+Unrelated fields, oversized/invalid amounts and impossible dates are rejected.
+Existing website-defined fields (such as a plan's origin) and unrelated
+transactions/rules are preserved. On successful writes, iOS refreshes the plan
+list and invalidates encrypted forecast and ledger snapshots.
+
+For an account without an initialized Cash ledger, the server returns 409
+instead of creating a document with fabricated settings. Clients should first
+initialize their existing Cash account. The full website still offers its
+other advanced budgeting controls; this API does not mutate those fields.
+
+## Work historic source reader (native iOS)
+
+`GET /api/native/work/documents?id=<document UUID>&view=versions&version=<version UUID>`
+reads one archived TeX version. The document must already exist under the
+verified Bearer user's personal R2 prefix, and the archived source object
+must independently confirm matching `owner_id`, `document_id` and `id`.
+The route rejects invalid identifiers and missing or cross-user versions.
+The response is JSON
+`{ readonly:true, version:{id,document_id,title,engine,source,reason,created_at} }`.
+No write method, PDF export or restore action is introduced here.
+
+Native iOS uses an encrypted account-specific device snapshot to display
+the last successfully fetched source immediately and updates it in the
+background. The native screen supports text selection and ShareLink, but
+cannot overwrite the Work document; safe version restore remains on the
+website until a dedicated ETag-conditional restore API is tested.

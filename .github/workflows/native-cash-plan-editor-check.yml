@@ -1,0 +1,41 @@
+name: Native Cash plans and Work source viewer
+
+on:
+  push:
+    branches: [feat/native-cash-plan-editor]
+    paths:
+      - cash-worker.js
+      - studio/native-cash-plans.js
+      - studio/native-work-documents.js
+      - scripts/native-work-cash-check.mjs
+      - cash-web/model.js
+      - .github/workflows/native-cash-plan-editor-check.yml
+  pull_request:
+    paths:
+      - cash-worker.js
+      - studio/native-cash-plans.js
+      - studio/native-work-documents.js
+      - scripts/native-work-cash-check.mjs
+      - cash-web/model.js
+      - .github/workflows/native-cash-plan-editor-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  native-plan-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Static validation
+        run: |
+          node --check cash-worker.js
+          node --check studio/native-cash-plans.js
+          node --check scripts/native-work-cash-check.mjs
+      - name: Real Cash model parity
+        run: node scripts/cash-model-check.mjs
+      - name: Native Cash edit and Work source authorization
+        run: node scripts/native-work-cash-check.mjs

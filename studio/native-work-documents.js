@@ -41,6 +41,29 @@ export async function handleNativeWorkDocuments(request, env) {
         // Existing website version snapshots live in the same owner-prefixed R2
         // store. Return bounded, metadata-only history, no source or PDF data.
         const prefix = "_system/tex-versions/" + userId + "/" + id + "/";
+        const versionId = new URL(request.url).searchParams.get("version");
+        if (versionId !== null) {
+          if (!validId(versionId)) return nativeJson({ error: "Invalid version id." }, 400);
+          const historic = await env.STORAGE.get(prefix + versionId + ".json");
+          if (!historic) return nativeJson({ error: "Version not found." }, 404);
+          const stored = JSON.parse(await historic.text());
+          if (stored?.owner_id !== userId || stored?.document_id !== id ||
+              stored?.id !== versionId || typeof stored?.source !== "string" ||
+              stored.source.length > MAX_SOURCE) {
+            return nativeJson({ error: "Version not found." }, 404);
+          }
+          return nativeJson({
+            readonly: true,
+            version: {
+              id: versionId, document_id: id,
+              title: String(stored.title || doc.title).slice(0, 180),
+              engine: ENGINES.has(stored.engine) ? stored.engine : "xelatex",
+              source: stored.source,
+              reason: String(stored.reason || "manual").slice(0, 50),
+              created_at: stored.created_at || null
+            }
+          });
+        }
         const versions = [];
         let cursor;
         do {
