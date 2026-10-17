@@ -37,6 +37,42 @@ export async function handleNativeWorkDocuments(request, env) {
       if (!obj) return nativeJson({ error: "Document not found." }, 404);
       const doc = JSON.parse(await obj.text());
       if (doc.owner_id !== userId || doc.id !== id) return nativeJson({ error: "Document not found." }, 404);
+      if (new URL(request.url).searchParams.get("view") === "versions") {
+        // Existing website version snapshots live in the same owner-prefixed R2
+        // store. Return bounded, metadata-only history, no source or PDF data.
+        const prefix = "_system/tex-versions/" + userId + "/" + id + "/";
+        const versions = [];
+        let cursor;
+        do {
+          const page = await env.STORAGE.list({
+            prefix, limit: 500, cursor, include: ["customMetadata"]
+          });
+          for (const entry of page.objects) {
+            const versionId = entry.key.slice(prefix.length).replace(/\.json$/, "");
+            const meta = entry.customMetadata || {};
+            if (!validId(versionId) || !entry.key.endsWith(".json") ||
+                meta.kind !== "tex-version" || meta.ownerId !== userId ||
+                meta.documentId !== id || meta.versionId !== versionId) continue;
+            versions.push({
+              id: versionId, document_id: id,
+              title: meta.title || doc.title,
+              engine: ENGINES.has(meta.engine) ? meta.engine : "xelatex",
+              reason: meta.reason || "autosave",
+              created_at: meta.createdAt || null,
+              source_chars: Math.max(0, Number(meta.sourceChars) || 0),
+              preview: String(meta.preview || "").slice(0, 220)
+            });
+          }
+          cursor = page.cursor;
+          if (!page.truncated || !cursor) break;
+        } while (true);
+        versions.sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+        return nativeJson({
+          document_id: id, versions: versions.slice(0, 80),
+          count: versions.length, storage: "source-only",
+          pdf_persisted: false
+        });
+      }
       return nativeJson({ document: doc, etag: obj.etag });
     }
     if (request.method === "GET") {
