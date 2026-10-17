@@ -202,3 +202,20 @@ For an account without an initialized Cash ledger, the server returns 409
 instead of creating a document with fabricated settings. Clients should first
 initialize their existing Cash account. The full website still offers its
 other advanced budgeting controls; this API does not mutate those fields.
+
+## Work historic source reader (native iOS)
+
+`GET /api/native/work/documents?id=<document UUID>&view=versions&version=<version UUID>`
+reads one archived TeX version. The document must already exist under the
+verified Bearer user's personal R2 prefix, and the archived source object
+must independently confirm matching `owner_id`, `document_id` and `id`.
+The route rejects invalid identifiers and missing or cross-user versions.
+The response is JSON
+`{ readonly:true, version:{id,document_id,title,engine,source,reason,created_at} }`.
+No write method, PDF export or restore action is introduced here.
+
+Native iOS uses an encrypted account-specific device snapshot to display
+the last successfully fetched source immediately and updates it in the
+background. The native screen supports text selection and ShareLink, but
+cannot overwrite the Work document; safe version restore remains on the
+website until a dedicated ETag-conditional restore API is tested.
