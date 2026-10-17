@@ -24,6 +24,7 @@ import { LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
 import { verifyNativeAppSession, nativeJson } from "./studio/native-mobile-auth.js";
 // Use the exact canonical website model; never recalculate forecasts differently on iOS.
 import "./cash-web/model.js";
+import { handleNativeCashPlanMutation } from "./studio/native-cash-plans.js";
 
 const MAX_DATA_BYTES = 2 * 1024 * 1024;
 const ASSET_PATHS = new Set(["/styles.css", "/model.js", "/app.js"]);
@@ -67,7 +68,7 @@ export default {
       return handleStudioSessionLogout(request);
     }
 
-    if (pathname === "/api/native/cash/data" || pathname === "/api/native/cash/transactions" || pathname === "/api/native/cash/planning" || pathname === "/api/native/cash/forecast") {
+    if (pathname === "/api/native/cash/data" || pathname === "/api/native/cash/transactions" || pathname === "/api/native/cash/planning" || pathname === "/api/native/cash/forecast" || pathname === "/api/native/cash/plans") {
       const session = await verifyNativeAppSession(request);
       if (!session.ok) return session.response;
       return handleNativeCash(request, env, session.user.id, pathname);
@@ -117,6 +118,9 @@ export default {
 async function handleNativeCash(request, env, userId, path) {
   if (!env?.STORAGE || !userId) return nativeJson({ error: "Cash storage unavailable." }, 503);
   const key = `cash/users/${userId}/data.json`;
+  if (path === "/api/native/cash/plans") {
+    return handleNativeCashPlanMutation(request, env, userId);
+  }
   // A device-safe, read-only projection of the same owner-scoped Cash R2
   // document used by cash.qsseda.com. Preserve source fields without
   // pretending to run the website's complete forecast model on the device.
@@ -182,7 +186,7 @@ async function handleNativeCash(request, env, userId, path) {
       const object = await env.STORAGE.get(key);
       if (!object) return nativeJson({
         plannedEvents: [], expectedEvents: [], recurringExpenses: [],
-        budgetRules: {}, settings: {}, updated_at: null, initialized: false
+        budgetRules: {}, settings: {}, updated_at: null, etag: null, initialized: false
       });
       const data = JSON.parse(await object.text());
       if (!validCashPayload(data)) return nativeJson({ error: "Cash storage schema mismatch." }, 409);
@@ -193,6 +197,7 @@ async function handleNativeCash(request, env, userId, path) {
         budgetRules: data.budgetRules || {},
         settings: data.settings || {},
         updated_at: object.uploaded?.toISOString?.() || null,
+        etag: object.etag,
         initialized: true
       });
     } catch {
