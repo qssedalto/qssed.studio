@@ -175,3 +175,30 @@ zero forecast.
 All mutations return 405. The endpoint has no session cookies or public
 caching, and does not expose private transactions. It must be deployed to
 the Cash Worker before the iOS forecast tab is distributed.
+
+
+## Native Cash plan editor (iOS 27)
+
+The Cash Worker adds `POST /api/native/cash/plans?kind=dated|expected|recurring`,
+`PUT /api/native/cash/plans?kind=<kind>&id=<plan id>` and
+`DELETE /api/native/cash/plans?kind=<kind>&id=<plan id>`.
+
+These are **authenticated, account-scoped mutations**. Every call passes the
+same `verifyNativeAppSession` bearer check as other native APIs. The verified
+user ID, not caller-controlled input, determines the R2 key. Mutations require
+`If-Match` equal to the exact current R2 `etag` (newly exposed in
+`GET /api/native/cash/planning`). No wildcard or blind overwrites are
+allowed. Conditional R2 writes return HTTP 409 on concurrent edits.
+Missing precondition returns 428.
+
+Payload allowlists cover date/month, type, amount, free-form category, note
+and enabled flag; recurring plans support name, day of month and reserve flag.
+Unrelated fields, oversized/invalid amounts and impossible dates are rejected.
+Existing website-defined fields (such as a plan's origin) and unrelated
+transactions/rules are preserved. On successful writes, iOS refreshes the plan
+list and invalidates encrypted forecast and ledger snapshots.
+
+For an account without an initialized Cash ledger, the server returns 409
+instead of creating a document with fabricated settings. Clients should first
+initialize their existing Cash account. The full website still offers its
+other advanced budgeting controls; this API does not mutate those fields.
