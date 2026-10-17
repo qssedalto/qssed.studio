@@ -151,3 +151,27 @@ read-only version summaries while refreshing behind the scenes.
 The native Work version endpoint and Cash planning endpoint must be deployed
 in the main Studio and Cash Workers, respectively, before shipping the
 corresponding iOS client.
+
+
+## Canonical Cash forecast / native iOS 27
+
+`GET https://cash.qsseda.com/api/native/cash/forecast` uses exactly the
+website's original `cash-web/model.js` via the Cash Worker. It requires a
+validated native Bearer session and reads only the verified account's Cash R2
+document. The response is a read-only projection with `as_of`,
+`period_start`, `period_end`, `actual_cash`, `disposable_cash`,
+`projected_end_balance`, `components`, `daily` and `monthly`.
+Full transactions and mutable account data are not returned.
+
+The returned end balance **includes** undated/reserved recurring expenses,
+weekly social transport budget and expected net cash flows from the canonical
+model. The daily path excludes non-dated reserves; iOS explicitly distinguishes
+that line from the final projected balance. All calculations remain server-side
+and share the exact website normalization / parity-tested implementation.
+For uninitialized accounts the response is `{ initialized:false,
+forecast:null, updated_at:null }`; the app must not display that as a fake
+zero forecast.
+
+All mutations return 405. The endpoint has no session cookies or public
+caching, and does not expose private transactions. It must be deployed to
+the Cash Worker before the iOS forecast tab is distributed.
