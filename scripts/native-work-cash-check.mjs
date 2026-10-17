@@ -86,6 +86,17 @@ try {
   assert(result.status === 200 && result.body.document.source === "Updated source", "Work edit should persist");
   assert((await request(workWorker,work+"?id="+id,"PUT",draft,bearer,{"If-Match":etag})).status === 409,
     "Stale document version must not overwrite other editors");
+result = await request(workWorker, work+"?id="+id+"&view=versions");
+  assert(result.status === 200 && result.body.document_id === id &&
+    result.body.versions.length >= 1,
+    "Native Work should return real version summaries for owned documents");
+  assert(result.body.versions.every(v => v.document_id === id &&
+    !("source" in v) && !("pdf" in v)),
+    "Native Work versions cannot expose source or binary result blobs");
+  assert((await request(workWorker,work+"?id=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee&view=versions")).status === 404,
+    "Work versions must not reveal another user's documents");
+  assert((await request(workWorker,work+"?id="+id+"&view=versions","DELETE")).status === 405,
+    "Version-history endpoint must remain read-only");
   assert((await request(workWorker,work+"?id=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")).status === 404,
     "Work cannot access arbitrary identifiers");
   assert((await request(workWorker,work,"POST",{...draft,engine:"unsafe"})).status === 400,
