@@ -1,0 +1,33 @@
+name: AERTEX native Cash planning contract
+
+on:
+  push:
+    branches:
+      - feat/aertex-native-cash-planning
+    paths:
+      - "cash-worker.js"
+      - "scripts/native-work-cash-check.mjs"
+      - "studio/native-mobile-auth.js"
+      - ".github/workflows/native-cash-planning-check.yml"
+  pull_request:
+    paths:
+      - "cash-worker.js"
+      - "scripts/native-work-cash-check.mjs"
+      - "studio/native-mobile-auth.js"
+      - ".github/workflows/native-cash-planning-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Parse Cash Worker
+        run: node --check cash-worker.js
+      - name: Verify authenticated native planning and existing write contracts
+        run: node scripts/native-work-cash-check.mjs
