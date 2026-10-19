@@ -147,6 +147,8 @@ jobs:
           node scripts/billing-subscription-check.mjs
           node --check scripts/wishes-check.mjs
           node scripts/wishes-check.mjs
+          node --check scripts/odd-signup-check.mjs
+          node scripts/odd-signup-check.mjs
           node --check scripts/locale-routing-check.mjs
           node scripts/locale-routing-check.mjs
           node --check scripts/root-render-check.mjs

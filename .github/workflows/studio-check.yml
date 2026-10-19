@@ -263,6 +263,9 @@ jobs:
 
       - name: Verify wish link builder and short routes
         run: node scripts/wishes-check.mjs
+      - name: Verify impossible sign-up parody
+        run: node scripts/odd-signup-check.mjs
+
 
       - name: Bundle Studio Worker
         run: npx --yes wrangler@4.136.3 deploy -c wrangler.jsonc --dry-run --outdir .wrangler-studio-check
