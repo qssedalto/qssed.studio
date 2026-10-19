@@ -6,6 +6,7 @@ export function oddSignUpPage(normalHref = "/sign-up") {
   const safeHref = /^\/(?:[a-z]{2}(?:-[a-z0-9]+)?\/)?sign-up$/.test(normalHref)
     ? normalHref
     : "/sign-up";
+  const policyHref = safeHref.replace(/\/sign-up$/, "/sign-up/odd/privacy");
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -27,7 +28,6 @@ export function oddSignUpPage(normalHref = "/sign-up") {
     .brand{display:flex;align-items:center;gap:12px;font-weight:850;font-size:19px;letter-spacing:.035em}
     .brand-mark{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:#232936;color:#fff;transform:rotate(-8deg);font-size:19px}
     .nav-right{display:flex;align-items:center;gap:13px}
-    .lab{border:1px solid #e9c4c9;color:#a44d5a;border-radius:100px;padding:7px 11px;background:#fff6f6;font-size:11px;font-weight:800;letter-spacing:.12em}
     .back{font-size:13px;color:#6c7487;font-weight:650}
     .hero{text-align:center;margin-bottom:29px}
     .eyebrow{color:#df6974;font-size:11px;font-weight:900;letter-spacing:.22em;margin:0 0 12px}
@@ -54,7 +54,7 @@ export function oddSignUpPage(normalHref = "/sign-up") {
     .message[hidden]{display:none}
     .input-tip{color:#949aaa;font-size:11px;line-height:1.6;margin:8px 0 0}
     .strength{height:5px;border-radius:10px;overflow:hidden;margin:9px 0 2px;background:#f0f1f5}
-    .strength-bar{height:100%;width:0;background:#e56c77;border-radius:10px;transition:width .25s}
+    .strength-bar{height:100%;width:0;background:#e56c77;border-radius:10px;transition:width .25s,background .25s}
     .password-field>input{padding-right:73px}
     .reveal{position:absolute;right:8px;top:7px;border:0;border-radius:8px;color:#667183;background:#f4f5f8;padding:9px 11px;font-size:12px;font-weight:700}
     .captcha{display:flex;gap:10px;align-items:center}
@@ -76,19 +76,16 @@ export function oddSignUpPage(normalHref = "/sign-up") {
     .captcha-code i:nth-child(5n+5){transform:rotate(-14deg) translateY(1px)}
     .captcha-refresh{position:relative;z-index:3;flex:none;margin-left:auto;border:0;background:#ffffffe0;backdrop-filter:blur(5px);border-radius:10px;padding:9px 10px;font-size:19px;color:#5e6c81;box-shadow:0 3px 12px #29345322}
     .captcha-refresh:hover{background:#fff;transform:rotate(15deg)}
-    .consent{margin:4px 0 24px;display:flex;align-items:center;gap:9px;color:#7e8797;font-size:12px;cursor:pointer;line-height:1.6}
+    .consent{margin:4px 0 24px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;color:#7e8797;font-size:12px;line-height:1.6}
+    .consent label{cursor:pointer}
+    .privacy-link{font-weight:700;color:#5368a4;text-decoration:underline;text-underline-offset:3px}
+    .privacy-link:hover{color:#b64f66}
     .consent input{accent-color:#e56b75;width:15px;height:15px;flex:none}
     .submit{border:0;border-radius:13px;padding:16px 19px;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;background:#272d3c;color:white;font-size:15px;font-weight:800;transition:transform .15s,background .15s}
     .submit:hover{background:#3d465d;transform:translateY(-1px)}
     .submit:active{transform:translateY(1px)}
-    .demo{border:1px solid #e0e5ed;border-radius:12px;background:#fff;padding:12px 18px;color:#677084;font-size:13px;font-weight:750}
-    .demo:hover{background:#f6f7f9}
-    .foot-actions{text-align:center;margin:16px 0 0}
     .result{margin:18px 0 0;padding:15px 17px;border:1px solid #f3c8c9;border-radius:12px;background:#fff4f5;color:#b84455;font-size:13px;line-height:1.7}
     .result[hidden]{display:none}
-    .real-link{text-decoration:underline;text-underline-offset:3px;font-weight:750;color:#555e73}
-    footer{text-align:center;color:#949bad;font-size:12px;line-height:1.9;margin:26px auto 0;max-width:480px}
-    .notice{display:flex;justify-content:center;gap:6px;align-items:center;color:#8f6571;font-weight:700;margin-top:10px}
     @media(max-width:550px){
       .layout{padding:17px 14px 50px}
       .nav{margin-bottom:37px}
@@ -108,12 +105,12 @@ export function oddSignUpPage(normalHref = "/sign-up") {
   <main class="layout">
     <nav class="nav" aria-label="页面导航">
       <a class="brand" href="${safeHref}"><span class="brand-mark" aria-hidden="true">↗</span><span>AERTEX <span style="color:#e16c79">ODD</span></span></a>
-      <div class="nav-right"><span class="lab">趣味模拟</span><a class="back" href="${safeHref}">正常注册 ↗</a></div>
+      <div class="nav-right"><a class="back" href="${safeHref}">正常注册 ↗</a></div>
     </nav>
     <header class="hero">
       <p class="eyebrow">THE IMPOSSIBLE SIGN-UP</p>
       <h1>注册一个新账号<span style="color:#e56b75">。</span></h1>
-      <p class="subhead">理论上只需要一分钟。<br>实际上，系统可能并不想让你注册。</p>
+      <p class="subhead">理论上只需要一分钟。</p>
     </header>
     <article class="card">
       <div class="card-top">
@@ -125,7 +122,7 @@ export function oddSignUpPage(normalHref = "/sign-up") {
         <div class="field">
           <label class="main-label" for="odd-email">邮箱 <span class="req">*</span></label>
           <div class="control"><input id="odd-email" type="text" inputmode="email" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="you@example.invalid"></div>
-          <div class="strength" aria-hidden="true"><div class="strength-bar" id="email-meter"></div></div>
+          <div class="strength" id="email-strength" role="progressbar" aria-label="邮箱强度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="strength-bar" id="email-meter"></div></div>
           <p class="message" id="email-message" aria-live="polite" hidden></p>
         </div>
         <div class="field">
@@ -155,17 +152,11 @@ export function oddSignUpPage(normalHref = "/sign-up") {
           <div class="captcha"><input id="odd-captcha" type="text" autocapitalize="characters" autocomplete="off" aria-label="图片验证码" placeholder="请输入右侧字符"><div class="captcha-art" aria-label="字符验证码"><span class="captcha-noise" aria-hidden="true"></span><span class="captcha-ghost g1" aria-hidden="true">8W0?</span><span class="captcha-ghost g2" aria-hidden="true">M7Q9</span><span class="captcha-code" id="captcha-code" aria-hidden="true"><i>7</i><i>M</i><i>?</i><i>Q</i></span><button class="captcha-refresh" type="button" id="captcha-refresh" aria-label="换一张验证码" title="换一张">↻</button></div></div>
           <p class="message" id="captcha-message" aria-live="polite" hidden></p>
         </div>
-        <label class="consent"><input id="odd-consent" type="checkbox"><span>我已阅读并同意：本网站可能不同意我。</span></label>
+        <div class="consent"><input id="odd-consent" type="checkbox"><label for="odd-consent">我已阅读并同意</label><a class="privacy-link" href="${policyHref}" target="_blank" rel="noopener noreferrer">隐私政策</a></div>
         <button class="submit" type="submit">立即注册 <span aria-hidden="true">→</span></button>
-        <div class="foot-actions"><button class="demo" type="button" id="demo">一键体验所有报错 ✨</button></div>
         <div class="result" role="status" aria-live="assertive" id="result" hidden></div>
       </form>
     </article>
-    <footer>
-      <div>当前系统处于<span style="font-weight:800;color:#667083">“非常努力地阻止注册”</span>模式。</div>
-      <div class="notice">趣味模拟 · 互动玩法</div>
-      <div>想认真注册？<a href="${safeHref}" class="real-link">前往正式注册入口</a></div>
-    </footer>
   </main>
   <script>
     (() => {
@@ -189,9 +180,23 @@ export function oddSignUpPage(normalHref = "/sign-up") {
         }
       };
       const renderEmail = () => {
-        const active = !!email.value.trim();
-        $("email-meter").style.width = active ? "54%" : "0";
-        note("email-message", active ? "邮箱强度：中等。为保证安全，请包含大写字母、小写字母、数字和特殊字符。（没错，是邮箱。）" : "");
+        const value = email.value;
+        const requirements = [
+          ["大写字母", /[A-Z]/.test(value)],
+          ["小写字母", /[a-z]/.test(value)],
+          ["数字", /[0-9]/.test(value)],
+          ["特殊字符", /[^A-Za-z0-9\\s]/.test(value)]
+        ];
+        const score = value.trim() ? requirements.filter(([, valid]) => valid).length * 25 : 0;
+        const missing = requirements.filter(([, valid]) => !valid).map(([name]) => name);
+        const grade = score === 100 ? "极强" : score >= 75 ? "较强" : score >= 50 ? "中等" : "较弱";
+        const meter = $("email-meter");
+        meter.style.width = score + "%";
+        meter.style.backgroundColor = score >= 100 ? "#2fad74" : score >= 75 ? "#e9aa54" : "#e56c77";
+        $("email-strength").setAttribute("aria-valuenow", String(score));
+        note("email-message", value.trim()
+          ? "邮箱强度：" + grade + "（" + score + "%）。" + (missing.length ? "还缺少：" + missing.join("、") + "。" : "大写字母、小写字母、数字、特殊字符均已包含。")
+          : "");
         refreshProgress();
       };
       const renderUsername = () => {
@@ -200,7 +205,7 @@ export function oddSignUpPage(normalHref = "/sign-up") {
       };
       const renderGender = () => {
         const selected = gender.options[gender.selectedIndex]?.text || "";
-        note("gender-message", gender.value ? "“" + selected + "”性别已被占用，请重新选择。剩余库存：0。" : "");
+        note("gender-message", gender.value ? "“" + selected + "”性别已被占用，请重新选择。" : "");
         refreshProgress();
       };
       const renderPassword = () => {
@@ -229,7 +234,11 @@ export function oddSignUpPage(normalHref = "/sign-up") {
         password.type = shown ? "text" : "password";
         $("reveal").textContent = shown ? "隐藏" : "显示";
       });
-      const codes = ["7M?Q", "404!", "0O0O", "????", "∞-1", "NOPE", "X7#K", "L?8Z", "S5$S", "1I|l", "6G9Q", "8B3E"];
+      const specialCodes = ["7M?Q", "404!", "0O0O", "????", "∞-1", "NOPE", "X7#K", "L?8Z", "S5$S", "1I|l", "6G9Q", "8B3E"];
+      // All 1024 generated suffixes are unique, so the collection holds 1036 different CAPTCHA challenges.
+      const codes = specialCodes.concat(Array.from({ length: 1024 }, (_, index) =>
+        "?!"[(index >> 5) % 2] + index.toString(36).toUpperCase().padStart(3, "0") + "~"
+      ));
       let codeIndex = 0;
       const renderCaptchaCode = (value) => {
         const target = $("captcha-code");
@@ -244,18 +253,6 @@ export function oddSignUpPage(normalHref = "/sign-up") {
         codeIndex = (codeIndex + 1) % codes.length;
         renderCaptchaCode(codes[codeIndex]);
         note("captcha-message", "新验证码已经生成。但系统无法证明你刚才看到的是哪一张。");
-      });
-      $("demo").addEventListener("click", () => {
-        email.value = "demo@example.invalid";
-        username.value = "12345678";
-        gender.value = "male";
-        password.value = "demo-only-123";
-        confirm.value = password.value;
-        captcha.value = "7M?Q";
-        $("odd-consent").checked = true;
-        [renderEmail, renderUsername, renderGender, renderPassword, renderConfirm, renderCaptcha].forEach((fn) => fn());
-        $("result").hidden = true;
-        email.scrollIntoView({behavior:"smooth",block:"center"});
       });
       $("odd-form").addEventListener("submit", (event) => {
         event.preventDefault();
