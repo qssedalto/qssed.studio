@@ -508,6 +508,39 @@ export function signUpPage(t, links, ipInfo) {
 .password-rules li::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--quiet)}
 .password-rules li.is-met::before{content:"";background:var(--success);box-shadow:0 0 0 3px color-mix(in srgb,var(--success) 13%,transparent)}
 #step-username,#step-name,#step-avatar,#step-birthday,#step-gender,#step-email,#step-password{transform-origin:50% 16%}
+/* Persistent VIP entry is independent of wizard steps; display on every sign-up stage. */
+.signup-vip-entry{
+  position:fixed;
+  z-index:2147481900;
+  right:calc(18px + env(safe-area-inset-right,0px));
+  bottom:calc(18px + env(safe-area-inset-bottom,0px));
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:48px;
+  width:auto;
+  max-width:calc(100vw - 32px);
+  padding:0 21px;
+  border:1px solid #d6ae50;
+  border-radius:999px;
+  background:linear-gradient(140deg,#fff5ce,#edce76);
+  box-shadow:0 8px 24px rgba(111,78,18,.2);
+  color:#62440e;
+  font-size:14px;
+  font-weight:800;
+  letter-spacing:.02em;
+  line-height:1.25;
+  text-decoration:none;
+  white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+}
+.signup-vip-entry:hover{background:linear-gradient(140deg,#fff9da,#f2d88e);color:#523804;box-shadow:0 10px 25px rgba(111,78,18,.26)}
+.signup-vip-entry:focus-visible{outline:3px solid #4b80de;outline-offset:4px}
+@media(max-width:560px){
+  body{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+  .signup-vip-entry{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));min-height:45px;padding:0 18px}
+}
+
 @media (max-width:560px){
   .password-rules{grid-template-columns:1fr}
   .name-count-grid,.avatar-actions{grid-template-columns:1fr}
@@ -516,6 +549,7 @@ export function signUpPage(t, links, ipInfo) {
 </head>
 <body>
   ${topControls(links, t)}
+  <a class="signup-vip-entry" href="${links.signUp}/odd" aria-label="${zh ? "VIP注册通道" : "VIP registration channel"}">${zh ? "VIP注册通道" : "VIP Registration"}</a>
   <div class="card">
     <h1 class="brand-title">${t.studioName}</h1>
 
