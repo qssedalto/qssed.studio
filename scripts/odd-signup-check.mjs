@@ -5,6 +5,9 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
+import { signUpPage } from "../studio/auth-pages.js";
+import { TEXT } from "../studio/config.js";
+import { buildLinks, getRouteInfo } from "../studio/routing.js";
 
 const source = await readFile(new URL("../studio/odd-signup.js", import.meta.url), "utf8");
 const privacySource = await readFile(new URL("../studio/odd-privacy.js", import.meta.url), "utf8");
@@ -13,6 +16,21 @@ const { oddSignUpPage } = await import("data:text/javascript," + encodeURICompon
 const { oddPrivacyPage, ODD_PRIVACY_CLAUSE_COUNT } = await import("data:text/javascript," + encodeURIComponent(privacySource));
 const markup = oddSignUpPage("/zh-cn/sign-up");
 const policyMarkup = oddPrivacyPage("/zh-cn/sign-up/odd");
+
+// A persistent navigational button lives outside the real signup wizard steps.
+const zhLinks = buildLinks("zh", "/sign-up", "zh-cn");
+const zhSignup = signUpPage(TEXT.zh, zhLinks, { country: "CN" });
+assert.equal(getRouteInfo(new Request("https://qsseda.com/zh-cn/sign-up/")).pathname, "/sign-up");
+assert.match(zhSignup, /class="signup-vip-entry" href="\/zh-cn\/sign-up\/odd"/);
+assert.equal((zhSignup.match(/class="signup-vip-entry"/g) || []).length, 1);
+assert.match(zhSignup, />VIP注册通道<\/a>/);
+assert.ok(zhSignup.indexOf('class="signup-vip-entry"') < zhSignup.indexOf('id="step-username"'), "VIP entry must stay outside stage toggling");
+assert.match(zhSignup, /\.signup-vip-entry\{[\s\S]*?position:fixed/);
+const enLinks = buildLinks("en", "/sign-up", "en-us");
+const enSignup = signUpPage(TEXT.en, enLinks, { country: "US" });
+assert.match(enSignup, /class="signup-vip-entry" href="\/en-us\/sign-up\/odd"/);
+assert.match(enSignup, />VIP Registration<\/a>/);
+
 
 assert.match(routeSource, /pathname === "\/sign-up\/odd"/);
 assert.match(routeSource, /pathname === "\/sign-up\/odd\/privacy"/);
