@@ -34,6 +34,7 @@ import { injectPublicSeo } from "./public-indexing.js";
 import { isQuestionRoute, questionAlternateLocales, questionDetailDescription, questionDetailPage, questionDetailPath, questionHubDescription, questionHubPage, questionIndexPath, questionRouteId } from "./public-question-pages.js";
 import { questionRouteLocale } from "./public-questions.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
+import { oddSignUpPage } from "./odd-signup.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
 import { watchSetupPage } from "./watch-setup-page.js";
@@ -283,6 +284,7 @@ export default {
         { indexable: canonicalHost }
       );
     }
+    if (pathname === "/sign-up/odd") return localizedPage(oddSignUpPage(links.signUp), locale);
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
     if (pathname === "/login") {
       const authUrl = new URL("/login", authOriginForRequest(request));
