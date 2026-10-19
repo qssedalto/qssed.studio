@@ -35,6 +35,7 @@ import { isQuestionRoute, questionAlternateLocales, questionDetailDescription, q
 import { questionRouteLocale } from "./public-questions.js";
 import { signUpPage, loginPage, notFoundPage } from "./auth-pages.js";
 import { oddSignUpPage } from "./odd-signup.js";
+import { oddPrivacyPage } from "./odd-privacy.js";
 import { birthdayPage } from "./ui-birthday.js";
 import { midAutumnPage } from "./ui-mid-autumn.js";
 import { watchSetupPage } from "./watch-setup-page.js";
@@ -284,6 +285,7 @@ export default {
         { indexable: canonicalHost }
       );
     }
+    if (pathname === "/sign-up/odd/privacy") return localizedPage(oddPrivacyPage(links.signUp.replace(/\/sign-up$/, "/sign-up/odd")), locale);
     if (pathname === "/sign-up/odd") return localizedPage(oddSignUpPage(links.signUp), locale);
     if (pathname === "/sign-up") return localizedPage(signUpPage(t, links, ipInfo), locale);
     if (pathname === "/login") {
