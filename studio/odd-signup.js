@@ -237,7 +237,7 @@ export function oddSignUpPage(normalHref = "/sign-up") {
       const specialCodes = ["7M?Q", "404!", "0O0O", "????", "∞-1", "NOPE", "X7#K", "L?8Z", "S5$S", "1I|l", "6G9Q", "8B3E"];
       // All 1024 generated suffixes are unique, so the collection holds 1036 different CAPTCHA challenges.
       const codes = specialCodes.concat(Array.from({ length: 1024 }, (_, index) =>
-        "?!"[(index >> 5) % 2] + index.toString(36).toUpperCase().padStart(3, "0") + "~"
+        "?!"[(index >> 5) % 2] + index.toString(36).toUpperCase().padStart(3, "0")
       ));
       let codeIndex = 0;
       const renderCaptchaCode = (value) => {
