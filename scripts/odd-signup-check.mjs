@@ -36,6 +36,11 @@ assert.match(routeSource, /pathname === "\/sign-up\/odd"/);
 assert.match(routeSource, /pathname === "\/sign-up\/odd\/privacy"/);
 assert.match(routeSource, /oddPrivacyPage\(links\.signUp\.replace/);
 assert.match(markup, /<title>离谱注册中心 · AERTEX ODD<\/title>/);
+assert.doesNotMatch(markup, /正常注册 ↗|THE IMPOSSIBLE SIGN-UP|不太合理的/);
+assert.doesNotMatch(markup, /class="nav-right"|class="eyebrow"/);
+assert.match(markup, /请完成以下 6 项校验/);
+assert.match(markup, /<h1>注册一个新账号/);
+
 assert.match(markup, /href="\/zh-cn\/sign-up\/odd\/privacy"/);
 assert.match(markup, /target="_blank" rel="noopener noreferrer">隐私政策<\/a>/);
 assert.match(markup, /id="email-strength" role="progressbar"/);
