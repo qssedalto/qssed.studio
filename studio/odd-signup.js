@@ -27,10 +27,7 @@ export function oddSignUpPage(normalHref = "/sign-up") {
     .nav{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:47px}
     .brand{display:flex;align-items:center;gap:12px;font-weight:850;font-size:19px;letter-spacing:.035em}
     .brand-mark{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:#232936;color:#fff;transform:rotate(-8deg);font-size:19px}
-    .nav-right{display:flex;align-items:center;gap:13px}
-    .back{font-size:13px;color:#6c7487;font-weight:650}
     .hero{text-align:center;margin-bottom:29px}
-    .eyebrow{color:#df6974;font-size:11px;font-weight:900;letter-spacing:.22em;margin:0 0 12px}
     h1{font-size:clamp(30px,6vw,43px);letter-spacing:-.05em;line-height:1.2;margin:0;color:#222635}
     .subhead{color:#777f90;margin:14px auto 0;line-height:1.8;font-size:14px}
     .card{background:#fff;border:1px solid #e8eaf0;border-radius:24px;padding:32px 38px 36px;box-shadow:0 15px 50px rgba(42,50,80,.06),0 2px 8px rgba(42,50,80,.03)}
@@ -89,7 +86,6 @@ export function oddSignUpPage(normalHref = "/sign-up") {
     @media(max-width:550px){
       .layout{padding:17px 14px 50px}
       .nav{margin-bottom:37px}
-      .back{font-size:12px}
       .card{padding:24px 20px 28px;border-radius:19px}
       .card-top{margin-bottom:21px}
       .tracks{margin-bottom:25px}
@@ -105,16 +101,14 @@ export function oddSignUpPage(normalHref = "/sign-up") {
   <main class="layout">
     <nav class="nav" aria-label="页面导航">
       <a class="brand" href="${safeHref}"><span class="brand-mark" aria-hidden="true">↗</span><span>AERTEX <span style="color:#e16c79">ODD</span></span></a>
-      <div class="nav-right"><a class="back" href="${safeHref}">正常注册 ↗</a></div>
     </nav>
     <header class="hero">
-      <p class="eyebrow">THE IMPOSSIBLE SIGN-UP</p>
       <h1>注册一个新账号<span style="color:#e56b75">。</span></h1>
       <p class="subhead">理论上只需要一分钟。</p>
     </header>
     <article class="card">
       <div class="card-top">
-        <div><h2>创建账户</h2><p class="quiet">请完成以下 6 项不太合理的校验</p></div>
+        <div><h2>创建账户</h2><p class="quiet">请完成以下 6 项校验</p></div>
         <span class="percent" id="percent" aria-live="polite">0%</span>
       </div>
       <div class="tracks" aria-hidden="true"><i class="track" id="progress-segment-0"></i><i class="track" id="progress-segment-1"></i><i class="track" id="progress-segment-2"></i><i class="track" id="progress-segment-3"></i></div>
