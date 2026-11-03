@@ -13,6 +13,7 @@
  */
 
 import studio from "./studio/entry.js";
+import { handleProledWallpaperRoute } from "./studio/public-wallpapers.js";
 import { handleKnowledgeSearch } from "./studio/knowledge-api.js";
 import { handleGlobalSearch } from "./studio/global-search-api.js";
 import { handleProjects } from "./studio/projects-api.js";
@@ -85,6 +86,8 @@ async function routeStudioRequest(request, env, ctx) {
   let url = new URL(request.url);
   let pathname = url.pathname;
   const workHost = isWorkSubdomainRequest(request);
+
+  if (!workHost && isMainHost(url.hostname) && (pathname === "/wallpapers/proled-xdr" || pathname.startsWith("/wallpapers/proled-xdr/"))) return handleProledWallpaperRoute(request, env);
 
   if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
   if (LOGO_PATHS.has(pathname)) return logoResponse(request);
