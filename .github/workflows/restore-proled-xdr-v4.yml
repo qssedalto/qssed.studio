@@ -1,0 +1,73 @@
+name: Restore PROLED XDR V4 wallpaper binaries
+
+on:
+  push:
+    branches:
+      - assets/proled-xdr-v4-20261103
+    paths:
+      - ".proled-staging/v4/**"
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out staged source
+        uses: actions/checkout@v4
+
+      - name: Reassemble and verify original wallpaper archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          export OUT=assets/wallpapers/proled-xdr
+          mkdir -p "$OUT"
+          cat .proled-staging/v4/part-* > "$OUT/PROLED_XDR_REPAIRED_V4_3456x2234.zip"
+          echo "e86023ab6989ef16ac598c74ebd04aa467840aa99f4ebc5a47d1778da9b374ba  $OUT/PROLED_XDR_REPAIRED_V4_3456x2234.zip" | sha256sum -c -
+          python3 - <<'PY'
+          import zipfile, pathlib, hashlib
+          out=pathlib.Path("assets/wallpapers/proled-xdr")
+          archive=out/"PROLED_XDR_REPAIRED_V4_3456x2234.zip"
+          expected={
+              "PROLED_XDR_Dark_Original_3456x2234.png":"bffb416bdf505e86c726a0b9f44af7b7d43613c11b78cc64883e8890fcafc6a0",
+              "PROLED_XDR_Light_Repaired_3456x2234.png":"67a80506a1c23d88c35728a5cea7c07bad8c32ce9f7fddc0e36fd30e97bad8a3"
+          }
+          with zipfile.ZipFile(archive) as z:
+              assert z.testzip() is None
+              names=z.namelist()
+              assert all("/" not in n and "\\" not in n and n not in (".","..") for n in names), names
+              assert all(n in names for n in expected), names
+              z.extractall(out)
+          for file,sha in expected.items():
+              actual=hashlib.sha256((out/file).read_bytes()).hexdigest()
+              assert actual==sha, f"Corrupted {file}: {actual}"
+              print(file, (out/file).stat().st_size, sha)
+          PY
+
+      - name: Commit verified binary assets to GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/wallpapers/proled-xdr
+          git rm -r .proled-staging/v4
+          git commit -m "assets(proled): restore verified full-resolution V4 PNG and ZIP binaries"
+          git push origin HEAD:assets/proled-xdr-v4-20261103
+
+      - name: Publish downloadable files into existing Cloudflare R2 bucket
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          bucket=qsseda-studio-storage
+          prefix=public/wallpapers/proled-xdr/v4
+          folder=assets/wallpapers/proled-xdr
+          npx --yes wrangler@4.136.3 r2 object put "$bucket/$prefix/PROLED_XDR_Light_Repaired_3456x2234.png" --file "$folder/PROLED_XDR_Light_Repaired_3456x2234.png" --content-type image/png --remote --force
+          npx --yes wrangler@4.136.3 r2 object put "$bucket/$prefix/PROLED_XDR_Dark_Original_3456x2234.png" --file "$folder/PROLED_XDR_Dark_Original_3456x2234.png" --content-type image/png --remote --force
+          npx --yes wrangler@4.136.3 r2 object put "$bucket/$prefix/PROLED_XDR_REPAIRED_V4_3456x2234.zip" --file "$folder/PROLED_XDR_REPAIRED_V4_3456x2234.zip" --content-type application/zip --remote --force
