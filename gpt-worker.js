@@ -207,6 +207,7 @@ function renderShell(locale, bootstrap = {}) {
   return renderGptApp(locale, bootstrap);
 }
 
+// 页面启动时通过内部请求加载账号配置和对话列表，指定会话时再追加其详情；返回数据仍须遵循当前登录态权限。
 async function loadGptBootstrap(request, env, gate, conversationId = "") {
   const tasks = [
     handleAiApi(internalRequest(request, "/api/ai/config"), env, gate),
