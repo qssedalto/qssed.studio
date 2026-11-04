@@ -26,6 +26,7 @@ export function parseServerUserAgent(userAgent) {
   return { user_agent: ua, browser, os, device_type };
 }
 
+// 用最近一段时间的服务器登录记录辅助识别暴力尝试；缺少数据库服务或 IP 时按当前代码回退，不应声称它是唯一限流层。
 export async function recentFailedLoginCount(env, ipAddress, logContext) {
   const secret = getSupabaseSecret(env);
   if (!secret || !ipAddress || ipAddress === "Unknown") return 0;
@@ -197,6 +198,7 @@ export function registrationInternationalNameValid(value) {
   return text.length > 0 && text.length <= 80;
 }
 
+// 注册依赖服务端 Supabase secret 与多项输入校验，缺少必需密钥时明确返回服务不可用，不能直接继续写数据库。
 export async function handleRegistrationSignup(request, env, ipInfo) {
   const requestId = getWorkerRequestId(request);
   const secret = getSupabaseSecret(env);
