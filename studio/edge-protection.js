@@ -42,8 +42,8 @@ export async function protectEdgeRequest(request, env) {
   if (declaredLength !== null && declaredLength > bodyLimit) return compactError(request, 413, "Request body is too large.");
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   if (!(await consume(env?.EDGE_GLOBAL_RATE_LIMITER, `edge:global:${ip}`))) return rateLimited(request);
-  const claimedSession = hasStudioSessionCookie(request);
-  if (!claimedSession && !(await consume(env?.EDGE_ANON_RATE_LIMITER, `edge:anon:${ip}`))) return rateLimited(request);
+  // Unverified cookies are attacker-controlled: apply per-IP request budgeting to all visitors.
+  if (!(await consume(env?.EDGE_ANON_RATE_LIMITER, `edge:anon:${ip}`))) return rateLimited(request);
   const bot = botSignals(request);
   if (!bot.verified && bot.score >= 3 && !(await consume(env?.EDGE_SUSPECT_RATE_LIMITER, `edge:suspect:${ip}`))) return rateLimited(request);
   if (isExpensiveRequest(pathname, request.method) && !(await consume(env?.EDGE_EXPENSIVE_RATE_LIMITER, `edge:expensive:${pathname}:ip:${ip}`))) return rateLimited(request);
