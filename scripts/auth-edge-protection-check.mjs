@@ -3,6 +3,7 @@ import {
   applyAuthEdgeHeaders,
   authBotSignals
 } from "../auth-edge-protection.js";
+import { rateLimitKey as authRateLimitKey } from "../auth-entry.js";
 
 const allow = { limit: async () => ({ success: true }) };
 const deny = { limit: async () => ({ success: false }) };
@@ -119,6 +120,17 @@ const protectedHtml = applyAuthEdgeHeaders(
 assert(protectedHtml.headers.get("x-robots-tag")?.includes("noindex"), "Auth HTML must opt out of indexing");
 assert(protectedHtml.headers.get("referrer-policy") === "no-referrer", "Auth pages must use no-referrer");
 assert(protectedHtml.headers.get("x-content-type-options") === "nosniff", "Auth responses must use nosniff");
+
+// OAuth mutations must never obtain new throttle buckets by rotating unverified credentials.
+const stableAuthKeys = [
+  { Authorization: "Bearer forged-first", Cookie: "session=first" },
+  { Authorization: "Bearer forged-second", Cookie: "session=second" },
+  { Cookie: "__Host-qsseda-auth-access=forged-third" },
+  {}
+].map(headers => authRateLimitKey(browser("/oauth/token", headers), "oauth:/oauth/token"));
+assert(new Set(stableAuthKeys).size === 1, "Forged OAuth tokens or cookies must not rotate Auth throttle buckets");
+assert(stableAuthKeys[0] === "oauth:/oauth/token:ip:203.0.113.88", "Auth OAuth throttle must use stable Cloudflare source IP");
+assert(authRateLimitKey(browser("/api/login"), "auth-login") === "auth-login:ip:203.0.113.88", "Auth login throttle must remain IP scoped");
 
 console.log("Auth edge anti-crawl and surge protection checks passed.");
 
