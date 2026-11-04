@@ -10,6 +10,9 @@ on:
       - "supabase/migrations/**"
       - "local-bridge/**"
 
+      - "ReadMe.md"
+      - "docs/BEGINNER_CODE_GUIDE_CN.md"
+      - "scripts/beginner-guide-check.mjs"
       - "scripts/security-markup-check.mjs"
       - "scripts/security-architecture-check.mjs"
       - "scripts/edge-protection-check.mjs"
@@ -68,6 +71,9 @@ on:
       - "supabase/migrations/**"
       - "local-bridge/**"
 
+      - "ReadMe.md"
+      - "docs/BEGINNER_CODE_GUIDE_CN.md"
+      - "scripts/beginner-guide-check.mjs"
       - "scripts/security-markup-check.mjs"
       - "scripts/security-architecture-check.mjs"
       - "scripts/edge-protection-check.mjs"
@@ -140,6 +146,7 @@ jobs:
           node --check local-bridge/codex-server.mjs
 
           node --check scripts/security-markup-check.mjs
+          node --check scripts/beginner-guide-check.mjs
           node --check scripts/security-architecture-check.mjs
           node --check scripts/edge-protection-check.mjs
           node --check scripts/wallpaper-download-check.mjs
@@ -182,6 +189,9 @@ jobs:
           node --check watch-web/aw-sync.mjs
           node --check AW-Sync/native/aw-sync.mjs
           node --check scripts/watch-cloud-check.mjs
+
+      - name: Verify Chinese beginner guide and source references
+        run: node scripts/beginner-guide-check.mjs
 
       - name: Verify browser security markup
         run: node scripts/security-markup-check.mjs
