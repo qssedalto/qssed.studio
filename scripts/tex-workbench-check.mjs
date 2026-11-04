@@ -41,6 +41,13 @@ for (const zh of [true, false]) {
     ".tex-runs-panel .tex-runs-head"
   ]) assert(workPageMarkup.includes(selector), "Work TeX home navigation is missing panel target: " + selector);
   assert(workPageMarkup.includes("https://qsseda.com/") && workPageMarkup.includes("AERTEX"), "Every Work TeX pane must receive an AERTEX Home destination");
+  // The desktop document rail shrinks to 44px, so its Home action must hide
+  // rather than compete with the only expand/collapse button in that rail.
+  const collapsedHomeSelector = ".tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link{";
+  assert(workMarkup.includes(collapsedHomeSelector + "\n          display:none!important;"), "Collapsed Work TeX document rail must hide its Home action.");
+  assert(!workMarkup.includes(collapsedHomeSelector + "\n          order:2!important;"), "Collapsed Home link must not retain its legacy second-button styling.");
+  assert(workPageMarkup.includes(".tex-work-app .tex-panel-home-link{"), "Expanded and mobile TeX panels must retain the normal Home link styles.");
+
   assert(workPageMarkup.includes(".tex-panel-home-link>svg{width:14px;height:14px"), "Work TeX must size only the direct Home icon, not every nested brand SVG.");
   assert(workPageMarkup.includes(".tex-panel-home-link .aertex-wordmark-token{"), "Work TeX must explicitly size the AERTEX wordmark.");
   assert(workPageMarkup.includes("width:70px!important") && workPageMarkup.includes("height:13.5px!important"), "Work TeX AERTEX wordmark must remain visibly legible.");
