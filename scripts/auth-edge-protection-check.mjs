@@ -3,7 +3,7 @@ import {
   applyAuthEdgeHeaders,
   authBotSignals
 } from "../auth-edge-protection.js";
-import { rateLimitKey as authRateLimitKey } from "../auth-entry.js";
+import authWorker, { rateLimitKey as authRateLimitKey } from "../auth-entry.js";
 
 const allow = { limit: async () => ({ success: true }) };
 const deny = { limit: async () => ({ success: false }) };
@@ -131,6 +131,23 @@ const stableAuthKeys = [
 assert(new Set(stableAuthKeys).size === 1, "Forged OAuth tokens or cookies must not rotate Auth throttle buckets");
 assert(stableAuthKeys[0] === "oauth:/oauth/token:ip:203.0.113.88", "Auth OAuth throttle must use stable Cloudflare source IP");
 assert(authRateLimitKey(browser("/api/login"), "auth-login") === "auth-login:ip:203.0.113.88", "Auth login throttle must remain IP scoped");
+
+// Login and OAuth mutation routes cannot silently bypass quotas when a
+// rate limiter binding is missing, throws, or returns malformed metadata.
+const authMutationRequest = pathname => new Request("https://auth.qsseda.com" + pathname, {
+  method: "POST",
+  headers: { "CF-Connecting-IP": "203.0.113.88" }
+});
+const authLimiterOutage = { limit: async () => { throw new Error("simulated auth limiter outage"); } };
+for (const [pathname, key] of [["/api/login", "AUTH_LOGIN_RATE_LIMITER"], ["/oauth/token", "AUTH_OAUTH_RATE_LIMITER"]]) {
+  for (const limiter of [undefined, authLimiterOutage, { limit: async () => ({}) }]) {
+    const response = await authWorker.fetch(authMutationRequest(pathname), env({ [key]: limiter }));
+    assert(response.status === 503, pathname + " must refuse mutations if throttling is unavailable");
+    assert(response.headers.get("retry-after") === "30", "Auth limiter outage must advertise retry timing");
+  }
+  const denied = await authWorker.fetch(authMutationRequest(pathname), env({ [key]: deny }));
+  assert(denied.status === 429, pathname + " must keep HTTP 429 for exhausted quotas");
+}
 
 console.log("Auth edge anti-crawl and surge protection checks passed.");
 
