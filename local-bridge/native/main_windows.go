@@ -43,8 +43,6 @@ var compileSlots = make(chan struct{}, 2)
 var allowedOrigins = map[string]bool{
 	"https://qsseda.com":        true,
 	"https://www.qsseda.com":    true,
-	"https://qsseda.online":     true,
-	"https://www.qsseda.online": true,
 	"https://qsseda.studio":     true,
 	"https://www.qsseda.studio": true,
 }
