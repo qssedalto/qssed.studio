@@ -38,7 +38,7 @@
   }
   function mainSiteOrigin() {
     const host = location.hostname.toLowerCase();
-    for (const root of ['qsseda.com', 'qsseda.online', 'qsseda.studio']) {
+    for (const root of ['qsseda.com', 'qsseda.studio']) {
       if (host === root || host.endsWith('.' + root)) return 'https://' + root;
     }
     return '/';
