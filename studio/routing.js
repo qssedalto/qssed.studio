@@ -23,6 +23,7 @@ function securityHeaders(contentType) {
 }
 
 // allowLoopback 只给确实需要本机桥接的页面；普通页面（包括 Watch setup/handoff）默认禁止本地网络连接。
+// 普通页面默认禁止访问本机桥接端点；只有显式 allowLoopback 的 Work 页面才向 CSP/Permissions-Policy 加入本机连接。
 function htmlSecurityHeaders(options = {}) {
   const headers = securityHeaders("text/html;charset=UTF-8");
   const allowLoopback = options?.allowLoopback === true;
