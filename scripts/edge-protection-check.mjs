@@ -6,7 +6,7 @@ import {
   requestBodyLimit
 } from "../studio/edge-protection.js";
 import { publicSitemapUrls } from "../studio/public-indexing.js";
-import { rateLimitKey } from "../worker.js";
+import studioWorker, { rateLimitKey } from "../worker.js";
 import { QUESTION_INDEX_LOCALES, publishedQuestions } from "../studio/public-questions.js";
 
 const allow = { limit: async () => ({ success: true }) };
@@ -215,6 +215,22 @@ const protectedJson = applyEdgeProtectionHeaders(
   new Response("{}", { headers: { "content-type": "application/json;charset=UTF-8" } })
 );
 assert(protectedJson.headers.get("x-robots-tag")?.includes("noarchive"), "JSON responses must opt out of indexing and archives");
+
+// Auth-sensitive Studio routes must fail closed if their dedicated limiter
+// is missing, errors, or returns an invalid shape. Ordinary API read fallback
+// is intentionally unchanged for availability.
+const studioAuthRequest = () => new Request("https://qsseda.com/api/auth/login", {
+  method: "POST",
+  headers: { "CF-Connecting-IP": "203.0.113.77" }
+});
+const limiterOutage = { limit: async () => { throw new Error("simulated limiter outage"); } };
+for (const limiter of [undefined, limiterOutage, { limit: async () => ({}) }]) {
+  const limitedResponse = await studioWorker.fetch(studioAuthRequest(), env({ AUTH_RATE_LIMITER: limiter }));
+  assert(limitedResponse.status === 503, "Studio auth mutations must fail closed if throttling cannot be established");
+  assert(limitedResponse.headers.get("retry-after") === "30", "Studio auth limiter outage must advertise retry timing");
+}
+const quotaExceeded = await studioWorker.fetch(studioAuthRequest(), env({ AUTH_RATE_LIMITER: deny }));
+assert(quotaExceeded.status === 429, "Studio auth quota exhaustion must remain HTTP 429");
 
 console.log("Edge anti-crawl and surge protection checks passed.");
 
