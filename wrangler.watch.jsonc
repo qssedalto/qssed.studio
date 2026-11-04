@@ -1,8 +1,6 @@
+// AERTEX Watch: aw.* UI and awd.*/aw.data.* device endpoints are isolated by hostname in watch-worker.js.
+// Legacy .studio serves data aliases only; the supported live roots are .com and .studio.
 {
-  // 一个 Worker 同时承载两种角色：
-  // - aw.*：登录后的 Watch UI 与浏览器读 API；
-  // - awd.* / aw.data.*：设备上传数据面。
-  // watch-worker.js 会再次按 hostname 分流，不能只依赖路由配置做权限隔离。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "qsseda-watch",
   "main": "watch-worker.js",
@@ -12,38 +10,58 @@
   "minify": true,
   "keep_names": false,
   "upload_source_maps": false,
-  // 静态仪表盘来自 watch-web，但 run_worker_first=true 确保鉴权、appearance.js、
-  // 安装器下载和 API 路由先经过 Worker，不能绕过会话门。
   "assets": {
     "directory": "./watch-web",
     "binding": "ASSETS",
     "run_worker_first": true
   },
-  // 当前复用私有 qsseda-studio-storage；Watch 自己用 watch/v1/... 前缀做逻辑隔离。
   "r2_buckets": [
     {
       "binding": "STORAGE",
       "bucket_name": "qsseda-studio-storage"
     }
   ],
-  // qsseda.studio 不再提供 aw.* UI，只保留数据域兼容路由；正式 UI 是 .com/.online 的 aw.*。
   "routes": [
-    { "pattern": "aw.qsseda.com/*", "zone_name": "qsseda.com" },
-    { "pattern": "aw.qsseda.com", "custom_domain": true },
-    { "pattern": "awd.qsseda.com/*", "zone_name": "qsseda.com" },
-    { "pattern": "awd.qsseda.com", "custom_domain": true },
-    { "pattern": "aw.data.qsseda.com/*", "zone_name": "qsseda.com" },
-    { "pattern": "aw.data.qsseda.com", "custom_domain": true },
-    { "pattern": "aw.qsseda.online/*", "zone_name": "qsseda.online" },
-    { "pattern": "aw.qsseda.online", "custom_domain": true },
-    { "pattern": "awd.qsseda.online/*", "zone_name": "qsseda.online" },
-    { "pattern": "awd.qsseda.online", "custom_domain": true },
-    { "pattern": "aw.data.qsseda.online/*", "zone_name": "qsseda.online" },
-    { "pattern": "aw.data.qsseda.online", "custom_domain": true },
-    { "pattern": "awd.qsseda.studio/*", "zone_name": "qsseda.studio" },
-    { "pattern": "awd.qsseda.studio", "custom_domain": true },
-    { "pattern": "aw.data.qsseda.studio/*", "zone_name": "qsseda.studio" },
-    { "pattern": "aw.data.qsseda.studio", "custom_domain": true }
+    {
+      "pattern": "aw.qsseda.com/*",
+      "zone_name": "qsseda.com"
+    },
+    {
+      "pattern": "aw.qsseda.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "awd.qsseda.com/*",
+      "zone_name": "qsseda.com"
+    },
+    {
+      "pattern": "awd.qsseda.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "aw.data.qsseda.com/*",
+      "zone_name": "qsseda.com"
+    },
+    {
+      "pattern": "aw.data.qsseda.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "awd.qsseda.studio/*",
+      "zone_name": "qsseda.studio"
+    },
+    {
+      "pattern": "awd.qsseda.studio",
+      "custom_domain": true
+    },
+    {
+      "pattern": "aw.data.qsseda.studio/*",
+      "zone_name": "qsseda.studio"
+    },
+    {
+      "pattern": "aw.data.qsseda.studio",
+      "custom_domain": true
+    }
   ],
   "observability": {
     "logs": {
