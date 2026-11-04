@@ -465,36 +465,27 @@ jobs:
           }
 
           verify_health "https://gpt.qsseda.com/health" "qsseda-gpt" "https://gpt.qsseda.com"
-          verify_health "https://gpt.qsseda.online/health" "qsseda-gpt" "https://gpt.qsseda.online"
           verify_health "https://gpt.qsseda.studio/health" "qsseda-gpt" "https://gpt.qsseda.studio"
 
           verify_health "https://cash.qsseda.com/health" "qsseda-cash" "https://cash.qsseda.com"
-          verify_health "https://cash.qsseda.online/health" "qsseda-cash" "https://cash.qsseda.online"
           verify_health "https://cash.qsseda.studio/health" "qsseda-cash" "https://cash.qsseda.studio"
 
           verify_health "https://aw.qsseda.com/health" "qsseda-watch" "https://aw.qsseda.com"
-          verify_health "https://aw.qsseda.online/health" "qsseda-watch" "https://aw.qsseda.online"
           verify_health "https://awd.qsseda.com/health" "qsseda-watch" "https://aw.qsseda.com"
           verify_health "https://aw.data.qsseda.com/health" "qsseda-watch" "https://aw.qsseda.com"
-          verify_health "https://awd.qsseda.online/health" "qsseda-watch" "https://aw.qsseda.online"
-          verify_health "https://aw.data.qsseda.online/health" "qsseda-watch" "https://aw.qsseda.online"
           verify_health "https://awd.qsseda.studio/health" "qsseda-watch" "https://aw.qsseda.com"
           verify_health "https://aw.data.qsseda.studio/health" "qsseda-watch" "https://aw.qsseda.com"
 
           verify_health "https://auth.qsseda.com/health" "qsseda-auth"
-          verify_health "https://auth.qsseda.online/health" "qsseda-auth"
           verify_health "https://auth.qsseda.studio/health" "qsseda-auth"
 
           verify_health "https://admin.qsseda.com/health" "qsseda-admin" "https://admin.qsseda.com"
-          verify_health "https://admin.qsseda.online/health" "qsseda-admin" "https://admin.qsseda.online"
           verify_health "https://admin.qsseda.studio/health" "qsseda-admin" "https://admin.qsseda.studio"
 
           verify_main "https://qsseda.com/robots.txt" "canonical"
-          verify_main "https://qsseda.online/robots.txt" "alias"
           verify_main "https://qsseda.studio/robots.txt" "alias"
 
           verify_work "https://work.qsseda.com/zh-cn/tex" "https://qsseda.com/work/handoff?next=%2Fzh-cn%2Ftex"
-          verify_work "https://work.qsseda.online/zh-cn/tex" "https://qsseda.online/work/handoff?next=%2Fzh-cn%2Ftex"
           verify_work "https://work.qsseda.studio/zh-cn/tex" "https://qsseda.studio/work/handoff?next=%2Fzh-cn%2Ftex"
 
           verify_brand_asset() {
