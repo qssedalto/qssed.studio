@@ -14,6 +14,7 @@ on:
       - scripts/security-markup-check.mjs
       - scripts/security-architecture-check.mjs
       - scripts/edge-protection-check.mjs
+      - scripts/wallpaper-download-check.mjs
       - scripts/global-search-check.mjs
       - scripts/projects-check.mjs
       - scripts/tasks-check.mjs
@@ -103,6 +104,8 @@ jobs:
           node scripts/security-architecture-check.mjs
           node --check scripts/edge-protection-check.mjs
           node scripts/edge-protection-check.mjs
+          node --check scripts/wallpaper-download-check.mjs
+          node scripts/wallpaper-download-check.mjs
           node --check scripts/global-search-check.mjs
           node scripts/global-search-check.mjs
           node --check scripts/projects-check.mjs
