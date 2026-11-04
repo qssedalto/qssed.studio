@@ -8,6 +8,7 @@ const DOCUMENT_ROOT = "_system/tex-documents/";
 const ROLES = new Set(["viewer", "editor"]);
 const MAX_BODY_BYTES = 16 * 1024;
 
+// 协作成员 API 先验证 Studio 会话与活跃账号，写请求额外进行同源校验；随后再按用户与文档权限分派操作。
 export async function handleTexCollaborationApi(request, env) {
   const session = await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
@@ -228,6 +229,7 @@ async function collaborationSnapshot(accessToken, ownerId, documentId, options =
   });
 }
 
+// 用当前用户 ID 与文档 ID 查询协作关系，再校验 owner ID 和角色；查询为空不能自动视作拥有文档。
 async function sharedDocumentMembership(accessToken, userId, documentId) {
   const response = await supabaseRequest(
     accessToken,
