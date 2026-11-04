@@ -4,7 +4,7 @@ import { normalizeSupportedLocale, SUPPORTED_LOCALES } from "./locale.js";
 //
 // 当前 AERTEX Watch 仪表盘没有直接渲染这套菜单；Watch 的身份切换主要走独立 handoff/session-gate。
 // 这里仍必须保持域族规则一致，因为 Auth/主站页面会和 Watch 共用同一账号标记。
-const DOMAIN_ROOTS = ["qsseda.com","qsseda.online","qsseda.studio"];
+const DOMAIN_ROOTS = ["qsseda.com","qsseda.studio"];
 
 export function accountMenuStyles() {
   return `
