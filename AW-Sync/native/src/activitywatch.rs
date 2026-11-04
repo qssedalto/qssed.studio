@@ -233,6 +233,7 @@ pub fn discover_with_probe(
 }
 
 /// 发现算法的可测试核心。测试时可以注入假的 probe，不需要真的扫描本机端口。
+/// 优先复查已知端口及默认端口，再进行候选范围扫描；探测的是 ActivityWatch 服务身份，而不只是 TCP 端口可连接。
 fn discover_with_probe_progress(
     last_port: Option<u16>,
     cancelled: Arc<AtomicBool>,
@@ -282,6 +283,7 @@ fn discover_with_probe_progress(
 }
 
 /// 对剩余端口做有限并发扫描。任一 worker 找到目标后用 AtomicBool 通知其他 worker 尽快停止。
+/// 扫描按给定并发上限分配探测并响应取消标记，避免本地发现过程阻塞界面或无限制创建请求。
 fn scan_ports_with_probe(
     ports: &[u16],
     concurrency: usize,
