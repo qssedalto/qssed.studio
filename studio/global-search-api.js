@@ -14,6 +14,7 @@ const MAX_RESULTS = 80;
 const MAX_NOTES = 240;
 const MAX_COMMUNITY_SCAN = 5000;
 
+// 全局搜索先校验 POST 与当前用户会话，再按来源聚合结果；每类私有资料都必须继续通过自己的用户授权边界。
 export async function handleGlobalSearch(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
@@ -119,6 +120,7 @@ async function searchKnowledge(query, accessToken, limit) {
   }));
 }
 
+// 个人笔记搜索不得扫描其他账号的对象前缀；搜索得分与摘要属于展示层，不能代替存储授权。
 async function searchNotes(env, userId, query) {
   const results = [];
   let cursor;

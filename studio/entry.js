@@ -42,6 +42,7 @@ import { watchSetupPage } from "./watch-setup-page.js";
 import { adminOriginForRequest, authOriginForRequest, awOriginForRequest, cashOriginForRequest, gptOriginForRequest, mainOriginForRequest, workOriginForRequest } from "./domain-family.js";
 import { localeFromPath, normalizeSupportedLocale } from "./locale.js";
 
+// 跨页面流程只接受本站相对路径作为返回目标；外部 URL 和协议相对地址不能被当作可信的登录落点。
 function safeLocalNext(value) {
   const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "";

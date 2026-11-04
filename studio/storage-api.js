@@ -15,6 +15,7 @@ export function isStorageObjectId(value) {
   return typeof value === "string" && UUID_PATTERN.test(value);
 }
 
+// R2 对象键由经服务端验证的 ownerId 和对象 ID 组成，避免依赖浏览器提交的完整物理路径做授权。
 export function storageKey(ownerId, objectId) {
   return `users/${ownerId}/${objectId}`;
 }
@@ -92,6 +93,7 @@ export function encodeRfc8187Filename(value) {
   return encodeURIComponent(value).replace(/['()*]/g, character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`);
 }
 
+// 先把 Bearer 凭证交给身份服务核实，再为后续 R2 操作绑定用户身份；仅检查 Authorization 头存在是不够的。
 export async function verifyStorageUser(request, env) {
   const authorization = request.headers.get("Authorization") || "";
   if (!/^Bearer\s+\S+$/i.test(authorization)) {
@@ -231,6 +233,7 @@ export async function handleStorageFiles(request, env) {
   });
 }
 
+// 上传前必须完成身份、订阅配额、文件大小与数据校验；这些约束独立于已经移除的公共壁纸上传入口。
 export async function handleStorageUpload(request, env) {
   const auth = await verifyStorageUser(request, env);
   if (auth.error) return auth.error;

@@ -126,6 +126,7 @@
       linkedRecurringMonth: /^\d{4}-\d{2}$/.test(String(item?.linkedRecurringMonth || '')) ? String(item.linkedRecurringMonth) : null
     };
   }
+  // 先把旧存档与不完整输入归一化到稳定数据结构，后续金额与日期算法才不必在每个分支重复处理缺失字段。
   function normalizeData(input) {
     const base = createDefaultData(), source = input && typeof input === 'object' ? input : {};
     const settings = { ...base.settings, ...(source.settings || {}) };
@@ -170,6 +171,7 @@
     if (value < start) return isoDate(addDays(parseDateKey(start), -1));
     return value > end ? end : value;
   }
+  // 优先使用显式计划关联匹配交易，再检查同日期和类型的候选；每笔实际交易只能替代一次计划扣款，避免重复抵扣。
   function resolvePlanReplacements(plans, transactions) {
     const replaced = new Set(), usedTransactions = new Set();
     for (const plan of plans) {
@@ -318,6 +320,7 @@
     return instances;
   }
 
+  // 所有日余额、周期计划与实际差异从统一模型推导，避免 UI 的独立计算与存储数据出现两套口径。
   function calculateFinancialModel(input, options = {}) {
     const data = normalizeData(input);
     const {

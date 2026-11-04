@@ -89,6 +89,7 @@ function sendJson(response, status, payload) {
   response.end(JSON.stringify(payload));
 }
 
+// TeX 能力检测只运行固定的版本探测参数；它不能演变为直接执行网页传入的任意命令。
 async function detectXeLaTeX() {
   const configured = String(process.env.QSSEDA_XELATEX || "").trim();
   const executable = configured || "xelatex";
@@ -108,6 +109,7 @@ async function detectXeLaTeX() {
   };
 }
 
+// 对子进程设置超时并统一收集退出状态，确保缺失程序或长时间挂起不会阻断本地桥接服务。
 function runFixedProbe(command, args, timeoutMs) {
   return new Promise(resolve => {
     let stdout = "";

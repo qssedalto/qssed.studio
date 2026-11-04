@@ -29,6 +29,7 @@ const EXPENSIVE_PATHS = new Set([
   "/api/admin/logs"
 ]);
 
+// 边缘层先处理扫描路径、请求体大小及分层限流，降低异常请求进入业务处理器后的资源消耗。
 export async function protectEdgeRequest(request, env) {
   const url = new URL(request.url);
   const pathname = url.pathname;
@@ -105,6 +106,7 @@ function isExpensiveRequest(pathname, method) {
   return EXPENSIVE_PATHS.has(pathname);
 }
 
+// 这是普通边缘流量限流的可用性优先降级：限流服务缺失或抛错时会放行；不要误以为它提供认证写操作的故障封闭保证。
 async function consume(limiter, key) {
   if (!limiter?.limit) return true;
   try { const result = await limiter.limit({ key }); return result?.success !== false; } catch { return true; }

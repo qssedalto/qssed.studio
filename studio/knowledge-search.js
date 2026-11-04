@@ -28,6 +28,7 @@ function flattenSections(sections = []) {
   ]).filter(Boolean).join("\n");
 }
 
+// 静态知识库索引从分类 schema 与中英文内容组合生成；这是公开内置资料，不应混入未经当前用户授权的个人知识记录。
 export function buildStaticKnowledgeSearchIndex(zh) {
   const lang = zh ? "zh" : "en";
   return KNOWLEDGE_CATEGORIES.flatMap(category => category.items.map(item => {

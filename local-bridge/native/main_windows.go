@@ -245,6 +245,7 @@ func runBridge() error {
 	return server.ListenAndServe()
 }
 
+// 本机桥接先限制 Host 与 Origin，再路由到能力端点；localhost 并不代表任何网页都应获得调用权限。
 func secureHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		host := strings.ToLower(strings.TrimSpace(r.Host))
@@ -354,6 +355,7 @@ func handleTexStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// 编译请求只接受 POST，并通过并发槽位约束同时运行的编译数；编译器参数和可用能力仍须由本地端控制。
 func handleTexCompile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		sendJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "Method not allowed."})

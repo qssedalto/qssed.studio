@@ -14,6 +14,7 @@ const MAX_SOURCE_CHARS = 180000;
 const MAX_PAYLOAD_BYTES = 512 * 1024;
 const MAX_RESULT_BYTES = 16 * 1024 * 1024;
 
+// 统一 TeX API 的会话与资源权限检查，再按文档、编译和运行结果分派；不能只因客户端知道文档 ID 就允许访问。
 export async function handleTexApi(request, env, action) {
   const session = await verifyStudioApiSession(request);
   if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
@@ -140,6 +141,7 @@ async function handleRuns(request, env, userId) {
   }
 }
 
+// TeX 编译需验证归属、输入与编译器可用性，记录运行状态和结果；不要把客户端 source 直接变成任意系统命令。
 async function handleCompile(request, env, userId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   if (!hasStorageBinding(env)) return json({ error: "TeX storage is temporarily unavailable." }, 503);

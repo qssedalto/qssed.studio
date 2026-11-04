@@ -70,6 +70,7 @@ export default {
   }
 };
 
+// 访问审计应随请求完成异步提交：用 waitUntil 延长 Worker 生命周期，并捕获审计失败，避免影响已生成的业务响应。
 function scheduleAudit(ctx, request, response, env, startedAt, source) {
   const promise = recordAccessAudit(request, response, env, startedAt, source)
     .catch(error => console.error("Access audit write failed", error));

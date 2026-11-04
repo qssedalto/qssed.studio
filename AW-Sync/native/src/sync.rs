@@ -153,6 +153,7 @@ impl<U: CloudUploader> SyncEngine<U> {
 
     /// 执行一整轮 Bucket 同步。
     /// 先枚举当前 ActivityWatch 的全部 Bucket，再逐个同步；Unauthorized 立即终止，其余错误记录首个原因并在轮末统一返回。
+    /// 单次运行按 Bucket 分配同步任务；若上传失败，不能把失败 Bucket 的进度错误地标记为已完成。
     pub fn run_once(
         &self,
         token: &str,
@@ -208,6 +209,7 @@ impl<U: CloudUploader> SyncEngine<U> {
 
     /// 单个 Bucket 的事务边界：读取断点 -> 拉取事件 -> 所有批次上传成功 -> 最后才保存新断点。
     /// 如果中途任何上传失败，断点不前移，下一轮会利用 2 秒重叠重新读取并由云端去重。
+    /// 使用已保存游标和重叠窗口请求事件，按批次上传；只有确认服务器接收后才推进该 Bucket 的游标。
     fn sync_bucket(
         &self,
         token: &str,
@@ -265,6 +267,7 @@ fn lock_error<T>(_: std::sync::PoisonError<T>) -> SyncError {
 }
 
 /// 把持久化断点转换成下一次查询起点；断点缺失或损坏时退回首次 30 天窗口。
+/// RFC3339 游标先转换到统一时刻再计算增量起点；缺失或非法游标退回首次同步窗口，而不是随意使用字符串比较。
 pub fn sync_start(last: &str, now: DateTime<Utc>) -> DateTime<Utc> {
     DateTime::parse_from_rfc3339(last)
         .map(|value| incremental_start(value.with_timezone(&Utc)))

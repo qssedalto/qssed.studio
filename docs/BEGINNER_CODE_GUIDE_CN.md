@@ -102,3 +102,20 @@ Work 使用 `wrangler.work.jsonc` 中相同的审计包装入口，但根据主�
 - [Worker 模块化记录](STUDIO_WORKER_MODULARIZATION.md)：为什么拆分、哪些历史约束必须保留。
 
 本文只迁移阅读路径与安全边界知识，不迁移旧分支的运行时代码、旧 SQL 注释或大规模注释覆盖率规则。
+
+## 10. 关键函数旁的中文解释（2026-11-04 复核）
+
+旧 PR #309 曾尝试为近三百个文件统一插入“初学者导读”，其中部分说明已经与最新的身份认证、限流和域名配置不一致，因此不能直接合并。本轮改为在**实际函数附近**保留经过当前源码核对、解释边界与失败路径的中文注释：
+
+| 主题 | 优先阅读的源码 | 重点问题 |
+| --- | --- | --- |
+| 登录与 OAuth | `auth-entry.js`、`auth-oauth.js`、`studio/session-gate.js`、`studio/auth-handoff.js` | 会话身份怎么确认？为何限流异常时认证请求返回 503？ |
+| 边缘与管理员安全 | `studio/edge-protection.js`、`admin/session.js`、`admin/admin-api.js` | 普通限流与认证限流如何区分？管理员身份在哪里重新授权？ |
+| 用户数据隔离 | `studio/storage-api.js`、`studio/projects-api.js`、`studio/tasks-api.js`、`studio/drafts-api.js` | R2 对象键由谁生成？如何约束项目、任务、草稿的跨账号引用？ |
+| Intelligence | `studio/ai-gateway.js`、`gpt-worker.js`、`studio/gpt-subdomain.js` | 模型访问、服务端凭证、会话交接之间有什么边界？ |
+| Watch 与数据同步 | `watch-worker.js`、`watch-web/app.js`、`AW-Sync/native/src/sync.rs`、`AW-Sync/native/src/activitywatch.rs` | 为什么要重叠同步、去重、AFK 过滤和时间区间相交？ |
+| Cash 与本地能力 | `cash-web/model.js`、`local-bridge/server.mjs`、`local-bridge/native/main_windows.go` | 计划扣款怎样避免重复匹配？为什么本地桥接不能执行任意命令？ |
+| TeX/协作与版本 | `studio/tex-api-core.js`、`studio/tex-version-api.js`、`studio/tex-collaboration-api.js` | 文档归属、协作成员、编译与历史版本如何受限制？ |
+| 路由与 UI | `studio/worker-audit.js`、`studio/routing.js`、`studio/browser-security.js`、`studio/ui-tex-workbench.js` | 访问审计何时提交？为什么不能仅靠页面脚本保障权限？ |
+
+**验证原则：** 这批注释只能解释当前代码实际执行的行为，不能当作安全保证书。改变代码时应先修改行为测试、再同步更新注释。对于不含特殊边界的简单 UI、纯数据文件和已执行的 SQL migration，保留现有代码，不为追求某个“注释覆盖率百分比”制造无意义或可能过时的说明。

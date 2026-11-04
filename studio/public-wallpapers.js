@@ -30,6 +30,7 @@ function parseRange(value, size) {
   return { offset: start, length: Math.min(end, size - 1) - start + 1 };
 }
 
+// 这是只读 R2 文件分发：先核对对象元数据与预期哈希，再处理 HEAD/Range，任何下载请求都不应执行 put。
 async function download(request, env, file) {
   if (request.method !== "GET" && request.method !== "HEAD") return fail("Method not allowed", 405);
   if (!env?.STORAGE?.head || !env?.STORAGE?.get) return fail("Storage unavailable", 503);
@@ -104,6 +105,7 @@ async function wallpaperCsp(markup) {
     "'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 }
 
+// 公共壁纸路径只允许下载页和已登记文件；旧的 /upload 路径不再存在，添加新路由时不要恢复浏览器上传。
 export async function handleProledWallpaperRoute(request, env) {
   const pathname = new URL(request.url).pathname.replace(/\/$/, "");
   if (pathname === ROOT) {

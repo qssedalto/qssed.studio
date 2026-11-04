@@ -24,6 +24,7 @@ export function isLegacyCookieApiPath(pathname) {
   return ROUTES.has(String(pathname || ""));
 }
 
+// 旧版 Cookie 接口是兼容入口，仍需走会话与来源检查；保留旧路径不意味着可以放宽当前数据访问规则。
 export async function handleLegacyCookieApi(request, env, pathname) {
   const route = ROUTES.get(String(pathname || ""));
   if (!route) return json({ error: "Unknown API route." }, 404);

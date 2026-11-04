@@ -113,6 +113,7 @@ export function preferredLocaleFromRequest(request, fallback = DEFAULT_LOCALE) {
   return localeFromAcceptLanguage(header, fallback);
 }
 
+// 显式 URL locale 优先于浏览器 Accept-Language；不能因为客户端语言变化就重定向覆盖用户选择的页面语言。
 export function preferredLocaleForPath(request, pathname, fallback = DEFAULT_LOCALE) {
   return localeFromPath(pathname) || preferredLocaleFromRequest(request, fallback);
 }

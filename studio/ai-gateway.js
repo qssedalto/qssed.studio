@@ -570,6 +570,7 @@ export async function handleAiAdminApi(request, env, session) {
   return json({ error: "AI administrator route not found." }, 404);
 }
 
+// 用户可见的模型与提供商清单来自服务端配置和当前账号的授权信息；不能只依靠前端隐藏选项来控制实际访问。
 async function userConfig(request, session) {
   const r = await rpc(session, "get_ai_runtime_config", {});
   if (!r.ok) return json({ enabled: false, error: "AI access is not enabled." }, 403);
@@ -634,6 +635,7 @@ async function userConfig(request, session) {
   });
 }
 
+// AI 聊天依次检查来源与服务配置、输入长度、数据库授予的模型访问权限，再调用上游服务；任何一步失败都必须明确返回。
 async function chat(request, env, session) {
   if (!session.native && !sameOrigin(request)) return json({ error: "Invalid origin." }, 403);
   if (!env.AI_CREDENTIAL_KEY) return json({ error: "AI service is not configured." }, 503);

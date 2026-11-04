@@ -10,6 +10,7 @@ const ROUTES = new Map([
   ["/api/gpt/turn", { target: "/codex/turn", methods: ["POST"] }]
 ]);
 
+// 远程桥接先验证调用环境和允许的请求路径，再代理受控能力；不应将它变成无认证的通用 HTTP 转发器。
 export async function handleRemoteCodexApi(request, env) {
   const url = new URL(request.url);
   const route = ROUTES.get(url.pathname);
@@ -85,6 +86,7 @@ export async function handleRemoteCodexApi(request, env) {
   }
 }
 
+// 桥接地址归一化要限制协议与目标，防止把可配置端点扩展成任意内网探测或敏感服务代理。
 function normalizeBridgeUrl(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";

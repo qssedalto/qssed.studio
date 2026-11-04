@@ -23,6 +23,7 @@ export function gptSessionRedirect(request, next = "/") {
   return redirect(target.toString());
 }
 
+// 从主站进入 Intelligence 时，先确认请求方法和当前站内会话，再构建目标产品的登录交接，不能跳过用户校验。
 export async function handleMainGptHandoff(request) {
   if (request.method !== "GET") {
     return new Response("Method not allowed", {
@@ -74,6 +75,7 @@ function localeFromPath(pathname) {
   return sharedLocaleFromPath(pathname);
 }
 
+// 登录后的目标地址只接受单斜杠开头的本地路径，双斜杠和 NUL 一律回退根路径，减少开放重定向风险。
 function safeGptPath(value) {
   const path = typeof value === "string" ? value.trim() : "";
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "/";

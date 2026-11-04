@@ -114,6 +114,7 @@ async function handleAuthorizeDecision(request) {
   });
 }
 
+// 授权码与刷新令牌走不同 grant 分支；先解析表单并核对 client，再让服务端 RPC 验证授权与令牌状态。
 async function handleToken(request) {
   const form = await readForm(request);
   if (!form) return tokenError("invalid_request", "Expected application/x-www-form-urlencoded body", 400);
@@ -172,6 +173,7 @@ async function handleRevoke(request) {
   return new Response(null, { status: 200, headers: oauthHeaders("application/json;charset=UTF-8") });
 }
 
+// 资源服务器先提供 Basic 凭证，再调用受保护的 introspection RPC；不能因为客户端提交了 token 就向它透露 token 状态。
 async function handleIntrospect(request) {
   const credentials = parseBasicCredentials(request.headers.get("Authorization") || "");
   if (!credentials) return introspectionUnauthorized();

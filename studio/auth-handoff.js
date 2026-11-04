@@ -6,6 +6,7 @@ import { studioSessionCookies, withStudioSessionCookies } from "./session-gate.j
 import { isServiceHost, rootDomainForHost, serviceOrigin } from "./domain-family.js";
 import { localeDirection, localeFromPath, normalizeSupportedLocale } from "./locale.js";
 
+// 跨产品会话交接必须核对来源并验证 Supabase 用户及账号状态，避免将一个来源不明的令牌直接种到目标主机。
 export async function handleAuthHandoff(request, env, locale) {
   const requestUrl = new URL(request.url);
   const hostname = requestUrl.hostname.toLowerCase();
@@ -68,6 +69,7 @@ export async function handleAuthHandoff(request, env, locale) {
 }
 
 // 规范登录成功后的站内落点。不同产品允许的深链范围不同；Watch 当前只允许语言根页。
+// Work、Intelligence、Cash、Watch 的目标路径需要各自规范化；先确认服务域与 locale，再生成站内安全落点。
 export function normalizeHandoffNext(value, locale, workTarget = false, gptTarget = false, cashTarget = false, watchTarget = false) {
   const candidate = typeof value === "string" ? value.trim() : "";
   const baseLocale = normalizeSupportedLocale(locale) || (locale === "zh" ? "zh-cn" : "en-us");

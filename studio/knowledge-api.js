@@ -3,6 +3,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 
+// 混合知识搜索要区分内置公开索引与个人数据库记录；读取个人内容时继续依赖用户身份和后端授权。
 export async function handleKnowledgeSearch(request) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
 

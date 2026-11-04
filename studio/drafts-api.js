@@ -13,6 +13,7 @@ function draftPrefix(userId) {
   return `${DRAFT_ROOT}${userId}/`;
 }
 
+// 草稿按用户 ID 分隔存储，避免把客户端传入的标识拼成跨用户 R2 路径。
 function draftKey(userId, draftId) {
   return `${draftPrefix(userId)}${draftId}.json`;
 }
@@ -176,6 +177,7 @@ async function readDraft(env, userId, draftId) {
   }
 }
 
+// 统一清洗草稿字段、关联项目 ID 和时间信息；更新旧草稿时需要保留必要的历史字段而不是直接覆盖全部对象。
 function normalizeDraft(input, userId, draftId, previous) {
   const source = input && typeof input === "object" ? input : {};
   const projectIdRaw = cleanText(source.project_id, 64);

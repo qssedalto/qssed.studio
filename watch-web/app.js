@@ -191,6 +191,7 @@ function floodEvents(input,pulsetime=5) {
   }
   // 先 flood 前台窗口事件，再和 not-afk 时间求交集。
 // 特别区分“没有 AFK Bucket”和“有 AFK Bucket 但整段都是 AFK”：后者必须得到 0 活跃时间。
+// 只有 AFK Bucket 完全缺失时才使用未过滤的窗口片段；如果有 AFK 数据却没有 not-afk 交集，活跃时间应为零。
 function activeWindowEvents(windowEvents,afkEvents,start,end) {
     const windows = floodEvents(windowEvents).map(event=>eventInterval(event,start,end)).filter(x=>x.end>x.start).sort((a,b)=>a.start-b.start);
     if (afkEvents === null) return windows;
@@ -270,6 +271,7 @@ function latestBucketsByHost(entries,kind) {
   }
 
   // 多设备可能在同一时刻同时活跃。按“新数据优先”的组顺序做 union_no_overlap，保证总活跃时间不会重复累计。
+// 设备和 Bucket 的活动区间可能重叠；按已覆盖的时间范围扣除重复部分，再汇总，避免多设备重复计时。
 function unionHostSegments(hostGroups) {
     const accepted = [];
     let coverage = [];
@@ -451,6 +453,7 @@ function intersectBrowserEvents(browserEvents,activeBrowserSegments,start,end,so
   }
 
   // 逐个 browser Bucket 读取 URL 事件，只和同设备、同浏览器家族的前台窗口求交，再对重复 watcher 做时间并集。
+// 网页使用时长需要与对应浏览器进程的前台活动相交，不能直接将所有 web.tab.current 事件当作活跃时间。
 async function loadWebsiteSegments(start,end,activeSegments) {
     const entries = Object.values(state.buckets||{});
     const browserBuckets = entries.filter(bucket=>bucketKind(bucket,"web"));

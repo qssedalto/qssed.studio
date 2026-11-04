@@ -14,6 +14,7 @@ export async function hardenBrowserResponse(response, pathname = "") {
   });
 }
 
+// 页面脚本替换属于客户端纵深防护，必须保持后端鉴权与 RLS 才能真正保护数据；修改 marker 时需要验证生成 HTML。
 export function hardenBrowserMarkup(markup) {
   let output = String(markup || "");
   output = hardenUsernameAvailability(output);
@@ -299,6 +300,7 @@ function replaceProfileHydration(markup) {
   return replaceRange(markup, start, end, replacement, false);
 }
 
+// 按精确起止标记替换页面片段；如果标记消失就保留原文，因此生成页面结构变化时回归测试必须及时发现。
 function replaceRange(source, startMarker, endMarker, replacement, consumeEnd) {
   const start = source.indexOf(startMarker);
   if (start < 0) return source;
