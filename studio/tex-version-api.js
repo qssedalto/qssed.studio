@@ -168,6 +168,7 @@ async function handleVersionPost(request, env, userId) {
   return json({ error: "Unknown TeX version action." }, 404);
 }
 
+// 保存版本快照前要关联当前用户及文档，判断内容是否确实发生变化；历史版本属于可回滚记录，不是可任意覆盖的缓存。
 export async function snapshotDocumentVersion(env, userId, document, options = {}) {
   if (!hasStorageBinding(env) || !isStorageObjectId(userId) || !isStorageObjectId(document?.id) || document?.owner_id !== userId) {
     return { version: null, created: false, skipped: true };
@@ -276,6 +277,7 @@ async function deletePrefix(env, prefix) {
   } while (cursor);
 }
 
+// 自动整理版本时要尊重版本保留策略，避免把用户需要用于恢复的文档历史一并删除。
 async function pruneSmartVersions(env, userId, documentId) {
   const objects = await listVersionObjects(env, userId, documentId);
   if (objects.length <= 90) return;
