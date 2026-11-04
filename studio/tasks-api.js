@@ -14,6 +14,7 @@ function taskPrefix(userId) {
   return `${TASK_ROOT}${userId}/`;
 }
 
+// 任务存储键总是位于当前用户前缀下；读写必须与已验证的用户身份绑定。
 function taskKey(userId, taskId) {
   return `${taskPrefix(userId)}${taskId}.json`;
 }
@@ -139,6 +140,7 @@ async function deleteTask(request, env, userId) {
   }
 }
 
+// 任务关联某个项目时先检查同一用户目录内的项目对象是否存在；不存在不能创建跨用户或悬空的关联。
 async function validateProjectReference(env, userId, projectId) {
   if (!projectId) return null;
   try {
