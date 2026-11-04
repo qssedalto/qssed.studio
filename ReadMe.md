@@ -2,9 +2,13 @@
 
 AERTEX is a Cloudflare Workers + Supabase application with a separate identity service at `auth.qsseda.com`, a standalone Work surface at `work.qsseda.com`, the **AERTEX Intelligence** interface at `gpt.qsseda.com`, and an isolated administrator control plane at `admin.qsseda.com`.
 
+## 中文入门导读
+
+第一次学习仓库建议阅读 [**中文代码导读**](./docs/BEGINNER_CODE_GUIDE_CN.md)，从请求入口、安全边界、业务模块与数据流开始，不需要先读完整个代码库。
+
 ## Runtime architecture
 
-`worker.js` remains the Studio Wrangler compatibility entrypoint and exports the implementation from `studio/entry.js`.
+The production Studio configuration in `wrangler.jsonc` enters through `studio/worker-audit.js`, which wraps `worker.js` with request auditing. `worker.js` owns edge checks and shared API/product routing and delegates remaining Studio pages to `studio/entry.js`.
 
 `studio/` is responsibility-based:
 
