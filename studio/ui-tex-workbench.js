@@ -1,3 +1,4 @@
+// 页面包含文档列表、源码编辑和编译交互；文档写入与编译必须依赖后端会话，而不是在浏览器长期保存 Bearer 凭证。
 export function texWorkbenchContent(zh) {
   const copy = zh ? {
     eyebrow: "实验室 · TeX",
