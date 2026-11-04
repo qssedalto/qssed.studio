@@ -243,3 +243,44 @@ export function rateLimitKey(request, scope) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   return `${scope}:ip:${ip}`;
 }
+
+function redirect(location) {
+  return new Response(null, { status: 302, headers: { location, "cache-control": "no-store", "referrer-policy": "no-referrer" } });
+}
+
+function isLegacyAdminSurface(pathname) {
+  return pathname === "/admin"
+    || pathname.startsWith("/admin/")
+    || pathname === "/zh-cn/admin"
+    || pathname.startsWith("/zh-cn/admin/")
+    || pathname === "/en/admin"
+    || pathname.startsWith("/en/admin/")
+    || pathname === "/api/admin"
+    || pathname.startsWith("/api/admin/");
+}
+
+function notFound() {
+  return new Response("Not found.", {
+    status: 404,
+    headers: {
+      "content-type": "text/plain;charset=UTF-8",
+      "cache-control": "private, no-store",
+      "x-content-type-options": "nosniff",
+      "x-robots-tag": "noindex, nofollow, noarchive, nosnippet"
+    }
+  });
+}
+
+function methodNotAllowed() {
+  return new Response(JSON.stringify({ error: "Method not allowed" }), {
+    status: 405,
+    headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store", "x-content-type-options": "nosniff" }
+  });
+}
+
+function tooManyRequests() {
+  return new Response(JSON.stringify({ error: "Too many requests. Please try again shortly." }), {
+    status: 429,
+    headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store", "retry-after": "60", "x-content-type-options": "nosniff" }
+  });
+}
