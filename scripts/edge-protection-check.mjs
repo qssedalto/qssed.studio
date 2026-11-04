@@ -6,6 +6,7 @@ import {
   requestBodyLimit
 } from "../studio/edge-protection.js";
 import { publicSitemapUrls } from "../studio/public-indexing.js";
+import { rateLimitKey } from "../worker.js";
 import { QUESTION_INDEX_LOCALES, publishedQuestions } from "../studio/public-questions.js";
 
 const allow = { limit: async () => ({ success: true }) };
@@ -162,6 +163,14 @@ for (const headers of [
   {}
 ]) await protectEdgeRequest(browserRequest("/zh-cn/dashboard", headers), env({ EDGE_ANON_RATE_LIMITER: recordBudget }));
 assert(cookieBudgetKeys.length === 4 && cookieBudgetKeys.every(key => key === cookieBudgetKeys[0]), "Changing client-controlled credentials must not change per-IP edge budget keys");
+const apiIdentityKeys = [
+  { Authorization: "Bearer forged-token-1" },
+  { Authorization: "Bearer forged-token-2" },
+  { Cookie: "__Host-qsseda-studio-access=forged-cookie" },
+  {}
+].map(headers => rateLimitKey(browserRequest("/api/tasks", headers), "read:/api/tasks"));
+assert(apiIdentityKeys.every(key => key === "read:/api/tasks:ip:203.0.113.77"), "API limiter keys must ignore forged bearer tokens and cookies");
+
 
 
 assert(requestBodyLimit("/api/storage/upload") === 52 * 1024 * 1024, "Storage upload body ceiling changed unexpectedly");
