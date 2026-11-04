@@ -1,4 +1,5 @@
 import { handleProledWallpaperRoute } from "../studio/public-wallpapers.js";
+import { createHash } from "node:crypto";
 
 const ROOT = "https://qsseda.com/wallpapers/proled-xdr";
 const SIZE = 7626593;
@@ -23,6 +24,23 @@ assert(home.status === 200, "The download landing page must remain available");
 const markup = await home.text();
 assert(markup.includes("PROLED XDR") && markup.includes("dark.png") && markup.includes("v4.zip"), "All three download links must survive");
 assert(!markup.includes("验证并上传") && !markup.includes('id="publish"') && !markup.includes('type="file"'), "No upload UI may remain");
+
+// The download page is the pilot for hash-based CSP: its one stylesheet and
+// one script must be authorized by their exact content hashes, not unsafe-inline.
+const csp = home.headers.get("content-security-policy") || "";
+const trustedInlineBlock = tag => {
+  const matches = [...markup.matchAll(tag === "script" ? /<script>([\s\S]*?)<\/script>/g : /<style>([\s\S]*?)<\/style>/g)];
+  assert(matches.length === 1, "The download page must contain exactly one inline " + tag + " block");
+  return "sha256-" + createHash("sha256").update(matches[0][1], "utf8").digest("base64");
+};
+assert(!csp.includes("'unsafe-inline'") && !csp.includes("'unsafe-eval'"), "Wallpaper CSP must not permit arbitrary inline execution");
+assert(csp.includes("script-src '" + trustedInlineBlock("script") + "'"), "Wallpaper CSP script hash must match rendered JS");
+assert(csp.includes("style-src '" + trustedInlineBlock("style") + "'"), "Wallpaper CSP style hash must match rendered CSS");
+assert(csp.includes("object-src 'none'") && csp.includes("frame-ancestors 'none'"), "Wallpaper CSP must protect the page from embedding and plugins");
+const headPage = await handle(ROOT, { method: "HEAD" });
+assert(headPage.status === 200 && (await headPage.text()) === "", "HEAD must remain bodyless");
+assert(headPage.headers.get("content-security-policy") === csp, "HEAD and GET must advertise identical CSP");
+
 
 const removed = await handle(ROOT + "/upload", { method: "POST", body: new Uint8Array([1]) });
 assert(removed.status === 404, "Retired upload route must return 404");

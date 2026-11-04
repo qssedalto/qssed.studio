@@ -83,13 +83,35 @@ function page() {
     '<script>' + script + '</script></body></html>';
 }
 
+// This page contains only first-party, constant-derived HTML. Hash its single
+// inline script and stylesheet so the browser can reject other inline code.
+// Never reuse this helper on markup containing untrusted user content.
+async function inlineBlockHash(markup, kind) {
+  const matcher = kind === "script" ? /<script>([\s\S]*?)<\/script>/g : /<style>([\s\S]*?)<\/style>/g;
+  const blocks = [...markup.matchAll(matcher)];
+  if (blocks.length !== 1) throw new Error("Expected one trusted inline " + kind + " block");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(blocks[0][1]));
+  return "sha256-" + btoa(String.fromCharCode(...new Uint8Array(digest)));
+}
+
+async function wallpaperCsp(markup) {
+  const [scriptHash, styleHash] = await Promise.all([
+    inlineBlockHash(markup, "script"),
+    inlineBlockHash(markup, "style")
+  ]);
+  return "default-src 'none'; img-src 'self'; style-src '" + styleHash +
+    "'; script-src '" + scriptHash +
+    "'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+}
+
 export async function handleProledWallpaperRoute(request, env) {
   const pathname = new URL(request.url).pathname.replace(/\/$/, "");
   if (pathname === ROOT) {
     if (request.method !== "GET" && request.method !== "HEAD") return fail("Method not allowed", 405);
-    return new Response(request.method === "HEAD" ? null : page(), { headers: {
+    const markup = page();
+    return new Response(request.method === "HEAD" ? null : markup, { headers: {
       ...SECURITY, "content-type": "text/html;charset=UTF-8", "cache-control": "no-store",
-      "content-security-policy": "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+      "content-security-policy": await wallpaperCsp(markup)
     } });
   }
   const key = FILE_BY_PATH[pathname];
