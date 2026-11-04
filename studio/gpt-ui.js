@@ -181,7 +181,7 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
     try{localStorage.setItem(modelPreferenceKey,value)}catch{}
     try{
       const host=String(location.hostname||"").toLowerCase();
-      const domain=["qsseda.com","qsseda.online","qsseda.studio"].find(item=>host===item||host.endsWith("."+item))||"";
+      const domain=["qsseda.com","qsseda.studio"].find(item=>host===item||host.endsWith("."+item))||"";
       document.cookie=modelPreferenceKey+"="+encodeURIComponent(value)+"; Path=/; Max-Age=31536000; SameSite=Lax; Secure"+(domain?"; Domain="+domain:"");
     }catch{}
   }

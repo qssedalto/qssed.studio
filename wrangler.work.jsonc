@@ -11,31 +11,101 @@
   "keep_vars": true,
   "durable_objects": {
     "bindings": [
-      { "name": "TEX_COLLAB_ROOMS", "class_name": "TexCollaborationRoom" }
+      {
+        "name": "TEX_COLLAB_ROOMS",
+        "class_name": "TexCollaborationRoom"
+      }
     ]
   },
   "migrations": [
-    { "tag": "tex-collaboration-v1", "new_sqlite_classes": ["TexCollaborationRoom"] }
+    {
+      "tag": "tex-collaboration-v1",
+      "new_sqlite_classes": [
+        "TexCollaborationRoom"
+      ]
+    }
   ],
   "ratelimits": [
-    { "name": "AUTH_RATE_LIMITER", "namespace_id": "730101", "simple": { "limit": 20, "period": 60 } },
-    { "name": "API_READ_RATE_LIMITER", "namespace_id": "730102", "simple": { "limit": 300, "period": 60 } },
-    { "name": "API_WRITE_RATE_LIMITER", "namespace_id": "730103", "simple": { "limit": 90, "period": 60 } },
-    { "name": "EDGE_GLOBAL_RATE_LIMITER", "namespace_id": "730104", "simple": { "limit": 600, "period": 60 } },
-    { "name": "EDGE_ANON_RATE_LIMITER", "namespace_id": "730105", "simple": { "limit": 120, "period": 60 } },
-    { "name": "EDGE_SUSPECT_RATE_LIMITER", "namespace_id": "730106", "simple": { "limit": 20, "period": 60 } },
-    { "name": "EDGE_EXPENSIVE_RATE_LIMITER", "namespace_id": "730107", "simple": { "limit": 45, "period": 60 } }
+    {
+      "name": "AUTH_RATE_LIMITER",
+      "namespace_id": "730101",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
+    },
+    {
+      "name": "API_READ_RATE_LIMITER",
+      "namespace_id": "730102",
+      "simple": {
+        "limit": 300,
+        "period": 60
+      }
+    },
+    {
+      "name": "API_WRITE_RATE_LIMITER",
+      "namespace_id": "730103",
+      "simple": {
+        "limit": 90,
+        "period": 60
+      }
+    },
+    {
+      "name": "EDGE_GLOBAL_RATE_LIMITER",
+      "namespace_id": "730104",
+      "simple": {
+        "limit": 600,
+        "period": 60
+      }
+    },
+    {
+      "name": "EDGE_ANON_RATE_LIMITER",
+      "namespace_id": "730105",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
+      "name": "EDGE_SUSPECT_RATE_LIMITER",
+      "namespace_id": "730106",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
+    },
+    {
+      "name": "EDGE_EXPENSIVE_RATE_LIMITER",
+      "namespace_id": "730107",
+      "simple": {
+        "limit": 45,
+        "period": 60
+      }
+    }
   ],
   "r2_buckets": [
-    { "binding": "STORAGE", "bucket_name": "qsseda-studio-storage" }
+    {
+      "binding": "STORAGE",
+      "bucket_name": "qsseda-studio-storage"
+    }
   ],
   "routes": [
-    { "pattern": "work.qsseda.com/*", "zone_name": "qsseda.com" },
-    { "pattern": "work.qsseda.com", "custom_domain": true },
-    { "pattern": "work.qsseda.online/*", "zone_name": "qsseda.online" },
-    { "pattern": "work.qsseda.online", "custom_domain": true },
-    { "pattern": "work.qsseda.studio/*", "zone_name": "qsseda.studio" },
-    { "pattern": "work.qsseda.studio", "custom_domain": true }
+    {
+      "pattern": "work.qsseda.com/*",
+      "zone_name": "qsseda.com"
+    },
+    {
+      "pattern": "work.qsseda.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "work.qsseda.studio/*",
+      "zone_name": "qsseda.studio"
+    },
+    {
+      "pattern": "work.qsseda.studio",
+      "custom_domain": true
+    }
   ],
   "observability": {
     "logs": {

@@ -96,7 +96,7 @@ jobs:
           const auth = fs.readFileSync('auth-worker.js', 'utf8');
           const entry = fs.readFileSync('auth-entry.js', 'utf8');
           const family = fs.readFileSync('studio/domain-family.js', 'utf8');
-          for (const root of ['qsseda.com','qsseda.online','qsseda.studio']) {
+          for (const root of ['qsseda.com','qsseda.studio']) {
             if (!family.includes(`"${root}"`)) throw new Error(`Missing domain root: ${root}`);
           }
           for (const path of ['/sso/start','/sso/import','/sso/complete']) {
@@ -126,7 +126,7 @@ jobs:
           const config = JSON.parse(text);
           if (config.main !== 'studio/auth-audit-entry.js') throw new Error('wrangler.auth.jsonc must point to studio/auth-audit-entry.js');
           if (!Array.isArray(config.routes)) throw new Error('Auth routes are missing');
-          for (const [host, zone] of [['auth.qsseda.com','qsseda.com'],['auth.qsseda.online','qsseda.online'],['auth.qsseda.studio','qsseda.studio']]) {
+          for (const [host, zone] of [['auth.qsseda.com','qsseda.com'],['auth.qsseda.studio','qsseda.studio']]) {
             if (!config.routes.some(r => r.pattern === `${host}/*` && r.zone_name === zone)) throw new Error(`${host} exact Worker route is missing`);
             if (!config.routes.some(r => r.pattern === host && r.custom_domain === true)) throw new Error(`${host} custom domain route is missing`);
           }

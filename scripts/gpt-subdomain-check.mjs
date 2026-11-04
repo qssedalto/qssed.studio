@@ -88,11 +88,11 @@ for (const locale of SUPPORTED_LOCALES) {
   );
 }
 assert(normalizeHandoffNext("/en", "ja-jp", false, true) === "/en-us", "Legacy /en GPT links must normalize to en-us.");
-for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.online","qsseda.online"],["gpt.qsseda.studio","qsseda.studio"]]) {
+for (const [host, zone] of [["gpt.qsseda.com","qsseda.com"],["gpt.qsseda.studio","qsseda.studio"]]) {
   assert(gptWrangler.routes?.some(route => route.pattern === `${host}/*` && route.zone_name === zone), `${host} exact Worker route must outrank the main-site wildcard route`);
   assert(gptWrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
 }
-assert(!gpt.includes("canonicalGptAlias"), "GPT .online/.studio hosts must stay on their own domains");
+assert(!gpt.includes("canonicalGptAlias"), "GPT .studio hosts must stay on their own domains");
 assert(gpt.includes('const localizedRest = routeLocale ? routeParts.slice(1) : routeParts;') && gpt.includes('if (routeLocale && localizedRest[0] === "c")'), "GPT Worker must support localized per-conversation routes.");
 assert(gpt.includes('const exempt = localizedRest[1] === "huawei-exempt"'), "GPT Worker must accept Huawei-exempt conversation aliases.");
 assert(gpt.includes("await huaweiHarmonyGate(request)"), "GPT Worker must await Huawei exemption verification.");
@@ -191,7 +191,7 @@ assert(appearance.includes('return "system";'), "Shared appearance runtime must 
 assert(appearance.includes('function cookieValue(name)'), "Shared appearance runtime must define cookie readers instead of calling missing helpers.");
 assert(appearance.includes('qssed_theme_generation'), "Shared appearance runtime must version the one-time System default migration.");
 assert(appearance.includes('localStorage.setItem(MODE_KEY,"system")'), "Existing browser preferences must be reset to System once for this migration.");
-assert(appearance.includes('["qsseda.com","qsseda.online","qsseda.studio"]'), "Shared appearance runtime must support every AERTEX domain family.");
+assert(appearance.includes('["qsseda.com","qsseda.studio"]'), "Shared appearance runtime must support every AERTEX domain family.");
 assert(intelligenceTheme.includes('appearanceBootScript()'), "Intelligence and AERTEX ID must delegate to the shared appearance runtime.");
 assert(gptUi.includes(':root[data-accent]{--accent:var(--aertex-accent);--accentText:var(--aertex-accent-ink)}'), "Intelligence must consume the shared iPhone accent variables.");
 assert(authWorker.includes('requestCookieValue(request, "qssed_locale")'), "AERTEX ID must prefer the shared locale cookie when no localized return path exists.");

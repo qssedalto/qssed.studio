@@ -10,7 +10,9 @@
   "upload_source_maps": false,
   "keep_vars": true,
   "triggers": {
-    "crons": ["17 3 * * *"]
+    "crons": [
+      "17 3 * * *"
+    ]
   },
   "ratelimits": [
     {
@@ -71,12 +73,22 @@
     }
   ],
   "routes": [
-    { "pattern": "qsseda.com/*", "zone_name": "qsseda.com" },
-    { "pattern": "*.qsseda.com/*", "zone_name": "qsseda.com" },
-    { "pattern": "qsseda.online/*", "zone_name": "qsseda.online" },
-    { "pattern": "*.qsseda.online/*", "zone_name": "qsseda.online" },
-    { "pattern": "qsseda.studio/*", "zone_name": "qsseda.studio" },
-    { "pattern": "*.qsseda.studio/*", "zone_name": "qsseda.studio" }
+    {
+      "pattern": "qsseda.com/*",
+      "zone_name": "qsseda.com"
+    },
+    {
+      "pattern": "*.qsseda.com/*",
+      "zone_name": "qsseda.com"
+    },
+    {
+      "pattern": "qsseda.studio/*",
+      "zone_name": "qsseda.studio"
+    },
+    {
+      "pattern": "*.qsseda.studio/*",
+      "zone_name": "qsseda.studio"
+    }
   ],
   "r2_buckets": [
     {

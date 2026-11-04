@@ -121,12 +121,12 @@ async function routeStudioRequest(request, env, ctx) {
   }
 
   if (AUTH_ABUSE_PATHS.has(pathname)) {
-    const key = await rateLimitKey(request, `auth:${pathname}`, false);
+    const key = rateLimitKey(request, `auth:${pathname}`);
     if (!(await allowed(env?.AUTH_RATE_LIMITER, key))) return tooManyRequests();
   } else if (pathname.startsWith("/api/")) {
     const isWrite = WRITE_METHODS.has(request.method.toUpperCase());
     const limiter = isWrite ? env?.API_WRITE_RATE_LIMITER : env?.API_READ_RATE_LIMITER;
-    const key = await rateLimitKey(request, `${isWrite ? "write" : "read"}:${pathname}`, true);
+    const key = rateLimitKey(request, `${isWrite ? "write" : "read"}:${pathname}`);
     if (!(await allowed(limiter, key))) return tooManyRequests();
   }
 
@@ -237,21 +237,11 @@ async function allowed(limiter, key) {
   }
 }
 
-async function rateLimitKey(request, scope, preferAuthenticatedIdentity) {
-  if (preferAuthenticatedIdentity) {
-    const authorization = request.headers.get("Authorization") || "";
-    if (authorization) return `${scope}:auth:${await digest(authorization)}`;
-    const cookie = request.headers.get("Cookie") || "";
-    if (cookie) return `${scope}:cookie:${await digest(cookie)}`;
-  }
+// Rate-limit identity must not be derived from attacker-controlled Authorization/Cookie values.
+// Cloudflare provides CF-Connecting-IP at the trusted edge; the limiters are IP-scoped.
+export function rateLimitKey(request, scope) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   return `${scope}:ip:${ip}`;
-}
-
-async function digest(value) {
-  const bytes = new TextEncoder().encode(String(value || ""));
-  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
-  return Array.from(hash.slice(0, 16), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function redirect(location) {

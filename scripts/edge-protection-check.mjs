@@ -6,6 +6,7 @@ import {
   requestBodyLimit
 } from "../studio/edge-protection.js";
 import { publicSitemapUrls } from "../studio/public-indexing.js";
+import { rateLimitKey } from "../worker.js";
 import { QUESTION_INDEX_LOCALES, publishedQuestions } from "../studio/public-questions.js";
 
 const allow = { limit: async () => ({ success: true }) };
@@ -103,7 +104,7 @@ const normalClaimedSession = browserRequest("/zh-cn/dashboard", {
   Cookie: "__Host-qsseda-studio-access=session-token"
 });
 result = await protectEdgeRequest(normalClaimedSession, env({ EDGE_ANON_RATE_LIMITER: deny }));
-assert(result === null, "Normal QssedA sessions should retain the anonymous-capacity exemption");
+assert(result?.status === 429, "A cookie without verified identity must not bypass the per-IP request budget");
 
 const verifiedBot = fakeRequest("/zh-cn/login", {
   headers: { "User-Agent": "Googlebot/2.1", Accept: "text/html" },
@@ -153,8 +154,27 @@ for (const cookie of ["first-forged-cookie", "second-forged-cookie"]) {
 assert(expensiveKeys.length === 2, "Expensive limiter was not invoked for both requests");
 assert(expensiveKeys[0] === expensiveKeys[1], "Rotating attacker-controlled cookies must not create new expensive-endpoint limiter buckets");
 assert(expensiveKeys[0].endsWith(":ip:203.0.113.77"), "Expensive endpoint limiter must be keyed by Cloudflare source IP");
+const cookieBudgetKeys = [];
+const recordBudget = { limit: async ({key}) => { cookieBudgetKeys.push(key); return { success: true }; } };
+for (const headers of [
+  { Authorization: "Bearer attacker-first" },
+  { Authorization: "Bearer attacker-second" },
+  { Cookie: "__Host-qsseda-studio-access=forged" },
+  {}
+]) await protectEdgeRequest(browserRequest("/zh-cn/dashboard", headers), env({ EDGE_ANON_RATE_LIMITER: recordBudget }));
+assert(cookieBudgetKeys.length === 4 && cookieBudgetKeys.every(key => key === cookieBudgetKeys[0]), "Changing client-controlled credentials must not change per-IP edge budget keys");
+const apiIdentityKeys = [
+  { Authorization: "Bearer forged-token-1" },
+  { Authorization: "Bearer forged-token-2" },
+  { Cookie: "__Host-qsseda-studio-access=forged-cookie" },
+  {}
+].map(headers => rateLimitKey(browserRequest("/api/tasks", headers), "read:/api/tasks"));
+assert(apiIdentityKeys.every(key => key === "read:/api/tasks:ip:203.0.113.77"), "API limiter keys must ignore forged bearer tokens and cookies");
+
+
 
 assert(requestBodyLimit("/api/storage/upload") === 52 * 1024 * 1024, "Storage upload body ceiling changed unexpectedly");
+assert(requestBodyLimit("/wallpapers/proled-xdr/upload") === 8 * 1024 * 1024, "Removed wallpaper upload route must not receive an elevated body-size allowance");
 assert(requestBodyLimit("/api/profile/media") === 10 * 1024 * 1024, "Profile media body ceiling changed unexpectedly");
 assert(requestBodyLimit("/api/auth/signup") === 6 * 1024 * 1024, "Signup body ceiling changed unexpectedly");
 assert(requestBodyLimit("/api/notes") === 2 * 1024 * 1024, "Default API body ceiling changed unexpectedly");

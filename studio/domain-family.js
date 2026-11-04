@@ -5,7 +5,6 @@
 // awOriginForRequest() 会把 studio 根规范化到 qsseda.com；数据域别名仍按请求根推导。
 export const QSS_DOMAIN_ROOTS = Object.freeze([
   "qsseda.com",
-  "qsseda.online",
   "qsseda.studio"
 ]);
 

@@ -13,6 +13,7 @@ on:
       - "scripts/security-markup-check.mjs"
       - "scripts/security-architecture-check.mjs"
       - "scripts/edge-protection-check.mjs"
+      - "scripts/wallpaper-download-check.mjs"
       - "scripts/public-index-runtime-check.mjs"
       - "scripts/public-questions-check.mjs"
       - "scripts/global-search-check.mjs"
@@ -70,6 +71,7 @@ on:
       - "scripts/security-markup-check.mjs"
       - "scripts/security-architecture-check.mjs"
       - "scripts/edge-protection-check.mjs"
+      - "scripts/wallpaper-download-check.mjs"
       - "scripts/global-search-check.mjs"
       - "scripts/projects-check.mjs"
       - "scripts/tasks-check.mjs"
@@ -140,6 +142,7 @@ jobs:
           node --check scripts/security-markup-check.mjs
           node --check scripts/security-architecture-check.mjs
           node --check scripts/edge-protection-check.mjs
+          node --check scripts/wallpaper-download-check.mjs
           node --check scripts/public-index-runtime-check.mjs
           node --check scripts/public-questions-check.mjs
           node --check scripts/global-search-check.mjs
@@ -187,7 +190,9 @@ jobs:
         run: node scripts/security-architecture-check.mjs
 
       - name: Verify edge anti-crawl and surge protection
-        run: node scripts/edge-protection-check.mjs
+        run: |
+          node scripts/edge-protection-check.mjs
+          node scripts/wallpaper-download-check.mjs
 
       - name: Verify public index route runtime
         run: node scripts/public-index-runtime-check.mjs
@@ -301,8 +306,6 @@ jobs:
           const expectedWildcardRoutes = new Map([
             ['qsseda.com/*', 'qsseda.com'],
             ['*.qsseda.com/*', 'qsseda.com'],
-            ['qsseda.online/*', 'qsseda.online'],
-            ['*.qsseda.online/*', 'qsseda.online'],
             ['qsseda.studio/*', 'qsseda.studio'],
             ['*.qsseda.studio/*', 'qsseda.studio']
           ]);

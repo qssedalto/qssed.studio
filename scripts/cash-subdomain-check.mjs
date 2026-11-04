@@ -66,7 +66,7 @@ for (const locale of SUPPORTED_LOCALES) {
   );
 }
 
-for (const [host, zone] of [["cash.qsseda.com","qsseda.com"],["cash.qsseda.online","qsseda.online"],["cash.qsseda.studio","qsseda.studio"]]) {
+for (const [host, zone] of [["cash.qsseda.com","qsseda.com"],["cash.qsseda.studio","qsseda.studio"]]) {
   assert(wrangler.routes?.some(route => route.pattern === `${host}/*` && route.zone_name === zone), `${host} exact Worker route is missing`);
   assert(wrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
 }

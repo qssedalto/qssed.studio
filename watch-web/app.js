@@ -44,7 +44,7 @@
   // 从 aw.<root> 推导主站 <root>，用于“返回 AERTEX”和 setup 教程；不把 qsseda.com 硬编码进所有别名域。
   function rootOrigin() {
     const host = location.hostname.toLowerCase();
-    for (const root of ["qsseda.com","qsseda.online","qsseda.studio"]) {
+    for (const root of ["qsseda.com","qsseda.studio"]) {
       if (host === root || host.endsWith("." + root)) return "https://" + root;
     }
     return "/";

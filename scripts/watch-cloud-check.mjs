@@ -48,10 +48,10 @@ assert(worker.includes('mergeEvents') && worker.includes('dayObjectKey'), "Cloud
 assert(worker.includes('verifyStudioPageSession'), "Watch browser reads must remain behind the AERTEX session gate.");
 assert(sessionGate.includes('const watchHost = isServiceHost(hostname, "aw");') && sessionGate.includes("workHost || gptHost || cashHost || watchHost"), "Watch host sessions must require the same domain-wide account marker as other isolated products.");
 
-for (const root of ["qsseda.com","qsseda.online"]) {
+for (const root of ["qsseda.com"]) {
   assert(wrangler.includes("aw." + root), "Missing Watch UI domain for aw." + root);
 }
-for (const root of ["qsseda.com","qsseda.online","qsseda.studio"]) {
+for (const root of ["qsseda.com","qsseda.studio"]) {
   for (const host of ["awd.","aw.data."]) {
     assert(wrangler.includes(host + root), "Missing Watch data domain for " + host + root);
   }
