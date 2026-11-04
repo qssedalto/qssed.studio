@@ -50,6 +50,7 @@ export function withStudioSessionCookies(response, cookies = []) {
 
 /// 验证页面/API 共用的 AERTEX 会话。
 /// 对独立产品子域（Work / Intelligence / Cash / Watch）除了验证 JWT，还要求域级 account marker 与 JWT subject 一致。
+// 主站与独立子域分别维护主机级会话。这里同时考虑 Cookie、账号标记以及必要时的刷新，不能仅凭跨域标记授权。
 export async function verifyStudioPageSession(request) {
   const url = new URL(request.url);
   const hostname = url.hostname.toLowerCase();
@@ -266,6 +267,7 @@ async function verifyAccessToken(accessToken) {
 }
 
 /// access token 过期时用 refresh token 换新会话；成功后上层会同时轮换浏览器 Cookie。
+// 刷新令牌只发送到 Supabase 的 refresh_token 端点；异常路径避免记录敏感令牌，调用方负责把成功结果写回安全 Cookie。
 async function refreshSession(refreshToken) {
   let response;
   try {
