@@ -60,11 +60,11 @@ export const QUESTIONS = Object.freeze([
     translations:{
       "zh-cn":{question:"AERTEX 的官方域名有哪些？",short:"规范主域名是 qsseda.com；Work、Intelligence、Cash、Watch 和 AERTEX ID 使用同一域名家族下的产品子域。",answer:[
         "AERTEX 的规范公开主域名是 qsseda.com。当前主要产品入口包括 work.qsseda.com、gpt.qsseda.com、cash.qsseda.com、aw.qsseda.com 和 auth.qsseda.com。",
-        "qsseda.online 与 qsseda.studio 也属于 AERTEX 的域名家族，但公开搜索内容以 qsseda.com 为规范来源。部分服务会把旧域名或别名规范化到 qsseda.com。"
+        "qsseda.studio 也属于 AERTEX 的域名家族，但公开搜索内容以 qsseda.com 为规范来源。部分服务会把旧域名或别名规范化到 qsseda.com。"
       ]},
       "en-us":{question:"What are AERTEX's official domains?",short:"The canonical public domain is qsseda.com, with Work, Intelligence, Cash, Watch, and AERTEX ID on product subdomains in the same domain family.",answer:[
         "AERTEX's canonical public main domain is qsseda.com. Current product entry points include work.qsseda.com, gpt.qsseda.com, cash.qsseda.com, aw.qsseda.com, and auth.qsseda.com.",
-        "qsseda.online and qsseda.studio are also part of the AERTEX domain family, while qsseda.com is the canonical source for public search content. Some older or alias service hosts canonicalize to qsseda.com."
+        "qsseda.studio is also part of the AERTEX domain family, while qsseda.com is the canonical source for public search content. Some older or alias service hosts canonicalize to qsseda.com."
       ]}
     }
   },
