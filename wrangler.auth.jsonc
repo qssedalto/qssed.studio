@@ -56,14 +56,23 @@
       "bucket_name": "qsseda-studio-storage"
     }
   ],
-  // Deployment touchpoint for Auth OAuth/PKCE and protected token introspection.
   "routes": [
-    { "pattern": "auth.qsseda.com/*", "zone_name": "qsseda.com" },
-    { "pattern": "auth.qsseda.com", "custom_domain": true },
-    { "pattern": "auth.qsseda.online/*", "zone_name": "qsseda.online" },
-    { "pattern": "auth.qsseda.online", "custom_domain": true },
-    { "pattern": "auth.qsseda.studio/*", "zone_name": "qsseda.studio" },
-    { "pattern": "auth.qsseda.studio", "custom_domain": true }
+    {
+      "pattern": "auth.qsseda.com/*",
+      "zone_name": "qsseda.com"
+    },
+    {
+      "pattern": "auth.qsseda.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "auth.qsseda.studio/*",
+      "zone_name": "qsseda.studio"
+    },
+    {
+      "pattern": "auth.qsseda.studio",
+      "custom_domain": true
+    }
   ],
   "observability": {
     "logs": {
