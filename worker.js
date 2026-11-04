@@ -239,7 +239,7 @@ async function allowed(limiter, key) {
 
 // Rate-limit identity must not be derived from attacker-controlled Authorization/Cookie values.
 // Cloudflare provides CF-Connecting-IP at the trusted edge; the limiters are IP-scoped.
-function rateLimitKey(request, scope) {
+export function rateLimitKey(request, scope) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   return `${scope}:ip:${ip}`;
 }
