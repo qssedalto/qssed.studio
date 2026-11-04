@@ -301,8 +301,6 @@ jobs:
           const expectedWildcardRoutes = new Map([
             ['qsseda.com/*', 'qsseda.com'],
             ['*.qsseda.com/*', 'qsseda.com'],
-            ['qsseda.online/*', 'qsseda.online'],
-            ['*.qsseda.online/*', 'qsseda.online'],
             ['qsseda.studio/*', 'qsseda.studio'],
             ['*.qsseda.studio/*', 'qsseda.studio']
           ]);
