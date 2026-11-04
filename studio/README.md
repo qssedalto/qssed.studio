@@ -1,6 +1,6 @@
 # Studio Worker modules
 
-The Studio Worker was extracted from the former monolithic `worker.js` in staged refactors. `worker.js` remains a compatibility facade that exports `studio/entry.js`.
+The Studio Worker was extracted from the former monolithic `worker.js` in staged refactors. Production `wrangler.jsonc` uses `studio/worker-audit.js` as its audited entrypoint, wrapping `worker.js` for security/routing and then `studio/entry.js` for Studio pages. See the [Chinese beginner code guide](../docs/BEGINNER_CODE_GUIDE_CN.md) for a source-verified reading sequence.
 
 Structural sequencing is frozen in [`../docs/STUDIO_WORKER_MODULARIZATION.md`](../docs/STUDIO_WORKER_MODULARIZATION.md). Phase 4 shared-layer sequencing is recorded in [`../docs/STUDIO_PHASE4_SHARED_INVENTORY.md`](../docs/STUDIO_PHASE4_SHARED_INVENTORY.md). Do not split modules by file size alone.
 
