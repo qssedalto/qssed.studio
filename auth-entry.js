@@ -102,6 +102,7 @@ function normalizePath(pathname) {
   return pathname.replace(/\/+$/, "") || "/";
 }
 
+// 只接受本站相对路径作为登录后的返回目标；拒绝 // 开头及 NUL，避免直接利用此参数跳往外站。
 function safeNextPath(value) {
   const path = typeof value === "string" ? value.trim().slice(0, 500) : "";
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("\u0000")) return "";
@@ -173,6 +174,7 @@ function scriptLiteral(value) {
 
 // Authentication mutations must not bypass throttling when their binding fails.
 // null = limiter unavailable, false = quota exceeded, true = admitted.
+// 认证写操作必须获得明确的限流决策。绑定缺失、异常或返回非布尔值时用 null 通知调用者返回 503，而不是放行。
 async function strictAuthLimit(limiter, key) {
   if (typeof limiter?.limit !== "function") {
     console.error("Auth mutation rate limiter binding is missing");
