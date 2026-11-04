@@ -2,7 +2,7 @@ import { IPHONE_THEME_DEFAULT, IPHONE_THEME_PALETTE } from "./iphone-theme-palet
 
 // 外观偏好是“根域家族共享”的，而不是每个产品各存一份。
 // 因此用户在主站改主题色/浅深色后，aw.* AERTEX Watch 只要加载 /appearance.js 就会得到同一偏好。
-const ROOT_DOMAINS = Object.freeze(["qsseda.com","qsseda.online","qsseda.studio"]);
+const ROOT_DOMAINS = Object.freeze(["qsseda.com","qsseda.studio"]);
 const VALID_MODES = Object.freeze(["system","light","dark"]);
 const VALID_ACCENTS = Object.freeze(IPHONE_THEME_PALETTE.map(color => color.id));
 const APPEARANCE_GENERATION = "20261002-system-v2";
