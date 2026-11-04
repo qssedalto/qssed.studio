@@ -44,6 +44,7 @@ export async function handleAdminHandoff(request) {
   return new Response(null, { status: 302, headers });
 }
 
+// 管理后台会话分两层校验：主机级 access token 必须有效，数据库也必须确认管理员身份；普通登录不等于管理员授权。
 export async function verifyAdminSession(request) {
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   const accessToken = cookies[ACCESS_COOKIE] || "";
@@ -123,6 +124,7 @@ async function verifyAccessToken(accessToken) {
   }
 }
 
+// 管理员权限以带当前用户 Bearer 的服务端 RPC 结果为准，不能只根据客户端页面、Cookie 名称或角色显示值判断。
 async function verifyAdminDatabaseSession(accessToken) {
   try {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_admin_session`, {
