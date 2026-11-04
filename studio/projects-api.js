@@ -13,6 +13,7 @@ function projectPrefix(userId) {
   return `${PROJECT_ROOT}${userId}/`;
 }
 
+// 项目 R2 key 由当前用户的专属前缀和规范化项目 ID 构成；禁止让浏览器直接指定任意存储对象键。
 function projectKey(userId, projectId) {
   return `${projectPrefix(userId)}${projectId}.json`;
 }
@@ -96,6 +97,7 @@ async function createProject(request, env, userId) {
   }
 }
 
+// 更新项目时先清洗 URL 中的 ID 和请求体，读取现有对象后再维护项目字段及元数据，避免覆盖无关用户的数据。
 async function updateProject(request, env, userId) {
   const url = new URL(request.url);
   const projectId = cleanProjectId(url.searchParams.get("id"));
