@@ -60,7 +60,7 @@ The control-plane API endpoint is:
 POST https://admin.qsseda.com/api/admin/access-audit
 ```
 
-Equivalent `admin.qsseda.online` and `admin.qsseda.studio` family hosts use their matching root domain.
+The equivalent `admin.qsseda.studio` family host uses its matching root domain.
 
 Supported actions:
 
