@@ -122,7 +122,9 @@ async function routeStudioRequest(request, env, ctx) {
 
   if (AUTH_ABUSE_PATHS.has(pathname)) {
     const key = rateLimitKey(request, `auth:${pathname}`);
-    if (!(await allowed(env?.AUTH_RATE_LIMITER, key))) return tooManyRequests();
+    const decision = await strictAuthLimit(env?.AUTH_RATE_LIMITER, key);
+    if (decision === null) return limiterUnavailable();
+    if (decision === false) return tooManyRequests();
   } else if (pathname.startsWith("/api/")) {
     const isWrite = WRITE_METHODS.has(request.method.toUpperCase());
     const limiter = isWrite ? env?.API_WRITE_RATE_LIMITER : env?.API_READ_RATE_LIMITER;
@@ -226,6 +228,22 @@ async function suppressWorkClientSessionBounce(response) {
   });
 }
 
+// For login, signup and session-handoff mutations, a missing/failing limiter
+// must not silently become an unrestricted authentication endpoint.
+async function strictAuthLimit(limiter, key) {
+  if (typeof limiter?.limit !== "function") {
+    console.error("Studio auth rate limiter binding is missing");
+    return null;
+  }
+  try {
+    const result = await limiter.limit({ key });
+    return typeof result?.success === "boolean" ? result.success : null;
+  } catch (error) {
+    console.error("Studio auth rate limiter unavailable", error);
+    return null;
+  }
+}
+
 async function allowed(limiter, key) {
   if (!limiter?.limit) return true;
   try {
@@ -275,6 +293,18 @@ function methodNotAllowed() {
   return new Response(JSON.stringify({ error: "Method not allowed" }), {
     status: 405,
     headers: { "content-type": "application/json;charset=UTF-8", "cache-control": "no-store", "x-content-type-options": "nosniff" }
+  });
+}
+
+function limiterUnavailable() {
+  return new Response(JSON.stringify({ error: "Authentication is temporarily unavailable. Please retry shortly." }), {
+    status: 503,
+    headers: {
+      "content-type": "application/json;charset=UTF-8",
+      "cache-control": "no-store",
+      "retry-after": "30",
+      "x-content-type-options": "nosniff"
+    }
   });
 }
 

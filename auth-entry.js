@@ -37,10 +37,14 @@ async function routeAuthRequest(request, env, ctx) {
 
   if (pathname === "/api/login") {
     const key = rateLimitKey(request, "auth-login");
-    if (!(await allowed(env?.AUTH_LOGIN_RATE_LIMITER, key))) return tooManyRequests();
+    const decision = await strictAuthLimit(env?.AUTH_LOGIN_RATE_LIMITER, key);
+    if (decision === null) return limiterUnavailable();
+    if (decision === false) return tooManyRequests();
   } else if (OAUTH_MUTATION_PATHS.has(pathname)) {
     const key = rateLimitKey(request, `oauth:${pathname}`);
-    if (!(await allowed(env?.AUTH_OAUTH_RATE_LIMITER, key))) return tooManyRequests();
+    const decision = await strictAuthLimit(env?.AUTH_OAUTH_RATE_LIMITER, key);
+    if (decision === null) return limiterUnavailable();
+    if (decision === false) return tooManyRequests();
   }
 
   if (isAuthSsoPath(pathname)) {
@@ -167,14 +171,19 @@ function scriptLiteral(value) {
   return JSON.stringify(String(value || "")).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
 
-async function allowed(limiter, key) {
-  if (!limiter?.limit) return true;
+// Authentication mutations must not bypass throttling when their binding fails.
+// null = limiter unavailable, false = quota exceeded, true = admitted.
+async function strictAuthLimit(limiter, key) {
+  if (typeof limiter?.limit !== "function") {
+    console.error("Auth mutation rate limiter binding is missing");
+    return null;
+  }
   try {
     const result = await limiter.limit({ key });
-    return result?.success !== false;
+    return typeof result?.success === "boolean" ? result.success : null;
   } catch (error) {
-    console.error("Auth rate limiter unavailable", error);
-    return true;
+    console.error("Auth mutation rate limiter unavailable", error);
+    return null;
   }
 }
 
@@ -184,6 +193,18 @@ async function allowed(limiter, key) {
 export function rateLimitKey(request, scope) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   return `${scope}:ip:${ip}`;
+}
+
+function limiterUnavailable() {
+  return new Response(JSON.stringify({ error: "Authentication is temporarily unavailable. Please retry shortly." }), {
+    status: 503,
+    headers: {
+      "content-type": "application/json;charset=UTF-8",
+      "cache-control": "no-store",
+      "retry-after": "30",
+      "x-content-type-options": "nosniff"
+    }
+  });
 }
 
 function tooManyRequests() {
