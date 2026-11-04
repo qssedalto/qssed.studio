@@ -106,8 +106,6 @@ for (const required of [
   'bridgePort       = "32145"',
   '"https://qsseda.com"',
   '"https://www.qsseda.com"',
-  '"https://qsseda.online"',
-  '"https://www.qsseda.online"',
   '"https://qsseda.studio"',
   '"https://www.qsseda.studio"',
   'HandleFunc("/health"',
