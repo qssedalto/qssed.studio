@@ -246,11 +246,11 @@ assert(workWrangler.name === "qsseda-work", "Work Worker must use a dedicated sc
 assert(workWrangler.main === "studio/worker-audit.js", "Work Worker must enter through the audited main-site facade");
 assert(workAuditWrapper.includes('import worker from "../worker.js"'), "Work audit wrapper must reuse the hardened main-site facade");
 assert(workAuditWrapper.includes("recordAccessAudit"), "Work audit wrapper must preserve private access auditing");
-for (const [host, zone] of [["work.qsseda.com","qsseda.com"],["work.qsseda.online","qsseda.online"],["work.qsseda.studio","qsseda.studio"]]) {
+for (const [host, zone] of [["work.qsseda.com","qsseda.com"],["work.qsseda.studio","qsseda.studio"]]) {
   assert(workWrangler.routes?.some(route => route.pattern === `${host}/*` && route.zone_name === zone), `${host} exact Worker route must outrank the main-site wildcard route`);
   assert(workWrangler.routes?.some(route => route.pattern === host && route.custom_domain === true), `${host} custom domain route is missing`);
 }
-assert(!workAuditWrapper.includes("canonicalQssedaAlias"), "Work .online/.studio hosts must stay on their own domains");
+assert(!workAuditWrapper.includes("canonicalQssedaAlias"), "Work .studio hosts must stay on their own domains");
 assert(entry.includes('workHref: `${workOrigin}/${fullLocale}/tex`'), "Studio shell must preserve the complete locale in the AERTEX Work product URL.");
 assert(entry.includes('cashHref: `${cashOrigin}/${fullLocale}`'), "Studio shell must expose AERTEX Cash as an independent product.");
 // Work 的共享产品导航也承担 Watch 跨产品入口，因此这里顺便锁定 Watch 的 canonical 域名推导与菜单顺序。
@@ -276,7 +276,7 @@ assert(shell.includes('href="${group.href}" target="_blank" rel="noopener norefe
 assert(shell.indexOf('title:"AERTEX Work"') < shell.indexOf('title:"AERTEX Cash"') && shell.indexOf('title:"AERTEX Cash"') < shell.indexOf('title:"AERTEX Watch"') && shell.indexOf('title:"AERTEX Watch"') < shell.indexOf('title:"AERTEX Intelligence"'), "Compact independent products must order AERTEX Work, AERTEX Cash, AERTEX Watch, then Intelligence.");
 assert(workWrangler.r2_buckets?.some(bucket => bucket.binding === "STORAGE" && bucket.bucket_name === "qsseda-studio-storage"), "Work Worker must share the protected main-site storage binding");
 
-for (const host of ["work.qsseda.com","work.qsseda.online","work.qsseda.studio"]) {
+for (const host of ["work.qsseda.com","work.qsseda.studio"]) {
   assert(bridge.includes(`"https://${host}"`), `Legacy Bridge must allow ${host}`);
   assert(nativeOrigin.includes(`allowedOrigins["https://${host}"] = true`), `Native Bridge must allow ${host}`);
 }
