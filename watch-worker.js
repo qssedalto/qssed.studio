@@ -253,6 +253,7 @@ async function handleTokenCreate(request, env, userId) {
 }
 
 // 设备上传入口：先限制请求大小/事件数，再校验 token、规范化 Bucket/事件，最后按 UTC 日期分片写入 R2。
+// 设备上传走独立数据面：先限制请求大小，再验证设备令牌，随后才解析 Bucket/Event 并写入 R2。
 async function handleDeviceSync(request, env) {
   if (!env || !env.STORAGE) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
@@ -349,6 +350,7 @@ async function handleBucketList(env, userId) {
 }
 
 // ActivityWatch 风格事件查询：按 start/end 读取可能相关的日分片，并保留“开始在范围外、但持续时间跨入范围”的事件。
+// 查询必须包含跨越时间窗口边界的事件，不能只读取时间戳落在窗口内的记录，否则统计会漏掉持续活动。
 async function handleEventQuery(request, env, userId, bucketId) {
   if (!env || !env.STORAGE || !userId) return json({ error: "Watch storage is unavailable." }, 503);
   if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "Method not allowed." }, 405);
@@ -455,6 +457,7 @@ function sanitizeData(value) {
 }
 
 // 合并同一 Bucket 日分片里的 heartbeat。优先用 ActivityWatch event id；没有 id 时退化为 timestamp+data 指纹。
+// 重复同步会再次送来同一个 heartbeat；去重标识不含 duration，保留较长版本才能正确反映持续时间。
 async function mergeEvents(existing, incoming) {
   const map = new Map();
   for (const event of [...existing, ...incoming]) {
