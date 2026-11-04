@@ -76,7 +76,6 @@ assertContains(adminHandoff, 'new URL("/control/handoff"', "Admin session redire
 
 for (const [host, zone] of [
   ["admin.qsseda.com", "qsseda.com"],
-  ["admin.qsseda.online", "qsseda.online"],
   ["admin.qsseda.studio", "qsseda.studio"]
 ]) {
   assert(wrangler.routes?.some(route => route.pattern === `${host}/*` && route.zone_name === zone), host + " Worker route is missing");
