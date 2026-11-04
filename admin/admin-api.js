@@ -71,6 +71,7 @@ export async function handleAdminAccess(request) {
   return withAdminSessionCookies(json({ is_admin: true, user_id: session.user.id }), session.cookies);
 }
 
+// 管理员动作由服务端白名单选择；在执行 RPC 前依次验证方法、同源要求和独立 Admin 会话，避免前端按钮成为授权边界。
 export async function handleAdminAction(request, _env, action) {
   const spec = ACTIONS[action];
   if (!spec) return json({ error: "Unknown administrator action." }, 404);
