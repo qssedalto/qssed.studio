@@ -13,7 +13,6 @@ const VERSION = "0.1.0";
 const SERVICE = "qsseda-codex-bridge";
 const DEFAULT_ORIGINS = [
   "https://gpt.qsseda.com",
-  "https://gpt.qsseda.online",
   "https://gpt.qsseda.studio"
 ];
 const EXTRA_ORIGINS = String(process.env.QSSEDA_CODEX_BRIDGE_ORIGINS || "")
