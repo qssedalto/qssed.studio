@@ -36,10 +36,10 @@ async function routeAuthRequest(request, env, ctx) {
   const effectiveReturn = requestedReturn || pendingReturn;
 
   if (pathname === "/api/login") {
-    const key = await rateLimitKey(request, "auth-login", false);
+    const key = rateLimitKey(request, "auth-login");
     if (!(await allowed(env?.AUTH_LOGIN_RATE_LIMITER, key))) return tooManyRequests();
   } else if (OAUTH_MUTATION_PATHS.has(pathname)) {
-    const key = await rateLimitKey(request, `oauth:${pathname}`, true);
+    const key = rateLimitKey(request, `oauth:${pathname}`);
     if (!(await allowed(env?.AUTH_OAUTH_RATE_LIMITER, key))) return tooManyRequests();
   }
 
@@ -178,23 +178,12 @@ async function allowed(limiter, key) {
   }
 }
 
-async function rateLimitKey(request, scope, preferAuthenticatedIdentity) {
-  if (preferAuthenticatedIdentity) {
-    const authorization = request.headers.get("Authorization") || "";
-    if (authorization) return `${scope}:auth:${await digest(authorization)}`;
-
-    const cookie = request.headers.get("Cookie") || "";
-    if (cookie) return `${scope}:cookie:${await digest(cookie)}`;
-  }
-
+// Use a stable Cloudflare source IP for both browser login and OAuth mutation limits.
+// Authentication headers and cookies can be attacker-controlled before validation;
+// using them as bucket identifiers would permit trivial credential-rotation bypasses.
+export function rateLimitKey(request, scope) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   return `${scope}:ip:${ip}`;
-}
-
-async function digest(value) {
-  const bytes = new TextEncoder().encode(String(value || ""));
-  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
-  return Array.from(hash.slice(0, 16), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function tooManyRequests() {
