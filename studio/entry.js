@@ -207,6 +207,14 @@ export default {
       const gate = await verifyStudioPageSession(request);
       if (!gate.ok) {
         if (isHomeRoute) {
+          // A shared account marker means the user has signed in on an AERTEX host.
+          // The main host may lack its own __Host session cookie: recover it before
+          // showing the public sign-in landing page. The bootstrap page validates
+          // the browser session or sends the user through the auth-domain handoff.
+          const accountMarker = String(getRequestCookie(request, "__Secure-qsseda-account-id") || "").trim();
+          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(accountMarker)) {
+            return withStudioSessionCookies(studioSessionBootstrapPage(locale, request), gate.cookies);
+          }
           const canonicalHost = new URL(request.url).hostname.toLowerCase() === "qsseda.com";
           return withStudioSessionCookies(
             localizedPage(publicHomeMarkup(fullLocale, request), locale, 200, { indexable: canonicalHost }),
