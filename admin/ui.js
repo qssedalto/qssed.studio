@@ -1321,31 +1321,32 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     const rows = data.entries || [];
     const pending = rows.filter(row=>row.approval_status==="pending").length;
     const approved = rows.filter(row=>row.approval_status==="approved").length;
-    const available = rows.reduce((n,row)=>n+Number(row.remaining||0),0);
-    view.innerHTML = objCards({"待审核申请":pending,"已批准账户":approved,"可用编译次数":available,"登记账户":rows.length})+
+    const available = rows.reduce((n,row)=>n+(row.unlimited?0:Number(row.remaining||0)),0);
+    view.innerHTML = objCards({"待审核申请":pending,"已批准账户":approved,"本周可用编译次数":available,"登记账户":rows.length})+
       '<section class="section"><div class="sectionHead"><h2>直接分配额度</h2><span class="mono">只适用于尚无额度记录的用户</span></div>'+
       '<div class="inline" style="padding:14px;gap:10px"><input id="texGrantUser" class="compactInput" aria-label="用户 UUID" placeholder="用户 UUID" style="width:min(410px,100%);flex:1 1 230px">'+
       '<label>次数 <input id="texGrantCount" class="compactInput" type="number" min="1" max="100" value="5" style="width:75px"></label>'+
       '<button class="btn primary" id="texGrantButton" type="button">分配额度</button></div>'+
-      '<div class="feedback" id="texGrantFeedback" role="status">已有额度记录的用户请在下表更新，不会清零已使用的次数。</div></section>'+
-      '<section class="section"><div class="sectionHead"><h2>GitHub Actions 编译额度</h2><span class="mono">仅管理员可以修改 · 每账户最多 100 次</span></div>'+
-      '<div class="tableWrap"><table><thead><tr><th>用户</th><th>状态</th><th>已用 / 总额度</th><th>私有仓库</th><th>分配额度</th><th>操作</th></tr></thead><tbody>'+
+      '<div class="feedback" id="texGrantFeedback" role="status">已有额度记录的用户请在下表调整每周发放量，不会清零已结转的次数。</div></section>'+
+      '<section class="section"><div class="sectionHead"><h2>GitHub Actions 编译额度</h2><span class="mono">仅管理员可以修改 · 每周最多 100 次 · 未用额度可结转</span></div>'+
+      '<div class="tableWrap"><table><thead><tr><th>用户</th><th>状态</th><th>累计已用 / 累计发放</th><th>本周使用 / 上限</th><th>私有仓库</th><th>分配额度</th><th>操作</th></tr></thead><tbody>'+
       (rows.length ? rows.map(row=>{
         const label=row.profile?.display_name||row.profile?.username||row.user_id;
         const status=({pending:"待审核",approved:"已批准",rejected:"已拒绝"})[row.approval_status]||row.approval_status;
-        const amount=row.approval_status==="pending"?Math.max(1,Math.min(100,Number(row.requested_credits)||1)):Math.max(1,Math.min(100,Number(row.quota_total)||1));
+        const amount=row.approval_status==="pending"?Math.max(1,Math.min(100,Number(row.requested_credits)||1)):Math.max(1,Math.min(100,Number(row.weekly_credits)||100));
         return '<tr data-tex-user="'+esc(row.user_id)+'" data-tex-status="'+esc(row.approval_status)+'">'+
           '<td><strong>'+esc(label)+'</strong><br><span class="mono">'+esc(row.user_id)+'</span></td>'+
-          '<td>'+esc(status)+(row.active?' · 编译中':'')+'</td>'+
-          '<td>'+esc(row.quota_used)+' / '+esc(row.quota_total)+'<br><span class="mono">剩余 '+esc(row.remaining)+'</span></td>'+
+          '<td>'+esc(status)+(row.unlimited?' · 无限制':'')+(row.active?' · 编译中':'')+'</td>'+
+          '<td>'+esc(row.quota_used)+' / '+esc(row.quota_total)+'<br><span class="mono">结余 '+(row.unlimited?'∞':esc(Math.max(0,row.quota_total-row.quota_used)))+'</span></td>'+ 
+          '<td>'+(row.unlimited?'∞':esc(row.weekly_used)+' / 100')+'<br><span class="mono">本周可用 '+(row.unlimited?'∞':esc(row.remaining))+'</span></td>'+
           '<td><span class="mono">'+esc(row.repo_name||"未创建")+'</span><br>'+esc(row.repo_state||"none")+'</td>'+
-          '<td><input class="texCreditAmount compactInput" aria-label="授予编译次数" type="number" min="1" max="100" value="'+amount+'" style="width:86px"></td>'+
+          '<td><input class="texCreditAmount compactInput" aria-label="每周发放额度" type="number" min="1" max="100" value="'+amount+'" style="width:86px"></td>'+
           '<td><div class="inline">'+(row.approval_status==="pending"
             ? '<button class="btn primary" data-tex-action="approve">批准</button><button class="btn danger" data-tex-action="reject">拒绝</button>'
             : row.approval_status==="approved"
-              ? '<button class="btn primary" data-tex-action="set-total">更新额度</button>'
+              ? '<button class="btn primary" data-tex-action="set-total">调整每周额度</button>'
               : '已拒绝 · 等待用户重新申请')+'</div></td></tr>';
-      }).join("") : '<tr><td colspan="6">暂无远程编译额度记录。</td></tr>')+
+      }).join("") : '<tr><td colspan="7">暂无远程编译额度记录。</td></tr>')+
       '</tbody></table></div><div class="feedback" id="texCreditsFeedback" role="status"></div></section>';
     const feedback=document.getElementById("texCreditsFeedback");
     document.getElementById("texGrantButton")?.addEventListener("click",async(event)=>{

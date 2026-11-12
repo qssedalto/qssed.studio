@@ -107,6 +107,13 @@ export function rewriteWorkSubdomainRequest(request) {
     return { request, pageNext: "", redirect: "", canonical: "", documentId: "", notFound: true };
   }
 
+  if(routeLocale && rest.length === 2 && rest[0] === "tex" && rest[1] === "setup") {
+    const internalUrl=new URL(url.toString());
+    internalUrl.pathname="/"+routeLocale+"/work/tex/setup";
+    return {request:new Request(internalUrl.toString(),request),pageNext:pathname,
+      redirect:"",canonical:"",documentId:""};
+  }
+
   if (routeLocale && rest.length === 1 && rest[0] === "tex") {
     const internalUrl = new URL(url.toString());
     internalUrl.pathname = `/${routeLocale}/work/tex`;
