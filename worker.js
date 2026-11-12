@@ -13,6 +13,7 @@
  */
 
 import studio from "./studio/entry.js";
+import { injectSweiFontResponse, sweiFontAssetResponse } from "./studio/swei-font.js";
 import { handleProledWallpaperRoute } from "./studio/public-wallpapers.js";
 import { handleKnowledgeSearch } from "./studio/knowledge-api.js";
 import { handleGlobalSearch } from "./studio/global-search-api.js";
@@ -93,6 +94,8 @@ async function routeStudioRequest(request, env, ctx) {
 
   if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
   if (LOGO_PATHS.has(pathname)) return logoResponse(request);
+  const sweiAsset = sweiFontAssetResponse(pathname, request.method);
+  if (sweiAsset) return sweiAsset;
 
   if (!workHost && isMainWorkHandoffPath(pathname)) return handleMainWorkHandoff(request);
   if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);
@@ -202,7 +205,7 @@ async function routeStudioRequest(request, env, ctx) {
   let response = await studio.fetch(request, env, ctx);
   if (workHost && workPageNext && response.status === 401) return workSessionRedirect(request, workPageNext);
   if (workHost && workPageNext && response.status === 200) response = await suppressWorkClientSessionBounce(response);
-  return hardenGlobalBrowserResponse(response);
+  return hardenGlobalBrowserResponse(await injectSweiFontResponse(response, request.method));
 }
 
 async function handleTexCollaborationRoute(request, env) {
