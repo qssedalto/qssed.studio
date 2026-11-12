@@ -5,6 +5,7 @@ import { gunzipSync } from "node:zlib";
 import { managedTexRepoName, MANAGED_TEX_WORKFLOW, MANAGED_TEX_WORKFLOW_PATH } from "../studio/tex-github-workflow.js";
 import { enhanceTexGithubWorkbench } from "../studio/ui-tex-github.js";
 import vm from "node:vm";
+import { selectTexPdfRange } from "../studio/tex-github-pdf-range.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexProjectControls } from "../studio/ui-tex-project-controls.js";
 import { texGithubSetupContent } from "../studio/ui-tex-github-setup.js";
@@ -147,4 +148,24 @@ assert(progressScript, "GitHub runtime missing");
 new vm.Script(progressScript,{filename:"tex-github-progress.js"});
 assert(api.includes("actions/runs/") && api.includes("/jobs?per_page=10"),"GitHub backend must supply actual job statuses.");
 assert(api.includes("steps: (Array.isArray(job.steps)"),"Backend must bound and normalize job step names.");
+// Safari PDFKit uses authenticated inline HTTP byte-range requests.
+const pdfBytes=Uint8Array.from({length:40},(_,i)=>i);
+const full=selectTexPdfRange(pdfBytes,null);
+assert.equal(full.status,200);assert.equal(full.body.byteLength,40);
+const head=selectTexPdfRange(pdfBytes,"bytes=0-4");
+assert.equal(head.status,206);assert.equal(head.contentRange,"bytes 0-4/40");
+assert.deepEqual([...head.body],[0,1,2,3,4]);
+const suffix=selectTexPdfRange(pdfBytes,"bytes=-5");
+assert.equal(suffix.status,206);assert.deepEqual([...suffix.body],[35,36,37,38,39]);
+const tail=selectTexPdfRange(pdfBytes,"bytes=38-");
+assert.equal(tail.status,206);assert.deepEqual([...tail.body],[38,39]);
+for (const invalid of ["bytes=40-50","bytes=6-2","bytes=-0","bytes=0-1,3-4","bytes=oops"]) {
+  const broken=selectTexPdfRange(pdfBytes,invalid);
+  assert.equal(broken.status,416,invalid);
+  assert.equal(broken.contentRange,"bytes */40");
+}
+assert(api.includes('request.headers.get("range")') &&
+  api.includes('"accept-ranges": "bytes"') &&
+  api.includes('request.method === "HEAD"'),
+  "Authenticated GitHub PDF proxy must support Safari Range/HEAD semantics.");
 console.log("AERTEX GitHub TeX isolation, quota and panel checks passed.");
