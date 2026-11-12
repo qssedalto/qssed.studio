@@ -37,7 +37,7 @@ export async function handleTexApi(request, env, action) {
   return withStudioSessionCookies(response, session.cookies);
 }
 
-async function verifyTexUser(accessToken) {
+export async function verifyTexUser(accessToken) {
   const token = String(accessToken || "").trim();
   if (!token) return { error: json({ error: "Authentication required." }, 401) };
 
