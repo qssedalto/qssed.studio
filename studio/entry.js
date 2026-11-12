@@ -25,6 +25,7 @@ import { enhanceWorkLocalBridgeNative } from "./ui-work-native.js";
 import { injectWorkTexHomeLinks, polishWorkHubTexRoute, polishWorkTexNavigation, polishWorkTexVisualTheme } from "./ui-work-tex.js";
 import { polishWorkTexViewportEdges } from "./ui-work-tex-viewport-edges.js";
 import { polishWorkTexWelcome } from "./ui-work-tex-welcome.js";
+import { polishWorkTexPdfControls } from "./ui-work-tex-pdf-controls.js";
 import { enhanceWorkTexCollapsiblePanels } from "./ui-work-tex-panels.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
@@ -249,7 +250,7 @@ export default {
       if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh));
       if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin, fullLocale, mainOrigin), workOrigin));
       if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, fullLocale, mainOrigin), zh));
-      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); markup = polishWorkTexWelcome(polishWorkTexViewportEdges(markup)); }
+      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); markup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup))); }
       // A revoked or nonexistent shared-document deep link returns to the Work
       // start screen with a localized, non-identifying explanation.
       if (pathname === "/work/tex" && new URL(request.url).searchParams.get("notice") === "document-unavailable") {
