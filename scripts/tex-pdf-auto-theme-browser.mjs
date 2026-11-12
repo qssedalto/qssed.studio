@@ -139,16 +139,16 @@ try{
   const nativeDeadline=Date.now()+14000;
   while(Date.now()<nativeDeadline){
     const value=await request("Runtime.evaluate",{
-      expression:"JSON.stringify({native:!!document.querySelector('.aertex-pdf-reader.aertex-pdf-native'),iframe:!!document.querySelector('.aertex-pdf-native-frame'),src:document.querySelector('.aertex-pdf-native-frame')?.getAttribute('src')||'',display:document.querySelector('.aertex-pdf-native-frame')?getComputedStyle(document.querySelector('.aertex-pdf-native-frame')).display:'none',canvas:document.querySelectorAll('.aertex-pdf-reader canvas').length,open:document.querySelector('.aertex-pdf-native-open')?getComputedStyle(document.querySelector('.aertex-pdf-native-open')).display:'none',save:document.querySelector('[data-pdf-action=download]')?getComputedStyle(document.querySelector('[data-pdf-action=download]')).display:'none'})",
+      expression:"JSON.stringify({native:!!document.querySelector('.aertex-pdf-reader.aertex-pdf-native'),object:!!document.querySelector('.aertex-pdf-native-object'),src:document.querySelector('.aertex-pdf-native-object')?.getAttribute('data')||'',display:document.querySelector('.aertex-pdf-native-object')?getComputedStyle(document.querySelector('.aertex-pdf-native-object')).display:'none',canvas:document.querySelectorAll('.aertex-pdf-reader canvas').length,open:document.querySelector('.aertex-pdf-native-open')?getComputedStyle(document.querySelector('.aertex-pdf-native-open')).display:'none',save:document.querySelector('[data-pdf-action=download]')?getComputedStyle(document.querySelector('[data-pdf-action=download]')).display:'none'})",
       returnByValue:true
     });
     if(value.result?.value){
       ios=JSON.parse(value.result.value);
-      if(ios.native&&ios.iframe&&ios.src.startsWith("blob:")&&ios.display!=="none")break;
+      if(ios.native&&ios.object&&ios.src.startsWith("blob:")&&ios.display!=="none")break;
     }
     await sleep(180);
   }
-  if(!ios?.native||!ios.iframe||!ios.src.startsWith("blob:")||
+  if(!ios?.native||!ios.object||!ios.src.startsWith("blob:")||
      ios.display==="none"||ios.canvas!==0||ios.open==="none"||ios.save==="none"){
     throw Error("iPad native PDF smoke check failed: "+JSON.stringify(ios)+
       "\nBrowser exceptions: "+exceptions.join("\n"));
@@ -157,7 +157,7 @@ try{
     const iosScreen=await request("Page.captureScreenshot",{format:"png",captureBeyondViewport:false});
     if(iosScreen.data)fs.writeFileSync(path.join(dir,"pdf-ios-native.png"),Buffer.from(iosScreen.data,"base64"));
   }catch(e){exceptions.push(String(e))}
-  console.log("PASS: emulated iPadOS renders the PDF through a visible native iframe with Save/Open actions, no PDF.js canvases");
+  console.log("PASS: emulated iPadOS renders the PDF through a visible native PDF object (DOM smoke only) with Save/Open actions, no PDF.js canvases");
   console.log("PASS: Chromium true fullscreen shows PDF only; native exit restores toolbar");
   console.log("PASS: real Chromium PDF light/dark/image-color pixel verification");
   console.log(result.report);

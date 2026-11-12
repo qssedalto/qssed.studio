@@ -14,19 +14,28 @@ assert(style && script, "Themed viewer needs both pre-paint CSS and a client con
 assert(html.indexOf('id="aertex-work-pdf-auto-theme"') < html.indexOf("</head>"),
   "Theme CSS must arrive before first paint to avoid a white flash");
 new Function(script);
-assert(style.includes(".aertex-pdf-reader.aertex-pdf-native iframe.aertex-pdf-native-frame"),
-  "iOS must show its own interactive, full-height PDFKit iframe.");
+assert(style.includes(".aertex-pdf-reader.aertex-pdf-native object.aertex-pdf-native-object"),
+  "iPadOS must use a full-height native PDF object, not the known blank iframe.");
 assert(style.includes(".aertex-pdf-native-open") && style.includes("display:none!important"),
   "Browser-native PDF fallback must not add buttons on desktop.");
 assert(script.includes("const iosNativePdf = /iPad|iPhone|iPod/"),
   "iOS PDF rendering must not rely on layout width or an unstable Safari UA alone.");
 assert(script.includes("navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints) > 1"),
   "iPadOS desktop user-agent detection missing.");
-assert(script.includes("if (iosNativePdf) {") && script.includes("showIosNativePdf(blob);") &&
+assert(script.includes("if (iosNativePdf) {") && script.includes("showIosNativePdf(blob, nativeHttpUrl);") &&
   script.includes("return;"),
   "iOS must bypass PDF.js rendering entirely.");
-assert(script.includes("nativeFrame.src = url;") && script.includes("blob.slice(0, blob.size, 'application/pdf')"),
+assert(script.includes("nativeObject.data = safeHttp || url;") && script.includes("blob.slice(0, blob.size, 'application/pdf')"),
   "iOS must render verified original PDF bytes with correct MIME, not an empty canvas.");
+assert(script.includes("document.createElement('object')") &&
+  !script.includes("document.createElement('iframe')"),
+  "The embedded native iPad PDF must not use a blob iframe.");
+assert(script.includes("const nativeHttp = /^[1-9][0-9]*$/.test") &&
+  script.includes("'/api/tex/github/pdf?run=' + encodeURIComponent(String(runId))"),
+  "Successful Github PDFs must use their authenticated inline HTTP URL.");
+assert(script.includes("nativeObject.type = 'application/pdf'") &&
+  script.includes("fallback.textContent = zh ? '无法内嵌显示？在 Safari 中打开完整 PDF ↗'"),
+  "Mobile native preview needs correct MIME and a visible PDFKit fallback.");
 assert(script.includes("if (iosNativeObjectUrl) disposeIosNativePdf();"),
   "Native PDF URLs must be released on close and navigation.");
 assert(script.includes("const pdfjs = await loadLibrary();"),
