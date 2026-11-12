@@ -229,8 +229,13 @@ export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "http
             if (local) {
               const engineText = local.engines.length ? ' · ' + local.engines.join(' / ') : '';
               setSurface(copy.localReady, copy.localDetail + ' · ' + local.host + engineText, true);
+              // The existing editor/preview must stay mounted. Tell the local
+              // compiler adapter to re-probe its connection in place instead of
+              // losing unsaved editor state with a full page reload.
+              window.dispatchEvent(new Event('qsseda:tex-local-recheck'));
+              checking = false;
+              button.disabled = false;
               button.textContent = copy.recheck;
-              window.setTimeout(() => window.location.reload(), 420);
               return;
             }
 

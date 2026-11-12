@@ -476,7 +476,27 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             }
           }, 10000);
 
+          // Connection-check UI can restore local compiler access after the
+          // browser's local-network permission prompt. Refresh adapter state
+          // without navigating away from the active document or losing edits.
+          let recheckPromise = null;
+          const refreshCompilerInPlace = () => {
+            if (destroyed || recheckPromise) return;
+            recheckPromise = Promise.all([probeCloud(), probeLocal()])
+              .then(() => {
+                if (destroyed) return;
+                syncCompiler();
+                if (previewEnabled && supportsCurrentEngine() && hasDocument()) {
+                  schedulePreview(240);
+                }
+              })
+              .catch(() => {})
+              .finally(() => { recheckPromise = null; });
+          };
+          window.addEventListener('qsseda:tex-local-recheck', refreshCompilerInPlace);
+
           window.addEventListener('pagehide', () => {
+            window.removeEventListener('qsseda:tex-local-recheck', refreshCompilerInPlace);
             destroyed = true;
             observer.disconnect();
             window.clearTimeout(previewTimer);

@@ -4,6 +4,7 @@ import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
 import { polishTexWorkbenchApp } from "../studio/ui-tex-app.js";
 import { enhanceWorkTexCollapsiblePanels } from "../studio/ui-work-tex-panels.js";
 import { injectWorkTexHomeLinks } from "../studio/ui-work-tex.js";
+import { polishWorkTexViewportEdges } from "../studio/ui-work-tex-viewport-edges.js";
 import { LAB_TOOLS } from "../studio/lab-tools.js";
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
@@ -28,11 +29,11 @@ for (const zh of [true, false]) {
   for (const code of scripts) new Function(code);
 
   const workMarkup = enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh), zh);
-  const workPageMarkup = injectWorkTexHomeLinks(
+  const workPageMarkup = polishWorkTexViewportEdges(injectWorkTexHomeLinks(
     `<!doctype html><html><head></head><body>${workMarkup}</body></html>`,
     zh ? "zh-cn" : "en-us",
     "https://qsseda.com"
-  );
+  ));
   assert(workPageMarkup.includes('id="qsseda-work-tex-home-links"'), "Work TeX must install shared main-site exit styling");
   for (const selector of [
     ".tex-documents-panel .tex-panel-head",
@@ -52,6 +53,16 @@ for (const zh of [true, false]) {
   assert(workPageMarkup.includes(".tex-panel-home-link .aertex-wordmark-token{"), "Work TeX must explicitly size the AERTEX wordmark.");
   assert(workPageMarkup.includes("width:70px!important") && workPageMarkup.includes("height:13.5px!important"), "Work TeX AERTEX wordmark must remain visibly legible.");
   assert(!workPageMarkup.includes(".tex-panel-home-link svg{width:13px;height:13px"), "Work TeX must not collapse the AERTEX wordmark into the Home icon dimensions.");
+
+  assert(workPageMarkup.includes('id="qsseda-work-tex-viewport-edges"'), "Work must apply the final flush-edge layout layer.");
+  assert(workPageMarkup.includes("scrollbar-width:none!important"), "Right PDF panel must hide visible scrollbars without disabling scrolling.");
+  assert(workPageMarkup.includes("scrollbar-gutter:auto!important"), "Right PDF panel must not reserve a blank stable scrollbar gutter.");
+  assert(workPageMarkup.includes("calc(100% - 24px)!important"), "PDF card must fill the right column with only the intended symmetric margins.");
+  assert(workPageMarkup.includes("left:50%!important") && workPageMarkup.includes("translateX(-50%)"), "Right collapsed plus button must be horizontally centered.");
+  assert(workPageMarkup.includes(".tex-documents-panel > .tex-panel-head"), "Document header must share the full-width sidebar background.");
+  assert(workMarkup.includes("openingDocument(id)") && workMarkup.includes("fastDocument(id)"), "Document selection must show immediate feedback and reuse prefetches.");
+  assert(workMarkup.includes("void loadRuns();"), "Document detail must appear before run history fetch finishes.");
+  assert(workMarkup.includes("window.addEventListener('qsseda:tex-local-recheck'"), "Local TeX must support in-place connection recovery.");
   assert(workMarkup.includes("tex-work-app"), "Work TeX route must render the dedicated app surface");
   assert(workMarkup.includes("tex-live-preview-switch"), "Live preview must use the custom switch instead of a native checkbox UI");
   assert(!workMarkup.includes('class="tex-live-switch"'), "Live preview switch class must match its CSS selector");
@@ -103,6 +114,10 @@ assert(texTool?.href === "/work/tex", "TeX Workbench registry must point at the 
 assert(config.includes('"/work/tex"'), "Work TeX route is missing from protected OS routes");
 assert(config.includes('["/workspace/experiments/tex", "/work/tex"]'), "Legacy TeX route must redirect to Work TeX");
 assert(entry.includes('pathname === "/work/tex"'), "Studio entry does not mount the Work TeX app");
+assert(entry.includes("polishWorkTexViewportEdges(markup)"), "Entry must apply the final Work viewport edge-fix CSS after the main theme.");
+const workUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
+assert(!workUi.includes("window.location.reload()"), "Bridge connection check must not force-refresh the Work editor.");
+assert(workUi.includes("qsseda:tex-local-recheck"), "Bridge connection check must dispatch the in-place re-probe signal.");
 assert(entry.includes("enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)"), "Work TeX collapsible panel renderer is not wired");
 assert(entry.includes("polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh)"), "Work TeX app renderer is not wired");
 assert(worker.includes('pathname.startsWith("/api/tex/")'), "Worker is missing the TeX API boundary");
