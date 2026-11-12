@@ -84,6 +84,7 @@ function emulate(locale) {
   const all = [body, ...body.querySelectorAll("*")];
   let observer = null;
   const document = {
+    nodeType: 9,
     readyState: "complete",
     body,
     documentElement: { lang: locale },
