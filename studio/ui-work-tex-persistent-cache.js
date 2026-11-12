@@ -19,3 +19,39 @@ export function enhanceWorkTexPersistentCache(markup) {
   }
   return source + '<script id="qsseda-work-tex-document-cache">' + cacheRuntime + '</script>';
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Only a server-verified account receives its local-cache partition key.
+// The Worker has already checked document access for /<locale>/d/<uuid>,
+// before serving this HTML. The cache does not authenticate a request.
+export function prepareWorkTexDocumentShell(markup, { userId = "", documentId = "", zh = true } = {}) {
+  let output = String(markup || "");
+  const user = UUID.test(String(userId)) ? String(userId).toLowerCase() : "";
+  if (!user) return output;
+  const root = '<section class="tex-workbench tex-work-app" data-tex-root>';
+  if (!output.includes(root)) throw new Error("Work TeX cache root markup changed.");
+  output = output.replace(root,
+    '<section class="tex-workbench tex-work-app" data-tex-root data-tex-cache-user="' + user + '">');
+  if (!UUID.test(String(documentId))) return output;
+  const placeholder = '<div id="tex-editor-placeholder" class="tex-editor-placeholder">';
+  const editor = '<section id="tex-editor" class="tex-editor" hidden>';
+  if (!output.includes(placeholder) || !output.includes(editor)) {
+    throw new Error("Work TeX authorized document shell anchors changed.");
+  }
+  // Do not paint the welcome page for a deep-linked document, even for users
+  // without an existing IndexedDB snapshot. Show a calm progress state until
+  // a cached copy (or the verified live copy) is ready.
+  output = output.replace(placeholder,
+    '<div id="tex-editor-placeholder" class="tex-editor-placeholder" hidden>');
+  const label = zh ? '正在打开文档…' : 'Opening document…';
+  const loading = '<div class="tex-document-restore" id="tex-document-restore" role="status" aria-live="polite"><span class="tex-document-restore-spinner" aria-hidden="true"></span>' + label + '</div>';
+  output = output.replace(editor, loading + editor);
+  const css = '<style id="tex-document-restoration-style">' +
+    '#tex-editor-placeholder[hidden]{display:none!important}' +
+    '.tex-work-app .tex-document-restore{min-height:260px;display:flex;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-size:13px}' +
+    '.tex-work-app .tex-document-restore-spinner{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--primary);animation:tex-doc-restore-spin .8s linear infinite}' +
+    '@keyframes tex-doc-restore-spin{to{transform:rotate(360deg)}}' +
+    '</style>';
+  return output.replace('</head>', css + '</head>');
+}
