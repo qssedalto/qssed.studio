@@ -307,21 +307,11 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         }
 
         function inferSelf(participants) {
-          if (inferredSelfId) return inferredSelfId;
-          const items = Array.isArray(participants) ? participants : [];
-          const role = accessRole();
-          const selection = view?.state?.selection?.main;
-          const start = selection ? Math.min(selection.anchor, selection.head) : Number(source.selectionStart) || 0;
-          const end = selection ? Math.max(selection.anchor, selection.head) : Number(source.selectionEnd) || 0;
-          let matches = items.filter(person => String(person?.role || '') === role && Number(person?.selection_start) === start && Number(person?.selection_end) === end);
-          if (role === 'owner') {
-            const owners = items.filter(person => person?.role === 'owner');
-            if (owners.length === 1) matches = owners;
-          }
-          if (matches.length === 1) {
-            inferredSelfId = String(matches[0]?.id || '');
-            window.__qssedaTexSelfParticipantId = inferredSelfId;
-          }
+          // Self identity comes from the server-assigned WebSocket client id,
+          // never inferred from matching cursor positions or membership roles.
+          const self = (Array.isArray(participants) ? participants : [])
+            .find(person => person?.self === true);
+          inferredSelfId = self ? String(self?.client_id || '') : '';
           return inferredSelfId;
         }
 
@@ -378,7 +368,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             const hue = colorFor(person);
             if (from !== to) appendSelectionRect(from, to, hue, hostRect);
 
-            const caretPosition = end;
+            const caretPosition = clamp(person.caret_position ?? end, docLength);
             const coords = view.coordsAtPos(caretPosition, caretPosition === docLength ? -1 : 1);
             if (!coords) continue;
             const top = coords.top - hostRect.top;
@@ -580,6 +570,15 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
               return selection ? { anchor: selection.anchor, head: selection.head } : { anchor: source.selectionStart || 0, head: source.selectionEnd || 0 };
             },
             syncFromSource: syncViewFromSource,
+            scrollToRemote(position) {
+              if (!view || !activeDocumentId()) return false;
+              const at = clamp(position, view.state.doc.length);
+              try {
+                view.dispatch({ effects: EditorView.scrollIntoView(at, { y: 'center', x: 'nearest' }) });
+                scheduleRemoteRender();
+                return true;
+              } catch { return false; }
+            },
             replaceSelection(text) {
               if (!view || source.readOnly || accessRole() === 'viewer') return false;
               const selection = view.state.selection.main;
@@ -595,6 +594,9 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           syncViewFromSource();
           if (window.__qssedaTexPresenceSnapshot) onPresence({ detail: window.__qssedaTexPresenceSnapshot });
           scheduleRemoteRender();
+          window.dispatchEvent(new CustomEvent('qsseda:tex-editor-ready', {
+            detail: { kind: 'codemirror6' }
+          }));
 
           window.addEventListener('pagehide', () => {
             if (remoteFrame) cancelAnimationFrame(remoteFrame);
