@@ -6,6 +6,7 @@ on:
       - 'studio/ui-work-tex-pdf-controls.js'
       - 'studio/ui-work-tex-pdf-auto-theme.js'
       - 'scripts/tex-pdf-auto-theme-visual.mjs'
+      - 'scripts/tex-pdf-auto-theme-browser.mjs'
       - 'studio/ui-work-tex-panels.js'
       - 'studio/entry.js'
       - 'studio/ui-work-tex-viewport-edges.js'
@@ -61,31 +62,9 @@ jobs:
             done
           done
       - name: Test PDF dark mode, white text and unchanged image pixels
-        shell: bash
         run: |
-          set -euo pipefail
           node scripts/tex-pdf-auto-theme-visual.mjs
-          browser="$(command -v google-chrome || command -v chromium)"
-          out=/tmp/aertex-tex-pdf-visual
-          "$browser" --headless --no-sandbox --disable-dev-shm-usage \
-            --disable-gpu --allow-file-access-from-files \
-            --virtual-time-budget=30000 --window-size=1300,950 \
-            --dump-dom "file://$out/pdf-theme-qa.html" > "$out/pdf-theme-qa.dom" 2> "$out/pdf-theme-qa.stderr" || {
-            tail -40 "$out/pdf-theme-qa.stderr"
-            exit 1
-          }
-          if ! grep -q 'data-pdf-theme-qa="PASS"' "$out/pdf-theme-qa.dom"; then
-            echo "PDF automatic theme/image preservation browser QA failed"
-            grep -o 'data-pdf-theme-qa="[^"]*"' "$out/pdf-theme-qa.dom" | head -1 || true
-            grep -o 'data-pdf-theme-report="[^"]*"' "$out/pdf-theme-qa.dom" | head -1 || true
-            tail -40 "$out/pdf-theme-qa.stderr" || true
-            exit 1
-          fi
-          "$browser" --headless --no-sandbox --disable-dev-shm-usage \
-            --disable-gpu --hide-scrollbars --allow-file-access-from-files \
-            --virtual-time-budget=13000 --window-size=1300,950 \
-            --screenshot="$out/pdf-theme-auto.png" "file://$out/pdf-theme-qa.html" > /dev/null 2>&1 || true
-
+          node scripts/tex-pdf-auto-theme-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
