@@ -675,10 +675,23 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           }, { once: true });
         }
 
-        window.addEventListener('qsseda:tex-editor-retry', () => {
-          if (!view && !mounting) void mount();
-        });
-        void mount();
+        function startMount() {
+          if (view || mounting) return;
+          void mount().catch(error => {
+            console.warn(labels.failed, error);
+            mounting = false;
+            try { view?.destroy(); } catch {}
+            view = null;
+            try { host?.remove(); } catch {}
+            host = null;
+            source.classList.remove('tex-source-bridge');
+            source.removeAttribute('aria-hidden');
+            source.tabIndex = 0;
+            announceEditor('failed', 'unexpected-init-error');
+          });
+        }
+        window.addEventListener('qsseda:tex-editor-retry', startMount);
+        startMount();
       })();
     </script>`;
 
