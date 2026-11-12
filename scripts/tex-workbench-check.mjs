@@ -301,5 +301,18 @@ assert(!markdown("<script>alert(1)</script>").includes("<script>"), "Markdown mu
 const presenceSource = fs.readFileSync(new URL("../studio/ui-work-tex-realtime.js",import.meta.url),"utf8");
 assert(presenceSource.includes("const people = new Map()") && presenceSource.includes("person?.id || person?.client_id"), "Online indicator must count unique accounts instead of connections.");
 
+const { enhanceWorkTexMobileFollowup } = await import("../studio/ui-work-tex-mobile-followup.js");
+const followup = enhanceWorkTexMobileFollowup("<main class='tex-work-app'></main>");
+const touchCss = followup.split('<style id="aertex-tex-mobile-followup">')[1]?.split('</style>')[0] || "";
+const touchScript = followup.split('<script id="aertex-tex-mobile-followup-runtime">')[1]?.split('</script>')[0] || "";
+assert(touchCss.includes("span:not(.tex-project-chevron)"),"Folder label must not stretch its chevron.");
+assert(touchCss.includes(".tex-shell.is-left-collapsed.is-right-collapsed"),"Two collapsed tablet rails need a 46px grid.");
+assert(touchCss.includes("body.os-shell:has(.tex-work-app)"),"Touch-specific grid overrides must outrank old desktop rules.");
+assert(touchCss.includes("tex-right-panel-restore-touch"),"Collapsed right sidebar must expose a reachable restore control.");
+assert(touchScript.includes("event.stopImmediatePropagation()"),"Tapping project folder must not open main.tex.");
+assert(touchScript.includes("window.__aertexAllowProjectActivation"),"Explicit cross-project file selection must remain possible.");
+new Function(touchScript);
+assert(WORK_TEX_EXPLORER_TREE.includes("window.__aertexAllowProjectActivation=true"),"Explicit file click must bypass folder-only mode.");
+assert(entry.includes("enhanceWorkTexMobileFollowup(enhanceWorkTexMobileQa"),"Followup must only be injected on Work TeX.");
 console.log("TeX Workbench checks passed.");
 function assert(condition, message) { if (!condition) throw new Error(message); }
