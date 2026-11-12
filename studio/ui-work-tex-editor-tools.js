@@ -290,7 +290,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         const renameButton = createButton(labels.rename, icons.rename);
         const historyButton = createButton(labels.history, icons.history, 'is-history');
         const separator = () => { const node = document.createElement('span'); node.className = 'tex-editor-command-separator'; node.setAttribute('aria-hidden', 'true'); return node; };
-        bar.append(saveButton, saveAsButton, separator(), undoButton, redoButton, separator(), cutButton, copyButton, pasteButton, renameButton, separator(), historyButton);
+        // Keep the Explorer-style edit group visible first even in narrow editor panes.
+        bar.append(cutButton, copyButton, pasteButton, renameButton, separator(), saveButton, saveAsButton, separator(), undoButton, redoButton, separator(), historyButton);
         const counts = sourceLabel.lastElementChild;
         if (counts) sourceLabel.insertBefore(bar, counts);
         else sourceLabel.append(bar);
