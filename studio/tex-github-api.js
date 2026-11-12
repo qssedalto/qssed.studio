@@ -3,6 +3,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { verifyTexUser } from "./tex-api-core.js";
 import { getSupabaseSecret, workerLog } from "./server-runtime.js";
+import { selectTexPdfRange } from "./tex-github-pdf-range.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import {
   managedTexRepoName, MANAGED_TEX_WORKFLOW_PATH, MANAGED_TEX_WORKFLOW,
@@ -77,8 +78,8 @@ export async function handleTexGithubApi(request, env, action) {
       response = await compile(request, env, userId);
     } else if (action === "runs" && request.method === "GET") {
       response = await listRuns(env, userId);
-    } else if ((action === "pdf" || action === "download") && request.method === "GET") {
-      response = await servePdf(env, userId, action === "download");
+    } else if ((action === "pdf" || action === "download") && (request.method === "GET" || request.method === "HEAD")) {
+      response = await servePdf(request, env, userId, action === "download");
     } else if (action === "admin/requests" && request.method === "GET") {
       response = admin ? await adminList(env) : fail(403, "Administrator required.");
     } else if (action === "admin/review" && request.method === "POST") {
@@ -592,7 +593,7 @@ function base64Bytes(data) {
   return out;
 }
 
-async function servePdf(env, userId, download) {
+async function servePdf(request, env, userId, download) {
   const row = await readRow(env, userId);
   if (!row?.repo_id || row.repo_state !== "ready") return fail(404, "There is no compiled PDF.");
   const repoPath = githubRepoPath(env, row.repo_name);
@@ -607,12 +608,19 @@ async function servePdf(env, userId, download) {
       String.fromCharCode(...bytes.subarray(0, 5)) !== "%PDF-") {
     return fail(502, "Invalid PDF output.");
   }
-  return new Response(bytes, {
-    headers: {
-      "content-type": "application/pdf",
-      "cache-control": "private, no-store",
-      "x-content-type-options": "nosniff",
-      "content-disposition": (download ? "attachment" : "inline") + "; filename=\"aertex-main.pdf\""
-    }
+  // PDFKit uses HTTP Range for inline PDFs on iPad Safari. Serve each
+  // requested slice with accurate Content-Range and preserve auth/RLS checks.
+  const range = selectTexPdfRange(bytes, download ? null : request.headers.get("range"));
+  const headers = {
+    "content-type": "application/pdf",
+    "cache-control": "private, no-store",
+    "x-content-type-options": "nosniff",
+    "accept-ranges": "bytes",
+    "content-disposition": (download ? "attachment" : "inline") + "; filename=\"aertex-main.pdf\""
+  };
+  if (range.contentRange) headers["content-range"] = range.contentRange;
+  headers["content-length"] = String(range.body?.byteLength || 0);
+  return new Response(request.method === "HEAD" ? null : range.body, {
+    status: range.status, headers
   });
 }
