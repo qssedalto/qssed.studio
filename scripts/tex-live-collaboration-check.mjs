@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { enhanceWorkTexCollaboration } from "../studio/ui-work-tex-collaboration-instant.js";
 import { TexCollaborationRoom } from "../studio/tex-collaboration-room.js";
+import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
+import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
+import { polishTexWorkbenchApp } from "../studio/ui-tex-app.js";
 
 const load = name => fs.readFileSync(new URL("../studio/" + name, import.meta.url), "utf8");
 const room = load("tex-collaboration-room.js");
@@ -26,7 +29,7 @@ assert.match(live, /stopOnManualScroll/, "Manual scrolling must stop following."
 
 for (const zh of [true,false]) {
   const markup = enhanceWorkTexCollaboration(
-    '<div class="tex-work-app" data-tex-root><div class="tex-editor-toolbar"></div></div>', zh
+    polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh),zh),zh), zh
   );
   assert.match(markup, /id="qsseda-tex-live-controls-runtime"/, "Live panel controller must mount.");
   assert.match(markup, /tex-live-follow-select/, "Follow selector must be styled.");
