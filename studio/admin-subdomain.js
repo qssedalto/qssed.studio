@@ -4,7 +4,7 @@ import { adminCanonicalPath as localizedAdminPath, adminLocaleFromPath } from ".
 import { localeFromPath as sharedLocaleFromPath, normalizeSupportedLocale, preferredLocaleFromRequest, SUPPORTED_LOCALES } from "./locale.js";
 
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
-const ADMIN_PATHS = new Set(["/", "/overview", "/users", "/roles", "/logs", "/system", "/access", "/content", "/storage", "/intelligence"]);
+const ADMIN_PATHS = new Set(["/", "/overview", "/users", "/roles", "/logs", "/system", "/access", "/content", "/storage", "/intelligence", "/tex-credits"]);
 
 export function isMainAdminHandoffPath(pathname) {
   return pathname === "/control/handoff" || pathname === "/zh-cn/control/handoff" || pathname === "/en/control/handoff";

@@ -20,6 +20,7 @@ import { adminOriginForRequest, mainOriginForRequest } from "./studio/domain-fam
 import { adminSessionRedirect } from "./studio/admin-subdomain.js";
 import { handleAuthorizedAccessAuditAdmin, recordAccessAudit } from "./studio/access-audit.js";
 import { handleAdminAccess, handleAdminAction } from "./admin/admin-api.js";
+import { handleAdminTexCredits } from "./admin/tex-credits-api.js";
 import { handleAdminContent } from "./admin/content-api.js";
 import {
   adminHeaders,
@@ -96,6 +97,8 @@ async function routeAdminRequest(request, env) {
       response = await handleAdminAccess(request);
     } else if (pathname === "/api/admin/access-audit") {
       response = await handleAuthorizedAccessAuditAdmin(request, env);
+    } else if (pathname === "/api/admin/tex-credits") {
+      response = await handleAdminTexCredits(request, env, session);
     } else if (pathname === "/api/admin/content/summaries") {
       response = await handleAdminContent(request, env, session, "summaries");
     } else if (pathname === "/api/admin/content/links") {
