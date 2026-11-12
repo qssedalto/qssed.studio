@@ -98,6 +98,35 @@ try{
       "\nJavaScript exceptions/warnings: "+exceptions.join("\n")+
       "\nChrome STDERR: "+stderr.slice(-3000));
   }
+  // Real browser-native Fullscreen API, initiated from the actual toolbar
+  // button with Chromium's DevTools user-gesture flag. The PDF page must be the
+  // only visible component and Esc/exitFullscreen must restore the normal view.
+  const click=await request("Runtime.evaluate",{
+    expression:"document.querySelector('.aertex-pdf-toolbar [data-pdf-action=expand]').click(); true",
+    userGesture:true,returnByValue:true
+  });
+  if(click.exceptionDetails)throw Error("Real fullscreen click threw: "+click.exceptionDetails.text);
+  await sleep(600);
+  const fullscreen=await request("Runtime.evaluate",{
+    expression:"JSON.stringify({active:document.fullscreenElement?.id||'',toolbar:getComputedStyle(document.querySelector('.aertex-pdf-toolbar')).display,reader:document.querySelector('.aertex-pdf-reader').getBoundingClientRect().height,viewport:innerHeight})",
+    returnByValue:true
+  });
+  const full=JSON.parse(fullscreen.result?.value||"{}");
+  if(full.active!=="aertex-pdf-reader"||full.toolbar!=="none"||Math.abs(full.reader-full.viewport)>3){
+    throw Error("Native fullscreen failed to isolate PDF-only view: "+JSON.stringify(full)+
+      "\nChrome warnings: "+exceptions.join("\n"));
+  }
+  await request("Runtime.evaluate",{
+    expression:"document.exitFullscreen()",awaitPromise:true,returnByValue:true
+  });
+  await sleep(200);
+  const exit=await request("Runtime.evaluate",{
+    expression:"JSON.stringify({active:!!document.fullscreenElement,toolbar:getComputedStyle(document.querySelector('.aertex-pdf-toolbar')).display})",
+    returnByValue:true
+  });
+  const after=JSON.parse(exit.result?.value||"{}");
+  if(after.active||after.toolbar==="none")throw Error("Exiting native fullscreen failed to restore PDF tools: "+JSON.stringify(after));
+  console.log("PASS: Chromium true fullscreen shows PDF only; native exit restores toolbar");
   console.log("PASS: real Chromium PDF light/dark/image-color pixel verification");
   console.log(result.report);
 }finally{
