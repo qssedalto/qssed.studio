@@ -214,6 +214,12 @@ assert(config.includes('["/workspace/experiments/tex", "/work/tex"]'), "Legacy T
 assert(entry.includes('pathname === "/work/tex"'), "Studio entry does not mount the Work TeX app");
 assert(entry.includes("polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup)))"), "Entry must mount the PDF zoom/header runtime after Work styling.");
 const workUi = workNavigationUi;
+const sourceFocus = workUi.match(/body\.os-shell:has\(\.tex-work-app\) #tex-source:focus-visible\s*\{([^}]*)\}/)?.[1] || "";
+assert(sourceFocus.includes("outline:none!important"), "Focused TeX source must not inherit the global outer focus outline.");
+assert(sourceFocus.includes("outline-offset:0!important"), "Focused TeX source must not use an offset focus ring.");
+assert(sourceFocus.includes("box-shadow:inset 0 0 0 1px var(--primary)!important"), "Focused TeX source should retain one inner blue border.");
+assert(!sourceFocus.includes("0 0 0 3px"), "TeX source must not render an external blue glow.");
+assert(workUi.includes("#tex-source:focus,"), "Both pointer and keyboard focus must use the same clean TeX source treatment.");
 assert(!workUi.includes("window.location.reload()"), "Bridge connection check must not force-refresh the Work editor.");
 assert(workUi.includes("qsseda:tex-local-recheck"), "Bridge connection check must dispatch the in-place re-probe signal.");
 assert(entry.includes("enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)"), "Work TeX collapsible panel renderer is not wired");
