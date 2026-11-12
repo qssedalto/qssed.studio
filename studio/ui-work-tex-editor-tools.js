@@ -5,8 +5,10 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     saveAs: "另存为",
     undo: "撤销",
     redo: "重做",
+    cut: "剪切",
     copy: "复制",
     paste: "粘贴",
+    rename: "重命名文档",
     history: "历史版本",
     saved: "已保存",
     saving: "正在保存…",
@@ -17,6 +19,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     create: "另存",
     copySuffix: " 副本",
     copied: "已复制",
+    cutFailed: "无法使用剪贴板执行剪切，请选中文本后按 Ctrl+X。",
+    copyFailed: "复制失败，请选中文本后按 Ctrl+C。",
     pasteDenied: "浏览器未授权读取剪贴板，请使用 Ctrl+V。",
     historyOpened: "已定位到版本历史"
   } : {
@@ -24,8 +28,10 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     saveAs: "Save As",
     undo: "Undo",
     redo: "Redo",
+    cut: "Cut",
     copy: "Copy",
     paste: "Paste",
+    rename: "Rename document",
     history: "Version History",
     saved: "Saved",
     saving: "Saving…",
@@ -36,6 +42,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     create: "Save Copy",
     copySuffix: " Copy",
     copied: "Copied",
+    cutFailed: "Clipboard permission denied. Select text and use Ctrl+X.",
+    copyFailed: "Copy failed. Select text and use Ctrl+C.",
     pasteDenied: "Clipboard access was denied. Use Ctrl+V instead.",
     historyOpened: "Version history opened"
   };
@@ -43,8 +51,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
   return output + `
     <style id="qsseda-work-tex-editor-tools">
       .tex-work-app .tex-source-label{
-        min-height:46px!important;
-        padding:7px 14px!important;
+        min-height:56px!important;
+        padding:7px 12px!important;
         display:flex!important;
         align-items:center!important;
         gap:10px!important;
@@ -64,13 +72,17 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         display:flex!important;
         align-items:center!important;
         gap:3px!important;
+        flex:1 1 auto!important;
         min-width:0!important;
-        overflow:hidden!important;
+        overflow-x:auto!important;
+        overflow-y:hidden!important;
+        scrollbar-width:none!important;
       }
+      .tex-editor-commandbar::-webkit-scrollbar{display:none!important}
       .tex-editor-command-separator{
         width:1px!important;
-        height:18px!important;
-        margin:0 3px!important;
+        height:24px!important;
+        margin:0 5px!important;
         background:var(--hairline)!important;
         flex:0 0 auto!important;
       }
@@ -78,26 +90,28 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         appearance:none!important;
         display:grid!important;
         place-items:center!important;
-        width:30px!important;
-        min-width:30px!important;
-        height:30px!important;
-        min-height:30px!important;
+        width:39px!important;
+        min-width:39px!important;
+        height:39px!important;
+        min-height:39px!important;
         margin:0!important;
         padding:0!important;
         border:0!important;
         border-radius:8px!important;
         background:transparent!important;
-        color:var(--muted)!important;
+        color:var(--text)!important;
         box-shadow:none!important;
         cursor:pointer!important;
         transition:background .14s ease,color .14s ease,transform .14s ease!important;
       }
-      .tex-editor-command:hover{background:var(--fill)!important;color:var(--text)!important}
-      .tex-editor-command:active{transform:scale(.92)!important}
+      .tex-editor-command:hover:not(:disabled){background:var(--fill)!important;color:var(--text)!important}
+      .tex-editor-command:active:not(:disabled){transform:scale(.95)!important}
       .tex-editor-command:focus-visible{outline:none!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 14%,transparent)!important}
-      .tex-editor-command:disabled{opacity:.34!important;cursor:not-allowed!important;transform:none!important}
-      .tex-editor-command svg{width:16px!important;height:16px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.7!important;stroke-linecap:round!important;stroke-linejoin:round!important}
-      .tex-editor-command.is-history svg{width:17px!important;height:17px!important}
+      .tex-editor-command:disabled{opacity:.30!important;cursor:not-allowed!important;transform:none!important}
+      .tex-editor-command svg{width:26px!important;height:26px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.7!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important}
+      .tex-editor-command svg .tex-icon-accent{stroke:var(--primary)!important}
+      .tex-editor-command svg .tex-icon-accent-fill{fill:var(--primary)!important;stroke:none!important}
+      .tex-editor-command.is-history svg{width:25px!important;height:25px!important}
 
       .tex-save-as-dialog{
         width:min(420px,calc(100vw - 28px));
@@ -250,14 +264,18 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           return button;
         }
 
+        // Large, independently drawn Windows Explorer-style vector icons.
+        // Muted strokes follow the page theme; their colored details use --primary.
         const icons = {
-          save: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>',
-          saveAs: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10l3 3v12H4z"/><path d="M7 5v5h7V5M15.5 15.5h5M18 13v5"/></svg>',
+          save: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path class="tex-icon-accent" d="M8 4v6h8V4M8 20v-6h8v6"/></svg>',
+          saveAs: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10l3 3v12H4z"/><path d="M7 5v5h7V5"/><path class="tex-icon-accent" d="M15.5 15.5h5M18 13v5"/></svg>',
           undo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4 11l5 4"/><path d="M5 11h8a6 6 0 0 1 6 6"/></svg>',
           redo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 7 5 4-5 4"/><path d="M19 11h-8a6 6 0 0 0-6 6"/></svg>',
-          copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
-          paste: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h6M9 3h6v4H9z"/><path d="M8 5H6v16h12V5h-2"/></svg>',
-          history: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v5h5"/><path d="M5.2 9.6A8 8 0 1 1 4 14"/><path d="M12 8v5l3 2"/></svg>'
+          cut: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7.4 3.2 20.8 21M24.6 3.2 11.2 21"/><circle class="tex-icon-accent" cx="8.8" cy="24.5" r="4.2"/><circle class="tex-icon-accent" cx="23.2" cy="24.5" r="4.2"/></svg>',
+          copy: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M17 26H7.5A3.5 3.5 0 0 1 4 22.5v-13A3.5 3.5 0 0 1 7.5 6H11"/><rect class="tex-icon-accent" x="13" y="3.5" width="15" height="22" rx="3"/></svg>',
+          paste: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10.5 6H6.5A3.5 3.5 0 0 0 3 9.5v16A3.5 3.5 0 0 0 6.5 29H12"/><path d="M21.5 6h3A3.5 3.5 0 0 1 28 9.5"/><rect x="10" y="3.5" width="12" height="5.5" rx="2"/><rect class="tex-icon-accent" x="13.5" y="11.5" width="15" height="18" rx="2"/></svg>',
+          rename: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 6H6.5A3.5 3.5 0 0 0 3 9.5v13A3.5 3.5 0 0 0 6.5 26H11M21 6h4.5A3.5 3.5 0 0 1 29 9.5v13a3.5 3.5 0 0 1-3.5 3.5H21"/><path d="m8.5 20 4.5-10 4.5 10M10 17h6"/><path class="tex-icon-accent" d="M21 2.5v27M17.5 2.5h7M17.5 29.5h7"/></svg>',
+          history: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v5h5"/><path d="M5.2 9.6A8 8 0 1 1 4 14"/><path class="tex-icon-accent" d="M12 8v5l3 2"/></svg>'
         };
 
         const bar = document.createElement('div');
@@ -266,11 +284,14 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         const saveAsButton = createButton(labels.saveAs, icons.saveAs);
         const undoButton = createButton(labels.undo, icons.undo);
         const redoButton = createButton(labels.redo, icons.redo);
+        const cutButton = createButton(labels.cut, icons.cut);
         const copyButton = createButton(labels.copy, icons.copy);
         const pasteButton = createButton(labels.paste, icons.paste);
+        const renameButton = createButton(labels.rename, icons.rename);
         const historyButton = createButton(labels.history, icons.history, 'is-history');
-        const separator = () => { const node = document.createElement('span'); node.className = 'tex-editor-command-separator'; return node; };
-        bar.append(saveButton, saveAsButton, separator(), undoButton, redoButton, separator(), copyButton, pasteButton, separator(), historyButton);
+        const separator = () => { const node = document.createElement('span'); node.className = 'tex-editor-command-separator'; node.setAttribute('aria-hidden', 'true'); return node; };
+        // Keep the Explorer-style edit group visible first even in narrow editor panes.
+        bar.append(cutButton, copyButton, pasteButton, renameButton, separator(), saveButton, saveAsButton, separator(), undoButton, redoButton, separator(), historyButton);
         const counts = sourceLabel.lastElementChild;
         if (counts) sourceLabel.insertBefore(bar, counts);
         else sourceLabel.append(bar);
@@ -333,32 +354,94 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         undoButton.addEventListener('click', () => { source.focus(); document.execCommand('undo'); });
         redoButton.addEventListener('click', () => { source.focus(); document.execCommand('redo'); });
 
-        copyButton.addEventListener('click', async () => {
-          const start = source.selectionStart ?? 0;
-          const end = source.selectionEnd ?? 0;
-          const text = start !== end ? source.value.slice(start, end) : source.value;
-          try {
-            await navigator.clipboard.writeText(text);
-            showMessage(labels.copied);
-          } catch {
-            source.focus();
-            source.setSelectionRange(start, end || source.value.length);
-            document.execCommand('copy');
+        function sourceSelection() {
+          // CodeMirror mirrors the source into the hidden textarea, but its own
+          // selection is authoritative when the enhanced editor is active.
+          const bridge = window.__qssedaTexEditorBridge;
+          const selection = bridge?.getSelection?.();
+          const maximum = source.value.length;
+          const clamp = value => Math.max(0, Math.min(maximum, Number(value) || 0));
+          const anchor = clamp(selection?.anchor ?? source.selectionStart);
+          const head = clamp(selection?.head ?? source.selectionEnd);
+          return { start: Math.min(anchor, head), end: Math.max(anchor, head) };
+        }
+
+        const canEditSource = () => !editor.hidden && Boolean(activeDocumentId()) &&
+          !source.readOnly && root.dataset.texCollaborationAccessRole !== 'viewer';
+
+        async function writeClipboard(text) {
+          if (navigator.clipboard?.writeText) {
+            try { await navigator.clipboard.writeText(text); return true; }
+            catch {}
           }
+          // Legacy clipboard fallback: never remove text unless copying succeeds.
+          const temporary = document.createElement('textarea');
+          temporary.value = text;
+          temporary.readOnly = true;
+          temporary.setAttribute('aria-hidden', 'true');
+          temporary.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+          document.body.append(temporary);
+          temporary.select();
+          let success = false;
+          try { success = Boolean(document.execCommand('copy')); }
+          catch {}
+          temporary.remove();
+          return success;
+        }
+
+        cutButton.addEventListener('click', async () => {
+          if (!canEditSource()) return;
+          const { start, end } = sourceSelection();
+          if (start === end) return;
+          const selectionText = source.value.slice(start, end);
+          if (!await writeClipboard(selectionText)) {
+            showMessage(labels.cutFailed, true);
+            return;
+          }
+          // A concurrent collaborative edit or another selection must not
+          // trigger an accidental deletion after an asynchronous clipboard call.
+          const current = sourceSelection();
+          if (start !== current.start || end !== current.end ||
+              source.value.slice(start, end) !== selectionText || !canEditSource()) return;
+          const bridge = window.__qssedaTexEditorBridge;
+          if (!bridge?.replaceSelection?.('')) {
+            source.setRangeText('', start, end, 'start');
+            source.dispatchEvent(new Event('input', { bubbles: true }));
+            source.focus();
+          }
+          syncDisabled();
+        });
+
+        copyButton.addEventListener('click', async () => {
+          const { start, end } = sourceSelection();
+          const text = start !== end ? source.value.slice(start, end) : source.value;
+          if (await writeClipboard(text)) showMessage(labels.copied);
+          else showMessage(labels.copyFailed, true);
         });
 
         pasteButton.addEventListener('click', async () => {
+          if (!canEditSource()) return;
           try {
             const text = await navigator.clipboard.readText();
-            const start = source.selectionStart ?? source.value.length;
-            const end = source.selectionEnd ?? start;
-            source.setRangeText(text, start, end, 'end');
-            source.dispatchEvent(new Event('input', { bubbles: true }));
-            source.focus();
+            if (!canEditSource()) return;
+            const bridge = window.__qssedaTexEditorBridge;
+            if (!bridge?.replaceSelection?.(text)) {
+              const { start, end } = sourceSelection();
+              source.setRangeText(text, start, end, 'end');
+              source.dispatchEvent(new Event('input', { bubbles: true }));
+              source.focus();
+            }
+            syncDisabled();
           } catch {
             showMessage(labels.pasteDenied, true);
             source.focus();
           }
+        });
+
+        renameButton.addEventListener('click', () => {
+          if (!canEditSource()) return;
+          title.focus();
+          title.select();
         });
 
         historyButton.addEventListener('click', () => {
@@ -401,12 +484,23 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         }, true);
 
         const syncDisabled = () => {
-          const disabled = editor.hidden || !activeDocumentId();
-          [saveButton, saveAsButton, undoButton, redoButton, copyButton, pasteButton, historyButton].forEach(button => { button.disabled = disabled; });
+          const noDocument = editor.hidden || !activeDocumentId();
+          const readOnly = source.readOnly || root.dataset.texCollaborationAccessRole === 'viewer';
+          [saveButton, saveAsButton, undoButton, redoButton, pasteButton, renameButton].forEach(button => {
+            button.disabled = noDocument || readOnly;
+          });
+          [copyButton, historyButton].forEach(button => { button.disabled = noDocument; });
+          const { start, end } = sourceSelection();
+          cutButton.disabled = noDocument || readOnly || start === end;
         };
         new MutationObserver(syncDisabled).observe(editor, { attributes: true, attributeFilter: ['hidden'] });
+        new MutationObserver(syncDisabled).observe(root, { attributes: true, attributeFilter: ['data-tex-collaboration-access-role', 'data-tex-collaboration-document-id'] });
+        new MutationObserver(syncDisabled).observe(source, { attributes: true, attributeFilter: ['readonly'] });
         const list = document.getElementById('tex-document-list');
         if (list) new MutationObserver(syncDisabled).observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+        // CodeMirror forwards selection changes to the underlying textarea.
+        // The basic textarea uses native select/keyup/pointerup events.
+        ['select', 'keyup', 'pointerup', 'input'].forEach(type => source.addEventListener(type, syncDisabled));
         syncDisabled();
       })();
     </script>`;

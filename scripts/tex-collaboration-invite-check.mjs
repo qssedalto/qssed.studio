@@ -21,6 +21,16 @@ for (const zh of [true, false]) {
   assert(html.includes("height:46px!important") && html.includes(".tex-collaboration-invite>.tex-role-segment"), "Invite controls must align at 46px");
   assert(html.includes("#tex-collaboration-add:disabled"), "Disabled cursor styling must be present");
   assert(html.includes(zh ? "搜索成员" : "Search members"), "Search placeholder must match locale");
+  // Windows Explorer-inspired source commands must remain large, themed and functional.
+  assert(html.includes('id="qsseda-work-tex-editor-tools"'), "TeX editor commandbar styles must be installed");
+  assert(html.includes("width:26px!important") && html.includes("width:39px!important"), "Editor command icons must remain large and easy to target");
+  assert(html.includes(".tex-editor-command svg .tex-icon-accent{stroke:var(--primary)!important}"), "Icon highlights must follow the user-selected theme color");
+  assert(html.includes("bar.append(cutButton, copyButton, pasteButton, renameButton"), "Cut/copy/paste/rename must be grouped first");
+  assert(html.includes("cutButton.disabled = noDocument || readOnly || start === end"), "Cut must require selected editable source text");
+  assert(html.includes("bridge?.getSelection?.()"), "Cut must read CodeMirror selections as well as textarea selections");
+  assert(html.includes("if (!await writeClipboard(selectionText))"), "Failed clipboard writes must never delete text");
+  assert(html.includes("title.focus();") && html.includes("title.select();"), "Rename action must focus and select the document title");
+  assert(html.includes("work-tex-"), "Other Work UI remains composed");
   const scripts = [...html.matchAll(/<script(?:\\s+[^>]*)?>([\\s\\S]*?)<\\/script>/g)];
   for (const [, code] of scripts) new Function(code);
 }
