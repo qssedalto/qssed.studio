@@ -157,12 +157,14 @@ function browserHarness(fixture) {
       // Chromium does not grant a fullscreen user activation in this JS fixture.
       const pdfReader=document.querySelector('.aertex-pdf-reader');
       let fullscreenRequests=0;
+      const originalRequestFullscreen=pdfReader.requestFullscreen;
       pdfReader.requestFullscreen=async opts=>{
         fullscreenRequests++;
         if(opts?.navigationUI!=='hide')throw Error('Native fullscreen must hide browser navigation');
       };
       newExpand.click();
       await new Promise(resolve=>setTimeout(resolve,40));
+      pdfReader.requestFullscreen=originalRequestFullscreen;
       if(fullscreenRequests!==1 || document.body.classList.contains('tex-preview-expanded')) {
         throw Error('PDF expand must request native fullscreen without toggling the Work layout');
       }
