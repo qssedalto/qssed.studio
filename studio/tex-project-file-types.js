@@ -55,8 +55,10 @@ const dotSet = new Set(SAFE_DOTFILES);
 const dotDirSet = new Set(SAFE_DOT_DIRECTORIES);
 const extensionlessSet = new Set(SAFE_EXTENSIONLESS_FILES);
 
-export const PROJECT_ACCEPT = [...new Set([...TEXT_EXTENSIONS,...BINARY_EXTENSIONS]
-  .map(extension=>"."+extension))].join(",");
+export const PROJECT_ACCEPT = [...new Set([
+  ...[...TEXT_EXTENSIONS,...BINARY_EXTENSIONS].map(extension=>"."+extension),
+  ...SAFE_DOTFILES
+])].join(",");
 
 export function projectFileExtension(name) {
   const base=String(name||"").split("/").at(-1)||"";
