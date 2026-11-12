@@ -15,6 +15,7 @@ const EXPENSIVE_PATHS = new Set([
   "/api/drafts",
   "/api/workbench/overview",
   "/api/tex/documents",
+  "/api/tex/files",
   "/api/tex/runs",
   "/api/tex/compile",
   "/api/tex/result",
