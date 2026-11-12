@@ -50,6 +50,25 @@ assert(script.includes("event.preventDefault();"), "Prevent opening a separate n
 assert(script.includes("URL.createObjectURL(pdfBlob)"), "PDF download must retain the untouched original data");
 
 assert(script.includes("const paths = {"), "Native-style PDF icons must be SVG path drawings rather than text symbols");
+
+assert(script.includes('pages:\'<path d="M8.2 5.2H21'), "The Contents glyph must be traced as the native three-line list");
+assert(script.includes('rotate:\'<path d="M3.2 11.6A9'), "Rotation must use the native large circular arc");
+assert(script.includes('<circle cx="12" cy="12" r="1.8"/>'), "Native rotate icon has a distinctive central ring");
+assert(script.includes('expand:\'<path d="M4.2 9.8V20'), "The native diagonal expansion icon must be present");
+assert(script.includes("pages:'<path") && script.includes("pages:'<path") && script.includes("pages:'<path"), "Contents must remain SVG artwork");
+assert(script.includes("pages:'目录'") && script.includes("pages:'Contents'"), "PDF sidebar must be named 目录, not 页面");
+assert(script.includes("entries=await loaded?.getOutline()"), "Contents sidebar must display actual PDF document bookmarks");
+assert(script.includes("tool('expand',labels.expand,'expand')"), "Native expand control must be inside the PDF toolbar");
+assert(script.includes("document.getElementById('tex-preview-expand')?.click();"), "New expand must reuse the existing fullscreen behavior");
+assert(style.includes("#tex-preview-expand{display:none!important}"), "The old heading expand icon must be removed from view");
+assert(style.includes("background:#f7f7f7!important") && style.includes("color:#252525!important"),
+  "Light PDF toolbar must have a pale background and dark icons");
+assert(style.includes(':root[data-theme="dark"] .tex-work-app .aertex-pdf-toolbar') &&
+       style.includes("color:#f3f3f3!important"),
+  "Dark PDF toolbar must retain dark background and pale icons");
+assert(style.includes("button.aertex-pdf-tool") && style.includes("color:inherit!important"),
+  "Toolbar icons must inherit the effective site theme rather than remain white");
+
 for (const iconName of ["pages","previous","next","minus","plus","fit","rotate","search","print","save"]) {
   assert(script.includes(iconName + ":'<"), "Missing hand-drawn SVG icon for " + iconName);
 }
