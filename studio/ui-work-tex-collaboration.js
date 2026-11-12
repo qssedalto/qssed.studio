@@ -140,9 +140,9 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     "async function initialize(){try{const [statusData,documentData]=await Promise.all([api('/api/tex/status'),api('/api/tex/documents')]);applyCompilerStatus(statusData);documents=Array.isArray(documentData.documents)?documentData.documents:[];renderDocuments();if(documents[0])await openDocument(documents[0].id);else renderEditor();}",
     "async function initialize(){try{const [statusData,documentData]=await Promise.all([api('/api/tex/status'),api('/api/tex/documents')]);applyCompilerStatus(statusData);documents=Array.isArray(documentData.documents)?documentData.documents:[];renderDocuments();const requested=routeDocumentId();if(requested)await openDocument(requested,'replace');else renderEditor();}"
   );
-  output = output.replace(
+  // The realtime/shared fetch adapter is installed by a later inline script.\n  // Defer the initial document GET to the next task, otherwise invited users\n  // can see an owner-only 404 before collaborator documents are registered.\n  output = output.replace(
     "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());void initialize();",
-    "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());window.addEventListener('popstate',()=>{const id=routeDocumentId();if(id&&id!==activeId)void openDocument(id,false)});void initialize();"
+    "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());window.addEventListener('popstate',()=>{const id=routeDocumentId();if(id&&id!==activeId)void openDocument(id,false)});window.setTimeout(()=>void initialize(),0);"
   );
 
   output += `
