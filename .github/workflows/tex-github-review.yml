@@ -1,0 +1,44 @@
+name: TeX GitHub Security Review
+on:
+  pull_request:
+    paths:
+      - 'studio/tex-github-*'
+      - 'studio/ui-tex-github.js'
+      - 'studio/tex-api-core.js'
+      - 'studio/entry.js'
+      - 'worker.js'
+      - 'docs/tex-github-*'
+      - 'scripts/tex-github-*'
+      - '.github/workflows/tex-github-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse backend and UI modules
+        run: |
+          node --check worker.js
+          node --check studio/tex-api-core.js
+          node --check studio/tex-github-api.js
+          node --check studio/tex-github-workflow.js
+          node --check studio/ui-tex-github.js
+          node --check studio/entry.js
+      - name: Verify GitHub tenant isolation and quota contract
+        run: node scripts/tex-github-isolation-check.mjs
+      - name: Verify new project creation, ZIP extraction and legal name gates
+        run: node scripts/tex-projects-check.mjs
+      - name: Verify existing TeX workspace rendering
+        run: |
+          node scripts/tex-workbench-check.mjs
+          node scripts/work-subdomain-check.mjs

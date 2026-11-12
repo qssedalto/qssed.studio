@@ -6,6 +6,7 @@ const NAV = [
   ["/content", "内容", "CT"],
   ["/storage", "存储", "ST"],
   ["/billing", "订阅与权益", "BL"],
+  ["/tex-credits", "编译额度管理", "TX"],
   ["/student-verification", "学生认证", "SV"],
   ["/intelligence", "AERTEX Intelligence", "AI"],
   ["/logs", "审计日志", "LG"],
@@ -274,6 +275,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     "/content":["内容","跨账户管理摘要与私有链接；与用户产品保持隔离。"],
     "/storage":["存储","查看跨账户 R2 用户文件，并执行管理操作。"],
     "/billing":["订阅与权益","管理套餐、有效期与用户产品权益。"],
+    "/tex-credits":["编译额度管理","审核远程编译申请、管理剩余额度和 GitHub 仓库状态。"],
     "/student-verification":["学生认证","审核并管理学生的学信网验证申请。"],
     "/intelligence":["AERTEX Intelligence","管理服务商、模型和用户 AI 访问权限；此模块直接属于 admin.qsseda.com 管理控制面。"],
     "/system":["系统","查看管理控制面的健康状态与部署信息。"]
@@ -1312,13 +1314,92 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
     }
     window.__aertexAdminAiTimer=setInterval(load,60000);
   }
+  async function texCredits(){
+    const response = await fetch("/api/admin/tex-credits", { credentials:"same-origin", cache:"no-store" });
+    const data = await response.json();
+    if(!response.ok) throw new Error(data.error || "无法读取编译额度");
+    const rows = data.entries || [];
+    const pending = rows.filter(row=>row.approval_status==="pending").length;
+    const approved = rows.filter(row=>row.approval_status==="approved").length;
+    const available = rows.reduce((n,row)=>n+(row.unlimited?0:Number(row.remaining||0)),0);
+    view.innerHTML = objCards({"待审核申请":pending,"已批准账户":approved,"本周可用编译次数":available,"登记账户":rows.length})+
+      '<section class="section"><div class="sectionHead"><h2>直接分配额度</h2><span class="mono">只适用于尚无额度记录的用户</span></div>'+
+      '<div class="inline" style="padding:14px;gap:10px"><input id="texGrantUser" class="compactInput" aria-label="用户 UUID" placeholder="用户 UUID" style="width:min(410px,100%);flex:1 1 230px">'+
+      '<label>次数 <input id="texGrantCount" class="compactInput" type="number" min="1" max="100" value="5" style="width:75px"></label>'+
+      '<button class="btn primary" id="texGrantButton" type="button">分配额度</button></div>'+
+      '<div class="feedback" id="texGrantFeedback" role="status">已有额度记录的用户请在下表调整每周发放量，不会清零已结转的次数。</div></section>'+
+      '<section class="section"><div class="sectionHead"><h2>GitHub Actions 编译额度</h2><span class="mono">仅管理员可以修改 · 每周最多 100 次 · 未用额度可结转</span></div>'+
+      '<div class="tableWrap"><table><thead><tr><th>用户</th><th>状态</th><th>累计已用 / 累计发放</th><th>本周使用 / 上限</th><th>私有仓库</th><th>分配额度</th><th>操作</th></tr></thead><tbody>'+
+      (rows.length ? rows.map(row=>{
+        const label=row.profile?.display_name||row.profile?.username||row.user_id;
+        const status=({pending:"待审核",approved:"已批准",rejected:"已拒绝"})[row.approval_status]||row.approval_status;
+        const amount=row.approval_status==="pending"?Math.max(1,Math.min(100,Number(row.requested_credits)||1)):Math.max(1,Math.min(100,Number(row.weekly_credits)||100));
+        return '<tr data-tex-user="'+esc(row.user_id)+'" data-tex-status="'+esc(row.approval_status)+'">'+
+          '<td><strong>'+esc(label)+'</strong><br><span class="mono">'+esc(row.user_id)+'</span></td>'+
+          '<td>'+esc(status)+(row.unlimited?' · 无限制':'')+(row.active?' · 编译中':'')+'</td>'+
+          '<td>'+esc(row.quota_used)+' / '+esc(row.quota_total)+'<br><span class="mono">结余 '+(row.unlimited?'∞':esc(Math.max(0,row.quota_total-row.quota_used)))+'</span></td>'+ 
+          '<td>'+(row.unlimited?'∞':esc(row.weekly_used)+' / 100')+'<br><span class="mono">本周可用 '+(row.unlimited?'∞':esc(row.remaining))+'</span></td>'+
+          '<td><span class="mono">'+esc(row.repo_name||"未创建")+'</span><br>'+esc(row.repo_state||"none")+'</td>'+
+          '<td><input class="texCreditAmount compactInput" aria-label="每周发放额度" type="number" min="1" max="100" value="'+amount+'" style="width:86px"></td>'+
+          '<td><div class="inline">'+(row.approval_status==="pending"
+            ? '<button class="btn primary" data-tex-action="approve">批准</button><button class="btn danger" data-tex-action="reject">拒绝</button>'
+            : row.approval_status==="approved"
+              ? '<button class="btn primary" data-tex-action="set-total">调整每周额度</button>'
+              : '已拒绝 · 等待用户重新申请')+'</div></td></tr>';
+      }).join("") : '<tr><td colspan="7">暂无远程编译额度记录。</td></tr>')+
+      '</tbody></table></div><div class="feedback" id="texCreditsFeedback" role="status"></div></section>';
+    const feedback=document.getElementById("texCreditsFeedback");
+    document.getElementById("texGrantButton")?.addEventListener("click",async(event)=>{
+      const button=event.currentTarget;
+      const userId=document.getElementById("texGrantUser").value.trim();
+      const credits=Number(document.getElementById("texGrantCount").value);
+      const status=document.getElementById("texGrantFeedback");
+      if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/.test(userId)||!Number.isInteger(credits)||credits<1||credits>100){
+        status.textContent="请输入正确的用户 UUID 和 1–100 的整数额度。";status.className="feedback bad";return;
+      }
+      button.disabled=true;status.textContent="正在分配…";status.className="feedback";
+      try{
+        const response=await fetch("/api/admin/tex-credits",{
+          method:"POST",credentials:"same-origin",
+          headers:{"content-type":"application/json","accept":"application/json"},
+          body:JSON.stringify({action:"grant",user_id:userId,credits})
+        });
+        const result=await response.json();
+        if(!response.ok)throw new Error(result.error||"分配失败");
+        await texCredits();
+        const next=document.getElementById("texGrantFeedback");
+        if(next){next.textContent="额度已成功分配。";next.className="feedback ok";}
+      }catch(error){status.textContent=String(error.message||error);status.className="feedback bad";button.disabled=false;}
+    });
+    view.querySelectorAll("button[data-tex-action]").forEach(button=>button.addEventListener("click",async()=>{
+      const row=button.closest("[data-tex-user]");
+      const action=button.dataset.texAction;
+      const credits=Number(row.querySelector(".texCreditAmount").value);
+      if(action!=="reject"&&(!Number.isInteger(credits)||credits<1||credits>100)){
+        feedback.textContent="额度必须是 1–100 的整数。";feedback.className="feedback bad";return;
+      }
+      button.disabled=true;feedback.textContent="正在保存…";feedback.className="feedback";
+      try{
+        const result=await fetch("/api/admin/tex-credits",{
+          method:"POST",credentials:"same-origin",
+          headers:{"content-type":"application/json","accept":"application/json"},
+          body:JSON.stringify({action,user_id:row.dataset.texUser,credits})
+        });
+        const payload=await result.json();
+        if(!result.ok)throw new Error(payload.error||"更新失败");
+        await texCredits();
+        const next=document.getElementById("texCreditsFeedback");
+        if(next){next.textContent="额度更新成功。";next.className="feedback ok";}
+      }catch(error){feedback.textContent=String(error.message||error);feedback.className="feedback bad";button.disabled=false;}
+    }));
+  }
   async function system(){
     const health=await get("/health");
     const overviewResult=await post("/api/admin/overview").catch(()=>({data:{}}));
     view.innerHTML=objCards({service:health.service||"admin",status:health.status||"unknown",origin:health.origin||location.origin,time:health.time||"—"})+
       '<section class="section"><div class="sectionHead"><h2>管理控制面</h2></div><pre>'+esc(JSON.stringify(localizeForDisplay({health,overview:overviewResult.data||{}}),null,2))+'</pre></section>';
   }
-  const loaders={"/":overview,"/users":users,"/roles":roles,"/logs":logs,"/access":access,"/content":content,"/storage":storage,"/billing":billing,"/student-verification":studentVerification,"/intelligence":intelligence,"/system":system};
+  const loaders={"/":overview,"/users":users,"/roles":roles,"/logs":logs,"/access":access,"/content":content,"/storage":storage,"/billing":billing,"/tex-credits":texCredits,"/student-verification":studentVerification,"/intelligence":intelligence,"/system":system};
   async function load(){view.innerHTML='<div class="state">正在加载管理数据…</div>';try{await (loaders[route]||overview)()}catch(error){errorView(error)}}
   document.getElementById("refresh")?.addEventListener("click",()=>void load());
   document.getElementById("logout")?.addEventListener("click",async()=>{

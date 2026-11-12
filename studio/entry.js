@@ -19,6 +19,9 @@ import { workbenchContent } from "./ui-workbench.js";
 import { labContent } from "./ui-lab.js";
 import { texWorkbenchContent } from "./ui-tex-workbench.js";
 import { enhanceTexWorkbenchLocal } from "./ui-tex-local.js";
+import { enhanceTexGithubWorkbench } from "./ui-tex-github.js";
+import { texGithubSetupContent } from "./ui-tex-github-setup.js";
+import { enhanceTexProjectControls } from "./ui-tex-project-controls.js";
 import { polishTexWorkbenchApp } from "./ui-tex-app.js";
 import { decorateWorkNavigation, workHubContent, workLocalBridgeContent } from "./ui-work.js";
 import { enhanceWorkLocalBridgeNative } from "./ui-work-native.js";
@@ -200,9 +203,9 @@ export default {
     const links = buildLinks(locale, pathname, fullLocale);
     const linksSubroute = pathname === "/info/links/mine" || pathname === "/info/links/community" || pathname === "/info/links/curated";
     const labSubroute = pathname === "/workspace/experiments/tex";
-    const workRoute = pathname === "/work" || pathname === "/work/local" || pathname === "/work/tex";
+    const workRoute = pathname === "/work" || pathname === "/work/local" || pathname === "/work/tex" || pathname === "/work/tex/setup";
     const isHomeRoute = pathname === "/";
-    const isProtectedOsRoute = (OS_PATHS.has(pathname) && pathname !== "/wishes") || linksSubroute;
+    const isProtectedOsRoute = (OS_PATHS.has(pathname) && pathname !== "/wishes") || linksSubroute || pathname === "/work/tex/setup";
 
     if (isHomeRoute || isProtectedOsRoute) {
       const gate = await verifyStudioPageSession(request);
@@ -259,7 +262,8 @@ export default {
       if (pathname === "/workspace/experiments/tex") markup = replaceOsContent(markup, enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh));
       if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin, fullLocale, mainOrigin), workOrigin));
       if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, fullLocale, mainOrigin), zh));
-      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); markup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup))); markup = prepareWorkTexDocumentShell(markup, { userId: gate.user?.id, documentId: new URL(request.url).searchParams.get("document"), zh }); }
+      if (pathname === "/work/tex/setup") markup = replaceOsContent(markup, texGithubSetupContent(zh, fullLocale));
+      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceTexGithubWorkbench(enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); markup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup))); markup = prepareWorkTexDocumentShell(markup, { userId: gate.user?.id, documentId: new URL(request.url).searchParams.get("document"), zh }); markup = enhanceTexProjectControls(markup, zh); }
       // A revoked or nonexistent shared-document deep link returns to the Work
       // start screen with a localized, non-identifying explanation.
       if (pathname === "/work/tex" && new URL(request.url).searchParams.get("notice") === "document-unavailable") {

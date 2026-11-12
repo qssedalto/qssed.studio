@@ -274,7 +274,7 @@ assert(texApp.includes('class="qtex-template-grid"') && texApp.includes('class="
 assert(texApp.includes('data-tex-start-template="blank"') && texApp.includes('data-tex-start-template="math"'), "Template actions must retain existing create handlers.");
 assert(entry.includes('polishWorkTexWelcome(polishWorkTexViewportEdges(markup))'), "Isolated Welcome styles must mount after Work pane styles.");
 assert(texApp.includes('startDetail: "选择一种结构，直接进入写作与排版。"'), "Chinese TeX start copy must stay concise and task-focused.");
-assert(texApp.includes('blankDetail: "最简 article 结构，适合从零开始"') && texApp.includes('articleDetail: "预设中文排版、章节与常用页面设置"') && texApp.includes('mathDetail: "预设公式环境，适合推导与课程记录"'), "Chinese TeX template descriptions must remain concrete and non-promotional.");
+assert(texApp.includes('blankDetail: "基础 article 结构，自动填入项目名与真实姓名"') && texApp.includes('articleDetail: "包含 main.tex、sample.bib 和 frog.jpg"') && texApp.includes('mathDetail: "上传 ZIP 文件，保留项目内的多个文件"'), "All three project cards must describe their actual files and behavior.");
 assert(workTexPanels.includes("order:1!important") && workTexPanels.includes(".tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link{\n          display:none!important;"), "Collapsed Work document rail must show only its restore control; Home belongs to expanded panels.");
 assert(workTexCollaboration.includes("window.setTimeout(()=>void initialize(),0)"), "The first TeX document load must wait for the invited-document fetch adapter to initialize.");
 assert(workTexCollaboration.includes("const workLocale=location.pathname.split('/')[1]||'zh-cn';"), "Invited-document navigation must preserve the current full regional locale.");

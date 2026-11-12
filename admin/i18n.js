@@ -1,6 +1,6 @@
 import { preferredLocaleFromRequest } from "../studio/locale.js";
 
-const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/billing", "/student-verification", "/intelligence", "/logs", "/system"];
+const PAGE_PATHS = ["/", "/overview", "/users", "/roles", "/access", "/content", "/storage", "/billing", "/tex-credits", "/student-verification", "/intelligence", "/logs", "/system"];
 
 const EN = [
   ["AERTEX 主站","AERTEX Home"],
@@ -21,6 +21,8 @@ const EN = [
   ["跨账户管理摘要与私有链接；与用户产品保持隔离。","Cross-account summaries and private-link administration, isolated from user products."],
   ["查看跨账户 R2 用户文件，并执行管理操作。","Cross-account R2 user-file inventory and administrative file operations."],
   ["订阅与权益","Billing & Entitlements"],
+  ["编译额度管理","Compilation quotas"],
+  ["审核远程编译申请、管理剩余额度和 GitHub 仓库状态。","Review remote compilation requests, quotas and GitHub repositories."],
   ["学生认证","Student Verification"],
   ["审核并管理学生的学信网验证申请。","Review and manage CHSI student-verification requests."],
   ["打开学信网官方验证 ↗","Open official CHSI verification ↗"],
