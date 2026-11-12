@@ -59,7 +59,14 @@ assert(script.includes("pages:'<path") && script.includes("pages:'<path") && scr
 assert(script.includes("pages:'目录'") && script.includes("pages:'Contents'"), "PDF sidebar must be named 目录, not 页面");
 assert(script.includes("entries=await loaded?.getOutline()"), "Contents sidebar must display actual PDF document bookmarks");
 assert(script.includes("tool('expand',labels.expand,'expand')"), "Native expand control must be inside the PDF toolbar");
-assert(script.includes("document.getElementById('tex-preview-expand')?.click();"), "New expand must reuse the existing fullscreen behavior");
+assert(script.includes("await reader.requestFullscreen({navigationUI:'hide'})"),
+  "PDF expansion must use actual browser fullscreen, not a layout-only toggle");
+assert(script.includes("document.fullscreenElement===reader") &&
+       script.includes("document.addEventListener('fullscreenchange',updateFullscreenState)"),
+  "Browser Fullscreen API state and native Esc exit must be tracked");
+assert(script.includes("expandButton.disabled=fullscreen"), "Expanded PDF must not have a second click-to-exit toggle");
+assert(!script.includes("document.getElementById('tex-preview-expand')?.click();"),
+  "Old preview header full-window layout toggle must not remain wired");
 assert(style.includes("#tex-preview-expand{display:none!important}"), "The old heading expand icon must be removed from view");
 assert(style.includes("background:#f7f7f7!important") && style.includes("color:#252525!important"),
   "Light PDF toolbar must have a pale background and dark icons");
@@ -85,8 +92,8 @@ assert(script.includes("buttons.get('pages').addEventListener('click'"),
   "Sidebar icon must open a functioning page list");
 assert(script.includes("buttons.get('rotate').addEventListener('click'"),
   "Rotation icon must rotate pages");
-assert(script.includes("buttons.get('search-toggle').addEventListener('click'"),
-  "Search icon must open a working search field");
+assert(script.includes("searchToggle.addEventListener('click'"),
+  "Search icon must open a floating find popover");
 assert(script.includes("searchInput.hidden=true"),
   "Escape should close the search field");
 assert(style.includes("background:#3b3b3b!important"),
@@ -98,6 +105,24 @@ assert(style.includes(".aertex-pdf-icon{") && style.includes("stroke-width:1.75"
   "Native-style icons must use thin consistent stroke artwork");
 assert(style.includes("input.aertex-pdf-search[hidden]"),
   "Search field must collapse until the user requests it");
+assert(script.includes('id="aertex-pdf-find-popover"') &&
+       script.includes('data-pdf-action="find-prev"') &&
+       script.includes('data-pdf-action="find-next"') &&
+       script.includes('data-pdf-action="find-close"'),
+  "Floating PDF find palette must provide native-style previous, next and close buttons");
+assert(script.includes("positionFindPopover()") &&
+       script.includes("searchToggle.getBoundingClientRect()"),
+  "Find palette must be anchored directly beneath the magnifier");
+assert(!script.includes("buttons.get('search-toggle').addEventListener('click'"),
+  "Legacy in-toolbar search control must be removed");
+assert(style.includes(".aertex-pdf-find-popover[hidden]") &&
+       style.includes("position:absolute!important;top:49px!important"),
+  "Search should overlay the PDF instead of taking any toolbar width");
+assert(style.includes(".aertex-pdf-reader:fullscreen") &&
+       style.includes(":fullscreen button[data-pdf-action=\"expand\"]"),
+  "Fullscreen should isolate PDF canvas and toolbar and hide repeated expand action");
+assert(!script.includes("document.body.classList.contains('tex-preview-expanded')"),
+  "Do not use website panel expansion state as a substitute for system fullscreen");
 assert(style.includes(".aertex-pdf-outline[hidden]"),
   "Page sidebar must be hidden until explicitly opened");
 
