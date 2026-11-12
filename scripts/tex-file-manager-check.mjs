@@ -102,7 +102,7 @@ const extraFormats=[
 ];
 const formats=await invoke({document_id:id,files:[...officeObjects,...extraFormats]});
 assert.equal(formats.status,200,JSON.stringify(formats.body));
-assert.equal(formats.body.document.files.filter(f=>/\\.(docx|xlsx|pptx)$/.test(f.name)&&f.encoding==="base64").length,3);
+assert.equal(formats.body.document.files.filter(f=>/\.(docx|xlsx|pptx)$/.test(f.name)&&f.encoding==="base64").length,3);
 assert(formats.body.document.files.some(f=>f.name===".gitignore"));
 assert(formats.body.document.files.some(f=>f.name===".github/workflows/ci.yml"));
 const badOffice=await invoke({document_id:id,files:[
