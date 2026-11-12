@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { handleTexProjectFiles } from "../studio/tex-project-files-api.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexProjectControls } from "../studio/ui-tex-project-controls.js";
+import { TEX_FILE_MODAL_RUNTIME } from "../studio/ui-tex-file-modal-runtime.js";
 
 const owner="11111111-1111-4111-8111-111111111111";
 const other="22222222-2222-4222-8222-222222222222";
@@ -70,6 +71,8 @@ assert.equal(outsider.status,404,"Files must only be writable within the authent
 const unknown=await invoke({document_id:"not-an-id",files:[file("a.tex","")]});
 assert.equal(unknown.status,400);
 
+// Rendered inline scripts are strings, so parse them explicitly in addition to module --check.
+new Function(TEX_FILE_MODAL_RUNTIME.replace("__COPY__", JSON.stringify({zh:true})));
 const markup=enhanceTexProjectControls('<body>'+texWorkbenchContent(true)+'</body>',true);
 assert(markup.includes('id="tex-create" type="button" disabled'),"Plus should be disabled before a project is active.");
 assert(markup.includes("window.__aertexFileSetActive?.(activeDocument)"),"Active project must control plus.");
