@@ -397,7 +397,7 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       '<dialog class="userDeleteDialog" id="userDeleteDialog" aria-labelledby="userDeleteDialogTitle" aria-describedby="userDeleteRisk">'+
       '<div class="userDeleteDialogHeader"><strong id="userDeleteDialogTitle">永久删除用户</strong><button class="userDeleteClose" id="userDeleteClose" type="button" aria-label="关闭">×</button></div>'+
       '<div class="userDeleteDialogBody">'+
-      '<div id="userDeleteRisk" class="userDeleteRisk">此操作无法撤销！将永久删除账户及其关联数据库记录。若该用户仍有 R2 文件、Watch 令牌、Supabase Storage 文件或远程编译仓库，服务器会拒绝删除，避免数据残留。</div>'+
+      '<div id="userDeleteRisk" class="userDeleteRisk">此操作无法撤销！请先在上方将账户状态设为「已暂停」或「已封禁」并点击「应用」。删除将永久移除账户及其关联数据库记录；若仍有 R2 文件、Watch 令牌、Supabase Storage 文件或远程编译仓库，服务器会拒绝操作，避免数据残留。</div>'+
       '<div class="userDeleteIdentity"><strong id="userDeleteName"></strong><span id="userDeleteEmail"></span><span id="userDeleteId"></span></div>'+
       '<label for="userDeleteConfirmText">请输入上方用户 UUID 以确认永久删除<input id="userDeleteConfirmText" type="text" autocomplete="off" spellcheck="false" placeholder="输入完整 UUID"></label>'+
       '<div class="userDeleteError" id="userDeleteError" role="alert"></div></div>'+
