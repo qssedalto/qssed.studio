@@ -19,7 +19,7 @@ assert.match(MANAGED_TEX_WORKFLOW, /latexmk_shell_escape: false/);
 assert.match(MANAGED_TEX_WORKFLOW, /timeout-minutes: 15/);
 assert.match(MANAGED_TEX_WORKFLOW, /needs: compile/);
 assert.match(MANAGED_TEX_WORKFLOW, /ref: pdf-output/);
-assert.match(MANAGED_TEX_WORKFLOW, /return_run_details/);
+
 assert.match(MANAGED_TEX_WORKFLOW, /git add -- main\.pdf/);
 assert(!MANAGED_TEX_WORKFLOW.includes("pull_request_target"), "no privileged PR execution");
 assert(!MANAGED_TEX_WORKFLOW.includes("secrets."), "compile never receives secrets");
@@ -42,6 +42,9 @@ assert(api.includes("verifyTexUser(session.accessToken)"), "server identity veri
 assert(api.includes("readRow(env, userId)"), "repository access must be bound to authenticated user");
 assert(api.includes('doc?.owner_id !== userId'), "shared documents cannot be compiled as own");
 assert(api.includes('await reserveCredit(env, userId, nonce)'), "quota reservation must be atomic");
+assert(api.includes("return_run_details: true"), "GitHub dispatch must return the exact run ID");
+assert(api.includes("active_run_id: runId"), "exact run ID must be persisted");
+assert(api.includes("Number(run.id) === Number(row.active_run_id)"), "quota release must match the exact run");
 assert(api.includes('githubRepoPath(env, row.repo_name)'), "server-derived repository binding required");
 assert(!api.includes("body.repo_name"), "client must never select a different repository");
 assert(!api.includes("body.owner"), "client must never choose GitHub owner");
