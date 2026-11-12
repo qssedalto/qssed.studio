@@ -80,10 +80,15 @@ async function ownerRead(request,env,user,doc,action){
   const values=await Promise.all(items.objects.map(async entry=>{
     const row=await loadJson(env,entry.key);
     return row?.document_id===doc && row?.owner_id===user.id &&
-      row.status==="pending" && config?.enabled &&
-      config?.audience==="selected" && row.revision===config.revision?row:null;
+      (row.status==="pending"||row.status==="approved") &&
+      config?.enabled && config?.audience==="selected" &&
+      row.revision===config.revision?row:null;
   }));
-  return json({requests:values.filter(Boolean).sort((a,b)=>String(a.requested_at).localeCompare(String(b.requested_at))).slice(0,50)});
+  const visible=values.filter(Boolean);
+  return json({
+    requests:config?.request_access?visible.filter(x=>x.status==="pending").sort((a,b)=>String(a.requested_at).localeCompare(String(b.requested_at))).slice(0,50):[],
+    approved:visible.filter(x=>x.status==="approved").sort((a,b)=>String(a.requested_at).localeCompare(String(b.requested_at))).slice(0,50)
+  });
 }
 async function ownerSave(env,user,body,origin){
   const doc=body?.document_id;
@@ -110,15 +115,19 @@ async function ownerSave(env,user,body,origin){
 }
 async function ownerDecide(env,user,body){
   const doc=body?.document_id,requester=body?.requester_id;
-  if(!validId(doc)||!validId(requester)||!["approve","decline"].includes(body.decision)){
+  if(!validId(doc)||!validId(requester)||!["approve","decline","revoke"].includes(body.decision)){
     return fail("Invalid access request.");
   }
   if(!(await owned(env,user.id,doc)))return fail("Document not found.",404);
   const config=await loadConfig(env,user.id,doc);
-  if(!config?.enabled||config.audience!=="selected"||!config.request_access)return fail("Access requests are disabled.",409);
+  if(!config?.enabled||config.audience!=="selected"||
+    (!config.request_access&&body.decision!=="revoke"))return fail("Access requests are disabled.",409);
   const key=requestKey(user.id,doc,requester);
   const row=await loadJson(env,key);
-  if(!row||row.status!=="pending"||row.revision!==config.revision)return fail("Access request is no longer pending.",409);
+  if(!row||row.revision!==config.revision||
+    (body.decision==="revoke"?row.status!=="approved":row.status!=="pending")){
+    return fail("Access request is no longer active.",409);
+  }
   const now=new Date().toISOString();
   if(body.decision==="approve"){
     await putJson(env,grantKey(requester,doc),{
@@ -126,7 +135,15 @@ async function ownerDecide(env,user,body){
       revision:config.revision,kind:"approved",role:config.role,granted_at:now
     });
   }
-  await putJson(env,key,{...row,status:body.decision==="approve"?"approved":"declined",resolved_at:now});
+  if(body.decision==="revoke"){
+    const grant=await loadJson(env,grantKey(requester,doc));
+    if(grant?.kind==="approved"&&grant.owner_id===user.id&&grant.revision===config.revision){
+      await env.STORAGE.delete(grantKey(requester,doc));
+      await disableSessions(env,user.id,doc);
+    }
+  }
+  await putJson(env,key,{...row,status:body.decision==="approve"?"approved":
+    body.decision==="revoke"?"revoked":"declined",resolved_at:now});
   return json({ok:true,decision:body.decision});
 }
 async function visitorAction(env,user,body,action){
