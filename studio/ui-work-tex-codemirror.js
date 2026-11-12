@@ -444,25 +444,75 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           return applyHistorySnapshot(snapshot, undoStack);
         }
 
-        async function mount() {
-          let cm;
-          let language;
-          let latex;
+        // Remote ESM dependencies can be delayed or blocked on mobile networks.
+        // A bounded fallback prevents an endless "loading" state and retains
+        // the normal textarea editor when both CDNs are unavailable.
+        let mounting = false;
+        function announceEditor(kind, reason = '') {
+          const detail = { kind, reason, at: Date.now() };
+          window.__qssedaTexEditorStatus = detail;
+          window.dispatchEvent(new CustomEvent('qsseda:tex-editor-state', { detail }));
+        }
+        async function timedModule(url, milliseconds) {
+          let timer;
           try {
-            [cm, language, latex] = await Promise.all([
-              import('https://cdn.jsdelivr.net/npm/codemirror@6.0.2/+esm'),
-              import('https://cdn.jsdelivr.net/npm/@codemirror/language@6.12.4/+esm'),
-              import('https://cdn.jsdelivr.net/npm/@codemirror/legacy-modes@6.5.3/mode/stex/+esm')
+            return await Promise.race([
+              import(url),
+              new Promise((_, reject) => {
+                timer = window.setTimeout(() => reject(new Error('Editor module request timed out')), milliseconds);
+              })
             ]);
+          } finally {
+            if (timer) window.clearTimeout(timer);
+          }
+        }
+        async function resilientModule(primary, alternate, timeout = 4500) {
+          try { return await timedModule(primary, timeout); }
+          catch (first) {
+            console.warn('AERTEX editor primary CDN unavailable', first);
+            return timedModule(alternate, timeout);
+          }
+        }
+
+        async function mount() {
+          if (mounting || view) return;
+          mounting = true;
+          announceEditor('loading');
+          let cm;
+          let syntax = null;
+          try {
+            // Language highlighting is optional; a grammar CDN failure must
+            // never prevent basic CodeMirror typing or cursor display.
+            const grammar = Promise.all([
+              resilientModule(
+                'https://cdn.jsdelivr.net/npm/@codemirror/language@6.12.4/+esm',
+                'https://esm.sh/@codemirror/language@6.12.4?bundle',
+                3300
+              ),
+              resilientModule(
+                'https://cdn.jsdelivr.net/npm/@codemirror/legacy-modes@6.5.3/mode/stex/+esm',
+                'https://esm.sh/@codemirror/legacy-modes@6.5.3/mode/stex?bundle',
+                3300
+              )
+            ]).then(modules => modules).catch(() => null);
+            cm = await resilientModule(
+              'https://cdn.jsdelivr.net/npm/codemirror@6.0.2/+esm',
+              'https://esm.sh/codemirror@6.0.2?bundle',
+              5500
+            );
+            syntax = await grammar;
           } catch (error) {
+            mounting = false;
             console.warn(labels.failed, error);
+            announceEditor('failed', 'module-unavailable');
             return;
           }
 
-          const { EditorView, basicSetup } = cm;
-          const { StreamLanguage } = language;
-          if (!EditorView || !basicSetup || !StreamLanguage || !latex?.stex) {
-            console.warn(labels.failed);
+          const { EditorView, basicSetup } = cm || {};
+          if (!EditorView || !basicSetup) {
+            mounting = false;
+            console.warn(labels.failed, 'Invalid CodeMirror module exports');
+            announceEditor('failed', 'module-invalid');
             return;
           }
 
@@ -479,22 +529,38 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             '&.cm-focused': { outline: 'none' }
           });
 
+          const baseExtensions = [
+            basicSetup,
+            theme,
+            EditorView.lineWrapping,
+            EditorView.updateListener.of(publishViewToBridge)
+          ];
           try {
-            view = new EditorView({
-              parent: host,
-              doc: nativeValue(),
-              extensions: [
-                basicSetup,
-                StreamLanguage.define(latex.stex),
-                theme,
-                EditorView.lineWrapping,
-                EditorView.updateListener.of(publishViewToBridge)
-              ]
+            const [language, latex] = syntax || [];
+            let extensions = baseExtensions;
+            if (language?.StreamLanguage && latex?.stex) {
+              try {
+                extensions = [basicSetup, language.StreamLanguage.define(latex.stex),
+                  theme, EditorView.lineWrapping, EditorView.updateListener.of(publishViewToBridge)];
+                view = new EditorView({ parent: host, doc: nativeValue(), extensions });
+              } catch (syntaxError) {
+                // Some CDN bundles load a second @codemirror/state version.
+                // Fall back to the editor rather than failing the entire page.
+                console.warn('AERTEX TeX syntax plugin unavailable; continuing without syntax highlighting', syntaxError);
+                try { view?.destroy(); } catch {}
+                view = null;
+                host.replaceChildren();
+              }
+            }
+            if (!view) view = new EditorView({
+              parent: host, doc: nativeValue(), extensions: baseExtensions
             });
           } catch (error) {
+            mounting = false;
             host.remove();
             host = null;
             console.warn(labels.failed, error);
+            announceEditor('failed', 'editor-init-failed');
             return;
           }
 
@@ -594,6 +660,8 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           syncViewFromSource();
           if (window.__qssedaTexPresenceSnapshot) onPresence({ detail: window.__qssedaTexPresenceSnapshot });
           scheduleRemoteRender();
+          mounting = false;
+          announceEditor('ready');
           window.dispatchEvent(new CustomEvent('qsseda:tex-editor-ready', {
             detail: { kind: 'codemirror6' }
           }));
@@ -607,7 +675,23 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           }, { once: true });
         }
 
-        void mount();
+        function startMount() {
+          if (view || mounting) return;
+          void mount().catch(error => {
+            console.warn(labels.failed, error);
+            mounting = false;
+            try { view?.destroy(); } catch {}
+            view = null;
+            try { host?.remove(); } catch {}
+            host = null;
+            source.classList.remove('tex-source-bridge');
+            source.removeAttribute('aria-hidden');
+            source.tabIndex = 0;
+            announceEditor('failed', 'unexpected-init-error');
+          });
+        }
+        window.addEventListener('qsseda:tex-editor-retry', startMount);
+        startMount();
       })();
     </script>`;
 

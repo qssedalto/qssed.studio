@@ -5,6 +5,7 @@ import { TexCollaborationRoom } from "../studio/tex-collaboration-room.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
 import { polishTexWorkbenchApp } from "../studio/ui-tex-app.js";
+import { html } from "../studio/routing.js";
 
 const load = name => fs.readFileSync(new URL("../studio/" + name, import.meta.url), "utf8");
 const room = load("tex-collaboration-room.js");
@@ -26,6 +27,24 @@ assert.match(codeMirror, /scrollToRemote\(position\)/, "CodeMirror must support 
 assert.match(codeMirror, /EditorView\.scrollIntoView\(at/, "Following must use viewport effects.");
 assert.doesNotMatch(codeMirror, /matches = items\.filter\(person => String\(person\?\.role/, "Position matching must never guess identity.");
 assert.match(live, /stopOnManualScroll/, "Manual scrolling must stop following.");
+assert.match(codeMirror, /resilientModule\(/, "CodeMirror must try a secondary CDN if the primary is unavailable.");
+assert.match(codeMirror, /timedModule\(/, "ESM imports must have an upper time limit.");
+assert.match(codeMirror, /announceEditor\('failed'/, "Failed initialization must be reported to the UI.");
+assert.match(codeMirror, /announceEditor\('ready'/, "Successful initialization must be reported.");
+assert.match(codeMirror, /qsseda:tex-editor-retry/, "Loading the editor must support a retry.");
+assert.match(codeMirror, /baseExtensions/, "Grammar CDN issues must not block CodeMirror startup.");
+assert.match(live, /toggle.disabled=!Boolean\(activeDocument\(\)\)/, "Cursor preference must not be disabled while CodeMirror loads.");
+assert.match(live, /qsseda:tex-editor-state/, "UI must subscribe to CodeMirror loading state.");
+assert.match(live, /editorState==='failed'/, "UI must show an editor failure state.");
+assert.match(live, /tex-live-retry/, "UI must provide a retry control.");
+assert.match(live, /window.setTimeout\(/, "Missing readiness events must be bounded by a watchdog.");
+
+const defaultPolicy = html("<p>ok</p>").headers.get("content-security-policy") || "";
+const texPolicy = html("<p>ok</p>", 200, { allowLoopback: true, allowTexEditorFallback: true })
+  .headers.get("content-security-policy") || "";
+assert(!defaultPolicy.includes("https://esm.sh"), "Fallback CDN must not be exposed on unrelated pages.");
+assert(texPolicy.includes("https://esm.sh"), "TeX workbench must allow the pinned ESM fallback origin.");
+
 
 for (const zh of [true,false]) {
   const markup = enhanceWorkTexCollaboration(

@@ -275,7 +275,7 @@ export default {
           `<div id="tex-message" class="tex-message is-error" role="status">${notice}</div>`
         );
       }
-      const pageOptions = pathname === "/work/local" || pathname === "/work/tex" || pathname === "/workspace/experiments/tex" ? { allowLoopback: true } : {};
+      const pageOptions = pathname === "/work/local" || pathname === "/work/tex" || pathname === "/workspace/experiments/tex" ? { allowLoopback: true, allowTexEditorFallback: pathname === "/work/tex" } : {};
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }
 
