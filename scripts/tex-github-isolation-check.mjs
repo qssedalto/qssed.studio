@@ -135,4 +135,16 @@ assert(schema.includes("active_run_id bigint"), "quota reservation must store ex
 assert(schema.includes("active_commit_sha text"), "quota reservation must store source commit SHA");
 assert(schema.includes("  repo_state text not null default"), "repository state must be declared");
 assert.equal((schema.match(/create or replace function public\.tex_gh_reserve_credit/g) || []).length, 1, "no duplicate quota functions");
+const progressHtml = enhanceTexGithubWorkbench('<aside class="tex-runs-panel"><div class="tex-compiler-card"></div></aside>',true);
+assert(progressHtml.includes('id="tex-gh-progress"'),"GitHub progress must be visible in the optional panel.");
+assert(progressHtml.includes('id="tex-gh-preview-state"'),"GitHub PDF must have a non-white verified loading state.");
+assert(progressHtml.includes('id="tex-gh-view-work"'),"Compact touch devices need an in-Work PDF reader.");
+assert(progressHtml.includes("String.fromCharCode(...magic) !== '%PDF-'"),"PDF must be validated before preview.");
+assert(progressHtml.includes("window.setInterval(poll, 5000)"),"Compile status must poll promptly.");
+assert(progressHtml.includes("result.jobs || []"),"Progress must come from actual GitHub job steps.");
+const progressScript = progressHtml.match(/<script id="tex-gh-runtime">([\\s\\S]*?)<\\/script>/)?.[1];
+assert(progressScript, "GitHub runtime missing");
+new vm.Script(progressScript,{filename:"tex-github-progress.js"});
+assert(api.includes("actions/runs/") && api.includes("/jobs?per_page=10"),"GitHub backend must supply actual job statuses.");
+assert(api.includes("steps: (Array.isArray(job.steps)"),"Backend must bound and normalize job step names.");
 console.log("AERTEX GitHub TeX isolation, quota and panel checks passed.");
