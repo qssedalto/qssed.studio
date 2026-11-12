@@ -1354,7 +1354,7 @@ export function adminHtml(markup, status = 200) {
       "x-frame-options": "DENY",
       "x-robots-tag": "noindex, nofollow, noarchive, nosnippet",
       "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
-      "content-security-policy": "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+      "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
     }
   });
 }

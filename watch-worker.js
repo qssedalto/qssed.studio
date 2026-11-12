@@ -22,6 +22,7 @@
 // 关键安全原则：浏览器数据读取必须走 AERTEX Session；电脑上传只认 Device Token；
 // 两种身份绝不能互相替代。R2 中所有 Watch 对象都放在 watch/v1/ 命名空间。
 import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
+import { injectSweiFontResponse, sweiFontAssetResponse } from "./studio/swei-font.js";
 import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { verifyNativeAppSession, nativeJson, nativeApiResponse } from "./studio/native-mobile-auth.js";
@@ -55,6 +56,8 @@ export default {
 
     if (!dataHost && FAVICON_PATHS.has(pathname)) return faviconResponse(request);
     if (!dataHost && LOGO_PATHS.has(pathname)) return logoResponse(request);
+    const sweiAsset = !dataHost && sweiFontAssetResponse(pathname, request.method);
+    if (sweiAsset) return sweiAsset;
 
     if (pathname === "/health") {
       return json({
@@ -581,11 +584,12 @@ async function serveAsset(request, env, assetPath, extraHeaders = {}) {
     headers.set("content-security-policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
   }
   for (const [name, value] of Object.entries(extraHeaders)) headers.set(name, value);
-  return new Response(request.method === "HEAD" ? null : asset.body, {
+  const response = new Response(request.method === "HEAD" ? null : asset.body, {
     status: asset.status,
     statusText: asset.statusText,
     headers
   });
+  return assetPath === "/index.html" ? injectSweiFontResponse(response, request.method) : response;
 }
 
 // 路由比较前折叠尾部斜杠，但保留根路径 /。
