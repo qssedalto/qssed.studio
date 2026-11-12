@@ -27,8 +27,6 @@ function securityHeaders(contentType) {
 function htmlSecurityHeaders(options = {}) {
   const headers = securityHeaders("text/html;charset=UTF-8");
   const allowLoopback = options?.allowLoopback === true;
-  // Only the TeX workbench can load its pinned fallback ESM modules.
-  const allowTexEditorFallback = options?.allowTexEditorFallback === true;
   const connectSources = allowLoopback
     ? `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN} http://127.0.0.1:32145 http://localhost:32145`
     : `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN}`;
@@ -39,9 +37,7 @@ function htmlSecurityHeaders(options = {}) {
   headers.set("permissions-policy", `${basePermissionsPolicy}, ${localNetworkPolicy}`);
   const directives = [
     "default-src 'self'",
-    allowTexEditorFallback
-      ? "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://esm.sh"
-      : "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     `connect-src ${connectSources}`,

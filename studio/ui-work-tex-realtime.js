@@ -154,7 +154,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
         function loadYjs() {
           if (Y) return Promise.resolve(Y);
           if (!yjsPromise) {
-            yjsPromise = import('https://cdn.jsdelivr.net/npm/yjs@13.6.27/+esm').then(module => {
+            yjsPromise = import('/assets/tex/yjs.js').then(module => {
               Y = module;
               return module;
             }).catch(error => {

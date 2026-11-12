@@ -8,3 +8,4 @@ AW-Sync/native/target/
 AW-Sync/native/*.exe
 AW-Sync/native/assets/*.ico
 AW-Sync/native/dist/
+tex-vendor/dist/

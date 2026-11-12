@@ -1,0 +1,22 @@
+{
+  "name": "@aertex/tex-browser-vendor",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Self-hosted CodeMirror and Yjs browser bundles for AERTEX Work",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "codemirror": "6.0.2",
+    "@codemirror/language": "6.12.4",
+    "@codemirror/legacy-modes": "6.5.3",
+    "yjs": "13.6.27"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  },
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}
