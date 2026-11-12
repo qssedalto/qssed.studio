@@ -28,7 +28,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
       - name: Render Work TeX app with an A4 PDF fixture
         run: node scripts/tex-pdf-preview-visual.mjs
-      - name: Chromium zoom, edge, button placement and screenshot QA
+      - name: Chromium real-shell gutter, PDF/empty state, button alignment screenshot QA
         shell: bash
         run: |
           set -euo pipefail
@@ -36,7 +36,7 @@ jobs:
           out=/tmp/aertex-tex-pdf-visual
           for locale in zh en; do
             for width in 1696 2560; do
-              for mode in expanded collapsed; do
+              for mode in expanded collapsed empty; do
                 if [ "$locale" = en ] && { [ "$width" = 2560 ] || [ "$mode" = collapsed ]; }; then continue; fi
                 url="file://$out/pdf-$locale.html?mode=$mode"
                 result="$out/$locale-$width-$mode.dom"
