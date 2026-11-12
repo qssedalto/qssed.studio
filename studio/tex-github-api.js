@@ -278,12 +278,22 @@ async function createRepository(env, userId) {
   let branch = record.source_branch || "main";
   try {
     if (!repoId) {
-      const created = await github(env, "/user/repos", "POST", {
-        name, private: true, auto_init: true,
-        description: "Private TeX workspace managed by AERTEX",
-        has_issues: false, has_wiki: false,
-        has_projects: false, allow_auto_merge: false
-      });
+      // Recover a repository created before a transient database/network error.
+      // The deterministic name is scoped to this authenticated user UUID.
+      let created = null;
+      try {
+        created = await github(env, "/repos/" + env.AERTEX_TEX_GITHUB_OWNER + "/" + name);
+      } catch (error) {
+        if (error.status !== 404) throw error;
+      }
+      if (!created) {
+        created = await github(env, "/user/repos", "POST", {
+          name, private: true, auto_init: true,
+          description: "Private TeX workspace managed by AERTEX",
+          has_issues: false, has_wiki: false,
+          has_projects: false, allow_auto_merge: false
+        });
+      }
       if (!created?.private || created.owner?.login?.toLowerCase() !== env.AERTEX_TEX_GITHUB_OWNER.toLowerCase()) {
         throw httpError(503, "unexpected_repository_owner");
       }
