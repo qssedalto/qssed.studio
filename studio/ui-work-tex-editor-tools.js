@@ -353,32 +353,94 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         undoButton.addEventListener('click', () => { source.focus(); document.execCommand('undo'); });
         redoButton.addEventListener('click', () => { source.focus(); document.execCommand('redo'); });
 
-        copyButton.addEventListener('click', async () => {
-          const start = source.selectionStart ?? 0;
-          const end = source.selectionEnd ?? 0;
-          const text = start !== end ? source.value.slice(start, end) : source.value;
-          try {
-            await navigator.clipboard.writeText(text);
-            showMessage(labels.copied);
-          } catch {
-            source.focus();
-            source.setSelectionRange(start, end || source.value.length);
-            document.execCommand('copy');
+        function sourceSelection() {
+          // CodeMirror mirrors the source into the hidden textarea, but its own
+          // selection is authoritative when the enhanced editor is active.
+          const bridge = window.__qssedaTexEditorBridge;
+          const selection = bridge?.getSelection?.();
+          const maximum = source.value.length;
+          const clamp = value => Math.max(0, Math.min(maximum, Number(value) || 0));
+          const anchor = clamp(selection?.anchor ?? source.selectionStart);
+          const head = clamp(selection?.head ?? source.selectionEnd);
+          return { start: Math.min(anchor, head), end: Math.max(anchor, head) };
+        }
+
+        const canEditSource = () => !editor.hidden && Boolean(activeDocumentId()) &&
+          !source.readOnly && root.dataset.texCollaborationAccessRole !== 'viewer';
+
+        async function writeClipboard(text) {
+          if (navigator.clipboard?.writeText) {
+            try { await navigator.clipboard.writeText(text); return true; }
+            catch {}
           }
+          // Legacy clipboard fallback: never remove text unless copying succeeds.
+          const temporary = document.createElement('textarea');
+          temporary.value = text;
+          temporary.readOnly = true;
+          temporary.setAttribute('aria-hidden', 'true');
+          temporary.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+          document.body.append(temporary);
+          temporary.select();
+          let success = false;
+          try { success = Boolean(document.execCommand('copy')); }
+          catch {}
+          temporary.remove();
+          return success;
+        }
+
+        cutButton.addEventListener('click', async () => {
+          if (!canEditSource()) return;
+          const { start, end } = sourceSelection();
+          if (start === end) return;
+          const selectionText = source.value.slice(start, end);
+          if (!await writeClipboard(selectionText)) {
+            showMessage(labels.cutFailed, true);
+            return;
+          }
+          // A concurrent collaborative edit or another selection must not
+          // trigger an accidental deletion after an asynchronous clipboard call.
+          const current = sourceSelection();
+          if (start !== current.start || end !== current.end ||
+              source.value.slice(start, end) !== selectionText || !canEditSource()) return;
+          const bridge = window.__qssedaTexEditorBridge;
+          if (!bridge?.replaceSelection?.('')) {
+            source.setRangeText('', start, end, 'start');
+            source.dispatchEvent(new Event('input', { bubbles: true }));
+            source.focus();
+          }
+          syncDisabled();
+        });
+
+        copyButton.addEventListener('click', async () => {
+          const { start, end } = sourceSelection();
+          const text = start !== end ? source.value.slice(start, end) : source.value;
+          if (await writeClipboard(text)) showMessage(labels.copied);
+          else showMessage(labels.copyFailed, true);
         });
 
         pasteButton.addEventListener('click', async () => {
+          if (!canEditSource()) return;
           try {
             const text = await navigator.clipboard.readText();
-            const start = source.selectionStart ?? source.value.length;
-            const end = source.selectionEnd ?? start;
-            source.setRangeText(text, start, end, 'end');
-            source.dispatchEvent(new Event('input', { bubbles: true }));
-            source.focus();
+            if (!canEditSource()) return;
+            const bridge = window.__qssedaTexEditorBridge;
+            if (!bridge?.replaceSelection?.(text)) {
+              const { start, end } = sourceSelection();
+              source.setRangeText(text, start, end, 'end');
+              source.dispatchEvent(new Event('input', { bubbles: true }));
+              source.focus();
+            }
+            syncDisabled();
           } catch {
             showMessage(labels.pasteDenied, true);
             source.focus();
           }
+        });
+
+        renameButton.addEventListener('click', () => {
+          if (!canEditSource()) return;
+          title.focus();
+          title.select();
         });
 
         historyButton.addEventListener('click', () => {
@@ -421,12 +483,23 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         }, true);
 
         const syncDisabled = () => {
-          const disabled = editor.hidden || !activeDocumentId();
-          [saveButton, saveAsButton, undoButton, redoButton, copyButton, pasteButton, historyButton].forEach(button => { button.disabled = disabled; });
+          const noDocument = editor.hidden || !activeDocumentId();
+          const readOnly = source.readOnly || root.dataset.texCollaborationAccessRole === 'viewer';
+          [saveButton, saveAsButton, undoButton, redoButton, pasteButton, renameButton].forEach(button => {
+            button.disabled = noDocument || readOnly;
+          });
+          [copyButton, historyButton].forEach(button => { button.disabled = noDocument; });
+          const { start, end } = sourceSelection();
+          cutButton.disabled = noDocument || readOnly || start === end;
         };
         new MutationObserver(syncDisabled).observe(editor, { attributes: true, attributeFilter: ['hidden'] });
+        new MutationObserver(syncDisabled).observe(root, { attributes: true, attributeFilter: ['data-tex-collaboration-access-role', 'data-tex-collaboration-document-id'] });
+        new MutationObserver(syncDisabled).observe(source, { attributes: true, attributeFilter: ['readonly'] });
         const list = document.getElementById('tex-document-list');
         if (list) new MutationObserver(syncDisabled).observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+        // CodeMirror forwards selection changes to the underlying textarea.
+        // The basic textarea uses native select/keyup/pointerup events.
+        ['select', 'keyup', 'pointerup', 'input'].forEach(type => source.addEventListener(type, syncDisabled));
         syncDisabled();
       })();
     </script>`;
