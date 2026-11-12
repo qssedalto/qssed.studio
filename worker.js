@@ -23,6 +23,7 @@ import { handleWorkbenchOverview } from "./studio/workbench-api.js";
 import { handleNativeWorkDocuments } from "./studio/native-work-documents.js";
 import { verifyNativeAppSession, nativeJson, nativeApiResponse } from "./studio/native-mobile-auth.js";
 import { handleTexApi } from "./studio/tex-api.js";
+import { handleTexGithubApi } from "./studio/tex-github-api.js";
 import { handleTexCollaborationApi } from "./studio/tex-collaboration-api.js";
 import { handleTexSharedCollaboration } from "./studio/tex-collaboration-shared.js";
 import { handleTexCollaborationRealtime } from "./studio/tex-collaboration-realtime.js";
@@ -163,6 +164,7 @@ async function routeStudioRequest(request, env, ctx) {
   if (pathname === "/api/tex/collaboration/realtime") return handleTexCollaborationRealtime(request, env);
   if (pathname === "/api/tex/collaboration/shared") return handleTexSharedCollaboration(request, env);
   if (pathname === "/api/tex/collaboration") return handleTexCollaborationRoute(request, env);
+  if (pathname.startsWith("/api/tex/github/")) return handleTexGithubApi(request, env, pathname.slice("/api/tex/github/".length));
   if (pathname.startsWith("/api/tex/")) return handleTexApi(request, env, pathname.slice("/api/tex/".length));
   if (pathname.startsWith("/api/work/")) return handleWorkApi(request, env, pathname.slice("/api/work/".length));
   if (pathname === "/api/curated-favorites") return handleCuratedFavorites(request, env);
