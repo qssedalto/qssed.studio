@@ -6,6 +6,7 @@ import { enhanceWorkTexCollapsiblePanels } from "../studio/ui-work-tex-panels.js
 import { injectWorkTexHomeLinks } from "../studio/ui-work-tex.js";
 import { polishWorkTexViewportEdges } from "../studio/ui-work-tex-viewport-edges.js";
 import { polishWorkTexWelcome } from "../studio/ui-work-tex-welcome.js";
+import { polishWorkTexPdfControls } from "../studio/ui-work-tex-pdf-controls.js";
 import { LAB_TOOLS } from "../studio/lab-tools.js";
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
@@ -31,11 +32,11 @@ for (const zh of [true, false]) {
   for (const code of scripts) new Function(code);
 
   const workMarkup = enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh), zh);
-  const workPageMarkup = polishWorkTexWelcome(polishWorkTexViewportEdges(injectWorkTexHomeLinks(
+  const workPageMarkup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(injectWorkTexHomeLinks(
     `<!doctype html><html><head></head><body>${workMarkup}</body></html>`,
     zh ? "zh-cn" : "en-us",
     "https://qsseda.com"
-  )));
+  ))));
   assert(workPageMarkup.includes('id="qsseda-work-tex-home-links"'), "Work TeX must install shared main-site exit styling");
   for (const selector of [
     ".tex-documents-panel .tex-panel-head",
@@ -62,6 +63,20 @@ for (const zh of [true, false]) {
   assert(workPageMarkup.includes("calc(100% - 10px)!important"), "PDF card must occupy the right column without the extra 24px gutter.");
   assert(workPageMarkup.includes("margin:8px 2px 8px 8px!important"), "PDF card must not reserve a visible right edge strip.");
   assert(workPageMarkup.includes("left:50%!important") && workPageMarkup.includes("translateX(-50%)"), "Right collapsed plus button must be horizontally centered.");
+  assert(workPageMarkup.includes('id="qsseda-work-tex-pdf-controls"'), "Work must mount a final edge-to-edge PDF preview control layer.");
+  assert(workPageMarkup.includes('id="qsseda-work-tex-pdf-controls-runtime"'), "Work must mount functional PDF zoom controls.");
+  assert(workPageMarkup.includes('body.os-shell:has(.tex-work-app)') && workPageMarkup.includes('padding:0!important;'), "TeX full-screen workspace must remove its outer right-hand white padding.");
+  assert(workPageMarkup.includes("height:100dvh!important") && workPageMarkup.includes("border-radius:0!important"), "TeX workspace must fill the viewport rather than leave rounded outer slivers.");
+  assert(workPageMarkup.includes("head.prepend(expand)") && workPageMarkup.includes("actions.append(collapse)"), "PDF fullscreen action must sit at the upper-left while collapse shares the right-hand toolbar.");
+  assert(workPageMarkup.includes("rail.prepend(collapse)"), "Collapsed rail must retain its only visible expand button.");
+  assert(workPageMarkup.includes("Math.abs") === false || workPageMarkup.includes("qtex-pdf-zoom"), "Zoom control must be mounted.");
+  assert(workPageMarkup.includes('qtex-pdf-zoom') && workPageMarkup.includes('#view=FitH') && workPageMarkup.includes('#zoom='), "PDF viewer must support fit-to-width and numeric zoom levels.");
+  const panelsSource = fs.readFileSync(new URL("../studio/ui-work-tex-panels.js", import.meta.url), "utf8");
+  assert(!panelsSource.includes("base + '#zoom=page-width'"), "Invalid legacy non-numeric PDF zoom fragments must no longer be forced.");
+  const previewRuntime = [...workPageMarkup.matchAll(/<script id="qsseda-work-tex-pdf-controls-runtime">([\s\S]*?)<\/script>/g)].map(match=>match[1]);
+  assert(previewRuntime.length === 1, "Work preview controls must mount exactly once.");
+  new Function(previewRuntime[0]);
+
   assert(workPageMarkup.includes("right:10px!important") && workPageMarkup.includes("margin-right:33px!important"), "Expanded preview collapse control must align at the right end of the preview action row.");
   assert(workPageMarkup.includes('id="qsseda-work-tex-welcome-clean"'), "Welcome page must use a single isolated stylesheet.");
   assert(workMarkup.includes('class="qtex-welcome"') && workMarkup.includes('class="qtex-welcome-hero"'), "Welcome page must render the editorial layout.");
@@ -132,7 +147,7 @@ assert(texTool?.href === "/work/tex", "TeX Workbench registry must point at the 
 assert(config.includes('"/work/tex"'), "Work TeX route is missing from protected OS routes");
 assert(config.includes('["/workspace/experiments/tex", "/work/tex"]'), "Legacy TeX route must redirect to Work TeX");
 assert(entry.includes('pathname === "/work/tex"'), "Studio entry does not mount the Work TeX app");
-assert(entry.includes("polishWorkTexWelcome(polishWorkTexViewportEdges(markup))"), "Entry must inject the isolated welcome after the other Work styles.");
+assert(entry.includes("polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup)))"), "Entry must mount the PDF zoom/header runtime after Work styling.");
 const workUi = workNavigationUi;
 assert(!workUi.includes("window.location.reload()"), "Bridge connection check must not force-refresh the Work editor.");
 assert(workUi.includes("qsseda:tex-local-recheck"), "Bridge connection check must dispatch the in-place re-probe signal.");

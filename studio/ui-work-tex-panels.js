@@ -310,17 +310,9 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
           if (event.key === 'Escape' && previewCard.classList.contains('is-expanded')) setExpanded(false);
         });
 
-        const normalizePdfZoom = () => {
-          const src = previewFrame.getAttribute('src') || '';
-          if (!src.startsWith('blob:') || src.includes('#zoom=page-width')) return;
-          const base = src.split('#')[0];
-          previewFrame.setAttribute('src', base + '#zoom=page-width');
-        };
-
-        const frameObserver = new MutationObserver(normalizePdfZoom);
-        frameObserver.observe(previewFrame, { attributes: true, attributeFilter: ['src'] });
-        normalizePdfZoom();
-        window.addEventListener('pagehide', () => frameObserver.disconnect(), { once: true });
+        // PDF URL fragments are managed by the dedicated preview toolbar.
+        // Do not force '#zoom=page-width': Chromium parses zoom as a numeric
+        // percentage, and that unrecognized value broke reliable page fitting.
       })();
     </script>`;
 

@@ -1,0 +1,66 @@
+name: Work TeX PDF Layout & Zoom QA
+
+on:
+  pull_request:
+    paths:
+      - 'studio/ui-work-tex-pdf-controls.js'
+      - 'studio/ui-work-tex-panels.js'
+      - 'studio/entry.js'
+      - 'studio/ui-work-tex-viewport-edges.js'
+      - 'scripts/tex-pdf-preview-visual.mjs'
+      - '.github/workflows/tex-pdf-preview-visual.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install CJK fonts for realistic Chinese screenshots
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+      - name: Render Work TeX app with an A4 PDF fixture
+        run: node scripts/tex-pdf-preview-visual.mjs
+      - name: Chromium zoom, edge, button placement and screenshot QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser="$(command -v google-chrome || command -v chromium)"
+          out=/tmp/aertex-tex-pdf-visual
+          for locale in zh en; do
+            for width in 1696 2560; do
+              for mode in expanded collapsed; do
+                if [ "$locale" = en ] && { [ "$width" = 2560 ] || [ "$mode" = collapsed ]; }; then continue; fi
+                url="file://$out/pdf-$locale.html?mode=$mode"
+                result="$out/$locale-$width-$mode.dom"
+                "$browser" --headless --no-sandbox --disable-dev-shm-usage \
+                  --disable-gpu --allow-file-access-from-files \
+                  --virtual-time-budget=4000 --window-size="$width,1050" \
+                  --dump-dom "$url" > "$result" 2> /dev/null
+                if ! grep -q 'data-pdf-qa="PASS"' "$result"; then
+                  echo "PDF preview geometry/zoom test failed: $locale $width $mode"
+                  grep -o 'data-pdf-qa="[^"]*"' "$result" || true
+                  grep -o 'data-pdf-edge="[^"]*"' "$result" || true
+                  exit 1
+                fi
+                "$browser" --headless --no-sandbox --disable-dev-shm-usage \
+                  --disable-gpu --hide-scrollbars --allow-file-access-from-files \
+                  --virtual-time-budget=4000 --window-size="$width,1050" \
+                  --screenshot="$out/pdf-$locale-$width-$mode.png" "$url" > /dev/null 2>&1
+                test -s "$out/pdf-$locale-$width-$mode.png"
+              done
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tex-pdf-layout-zoom-qa
+          path: /tmp/aertex-tex-pdf-visual/*.png
+          retention-days: 7
