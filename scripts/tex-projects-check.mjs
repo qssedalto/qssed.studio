@@ -44,10 +44,16 @@ try{
   assert.equal(incomplete.response.status,422,"Unknown author must not be made up.");
   profile={first_name:"名",last_name:"姓"};
 
-  // Offline CI must never silently generate a substituted frog.jpg.
-  // The exact main.tex and bibliography are reproducible from the pinned source.
+  // Offline example creation must succeed using the exact bundled frog.jpg.
+  // Never silently generate or fetch a substituted image.
   const example=await create(postJson({type:"example",title:"我的示例"}));
-  assert.equal(example.response.status,400,"A missing verified image fails closed.");
+  assert.equal(example.response.status,201,JSON.stringify(example.body));
+  assert.equal(example.body.document.project_type,"example");
+  assert.deepEqual(example.body.document.files.map(f=>f.name),["sample.bib","frog.jpg"]);
+  const frogBytes=Buffer.from(example.body.document.files[1].content,"base64");
+  assert.equal(frogBytes.length,97080);
+  assert.equal(createHash("sha256").update(frogBytes).digest("hex"),
+    "2913cb8ca0c77173737a5f2d0c9b80c0034e09a6c8708af1a8737dfcd8e8bc44");
   const sourceFile=fs.readFileSync(new URL("../studio/tex-project-api.js",import.meta.url),"utf8");
   const embedded=name=>{
     const match=sourceFile.match(new RegExp('const '+name+'="([A-Za-z0-9+/=]+)"'));
@@ -106,7 +112,7 @@ try{
   assert.equal(refused.response.status,400,"Traversal paths must be rejected.");
   const nonZip=await create(asZip(Buffer.from("not a zip")));
   assert.equal(nonZip.response.status,400,"Invalid ZIP must be rejected.");
-  assert.equal(writes.length,2,"Only successfully validated projects can reach R2.");
+  assert.equal(writes.length,3,"Only successfully validated projects can reach R2.");
   console.log("TeX project creation, legal-name gate, sample files, ZIP import and traversal checks passed.");
 }finally{
   globalThis.fetch=realFetch;

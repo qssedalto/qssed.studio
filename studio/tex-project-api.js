@@ -3,6 +3,7 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { workerLog } from "./server-runtime.js";
+import { VERIFIED_SAMPLE_FROG_BASE64 } from "./tex-example-frog.js";
 
 const ROOT = "_system/tex-documents/";
 const LIMIT_ZIP = 3 * 1024 * 1024;
@@ -213,32 +214,15 @@ async function verifiedFrog(bytes){
   return hex===EXAMPLE_FROG_SHA256;
 }
 async function sampleFrog(env){
-  try{
-    const cached=await env.STORAGE.get(EXAMPLE_FROG_CACHE);
-    if(cached){
-      const bytes=new Uint8Array(await cached.arrayBuffer());
-      if(await verifiedFrog(bytes))return toBase64(bytes);
-    }
-    const response=await fetch(EXAMPLE_FROG_URL,{
-      method:"GET",redirect:"error",headers:{accept:"image/jpeg"}
-    });
-    if(!response.ok||Number(response.headers.get("content-length")||0)>97080)
-      throw new Error("Immutable example asset unavailable.");
-    const bytes=new Uint8Array(await response.arrayBuffer());
-    if(!(await verifiedFrog(bytes)))throw new Error("Example asset failed SHA-256 verification.");
-    await env.STORAGE.put(EXAMPLE_FROG_CACHE,bytes,{
-      httpMetadata:{contentType:"image/jpeg"},
-      customMetadata:{source:"pinned-github-example",expected_sha256:EXAMPLE_FROG_SHA256}
-    });
-    return toBase64(bytes);
-  }catch(error){
-    workerLog("warn","tex.project.sample_asset_fallback",{
-      code:String(error?.name||"unavailable").slice(0,35)
-    });
-    // Never silently substitute an approximate image: example projects must
-    // reproduce the user's three original files exactly, byte-for-byte.
-    // On a cache miss and failed upstream verification, reject creation.
-    throw new Error("The original example image is temporarily unavailable. Please retry.");
+  // Keep the sample self-contained: runtime GitHub access is not reliable
+  // in all worker environments. The bundled asset is pinned and verified.
+  const binary=atob(VERIFIED_SAMPLE_FROG_BASE64);
+  const bytes=Uint8Array.from(binary, ch=>ch.charCodeAt(0));
+  if(!(await verifiedFrog(bytes))){
+    workerLog("error","tex.project.sample_asset_invalid",{reason:"Bundled sample checksum mismatch"});
+    throw new Error("Verified example image failed integrity check.");
   }
+  return VERIFIED_SAMPLE_FROG_BASE64;
 }
+
 const SAMPLE_FROG_JPG = "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";
