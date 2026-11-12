@@ -8,9 +8,9 @@ const DOCUMENT_ROOT = "_system/tex-documents/";
 const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|png|jpe?g|pdf)$/i;
 const BINARY = /\.(png|jpe?g|pdf)$/i;
 const MAX_FILES = 24; // extras; main.tex is the 25th entry
-const MAX_SINGLE_BYTES = 1024 * 1024;
+const MAX_SINGLE_BYTES = 3 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
-const MAX_JSON_BYTES = 1600 * 1024;
+const MAX_JSON_BYTES = 5 * 1024 * 1024;
 const MAX_TEXT_CHARS = 180000;
 const encoder = new TextEncoder();
 
@@ -43,7 +43,7 @@ function validatedFile(value) {
     try { bytes = Uint8Array.from(atob(value.content), c => c.charCodeAt(0)); }
     catch { throw new Error("Invalid base64 file content."); }
   } else bytes = encoder.encode(value.content);
-  if (bytes.byteLength > MAX_SINGLE_BYTES) throw new Error("A file cannot exceed 1 MB.");
+  if (bytes.byteLength > MAX_SINGLE_BYTES) throw new Error("A file cannot exceed 3 MB.");
   if (binary) {
     const ext = value.name.split(".").pop().toLowerCase();
     const jpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
