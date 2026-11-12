@@ -13,6 +13,10 @@ function cacheHeaders(type="text/html;charset=UTF-8"){
   "referrer-policy":"no-referrer",
   "x-robots-tag":"noindex, nofollow, noarchive",
   "x-content-type-options":"nosniff",
+  "x-frame-options":"DENY",
+  "strict-transport-security":"max-age=31536000; includeSubDomains",
+  "cross-origin-resource-policy":"same-origin",
+  "permissions-policy":"camera=(), microphone=(), geolocation=(), payment=()",
   "content-security-policy":"default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
  };
 }
