@@ -286,4 +286,40 @@ assertAbsent(migration, "auth.jwt()->'app_metadata'->>'is_admin'", "Administrato
 
 
 
+// Regression: Cloudflare Workers rejects redirect:"error" *before* network I/O.
+// Probe the real quota route using a stubbed upstream; never use a real token.
+const quotaApi = read("admin/tex-credits-api.js");
+assertContains(quotaApi, 'redirect: "manual"', "Quota RPC must use Workers-compatible no-follow redirect mode.");
+assertAbsent(quotaApi, 'redirect: "error"', "Workers cannot construct redirect:error requests.");
+assertContains(quotaApi, 'result.status >= 300 && result.status < 400', "Quota RPC must fail closed on redirects.");
+const { handleAdminTexCredits } = await import("../admin/tex-credits-api.js");
+const savedFetch = globalThis.fetch;
+const fakeAdmin = {ok:true, accessToken:"test-jwt-not-a-real-token", user:{id:"11111111-1111-4111-8111-111111111111"}};
+const quotaRequest = new Request("https://admin.qsseda.com/api/admin/tex-credits");
+try {
+  let capturedRedirect;
+  globalThis.fetch = async (_url, options) => {
+    capturedRedirect = options?.redirect;
+    return new Response(JSON.stringify({entries:[],pending:0}),{
+      status:200,headers:{"content-type":"application/json"}
+    });
+  };
+  const ok = await handleAdminTexCredits(quotaRequest,{},fakeAdmin);
+  assert(ok.status === 200 && capturedRedirect === "manual",
+    "Admin quota list must reach Supabase with a Workers-compatible request.");
+  const payload = await ok.json();
+  assert(Array.isArray(payload.entries) && payload.entries.length === 0,
+    "Admin quota GET must return the database's empty ledger.");
+  globalThis.fetch = async () => new Response(null, {
+    status:302, headers:{location:"https://example.invalid/capture"}
+  });
+  const redirected = await handleAdminTexCredits(quotaRequest,{},fakeAdmin);
+  assert(redirected.status === 503, "Quota fetch must never follow an upstream redirect.");
+  globalThis.fetch = async () => new Response(JSON.stringify({message:"not authorized"}), {status:403});
+  const denied = await handleAdminTexCredits(quotaRequest,{},fakeAdmin);
+  assert(denied.status === 403, "Quota API must not elevate denied admin privileges.");
+} finally {
+  globalThis.fetch = savedFetch;
+}
+
 console.log("AERTEX isolated admin control plane checks passed.");
