@@ -241,6 +241,18 @@ function mobileTexQaRuntime() {
     }, 0);
   });
 
+  // Internal Markdown links select project files without navigating away.
+  root.addEventListener('click', event => {
+    if (!media.matches) return;
+    const link = event.target.closest?.('.tex-inline-preview a[data-tex-project-link]');
+    if (!link) return;
+    event.preventDefault();
+    const name = String(link.dataset.texProjectLink || '').replace(/^\.\//, '');
+    const target = [...(list?.querySelectorAll('.tex-tree-file[data-file]') || [])]
+      .find(button => button.dataset.file === name);
+    target?.click();
+  });
+
   // A safe, browser-only Markdown subset for touch layouts. All text is
   // escaped before formatting; raw HTML never executes.
   const html = value => String(value).replace(/[&<>"']/g, ch => ({
@@ -255,6 +267,13 @@ function mobileTexQaRuntime() {
     s = s.replace(/`([^`\n]+)`/g, (_,code) => marker('<code>' + code + '</code>'));
     s = s.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, (_,name,url) =>
       marker('<a href="' + html(url) + '" rel="noopener noreferrer" target="_blank">' + name + '</a>'));
+    s = s.replace(/\[([^\]\n]+)\]\(([^()\s]+)\)/g, (_,name,path) => {
+      const relative=path.replace(/^\.\//, '');
+      if (relative.startsWith('/') || relative.startsWith('#') ||
+          relative.split('/').some(part=>part==='..'||part==='') ||
+          /^[a-z][a-z0-9+.-]*:/i.test(relative)) return '['+name+']('+path+')';
+      return marker('<a href="#" data-tex-project-link="' + html(relative) + '">' + name + '</a>');
+    });
     s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
       .replace(/__([^_\n]+)__/g, '<strong>$1</strong>')
       .replace(/~~([^~\n]+)~~/g, '<del>$1</del>')
