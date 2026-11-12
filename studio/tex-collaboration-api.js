@@ -3,6 +3,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
+import { resolveLinkGrant } from "./tex-link-capabilities.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const ROLES = new Set(["viewer", "editor"]);
@@ -61,7 +62,16 @@ async function getCollaboration(request, env, user, accessToken) {
 
   const membership = await sharedDocumentMembership(accessToken, user.id, documentId);
   if (membership.error) return collaborationBackendError(membership.error);
-  if (!membership.data) return json({ error: "TeX document not found." }, 404);
+  if (!membership.data) {
+    const grant = await resolveLinkGrant(env, user.id, documentId);
+    if (!grant) return json({ error: "TeX document not found." }, 404);
+    if (url.searchParams.get("action") === "search") {
+      return json({ error: "Only the document owner can invite collaborators." }, 403);
+    }
+    return collaborationSnapshot(accessToken, grant.owner_id, documentId, {
+      canManage: false, currentUserId: user.id, currentUserRole: grant.role
+    });
+  }
   if (url.searchParams.get("action") === "search") {
     return json({ error: "Only the document owner can invite collaborators." }, 403);
   }
