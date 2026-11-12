@@ -1,0 +1,75 @@
+name: AERTEX TeX Isolated Preview
+
+on:
+  pull_request:
+    paths:
+      - "studio/tex-github-*.js"
+      - "studio/ui-tex-github.js"
+      - "studio/tex-api-core.js"
+      - "studio/tex-github-preview.js"
+      - "studio/entry.js"
+      - "worker.js"
+      - "wrangler.tex-preview.jsonc"
+      - ".github/workflows/tex-github-isolated-preview.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aertex-tex-isolated-preview
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    if: github.event.pull_request.number == 335 && github.event.pull_request.head.repo.full_name == 'qssedalto/qssed.studio' && github.event.pull_request.head.ref == 'work/tex-github-quota-isolation-20261112'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify preview entrypoint and zero-production-binding config
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check studio/tex-github-preview.js
+          node scripts/tex-github-isolation-check.mjs
+          node - <<'JS'
+          const fs = require("node:fs");
+          const c = JSON.parse(fs.readFileSync("wrangler.tex-preview.jsonc", "utf8"));
+          if (c.name !== "qsseda-tex-gh-preview" || c.main !== "studio/tex-github-preview.js" ||
+              c.workers_dev !== true || c.keep_vars !== false ||
+              c.r2_buckets || c.routes || c.d1_databases || c.durable_objects ||
+              c.vars || c.kv_namespaces || c.services || c.workflows) {
+            throw new Error("Preview config must contain no production routes, secrets or resources");
+          }
+          console.log("Standalone preview has no production routes or bindings.");
+          JS
+      - name: Deploy isolated Worker (NOT qsseda-work)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.136.3 deploy --config wrangler.tex-preview.jsonc
+      - name: Smoke test preview, deny unauthenticated actions
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://qsseda-tex-gh-preview.a15952007978.workers.dev"
+          ok=0
+          for i in 1 2 3 4 5 6; do
+            status="$(curl -fsS --max-time 12 -o /tmp/aertex-preview-health.json -w '%{http_code}' "$base/health" || true)"
+            if [ "$status" = "200" ] && grep -q '"production":false' /tmp/aertex-preview-health.json; then ok=1; break; fi
+            sleep 3
+          done
+          test "$ok" = 1 || { echo "Preview health failed"; exit 1; }
+          for route in status pdf download runs; do
+            status="$(curl --silent --show-error --max-time 12 -o /tmp/aertex-preview-api.json -w '%{http_code}' "$base/api/tex/github/$route")"
+            test "$status" = 401 || { echo "Unauthorized $route was not rejected (HTTP $status)"; exit 1; }
+          done
+          status="$(curl --silent --show-error --max-time 12 -X POST -o /tmp/aertex-preview-api.json -w '%{http_code}' "$base/api/tex/github/repository")"
+          test "$status" = 401 || { echo "Unauthorized repository creation was not rejected (HTTP $status)"; exit 1; }
+          echo "Isolated AERTEX TeX preview smoke tests passed: $base"
