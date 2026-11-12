@@ -11,7 +11,7 @@ for (const zh of [true, false]) {
   assert(html.includes('data-tex-action') && html.includes("copy-all"), "Copy All must be installed");
   assert(html.includes("rename-project") && html.includes("delete-project") && html.includes("save-project-zip"),
     "File and project commands must remain distinct");
-  assert(html.includes("operation:'rename'") || html.includes("kind==='rename'"), "Project file rename must reach file API");
+  assert(html.includes("fileOperation('rename',asset.name,name)"), "Supplementary file rename must call the authorized file API");
   assert(html.includes("projectQuestion"), "Project deletion must warn about all related data");
   assert(html.includes("sourceMode") || html.includes("data-mode="), "Inline code/preview tabs must exist");
   assert(WORK_TEX_EXPLORER_STYLE.includes("#tex-document-list>.tex-document-item"),
