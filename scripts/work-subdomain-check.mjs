@@ -276,6 +276,8 @@ assert(workTexUi.includes('white-space:nowrap!important'), "Work TeX template ti
 assert(texApp.includes('startDetail: "选择一种结构，直接进入写作与排版。"'), "Chinese TeX start copy must stay concise and task-focused.");
 assert(texApp.includes('blankDetail: "最简 article 结构，适合从零开始"') && texApp.includes('articleDetail: "预设中文排版、章节与常用页面设置"') && texApp.includes('mathDetail: "预设公式环境，适合推导与课程记录"'), "Chinese TeX template descriptions must remain concrete and non-promotional.");
 assert(workTexPanels.includes("order:1!important") && workTexPanels.includes(".tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link{\n          display:none!important;"), "Collapsed Work document rail must show only its restore control; Home belongs to expanded panels.");
+assert(workTexCollaboration.includes("window.setTimeout(()=>void initialize(),0)"), "The first TeX document load must wait for the invited-document fetch adapter to initialize.");
+assert(workTexCollaboration.includes("const workLocale=location.pathname.split('/')[1]||'zh-cn';"), "Invited-document navigation must preserve the current full regional locale.");
 assert(workTexCollaboration.includes("const requested=routeDocumentId();if(requested)await openDocument(requested,'replace');else renderEditor();"), "Work TeX root must stay on the start/recommendation surface unless a document deep link is explicitly requested.");
 assert(!workTexCollaboration.includes("else if(documents[0])await openDocument(documents[0].id,'replace')"), "Work TeX must not auto-open the first document on a fresh root visit.");
 assert(entry.includes("polishWorkTexVisualTheme(markup)"), "Work visual theme must be applied only after existing TeX behavior enhancements.");
