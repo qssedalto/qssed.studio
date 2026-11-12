@@ -38,6 +38,16 @@ GitHub-hosted Actions are not a fully hardened untrusted-code sandbox. For a lar
 3. Create a revocable GitHub credential under a dedicated automation account if possible. For a fine-grained PAT, grant access to **All repositories** (new per-user repositories must be included after creation) and only these permissions: **Repository creation: write** (POST /user/repos), **Administration: write** (delete repo and repository identity management), **Contents: write** (source and output branch files), **Workflows: write** (creating the managed workflow file), and **Actions: write/read** (dispatch and list runs). Metadata read is implicit. The token is high impact because it can create and delete private repositories under the operator account. A GitHub App with user authorization and short-lived installation/user tokens is preferable for a long-lived public service. Do not use the ChatGPT connector credential.
 4. Install AERTEX_TEX_GITHUB_TOKEN as a Worker Secret on qsseda-work, and configure AERTEX_TEX_GITHUB_OWNER and AERTEX_TEX_GITHUB_ADMIN_USER_IDS. The relevant Wrangler configuration is wrangler.work.jsonc. Do not publish tokens in source control.
 5. Test via Work preview: apply, approve, create private repo, compile a small Chinese XeLaTeX file, retrieve PDF, verify a second user cannot access that repo, delete it, and ensure the new-repo control reappears only after deletion.
+
+For the existing Work Worker, configure secrets interactively from the repository root (Wrangler prompts for each value; never put the token in shell history or commit it):
+
+```sh
+npx wrangler secret put AERTEX_TEX_GITHUB_TOKEN --config wrangler.work.jsonc
+npx wrangler secret put AERTEX_TEX_GITHUB_OWNER --config wrangler.work.jsonc
+npx wrangler secret put AERTEX_TEX_GITHUB_ADMIN_USER_IDS --config wrangler.work.jsonc
+```
+
+The owner value is the GitHub login for the credential. The administrator value is a comma-separated list of verified Supabase Auth user UUIDs. Verify the secret names are present using `wrangler secret list --config wrangler.work.jsonc`; this lists names, not values. Configure GitHub Actions spending/budget alerts before enabling any user quota. Do not deploy the Work Worker solely to set these secrets; add them after the reviewed code is ready for a controlled preview.
 6. Monitor private GitHub Actions usage, rate limits, job duration, orphaned repos and cost before opening the feature to real users.
 
 
