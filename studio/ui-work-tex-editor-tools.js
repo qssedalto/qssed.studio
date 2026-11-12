@@ -117,18 +117,21 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         border:0!important;
         border-radius:8px!important;
         background:transparent!important;
-        color:var(--text)!important;
+        color:color-mix(in srgb,var(--text) 74%,var(--surface))!important;
         box-shadow:none!important;
         cursor:pointer!important;
         transition:background .14s ease,color .14s ease,transform .14s ease!important;
       }
-      .tex-editor-command:hover:not(:disabled){background:var(--fill)!important;color:var(--text)!important}
+      .tex-editor-command:hover:not(:disabled){background:var(--fill)!important;color:color-mix(in srgb,var(--text) 85%,var(--surface))!important}
       .tex-editor-command:active:not(:disabled){transform:scale(.95)!important}
       .tex-editor-command:focus-visible{outline:none!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 14%,transparent)!important}
       .tex-editor-command:disabled{opacity:.30!important;cursor:not-allowed!important;transform:none!important}
       .tex-editor-command svg{width:26px!important;height:26px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.7!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important}
       .tex-editor-command svg .tex-icon-accent{stroke:var(--primary)!important}
       .tex-editor-command svg .tex-icon-accent-fill{fill:var(--primary)!important;stroke:none!important}
+      .tex-editor-command svg.tex-pixel-traced-icon{width:30px!important;height:30px!important;stroke:none!important;fill:none!important}
+      .tex-editor-command svg.tex-pixel-traced-icon .tex-source-gray{fill:currentColor!important;stroke:none!important}
+      .tex-editor-command svg.tex-pixel-traced-icon .tex-source-accent{fill:var(--primary)!important;stroke:none!important}
       .tex-editor-command.is-history svg{width:25px!important;height:25px!important}
       .tex-editor-command svg.tex-icon-mirror{transform:scaleX(-1);transform-origin:center}
       .tex-editor-command.is-delete:hover:not(:disabled){background:color-mix(in srgb,var(--danger,#ac4137) 10%,transparent)!important;color:var(--danger,#ac4137)!important}
@@ -317,19 +320,18 @@ export function enhanceWorkTexEditorTools(markup, zh) {
 
         // Large, independently drawn Windows Explorer-style vector icons.
         // Muted strokes follow the page theme; their colored details use --primary.
-        // Floppy disk and curved undo glyphs follow the supplied reference silhouettes;
-        // redo is the exact horizontal mirror of undo, not a different path.
-        const undoSvg = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10.25 3.5v11H3.5"/><path d="M10.25 14.5H19a9.5 9.5 0 0 1 6.7 16.2l-3.9 3.8"/></svg>';
+        // Exact silhouettes vector-traced from the user-provided pixel references.
+        const undoSvg = '<svg class="tex-pixel-traced-icon" viewBox="0 0 30 30" aria-hidden="true"><path class="tex-source-gray" fill-rule="evenodd" d="M2 2 2 13 3 14 14 14 14 12 7 12 6 11 13 4 14 4 15 3 19 3 20 4 21 4 25 8 25 14 24 15 24 16 23 17 22 17 12 27 12 28 13 28 26 15 26 13 27 12 26 7 22 3 21 3 20 2 14 2 13 3 12 3 5 10 4 9 4 2Z"/></svg>';
         const icons = {
-          save: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6.5 3.5h17l4 4.2v19.8A2 2 0 0 1 25.5 29h-19a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2Z"/><path d="M10 3.5v9h12v-9M18.5 6v5"/><rect x="10" y="19.5" width="12" height="9.5" rx="1.25"/></svg>',
-          saveAs: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6.5 3.5h17l4 4.2v12M19 29H6.5a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2Z"/><path d="M10 3.5v9h12v-9M18.5 6v5M10 29v-9.5h9"/><path d="m18.3 25.8 7.4-7.4a2.7 2.7 0 0 1 3.8 3.8l-7.4 7.4-5.3 1.2Z"/><path d="m23.6 20.4 3.8 3.8"/></svg>',
+          save: '<svg class="tex-pixel-traced-icon" viewBox="0 0 29 29" aria-hidden="true"><path class="tex-source-gray" fill-rule="evenodd" d="M4 2 2 4 2 24 4 26 24 26 26 24 26 7 21 2Z M7 16 8 15 20 15 21 16 21 24 20 25 8 25 7 24Z M8 4 9 3 17 3 18 4 18 8 17 9 9 9 8 8Z M5 3 6 3 7 4 7 8 8 9 8 10 17 10 19 8 19 4 20 3 21 4 22 4 25 7 25 23 23 25 22 24 22 15 21 15 20 14 8 14 7 15 6 15 6 24 5 25 3 23 3 5Z"/></svg>',
+          saveAs: '<svg class="tex-pixel-traced-icon" viewBox="0 0 30 31" aria-hidden="true"><path class="tex-source-gray" fill-rule="evenodd" d="M26 13 23 13 14 22 14 23 13 24 13 27 14 28 15 27 17 27 28 16 28 15Z M21 2 4 2 2 4 2 24 4 26 10 26 10 25 8 25 7 24 7 16 8 15 18 15 18 14 8 14 7 15 6 15 6 24 5 25 3 23 3 5 5 3 6 3 7 4 7 8 8 9 8 10 18 10 19 9 19 4 20 3 21 4 22 4 25 7 25 10 26 10 26 7Z M8 4 9 3 17 3 18 4 18 8 17 9 9 9 8 8Z"/></svg>',
+          cut: '<svg class="tex-pixel-traced-icon" viewBox="3 5 32 32" aria-hidden="true"><path class="tex-source-gray" fill-rule="evenodd" d="M29 7 27 8 27 9 23 14 22 17 24 16 24 15 28 10Z M12 7 12 8 16 13 17 16 19 18 19 21 17 23 17 25 18 25 18 24 20 22 21 22 23 24 23 25 24 25 24 23 22 21 14 8Z"/><path class="tex-source-accent" fill-rule="evenodd" d="M27 24 23 27 23 33 25 35 30 35 32 33 32 27 30 25Z M26 26 29 26 31 29 31 32 29 34 26 34 24 32 24 29Z M13 24 9 27 9 33 11 35 16 35 18 33 18 27 16 25Z M12 26 15 26 17 29 17 32 15 34 12 34 10 32 10 29Z"/></svg>',
+          copy: '<svg class="tex-pixel-traced-icon" viewBox="3 5 32 32" aria-hidden="true"><path class="tex-source-gray" fill-rule="evenodd" d="M10 14 8 16 8 18 7 19 7 29 8 30 8 32 12 34 18 34 19 33 21 33 22 32 22 30 20 32 10 32 9 31 9 17 11 15 14 15 14 14Z"/><path class="tex-source-accent" fill-rule="evenodd" d="M18 9 16 12 16 24 17 26 18 26 19 28 29 28 29 27 31 25 31 10 29 9Z M19 10 29 10 30 11 30 24 28 26 19 26 17 23 17 13Z"/></svg>',
+          paste: '<svg class="tex-pixel-traced-icon" viewBox="3 5 32 32" aria-hidden="true"><path class="tex-source-gray" fill-rule="evenodd" d="M26 9 22 8 21 7 13 7 12 8 9 8 7 9 6 11 6 32 8 35 15 35 14 34 9 34 8 33 8 11 9 10 12 10 15 12 19 12 22 10 25 10 26 11 26 13 27 13 27 10Z M13 9 14 8 19 8 20 9 19 10 14 10Z"/><path class="tex-source-accent" fill-rule="evenodd" d="M18 16 17 17 17 34 18 35 29 35 30 34 30 16Z M19 17 28 17 29 18 29 33 28 34 19 34 18 33 18 18Z"/></svg>',
+          rename: '<svg class="tex-pixel-traced-icon" viewBox="3 5 32 32" aria-hidden="true"><path class="tex-source-gray" fill-rule="evenodd" d="M25 10 25 12 28 12 30 14 30 28 28 30 25 30 25 32 27 32 31 29 31 13 29 11Z M6 11 4 13 4 29 8 32 19 32 18 30 7 30 5 28 5 14 7 12 18 12 19 10 8 10Z"/><path class="tex-source-accent" fill-rule="evenodd" d="M14 14 12 15 9 21 8 25 9 25 9 24 11 22 15 22 17 24 17 25 18 25 18 23 15 18Z M11 20 13 17 15 19 14 21 12 21Z M18 7 18 8 20 8 21 9 21 33 20 34 18 34 18 35 26 35 26 34 23 34 22 33 22 9 23 8 26 8 26 7Z"/></svg>',
+          delete: '<svg class="tex-pixel-traced-icon" viewBox="3 5 32 32" aria-hidden="true"><path class="tex-source-gray" fill-rule="evenodd" d="M5 10 5 11 7 13 7 20 8 21 8 30 9 31 9 34 10 35 25 35 26 34 26 31 27 30 28 13 30 11 30 10 22 10 21 8 19 7 16 7 13 10Z M9 12 26 12 27 13 27 18 26 19 26 28 25 29 25 33 24 34 11 34 10 33 9 19 8 18 8 13Z M20 17 19 19 19 26 20 28 21 28 21 18Z M15 17 14 18 14 28 15 28 16 26 16 19Z M16 9 17 8 19 9 18 10Z"/></svg>',
           undo: undoSvg,
-          redo: undoSvg.replace('<svg ', '<svg class="tex-icon-mirror" '),
-          cut: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 3.5 20.5 21M25 3.5 11.5 21"/><circle class="tex-icon-accent" cx="8" cy="24.3" r="4.1"/><circle class="tex-icon-accent" cx="24" cy="24.3" r="4.1"/></svg>',
-          copy: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M17 27H8a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4h4"/><rect class="tex-icon-accent" x="13.5" y="3" width="14" height="22.8" rx="3"/></svg>',
-          paste: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9.5 5.8H7a3 3 0 0 0-3 3V26a3 3 0 0 0 3 3h5M23 5.8h2a3 3 0 0 1 3 3v1.8"/><rect x="10" y="3.5" width="12" height="5.6" rx="1.8"/><rect class="tex-icon-accent" x="14.5" y="11" width="14" height="18" rx="1.6"/></svg>',
-          rename: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12.5 6H8a4 4 0 0 0-4 4v12a4 4 0 0 0 4 4h4.5M22 6h2a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4h-2"/><path d="m9 21 4.4-11.5L18 21M10.2 17.5h6.5"/><path class="tex-icon-accent" d="M20.5 2.5v27M17.5 2.5h6M17.5 29.5h6"/></svg>',
-          delete: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8h24M12 8V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3M7 8l1.4 19a2.2 2.2 0 0 0 2.2 2h10.8a2.2 2.2 0 0 0 2.2-2L25 8M13 13v11M19 13v11"/></svg>',
+          redo: undoSvg.replace('class="tex-pixel-traced-icon"', 'class="tex-pixel-traced-icon tex-icon-mirror"'),
           history: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v5h5"/><path d="M5.2 9.6A8 8 0 1 1 4 14"/><path class="tex-icon-accent" d="M12 8v5l3 2"/></svg>'
         };
 

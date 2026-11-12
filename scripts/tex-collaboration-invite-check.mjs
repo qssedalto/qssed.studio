@@ -27,6 +27,12 @@ for (const zh of [true, false]) {
   assert(html.includes(".tex-editor-command svg .tex-icon-accent{stroke:var(--primary)!important}"), "Icon highlights must follow the user-selected theme color");
   assert(html.includes("bar.append(cutButton, copyButton, pasteButton, renameButton, deleteButton"), "Windows-style edit and delete actions must be grouped first");
   assert(html.includes("redo: undoSvg.replace("), "Redo must be an exact mirror of Undo");
+  assert(html.includes("tex-pixel-traced-icon") && html.includes("tex-source-gray") && html.includes("tex-source-accent"), "TeX toolbar must use the screenshot-traced SVGs with two-color paths.");
+  assert(html.includes("svg.tex-pixel-traced-icon{width:30px!important;height:30px!important"), "Traced icons must use the original Explorer-like size.");
+  assert(html.includes("fill:var(--primary)!important;stroke:none!important"), "SVG blue accents must follow the user theme.");
+  assert(html.includes("color:color-mix(in srgb,var(--text) 74%,var(--surface))"), "Neutral icon stroke must adapt to light/dark color schemes.");
+  assert(html.includes("M27 24 23 27 23 33") && html.includes("M18 16 17 17 17 34"), "Cut and Paste paths must be traced from supplied screenshots rather than generic shapes.");
+  assert(html.includes("M2 2 2 13 3 14") && html.includes("M26 13 23 13 14 22"), "Undo and Save As must be traced from supplied references.");
   assert(html.includes("icons.saveAs") && html.includes("icons.save"), "Both custom floppy SVG commands must be available");
   assert(html.includes("tex-delete-dialog-header") && html.includes("tex-delete-dialog-confirm") && html.includes("tex-delete-file-name"), "Delete dialog must have title, filename and confirm action");
   assert(html.includes("window.__qssedaTexConfirmDelete = filename =>"), "Delete confirmation must use the custom dialog");
