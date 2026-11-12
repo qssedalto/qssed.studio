@@ -14,6 +14,7 @@ const edge = fs.readFileSync(new URL("../studio/edge-protection.js", import.meta
 const api = fs.readFileSync(new URL("../studio/tex-api-core.js", import.meta.url), "utf8");
 const apiWrapper = fs.readFileSync(new URL("../studio/tex-api.js", import.meta.url), "utf8");
 const versionApi = fs.readFileSync(new URL("../studio/tex-version-api.js", import.meta.url), "utf8");
+const workNavigationUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
 
 for (const zh of [true, false]) {
   const markup = texWorkbenchContent(zh);
@@ -73,7 +74,7 @@ for (const zh of [true, false]) {
   assert(workMarkup.includes("void loadRuns();"), "Document detail must appear before run history fetch finishes.");
   assert(workMarkup.includes("window.addEventListener('qsseda:tex-local-recheck'"), "Local TeX must support in-place connection recovery.");
   assert(workMarkup.includes("localCopy.previewSelectDocument"), "No document selected must not be mislabeled an unsupported engine.");
-  assert(workMarkup.includes("detail: { host: local.host, engines: local.engines }"), "Bridge connection checker must share the verified local endpoint with preview.");
+  assert(workNavigationUi.includes("detail: { host: local.host, engines: local.engines }"), "Bridge connection checker must share the verified local endpoint with preview.");
   assert(workMarkup.includes("localEngines = engines") && workMarkup.includes("localBase = base"), "Preview adapter must accept the verified Bridge engines without a redundant failing probe.");
 
   assert(workMarkup.includes("tex-work-app"), "Work TeX route must render the dedicated app surface");
@@ -128,7 +129,7 @@ assert(config.includes('"/work/tex"'), "Work TeX route is missing from protected
 assert(config.includes('["/workspace/experiments/tex", "/work/tex"]'), "Legacy TeX route must redirect to Work TeX");
 assert(entry.includes('pathname === "/work/tex"'), "Studio entry does not mount the Work TeX app");
 assert(entry.includes("polishWorkTexViewportEdges(markup)"), "Entry must apply the final Work viewport edge-fix CSS after the main theme.");
-const workUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
+const workUi = workNavigationUi;
 assert(!workUi.includes("window.location.reload()"), "Bridge connection check must not force-refresh the Work editor.");
 assert(workUi.includes("qsseda:tex-local-recheck"), "Bridge connection check must dispatch the in-place re-probe signal.");
 assert(entry.includes("enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)"), "Work TeX collapsible panel renderer is not wired");
