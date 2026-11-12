@@ -5,8 +5,10 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     saveAs: "另存为",
     undo: "撤销",
     redo: "重做",
+    cut: "剪切",
     copy: "复制",
     paste: "粘贴",
+    rename: "重命名文档",
     history: "历史版本",
     saved: "已保存",
     saving: "正在保存…",
@@ -17,6 +19,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     create: "另存",
     copySuffix: " 副本",
     copied: "已复制",
+    cutFailed: "无法使用剪贴板执行剪切，请选中文本后按 Ctrl+X。",
+    copyFailed: "复制失败，请选中文本后按 Ctrl+C。",
     pasteDenied: "浏览器未授权读取剪贴板，请使用 Ctrl+V。",
     historyOpened: "已定位到版本历史"
   } : {
@@ -24,8 +28,10 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     saveAs: "Save As",
     undo: "Undo",
     redo: "Redo",
+    cut: "Cut",
     copy: "Copy",
     paste: "Paste",
+    rename: "Rename document",
     history: "Version History",
     saved: "Saved",
     saving: "Saving…",
@@ -36,6 +42,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     create: "Save Copy",
     copySuffix: " Copy",
     copied: "Copied",
+    cutFailed: "Clipboard permission denied. Select text and use Ctrl+X.",
+    copyFailed: "Copy failed. Select text and use Ctrl+C.",
     pasteDenied: "Clipboard access was denied. Use Ctrl+V instead.",
     historyOpened: "Version history opened"
   };
@@ -43,8 +51,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
   return output + `
     <style id="qsseda-work-tex-editor-tools">
       .tex-work-app .tex-source-label{
-        min-height:46px!important;
-        padding:7px 14px!important;
+        min-height:56px!important;
+        padding:7px 12px!important;
         display:flex!important;
         align-items:center!important;
         gap:10px!important;
@@ -64,13 +72,17 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         display:flex!important;
         align-items:center!important;
         gap:3px!important;
+        flex:1 1 auto!important;
         min-width:0!important;
-        overflow:hidden!important;
+        overflow-x:auto!important;
+        overflow-y:hidden!important;
+        scrollbar-width:none!important;
       }
+      .tex-editor-commandbar::-webkit-scrollbar{display:none!important}
       .tex-editor-command-separator{
         width:1px!important;
-        height:18px!important;
-        margin:0 3px!important;
+        height:24px!important;
+        margin:0 5px!important;
         background:var(--hairline)!important;
         flex:0 0 auto!important;
       }
@@ -78,26 +90,28 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         appearance:none!important;
         display:grid!important;
         place-items:center!important;
-        width:30px!important;
-        min-width:30px!important;
-        height:30px!important;
-        min-height:30px!important;
+        width:39px!important;
+        min-width:39px!important;
+        height:39px!important;
+        min-height:39px!important;
         margin:0!important;
         padding:0!important;
         border:0!important;
         border-radius:8px!important;
         background:transparent!important;
-        color:var(--muted)!important;
+        color:var(--text)!important;
         box-shadow:none!important;
         cursor:pointer!important;
         transition:background .14s ease,color .14s ease,transform .14s ease!important;
       }
-      .tex-editor-command:hover{background:var(--fill)!important;color:var(--text)!important}
-      .tex-editor-command:active{transform:scale(.92)!important}
+      .tex-editor-command:hover:not(:disabled){background:var(--fill)!important;color:var(--text)!important}
+      .tex-editor-command:active:not(:disabled){transform:scale(.95)!important}
       .tex-editor-command:focus-visible{outline:none!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 14%,transparent)!important}
-      .tex-editor-command:disabled{opacity:.34!important;cursor:not-allowed!important;transform:none!important}
-      .tex-editor-command svg{width:16px!important;height:16px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.7!important;stroke-linecap:round!important;stroke-linejoin:round!important}
-      .tex-editor-command.is-history svg{width:17px!important;height:17px!important}
+      .tex-editor-command:disabled{opacity:.30!important;cursor:not-allowed!important;transform:none!important}
+      .tex-editor-command svg{width:26px!important;height:26px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.7!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important}
+      .tex-editor-command svg .tex-icon-accent{stroke:var(--primary)!important}
+      .tex-editor-command svg .tex-icon-accent-fill{fill:var(--primary)!important;stroke:none!important}
+      .tex-editor-command.is-history svg{width:25px!important;height:25px!important}
 
       .tex-save-as-dialog{
         width:min(420px,calc(100vw - 28px));
