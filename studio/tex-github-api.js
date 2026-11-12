@@ -8,6 +8,7 @@ import {
   managedTexRepoName, MANAGED_TEX_WORKFLOW_PATH, MANAGED_TEX_WORKFLOW,
   INITIAL_TEX_SOURCE, INITIAL_TEX_README
 } from "./tex-github-workflow.js";
+import { selectTexGithubCompileFiles } from "./tex-github-source-selection.js";
 
 const TABLE = "tex_github_allowances";
 const API_VERSION = "2026-03-10";
@@ -288,6 +289,50 @@ async function putFile(env, repoPath, name, value, branch, alreadyBase64 = false
   });
 }
 
+// Publish a clean, atomic source snapshot in one Git commit rather than
+// rewriting the branch one file at a time (which made 500-file projects
+// impractical and could leave stale dependencies from a previous project).
+// Only the fixed operator-owned workflow is included; project .github files
+// and executable source are excluded by selectTexGithubCompileFiles().
+async function commitCompileSnapshot(env, repoPath, branch, selected) {
+  const reference=await github(env, repoPath+"/git/ref/heads/"+encodeURIComponent(branch));
+  const parent=String(reference?.object?.sha||"");
+  if(!/^[0-9a-f]{40}$/.test(parent)) throw httpError(503,"source_branch_unavailable");
+  const entries=[
+    {name:MANAGED_TEX_WORKFLOW_PATH,encoding:"utf8",content:MANAGED_TEX_WORKFLOW},
+    {name:"README.md",encoding:"utf8",content:INITIAL_TEX_README},
+    ...selected.entries
+  ];
+  const tree=[];
+  for(const asset of entries){
+    const item={path:asset.name,mode:"100644",type:"blob"};
+    if(asset.encoding==="base64"){
+      const blob=await github(env,repoPath+"/git/blobs","POST",{
+        content:asset.content,encoding:"base64"
+      });
+      if(!/^[0-9a-f]{40}$/.test(String(blob?.sha||""))) throw httpError(503,"file_blob_missing");
+      item.sha=blob.sha;
+    }else{
+      item.content=asset.content;
+    }
+    tree.push(item);
+  }
+  // No base_tree: drop stale files from previous compilations and prevent
+  // old project inputs or workflows from surviving into the next build.
+  const createdTree=await github(env,repoPath+"/git/trees","POST",{tree});
+  if(!/^[0-9a-f]{40}$/.test(String(createdTree?.sha||""))) throw httpError(503,"source_tree_missing");
+  const createdCommit=await github(env,repoPath+"/git/commits","POST",{
+    message:"build(tex): publish saved project for XeLaTeX",
+    tree:createdTree.sha,parents:[parent]
+  });
+  const sha=String(createdCommit?.sha||"");
+  if(!/^[0-9a-f]{40}$/.test(sha)) throw httpError(503,"source_commit_missing");
+  await github(env,repoPath+"/git/refs/heads/"+encodeURIComponent(branch),"PATCH",{
+    sha,force:false
+  });
+  return {sha, included:selected.included, skipped:selected.skipped};
+}
+
 async function verifyOwner(env) {
   const profile = await github(env, "/user");
   if (String(profile?.login || "").toLowerCase() !== String(env.AERTEX_TEX_GITHUB_OWNER).toLowerCase()) {
@@ -432,6 +477,12 @@ async function compile(request, env, userId) {
   if (!doc.source.trim() || doc.source.length > MAX_SOURCE || doc.engine !== "xelatex") {
     return fail(400, "GitHub builds currently require a XeLaTeX document under 160,000 characters.");
   }
+  // Validate/choose relevant dependencies before reserving a credit. Office
+  // documents, Python/Java/C++ sources, Git metadata and generated main.pdf
+  // remain in Work but must not be synchronized to the compile-only repo.
+  let selected;
+  try { selected=selectTexGithubCompileFiles(doc); }
+  catch(error){return fail(400,String(error?.message||"Project files are invalid.").slice(0,200));}
   const nonce = crypto.randomUUID();
   const remaining = await reserveCredit(env, userId, nonce);
   if (remaining === null) return fail(429, "No available credit or another build is active.");
@@ -441,32 +492,12 @@ async function compile(request, env, userId) {
     const actual = await github(env, repoPath);
     if (actual?.id !== row.repo_id || !actual.private) throw httpError(409, "repository_identity_mismatch");
 
-    // Upload validated per-project files before the final main.tex commit.
-    // Never accept user-controlled GitHub workflow paths or repository names.
-    const extras = Array.isArray(doc.files) ? doc.files : [];
-    if(extras.length>24) throw httpError(400,"too_many_project_files");
-    let totalExtras=0;const usedNames=new Set();
-    for(const asset of extras){
-      const name=String(asset?.name||"");const segments=name.split("/");
-      if(name==="main.tex"||name.length>140||segments.some(p=>!p||p==="."||p===".."||p.startsWith("."))||
-         name.includes("\\")||!(/\.(?:bib|sty|cls|bst|txt|png|jpe?g|pdf|tex)$/i.test(name))||
-         usedNames.has(name.toLowerCase()))throw httpError(400,"unsafe_project_path");
-      usedNames.add(name.toLowerCase());
-      if(asset?.encoding==="utf8"&&typeof asset.content==="string"){
-        totalExtras+=new TextEncoder().encode(asset.content).byteLength;
-        if(totalExtras>4*1024*1024)throw httpError(400,"project_too_large");
-        await putFile(env,repoPath,name,asset.content,row.source_branch||"main");
-      }else if(asset?.encoding==="base64"&&typeof asset.content==="string"&&
-        /^[A-Za-z0-9+/]*={0,2}$/.test(asset.content)){
-        totalExtras+=Math.floor(asset.content.length*3/4);
-        if(totalExtras>4*1024*1024)throw httpError(400,"project_too_large");
-        await putFile(env,repoPath,name,asset.content,row.source_branch||"main",true);
-      }else throw httpError(400,"invalid_project_file");
-    }
+    // Atomically create a clean repository tree with one commit. Validate
+    // branch ancestry before dispatch; failed pre-dispatch writes refund quota.
+    const committed=await commitCompileSnapshot(env,repoPath,row.source_branch||"main",selected);
     // Persist the unique Git commit before dispatch. A timed-out HTTP call may
     // have queued an Actions run; never refund a potentially successful dispatch.
-    const committed = await putFile(env, repoPath, "main.tex", doc.source, row.source_branch || "main");
-    const sourceSha = String(committed?.commit?.sha || "");
+    const sourceSha = String(committed.sha || "");
     if (!/^[0-9a-f]{40}$/.test(sourceSha)) throw httpError(503, "source_sha_unavailable");
     const bound = await updateRow(env, userId, {
       active_commit_sha: sourceSha
@@ -486,7 +517,8 @@ async function compile(request, env, userId) {
       active_run_id: runId, last_run_at: new Date().toISOString()
     }, "&active_nonce=eq." + encodeURIComponent(nonce));
     if (!recorded) throw httpError(503, "run_id_persistence_failed");
-    return json({ queued: true, remaining, run_id: runId, document_id: docId }, 202);
+    return json({ queued: true, remaining, run_id: runId, document_id: docId,
+      synced_files: selected.included, skipped_files: selected.skipped }, 202);
   } catch (error) {
     // A non-returning dispatch may still have started a GitHub run.
     // The recorded commit SHA lets the owner/admin reconcile the exact run;
