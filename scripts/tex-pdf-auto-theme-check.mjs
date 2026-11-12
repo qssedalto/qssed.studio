@@ -35,6 +35,8 @@ assert(script.includes("operationsFilter:index => masks.background[index] !== fa
   "Colored raster images must be painted on their own unchanged layer");
 assert(script.includes("operationsFilter:index => masks.foreground[index] !== false"),
   "Black glyphs must be isolated for white recoloring");
+assert(script.includes("state.displayReadyCapability && state.operatorList?.lastChunk"), "Classify exactly the renderer's DISPLAY operator list");
+assert(!script.includes("await cell.page.getOperatorList()"), "OPLIST indices differ from DISPLAY paint indices and can recolor images");
 assert(script.includes("textCtx.globalCompositeOperation = 'source-in'"),
   "Only the glyph/vector canvas may be recolored");
 assert(script.includes('background:\'rgba(0,0,0,0)\''), "The ink layer must have a transparent background");
