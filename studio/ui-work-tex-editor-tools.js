@@ -134,7 +134,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
       .tex-editor-command.is-delete:hover:not(:disabled){background:color-mix(in srgb,var(--danger,#ac4137) 10%,transparent)!important;color:var(--danger,#ac4137)!important}
       .tex-delete-dialog{
         box-sizing:border-box;
-        width:min(640px,calc(100vw - 32px));
+        width:min(860px,calc(100vw - 32px));
         max-height:calc(100dvh - 32px);
         padding:0;
         border:1px solid var(--border,#d8d8df);
@@ -381,7 +381,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           if (!activeDocumentId() || root.dataset.texCollaborationAccessRole === 'viewer' ||
               root.dataset.texCollaborationAccessRole === 'editor' || deleteDialog.open) return Promise.resolve(false);
           const name = String(filename || title.value || 'main.tex').trim();
-          deleteFileName.textContent = /\.tex$/i.test(name) ? name : name + '.tex';
+          deleteFileName.textContent = name.toLowerCase().endsWith('.tex') ? name : name + '.tex';
           deleteDialog.returnValue = 'cancel';
           return new Promise(resolve => {
             resolveDelete = resolve;
