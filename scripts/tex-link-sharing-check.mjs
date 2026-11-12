@@ -123,6 +123,12 @@ assert(api.includes('status:"pending"'),"Access requests must be persisted.");
 assert(api.includes('kind:"approved"'),"Request approval must persist a scoped grant.");
 assert(socket.includes("resolveLinkGrant(this.env"),"WebSocket writes must recheck link authorization.");
 assert(socket.includes("/revoke-links"),"Owner revocation must terminate connected link users.");
+assert(socket.includes("X-Qsseda-Collab-Target"),"Single-member revocation must target only that member's socket.");
+assert(api.includes('decision:"revoke"') || api.includes('body.decision==="revoke"'),"Owner must be able to revoke an approved grant.");
+assert(api.includes('env.STORAGE.delete(grantKey(requester,doc))'),"Revocation must delete the owner-scoped grant index.");
+assert(ui.includes('tex-link-approved-list'),"Link settings must render the approved members list.");
+assert(ui.includes('tex-link-rotate'),"Owner must be able to invalidate previously issued links.");
+
 assert(realtime.includes('X-Qsseda-Collab-Link-Grant'),"Realtime gateway must tag grant sessions.");
 assert(shared.includes("resolveLinkGrant(env"),"Shared editor must verify link grants.");
 console.log("TeX link-sharing: token validation, selected/anyone ACL, viewer downloads, approval grants, revocation, browser runtime syntax and realtime guards passed.");
