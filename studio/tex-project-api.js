@@ -4,25 +4,20 @@ import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { workerLog } from "./server-runtime.js";
 import { VERIFIED_SAMPLE_FROG_BASE64 } from "./tex-example-frog.js";
+import { MAX_PROJECT_FILES, MAX_ARCHIVE_ENTRIES, MAX_PROJECT_BYTES, MAX_SINGLE_FILE_BYTES, MAX_ZIP_BYTES, isSafeProjectFilename, isSkippableArchiveMetadata, isBinaryProjectFile } from "./tex-project-file-types.js";
 
 const ROOT = "_system/tex-documents/";
-const LIMIT_ZIP = 3 * 1024 * 1024;
-const LIMIT_TOTAL = 4 * 1024 * 1024;
-const LIMIT_FILES = 25; // same as project-file API: main.tex plus at most 24 supporting files
+const LIMIT_ZIP = MAX_ZIP_BYTES;
+const LIMIT_TOTAL = MAX_PROJECT_BYTES;
+const LIMIT_FILES = MAX_PROJECT_FILES;
 const SOURCE_LIMIT = 180000;
 const MAX_DOCS = 120;
-const BINARY_EXT = /\.(png|jpe?g|pdf)$/i;
-const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|md|markdown|py|png|jpe?g|pdf)$/i;
+
 const utf8 = new TextDecoder("utf-8", { fatal: true });
 
 function problem(message, status = 400) { return json({ error: message }, status); }
 function titleText(s) { return String(s || "").replace(/[\x00-\x1f\x7f]/g, " ").trim().slice(0, 180); }
-function safeName(name) {
-  return typeof name === "string" && name.length <= 140 &&
-    !name.startsWith("/") && !name.includes("\\") && !name.includes("\x00") &&
-    !name.split("/").some(part => part === "" || part === "." || part === ".." || part.startsWith(".")) &&
-    !/^\.github\//i.test(name) && ALLOWED.test(name);
-}
+const safeName=isSafeProjectFilename;
 function toBase64(bytes) {
   let output = "";
   for(let i=0;i<bytes.length;i+=8192) output += String.fromCharCode(...bytes.subarray(i,i+8192));
@@ -62,7 +57,7 @@ async function boundedZip(stream) {
   const reader=stream.getReader();let len=0;const chunks=[];
   try {
     while(true){const {done,value}=await reader.read();if(done)break;len+=value.byteLength;
-      if(len>LIMIT_ZIP) throw new Error("ZIP file exceeds 3 MB.");
+      if(len>LIMIT_ZIP) throw new Error("ZIP file exceeds 24 MB.");
       chunks.push(value);}
   } finally {reader.releaseLock();}
   const bytes=new Uint8Array(len);let offset=0;for(const c of chunks){bytes.set(c,offset);offset+=c.byteLength;}return bytes;
@@ -85,7 +80,7 @@ async function unzip(raw) {
   if(tail<0) throw new Error("ZIP central directory missing.");
   const total=v.getUint16(tail+10,true);
   const cd=v.getUint32(tail+16,true);
-  if(total<1||total>LIMIT_FILES+16||cd>=tail)throw new Error("ZIP contains too many files.");
+  if(total<1||total>MAX_ARCHIVE_ENTRIES||cd>=tail)throw new Error("ZIP contains too many archive entries (maximum 3,000).");
   const entries=[];const skipped=[];let offset=cd;let totalBytes=0;
   for(let i=0;i<total;i++){
     if(offset+46>tail||v.getUint32(offset,true)!==0x02014b50)throw new Error("Invalid ZIP entry.");
@@ -93,6 +88,8 @@ async function unzip(raw) {
     const packed=v.getUint32(offset+20,true),plain=v.getUint32(offset+24,true);
     const nameLen=v.getUint16(offset+28,true),extra=v.getUint16(offset+30,true),comment=v.getUint16(offset+32,true);
     const pos=v.getUint32(offset+42,true);
+    const unixType=(v.getUint32(offset+38,true)>>>16)&0xf000;
+    if(unixType===0xa000)throw new Error("ZIP symbolic links are not allowed.");
     if(flag&1||![0,8].includes(method)||plain===0xffffffff||packed===0xffffffff)
       throw new Error("Encrypted or unsupported ZIP format.");
     if(offset+46+nameLen+extra+comment>tail||pos+30>raw.length)throw new Error("ZIP entry is incomplete.");
@@ -105,21 +102,20 @@ async function unzip(raw) {
        name.split("/").some(part=>part==="."||part===".."))
       throw new Error("Unsafe project path in ZIP: "+name);
     if(name.endsWith("/"))continue;
-    const parts=name.split("/");
-    const isRepoMetadata=parts.some(part=>part===".github"||part==="__MACOSX")||
-      parts.at(-1)===".gitignore"||parts.at(-1)===".DS_Store";
-    if(isRepoMetadata){skipped.push(name);continue;}
+    // Mac finder resources / Git object internals are never project assets.
+    // Keep real .gitignore and .github/workflows/*.yml files.
+    if(isSkippableArchiveMetadata(name)){skipped.push(name);continue;}
     totalBytes+=plain;
-    if(plain>1024*1024)throw new Error("ZIP entry exceeds the 1 MB limit: "+name);
-    if(totalBytes>LIMIT_TOTAL)throw new Error("ZIP contents exceed the 4 MB decompressed limit.");
-    if(packed>LIMIT_ZIP)throw new Error("ZIP entry exceeds the 3 MB compressed limit: "+name);
+    if(plain>MAX_SINGLE_FILE_BYTES)throw new Error("ZIP entry exceeds the 8 MB per-file limit: "+name);
+    if(totalBytes>LIMIT_TOTAL)throw new Error("ZIP contents exceed the 32 MB project limit.");
+    if(packed>LIMIT_ZIP)throw new Error("ZIP entry exceeds the 24 MB compressed limit: "+name);
     if(entries.length>=LIMIT_FILES)
-      throw new Error("ZIP contains more than 25 importable files (including main.tex).");
+      throw new Error("ZIP contains more than 500 importable files (including main.tex).");
     if(v.getUint32(pos,true)!==0x04034b50)throw new Error("ZIP local header missing.");
     const start=pos+30+v.getUint16(pos+26,true)+v.getUint16(pos+28,true);
     if(start+packed>raw.length)throw new Error("ZIP file data truncated.");
     const slice=raw.subarray(start,start+packed);
-    const data=method===0?slice:await inflateBounded(slice,Math.min(plain,1024*1024));
+    const data=method===0?slice:await inflateBounded(slice,Math.min(plain,MAX_SINGLE_FILE_BYTES));
     if(data.length!==plain)throw new Error("ZIP file length does not match archive.");
     entries.push({name,data});
   }
@@ -142,7 +138,7 @@ async function unzip(raw) {
   if(!source||source.length>SOURCE_LIMIT)throw new Error("main.tex exceeds source limit.");
   const extras=[];
   for(const e of named){if(e===main)continue;
-    if(BINARY_EXT.test(e.name))extras.push({name:e.name,encoding:"base64",content:toBase64(e.data)});
+    if(isBinaryProjectFile(e.name))extras.push({name:e.name,encoding:"base64",content:toBase64(e.data)});
     else extras.push({name:e.name,encoding:"utf8",content:utf8.decode(e.data)});
   }
   return {source,extras,skipped};
@@ -171,7 +167,7 @@ export async function handleTexProjects(request,env,userId,accessToken) {
     if(isZip){
       const title=titleText(decodeURIComponent(request.headers.get("x-tex-project-name")||""));
       if(!title)return problem("Project name is required.");
-      if(Number(request.headers.get("content-length")||0)>LIMIT_ZIP)return problem("ZIP must be under 3 MB.",413);
+      if(Number(request.headers.get("content-length")||0)>LIMIT_ZIP)return problem("ZIP must be under 24 MB.",413);
       const {source,extras,skipped}=await unzip(await boundedZip(request.body));
       return await createDocument(env,userId,title,source,extras,"imported",skipped);
     }

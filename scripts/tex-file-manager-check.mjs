@@ -56,10 +56,10 @@ const invalidCases=[
  {name:"main overwrite",files:[file("main.tex","oops")],status:409},
  {name:"path traversal",files:[file("../secret.tex","oops")],status:400},
  {name:"hidden path",files:[file(".git/config.tex","oops")],status:400},
- {name:"unsupported extension",files:[file("code.js","bad")],status:400},
+ {name:"unsupported executable",files:[file("tool.exe","not allowed")],status:400},
  {name:"text in binary",files:[file("image.png","not binary")],status:400},
  {name:"wrong binary signature",files:[{name:"file.pdf",encoding:"base64",content:Buffer.from("not a pdf").toString("base64")}],status:400},
- {name:"overlarge",files:[file("huge.tex","a".repeat(180001))],status:400}
+ {name:"overlarge",files:[file("huge.tex","a".repeat(2000001))],status:400}
 ];
 for(const test of invalidCases){
   const r=await invoke({document_id:id,files:test.files});
@@ -80,6 +80,46 @@ assert(!objects.get(key).files.some(f=>f.name==="chapters/chapter1.tex"),"Delete
 const markdown=await invoke({document_id:id,files:[file("notes/README.md","# Heading")]});
 assert.equal(markdown.status,200,"Markdown text files must be supported for inline reading.");
 assert.equal((await invoke({document_id:id,operation:"delete",name:"notes/README.md"})).status,200);
+// Word, Excel and PowerPoint must remain binary, while CSV, JSON, JS and
+// programming language sources must remain directly editable UTF-8 files.
+const binaryFile=(name,bytes)=>({
+  name,encoding:"base64",content:Buffer.from(bytes).toString("base64")
+});
+const officeObjects=[
+  binaryFile("documents/report.docx",[0x50,0x4b,0x03,0x04,0,0]),
+  binaryFile("data/table.xlsx",[0x50,0x4b,0x03,0x04,0,0]),
+  binaryFile("slides/deck.pptx",[0x50,0x4b,0x03,0x04,0,0])
+];
+const extraFormats=[
+  file("results/data.csv","x,y\\n1,2"),
+  file("code/main.cpp","#include <iostream>"),
+  file("code/Main.java","public class Main {}"),
+  file("src/app.js","export const x = 1;"),
+  file("settings.json",'{"enabled":true}'),
+  file("config/build.yml","steps: []"),
+  file(".gitignore","node_modules/"),
+  file(".github/workflows/ci.yml","name: CI")
+];
+const formats=await invoke({document_id:id,files:[...officeObjects,...extraFormats]});
+assert.equal(formats.status,200,JSON.stringify(formats.body));
+assert.equal(formats.body.document.files.filter(f=>/\.(docx|xlsx|pptx)$/.test(f.name)&&f.encoding==="base64").length,3);
+assert(formats.body.document.files.some(f=>f.name===".gitignore"));
+assert(formats.body.document.files.some(f=>f.name===".github/workflows/ci.yml"));
+const badOffice=await invoke({document_id:id,files:[
+  binaryFile("broken.docx",Buffer.from("not an Office archive"))
+]});
+assert.equal(badOffice.status,400,"Office MIME extensions must have a ZIP container signature.");
+
+const fullId="44444444-4444-4444-8444-444444444444";
+const fullKey="_system/tex-documents/"+owner+"/"+fullId+".json";
+objects.set(fullKey,{...structuredClone(original),id:fullId,files:[]});
+const allFiles=Array.from({length:499},(_,i)=>file("code/file"+i+".js","// "+i));
+const full=await invoke({document_id:fullId,files:allFiles});
+assert.equal(full.status,200,JSON.stringify(full.body).slice(0,600));
+assert.equal(full.body.document.files.length,499,"499 extra assets and main.tex = 500 files.");
+const over=await invoke({document_id:fullId,files:[file("501st.txt","extra")]});
+assert.equal(over.status,409,"The 501st project file must be rejected.");
+assert.match(over.body.error,/500 files/);
 const outsider=await invoke({document_id:id,files:[file("steal.tex","") ]},other);
 assert.equal(outsider.status,404,"Files must only be writable within the authenticated owner's namespace.");
 const unknown=await invoke({document_id:"not-an-id",files:[file("a.tex","")]});
@@ -97,6 +137,8 @@ for(const id of ["tex-file-dialog","tex-file-panel-upload","tex-file-panel-new",
 }
 assert(markup.includes("/api/tex/files"),"Dialog must save through the owner-scoped file API.");
 assert(markup.includes("data-file-tab"),"Dialog needs accessible three-way navigation.");
+assert(markup.includes("tex-project-files") || markup.includes("tex-file-dialog"),"File modal must remain mounted.");
+assert(markup.includes("supports") || markup.includes("500 个文件"),"File picker must describe the expanded file limits.");
 assert(markup.includes('id="tex-file-text-editor"'),"New text files need an editable surface.");
 assert(markup.includes("operation:'replace'"),"Text editing must save through authorized file replacement.");
 console.log("TeX file creation, ACL isolation, duplicate protection, import UI and disabled plus validated.");
