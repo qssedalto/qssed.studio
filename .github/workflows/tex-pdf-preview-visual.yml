@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install CJK fonts for realistic Chinese screenshots
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
       - name: Render Work TeX app with an A4 PDF fixture
         run: node scripts/tex-pdf-preview-visual.mjs
       - name: Chromium zoom, edge, button placement and screenshot QA
