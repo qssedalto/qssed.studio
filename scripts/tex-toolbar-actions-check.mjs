@@ -158,8 +158,9 @@ for (const zh of [true, false]) {
     "Save As must navigate to the newly created document in the same locale");
   assert.equal(saveAsDialog.open, false, "Save As should close after success");
 
-  assert(html.includes("svg.tex-smooth-icon"), "Missing smooth Windows-style SVGs");
+  assert(html.includes("svg.tex-fluent-icon"), "Missing actual Microsoft Fluent SVG geometry");
   assert(html.includes("saveAs:") && html.includes("copy:"), "Distinct copy and Save As icons required");
   assert(!html.includes("M9 29V18.8c0-.8"), "Old save-as pencil-crossing line must not return");
+  assert(html.includes("tex-fluent-icon .tex-fluent-accent{fill:var(--primary)!important"), "Copy highlight must follow user theme color");
 }
 console.log("Work TeX toolbar Copy / Save As interaction checks passed.");
