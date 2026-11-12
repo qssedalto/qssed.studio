@@ -317,15 +317,19 @@ export function enhanceWorkTexEditorTools(markup, zh) {
 
         // Large, independently drawn Windows Explorer-style vector icons.
         // Muted strokes follow the page theme; their colored details use --primary.
+        // Floppy disk and curved undo glyphs follow the supplied reference silhouettes;
+        // redo is the exact horizontal mirror of undo, not a different path.
+        const undoSvg = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10.25 3.5v11H3.5"/><path d="M10.25 14.5H19a9.5 9.5 0 0 1 6.7 16.2l-3.9 3.8"/></svg>';
         const icons = {
-          save: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path class="tex-icon-accent" d="M8 4v6h8V4M8 20v-6h8v6"/></svg>',
-          saveAs: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10l3 3v12H4z"/><path d="M7 5v5h7V5"/><path class="tex-icon-accent" d="M15.5 15.5h5M18 13v5"/></svg>',
-          undo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4 11l5 4"/><path d="M5 11h8a6 6 0 0 1 6 6"/></svg>',
-          redo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 7 5 4-5 4"/><path d="M19 11h-8a6 6 0 0 0-6 6"/></svg>',
-          cut: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7.4 3.2 20.8 21M24.6 3.2 11.2 21"/><circle class="tex-icon-accent" cx="8.8" cy="24.5" r="4.2"/><circle class="tex-icon-accent" cx="23.2" cy="24.5" r="4.2"/></svg>',
-          copy: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M17 26H7.5A3.5 3.5 0 0 1 4 22.5v-13A3.5 3.5 0 0 1 7.5 6H11"/><rect class="tex-icon-accent" x="13" y="3.5" width="15" height="22" rx="3"/></svg>',
-          paste: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10.5 6H6.5A3.5 3.5 0 0 0 3 9.5v16A3.5 3.5 0 0 0 6.5 29H12"/><path d="M21.5 6h3A3.5 3.5 0 0 1 28 9.5"/><rect x="10" y="3.5" width="12" height="5.5" rx="2"/><rect class="tex-icon-accent" x="13.5" y="11.5" width="15" height="18" rx="2"/></svg>',
-          rename: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 6H6.5A3.5 3.5 0 0 0 3 9.5v13A3.5 3.5 0 0 0 6.5 26H11M21 6h4.5A3.5 3.5 0 0 1 29 9.5v13a3.5 3.5 0 0 1-3.5 3.5H21"/><path d="m8.5 20 4.5-10 4.5 10M10 17h6"/><path class="tex-icon-accent" d="M21 2.5v27M17.5 2.5h7M17.5 29.5h7"/></svg>',
+          save: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6.5 3.5h17l4 4.2v19.8A2 2 0 0 1 25.5 29h-19a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2Z"/><path d="M10 3.5v9h12v-9M18.5 6v5"/><rect x="10" y="19.5" width="12" height="9.5" rx="1.25"/></svg>',
+          saveAs: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6.5 3.5h17l4 4.2v12M19 29H6.5a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2Z"/><path d="M10 3.5v9h12v-9M18.5 6v5M10 29v-9.5h9"/><path d="m18.3 25.8 7.4-7.4a2.7 2.7 0 0 1 3.8 3.8l-7.4 7.4-5.3 1.2Z"/><path d="m23.6 20.4 3.8 3.8"/></svg>',
+          undo: undoSvg,
+          redo: undoSvg.replace('<svg ', '<svg class="tex-icon-mirror" '),
+          cut: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 3.5 20.5 21M25 3.5 11.5 21"/><circle class="tex-icon-accent" cx="8" cy="24.3" r="4.1"/><circle class="tex-icon-accent" cx="24" cy="24.3" r="4.1"/></svg>',
+          copy: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M17 27H8a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4h4"/><rect class="tex-icon-accent" x="13.5" y="3" width="14" height="22.8" rx="3"/></svg>',
+          paste: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9.5 5.8H7a3 3 0 0 0-3 3V26a3 3 0 0 0 3 3h5M23 5.8h2a3 3 0 0 1 3 3v1.8"/><rect x="10" y="3.5" width="12" height="5.6" rx="1.8"/><rect class="tex-icon-accent" x="14.5" y="11" width="14" height="18" rx="1.6"/></svg>',
+          rename: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12.5 6H8a4 4 0 0 0-4 4v12a4 4 0 0 0 4 4h4.5M22 6h2a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4h-2"/><path d="m9 21 4.4-11.5L18 21M10.2 17.5h6.5"/><path class="tex-icon-accent" d="M20.5 2.5v27M17.5 2.5h6M17.5 29.5h6"/></svg>',
+          delete: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 8h24M12 8V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3M7 8l1.4 19a2.2 2.2 0 0 0 2.2 2h10.8a2.2 2.2 0 0 0 2.2-2L25 8M13 13v11M19 13v11"/></svg>',
           history: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v5h5"/><path d="M5.2 9.6A8 8 0 1 1 4 14"/><path class="tex-icon-accent" d="M12 8v5l3 2"/></svg>'
         };
 
@@ -339,10 +343,11 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         const copyButton = createButton(labels.copy, icons.copy);
         const pasteButton = createButton(labels.paste, icons.paste);
         const renameButton = createButton(labels.rename, icons.rename);
+        const deleteButton = createButton(labels.delete, icons.delete, 'is-delete');
         const historyButton = createButton(labels.history, icons.history, 'is-history');
         const separator = () => { const node = document.createElement('span'); node.className = 'tex-editor-command-separator'; node.setAttribute('aria-hidden', 'true'); return node; };
         // Keep the Explorer-style edit group visible first even in narrow editor panes.
-        bar.append(cutButton, copyButton, pasteButton, renameButton, separator(), saveButton, saveAsButton, separator(), undoButton, redoButton, separator(), historyButton);
+        bar.append(cutButton, copyButton, pasteButton, renameButton, deleteButton, separator(), saveButton, saveAsButton, separator(), undoButton, redoButton, separator(), historyButton);
         const counts = sourceLabel.lastElementChild;
         if (counts) sourceLabel.insertBefore(bar, counts);
         else sourceLabel.append(bar);
