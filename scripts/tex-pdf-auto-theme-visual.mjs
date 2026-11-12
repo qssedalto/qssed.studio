@@ -222,3 +222,24 @@ fs.mkdirSync(dir,{recursive:true});
 const target=path.join(dir,'pdf-theme-qa.html');
 fs.writeFileSync(target,html);
 console.log(target,html.length);
+
+// Second browser fixture: emulated iPad must use PDFKit/native iframe, never
+// the PDF.js canvas branch. The PDF bytes are a local synthetic QA document.
+const iosBase = '<!doctype html><html lang="zh-cn" data-theme="dark"><head><meta charset="utf-8">' +
+  '<style>html,body{height:100%;margin:0}body.os-shell{background:#1b1c20}' +
+  '.tex-work-app{width:100%;height:100dvh}.tex-live-preview-viewport{height:100%;position:relative}' +
+  '#tex-live-preview-frame{width:100%;height:100%}</style></head><body class="os-shell">' +
+  '<section class="tex-work-app"><div class="tex-live-preview-viewport">' +
+  '<iframe id="tex-live-preview-frame" hidden></iframe></div></section>' +
+  '<script>window.addEventListener("load",()=>{' +
+  'const bytes=Uint8Array.from(atob(' + JSON.stringify(fixture) + '),ch=>ch.charCodeAt(0));' +
+  'const blob=new Blob([bytes],{type:"application/pdf"});' +
+  'const frame=document.getElementById("tex-live-preview-frame");' +
+  'frame.hidden=false;frame.src=URL.createObjectURL(blob);' +
+  'window.dispatchEvent(new CustomEvent("qsseda:tex-preview-blob",{detail:{blob}}));' +
+  '});</script></body></html>';
+const iosHtml = enhanceWorkTexPdfAutoTheme(iosBase);
+const iosTarget = path.join(dir, 'pdf-ios-native-qa.html');
+fs.writeFileSync(iosTarget, iosHtml);
+console.log(iosTarget, iosHtml.length);
+
