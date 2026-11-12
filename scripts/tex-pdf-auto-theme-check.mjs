@@ -119,8 +119,10 @@ assert(style.includes(".aertex-pdf-find-popover[hidden]") &&
        style.includes("position:absolute!important;top:49px!important"),
   "Search should overlay the PDF instead of taking any toolbar width");
 assert(style.includes(".aertex-pdf-reader:fullscreen") &&
-       style.includes(":fullscreen button[data-pdf-action=\"expand\"]"),
-  "Fullscreen should isolate PDF canvas and toolbar and hide repeated expand action");
+       style.includes(":fullscreen .aertex-pdf-toolbar") &&
+       style.includes(":fullscreen .aertex-pdf-pages") &&
+       style.includes("grid-template-rows:minmax(0,1fr)!important"),
+  "Native fullscreen must show only PDF pages, without a toolbar or any other site content");
 assert(!script.includes("document.body.classList.contains('tex-preview-expanded')"),
   "Do not use website panel expansion state as a substitute for system fullscreen");
 assert(style.includes(".aertex-pdf-outline[hidden]"),
