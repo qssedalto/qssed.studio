@@ -82,6 +82,11 @@ const masks = buildMasks({
   fnArray:operations.map(item=>item[0]),
   argsArray:operations.map(item=>item[1])
 });
+const folded = buildMasks({fnArray:[59,91,85],argsArray:[["#ffffff"],[22,[{}],{0:0,1:0,2:400,3:600}],["photo"]]});
+assert.equal(folded.background[1], false, "PDF.js constructPath(OPS.fill) must suppress a white vector page background");
+assert.equal(folded.foreground[1], false, "A white vector background may NOT enter the white text overlay");
+assert.equal(folded.background[2], true, "Photo operators must remain in the color-preserving background layer");
+assert.equal(folded.foreground[2], false, "Photo operators must never be recolored");
 assert.equal(masks.background[2], false, "White page background must not render in dark mode");
 assert.equal(masks.background[5], false, "Original black text must not remain on dark background");
 assert.equal(masks.foreground[5], true, "Text must be isolated in the white ink layer");
