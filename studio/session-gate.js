@@ -186,7 +186,8 @@ export function studioSessionBootstrapPage(locale, request) {
       const status = document.getElementById("studio-session-status");
       const goLogin = async () => {
         if (status) status.textContent = ${scriptLiteral(failed)};
-        try { await supabaseClient.auth.signOut({ scope: "local" }); } catch {}
+        // A missing host-local browser session is not proof of logout: the
+        // auth subdomain may still hold a valid session and can hand it off.
         const target = new URL("/continue", ${scriptLiteral(authOrigin)});
         target.searchParams.set("next", location.pathname + location.search);
         location.replace(target.toString());
