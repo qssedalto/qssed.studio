@@ -290,17 +290,31 @@ export function enhanceWorkTexRealtime(markup, zh) {
 
         function renderPresence(participants) {
           const current = connection;
-          const items = Array.isArray(participants) ? participants.map(person => {
+          // A user may have multiple Safari tabs/WebSocket connections.
+          // Presence counts people, not sockets. Keep the local tab as the
+          // preferred representative so self/follow state remains consistent.
+          const people = new Map();
+          const sockets = [];
+          for (const person of Array.isArray(participants) ? participants : []) {
+            const identity = String(person?.id || person?.client_id || '').trim();
+            if (!identity) continue;
             const a = relativeIndex(current, person?.anchor_rel, Number(person?.selection_start) || 0);
             const h = relativeIndex(current, person?.head_rel, Number(person?.caret_position ?? person?.selection_end) || 0);
-            return {
+            const entry = {
               ...person,
               self: Boolean(current?.clientId && person?.client_id === current.clientId),
               selection_start: Math.min(a, h),
               selection_end: Math.max(a, h),
               caret_position: h
             };
-          }) : [];
+            sockets.push(entry);
+            const earlier = people.get(identity);
+            if (!earlier || (!earlier.self && entry.self)) people.set(identity, entry);
+          }
+          // Preserve existing desktop socket-level display: only compact touch
+          // screens collapse duplicate tabs into one online person.
+          const compactTouch = window.matchMedia('(max-width:1280px) and (pointer:coarse), (max-width:760px)').matches;
+          const items = compactTouch ? [...people.values()] : sockets;
           const count = items.length;
           if (current) current.presence = items;
           publishPresence(items);
