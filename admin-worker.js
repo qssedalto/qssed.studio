@@ -13,6 +13,7 @@
  */
 
 import { protectEdgeRequest, applyEdgeProtectionHeaders } from "./studio/edge-protection.js";
+import { injectSweiFontResponse, sweiFontAssetResponse } from "./studio/swei-font.js";
 import { FAVICON_PATHS, faviconResponse } from "./studio/favicon.js";
 import { LOGO_PATHS, logoResponse } from "./studio/brand-logo.js";
 import { adminOriginForRequest, mainOriginForRequest } from "./studio/domain-family.js";
@@ -47,7 +48,7 @@ export default {
     }
 
     scheduleAudit(ctx, request, response, env, startedAt);
-    return applyEdgeProtectionHeaders(request, response);
+    return applyEdgeProtectionHeaders(request, await injectSweiFontResponse(response, request.method));
   }
 };
 
@@ -57,6 +58,8 @@ async function routeAdminRequest(request, env) {
 
   if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
   if (LOGO_PATHS.has(pathname)) return logoResponse(request);
+  const sweiAsset = sweiFontAssetResponse(pathname, request.method);
+  if (sweiAsset) return sweiAsset;
 
   if (pathname === "/health") {
     return json({
