@@ -84,6 +84,43 @@ function browserHarness(fixture) {
     try{
       const light=await waitFor('light');
       report.push({step:'light',light});
+      // Pixel-level layout contract: native-looking SVG glyphs, no fake ink
+      // tools, distinct left/center/right groups, and working page/search UI.
+      const bar=document.querySelector('.aertex-pdf-toolbar');
+      const left=bar?.querySelector('.aertex-pdf-section-left');
+      const center=bar?.querySelector('.aertex-pdf-section-center');
+      const right=bar?.querySelector('.aertex-pdf-section-right');
+      const icons=bar?.querySelectorAll('button.aertex-pdf-tool svg.aertex-pdf-icon');
+      if (!bar||!left||!center||!right||icons.length!==10) {
+        throw Error('Native PDF toolbar SVG icons/3 groups missing: '+(icons?.length||0));
+      }
+      const groups=[left,center,right].map(e=>e.getBoundingClientRect());
+      if (Math.abs(bar.getBoundingClientRect().height-44)>1 ||
+          groups[0].right>groups[1].left+2 ||
+          groups[1].right>groups[2].left+2 ||
+          getComputedStyle(bar).backgroundColor!=='rgb(59, 59, 59)') {
+        throw Error('Native PDF toolbar sizing or alignment differs: '+JSON.stringify(groups.map(r=>[r.left,r.right])));
+      }
+      if(bar.querySelector('[data-pdf-action="highlight"]')||
+         bar.querySelector('[data-pdf-action="draw"]')) {
+         throw Error('Unsupported drawing controls must not be displayed');
+      }
+      const pageToggle=bar.querySelector('[data-pdf-action="pages"]');
+      const pageList=document.querySelector('.aertex-pdf-outline');
+      pageToggle.click();
+      if(pageList.hidden || !pageList.querySelector('[data-pdf-page-num="1"]')) {
+        throw Error('Page navigation icon does not display a functioning page list');
+      }
+      pageList.querySelector('[data-pdf-page-num="1"]').click();
+      if(!pageList.hidden) throw Error('Page thumbnail selection must close the list');
+      const searchToggle=bar.querySelector('[data-pdf-action="search-toggle"]');
+      const search=bar.querySelector('[data-pdf-action="find"]');
+      if(!search.hidden) throw Error('Native search field must start collapsed');
+      searchToggle.click();
+      if(search.hidden || document.activeElement!==search) throw Error('Search icon does not reveal/focus the field');
+      search.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+      if(!search.hidden) throw Error('Escape does not close PDF search');
+      report.push({step:'native-toolbar',icons:icons.length,groups:groups.map(r=>Math.round(r.left))});
       document.documentElement.dataset.themeMode='dark';
       document.documentElement.dataset.theme='dark';
       window.dispatchEvent(new Event('aertex-themechange'));
