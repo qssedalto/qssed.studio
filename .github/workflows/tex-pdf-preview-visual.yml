@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - 'studio/ui-work-tex-pdf-controls.js'
+      - 'studio/ui-work-tex-pdf-auto-theme.js'
+      - 'scripts/tex-pdf-auto-theme-visual.mjs'
+      - 'scripts/tex-pdf-auto-theme-browser.mjs'
       - 'studio/ui-work-tex-panels.js'
       - 'studio/entry.js'
       - 'studio/ui-work-tex-viewport-edges.js'
@@ -58,6 +61,10 @@ jobs:
               done
             done
           done
+      - name: Test PDF dark mode, white text and unchanged image pixels
+        run: |
+          node scripts/tex-pdf-auto-theme-visual.mjs
+          node scripts/tex-pdf-auto-theme-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
