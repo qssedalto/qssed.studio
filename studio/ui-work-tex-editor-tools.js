@@ -27,6 +27,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     saveFailed: "保存失败",
     saveAsTitle: "另存为新文档",
     saveAsName: "文档名称",
+    saveAsNameRequired: "请输入新文档的名称。",
+    saveAsFailed: "无法创建文档副本，请检查名称或稍后重试。",
     cancel: "取消",
     create: "另存",
     copySuffix: " 副本",
@@ -56,6 +58,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     saveFailed: "Save failed",
     saveAsTitle: "Save as a new document",
     saveAsName: "Document name",
+    saveAsNameRequired: "Enter a name for the new document.",
+    saveAsFailed: "Could not create a copy. Check the name or try again.",
     cancel: "Cancel",
     create: "Save Copy",
     copySuffix: " Copy",
@@ -106,6 +110,10 @@ export function enhanceWorkTexEditorTools(markup, zh) {
       }
       .tex-editor-command{
         appearance:none!important;
+        position:relative!important;
+        isolation:isolate!important;
+        flex:0 0 39px!important;
+        touch-action:manipulation!important;
         display:grid!important;
         place-items:center!important;
         width:39px!important;
@@ -127,13 +135,15 @@ export function enhanceWorkTexEditorTools(markup, zh) {
       .tex-editor-command:focus-visible{outline:none!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 14%,transparent)!important}
       .tex-editor-command:disabled{opacity:.30!important;cursor:not-allowed!important;transform:none!important}
       .tex-editor-command svg{width:26px!important;height:26px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.7!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important}
+      .tex-editor-command svg{pointer-events:none!important}
       .tex-editor-command svg .tex-icon-accent{stroke:var(--primary)!important}
       .tex-editor-command svg .tex-icon-accent-fill{fill:var(--primary)!important;stroke:none!important}
-      /* Rounded, precision-stroked icons stay smooth at fractional pixel sizes. */
-      .tex-editor-command svg.tex-smooth-icon{width:30px!important;height:30px!important;fill:none!important;stroke:none!important;overflow:visible!important}
-      .tex-editor-command svg.tex-smooth-icon path{fill:none!important;stroke-width:1.65!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important}
-      .tex-editor-command svg.tex-smooth-icon .tex-source-gray{fill:none!important;stroke:currentColor!important}
-      .tex-editor-command svg.tex-smooth-icon .tex-source-accent{fill:none!important;stroke:var(--primary)!important}
+      /* Crisp native Fluent paths; 28px optical size in 39px hit targets. */
+      .tex-editor-command svg.tex-fluent-icon{width:28px!important;height:28px!important;stroke:none!important;fill:none!important;overflow:hidden!important}
+      .tex-editor-command svg.tex-fluent-icon .tex-fluent-neutral{fill:currentColor!important;stroke:none!important}
+      .tex-editor-command svg.tex-fluent-icon .tex-fluent-accent{fill:var(--primary)!important;stroke:none!important}
+      .tex-editor-command svg.tex-fluent-icon .tex-fluent-accent-ring{stroke:var(--primary)!important;stroke-width:1.5!important;fill:none!important}
+      .tex-editor-command svg.tex-fluent-icon .tex-fluent-accent-line{stroke:var(--primary)!important;stroke-width:1.35!important;stroke-linecap:round!important;stroke-linejoin:round!important;fill:none!important}
       .tex-editor-command.is-history svg{width:25px!important;height:25px!important}
       .tex-editor-command svg.tex-icon-mirror{transform:scaleX(-1);transform-origin:center}
       .tex-editor-command.is-delete:hover:not(:disabled){background:color-mix(in srgb,var(--danger,#ac4137) 10%,transparent)!important;color:var(--danger,#ac4137)!important}
@@ -181,6 +191,9 @@ export function enhanceWorkTexEditorTools(markup, zh) {
       .tex-save-as-dialog::backdrop{background:rgba(0,0,0,.26);backdrop-filter:blur(3px)}
       .tex-save-as-sheet{display:grid;gap:16px;padding:20px}
       .tex-save-as-sheet strong{font-size:18px;letter-spacing:-.02em}
+      .tex-save-as-error{margin:0!important;padding:10px 12px;border-radius:9px;background:color-mix(in srgb,var(--danger,#a5453a) 12%,var(--surface));color:var(--danger,#a5453a);font-size:12px;line-height:1.5}
+      .tex-save-as-error[hidden]{display:none!important}
+      .tex-save-as-actions button:disabled{opacity:.55;cursor:progress}
       .tex-save-as-sheet label{display:grid;gap:7px;color:var(--muted);font-size:11px}
       .tex-save-as-sheet input{box-sizing:border-box;width:100%;height:44px;margin:0;padding:0 12px;border:0;border-radius:12px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);outline:none}
       .tex-save-as-sheet input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 12%,transparent),inset 0 0 0 1px var(--primary)}
@@ -305,50 +318,57 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         const snapshot = () => ({ title: title.value, engine: engine.value, source: source.value });
         const safeName = value => String(value || 'qsseda-tex').replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'qsseda-tex';
         const workDocumentRoute = id => {
-          const locale = location.pathname.startsWith('/en/') ? 'en' : 'zh-cn';
+          // Preserve the actual route locale (including en-us) on Save As.
+          const locale = String(location.pathname.split('/')[1] || 'zh-cn');
           const exempt = location.pathname.includes('/huawei-exempt/') ? 'huawei-exempt/' : '';
           return '/' + locale + '/d/' + exempt + encodeURIComponent(id);
         };
 
-        function createButton(name, svg, className = '') {
+        function createButton(action, name, svg, className = '') {
           const button = document.createElement('button');
           button.type = 'button';
+          button.id = 'tex-command-' + action;
+          button.dataset.texAction = action;
           button.className = 'tex-editor-command' + (className ? ' ' + className : '');
           button.title = name;
           button.setAttribute('aria-label', name);
           button.innerHTML = svg;
+          // An icon click must never be interpreted as an adjacent command or
+          // reach a document-level click handler.
+          button.addEventListener('click', event => event.stopPropagation());
           return button;
         }
 
-        // Large, independently drawn Windows Explorer-style vector icons.
-        // Muted strokes follow the page theme; their colored details use --primary.
-        // Reference-matched SVGs with rounded Bezier strokes instead of jagged raster outlines.
-        const undoSvg = '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M4.6 4.5v10.4h10.2"/><path class="tex-source-gray" d="M4.8 14.8 15.6 4.2"/><path class="tex-source-gray" d="M15.4 4.9c6.6 0 11.6 4.9 11.6 11.3 0 3.1-1.4 5.8-4.1 8.5L16.7 30"/></svg>';
+        // Official Microsoft Fluent UI System Icon vector geometry (MIT licensed).
+        // Copyright (c) 2020 Microsoft Corporation.
+        // See studio/vendor/fluent-ui-system-icons-LICENSE.txt for full notice.
+        // Individual layers are recolored with user-selected --primary.
+        const undoSvg = '<svg class="tex-fluent-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tex-fluent-neutral" d="M4.75 2C5.1297 2 5.44349 2.28215 5.49315 2.64823L5.5 2.75V8.44L10.0743 3.88014C12.5163 1.43819 16.4385 1.37863 18.9526 3.70146L19.1385 3.88014C21.6415 6.38313 21.6415 10.4413 19.1385 12.9443L10.2933 21.7835C10.0003 22.0762 9.52558 22.0759 9.23269 21.783C8.93979 21.4901 8.94013 21.0151 9.23315 20.7223L18.0778 11.8836C19.995 9.96641 19.995 6.85801 18.0778 4.9408C16.2187 3.08169 13.2395 3.02535 11.3118 4.77248L11.1342 4.94156L6.562 9.5L12.25 9.50018C12.6297 9.50018 12.9435 9.78234 12.9932 10.1484L13 10.2502C13 10.6299 12.7178 10.9437 12.3518 10.9933L12.25 11.0002H4.75C4.3703 11.0002 4.05651 10.718 4.00685 10.352L4 10.2502V2.75C4 2.33579 4.33579 2 4.75 2Z"/></svg>';
         const icons = {
-          save: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M6.5 3.5h15.2l5.8 5.8v17.8a2.4 2.4 0 0 1-2.4 2.4H6.5a2.4 2.4 0 0 1-2.4-2.4V5.9a2.4 2.4 0 0 1 2.4-2.4Z"/><path class="tex-source-gray" d="M9 3.6v9.3h12.5V3.7M19 6.2v4"/><path class="tex-source-gray" d="M9.1 29V18.8c0-.8.6-1.4 1.4-1.4h11.1c.8 0 1.4.6 1.4 1.4V29"/></svg>',
-          saveAs: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M6.4 3.5h15.3l5.7 5.8v11.1M18.2 29.5H6.4A2.4 2.4 0 0 1 4 27.1V5.9a2.4 2.4 0 0 1 2.4-2.4Z"/><path class="tex-source-gray" d="M9 3.6v9.3h12.3V3.8M19 6.2v4M9 29V18.8c0-.8.6-1.4 1.4-1.4h9.4"/><path class="tex-source-gray" d="m18.1 26.5 8.8-8.8a2.5 2.5 0 0 1 3.6 3.6l-8.8 8.8-5.1 1.2 1.5-4.8Z"/><path class="tex-source-gray" d="m25.3 19.3 3.6 3.6"/></svg>',
-          cut: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M6.6 3.5 18.7 20.9M25.4 3.5 13.2 20.9"/><path class="tex-source-accent" d="M12.5 25.1a4.2 4.2 0 1 1-8.4 0 4.2 4.2 0 0 1 8.4 0ZM27.9 25.1a4.2 4.2 0 1 1-8.4 0 4.2 4.2 0 0 1 8.4 0Z"/></svg>',
-          copy: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M13.3 7.5H9.1a3.8 3.8 0 0 0-3.8 3.8v13a3.8 3.8 0 0 0 3.8 3.8h9.3a3.6 3.6 0 0 0 3-1.5"/><path class="tex-source-accent" d="M16.9 4.1h8.5c2 0 3.6 1.6 3.6 3.6v13.6c0 2-1.6 3.6-3.6 3.6h-8.5c-2 0-3.6-1.6-3.6-3.6V7.7c0-2 1.6-3.6 3.6-3.6Z"/></svg>',
-          paste: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M10.7 6.3H8.5a3.7 3.7 0 0 0-3.7 3.7v17.6a2.5 2.5 0 0 0 2.5 2.5h5M21.3 6.3h1.4a3.7 3.7 0 0 1 3.7 3.7v2.2"/><path class="tex-source-gray" d="M12.8 4.6c0-.8.7-1.5 1.5-1.5h5.1c.8 0 1.5.7 1.5 1.5v3c0 .8-.7 1.5-1.5 1.5h-5.1c-.8 0-1.5-.7-1.5-1.5v-3Z"/><path class="tex-source-accent" d="M18.1 13.2h9.3c.8 0 1.4.6 1.4 1.4v14c0 .8-.6 1.4-1.4 1.4h-9.3c-.8 0-1.4-.6-1.4-1.4v-14c0-.8.6-1.4 1.4-1.4Z"/></svg>',
-          rename: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M12.5 6.9H9A4.2 4.2 0 0 0 4.8 11v13A4.2 4.2 0 0 0 9 28.2h4M24.3 6.9H25a4.2 4.2 0 0 1 4.2 4.2v13a4.2 4.2 0 0 1-4.2 4.1h-.9"/><path class="tex-source-accent" d="m8.9 23.8 4.7-12 4.7 12M10.4 20h6.4"/><path class="tex-source-accent" d="M20.7 3v26M17.4 3h6.6M17.4 29h6.6"/></svg>',
-          delete: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M4.2 9.8h23.6M12.1 9.8V7.1a3.1 3.1 0 0 1 3.1-3.1h1.6a3.1 3.1 0 0 1 3.1 3.1v2.7"/><path class="tex-source-gray" d="m7.8 10.1 1.3 16.6a2.5 2.5 0 0 0 2.5 2.3h8.8a2.5 2.5 0 0 0 2.5-2.3l1.3-16.6"/><path class="tex-source-gray" d="M13.2 15.1v9.1M18.8 15.1v9.1"/></svg>',
+          save: '<svg class="tex-fluent-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tex-fluent-neutral" d="M3 5.75C3 4.23122 4.23122 3 5.75 3H15.7145C16.5764 3 17.4031 3.34241 18.0126 3.9519L20.0481 5.98744C20.6576 6.59693 21 7.42358 21 8.28553V18.25C21 19.7688 19.7688 21 18.25 21H5.75C4.23122 21 3 19.7688 3 18.25V5.75ZM5.75 4.5C5.05964 4.5 4.5 5.05964 4.5 5.75V18.25C4.5 18.9404 5.05964 19.5 5.75 19.5H6V14.25C6 13.0074 7.00736 12 8.25 12H15.75C16.9926 12 18 13.0074 18 14.25V19.5H18.25C18.9404 19.5 19.5 18.9404 19.5 18.25V8.28553C19.5 7.8214 19.3156 7.37629 18.9874 7.0481L16.9519 5.01256C16.6918 4.75246 16.3582 4.58269 16 4.52344V7.25C16 8.49264 14.9926 9.5 13.75 9.5H9.25C8.00736 9.5 7 8.49264 7 7.25V4.5H5.75ZM16.5 19.5V14.25C16.5 13.8358 16.1642 13.5 15.75 13.5H8.25C7.83579 13.5 7.5 13.8358 7.5 14.25V19.5H16.5ZM8.5 4.5V7.25C8.5 7.66421 8.83579 8 9.25 8H13.75C14.1642 8 14.5 7.66421 14.5 7.25V4.5H8.5Z"/></svg>',
+          saveAs: '<svg class="tex-fluent-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tex-fluent-neutral" d="M5.75 3C4.23122 3 3 4.23122 3 5.75V18.25C3 19.7688 4.23122 21 5.75 21H9.99852C9.99129 20.8075 10.011 20.6088 10.0613 20.4075L10.2882 19.5H7.5V14.25C7.5 13.8358 7.83579 13.5 8.25 13.5H14.8531L16.2883 12.0648C16.1158 12.0225 15.9355 12 15.75 12H8.25C7.00736 12 6 13.0074 6 14.25V19.5H5.75C5.05964 19.5 4.5 18.9404 4.5 18.25V5.75C4.5 5.05964 5.05964 4.5 5.75 4.5H7V7.25C7 8.49264 8.00736 9.5 9.25 9.5H13.75C14.9926 9.5 16 8.49264 16 7.25V4.52344C16.3582 4.58269 16.6918 4.75246 16.9519 5.01256L18.9874 7.0481C19.3156 7.37629 19.5 7.8214 19.5 8.28553V10.007C19.5709 10.0024 19.642 10 19.713 10H19.7151C20.1521 10.0002 20.59 10.0874 21 10.2615V8.28553C21 7.42358 20.6576 6.59693 20.0481 5.98744L18.0126 3.9519C17.4031 3.34241 16.5764 3 15.7145 3H5.75ZM8.5 7.25V4.5H14.5V7.25C14.5 7.66421 14.1642 8 13.75 8H9.25C8.83579 8 8.5 7.66421 8.5 7.25ZM19.7152 11H19.7131C19.1285 11.0003 18.5439 11.2234 18.0979 11.6695L12.1955 17.5719C11.8513 17.916 11.6072 18.3472 11.4892 18.8194L11.0315 20.6501C10.8325 21.4462 11.5536 22.1674 12.3497 21.9683L14.1804 21.5106C14.6526 21.3926 15.0838 21.1485 15.4279 20.8043L21.3303 14.9019C22.223 14.0093 22.223 12.5621 21.3303 11.6695C20.8843 11.2234 20.2998 11.0003 19.7152 11Z"/></svg>',
+          cut: '<svg class="tex-fluent-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tex-fluent-neutral" d="M12.1409 9.3415L12.14 9.34286L7.37017 2.3284C7.13725 1.98587 6.67077 1.89702 6.32824 2.12994C5.98572 2.36286 5.89687 2.82934 6.12978 3.17187L11.2606 10.7171L8.86478 14.4605C8.30797 14.1665 7.67342 14.0001 7 14.0001C4.79086 14.0001 3 15.791 3 18.0001C3 20.2093 4.79086 22.0001 7 22.0001C9.20914 22.0001 11 20.2093 11 18.0001C11 17.0089 10.6395 16.1019 10.0424 15.4031L12.178 12.0662L14.2426 15.1024C13.4771 15.831 13 16.8599 13 18.0001C13 20.2093 14.7909 22.0001 17 22.0001C19.2091 22.0001 21 20.2093 21 18.0001C21 15.791 19.2091 14.0001 17 14.0001C16.471 14.0001 15.9659 14.1028 15.5037 14.2894L13.0575 10.692L13.0588 10.69L12.1409 9.3415ZM4.5 18.0001C4.5 16.6194 5.61929 15.5001 7 15.5001C8.38071 15.5001 9.5 16.6194 9.5 18.0001C9.5 19.3808 8.38071 20.5001 7 20.5001C5.61929 20.5001 4.5 19.3808 4.5 18.0001ZM14.5 18.0001C14.5 16.6194 15.6193 15.5001 17 15.5001C18.3807 15.5001 19.5 16.6194 19.5 18.0001C19.5 19.3808 18.3807 20.5001 17 20.5001C15.6193 20.5001 14.5 19.3808 14.5 18.0001ZM13.9381 9.31607L17.8815 3.15438C18.1048 2.8055 18.003 2.34167 17.6541 2.11839C17.3053 1.89511 16.8414 1.99692 16.6181 2.3458L13.0202 7.96756L13.9381 9.31607Z"/><circle class="tex-fluent-accent-ring" cx="7" cy="18" r="3.25"/><circle class="tex-fluent-accent-ring" cx="17" cy="18" r="3.25"/></svg>',
+          copy: '<svg class="tex-fluent-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tex-fluent-neutral" d="M8.5 8.5H5.25C4.2835 8.5 3.5 9.2835 3.5 10.25V18.75C3.5 19.7165 4.2835 20.5 5.25 20.5H11.25C12.2165 20.5 13 19.7165 13 18.75V18H14.5V18.75C14.5 20.5449 13.0449 22 11.25 22H5.25C3.45507 22 2 20.5449 2 18.75V10.25C2 8.45507 3.45507 7 5.25 7H8.5V8.5Z"/><path class="tex-fluent-accent" d="M18.75 2C20.5449 2 22 3.45507 22 5.25V13.75C22 15.5449 20.5449 17 18.75 17H12.75C10.9551 17 9.5 15.5449 9.5 13.75V5.25C9.5 3.45507 10.9551 2 12.75 2H18.75ZM12.75 3.5C11.7835 3.5 11 4.2835 11 5.25V13.75C11 14.7165 11.7835 15.5 12.75 15.5H18.75C19.7165 15.5 20.5 14.7165 20.5 13.75V5.25C20.5 4.2835 19.7165 3.5 18.75 3.5H12.75Z"/></svg>',
+          paste: '<svg class="tex-fluent-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tex-fluent-neutral" d="M12.7533 2C13.9109 2 14.8641 2.87549 14.9867 4.00046L16.75 4C17.9409 4 18.9156 4.92516 18.9948 6.09595L19 6.25C19 6.62919 18.7182 6.94257 18.3526 6.99216L18.249 6.999C17.8698 6.999 17.5564 6.71722 17.5068 6.35163L17.5 6.25C17.5 5.8703 17.2178 5.55651 16.8518 5.50685L16.75 5.5L14.6176 5.50082C14.2141 6.09953 13.5297 6.4933 12.7533 6.4933H9.24665C8.47031 6.4933 7.78594 6.09953 7.38237 5.50082L5.25 5.5C4.8703 5.5 4.55651 5.78215 4.50685 6.14823L4.5 6.25V19.7546C4.5 20.1343 4.78215 20.4481 5.14823 20.4977L5.25 20.5046L8.25 20.5041C8.62964 20.5041 8.94343 20.7861 8.99314 21.1521L9 21.254C9 21.6682 8.66423 22.0041 8.25 22.0041L5.25 22.0046C4.05914 22.0046 3.08436 21.0794 3.00519 19.9086L3 19.7546V6.25C3 5.05914 3.92516 4.08436 5.09595 4.00519L5.25 4L7.01333 4.00046C7.13595 2.87549 8.08906 2 9.24665 2H12.7533Z"/><path class="tex-fluent-accent" d="M18.75 8C19.9409 8 20.9156 8.92516 20.9948 10.096L21 10.25V19.75C21 20.9409 20.0748 21.9156 18.904 21.9948L18.75 22H12.25C11.0591 22 10.0844 21.0748 10.0052 19.904L10 19.75V10.25C10 9.05914 10.9252 8.08436 12.096 8.00519L12.25 8H18.75ZM18.75 9.5H12.25C11.8703 9.5 11.5565 9.78215 11.5068 10.1482L11.5 10.25V19.75C11.5 20.1297 11.7822 20.4435 12.1482 20.4932L12.25 20.5H18.75C19.1297 20.5 19.4435 20.2178 19.4932 19.8518L19.5 19.75V10.25C19.5 9.8703 19.2178 9.55651 18.8518 9.50685L18.75 9.5ZM12.7533 3.5H9.24665C8.83429 3.5 8.5 3.83429 8.5 4.24665C8.5 4.65902 8.83429 4.9933 9.24665 4.9933H12.7533C13.1657 4.9933 13.5 4.65902 13.5 4.24665C13.5 3.83429 13.1657 3.5 12.7533 3.5Z"/></svg>',
+          rename: '<svg class="tex-fluent-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tex-fluent-neutral" d="M14.2502 2C14.6645 2 15.0002 2.33579 15.0002 2.75C15.0002 3.16421 14.6645 3.5 14.2502 3.5H12.7502V20.5H14.2502C14.6645 20.5 15.0002 20.8358 15.0002 21.25C15.0002 21.6642 14.6645 22 14.2502 22H9.75024C9.33603 22 9.00024 21.6642 9.00024 21.25C9.00024 20.8358 9.33603 20.5 9.75024 20.5H11.2502V3.5H9.75024C9.33603 3.5 9.00024 3.16421 9.00024 2.75C9.00024 2.33579 9.33603 2 9.75024 2H14.2502ZM10.2502 6.5H5.25024C4.28375 6.5 3.50024 7.2835 3.50024 8.25V15.75C3.50024 16.7165 4.28375 17.5 5.25024 17.5H10.2502V19H5.25024C3.45532 19 2.00024 17.5449 2.00024 15.75V8.25C2.00024 6.45507 3.45532 5 5.25024 5H10.2502V6.5ZM18.7502 5C20.5452 5 22.0002 6.45507 22.0002 8.25V15.75C22.0002 17.5449 20.5452 19 18.7502 19H13.7502V17.5H18.7502C19.7167 17.5 20.5002 16.7165 20.5002 15.75V8.25C20.5002 7.2835 19.7167 6.5 18.7502 6.5H13.7502V5H18.7502Z"/><path class="tex-fluent-accent-line" d="M5.1 14.4 7 9.6 8.9 14.4M5.7 12.8h2.6"/></svg>',
+          delete: '<svg class="tex-fluent-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tex-fluent-neutral" d="M10 5H14C14 3.89543 13.1046 3 12 3C10.8954 3 10 3.89543 10 5ZM8.5 5C8.5 3.067 10.067 1.5 12 1.5C13.933 1.5 15.5 3.067 15.5 5H21.25C21.6642 5 22 5.33579 22 5.75C22 6.16421 21.6642 6.5 21.25 6.5H19.9309L18.7589 18.6112C18.5729 20.5334 16.9575 22 15.0263 22H8.97369C7.04254 22 5.42715 20.5334 5.24113 18.6112L4.06908 6.5H2.75C2.33579 6.5 2 6.16421 2 5.75C2 5.33579 2.33579 5 2.75 5H8.5ZM10.5 9.75C10.5 9.33579 10.1642 9 9.75 9C9.33579 9 9 9.33579 9 9.75V17.25C9 17.6642 9.33579 18 9.75 18C10.1642 18 10.5 17.6642 10.5 17.25V9.75ZM14.25 9C14.6642 9 15 9.33579 15 9.75V17.25C15 17.6642 14.6642 18 14.25 18C13.8358 18 13.5 17.6642 13.5 17.25V9.75C13.5 9.33579 13.8358 9 14.25 9ZM6.73416 18.4667C6.84577 19.62 7.815 20.5 8.97369 20.5H15.0263C16.185 20.5 17.1542 19.62 17.2658 18.4667L18.4239 6.5H5.57608L6.73416 18.4667Z"/></svg>',
           undo: undoSvg,
-          redo: undoSvg.replace('class="tex-smooth-icon"', 'class="tex-smooth-icon tex-icon-mirror"'),
+          redo: undoSvg.replace('class="tex-fluent-icon"', 'class="tex-fluent-icon tex-icon-mirror"'),
           history: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v5h5"/><path d="M5.2 9.6A8 8 0 1 1 4 14"/><path class="tex-icon-accent" d="M12 8v5l3 2"/></svg>'
         };
 
         const bar = document.createElement('div');
         bar.className = 'tex-editor-commandbar';
-        const saveButton = createButton(labels.save, icons.save);
-        const saveAsButton = createButton(labels.saveAs, icons.saveAs);
-        const undoButton = createButton(labels.undo, icons.undo);
-        const redoButton = createButton(labels.redo, icons.redo);
-        const cutButton = createButton(labels.cut, icons.cut);
-        const copyButton = createButton(labels.copy, icons.copy);
-        const pasteButton = createButton(labels.paste, icons.paste);
-        const renameButton = createButton(labels.rename, icons.rename);
-        const deleteButton = createButton(labels.delete, icons.delete, 'is-delete');
-        const historyButton = createButton(labels.history, icons.history, 'is-history');
+        const saveButton = createButton('save', labels.save, icons.save);
+        const saveAsButton = createButton('save-as', labels.saveAs, icons.saveAs);
+        const undoButton = createButton('undo', labels.undo, icons.undo);
+        const redoButton = createButton('redo', labels.redo, icons.redo);
+        const cutButton = createButton('cut', labels.cut, icons.cut);
+        const copyButton = createButton('copy', labels.copy, icons.copy);
+        const pasteButton = createButton('paste', labels.paste, icons.paste);
+        const renameButton = createButton('rename', labels.rename, icons.rename);
+        const deleteButton = createButton('delete', labels.delete, icons.delete, 'is-delete');
+        const historyButton = createButton('history', labels.history, icons.history, 'is-history');
         const separator = () => { const node = document.createElement('span'); node.className = 'tex-editor-command-separator'; node.setAttribute('aria-hidden', 'true'); return node; };
         // Keep the Explorer-style edit group visible first even in narrow editor panes.
         bar.append(cutButton, copyButton, pasteButton, renameButton, deleteButton, separator(), saveButton, saveAsButton, separator(), undoButton, redoButton, separator(), historyButton);
@@ -358,9 +378,15 @@ export function enhanceWorkTexEditorTools(markup, zh) {
 
         const dialog = document.createElement('dialog');
         dialog.className = 'tex-save-as-dialog';
-        dialog.innerHTML = '<form method="dialog" class="tex-save-as-sheet"><strong>' + labels.saveAsTitle + '</strong><label><span>' + labels.saveAsName + '</span><input maxlength="180" autocomplete="off"></label><div class="tex-save-as-actions"><button value="cancel">' + labels.cancel + '</button><button class="is-primary" value="confirm">' + labels.create + '</button></div></form>';
+        dialog.innerHTML = '<form class="tex-save-as-sheet"><strong id="tex-save-as-title">' + labels.saveAsTitle + '</strong><label><span>' + labels.saveAsName + '</span><input name="newTitle" maxlength="180" autocomplete="off" required></label><p class="tex-save-as-error" role="alert" hidden></p><div class="tex-save-as-actions"><button type="button" data-action="cancel">' + labels.cancel + '</button><button type="submit" class="is-primary" data-action="create">' + labels.create + '</button></div></form>';
+        dialog.setAttribute('aria-labelledby', 'tex-save-as-title');
         document.body.append(dialog);
+        const saveAsForm = dialog.querySelector('form');
         const saveAsInput = dialog.querySelector('input');
+        const saveAsError = dialog.querySelector('.tex-save-as-error');
+        const saveAsCancel = dialog.querySelector('[data-action="cancel"]');
+        const saveAsConfirm = dialog.querySelector('[data-action="create"]');
+        let saveAsPending = false;
 
         const deleteDialog = document.createElement('dialog');
         deleteDialog.className = 'tex-delete-dialog';
@@ -422,26 +448,61 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         }
 
         async function saveAs(name) {
+          if (saveAsPending || saveAsButton.disabled) return;
           const nextTitle = String(name || '').trim();
-          if (!nextTitle) return;
+          if (!nextTitle) {
+            saveAsError.textContent = labels.saveAsNameRequired;
+            saveAsError.hidden = false;
+            saveAsInput.focus();
+            return;
+          }
+          saveAsPending = true;
           saveAsButton.disabled = true;
+          saveAsCancel.disabled = true;
+          saveAsConfirm.disabled = true;
+          saveAsConfirm.textContent = labels.saving;
+          saveAsError.hidden = true;
           try {
             const data = await api('/api/tex/documents', { method: 'POST', body: JSON.stringify({ ...snapshot(), title: nextTitle }) });
-            if (data?.document?.id) {
-              location.assign(workDocumentRoute(data.document.id));
-            }
+            const createdId = String(data?.document?.id || '').trim();
+            if (!createdId) throw new Error(labels.saveAsFailed);
+            // Close only on success. If the request fails, the error is visible
+            // inside the dialog rather than silently disappearing.
+            dialog.close('created');
+            location.assign(workDocumentRoute(createdId));
           } catch (error) {
-            showMessage(error?.message || labels.saveFailed, true);
-          } finally { saveAsButton.disabled = false; }
+            saveAsError.textContent = error?.message || labels.saveAsFailed;
+            saveAsError.hidden = false;
+            showMessage(saveAsError.textContent, true);
+          } finally {
+            saveAsPending = false;
+            saveAsCancel.disabled = false;
+            saveAsConfirm.disabled = false;
+            saveAsConfirm.textContent = labels.create;
+            saveAsButton.disabled = !canEditSource();
+          }
         }
 
         saveButton.addEventListener('click', () => void saveNow());
-        saveAsButton.addEventListener('click', () => {
+        saveAsButton.addEventListener('click', event => {
+          event.preventDefault();
+          if (saveAsButton.disabled || dialog.open) return;
           saveAsInput.value = (title.value || 'TeX') + labels.copySuffix;
-          dialog.showModal();
-          window.setTimeout(() => { saveAsInput.focus(); saveAsInput.select(); }, 20);
+          saveAsError.hidden = true;
+          saveAsError.textContent = '';
+          try {
+            dialog.showModal();
+            window.setTimeout(() => { saveAsInput.focus(); saveAsInput.select(); }, 20);
+          } catch (error) {
+            showMessage(error?.message || labels.saveAsFailed, true);
+          }
         });
-        dialog.addEventListener('close', () => { if (dialog.returnValue === 'confirm') void saveAs(saveAsInput.value); });
+        saveAsForm.addEventListener('submit', event => {
+          event.preventDefault();
+          void saveAs(saveAsInput.value);
+        });
+        saveAsCancel.addEventListener('click', () => { if (!saveAsPending) dialog.close('cancel'); });
+        dialog.addEventListener('cancel', event => { if (saveAsPending) event.preventDefault(); });
 
         undoButton.addEventListener('click', () => { source.focus(); document.execCommand('undo'); });
         redoButton.addEventListener('click', () => { source.focus(); document.execCommand('redo'); });
@@ -504,7 +565,11 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           syncDisabled();
         });
 
-        copyButton.addEventListener('click', async () => {
+        copyButton.addEventListener('click', async event => {
+          // Copy is a pure clipboard command. Never open another document or
+          // invoke the Save As dialog (including via parent click handlers).
+          event.preventDefault();
+          if (copyButton.disabled) return;
           const { start, end } = sourceSelection();
           const text = start !== end ? source.value.slice(start, end) : source.value;
           if (await writeClipboard(text)) showMessage(labels.copied);
