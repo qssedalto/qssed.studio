@@ -37,7 +37,7 @@ jobs:
           out=/tmp/aertex-tex-welcome-qa
           mkdir -p "$out"
           for locale in zh en; do
-            for width in 1600 1180; do
+            for width in 2560 1600 1180; do
               target="file://$out/welcome-$locale.html"
               "$browser" --headless --no-sandbox --disable-dev-shm-usage --disable-gpu \
                 --hide-scrollbars --allow-file-access-from-files --virtual-time-budget=2500 \
