@@ -37,7 +37,7 @@ assert(worker.includes("suppressWorkClientSessionBounce"), "Authenticated Work H
 assert(worker.includes('markup.replace(\n    "    hydrateOsUser();"'), "Work suppression must target the inherited main-site hydrateOsUser call only");
 assert(worker.includes("server-side host-only session gate"), "Work session suppression must document that the server-side gate remains authoritative");
 assert(workAuditWrapper.includes('isServiceHost(url.hostname, "work")'), "Huawei exemption aliases must normalize on the Work custom domain.");
-assert(worker.includes("workDocumentId") && worker.includes('handleTexApi(validationRequest, env, "documents")'), "Work document deep links must be server-validated through the existing TeX ACL path before rendering.");
+assert(worker.includes("workDocumentId") && worker.includes('handleTexApi(new Request(validationUrl.toString()'), "Work document deep links must continue to validate the owner document before rendering.");
 assert(worker.includes('if (mapped.notFound) return workDocumentNotFound(workPublicRequest);'), "Malformed Work document paths must continue to produce the branded 404.");
 assert(worker.includes("resolveWorkDocumentLink(") && worker.includes("handleTexSharedCollaboration(new Request(sharedUrl.toString()"), "Invited TeX deep links must validate collaborator membership before showing an error.");
 assert(worker.includes("workDocumentUnavailableRedirect(workPublicRequest)"), "Expired or revoked TeX document links must return to Work start, not display a 404.");
