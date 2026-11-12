@@ -46,6 +46,9 @@ assert(!api.includes("body.repo_name"), "client must never select a different re
 assert(!api.includes("body.owner"), "client must never choose GitHub owner");
 assert(schema.includes("user_id uuid primary key"), "one repository per user is enforced by database key");
 assert(schema.includes("enable row level security"), "user allocations must enable RLS");
-assert(schema.includes("revoke all on public.tex_github_allowances from anon, authenticated"), "no direct user table access");
-assert(schema.includes("active_nonce is null or active_since"), "concurrent compilation must be serialized");
+assert(/revoke all on public\.tex_github_allowances from PUBLIC, anon, authenticated/.test(schema), "no direct user table access");
+assert(schema.includes("grant select, insert, update, delete on public.tex_github_allowances to service_role"),"server-only database access");
+assert(schema.includes("and active_nonce is null"), "concurrent compilation must be serialized");
+assert(schema.includes("  repo_state text not null default"), "repository state must be declared");
+assert.equal((schema.match(/create or replace function public\.tex_gh_reserve_credit/g) || []).length, 1, "no duplicate quota functions");
 console.log("AERTEX GitHub TeX isolation, quota and panel checks passed.");
