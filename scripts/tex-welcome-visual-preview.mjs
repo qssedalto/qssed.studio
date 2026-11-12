@@ -29,6 +29,7 @@ for (const zh of [true,false]) {
     "window.addEventListener('load',()=>{const w=document.querySelector('.qtex-welcome'),card=document.querySelectorAll('.qtex-template'),k=document.querySelector('.qtex-welcome-brand'),head=document.querySelector('.qtex-welcome-copy h2');",
     "const pass=!!w&&card.length===3&&!!head&&!!k&&getComputedStyle(k).writingMode==='horizontal-tb'&&document.querySelectorAll('.tex-start-card').length===0&&",
     "Math.abs(card[0].getBoundingClientRect().width-card[1].getBoundingClientRect().width)<2&&",
+    "Math.abs(parseFloat(getComputedStyle(head.firstElementChild).fontSize)-parseFloat(getComputedStyle(head.lastElementChild).fontSize))<1&&",
     "head.getBoundingClientRect().right<=w.getBoundingClientRect().right+2&&",
     "w.getBoundingClientRect().width<=document.querySelector('.tex-editor-panel').getBoundingClientRect().width+2;",
     "document.body.setAttribute('data-visual-qa',pass?'PASS':'FAIL');",
