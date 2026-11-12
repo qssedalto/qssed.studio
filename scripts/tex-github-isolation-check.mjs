@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { managedTexRepoName, MANAGED_TEX_WORKFLOW, MANAGED_TEX_WORKFLOW_PATH } from "../studio/tex-github-workflow.js";
 import { enhanceTexGithubWorkbench } from "../studio/ui-tex-github.js";
+import vm from "node:vm";
+import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
+import { enhanceTexProjectControls } from "../studio/ui-tex-project-controls.js";
+import { texGithubSetupContent } from "../studio/ui-tex-github-setup.js";
 
 const userA = "11111111-1111-4111-8111-111111111111";
 const userB = "22222222-2222-4222-8222-222222222222";
@@ -36,6 +40,47 @@ assert(html.indexOf('id="tex-gh-widget"') < html.indexOf('class="tex-compiler-ca
 assert(html.includes('id="tex-gh-card" aria-label="GitHub Actions" hidden'), "Remote controls should be collapsed by default");
 const en = enhanceTexGithubWorkbench('<aside class="tex-runs-panel"><div class="tex-compiler-card"></div></aside>', false);
 assert(en.includes("Create my only repository") && en.includes("Remote compilation (not recommended)"), "English locale must render");
+
+// The first-click onboarding must preserve the exact same-origin document route.
+const setup = texGithubSetupContent(true, "zh-cn");
+assert(setup.includes('id="tex-setup-form"') && setup.includes("每周最多使用 100 次"),
+  "Onboarding must explain weekly build limits and render the application form");
+assert(setup.includes('window.location') === false && setup.includes('location.assign(back)'),
+  "Return must use the validated original document target");
+assert(setup.includes('parsed.origin===location.origin') &&
+  setup.includes('encodeURIComponent') === false &&
+  setup.includes('new URL(original,location.origin)'),
+  "Only same-origin verified return paths are accepted");
+const workProject = enhanceTexProjectControls('<body>' + texWorkbenchContent(true) + '</body>', true);
+assert(workProject.includes("新建项目") && workProject.includes("上传项目") &&
+  workProject.includes("示例项目"), "Three project options must replace legacy blank template");
+assert(workProject.includes('id="tex-project-dialog"') &&
+  workProject.includes('id="tex-project-file"'), "Project creation and ZIP modal missing");
+assert(workProject.includes('window.__aertexTexProjectOpenDialog=openDialog'),
+  "Welcome card must directly open its selected project dialog");
+assert(!workProject.includes('const template=templates[document.getElementById('),
+  "Legacy instant-create template path should be disabled");
+for (const [index,match] of [...workProject.matchAll(/<script(?:\\s+[^>]*)?>([\\s\\S]*?)<\\/script>/g)].entries()){
+  new vm.Script(match[1], {filename:"project-ui-"+index+".js"});
+}
+const projectBackend = fs.readFileSync(new URL("../studio/tex-project-api.js",import.meta.url),"utf8");
+const weekSql = fs.readFileSync(new URL("../docs/tex-github-weekly-rollover.sql",import.meta.url),"utf8");
+const weekAdminSql = fs.readFileSync(new URL("../docs/tex-github-weekly-admin.sql",import.meta.url),"utf8");
+assert(projectBackend.includes('ownerName(accessToken,userId)') &&
+  projectBackend.includes('profiles?select=first_name,last_name&id=eq.'),
+  "Blank project author name must come from the requesting user's profile");
+assert(projectBackend.includes('Asia/Shanghai') && projectBackend.includes('\\\\maketitle'),
+  "Blank project must include the current date and title matter");
+assert(projectBackend.includes('new DecompressionStream("deflate-raw")') &&
+  projectBackend.includes('segments.some') === false && projectBackend.includes('safeName(e.name)'),
+  "ZIP imports must be bounded and reject traversal paths");
+assert(projectBackend.includes('SAMPLE_BIB') && projectBackend.includes('SAMPLE_FROG_JPG'),
+  "Example project needs BibTeX and a real image");
+assert(weekSql.includes("quota_week_start") && weekSql.includes("weekly_used<100") &&
+  weekSql.includes("is_operator") && weekSql.includes("quota_total +"),
+  "Atomic weekly cap, admin exemption and carried balance must be enforced by database");
+assert(weekAdminSql.includes("weekly_credits") && weekAdminSql.includes("public.is_admin()"),
+  "Only verified administrators may change weekly grant policy");
 
 const api = fs.readFileSync(new URL("../studio/tex-github-api.js", import.meta.url), "utf8");
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
