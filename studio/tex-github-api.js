@@ -10,7 +10,7 @@ import {
 } from "./tex-github-workflow.js";
 
 const TABLE = "tex_github_allowances";
-const API_VERSION = "2022-11-28";
+const API_VERSION = "2026-03-10";
 const MAX_SOURCE = 160000;
 const PDF_LIMIT = 16 * 1024 * 1024;
 const MINUTE = 60 * 1000;
@@ -338,7 +338,7 @@ async function deleteRepository(request, env, userId) {
   }
   await updateRow(env, userId, {
     repo_name: null, repo_id: null, repo_state: "none", source_branch: "main",
-    active_nonce: null, active_since: null
+    active_nonce: null, active_run_id: null, active_commit_sha: null, active_since: null
   });
   return json({ deleted: true });
 }
@@ -377,18 +377,43 @@ async function compile(request, env, userId) {
   const nonce = crypto.randomUUID();
   const remaining = await reserveCredit(env, userId, nonce);
   if (remaining === null) return fail(429, "No available credit or another build is active.");
+  let dispatchAttempted = false;
   try {
     const repoPath = githubRepoPath(env, row.repo_name);
     const actual = await github(env, repoPath);
     if (actual?.id !== row.repo_id || !actual.private) throw httpError(409, "repository_identity_mismatch");
-    await putFile(env, repoPath, "main.tex", doc.source, row.source_branch || "main");
-    await github(env, repoPath + "/actions/workflows/aertex-compile.yml/dispatches", "POST", {
-      ref: row.source_branch || "main"
+
+    // Persist the unique Git commit before dispatch. A timed-out HTTP call may
+    // have queued an Actions run; never refund a potentially successful dispatch.
+    const committed = await putFile(env, repoPath, "main.tex", doc.source, row.source_branch || "main");
+    const sourceSha = String(committed?.commit?.sha || "");
+    if (!/^[0-9a-f]{40}$/.test(sourceSha)) throw httpError(503, "source_sha_unavailable");
+    const bound = await updateRow(env, userId, {
+      active_commit_sha: sourceSha
+    }, "&active_nonce=eq." + encodeURIComponent(nonce));
+    if (!bound) throw httpError(409, "lost_quota_reservation");
+
+    dispatchAttempted = true;
+    const dispatched = await github(env, repoPath + "/actions/workflows/aertex-compile.yml/dispatches", "POST", {
+      ref: row.source_branch || "main",
+      return_run_details: true
     });
-    await updateRow(env, userId, { last_run_at: new Date().toISOString() });
-    return json({ queued: true, remaining, document_id: docId }, 202);
+    const runId = Number(dispatched?.workflow_run_id);
+    if (!Number.isSafeInteger(runId) || runId <= 0) {
+      throw httpError(503, "dispatch_run_id_unavailable");
+    }
+    const recorded = await updateRow(env, userId, {
+      active_run_id: runId, last_run_at: new Date().toISOString()
+    }, "&active_nonce=eq." + encodeURIComponent(nonce));
+    if (!recorded) throw httpError(503, "run_id_persistence_failed");
+    return json({ queued: true, remaining, run_id: runId, document_id: docId }, 202);
   } catch (error) {
-    await releaseCredit(env, userId, nonce, true).catch(() => {});
+    // A non-returning dispatch may still have started a GitHub run.
+    // The recorded commit SHA lets the owner/admin reconcile the exact run;
+    // the credit remains reserved and cannot be spent again.
+    if (!dispatchAttempted) {
+      await releaseCredit(env, userId, nonce, true).catch(() => {});
+    }
     throw error;
   }
 }
@@ -397,21 +422,33 @@ async function listRuns(env, userId) {
   const row = await readRow(env, userId);
   if (!row?.repo_id || row.repo_state !== "ready") return json({ runs: [], active: false });
   const repoPath = githubRepoPath(env, row.repo_name);
-  const dataObject = await github(env,
-    repoPath + "/actions/workflows/aertex-compile.yml/runs?event=workflow_dispatch&per_page=8");
-  const runs = Array.isArray(dataObject?.workflow_runs) ? dataObject.workflow_runs : [];
+  const response = await github(env,
+    repoPath + "/actions/workflows/aertex-compile.yml/runs?event=workflow_dispatch&per_page=20");
+  const runs = Array.isArray(response?.workflow_runs) ? response.workflow_runs : [];
   const normalized = runs.map(run => ({
     id: run.id, status: run.status, conclusion: run.conclusion,
     created_at: run.created_at, updated_at: run.updated_at
   }));
-  if (row.active_nonce && normalized.some(run =>
-    run.status === "completed" && Date.parse(run.created_at) >= Date.parse(row.active_since || "") - 5000
-  )) {
+
+  // The old "any run created recently" heuristic is unsafe: it can release
+  // another dispatch's credit. Match the authoritative ID; a stored commit
+  // SHA is a recovery fallback when GitHub accepted a request but its 200
+  // response (or the subsequent database write) was lost.
+  const activeRun = row.active_nonce ? runs.find(run => {
+    if (row.active_run_id) return Number(run.id) === Number(row.active_run_id);
+    return Boolean(row.active_commit_sha) &&
+      String(run.head_sha) === String(row.active_commit_sha) &&
+      Date.parse(run.created_at) >= Date.parse(row.active_since || "") - 15000;
+  }) : null;
+
+  if (activeRun?.status === "completed" && row.active_nonce) {
     await releaseCredit(env, userId, row.active_nonce, false).catch(() => {});
   }
-  return json({ runs: normalized, active: Boolean(row.active_nonce) &&
-    !normalized.some(run => run.status === "completed" &&
-      Date.parse(run.created_at) >= Date.parse(row.active_since || "") - 5000) });
+  return json({
+    runs: normalized,
+    active: Boolean(row.active_nonce) && activeRun?.status !== "completed",
+    active_run_id: row.active_run_id || activeRun?.id || null
+  });
 }
 
 function base64Bytes(data) {
