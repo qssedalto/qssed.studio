@@ -207,16 +207,16 @@ export function enhanceWorkTexDesktopTypography(markup) {
       }
     </style>
     <style id="qsseda-work-tex-toolbar-control-heights">
-      /* Keep the engine select, collaboration action and AERTEX home action level. */
+      /* Match the original XeLaTeX select (38px); do not enlarge all controls. */
       @media (min-width:761px){
         .tex-work-app .tex-editor-toolbar{align-items:flex-end!important}
         .tex-work-app .tex-editor-toolbar>label select,
         .tex-work-app .tex-editor-toolbar>#tex-collaboration-open,
         .tex-work-app .tex-editor-toolbar>.tex-panel-home-link{
           box-sizing:border-box!important;
-          height:64px!important;
-          min-height:64px!important;
-          max-height:64px!important;
+          height:38px!important;
+          min-height:38px!important;
+          max-height:38px!important;
           align-self:flex-end!important;
           margin-top:0!important;
           margin-bottom:0!important;
