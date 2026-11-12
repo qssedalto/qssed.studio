@@ -551,8 +551,7 @@ const WORK_TEX_VISUAL_STYLE = `
 
     @media(prefers-reduced-motion:reduce){
       body.os-shell:has(.tex-work-app) .tex-document-item,
-      body.os-shell:has(.tex-work-app) .tex-mobile-tab,
-      body.os-shell:has(.tex-work-app) .tex-start-card::after{
+      body.os-shell:has(.tex-work-app) .tex-mobile-tab{
         transition:none!important;
         transform:none!important;
       }
