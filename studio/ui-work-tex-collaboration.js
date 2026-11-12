@@ -7,7 +7,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     members: "成员",
     membersDetail: "管理谁可以参与这份文档。成员设置会绑定到当前文档。",
     invite: "邀请成员",
-    username: "用户名",
+    username: "搜索成员",
     viewer: "只读",
     editor: "可编辑",
     owner: "所有者",
@@ -51,7 +51,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     members: "People",
     membersDetail: "Manage who can participate in this document. Membership is scoped to the active document.",
     invite: "Invite people",
-    username: "Username",
+    username: "Search members",
     viewer: "Viewer",
     editor: "Editor",
     owner: "Owner",
@@ -193,7 +193,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
 
       .tex-collaboration-invite{display:flex!important;align-items:stretch!important;width:100%!important;gap:9px!important}
       .tex-collaboration-user-search{position:relative!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;height:46px!important}
-      .tex-collaboration-invite input,.tex-collaboration-invite select,.tex-collaboration-member select{box-sizing:border-box;width:100%;min-width:0;height:46px;margin:0;padding:0 12px;border:0;border-radius:12px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);font-size:13px;outline:none}
+      .tex-collaboration-invite input,.tex-collaboration-invite select,.tex-collaboration-member select{appearance:none;-webkit-appearance:none;box-sizing:border-box;width:100%;min-width:0;height:46px;margin:0;padding:0 12px;border:0;border-radius:12px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);font-size:13px;outline:none}
       .tex-collaboration-invite input:focus,.tex-collaboration-invite select:focus,.tex-collaboration-member select:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 10%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--primary) 60%,var(--border))}
       #tex-collaboration-role{flex:0 0 112px!important;width:112px!important}
       #tex-collaboration-add{box-sizing:border-box;flex:0 0 80px!important;width:80px!important;height:46px!important;min-height:46px!important;margin:0!important;padding:0 12px!important}
@@ -296,13 +296,13 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             '<section class="tex-collaboration-page" data-page="members">' +
               '<div class="tex-collaboration-section">' +
                 '<div class="tex-collaboration-section-head"><div><strong>' + labels.members + '</strong><span>' + labels.membersDetail + '</span></div><span id="tex-collaboration-count" class="tex-collaboration-count">0</span></div>' +
-                '<form id="tex-collaboration-invite" class="tex-collaboration-invite">' +
+                '<form id="tex-collaboration-invite" class="tex-collaboration-invite" autocomplete="off">' +
                   '<div class="tex-collaboration-user-search">' +
-                    '<input id="tex-collaboration-username" type="text" autocomplete="off" spellcheck="false" placeholder="' + labels.username + '" aria-label="' + labels.username + '" aria-autocomplete="list" aria-controls="tex-collaboration-search-results">' +
+                    '<input id="tex-collaboration-member-search" name="collaboration-member-lookup" type="search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" data-1p-ignore="true" data-lpignore="true" data-bwignore="true" placeholder="' + labels.username + '" aria-label="' + labels.username + '" aria-autocomplete="list" aria-controls="tex-collaboration-search-results">' +
                     '<div id="tex-collaboration-search-results" class="tex-collaboration-search-results" role="listbox" hidden></div>' +
                   '</div>' +
                   '<select id="tex-collaboration-role" aria-label="' + labels.invite + '"><option value="editor">' + labels.editor + '</option><option value="viewer">' + labels.viewer + '</option></select>' +
-                  '<button id="tex-collaboration-add" type="submit">' + labels.add + '</button>' +
+                  '<button id="tex-collaboration-add" type="submit" disabled>' + labels.add + '</button>' +
                 '</form>' +
                 '<div id="tex-collaboration-message" class="tex-collaboration-message"></div>' +
                 '<div id="tex-collaboration-list" class="tex-collaboration-list"></div>' +
@@ -339,7 +339,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         const count = drawer.querySelector('#tex-collaboration-count');
         const form = drawer.querySelector('#tex-collaboration-invite');
         const searchWrap = drawer.querySelector('.tex-collaboration-user-search');
-        const username = drawer.querySelector('#tex-collaboration-username');
+        const username = drawer.querySelector('#tex-collaboration-member-search');
         const searchResults = drawer.querySelector('#tex-collaboration-search-results');
         const role = drawer.querySelector('#tex-collaboration-role');
         const add = drawer.querySelector('#tex-collaboration-add');
@@ -445,6 +445,8 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         function updateSaveState() {
           saveButton.disabled = loading || saving || !hasDraftChanges();
           cancelButton.disabled = saving;
+          const handle = String(username.value || '').trim().replace(/^@+/, '');
+          add.disabled = loading || saving || !activeDocumentId() || snapshot?.can_manage !== true || !handle;
         }
 
         function isExistingMember(person) {
@@ -544,6 +546,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           selectedSearchPerson = person || null;
           username.value = person?.username || '';
           hideSearchResults();
+          updateSaveState();
           role.focus();
         }
 
@@ -663,8 +666,8 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         form.addEventListener('submit', async event => {
           event.preventDefault();
           const id = activeDocumentId();
-          const handle = username.value.trim();
-          if (!id || !handle || loading || saving) return;
+          const handle = username.value.trim().replace(/^@+/, '');
+          if (!id || !handle || loading || saving || snapshot?.can_manage !== true) return;
           hideSearchResults();
           setBusy(true);
           add.textContent = labels.adding;
@@ -795,6 +798,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         cancelButton.addEventListener('click', () => closeDrawer(false));
         saveButton.addEventListener('click', () => void saveDraft());
         steps.forEach(step => step.addEventListener('click', () => setPage(Number(step.dataset.pageIndex || 0))));
+        username.addEventListener('input', updateSaveState);
         username.addEventListener('input', scheduleSearch);
         username.addEventListener('focus', () => {
           const query = String(username.value || '').trim().replace(/^@+/, '');
