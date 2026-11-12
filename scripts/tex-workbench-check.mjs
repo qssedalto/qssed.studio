@@ -48,6 +48,11 @@ for (const zh of [true, false]) {
   for (const code of scripts) new Function(code);
 
   const workMarkup = enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh), zh);
+  // The generated document handler must await the custom modal before invoking
+  // the original authenticated DELETE route. A Promise alone is always truthy.
+  assert(workMarkup.includes("!await window.__qssedaTexConfirmDelete?.("), "Delete flow must await the custom confirmation result.");
+  assert(!workMarkup.includes("window.confirm(copy.deleteConfirm)"), "Legacy browser confirm must be replaced in Work TeX.");
+  assert(workMarkup.includes("deleteFileName.textContent"), "Delete dialog must show the active TeX filename.");
   // Regression: the last stylesheet in the generated page used to silently
   // override our 38px desktop controls with 64px, despite older CSS checks passing.
   const finalToolbar = workMarkup.match(/<style id="qsseda-work-tex-toolbar-final-height">([\s\S]*?)<\/style>/)?.[1];
