@@ -35,10 +35,13 @@ GitHub-hosted Actions are not a fully hardened untrusted-code sandbox. For a lar
 
 1. Review the GitHub feature PR and pass all isolation and existing TeX checks.
 2. Apply docs/tex-github-allowance-schema.sql to the QssedA Studio Supabase project through an operator-approved privileged SQL session. The new table has RLS enabled, no direct browser grants, and atomic credit functions.
-3. Create a revocable GitHub credential under the operator's account. A fine-grained PAT needs appropriate repository creation, administration, contents, workflow, and Actions scopes (check current GitHub documentation for the exact permissions). Creating future repos may require broad access; a dedicated automation account is safer.
+3. Create a revocable GitHub credential under a dedicated automation account if possible. For a fine-grained PAT, grant access to **All repositories** (new per-user repositories must be included after creation) and only these permissions: **Repository creation: write** (POST /user/repos), **Administration: write** (delete repo and repository identity management), **Contents: write** (source and output branch files), **Workflows: write** (creating the managed workflow file), and **Actions: write/read** (dispatch and list runs). Metadata read is implicit. The token is high impact because it can create and delete private repositories under the operator account. A GitHub App with user authorization and short-lived installation/user tokens is preferable for a long-lived public service. Do not use the ChatGPT connector credential.
 4. Install AERTEX_TEX_GITHUB_TOKEN as a Worker Secret on qsseda-work, and configure AERTEX_TEX_GITHUB_OWNER and AERTEX_TEX_GITHUB_ADMIN_USER_IDS. The relevant Wrangler configuration is wrangler.work.jsonc. Do not publish tokens in source control.
 5. Test via Work preview: apply, approve, create private repo, compile a small Chinese XeLaTeX file, retrieve PDF, verify a second user cannot access that repo, delete it, and ensure the new-repo control reappears only after deletion.
 6. Monitor private GitHub Actions usage, rate limits, job duration, orphaned repos and cost before opening the feature to real users.
+
+
+The workflow dispatch request uses `return_run_details: true` with GitHub REST API version `2026-03-10`, so the service stores the exact `workflow_run_id` against the reserved credit. The credit is released only when that exact run completes; an ambiguous dispatch leaves the reservation locked for reconciliation rather than refunding a potentially queued build.
 
 ## API contract
 
