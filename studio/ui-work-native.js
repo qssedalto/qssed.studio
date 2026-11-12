@@ -6,7 +6,8 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
     .replace("Connection checks do not send account cookies, bearer tokens, or document content.", "Connection checks do not send your account credentials or document content.");
 
   const nativeButton = `<a class="work-button secondary" id="work-native-bridge-download" href="/api/work/bridge/windows" download="AERTEX-Bridge.exe" data-qsseda-native-bridge-download="1">${zh ? "安装 Windows 连接组件" : "Install Windows component"}</a>`;
-  output = output.replace("<!--QSSedaWorkNativeAction-->", nativeButton);
+  const texliveButton = `<a class="work-button secondary" id="work-native-texlive-download" href="https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=w9mHFn" target="_blank" rel="noopener noreferrer">${zh ? "下载 TeX Live（ISO）" : "Download TeX Live (ISO)"}</a>`;
+  output = output.replace("<!--QSSedaWorkNativeAction-->", nativeButton + texliveButton);
 
   const nativeNote = zh
     ? `<details class="work-details" id="work-native-install-details"><summary>Windows 安装说明</summary><div class="work-detail-grid"><div><span>安装</span><span>下载后双击一次即可</span></div><div><span>启动</span><span>以后随当前用户自动启动</span></div><div><span>依赖</span><span>不要求安装 Node.js，也不需要 PowerShell</span></div></div></details><div class="work-connection-message" id="work-bridge-upgrade-note" hidden>检测到连接组件版本较旧。请安装新版后重新检查连接。</div>`
@@ -27,12 +28,20 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
         const statusCard = document.getElementById("work-local-status-card");
         const note = document.getElementById("work-bridge-upgrade-note");
         const download = document.getElementById("work-native-bridge-download");
+        const texliveDownload = document.getElementById("work-native-texlive-download");
         const installDetails = document.getElementById("work-native-install-details");
-        if (!version || !note || !download) return;
+        if (!version || !note || !download || !texliveDownload) return;
 
         const isWindows = /Windows/i.test(navigator.userAgent || "");
         download.hidden = !isWindows;
+        texliveDownload.hidden = !isWindows;
         if (installDetails) installDetails.hidden = !isWindows;
+
+        // Do not navigate away on cancellation; confirmation opens a new tab.
+        texliveDownload.addEventListener("click", (event) => {
+          const warning = ${JSON.stringify(zh ? "即将打开 Microsoft OneDrive 上的 TeX Live 安装镜像（texlive.iso）。访问或下载可能需要额外的网络环境。是否继续？" : "You are about to open the TeX Live installation image (texlive.iso) on Microsoft OneDrive. Access or download may require additional network access. Continue?")};
+          if (!window.confirm(warning)) event.preventDefault();
+        });
 
         const syncUpgradeState = () => {
           const versionText = String(version.textContent || "");

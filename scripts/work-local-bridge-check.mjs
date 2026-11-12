@@ -20,6 +20,7 @@ const zhHub = workHubContent(true);
 const zhLocal = workLocalBridgeContent(true);
 const enLocal = workLocalBridgeContent(false);
 const zhNativeLocal = enhanceWorkLocalBridgeNative(zhLocal, true);
+const enNativeLocal = enhanceWorkLocalBridgeNative(enLocal, false);
 const zhTexLocal = enhanceTexWorkbenchLocal(texWorkbenchContent(true), true);
 
 for (const route of ["/work", "/work/local", "/work/tex"]) {
@@ -38,6 +39,15 @@ assert(zhLocal.includes("credentials: \"omit\""), "Local bridge requests must no
 assert(!zhLocal.includes("Authorization"), "Local bridge page must not send a bearer Authorization header");
 assert(enLocal.includes("/tex/status"), "Local bridge page is missing the TeX status probe");
 assert(zhNativeLocal.includes("/api/work/bridge/windows"), "Native Windows Bridge download is missing from the Work page");
+const texliveUrl = "https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=w9mHFn";
+for (const markup of [zhNativeLocal, enNativeLocal]) {
+  assert(markup.includes(`id="work-native-texlive-download" href="${texliveUrl}"`), "TeX Live ISO button must link to the configured OneDrive location");
+  assert(markup.includes('target="_blank" rel="noopener noreferrer"'), "TeX Live ISO must open in a secure new tab");
+  assert(markup.includes("window.confirm(warning)") && markup.includes("event.preventDefault()"), "TeX Live ISO download must require confirmation and permit cancel");
+  assert(markup.indexOf('id="work-native-texlive-download"') > markup.indexOf('id="work-native-bridge-download"'), "TeX Live ISO button must be placed next to the Windows installer");
+}
+assert(zhNativeLocal.includes("下载 TeX Live（ISO）") && zhNativeLocal.includes("额外的网络环境"), "Chinese TeX Live button and network warning are missing");
+assert(enNativeLocal.includes("Download TeX Live (ISO)") && enNativeLocal.includes("additional network access"), "English TeX Live button and network warning are missing");
 assert(zhNativeLocal.includes("不要求安装 Node.js"), "Native Bridge UI must explain that Node.js is not required");
 assert(zhNativeLocal.includes("window.setTimeout(() => void probe(), 260)"), "Work page should probe localhost automatically on load");
 
@@ -62,7 +72,7 @@ assert(zhTexLocal.includes("previewOnly") && zhTexLocal.includes("if (!previewOn
 assert(zhTexLocal.includes("snapshot !== currentPreviewSnapshot()"), "Live preview must discard stale compile results");
 assert(zhTexLocal.includes("URL.revokeObjectURL(previewUrl)"), "Live preview must release replaced PDF object URLs");
 
-const scripts = [...zhNativeLocal.matchAll(/<script>([\s\S]*?)<\/script>/g), ...zhTexLocal.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+const scripts = [...zhNativeLocal.matchAll(/<script>([\s\S]*?)<\/script>/g), ...enNativeLocal.matchAll(/<script>([\s\S]*?)<\/script>/g), ...zhTexLocal.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 assert(scripts.length > 1, "Work and TeX local bridge pages must include client scripts");
 for (const script of scripts) new Function(script);
 
