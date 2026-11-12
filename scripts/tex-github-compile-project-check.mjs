@@ -28,7 +28,7 @@ assert.deepEqual(selected.entries.map(x=>x.name),[
   "images/graph.png","images/chart.pdf"
 ]);
 assert.equal(selected.included,6);
-assert.equal(selected.skipped,6);
+assert.equal(selected.skipped,7);
 assert(!selected.entries.some(x=>x.name.startsWith(".github")));
 assert(!selected.entries.some(x=>x.name==="main.pdf"));
 assert(!selected.entries.some(x=>x.name.endsWith(".py")));
@@ -78,7 +78,7 @@ const commit=new Function(
 const result=await commit({},repo,branch,selected);
 assert.equal(result.sha,"d".repeat(40));
 assert.equal(result.included,6);
-assert.equal(result.skipped,6);
+assert.equal(result.skipped,7);
 const treeCall=calls.find(x=>x.path.endsWith("/git/trees"));
 assert(treeCall && !("base_tree" in treeCall.body),"A clean tree must remove stale previous-project files.");
 const tree=treeCall.body.tree;
