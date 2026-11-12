@@ -18,6 +18,8 @@ create table if not exists public.tex_github_allowances (
   repo_state text not null default 'none'
     check (repo_state in ('none', 'creating', 'ready', 'deleting', 'error')),
   active_nonce uuid,
+  active_run_id bigint check (active_run_id is null or active_run_id > 0),
+  active_commit_sha text check (active_commit_sha is null or active_commit_sha ~ '^[0-9a-f]{40}$'),
   active_since timestamptz,
   last_run_at timestamptz,
   created_at timestamptz not null default now(),
@@ -46,6 +48,8 @@ begin
   update public.tex_github_allowances
      set quota_used = quota_used + 1,
          active_nonce = p_nonce,
+         active_run_id = null,
+         active_commit_sha = null,
          active_since = now(),
          updated_at = now()
    where user_id = p_user_id
@@ -73,6 +77,8 @@ begin
   update public.tex_github_allowances
      set quota_used = case when p_refund then greatest(0, quota_used - 1) else quota_used end,
          active_nonce = null,
+         active_run_id = null,
+         active_commit_sha = null,
          active_since = null,
          updated_at = now()
    where user_id = p_user_id and active_nonce = p_nonce
