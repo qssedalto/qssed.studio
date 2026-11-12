@@ -450,6 +450,7 @@ export function workLocalBridgeContent(zh, locale = "", mainOrigin = "https://qs
             <a class="work-button secondary work-home-button" href="${mainHref}">${mainLabel}</a>
             <!--QSSedaWorkNativeAction-->
           </div>
+          <div class="work-native-slot" id="work-native-note-slot"><!--QSSedaWorkNativeNote--></div>
         </div>
 
         <aside class="work-status-card" id="work-local-status-card" aria-live="polite">
@@ -462,6 +463,7 @@ export function workLocalBridgeContent(zh, locale = "", mainOrigin = "https://qs
               </div>
             </div>
             <p class="work-status-detail" id="work-local-status-detail">${copy.idleDetail}</p>
+            <div class="work-connection-message" id="work-local-log">${copy.logIdle}</div>
           </div>
           <div>
             <div class="work-status-list">
@@ -480,24 +482,7 @@ export function workLocalBridgeContent(zh, locale = "", mainOrigin = "https://qs
         </aside>
       </section>
 
-      <section class="work-panel">
-        <article class="work-card">
-          <span class="work-card-icon">${workIcon("computer")}</span>
-          <h3>${copy.capabilities}</h3>
-          <p>${copy.capabilitiesDetail}</p>
-          <div class="work-capabilities" id="work-local-capabilities"><span class="work-capability">${copy.waiting}</span></div>
-          <div class="work-native-slot" id="work-native-note-slot"><!--QSSedaWorkNativeNote--></div>
-        </article>
-        <article class="work-card">
-          <span class="work-card-icon">${workIcon("privacy")}</span>
-          <h3>${copy.privacyTitle}</h3>
-          <div class="work-privacy-row">
-            <span class="work-privacy-symbol"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span>
-            <p class="work-note">${copy.privacyDetail}</p>
-          </div>
-          <div class="work-connection-message" id="work-local-log">${copy.logIdle}</div>
-        </article>
-      </section>
+
     </div>
     <script>
       (() => {
