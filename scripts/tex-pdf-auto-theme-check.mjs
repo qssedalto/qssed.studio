@@ -14,6 +14,23 @@ assert(style && script, "Themed viewer needs both pre-paint CSS and a client con
 assert(html.indexOf('id="aertex-work-pdf-auto-theme"') < html.indexOf("</head>"),
   "Theme CSS must arrive before first paint to avoid a white flash");
 new Function(script);
+assert(style.includes(".aertex-pdf-reader.aertex-pdf-native iframe.aertex-pdf-native-frame"),
+  "iOS must show its own interactive, full-height PDFKit iframe.");
+assert(style.includes(".aertex-pdf-native-open") && style.includes("display:none!important"),
+  "Browser-native PDF fallback must not add buttons on desktop.");
+assert(script.includes("const iosNativePdf = /iPad|iPhone|iPod/"),
+  "iOS PDF rendering must not rely on layout width or an unstable Safari UA alone.");
+assert(script.includes("navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints) > 1"),
+  "iPadOS desktop user-agent detection missing.");
+assert(script.includes("if (iosNativePdf) {\\n      showIosNativePdf(blob);\\n      return;\\n    }"),
+  "iOS must bypass PDF.js rendering entirely.");
+assert(script.includes("nativeFrame.src = url;") && script.includes("blob.slice(0, blob.size, 'application/pdf')"),
+  "iOS must render verified original PDF bytes with correct MIME, not an empty canvas.");
+assert(script.includes("if (iosNativeObjectUrl) disposeIosNativePdf();"),
+  "Native PDF URLs must be released on close and navigation.");
+assert(script.includes("const pdfjs = await loadLibrary();"),
+  "Desktop PDF.js renderer must remain available unchanged.");
+
 assert(script.includes("const faithfulTouch = window.matchMedia("),
   "Small touch screens must bypass the destructive split-mask renderer");
 assert(script.includes("if (paintTheme === 'dark' && !faithfulTouch)"),
