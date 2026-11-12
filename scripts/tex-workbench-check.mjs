@@ -48,6 +48,22 @@ for (const zh of [true, false]) {
   for (const code of scripts) new Function(code);
 
   const workMarkup = enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh), zh);
+  // Regression: the last stylesheet in the generated page used to silently
+  // override our 38px desktop controls with 64px, despite older CSS checks passing.
+  const finalToolbar = workMarkup.match(/<style id="qsseda-work-tex-toolbar-final-height">([\s\S]*?)<\/style>/)?.[1];
+  assert(finalToolbar, "Final Work TeX toolbar height stylesheet must exist");
+  const finalDesktop = finalToolbar.split("@media (max-width:760px)")[0];
+  for (const selector of [">label>#tex-engine", ">#tex-collaboration-open", ">.tex-panel-home-link"]) {
+    assert(finalDesktop.includes(selector), "Final toolbar rule must cover " + selector);
+  }
+  for (const property of ["height", "min-height", "max-height"]) {
+    assert(finalDesktop.includes(property + ":38px!important"), "FINAL desktop toolbar controls must really be 38px");
+    assert(!finalDesktop.includes(property + ":64px!important"), "FINAL toolbar must not override compact controls with 64px");
+    assert(finalToolbar.includes(property + ":42px!important"), "Mobile controls should retain 42px touch sizing");
+  }
+  assert(workMarkup.lastIndexOf('id="qsseda-work-tex-toolbar-final-height"') >
+    workMarkup.indexOf('id="qsseda-work-tex-toolbar-control-heights"'),
+    "The late-arriving toolbar CSS must be covered by the compact-height check");
   const workPageMarkup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(injectWorkTexHomeLinks(
     `<!doctype html><html><head></head><body>${workMarkup}</body></html>`,
     zh ? "zh-cn" : "en-us",

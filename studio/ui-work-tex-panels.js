@@ -318,8 +318,9 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
 
   output = enhanceWorkTexDesktopTypography(output);
   output = enhanceWorkTexMobileApple(enhanceWorkTexMobileTools(enhanceWorkTexMobile(output, zh), zh));
-  // Apply the final sizing rule after collaboration and mobile refinements.
-  // The original engine select is 64px tall on desktop; match both neighboring actions.
+  // The final stylesheet loads AFTER collaboration/mobile rules; it must use
+  // the same compact 38px desktop height as ui-work-tex-desktop-type.js.
+  // A stale 64px override here previously superseded that earlier fix.
   return enhanceWorkTexCollaboration(output, zh) + `
     <style id="qsseda-work-tex-toolbar-final-height">
       @media (min-width:951px), (min-width:761px) and (pointer:fine){
@@ -329,9 +330,9 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
         .tex-work-app .tex-editor-toolbar>#tex-collaboration-open,
         .tex-work-app .tex-editor-toolbar>.tex-panel-home-link{
           box-sizing:border-box!important;
-          height:64px!important;
-          min-height:64px!important;
-          max-height:64px!important;
+          height:38px!important;
+          min-height:38px!important;
+          max-height:38px!important;
           padding-block:0!important;
           margin-block:0!important;
           align-self:flex-end!important;
