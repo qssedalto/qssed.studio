@@ -78,6 +78,13 @@ export function polishWorkTexViewportEdges(markup) {
           transform:translateX(-50%)!important;
         }
       }
+      /* The real saved HTML exposes white from .os-main beneath the rounded
+         upper-left corner of the lavender documents pane. Paint the TeX-only
+         host with the same panel substrate so no white crescent leaks through.
+         No document/preview/editor elements or handlers are changed. */
+      body.os-shell:has(.tex-work-app) .os-main {
+        background:var(--work-panel-soft)!important;
+      }
       /* A single continuous surface, not a contrasting white header strip. */
       body.os-shell:has(.tex-work-app) .tex-documents-panel {
         background:var(--work-panel-soft)!important;
