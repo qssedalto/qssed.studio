@@ -267,12 +267,12 @@ assert(workTexUi.includes("fetch('/api/tex/status'"), "Manual Work TeX connectio
 assert(workTexUi.includes('id="qsseda-work-tex-visual-system-v2"'), "Standalone Work TeX must include the final shared visual-system layer.");
 assert(workTexUi.includes(':root[data-accent] body.os-shell:has(.tex-work-app){--primary:var(--aertex-accent)'), "Work TeX must consume the shared iPhone accent variables.");
 assert(workTexUi.includes('.tex-mobile-tab[aria-selected="true"]'), "Work mobile navigation must expose an accent-aware selected state.");
-assert(workTexUi.includes('.tex-start-card::after'), "Work start templates must use the upgraded product-card treatment.");
-assert(workTexUi.includes('.tex-start-card[data-tex-start-template="blank"]::before{content:"+"}') && workTexUi.includes('.tex-start-card[data-tex-start-template="math"]::before{content:"∑"'), "Work TeX start templates must keep the refined compact template symbols.");
-assert(workTexUi.includes('font-size:clamp(32px,3.4vw,44px)!important') && workTexUi.includes('width:min(100%,1080px)!important'), "Work TeX start surface must keep the premium hero scale and balanced three-card width.");
-assert(workTexUi.includes('grid-template-columns:repeat(3,minmax(0,1fr))!important') && workTexUi.includes('grid-template-rows:46px auto minmax(40px,1fr)!important'), "Work TeX template cards must share symmetric columns and internal row geometry.");
-assert(workTexUi.includes('radial-gradient(760px 330px at 50% -6%') && workTexUi.includes('0 0 34px color-mix(in srgb,var(--primary) 7%,transparent)'), "Work TeX start surface must retain restrained premium lighting and hover glow.");
-assert(workTexUi.includes('white-space:nowrap!important'), "Work TeX template titles must not wrap like the old oversized start cards.");
+assert(!workTexUi.includes('.tex-start-card::after') && !workTexUi.includes('.tex-start-card[data-tex-start-template'), "Remove decorative pseudo-elements that caused duplicate card icons.");
+assert(!workTexUi.includes('radial-gradient(760px 330px at 50% -6%'), "Remove excessive legacy welcome glow and stacked rules.");
+assert(texApp.includes('class="qtex-welcome"') && texApp.includes('class="qtex-welcome-hero"'), "New welcome must render a compact editorial hero.");
+assert(texApp.includes('class="qtex-template-grid"') && texApp.includes('class="qtex-template-top"'), "Welcome cards must have one explicit template icon and a separate heading.");
+assert(texApp.includes('data-tex-start-template="blank"') && texApp.includes('data-tex-start-template="math"'), "Template actions must retain existing create handlers.");
+assert(entry.includes('polishWorkTexWelcome(polishWorkTexViewportEdges(markup))'), "Isolated Welcome styles must mount after Work pane styles.");
 assert(texApp.includes('startDetail: "选择一种结构，直接进入写作与排版。"'), "Chinese TeX start copy must stay concise and task-focused.");
 assert(texApp.includes('blankDetail: "最简 article 结构，适合从零开始"') && texApp.includes('articleDetail: "预设中文排版、章节与常用页面设置"') && texApp.includes('mathDetail: "预设公式环境，适合推导与课程记录"'), "Chinese TeX template descriptions must remain concrete and non-promotional.");
 assert(workTexPanels.includes("order:1!important") && workTexPanels.includes(".tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link{\n          display:none!important;"), "Collapsed Work document rail must show only its restore control; Home belongs to expanded panels.");

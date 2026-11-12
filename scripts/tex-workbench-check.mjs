@@ -5,6 +5,7 @@ import { polishTexWorkbenchApp } from "../studio/ui-tex-app.js";
 import { enhanceWorkTexCollapsiblePanels } from "../studio/ui-work-tex-panels.js";
 import { injectWorkTexHomeLinks } from "../studio/ui-work-tex.js";
 import { polishWorkTexViewportEdges } from "../studio/ui-work-tex-viewport-edges.js";
+import { polishWorkTexWelcome } from "../studio/ui-work-tex-welcome.js";
 import { LAB_TOOLS } from "../studio/lab-tools.js";
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
@@ -30,11 +31,11 @@ for (const zh of [true, false]) {
   for (const code of scripts) new Function(code);
 
   const workMarkup = enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh), zh);
-  const workPageMarkup = polishWorkTexViewportEdges(injectWorkTexHomeLinks(
+  const workPageMarkup = polishWorkTexWelcome(polishWorkTexViewportEdges(injectWorkTexHomeLinks(
     `<!doctype html><html><head></head><body>${workMarkup}</body></html>`,
     zh ? "zh-cn" : "en-us",
     "https://qsseda.com"
-  ));
+  )));
   assert(workPageMarkup.includes('id="qsseda-work-tex-home-links"'), "Work TeX must install shared main-site exit styling");
   for (const selector of [
     ".tex-documents-panel .tex-panel-head",
@@ -62,12 +63,19 @@ for (const zh of [true, false]) {
   assert(workPageMarkup.includes("margin:8px 2px 8px 8px!important"), "PDF card must not reserve a visible right edge strip.");
   assert(workPageMarkup.includes("left:50%!important") && workPageMarkup.includes("translateX(-50%)"), "Right collapsed plus button must be horizontally centered.");
   assert(workPageMarkup.includes("right:10px!important") && workPageMarkup.includes("margin-right:33px!important"), "Expanded preview collapse control must align at the right end of the preview action row.");
-  assert(workPageMarkup.includes(".tex-start-card:nth-child(1) {background:#cbf476") &&
-    workPageMarkup.includes(".tex-start-card:nth-child(2) {background:#c9b2ff") &&
-    workPageMarkup.includes(".tex-start-card:nth-child(3) {background:#a9c6ff"), "Welcome templates must use the QssedA DEV green, violet and blue palette.");
-  assert(workPageMarkup.includes("font-family:Inter,ui-sans-serif"), "Welcome heading must reuse QssedA DEV's Inter/system typography.");
-  assert(workPageMarkup.includes("start-grid") && workPageMarkup.includes("tex-start-kicker"), "Welcome page must contain an editorial kicker and template tiles.");
-  assert(workMarkup.includes("class=\"tex-start-card-icon\""), "Colorful template cards must retain their accessible label and icon.");
+  assert(workPageMarkup.includes('id="qsseda-work-tex-welcome-clean"'), "Welcome page must use a single isolated stylesheet.");
+  assert(workMarkup.includes('class="qtex-welcome"') && workMarkup.includes('class="qtex-welcome-hero"'), "Welcome page must render the editorial layout.");
+  assert(workMarkup.includes('class="qtex-paper"') && workMarkup.includes('main.tex'), "Welcome illustration must show a document with TeX source.");
+  assert(workPageMarkup.includes("container:qtex / inline-size"), "Welcome must adapt to the actual editor column, not just viewport width.");
+  assert(workPageMarkup.includes("grid-template-columns:repeat(3,minmax(0,1fr))"), "Templates must use equal columns in a sufficiently wide editor.");
+  assert(workPageMarkup.includes("--qtex-accent:#c9b2ff") && workPageMarkup.includes("--qtex-accent:#a9c6ff"), "Templates must use restrained QssedA DEV colors.");
+  assert(workPageMarkup.includes("@container qtex (max-width:615px)"), "Narrow editor columns must switch to compact single-column tiles.");
+  assert((workMarkup.match(/<button[^>]*data-tex-start-template="/g) || []).length === 3, "Welcome must expose exactly three template buttons.");
+  assert(!workMarkup.includes('class="tex-start-card"') && !workMarkup.includes('.tex-start-card::before'), "Previous duplicate-icon template treatment must be removed.");
+  assert(!workPageMarkup.includes(".tex-start-kicker") && !workPageMarkup.includes("radial-gradient(closest-side at"), "Buggy vertical kicker and heavy background glow must be eliminated.");
+  assert(workMarkup.includes('id="tex-editor-placeholder"'), "Existing editor open/close behavior must retain its placeholder ID.");
+  if (zh) assert(workMarkup.includes("选择模板") && workMarkup.includes("从灵感到排版"), "Chinese editorial copy must render.");
+  else assert(workMarkup.includes("Choose a template") && workMarkup.includes("FROM IDEA TO TYPESET"), "English editorial copy must render.");
 
   assert(workPageMarkup.includes(".tex-documents-panel > .tex-panel-head"), "Document header must share the full-width sidebar background.");
   assert(workMarkup.includes("openingDocument(id)") && workMarkup.includes("fastDocument(id)"), "Document selection must show immediate feedback and reuse prefetches.");
@@ -81,12 +89,8 @@ for (const zh of [true, false]) {
   assert(workMarkup.includes("tex-live-preview-switch"), "Live preview must use the custom switch instead of a native checkbox UI");
   assert(!workMarkup.includes('class="tex-live-switch"'), "Live preview switch class must match its CSS selector");
   assert(workMarkup.includes("data-tex-start-template=\"blank\""), "Work TeX start surface must expose quick templates");
-  assert(workMarkup.includes(".tex-start-surface>.tex-start-grid"), "Start grid must override the legacy placeholder direct-child sizing rule");
-  assert(workMarkup.includes("width:min(100%,650px)!important"), "Start grid must retain a usable responsive width");
-  assert(workMarkup.includes(".tex-start-surface>.tex-start-copy"), "Start copy must escape the legacy 52px placeholder box");
-  assert(workMarkup.includes("overflow-x:hidden!important") && workMarkup.includes("overflow-y:auto!important"), "TeX start surface must clip decorative horizontal overflow while keeping vertical scrolling.");
-  assert(workMarkup.includes("max-width:100%!important"), "TeX start surface must stay constrained to the visible editor column.");
-  assert(!workMarkup.includes("isolation:isolate;\n      overflow:auto!important;"), "TeX start decoration must not create a horizontal scroll range.");
+  assert(workPageMarkup.includes(".tex-editor-placeholder:has(.qtex-welcome)"), "Welcome must override the legacy placeholder layout.");
+  assert(!workNavigationUi.includes(".tex-start-card::before"), "Old Work theme must not add pseudo-icon duplicates.");
   assert(workMarkup.includes("focus-within"), "TeX search focus styling must be explicitly controlled");
   assert(workMarkup.includes("appearance:none!important"), "TeX selectors must use the controlled arrow treatment");
   assert(workMarkup.includes('class="tex-panel-title"'), "Document count must sit beside the Documents label");
@@ -128,7 +132,7 @@ assert(texTool?.href === "/work/tex", "TeX Workbench registry must point at the 
 assert(config.includes('"/work/tex"'), "Work TeX route is missing from protected OS routes");
 assert(config.includes('["/workspace/experiments/tex", "/work/tex"]'), "Legacy TeX route must redirect to Work TeX");
 assert(entry.includes('pathname === "/work/tex"'), "Studio entry does not mount the Work TeX app");
-assert(entry.includes("polishWorkTexViewportEdges(markup)"), "Entry must apply the final Work viewport edge-fix CSS after the main theme.");
+assert(entry.includes("polishWorkTexWelcome(polishWorkTexViewportEdges(markup))"), "Entry must inject the isolated welcome after the other Work styles.");
 const workUi = workNavigationUi;
 assert(!workUi.includes("window.location.reload()"), "Bridge connection check must not force-refresh the Work editor.");
 assert(workUi.includes("qsseda:tex-local-recheck"), "Bridge connection check must dispatch the in-place re-probe signal.");

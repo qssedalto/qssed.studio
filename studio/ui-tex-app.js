@@ -3,7 +3,8 @@ export function polishTexWorkbenchApp(markup, zh) {
     startTitle: "开始一份 TeX 文档",
     startLead: "开始一份",
     startAccent: "TeX 文档",
-    startKicker: "AERTEX / 创作空间",
+    startKicker: "从灵感到排版",
+    chooseTemplate: "选择模板",
     startDetail: "选择一种结构，直接进入写作与排版。",
     blank: "空白文档",
     blankDetail: "最简 article 结构，适合从零开始",
@@ -19,7 +20,8 @@ export function polishTexWorkbenchApp(markup, zh) {
     startTitle: "Start a TeX document",
     startLead: "Start a",
     startAccent: "TeX document",
-    startKicker: "AERTEX / CREATIVE WORKSPACE",
+    startKicker: "FROM IDEA TO TYPESET",
+    chooseTemplate: "Choose a template",
     startDetail: "Choose a structure and start writing and typesetting.",
     blank: "Blank",
     blankDetail: "A minimal article structure for a clean start",
@@ -37,16 +39,48 @@ export function polishTexWorkbenchApp(markup, zh) {
     ? '<div id="tex-editor-placeholder" class="tex-editor-placeholder"><div>TeX</div><strong>选择一份文档开始编辑</strong><span>也可以从左侧模板新建文档。</span></div>'
     : '<div id="tex-editor-placeholder" class="tex-editor-placeholder"><div>TeX</div><strong>Select a document to start editing</strong><span>Or create one from a template on the left.</span></div>';
 
-  const startSurface = `<div id="tex-editor-placeholder" class="tex-editor-placeholder tex-start-surface">
-    <div class="tex-start-kicker"><span class="tex-start-signal" aria-hidden="true"></span>${copy.startKicker}</div>
-    <div class="tex-start-mark">TeX</div>
-    <div class="tex-start-copy"><strong>${copy.startLead} <em>${copy.startAccent}</em></strong><span>${copy.startDetail}</span></div>
-    <div class="tex-start-grid">
-      <button type="button" class="tex-start-card" data-tex-start-template="blank"><span class="tex-start-card-icon" aria-hidden="true">＋</span><b>${copy.blank}</b><span>${copy.blankDetail}</span></button>
-      <button type="button" class="tex-start-card" data-tex-start-template="article"><span class="tex-start-card-icon" aria-hidden="true">文</span><b>${copy.article}</b><span>${copy.articleDetail}</span></button>
-      <button type="button" class="tex-start-card" data-tex-start-template="math"><span class="tex-start-card-icon" aria-hidden="true">∑</span><b>${copy.math}</b><span>${copy.mathDetail}</span></button>
-    </div>
-    <div class="tex-start-features"><span>● ${copy.local}</span><span>● ${copy.autosave}</span><span>● ${copy.preview}</span></div>
+  const startSurface = `<div id="tex-editor-placeholder" class="tex-editor-placeholder">
+    <section class="qtex-welcome" aria-label="${copy.startTitle}">
+      <div class="qtex-welcome-bar">
+        <span class="qtex-welcome-brand"><i aria-hidden="true"></i>AERTEX <span>/</span> WORK</span>
+        <span class="qtex-welcome-number">EDITOR / 01</span>
+      </div>
+      <div class="qtex-welcome-hero">
+        <div class="qtex-welcome-copy">
+          <span class="qtex-welcome-kicker">${copy.startKicker}</span>
+          <h2><span>${copy.startLead}</span><em>${copy.startAccent}</em></h2>
+          <p>${copy.startDetail}</p>
+        </div>
+        <div class="qtex-welcome-art" aria-hidden="true">
+          <div class="qtex-paper">
+            <div class="qtex-paper-header"><span><i></i>main.tex</span><span>XeLaTeX</span></div>
+            <div class="qtex-code"><span>01</span><code>&#92;documentclass{article}</code></div>
+            <div class="qtex-code"><span>02</span><code>&#92;begin{document}</code></div>
+            <div class="qtex-code"><span>03</span><code>Hello, TeX!</code></div>
+            <div class="qtex-code"><span>04</span><code>&#92;end{document}</code></div>
+            <div class="qtex-paper-bottom"><span>TeX</span><span>→</span><span>PDF</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="qtex-templates">
+        <div class="qtex-templates-header"><strong>${copy.chooseTemplate}</strong><span>03 / TEMPLATES</span></div>
+        <div class="qtex-template-grid">
+          <button type="button" class="qtex-template qtex-template-blank" data-tex-start-template="blank">
+            <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">+</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
+            <span class="qtex-template-info"><strong>${copy.blank}</strong><span>${copy.blankDetail}</span></span>
+          </button>
+          <button type="button" class="qtex-template qtex-template-article" data-tex-start-template="article">
+            <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">${zh ? "文" : "A"}</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
+            <span class="qtex-template-info"><strong>${copy.article}</strong><span>${copy.articleDetail}</span></span>
+          </button>
+          <button type="button" class="qtex-template qtex-template-math" data-tex-start-template="math">
+            <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">∑</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
+            <span class="qtex-template-info"><strong>${copy.math}</strong><span>${copy.mathDetail}</span></span>
+          </button>
+        </div>
+      </div>
+      <div class="qtex-welcome-footer"><span>${copy.local}</span><span>${copy.autosave}</span><span>${copy.preview}</span></div>
+    </section>
   </div>`;
 
   let output = String(markup || "")
@@ -89,21 +123,7 @@ export function polishTexWorkbenchApp(markup, zh) {
       .tex-live-preview-toggle:has(input:disabled){opacity:.48;cursor:default}
       .tex-live-preview-card.is-unavailable{opacity:1!important}
 
-      .tex-start-surface{display:flex!important;flex-direction:column;justify-content:center;align-items:center;gap:18px!important;padding:42px 36px!important;background:radial-gradient(circle at 50% 38%,rgba(10,132,255,.045),transparent 42%)}
-      .tex-start-surface>.tex-start-mark{display:grid!important;place-items:center!important;width:52px!important;height:52px!important;border-radius:16px!important;background:var(--fill)!important;box-shadow:inset 0 0 0 1px var(--hairline);font:700 13px ui-monospace,SFMono-Regular,Menlo,monospace!important}
-      .tex-start-surface>.tex-start-copy{display:grid!important;place-items:stretch!important;gap:6px!important;width:min(100%,560px)!important;height:auto!important;border-radius:0!important;background:transparent!important;font:inherit!important;text-align:center}
-      .tex-start-copy strong{font-size:18px!important;letter-spacing:-.025em}
-      .tex-start-copy span{font-size:11px!important;line-height:1.55;color:var(--muted)}
-      .tex-start-surface>.tex-start-grid{display:grid!important;place-items:stretch!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px!important;width:min(100%,650px)!important;height:auto!important;border-radius:0!important;background:transparent!important;font:inherit!important}
-      .tex-start-card{appearance:none;display:grid;gap:5px;min-width:0;min-height:92px;padding:14px;border:0;border-radius:14px;background:var(--card);color:var(--text);text-align:left;box-shadow:inset 0 0 0 1px var(--border);cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
-      .tex-start-card:hover{transform:translateY(-1px);background:var(--surface);box-shadow:inset 0 0 0 1px rgba(10,132,255,.28),0 8px 24px rgba(0,0,0,.04)}
-      .tex-start-card:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(10,132,255,.1),inset 0 0 0 1px rgba(10,132,255,.55)}
-      .tex-start-card b{font-size:11px}.tex-start-card span{font-size:9px!important;line-height:1.45;color:var(--muted);text-align:left}
-      .tex-start-surface>.tex-start-features{display:flex!important;place-items:initial!important;flex-wrap:wrap;justify-content:center;gap:12px!important;width:auto!important;height:auto!important;border-radius:0!important;background:transparent!important;font:inherit!important;color:var(--quiet)}
-      .tex-start-features span{font-size:8px!important}
-      .tex-start-features span::first-letter{color:var(--primary)}
-
-      @media(max-width:760px){.tex-start-surface>.tex-start-grid{grid-template-columns:1fr}.tex-start-surface{padding:28px 18px!important}.tex-work-app .tex-hero{padding:14px}.tex-work-app .tex-hero p{display:none}}
+      @media(max-width:760px){.tex-work-app .tex-hero{padding:14px}.tex-work-app .tex-hero p{display:none}}
     </style>
     <script>
       (() => {

@@ -1,0 +1,61 @@
+name: Work TeX Welcome Visual QA
+
+on:
+  pull_request:
+    paths:
+      - 'studio/ui-tex-app.js'
+      - 'studio/ui-work-tex-welcome.js'
+      - 'studio/ui-work-tex-viewport-edges.js'
+      - 'studio/ui-work-tex.js'
+      - 'studio/entry.js'
+      - 'scripts/tex-welcome-visual-preview.mjs'
+      - '.github/workflows/tex-welcome-visual.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chinese font for accurate visual QA
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+      - name: Render actual Work TeX component and CSS composition
+        run: node scripts/tex-welcome-visual-preview.mjs
+      - name: Browser geometry and no-duplicate icon check
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser="$(command -v google-chrome || command -v chromium)"
+          out=/tmp/aertex-tex-welcome-qa
+          mkdir -p "$out"
+          for locale in zh en; do
+            for width in 2560 1600 1180; do
+              target="file://$out/welcome-$locale.html"
+              "$browser" --headless --no-sandbox --disable-dev-shm-usage --disable-gpu \
+                --hide-scrollbars --allow-file-access-from-files --virtual-time-budget=2500 \
+                --window-size="$width,1000" --dump-dom "$target" > "$out/${locale}-${width}.dom" 2> /dev/null
+              grep -q 'data-visual-qa="PASS"' "$out/${locale}-${width}.dom" || {
+                echo "Welcome geometry failure for $locale at width $width"
+                grep -o 'data-visual-qa="[^"]*"' "$out/${locale}-${width}.dom" || true
+                exit 1
+              }
+              "$browser" --headless --no-sandbox --disable-dev-shm-usage --disable-gpu \
+                --hide-scrollbars --allow-file-access-from-files --virtual-time-budget=2500 \
+                --window-size="$width,1000" --screenshot="$out/welcome-$locale-$width.png" "$target" > /dev/null 2>&1
+              test -s "$out/welcome-$locale-$width.png"
+            done
+          done
+      - name: Upload screenshot previews for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: tex-welcome-visual-qa
+          path: /tmp/aertex-tex-welcome-qa/*.png
+          retention-days: 7
