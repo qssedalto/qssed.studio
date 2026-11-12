@@ -1,7 +1,7 @@
 import { SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
-import { verifyTexUser, isSameOriginMutation } from "./tex-api-core.js";
+import { verifyTexUser } from "./tex-api-core.js";
 import { getSupabaseSecret, workerLog } from "./server-runtime.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import {
@@ -23,7 +23,7 @@ export async function handleTexGithubApi(request, env, action) {
   if (!["GET", "POST", "DELETE"].includes(request.method)) {
     return withStudioSessionCookies(fail(405, "Method not allowed."), session.cookies);
   }
-  if (request.method !== "GET" && !isSameOriginMutation(request)) {
+  if (request.method !== "GET" && !strictOrigin(request)) {
     return withStudioSessionCookies(fail(403, "Cross-origin mutation blocked."), session.cookies);
   }
   const userId = verified.user.id;
@@ -77,6 +77,15 @@ export async function handleTexGithubApi(request, env, action) {
     });
     return withStudioSessionCookies(fail(status, publicError(status)), session.cookies);
   }
+}
+
+function strictOrigin(request) {
+  const origin = request.headers.get("origin");
+  if (origin) {
+    try { return new URL(origin).origin === new URL(request.url).origin; }
+    catch { return false; }
+  }
+  return request.headers.get("sec-fetch-site") === "same-origin";
 }
 
 function configured(env) {
@@ -409,10 +418,12 @@ async function servePdf(env, userId, download) {
   if (!row?.repo_id || row.repo_state !== "ready") return fail(404, "There is no compiled PDF.");
   const repoPath = githubRepoPath(env, row.repo_name);
   const result = await github(env, repoPath + "/contents/main.pdf?ref=pdf-output");
-  if (!result || result.type !== "file" || result.size > PDF_LIMIT || !result.content) {
+  if (!result || result.type !== "file" || result.size > PDF_LIMIT) {
     return fail(404, "The PDF is not available yet.");
   }
-  const bytes = base64Bytes(result.content);
+  const blob = result.content ? result : await github(env, repoPath + "/git/blobs/" + encodeURIComponent(result.sha));
+  if (!blob?.content || blob.encoding !== "base64") return fail(404, "The PDF is not available yet.");
+  const bytes = base64Bytes(blob.content);
   if (bytes.byteLength < 5 || bytes.byteLength > PDF_LIMIT ||
       String.fromCharCode(...bytes.subarray(0, 5)) !== "%PDF-") {
     return fail(502, "Invalid PDF output.");
