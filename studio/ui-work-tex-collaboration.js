@@ -94,8 +94,8 @@ export function enhanceWorkTexCollaboration(markup, zh) {
   output = output.replace(
     "let documents=[];let runs=[];let activeId='';let activeDocument=null;let dirty=false;let saveTimer=null;let saveSequence=0;let compilerAvailable=false;",
     "let documents=[];let runs=[];let activeId='';let activeDocument=null;let dirty=false;let saveTimer=null;let saveSequence=0;let compilerAvailable=false;"+
-    "const workLocale=location.pathname.startsWith('/en/')?'en':'zh-cn';"+
-    "const routeDocumentId=()=>{const match=location.pathname.match(/^\\/(?:zh-cn|en)\\/d\\/(?:huawei-exempt\\/)?([0-9a-f-]{36})$/i);return match?match[1]:''};"+
+    "const workLocale=location.pathname.split('/')[1]||'zh-cn';"+
+    "const routeDocumentId=()=>{const match=location.pathname.match(/^\\/[a-z]{2}(?:-[a-z]{2})?\\/d\\/(?:huawei-exempt\\/)?([0-9a-f-]{36})$/i);return match?match[1]:''};"+
     "const documentRoute=id=>'/'+workLocale+'/d/'+(location.pathname.includes('/huawei-exempt/')?'huawei-exempt/':'')+encodeURIComponent(id);"+
     "const workRootRoute=()=>'/'+workLocale+'/tex';"+
     "const syncDocumentRoute=(id,replace=false)=>{if(!id)return;const next=documentRoute(id);if(location.pathname===next)return;history[replace?'replaceState':'pushState']({texDocumentId:id},'',next)};"
@@ -140,9 +140,12 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     "async function initialize(){try{const [statusData,documentData]=await Promise.all([api('/api/tex/status'),api('/api/tex/documents')]);applyCompilerStatus(statusData);documents=Array.isArray(documentData.documents)?documentData.documents:[];renderDocuments();if(documents[0])await openDocument(documents[0].id);else renderEditor();}",
     "async function initialize(){try{const [statusData,documentData]=await Promise.all([api('/api/tex/status'),api('/api/tex/documents')]);applyCompilerStatus(statusData);documents=Array.isArray(documentData.documents)?documentData.documents:[];renderDocuments();const requested=routeDocumentId();if(requested)await openDocument(requested,'replace');else renderEditor();}"
   );
+  // The realtime/shared fetch adapter is installed by a later inline script.
+  // Defer the initial document GET to the next task, otherwise invited users
+  // can see an owner-only 404 before collaborator documents are registered.
   output = output.replace(
     "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());void initialize();",
-    "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());window.addEventListener('popstate',()=>{const id=routeDocumentId();if(id&&id!==activeId)void openDocument(id,false)});void initialize();"
+    "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());window.addEventListener('popstate',()=>{const id=routeDocumentId();if(id&&id!==activeId)void openDocument(id,false)});window.setTimeout(()=>void initialize(),0);"
   );
 
   output += `

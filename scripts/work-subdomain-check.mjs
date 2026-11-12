@@ -4,7 +4,7 @@ import { notFoundPage } from "../studio/auth-pages.js";
 import { TEXT } from "../studio/config.js";
 import { huaweiHarmonyGate } from "../studio/huawei-harmony-gate.js";
 import { SUPPORTED_LOCALES } from "../studio/locale.js";
-import { rewriteWorkSubdomainRequest, workDocumentNotFound } from "../studio/work-subdomain.js";
+import { rewriteWorkSubdomainRequest, workDocumentNotFound, resolveWorkDocumentLink, workDocumentUnavailableRedirect } from "../studio/work-subdomain.js";
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
 const workAuditWrapper = fs.readFileSync(new URL("../studio/worker-audit.js", import.meta.url), "utf8");
@@ -37,13 +37,57 @@ assert(worker.includes("suppressWorkClientSessionBounce"), "Authenticated Work H
 assert(worker.includes('markup.replace(\n    "    hydrateOsUser();"'), "Work suppression must target the inherited main-site hydrateOsUser call only");
 assert(worker.includes("server-side host-only session gate"), "Work session suppression must document that the server-side gate remains authoritative");
 assert(workAuditWrapper.includes('isServiceHost(url.hostname, "work")'), "Huawei exemption aliases must normalize on the Work custom domain.");
-assert(worker.includes("workDocumentId") && worker.includes('handleTexApi(validationRequest, env, "documents")'), "Work document deep links must be server-validated through the existing TeX ACL path before rendering.");
-assert(worker.includes("workDocumentNotFound(workPublicRequest)"), "Missing or inaccessible Work document deep links must render the branded 404 page.");
+assert(worker.includes("workDocumentId") && worker.includes('handleTexApi(new Request(validationUrl.toString()'), "Work document deep links must continue to validate the owner document before rendering.");
+assert(worker.includes('if (mapped.notFound) return workDocumentNotFound(workPublicRequest);'), "Malformed Work document paths must continue to produce the branded 404.");
+assert(worker.includes("resolveWorkDocumentLink(") && worker.includes("handleTexSharedCollaboration(new Request(sharedUrl.toString()"), "Invited TeX deep links must validate collaborator membership before showing an error.");
+assert(worker.includes("workDocumentUnavailableRedirect(workPublicRequest)"), "Expired or revoked TeX document links must return to Work start, not display a 404.");
 assert(work.includes("WORK_DOCUMENT_ID_RE"), "Work must constrain document routes to UUID-shaped identifiers.");
 assert(work.includes("parseWorkDocumentPath") && work.includes("parseShortWorkDocumentPath"), "Work must support localized and short document deep-link forms.");
 assert(work.includes("/d/"), "Work canonical document routes must use the /d/<uuid> namespace.");
 assert(work.includes("huawei-exempt/"), "Work document deep links must accept the existing Huawei exemption alias marker.");
 const TEST_DOCUMENT_ID = "123e4567-e89b-12d3-a456-426614174000";
+
+const linkCases = [
+  { owned: 200, shared: 200, action: "open", sharedCalls: 0 },
+  { owned: 404, shared: 200, action: "open", sharedCalls: 1 },
+  { owned: 404, shared: 404, action: "home", sharedCalls: 1 },
+  { owned: 401, shared: 200, action: "sign-in", sharedCalls: 0 },
+  { owned: 404, shared: 401, action: "sign-in", sharedCalls: 1 },
+  { owned: 403, shared: 200, action: "response", sharedCalls: 0 },
+  { owned: 503, shared: 200, action: "response", sharedCalls: 0 },
+  { owned: 404, shared: 503, action: "response", sharedCalls: 1 }
+];
+for (const scenario of linkCases) {
+  let sharedCalls = 0;
+  const outcome = await resolveWorkDocumentLink(
+    async () => ({ status: scenario.owned }),
+    async () => { sharedCalls += 1; return { status: scenario.shared }; }
+  );
+  assert(outcome.action === scenario.action, `Wrong link action for owner=${scenario.owned}, invited=${scenario.shared}`);
+  assert(sharedCalls === scenario.sharedCalls, "Shared-membership lookup must only run after owner-document 404.");
+  if (scenario.action === "response") {
+    assert(outcome.response.status === (scenario.owned === 404 ? scenario.shared : scenario.owned), "Backend outages and 403 errors must not be disguised as missing invites.");
+  }
+}
+
+const unavailableLink = workDocumentUnavailableRedirect(new Request(
+  `https://work.qsseda.com/zh-cn/d/${TEST_DOCUMENT_ID}?source=invitation`
+));
+assert(unavailableLink.status === 302, "Revoked or nonexistent shared document URLs must redirect.");
+assert(
+  unavailableLink.headers.get("location") === "https://work.qsseda.com/zh-cn/tex?notice=document-unavailable",
+  "Unavailable deep links must land on the regional Work home, without leaking the document ID."
+);
+assert(unavailableLink.headers.get("cache-control") === "no-store", "Work invite redirects must never be cached.");
+const alternateDomain = workDocumentUnavailableRedirect(new Request(
+  `https://work.qsseda.studio/en-us/d/${TEST_DOCUMENT_ID}`
+));
+assert(
+  alternateDomain.headers.get("location") === "https://work.qsseda.studio/en-us/tex?notice=document-unavailable",
+  "Expired links must preserve both region and first-party Work domain."
+);
+assert(entry.includes("document-unavailable") && entry.includes("邀请可能已失效"), "Returned Work home must display a localized explanation.");
+
 
 const hwPreviewResponse = await huaweiHarmonyGate(new Request(
   `https://work.qsseda.com/zh-cn/d/${TEST_DOCUMENT_ID}/hw`,
@@ -232,6 +276,8 @@ assert(workTexUi.includes('white-space:nowrap!important'), "Work TeX template ti
 assert(texApp.includes('startDetail: "选择一种结构，直接进入写作与排版。"'), "Chinese TeX start copy must stay concise and task-focused.");
 assert(texApp.includes('blankDetail: "最简 article 结构，适合从零开始"') && texApp.includes('articleDetail: "预设中文排版、章节与常用页面设置"') && texApp.includes('mathDetail: "预设公式环境，适合推导与课程记录"'), "Chinese TeX template descriptions must remain concrete and non-promotional.");
 assert(workTexPanels.includes("order:1!important") && workTexPanels.includes(".tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link{\n          display:none!important;"), "Collapsed Work document rail must show only its restore control; Home belongs to expanded panels.");
+assert(workTexCollaboration.includes("window.setTimeout(()=>void initialize(),0)"), "The first TeX document load must wait for the invited-document fetch adapter to initialize.");
+assert(workTexCollaboration.includes("const workLocale=location.pathname.split('/')[1]||'zh-cn';"), "Invited-document navigation must preserve the current full regional locale.");
 assert(workTexCollaboration.includes("const requested=routeDocumentId();if(requested)await openDocument(requested,'replace');else renderEditor();"), "Work TeX root must stay on the start/recommendation surface unless a document deep link is explicitly requested.");
 assert(!workTexCollaboration.includes("else if(documents[0])await openDocument(documents[0].id,'replace')"), "Work TeX must not auto-open the first document on a fresh root visit.");
 assert(entry.includes("polishWorkTexVisualTheme(markup)"), "Work visual theme must be applied only after existing TeX behavior enhancements.");

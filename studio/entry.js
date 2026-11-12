@@ -248,6 +248,17 @@ export default {
       if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin, fullLocale, mainOrigin), workOrigin));
       if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, fullLocale, mainOrigin), zh));
       if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); }
+      // A revoked or nonexistent shared-document deep link returns to the Work
+      // start screen with a localized, non-identifying explanation.
+      if (pathname === "/work/tex" && new URL(request.url).searchParams.get("notice") === "document-unavailable") {
+        const notice = locale === "zh"
+          ? "无法打开该文档：邀请可能已失效，或当前账号没有访问权限。已返回 Work 首页。"
+          : "This document is unavailable. The invitation may have expired, or this account no longer has access. Returned to Work.";
+        markup = markup.replace(
+          '<div id="tex-message" class="tex-message" hidden></div>',
+          `<div id="tex-message" class="tex-message is-error" role="status">${notice}</div>`
+        );
+      }
       const pageOptions = pathname === "/work/local" || pathname === "/work/tex" || pathname === "/workspace/experiments/tex" ? { allowLoopback: true } : {};
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }

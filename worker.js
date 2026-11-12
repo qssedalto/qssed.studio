@@ -43,7 +43,9 @@ import {
   mainWorkRedirect,
   rewriteWorkSubdomainRequest,
   workSessionRedirect,
-  workDocumentNotFound
+  workDocumentNotFound,
+  resolveWorkDocumentLink,
+  workDocumentUnavailableRedirect
 } from "./studio/work-subdomain.js";
 import {
   handleMainGptHandoff,
@@ -182,14 +184,19 @@ async function routeStudioRequest(request, env, ctx) {
   if (workHost && workDocumentId) {
     const validationUrl = new URL("/api/tex/documents", request.url);
     validationUrl.searchParams.set("id", workDocumentId);
-    const validationRequest = new Request(validationUrl.toString(), {
-      method: "GET",
-      headers: request.headers
-    });
-    const validation = await handleTexApi(validationRequest, env, "documents");
-    if (validation.status === 401) return workSessionRedirect(workPublicRequest, workPageNext);
-    if (validation.status === 404) return workDocumentNotFound(workPublicRequest);
-    if (!validation.ok) return validation;
+    const sharedUrl = new URL("/api/tex/collaboration/shared", request.url);
+    sharedUrl.searchParams.set("document", workDocumentId);
+    const access = await resolveWorkDocumentLink(
+      () => handleTexApi(new Request(validationUrl.toString(), {
+        method: "GET", headers: request.headers
+      }), env, "documents"),
+      () => handleTexSharedCollaboration(new Request(sharedUrl.toString(), {
+        method: "GET", headers: request.headers
+      }), env)
+    );
+    if (access.action === "sign-in") return workSessionRedirect(workPublicRequest, workPageNext);
+    if (access.action === "home") return workDocumentUnavailableRedirect(workPublicRequest);
+    if (access.action === "response") return access.response;
   }
 
   let response = await studio.fetch(request, env, ctx);

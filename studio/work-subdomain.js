@@ -228,6 +228,33 @@ function parseShortWorkDocumentPath(pathname) {
   return { exempt: Boolean(match[1]), id: match[2] };
 }
 
+// Deep links can refer either to the owner's document or to an invited
+// collaborator's document. Do not mistake the absence from the owner's own
+// collection for revoked access: consult the member ACL before redirecting.
+export async function resolveWorkDocumentLink(validateOwned, validateShared) {
+  const owned = await validateOwned();
+  if (owned.status === 200) return { action: "open" };
+  if (owned.status === 401) return { action: "sign-in" };
+  if (owned.status !== 404) return { action: "response", response: owned };
+
+  const shared = await validateShared();
+  if (shared.status === 200) return { action: "open" };
+  if (shared.status === 401) return { action: "sign-in" };
+  if (shared.status === 404) return { action: "home" };
+  return { action: "response", response: shared };
+}
+
+// A valid document URL can become inaccessible after logout, account switching,
+// removal of a collaborator, or deletion. Go back to Work, not a dead-end 404.
+// Preserve the regional locale and domain family but never expose the document
+// ID in the redirect destination.
+export function workDocumentUnavailableRedirect(request) {
+  const { fullLocale } = getRouteInfo(request);
+  const target = new URL(`/${fullLocale}/tex`, workOriginForRequest(request));
+  target.searchParams.set("notice", "document-unavailable");
+  return redirect(target.toString());
+}
+
 export function workDocumentNotFound(request) {
   const { pathname, locale, fullLocale } = getRouteInfo(request);
   const t = TEXT[locale] || TEXT.en;
