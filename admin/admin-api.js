@@ -22,6 +22,11 @@ const ACTIONS = {
     write: true,
     params: ["p_user_id", "p_status"]
   },
+  "user-delete": {
+    rpc: "admin_delete_user",
+    write: true,
+    params: ["p_user_id", "p_confirmation"]
+  },
   permissions: {
     rpc: "update_role_permissions",
     write: true,
@@ -96,7 +101,7 @@ export async function handleAdminAction(request, _env, action) {
     if (Object.prototype.hasOwnProperty.call(incoming, key)) params[key] = incoming[key];
   }
 
-  if (spec.write && ["user-role", "user-status", "permissions", "subscription-grant", "subscription-reset", "student-verification-review"].includes(action)) {
+  if (spec.write && ["user-role", "user-status", "user-delete", "permissions", "subscription-grant", "subscription-reset", "student-verification-review"].includes(action)) {
     params.p_ip_address = request.headers.get("CF-Connecting-IP") || null;
     params.p_user_agent = String(request.headers.get("User-Agent") || "").slice(0, 500) || null;
   }
@@ -117,6 +122,33 @@ export async function handleAdminAction(request, _env, action) {
   if (action === "user-status") {
     if (!isUuid(params.p_user_id) || !["active", "suspended", "banned"].includes(params.p_status)) {
       return withAdminSessionCookies(json({ error: "Invalid user status request." }, 400), session.cookies);
+    }
+  }
+
+  if (action === "user-delete") {
+    if (!isUuid(params.p_user_id) ||
+        params.p_confirmation !== params.p_user_id ||
+        params.p_user_id === session.user.id) {
+      return withAdminSessionCookies(json({error: "Invalid deletion confirmation or protected account."}, 403), session.cookies);
+    }
+    if (!(_env?.STORAGE && typeof _env.STORAGE.list === "function")) {
+      return withAdminSessionCookies(json({error: "Cannot verify user files; deletion is unavailable."}, 503), session.cookies);
+    }
+    // Block rather than orphan R2 data or active Watch device tokens.
+    // No storage objects are removed implicitly by account deletion.
+    try {
+      const blocker = await accountStorageBlocker(_env.STORAGE, params.p_user_id);
+      if (blocker) {
+        return withAdminSessionCookies(json({
+          error: "该账户仍有关联文件或 Watch 设备令牌。请先清理相关数据，再删除账户。"
+        }, 409), session.cookies);
+      }
+    } catch (error) {
+      workerLog("warn", "admin.user_delete.storage_check_failed", {
+        actor_id: session.user.id,
+        reason: String(error?.name || "storage_unavailable").slice(0, 50)
+      });
+      return withAdminSessionCookies(json({error: "无法确认账户文件是否已清空，已阻止删除。"}, 503), session.cookies);
     }
   }
 
@@ -204,6 +236,7 @@ async function callRpc(accessToken, rpc, params) {
   try {
     upstream = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
       method: "POST",
+      redirect: "manual",
       headers: {
         apikey: SUPABASE_KEY,
         Authorization: `Bearer ${accessToken}`,
@@ -223,6 +256,48 @@ async function callRpc(accessToken, rpc, params) {
     catch { payload = { error: "Administrator service returned an invalid response." }; }
   }
   return { ok: upstream.ok, status: upstream.status, payload };
+}
+
+// This is a fail-closed preflight: deleting an Auth account would cascade DB
+// records while leaving R2 objects and Watch upload tokens orphaned.
+const USER_R2_ROOTS = [
+  "users/",
+  "_system/tex-documents/",
+  "_system/tex-runs/",
+  "_system/tex-results/",
+  "_system/projects/",
+  "_system/drafts/",
+  "_system/summaries/",
+  "_system/user-links/",
+  "watch/v1/users/"
+];
+
+async function accountStorageBlocker(bucket, userId) {
+  for (const root of USER_R2_ROOTS) {
+    const page = await bucket.list({prefix: root + userId + "/", limit: 1});
+    if (!page || !Array.isArray(page.objects)) throw new Error("Invalid R2 listing");
+    if (page.objects.length > 0) return "r2";
+  }
+  // Watch upload credentials are stored by token hash, not by user path.
+  // Scan a bounded set and fail closed if it exceeds the safety cap.
+  let cursor;
+  let scanned = 0;
+  do {
+    const page = await bucket.list({
+      prefix: "watch/v1/tokens/", cursor, limit: 100
+    });
+    if (!page || !Array.isArray(page.objects)) throw new Error("Invalid Watch token listing");
+    for (const object of page.objects) {
+      if (++scanned > 1000) throw new Error("Watch token scan limit");
+      const stored = await bucket.get(object.key);
+      if (!stored) throw new Error("Watch token unavailable");
+      const token = JSON.parse(await stored.text());
+      if (token?.user_id === userId) return "watch-token";
+    }
+    if (!page.truncated) return null;
+    cursor = page.cursor;
+    if (!cursor) throw new Error("Watch token pagination missing");
+  } while (true);
 }
 
 function cleanError(payload) {

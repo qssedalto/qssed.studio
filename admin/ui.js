@@ -232,6 +232,25 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
   .studentRequestCard{padding:12px}
   .studentActions .btn{height:46px;font-size:12px}
 }
+
+.userDeleteDialog{width:min(490px,calc(100vw - 28px));max-height:calc(100dvh - 28px);padding:0;border:1px solid #6a3030;border-radius:14px;background:var(--panel2);color:var(--text);box-shadow:0 30px 100px rgba(0,0,0,.7)}
+.userDeleteDialog::backdrop{background:rgba(0,0,0,.76);backdrop-filter:blur(5px)}
+.userDeleteDialogHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.userDeleteDialogHeader strong{font-size:17px}
+.userDeleteDialogBody{padding:18px 20px;display:grid;gap:14px}
+.userDeleteDialogBody p{margin:0;line-height:1.65;color:var(--muted)}
+.userDeleteRisk{border:1px solid #70403a;background:#271714;color:#ffc7b8;padding:12px 13px;line-height:1.6}
+.userDeleteIdentity{border:1px solid var(--line);background:#0a1016;padding:11px 13px;display:grid;gap:5px;overflow-wrap:anywhere}
+.userDeleteIdentity strong{font-size:14px}
+.userDeleteIdentity span{color:var(--muted);font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}
+.userDeleteDialogBody label{display:grid;gap:7px;font-size:12px}
+.userDeleteDialogBody input{width:100%;min-height:40px;border:1px solid var(--line);background:#0b1016;color:var(--text);padding:8px 10px;outline-offset:2px}
+.userDeleteDialogBody input:focus{border-color:var(--bad);outline:1px solid var(--bad)}
+.userDeleteDialogFooter{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--line)}
+.userDeleteDialogFooter .btn{height:38px}
+.userDeleteError{min-height:16px;color:var(--bad);font-size:12px;line-height:1.5}
+.userDeleteDialog .userDeleteClose{border:0;background:transparent;color:var(--muted);font-size:23px;cursor:pointer;line-height:1}
+@media(max-width:680px){.userDeleteDialog{width:calc(100vw - 18px)}.userDeleteDialogFooter{flex-wrap:wrap}.userDeleteDialogFooter .btn{flex:1}}
 </style>
 </head>
 <body data-route="${escapeHtml(current)}">
@@ -372,8 +391,68 @@ pre{margin:0;padding:14px;overflow:auto;background:var(--code);color:#c5d2df;fon
       rows.map(row=>'<tr data-user-row="'+esc(row.user_id)+'"><td><strong>'+esc(row.display_name||row.username||"—")+'</strong><br><span class="mono">'+esc(row.user_id)+'</span></td><td class="mono">'+esc(row.email||"—")+'</td>'+
       '<td><select class="userRole compactInput"><option value="admin" '+(row.role==="admin"?"selected":"")+'>管理员</option><option value="editor" '+(row.role==="editor"?"selected":"")+'>编辑者</option><option value="user" '+(row.role==="user"?"selected":"")+'>普通用户</option></select></td>'+
       '<td><select class="userStatus compactInput"><option value="active" '+(row.status==="active"?"selected":"")+'>正常</option><option value="suspended" '+(row.status==="suspended"?"selected":"")+'>已暂停</option><option value="banned" '+(row.status==="banned"?"selected":"")+'>已封禁</option></select></td>'+
-      '<td class="mono">'+esc(row.last_sign_in_at||row.last_seen_at||"—")+'</td><td><div class="inline"><button class="btn saveUser" type="button">应用</button></div></td></tr>').join('')+
-      '</tbody></table></div><div class="feedback" id="usersFeedback"></div></section>';
+      '<td class="mono">'+esc(row.last_sign_in_at||row.last_seen_at||"—")+'</td><td><div class="inline"><button class="btn saveUser" type="button">应用</button>'+
+      (row.role==="admin" ? '<span class="mono" title="管理员账户受保护，不允许通过此入口删除">受保护</span>' : '<button class="btn danger deleteUser" type="button" aria-label="删除用户 '+esc(row.username||row.display_name||row.user_id)+'">删除</button>')+'</div></td></tr>').join('')+
+      '</tbody></table></div><div class="feedback" id="usersFeedback" role="status"></div></section>'+
+      '<dialog class="userDeleteDialog" id="userDeleteDialog" aria-labelledby="userDeleteDialogTitle" aria-describedby="userDeleteRisk">'+
+      '<div class="userDeleteDialogHeader"><strong id="userDeleteDialogTitle">永久删除用户</strong><button class="userDeleteClose" id="userDeleteClose" type="button" aria-label="关闭">×</button></div>'+
+      '<div class="userDeleteDialogBody">'+
+      '<div id="userDeleteRisk" class="userDeleteRisk">此操作无法撤销！请先在上方将账户状态设为「已暂停」或「已封禁」并点击「应用」。删除将永久移除账户及其关联数据库记录；若仍有 R2 文件、Watch 令牌、Supabase Storage 文件或远程编译仓库，服务器会拒绝操作，避免数据残留。</div>'+
+      '<div class="userDeleteIdentity"><strong id="userDeleteName"></strong><span id="userDeleteEmail"></span><span id="userDeleteId"></span></div>'+
+      '<label for="userDeleteConfirmText">请输入上方用户 UUID 以确认永久删除<input id="userDeleteConfirmText" type="text" autocomplete="off" spellcheck="false" placeholder="输入完整 UUID"></label>'+
+      '<div class="userDeleteError" id="userDeleteError" role="alert"></div></div>'+
+      '<div class="userDeleteDialogFooter"><button type="button" class="btn" id="userDeleteCancel">取消</button><button type="button" class="btn danger" id="userDeleteSubmit" disabled>永久删除用户</button></div></dialog>';
+
+    const deleteDialog=document.getElementById("userDeleteDialog");
+    const deleteInput=document.getElementById("userDeleteConfirmText");
+    const deleteSubmit=document.getElementById("userDeleteSubmit");
+    const deleteError=document.getElementById("userDeleteError");
+    let selectedDeletion=null;
+    let deleting=false;
+    const closeDeleteDialog=()=>{if(!deleting)deleteDialog.close();};
+    document.getElementById("userDeleteCancel").addEventListener("click",closeDeleteDialog);
+    document.getElementById("userDeleteClose").addEventListener("click",closeDeleteDialog);
+    deleteDialog.addEventListener("cancel",event=>{if(deleting)event.preventDefault();});
+    deleteInput.addEventListener("input",()=>{
+      deleteError.textContent="";
+      deleteSubmit.disabled=deleting||!selectedDeletion||deleteInput.value.trim().toLowerCase()!==selectedDeletion.user_id;
+    });
+    document.querySelectorAll(".deleteUser").forEach(button=>button.addEventListener("click",()=>{
+      const tableRow=button.closest("[data-user-row]");
+      const userId=tableRow?.dataset.userRow;
+      const target=rows.find(user=>user.user_id===userId);
+      if(!target||target.role==="admin")return;
+      selectedDeletion=target;
+      document.getElementById("userDeleteName").textContent=target.display_name||target.username||"未命名用户";
+      document.getElementById("userDeleteEmail").textContent=target.email||"未设置邮箱";
+      document.getElementById("userDeleteId").textContent=target.user_id;
+      deleteError.textContent="";
+      deleteInput.value="";
+      deleteSubmit.disabled=true;
+      deleteDialog.showModal();
+      deleteInput.focus();
+    }));
+    deleteSubmit.addEventListener("click",async()=>{
+      const target=selectedDeletion;
+      if(!target||deleting||deleteInput.value.trim().toLowerCase()!==target.user_id)return;
+      deleting=true;
+      deleteSubmit.disabled=true;
+      deleteError.textContent="正在验证账户数据并执行删除…";
+      try{
+        await post("/api/admin/user-delete",{
+          p_user_id:target.user_id,p_confirmation:deleteInput.value.trim().toLowerCase()
+        });
+        deleting=false;
+        deleteDialog.close();
+        await users();
+        const feedback=document.getElementById("usersFeedback");
+        if(feedback){feedback.textContent="用户账户已永久删除，操作已写入审计日志。";feedback.className="feedback ok";}
+      }catch(error){
+        deleting=false;
+        deleteError.textContent=String(error.message||"删除失败");
+        deleteSubmit.disabled=false;
+      }
+    });
 
     document.querySelectorAll(".saveUser").forEach(button=>button.addEventListener("click",async()=>{
       const row=button.closest("[data-user-row]");if(!row)return;

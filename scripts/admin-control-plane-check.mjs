@@ -322,4 +322,82 @@ try {
   globalThis.fetch = savedFetch;
 }
 
+// Administrative account deletion is deliberately hard to trigger: it
+// requires a live admin session, a UUID typed a second time and no R2 assets.
+const deleteSql = read("supabase/migrations/20261112124500_admin_delete_user_guarded.sql");
+assertContains(deleteSql, "perform aertex_private.admin_assert()", "Delete RPC must verify a live administrator session.");
+assertContains(deleteSql, "p_user_id = auth.uid()", "Admins must not delete their own accounts.");
+assertContains(deleteSql, "v_role = 'admin'", "Admin accounts must be protected from deletion.");
+assertContains(deleteSql, "from public.admin_users", "Legacy root administrator must also be protected.");
+assertContains(deleteSql, "v_status not in ('suspended','banned')", "Account must first be suspended.");
+assertContains(deleteSql, "from storage.objects", "Supabase Storage ownership blocks deletion.");
+assertContains(deleteSql, "from public.tex_github_allowances", "GitHub compilation repos must be removed first.");
+assertContains(deleteSql, "perform public.write_audit_log(", "Account deletion must be audited atomically.");
+assertContains(deleteSql, "delete from auth.users", "Delete must reach the Auth identity, not only the profile.");
+assertContains(deleteSql, "security invoker", "Public RPC wrapper must be security invoker.");
+assertContains(deleteSql, "grant execute on function public.admin_delete_user", "Only logged-in accounts may reach RPC.");
+assertContains(adminApi, '"user-delete":', "Admin action allowlist must include account deletion.");
+assertContains(adminApi, "accountStorageBlocker(", "Deletion must reject R2/Watch leftovers.");
+assertContains(adminUi, 'id="userDeleteDialog"', "Deletion confirmation dialog must be present.");
+assertContains(adminUi, 'id="userDeleteConfirmText"', "Deletion must require manually typed UUID.");
+assertContains(adminUi, 'class="btn danger deleteUser"', "User rows need a visible danger action.");
+assertContains(adminUi, 'row.role==="admin"', "Protected admin rows must not offer delete.");
+
+const {handleAdminAction} = await import("../admin/admin-api.js");
+const initialFetch = globalThis.fetch;
+const adminId = "99999999-9999-4999-8999-999999999999";
+const targetId = "11111111-1111-4111-8111-111111111111";
+const deleteRequest = (id=targetId, confirmation=id, withSession=true) => new Request(
+  "https://admin.qsseda.com/api/admin/user-delete", {
+    method:"POST",
+    headers:{
+      Origin:"https://admin.qsseda.com",
+      "Content-Type":"application/json",
+      ...(withSession?{Cookie:"__Host-aertex-admin-access=ci-only-placeholder"}:{})
+    },
+    body:JSON.stringify({p_user_id:id,p_confirmation:confirmation})
+  }
+);
+let rpcCount = 0;
+globalThis.fetch = async (url) => {
+  const path=new URL(String(url)).pathname;
+  if(path==="/auth/v1/user")return new Response(JSON.stringify({id:adminId,email:"admin@example.invalid"}),{status:200});
+  if(path==="/rest/v1/rpc/verify_admin_session")return new Response("true",{status:200});
+  if(path==="/rest/v1/rpc/admin_delete_user"){
+    rpcCount++;
+    return new Response(JSON.stringify({deleted:true,user_id:targetId}),{status:200});
+  }
+  throw new Error("Unexpected mocked admin network request: "+path);
+};
+const emptyStorage = {
+  list:async()=>({objects:[],truncated:false}),
+  get:async()=>null
+};
+try{
+  const missingSession=await handleAdminAction(deleteRequest(targetId,targetId,false),{STORAGE:emptyStorage},"user-delete");
+  assert(missingSession.status===401,"Unauthenticated user deletion must fail.");
+  const self=await handleAdminAction(deleteRequest(adminId),{STORAGE:emptyStorage},"user-delete");
+  assert(self.status===403,"Administrator must not delete their own account.");
+  const badConfirm=await handleAdminAction(deleteRequest(targetId,adminId),{STORAGE:emptyStorage},"user-delete");
+  assert(badConfirm.status===403,"Incorrect confirmation must fail before any storage/RPC operation.");
+  const occupiedStorage={list:async()=>({objects:[{key:"users/"+targetId+"/file"}],truncated:false})};
+  const blocked=await handleAdminAction(deleteRequest(),{STORAGE:occupiedStorage},"user-delete");
+  assert(blocked.status===409,"User-owned R2 files must block deletion.");
+  const watchStorage={
+    list:async args=>args.prefix==="watch/v1/tokens/"?
+      {objects:[{key:"watch/v1/tokens/token-hash.json"}],truncated:false}:
+      {objects:[],truncated:false},
+    get:async()=>({text:async()=>JSON.stringify({user_id:targetId})})
+  };
+  const blockedWatch=await handleAdminAction(deleteRequest(),{STORAGE:watchStorage},"user-delete");
+  assert(blockedWatch.status===409,"Watch device tokens must block deletion.");
+  assert(rpcCount===0,"Blocked deletions must never reach the RPC.");
+  const allowed=await handleAdminAction(deleteRequest(),{STORAGE:emptyStorage},"user-delete");
+  assert(allowed.status===200,"Verified, confirmed, storage-free request must invoke the protected RPC.");
+  const reply=await allowed.json();
+  assert(reply.data?.deleted===true&&rpcCount===1,"Only the permitted deletion may reach the RPC.");
+}finally{
+  globalThis.fetch=initialFetch;
+}
+
 console.log("AERTEX isolated admin control plane checks passed.");
