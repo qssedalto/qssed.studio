@@ -50,7 +50,7 @@ for (const zh of [true, false]) {
   const workMarkup = enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(markup, zh), zh), zh);
   // Regression: the last stylesheet in the generated page used to silently
   // override our 38px desktop controls with 64px, despite older CSS checks passing.
-  const finalToolbar = workMarkup.match(/<style id="qsseda-work-tex-toolbar-final-height">([\\s\\S]*?)<\\/style>/)?.[1];
+  const finalToolbar = workMarkup.match(/<style id="qsseda-work-tex-toolbar-final-height">([\s\S]*?)<\/style>/)?.[1];
   assert(finalToolbar, "Final Work TeX toolbar height stylesheet must exist");
   const finalDesktop = finalToolbar.split("@media (max-width:760px)")[0];
   for (const selector of [">label>#tex-engine", ">#tex-collaboration-open", ">.tex-panel-home-link"]) {
