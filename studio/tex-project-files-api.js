@@ -3,26 +3,19 @@
 import { json } from "./routing.js";
 import { isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
+import { MAX_PROJECT_EXTRA_FILES, MAX_PROJECT_FILES, MAX_PROJECT_BYTES, MAX_SINGLE_FILE_BYTES, MAX_JSON_UPLOAD_BYTES, MAX_TEXT_CHARACTERS, isSafeProjectFilename, isBinaryProjectFile } from "./tex-project-file-types.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
-const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|md|markdown|py|png|jpe?g|pdf)$/i;
-const BINARY = /\.(png|jpe?g|pdf)$/i;
-const MAX_FILES = 24; // extras; main.tex is the 25th entry
-const MAX_SINGLE_BYTES = 3 * 1024 * 1024;
-const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
-const MAX_JSON_BYTES = 5 * 1024 * 1024;
-const MAX_TEXT_CHARS = 180000;
+const BINARY = { test: isBinaryProjectFile };
+const MAX_FILES = MAX_PROJECT_EXTRA_FILES;
+const MAX_SINGLE_BYTES = MAX_SINGLE_FILE_BYTES;
+const MAX_TOTAL_BYTES = MAX_PROJECT_BYTES;
+const MAX_JSON_BYTES = MAX_JSON_UPLOAD_BYTES;
+const MAX_TEXT_CHARS = MAX_TEXT_CHARACTERS;
 const encoder = new TextEncoder();
 
 function fail(message, status = 400) { return json({ error: message }, status); }
-function validName(value) {
-  if (typeof value !== "string" || value.length > 140 || !value ||
-      value.startsWith("/") || value.includes("\\") || /[\x00-\x1f\x7f]/.test(value) ||
-      !ALLOWED.test(value)) return false;
-  const parts = value.split("/");
-  return parts.length <= 8 && parts.every(part => part && part !== "." && part !== ".." &&
-    !part.startsWith(".") && part.length <= 100);
-}
+const validName=isSafeProjectFilename;
 function sizeOf(file) {
   if (file.encoding === "base64") return Math.floor(String(file.content || "").length * 3 / 4);
   return encoder.encode(String(file.content || "")).byteLength;
@@ -43,13 +36,24 @@ function validatedFile(value) {
     try { bytes = Uint8Array.from(atob(value.content), c => c.charCodeAt(0)); }
     catch { throw new Error("Invalid base64 file content."); }
   } else bytes = encoder.encode(value.content);
-  if (bytes.byteLength > MAX_SINGLE_BYTES) throw new Error("A file cannot exceed 3 MB.");
+  if (bytes.byteLength > MAX_SINGLE_BYTES) throw new Error("A file cannot exceed 8 MB.");
   if (binary) {
     const ext = value.name.split(".").pop().toLowerCase();
     const jpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
     const png = bytes.length >= 8 && [137,80,78,71,13,10,26,10].every((x,i)=>bytes[i]===x);
     const pdf = bytes.length >= 5 && [37,80,68,70,45].every((x,i)=>bytes[i]===x);
-    if (!((ext === "png" && png) || ((ext === "jpg" || ext === "jpeg") && jpeg) || (ext === "pdf" && pdf))) {
+    const zip = bytes.length>=4 && bytes[0]===0x50 && bytes[1]===0x4b &&
+      [0x03,0x05,0x07].includes(bytes[2]);
+    const ole = bytes.length>=8 && [0xd0,0xcf,0x11,0xe0,0xa1,0xb1,0x1a,0xe1].every((b,i)=>bytes[i]===b);
+    const gif = bytes.length>=6 && ["GIF87a","GIF89a"].includes(String.fromCharCode(...bytes.subarray(0,6)));
+    const webp = bytes.length>=12 && String.fromCharCode(...bytes.subarray(0,4))==="RIFF" &&
+      String.fromCharCode(...bytes.subarray(8,12))==="WEBP";
+    const officeZip = new Set(["docx","docm","dotx","xlsx","xlsm","xlsb","pptx","pptm","potx","odt","ods","odp","epub","jar","war","ear","zip"]);
+    const legacyOffice = new Set(["doc","dot","xls","ppt"]);
+    if (((ext==="png"&&!png)||(["jpg","jpeg"].includes(ext)&&!jpeg)||
+         (ext==="pdf"&&!pdf)||(ext==="gif"&&!gif)||(ext==="webp"&&!webp)||
+         (officeZip.has(ext)&&!zip&&!(ext==="xlsb"&&ole))||
+         (legacyOffice.has(ext)&&!ole))) {
       throw new Error("File content does not match its extension.");
     }
   }
@@ -72,7 +76,7 @@ export async function handleTexProjectFiles(request, env, userId) {
   const operation = input?.operation || "add";
   const modifyingEntry = operation === "rename" || operation === "delete";
   if (!modifyingEntry && (!Array.isArray(input?.files) || !input.files.length || input.files.length > MAX_FILES)) {
-    return fail("Select between 1 and 24 files.");
+    return fail("Select between 1 and 499 supporting files.");
   }
   const key = DOCUMENT_ROOT + userId + "/" + documentId + ".json";
   try {
@@ -122,13 +126,13 @@ export async function handleTexProjectFiles(request, env, userId) {
           if (seen.has(f.name.toLowerCase())) return fail("File already exists: " + f.name, 409);
           seen.add(f.name.toLowerCase());
         }
-        if (existing.length + added.length > MAX_FILES) return fail("A project can contain at most 25 files including main.tex.", 409);
+        if (existing.length + added.length > MAX_FILES) return fail("A project can contain at most 500 files including main.tex.", 409);
         next = [...existing, ...added];
       }
     }
     const total = encoder.encode(String(doc.source || "")).length +
       next.reduce((n,f)=>n+sizeOf(f),0);
-    if (total > MAX_TOTAL_BYTES) return fail("Project file content cannot exceed 4 MB.", 413);
+    if (total > MAX_TOTAL_BYTES) return fail("Project file content cannot exceed 32 MB.", 413);
     doc.files = next;
     doc.updated_at = new Date().toISOString();
     await env.STORAGE.put(key, JSON.stringify(doc), {
