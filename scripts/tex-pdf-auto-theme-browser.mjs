@@ -80,7 +80,7 @@ try{
   let result="";
   while(Date.now()<deadline){
     const response=await request("Runtime.evaluate",{
-      expression:"JSON.stringify({status:document.body?.dataset?.pdfThemeQa||'',report:document.body?.dataset?.pdfThemeReport||'',notice:document.querySelector('.aertex-pdf-notice')?.textContent||''})",
+      expression:"JSON.stringify({status:document.body?.dataset?.pdfThemeQa||'',report:document.body?.dataset?.pdfThemeReport||'',notice:document.querySelector('.aertex-pdf-notice')?.textContent||'',debug:window.__aertexPdfDebug||null})",
       returnByValue:true
     });
     if(response.result?.value){
