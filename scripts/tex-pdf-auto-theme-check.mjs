@@ -22,7 +22,7 @@ assert(script.includes("const iosNativePdf = /iPad|iPhone|iPod/"),
   "iOS PDF rendering must not rely on layout width or an unstable Safari UA alone.");
 assert(script.includes("navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints) > 1"),
   "iPadOS desktop user-agent detection missing.");
-assert(script.includes("if (iosNativePdf) {") && script.includes("showIosNativePdf(blob);") &&
+assert(script.includes("if (iosNativePdf) {") && script.includes("showIosNativePdf(blob, nativeHttpUrl);") &&
   script.includes("return;"),
   "iOS must bypass PDF.js rendering entirely.");
 assert(script.includes("nativeObject.data = safeHttp || url;") && script.includes("blob.slice(0, blob.size, 'application/pdf')"),
