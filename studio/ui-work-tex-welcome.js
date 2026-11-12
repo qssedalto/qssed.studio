@@ -8,7 +8,7 @@ export function polishWorkTexWelcome(markup) {
 body.os-shell:has(.tex-work-app) .tex-editor-placeholder:has(.qtex-welcome){
   display:flex!important;
   flex-direction:column!important;
-  justify-content:center!important;
+  justify-content:flex-start!important;
   align-items:center!important;
   gap:12px!important;
   width:100%!important;
@@ -16,7 +16,7 @@ body.os-shell:has(.tex-work-app) .tex-editor-placeholder:has(.qtex-welcome){
   min-height:0!important;
   overflow-x:hidden!important;
   overflow-y:auto!important;
-  padding:clamp(22px,3vw,48px) clamp(20px,3.2vw,56px)!important;
+  padding:clamp(35px,6vh,88px) clamp(20px,3.2vw,56px) 40px!important;
   background:var(--work-panel)!important;
   text-align:left!important;
   container:qtex / inline-size;
@@ -94,6 +94,13 @@ body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2{
 body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2>span,
 body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2>em{
   display:block;
+}
+body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2>span{
+  font:inherit!important;
+  font-size:inherit!important;
+  line-height:inherit!important;
+  letter-spacing:inherit!important;
+  color:var(--text)!important;
 }
 body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2>em{
   color:#1b52ec;
@@ -257,6 +264,7 @@ body.os-shell:has(.tex-work-app) .qtex-template-info{
 body.os-shell:has(.tex-work-app) .qtex-template-info>strong{
   font:770 clamp(15px,1.1vw,19px)/1.4 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif;
   letter-spacing:-.04em;
+  color:var(--text)!important;
 }
 body.os-shell:has(.tex-work-app) .qtex-template-info>span{
   color:var(--muted);
