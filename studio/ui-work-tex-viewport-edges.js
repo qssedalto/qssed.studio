@@ -78,12 +78,44 @@ export function polishWorkTexViewportEdges(markup) {
           transform:translateX(-50%)!important;
         }
       }
-      /* The real saved HTML exposes white from .os-main beneath the rounded
-         upper-left corner of the lavender documents pane. Paint the TeX-only
-         host with the same panel substrate so no white crescent leaks through.
-         No document/preview/editor elements or handlers are changed. */
-      body.os-shell:has(.tex-work-app) .os-main {
-        background:var(--work-panel-soft)!important;
+      /* Four-corner surface contract. The outer .os-main and inner .tex-shell
+         previously each had an independent rounded border/background. The
+         resulting nested arcs exposed mismatched substrate at every corner.
+         Leave one rounded clip (.tex-shell); each pane paints up to its edge.
+         Scope to TeX and preserve the existing mobile full-bleed behavior. */
+      @media (min-width:761px) {
+        body.os-shell:has(.tex-work-app) .os-main {
+          border:0!important;
+          border-radius:0!important;
+          background:transparent!important;
+          box-shadow:none!important;
+          -webkit-backdrop-filter:none!important;
+          backdrop-filter:none!important;
+        }
+        body.os-shell:has(.tex-work-app) .tex-workbench .tex-shell {
+          border-radius:24px!important;
+          background:var(--work-panel-soft)!important;
+          overflow:hidden!important;
+        }
+        body.os-shell:has(.tex-work-app) .tex-shell > .tex-documents-panel {
+          background:var(--work-panel-soft)!important;
+          background-clip:border-box!important;
+        }
+        body.os-shell:has(.tex-work-app) .tex-shell > .tex-editor-panel {
+          background:var(--work-panel)!important;
+        }
+        body.os-shell:has(.tex-work-app) .tex-shell > .tex-runs-panel {
+          background:var(--work-panel-soft)!important;
+        }
+      }
+      /* At two-column tablet widths, the outer right corner belongs to the
+         editor (not the third preview rail). Match the shell underpaint too. */
+      @media (min-width:761px) and (max-width:1080px) {
+        body.os-shell:has(.tex-work-app) .tex-workbench .tex-shell {
+          background:linear-gradient(to right,
+            var(--work-panel-soft) 0%,var(--work-panel-soft) 50%,
+            var(--work-panel) 50%,var(--work-panel) 100%)!important;
+        }
       }
       /* A single continuous surface, not a contrasting white header strip. */
       body.os-shell:has(.tex-work-app) .tex-documents-panel {
