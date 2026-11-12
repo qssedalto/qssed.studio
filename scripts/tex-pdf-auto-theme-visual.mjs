@@ -114,12 +114,31 @@ function browserHarness(fixture) {
       pageList.querySelector('[data-pdf-page-num="1"]').click();
       if(!pageList.hidden) throw Error('Page thumbnail selection must close the list');
       const searchToggle=bar.querySelector('[data-pdf-action="search-toggle"]');
-      const search=bar.querySelector('[data-pdf-action="find"]');
-      if(!search.hidden) throw Error('Native search field must start collapsed');
+      const search=document.querySelector('.aertex-pdf-find-popover [data-pdf-action="find"]');
+      const findPopover=document.querySelector('#aertex-pdf-find-popover');
+      if(!search.hidden || !findPopover.hidden || bar.contains(search)) {
+        throw Error('Search must initially be hidden outside the toolbar');
+      }
+      const rightBefore=right.getBoundingClientRect().width;
       searchToggle.click();
-      if(search.hidden || document.activeElement!==search) throw Error('Search icon does not reveal/focus the field');
-      search.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
-      if(!search.hidden) throw Error('Escape does not close PDF search');
+      const popupRect=findPopover.getBoundingClientRect();
+      const iconRect=searchToggle.getBoundingClientRect();
+      if(findPopover.hidden || search.hidden || document.activeElement!==search ||
+         Math.abs(right.getBoundingClientRect().width-rightBefore)>1 ||
+         popupRect.top<iconRect.bottom-2 || popupRect.bottom<=iconRect.bottom ||
+         popupRect.left<document.querySelector('.aertex-pdf-reader').getBoundingClientRect().left-1 ||
+         !findPopover.querySelector('[data-pdf-action="find-prev"]') ||
+         !findPopover.querySelector('[data-pdf-action="find-next"]') ||
+         !findPopover.querySelector('[data-pdf-action="find-close"]')) {
+        throw Error('Floating find palette must appear below magnifier without expanding the toolbar');
+      }
+      findPopover.querySelector('[data-pdf-action="find-next"]').click();
+      findPopover.querySelector('[data-pdf-action="find-prev"]').click();
+      findPopover.querySelector('[data-pdf-action="find-close"]').click();
+      if(!findPopover.hidden || !search.hidden ||
+         searchToggle.getAttribute('aria-expanded')!=='false') {
+        throw Error('Find popup close button should hide the palette and restore the toolbar');
+      }
       // Native outline label and pixel-traced glyph details.
       if(pageToggle.title!=='目录' ||
          !bar.querySelector('[data-pdf-action="rotate"] svg circle[cx="12"]') ||
@@ -134,14 +153,18 @@ function browserHarness(fixture) {
       if(getComputedStyle(legacy).display!=='none') {
         throw Error('Old PDF expand icon must not appear outside the toolbar');
       }
+      // Stub native requestFullscreen to verify click wiring even when headless
+      // Chromium does not grant a fullscreen user activation in this JS fixture.
+      const pdfReader=document.querySelector('.aertex-pdf-reader');
+      let fullscreenRequests=0;
+      pdfReader.requestFullscreen=async opts=>{
+        fullscreenRequests++;
+        if(opts?.navigationUI!=='hide')throw Error('Native fullscreen must hide browser navigation');
+      };
       newExpand.click();
-      if(!document.body.classList.contains('tex-preview-expanded') ||
-         newExpand.getAttribute('aria-expanded')!=='true') {
-        throw Error('Native expand icon did not activate the existing preview fullscreen');
-      }
-      newExpand.click();
-      if(document.body.classList.contains('tex-preview-expanded')) {
-        throw Error('Native expand icon did not restore the preview');
+      await new Promise(resolve=>setTimeout(resolve,40));
+      if(fullscreenRequests!==1 || document.body.classList.contains('tex-preview-expanded')) {
+        throw Error('PDF expand must request native fullscreen without toggling the Work layout');
       }
       report.push({step:'native-toolbar',icons:icons.length,groups:groups.map(r=>Math.round(r.left))});
       document.documentElement.dataset.themeMode='dark';
