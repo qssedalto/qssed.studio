@@ -460,7 +460,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
               data = Uint8Array.from(decoded, c => c.charCodeAt(0));
               type = /\\.pdf$/i.test(name) ? 'application/pdf' :
                 /\\.png$/i.test(name) ? 'image/png' : 'image/jpeg';
-            } else data = asset.content || '';
+            } else data = String(window.__aertexTexExplorerEditableText?.() ?? asset.content ?? '');
           }
           const url = URL.createObjectURL(new Blob([data], { type }));
           const a = document.createElement('a');
