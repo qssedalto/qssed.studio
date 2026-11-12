@@ -42,6 +42,14 @@ const multi=await invoke({document_id:id,files:[file("sections/notes.txt","hello
 assert.equal(multi.status,200);
 assert.equal(objects.get(key).files.length,4);
 
+const edited=await invoke({document_id:id,operation:"replace",
+  files:[file("chapter1.tex","\\\\section{Updated}") ]});
+assert.equal(edited.status,200,"Existing supplementary files must be editable.");
+assert.equal(objects.get(key).files.find(f=>f.name==="chapter1.tex").content,"\\\\section{Updated}");
+assert.equal(objects.get(key).source,original.source,"Editing an extra file must not replace main.tex.");
+const missingEdit=await invoke({document_id:id,operation:"replace",files:[file("not-here.tex","") ]});
+assert.equal(missingEdit.status,404,"Only existing files may be edited.");
+
 const invalidCases=[
  {name:"duplicate",files:[file("SAMPLE.BIB","oops")],status:409},
  {name:"main overwrite",files:[file("main.tex","oops")],status:409},
@@ -72,4 +80,6 @@ for(const id of ["tex-file-dialog","tex-file-panel-upload","tex-file-panel-new",
 }
 assert(markup.includes("/api/tex/files"),"Dialog must save through the owner-scoped file API.");
 assert(markup.includes("data-file-tab"),"Dialog needs accessible three-way navigation.");
+assert(markup.includes('id="tex-file-text-editor"'),"New text files need an editable surface.");
+assert(markup.includes("operation:'replace'"),"Text editing must save through authorized file replacement.");
 console.log("TeX file creation, ACL isolation, duplicate protection, import UI and disabled plus validated.");
