@@ -174,7 +174,7 @@ async function routeStudioRequest(request, env, ctx) {
     return nativeApiResponse(result);
   }
   if (pathname === "/api/workbench/overview") return handleWorkbenchOverview(request, env);
-  if (pathname === "/api/tex/link") return handleTexLinkSharingApi(request, env);
+  if (pathname === "/api/tex/link") return workHost ? handleTexLinkSharingApi(request, env) : new Response("Not Found", { status: 404 });
   if (pathname === "/api/tex/collaboration/realtime") return handleTexCollaborationRealtime(request, env);
   if (pathname === "/api/tex/collaboration/shared") return handleTexSharedCollaboration(request, env);
   if (pathname === "/api/tex/collaboration") return handleTexCollaborationRoute(request, env);
