@@ -60,7 +60,7 @@ assert(workProject.includes('window.__aertexTexProjectOpenDialog=openDialog'),
   "Welcome card must directly open its selected project dialog");
 assert(!workProject.includes('const template=templates[document.getElementById('),
   "Legacy instant-create template path should be disabled");
-for (const [index,match] of [...workProject.matchAll(/<script(?:\\s+[^>]*)?>([\\s\\S]*?)<\\/script>/g)].entries()){
+for (const [index,match] of [...workProject.matchAll(/<script(?:\s+[^>]*)?>([\s\S]*?)<\/script>/g)].entries()){
   new vm.Script(match[1], {filename:"project-ui-"+index+".js"});
 }
 const projectBackend = fs.readFileSync(new URL("../studio/tex-project-api.js",import.meta.url),"utf8");
