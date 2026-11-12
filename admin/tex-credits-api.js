@@ -20,13 +20,19 @@ function sameOrigin(request) {
 
 async function rpc(session, procedure, body) {
   const result = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + procedure, {
-    method: "POST", redirect: "error",
+    // Workers implement only "manual" and "follow". "error" throws a TypeError
+    // before any Supabase request is sent, leaving quotas unavailable.
+    // Never follow redirects carrying the administrator's bearer token.
+    method: "POST", redirect: "manual",
     headers: {
       apikey: SUPABASE_KEY, authorization: "Bearer " + session.accessToken,
       "content-type": "application/json;charset=UTF-8", accept: "application/json"
     },
     body: JSON.stringify(body)
   });
+  if (result.status >= 300 && result.status < 400) {
+    return {error: true, status: 503, body: {error: "Quota service redirect was blocked."}};
+  }
   const raw = await result.text();
   let data = {};
   try { data = raw ? JSON.parse(raw) : {}; } catch {}
