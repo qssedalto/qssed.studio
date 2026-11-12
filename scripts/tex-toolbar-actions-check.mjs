@@ -103,6 +103,7 @@ for (const zh of [true, false]) {
   const window = {
     setTimeout(callback) { callback(); },
     requestAnimationFrame(callback) { callback(); },
+    addEventListener() {},
     dispatchEvent() {}
   };
   const navigator = { clipboard: {
