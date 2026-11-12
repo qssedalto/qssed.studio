@@ -89,7 +89,8 @@ function strictOrigin(request) {
 }
 
 function configured(env) {
-  return Boolean(String(env.AERTEX_TEX_GITHUB_TOKEN || "") && validOwner(env.AERTEX_TEX_GITHUB_OWNER));
+  return Boolean(String(env.AERTEX_TEX_GITHUB_TOKEN || "") && validOwner(env.AERTEX_TEX_GITHUB_OWNER) &&
+    String(env.AERTEX_TEX_GITHUB_ADMIN_USER_IDS || "").split(",").some(id => isStorageObjectId(id.trim())));
 }
 
 function validOwner(owner) {
@@ -157,10 +158,15 @@ async function inputBody(request) {
 async function apply(request, env, userId) {
   const body = await inputBody(request);
   const amount = Number(body?.credits);
+  if (!configured(env)) return fail(503, "GitHub compilation has not been enabled by the administrator.");
   if (!Number.isInteger(amount) || amount < 1 || amount > 30) return fail(400, "Request between 1 and 30 compilation credits.");
   const existing = await readRow(env, userId);
   if (existing?.approval_status === "pending") return fail(409, "Your earlier request is pending.");
   if (existing?.active_nonce) return fail(409, "A build is still active.");
+  if (existing?.approval_status === "rejected" &&
+      Date.now() - Date.parse(existing.updated_at || 0) < 60 * MINUTE) {
+    return fail(429, "Please wait before submitting another application.");
+  }
   const values = {
     user_id: userId, approval_status: "pending", requested_credits: amount
   };
@@ -326,7 +332,9 @@ async function deleteRepository(request, env, userId) {
     if (actual?.id !== row.repo_id || !actual.private) throw httpError(409, "repository_identity_mismatch");
     await github(env, repoPath, "DELETE");
   } catch (error) {
-    if (error.status !== 404) throw error;
+    // A 404 can mean revoked credentials, not necessarily successful deletion.
+    // Keep the DB ownership lock until an administrator reconciles the repository.
+    throw error.status === 404 ? httpError(503, "repository_not_visible") : error;
   }
   await updateRow(env, userId, {
     repo_name: null, repo_id: null, repo_state: "none", source_branch: "main",
@@ -403,7 +411,7 @@ async function listRuns(env, userId) {
   }
   return json({ runs: normalized, active: Boolean(row.active_nonce) &&
     !normalized.some(run => run.status === "completed" &&
-      Date.parse(run.created_at) >= Date.parse(row.active_since || "") - MINUTE) });
+      Date.parse(run.created_at) >= Date.parse(row.active_since || "") - 5000) });
 }
 
 function base64Bytes(data) {
