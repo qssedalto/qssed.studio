@@ -111,7 +111,13 @@ async function unzip(raw) {
   }
   if(!entries.length)throw new Error("No supported files in ZIP.");
   const split=entries.map(e=>e.name.split("/"));
-  const root=split.every(parts=>parts.length>1&&parts[0]===split[0][0])?split[0][0]+"/":"";
+  // Never strip "." or ".." as a shared archive prefix; doing so would
+  // convert "../main.tex" into the seemingly safe "main.tex" (ZIP Slip).
+  const candidate=split[0]?.[0] || "";
+  const safeTop=/^[A-Za-z0-9][A-Za-z0-9._ -]{0,99}$/.test(candidate) &&
+    candidate!=="." && candidate!=="..";
+  const root=safeTop && split.every(parts=>parts.length>1&&parts[0]===candidate)
+    ?candidate+"/":"";
   const named=entries.map(e=>({name:root?e.name.slice(root.length):e.name,data:e.data}));
   const seen=new Set();
   for(const e of named){if(!safeName(e.name)||seen.has(e.name.toLowerCase()))throw new Error("Unsafe or duplicate project path: "+e.name);seen.add(e.name.toLowerCase());}
