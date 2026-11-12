@@ -128,8 +128,8 @@ assert(gpt.includes('pathname.startsWith("/_internal/admin-ai/")'), "GPT Worker 
 assert(gpt.includes("X-AERTEX-Control-Secret"), "Private AI admin bridge must require a server-side secret.");
 assert(gpt.includes("handleAiAdminApi(proxied, env"), "AI admin handler may only be reached through the private bridge.");
 assert(!gpt.includes("renderAdminDenied"), "GPT Worker must not carry legacy administrator pages.");
-assert(gpt.includes("script-src 'unsafe-inline' https://cdn.jsdelivr.net"), "Intelligence CSP must allow the pinned KaTeX/highlight script origin.");
-assert(gpt.includes("style-src 'unsafe-inline' https://cdn.jsdelivr.net"), "Intelligence CSP must allow the pinned KaTeX stylesheet origin.");
+assert(gpt.includes("script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net"), "Intelligence CSP must allow the pinned KaTeX/highlight script origin.");
+assert(gpt.includes("style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net"), "Intelligence CSP must allow the pinned KaTeX stylesheet origin.");
 assert(gpt.includes("font-src https://cdn.jsdelivr.net data:"), "Intelligence CSP must allow KaTeX web fonts while keeping other font origins blocked.");
 assert(gpt.includes('pathname.startsWith("/api/ai/admin/")'), "GPT Worker must explicitly hide legacy administrator API paths.");
 assert(gpt.includes('if (localizedRest[0] === "admin")'), "GPT Worker must hide administrator page paths under every supported locale.");
