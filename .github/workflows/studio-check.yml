@@ -237,6 +237,9 @@ jobs:
       - name: Verify TeX Workbench
         run: node scripts/tex-workbench-check.mjs
 
+      - name: Verify TeX add-file workflows and authorization
+        run: node scripts/tex-file-manager-check.mjs
+
       - name: Verify site-synced PDF colors and preserved images
         run: node scripts/tex-pdf-auto-theme-check.mjs
 
