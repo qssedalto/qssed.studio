@@ -106,6 +106,10 @@ export function enhanceWorkTexEditorTools(markup, zh) {
       }
       .tex-editor-command{
         appearance:none!important;
+        position:relative!important;
+        isolation:isolate!important;
+        flex:0 0 39px!important;
+        touch-action:manipulation!important;
         display:grid!important;
         place-items:center!important;
         width:39px!important;
@@ -127,6 +131,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
       .tex-editor-command:focus-visible{outline:none!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 14%,transparent)!important}
       .tex-editor-command:disabled{opacity:.30!important;cursor:not-allowed!important;transform:none!important}
       .tex-editor-command svg{width:26px!important;height:26px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.7!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important}
+      .tex-editor-command svg{pointer-events:none!important}
       .tex-editor-command svg .tex-icon-accent{stroke:var(--primary)!important}
       .tex-editor-command svg .tex-icon-accent-fill{fill:var(--primary)!important;stroke:none!important}
       /* Rounded, precision-stroked icons stay smooth at fractional pixel sizes. */
@@ -310,13 +315,18 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           return '/' + locale + '/d/' + exempt + encodeURIComponent(id);
         };
 
-        function createButton(name, svg, className = '') {
+        function createButton(action, name, svg, className = '') {
           const button = document.createElement('button');
           button.type = 'button';
+          button.id = 'tex-command-' + action;
+          button.dataset.texAction = action;
           button.className = 'tex-editor-command' + (className ? ' ' + className : '');
           button.title = name;
           button.setAttribute('aria-label', name);
           button.innerHTML = svg;
+          // An icon click must never be interpreted as an adjacent command or
+          // reach a document-level click handler.
+          button.addEventListener('click', event => event.stopPropagation());
           return button;
         }
 
@@ -326,9 +336,10 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         const undoSvg = '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M4.6 4.5v10.4h10.2"/><path class="tex-source-gray" d="M4.8 14.8 15.6 4.2"/><path class="tex-source-gray" d="M15.4 4.9c6.6 0 11.6 4.9 11.6 11.3 0 3.1-1.4 5.8-4.1 8.5L16.7 30"/></svg>';
         const icons = {
           save: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M6.5 3.5h15.2l5.8 5.8v17.8a2.4 2.4 0 0 1-2.4 2.4H6.5a2.4 2.4 0 0 1-2.4-2.4V5.9a2.4 2.4 0 0 1 2.4-2.4Z"/><path class="tex-source-gray" d="M9 3.6v9.3h12.5V3.7M19 6.2v4"/><path class="tex-source-gray" d="M9.1 29V18.8c0-.8.6-1.4 1.4-1.4h11.1c.8 0 1.4.6 1.4 1.4V29"/></svg>',
-          saveAs: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M6.4 3.5h15.3l5.7 5.8v11.1M18.2 29.5H6.4A2.4 2.4 0 0 1 4 27.1V5.9a2.4 2.4 0 0 1 2.4-2.4Z"/><path class="tex-source-gray" d="M9 3.6v9.3h12.3V3.8M19 6.2v4M9 29V18.8c0-.8.6-1.4 1.4-1.4h9.4"/><path class="tex-source-gray" d="m18.1 26.5 8.8-8.8a2.5 2.5 0 0 1 3.6 3.6l-8.8 8.8-5.1 1.2 1.5-4.8Z"/><path class="tex-source-gray" d="m25.3 19.3 3.6 3.6"/></svg>',
+          // Pencil body is detached from the disk inset: no crossed-out bar.
+          saveAs: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M7 3.5h14.8l5.2 5.2v10.2M17 29H7a2.5 2.5 0 0 1-2.5-2.5V6A2.5 2.5 0 0 1 7 3.5Z"/><path class="tex-source-gray" d="M9 3.8v9.1h12V3.8M18.8 6.2v4.2M9 27.6v-8.2a1.6 1.6 0 0 1 1.6-1.6H18"/><path class="tex-source-gray" d="m19 25.1 7.4-7.4a2.55 2.55 0 0 1 3.6 3.6l-7.4 7.4-5.3 1.3Z"/><path class="tex-source-gray" d="m24.8 19.3 3.6 3.6"/></svg>',
           cut: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M6.6 3.5 18.7 20.9M25.4 3.5 13.2 20.9"/><path class="tex-source-accent" d="M12.5 25.1a4.2 4.2 0 1 1-8.4 0 4.2 4.2 0 0 1 8.4 0ZM27.9 25.1a4.2 4.2 0 1 1-8.4 0 4.2 4.2 0 0 1 8.4 0Z"/></svg>',
-          copy: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M13.3 7.5H9.1a3.8 3.8 0 0 0-3.8 3.8v13a3.8 3.8 0 0 0 3.8 3.8h9.3a3.6 3.6 0 0 0 3-1.5"/><path class="tex-source-accent" d="M16.9 4.1h8.5c2 0 3.6 1.6 3.6 3.6v13.6c0 2-1.6 3.6-3.6 3.6h-8.5c-2 0-3.6-1.6-3.6-3.6V7.7c0-2 1.6-3.6 3.6-3.6Z"/></svg>',
+          copy: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M14 8H10a4 4 0 0 0-4 4v12a4 4 0 0 0 4 4h10a4 4 0 0 0 4-4"/><rect class="tex-source-accent" x="14.5" y="3.5" width="14" height="21" rx="3.5"/></svg>',
           paste: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M10.7 6.3H8.5a3.7 3.7 0 0 0-3.7 3.7v17.6a2.5 2.5 0 0 0 2.5 2.5h5M21.3 6.3h1.4a3.7 3.7 0 0 1 3.7 3.7v2.2"/><path class="tex-source-gray" d="M12.8 4.6c0-.8.7-1.5 1.5-1.5h5.1c.8 0 1.5.7 1.5 1.5v3c0 .8-.7 1.5-1.5 1.5h-5.1c-.8 0-1.5-.7-1.5-1.5v-3Z"/><path class="tex-source-accent" d="M18.1 13.2h9.3c.8 0 1.4.6 1.4 1.4v14c0 .8-.6 1.4-1.4 1.4h-9.3c-.8 0-1.4-.6-1.4-1.4v-14c0-.8.6-1.4 1.4-1.4Z"/></svg>',
           rename: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M12.5 6.9H9A4.2 4.2 0 0 0 4.8 11v13A4.2 4.2 0 0 0 9 28.2h4M24.3 6.9H25a4.2 4.2 0 0 1 4.2 4.2v13a4.2 4.2 0 0 1-4.2 4.1h-.9"/><path class="tex-source-accent" d="m8.9 23.8 4.7-12 4.7 12M10.4 20h6.4"/><path class="tex-source-accent" d="M20.7 3v26M17.4 3h6.6M17.4 29h6.6"/></svg>',
           delete: '<svg class="tex-smooth-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="tex-source-gray" d="M4.2 9.8h23.6M12.1 9.8V7.1a3.1 3.1 0 0 1 3.1-3.1h1.6a3.1 3.1 0 0 1 3.1 3.1v2.7"/><path class="tex-source-gray" d="m7.8 10.1 1.3 16.6a2.5 2.5 0 0 0 2.5 2.3h8.8a2.5 2.5 0 0 0 2.5-2.3l1.3-16.6"/><path class="tex-source-gray" d="M13.2 15.1v9.1M18.8 15.1v9.1"/></svg>',
@@ -339,16 +350,16 @@ export function enhanceWorkTexEditorTools(markup, zh) {
 
         const bar = document.createElement('div');
         bar.className = 'tex-editor-commandbar';
-        const saveButton = createButton(labels.save, icons.save);
-        const saveAsButton = createButton(labels.saveAs, icons.saveAs);
-        const undoButton = createButton(labels.undo, icons.undo);
-        const redoButton = createButton(labels.redo, icons.redo);
-        const cutButton = createButton(labels.cut, icons.cut);
-        const copyButton = createButton(labels.copy, icons.copy);
-        const pasteButton = createButton(labels.paste, icons.paste);
-        const renameButton = createButton(labels.rename, icons.rename);
-        const deleteButton = createButton(labels.delete, icons.delete, 'is-delete');
-        const historyButton = createButton(labels.history, icons.history, 'is-history');
+        const saveButton = createButton('save', labels.save, icons.save);
+        const saveAsButton = createButton('save-as', labels.saveAs, icons.saveAs);
+        const undoButton = createButton('undo', labels.undo, icons.undo);
+        const redoButton = createButton('redo', labels.redo, icons.redo);
+        const cutButton = createButton('cut', labels.cut, icons.cut);
+        const copyButton = createButton('copy', labels.copy, icons.copy);
+        const pasteButton = createButton('paste', labels.paste, icons.paste);
+        const renameButton = createButton('rename', labels.rename, icons.rename);
+        const deleteButton = createButton('delete', labels.delete, icons.delete, 'is-delete');
+        const historyButton = createButton('history', labels.history, icons.history, 'is-history');
         const separator = () => { const node = document.createElement('span'); node.className = 'tex-editor-command-separator'; node.setAttribute('aria-hidden', 'true'); return node; };
         // Keep the Explorer-style edit group visible first even in narrow editor panes.
         bar.append(cutButton, copyButton, pasteButton, renameButton, deleteButton, separator(), saveButton, saveAsButton, separator(), undoButton, redoButton, separator(), historyButton);
