@@ -117,6 +117,14 @@ const socket=readFileSync(new URL("../studio/tex-collaboration-room.js",import.m
 const realtime=readFileSync(new URL("../studio/tex-collaboration-realtime.js",import.meta.url),"utf8");
 const shared=readFileSync(new URL("../studio/tex-collaboration-shared.js",import.meta.url),"utf8");
 assert(ui.includes("stopImmediatePropagation"),"Link saving must not change members.");
+assert(!ui.includes("buttonObserver"),"Safari: Save state must never observe its own disabled attribute.");
+assert(!/observe\(save,\s*\{[^}]*attributeFilter[^}]*disabled/.test(ui),
+  "Safari: observing Save.disabled while setting Save.disabled creates an endless MutationObserver microtask loop.");
+assert(ui.includes("all.forEach(input=>input.addEventListener('change'"),
+  "Sharing choices must use user events rather than mutation-driven button updates.");
+assert(ui.includes("window.addEventListener('qsseda:tex-collaboration-page'"),
+  "Switching to the sharing step must explicitly recalculate its Save state.");
+
 assert(api.includes("sameOrigin(request)"),"All sharing mutations require same-origin.");
 assert(api.includes("await owned(env,user.id,doc)"),"Only the owner may update link settings.");
 assert(api.includes('status:"pending"'),"Access requests must be persisted.");
