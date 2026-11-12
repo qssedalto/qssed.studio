@@ -56,6 +56,7 @@ export class TexCollaborationRoom {
       expires_at: Date.now() + AUTH_LEASE_MS,
       selection_start: 0,
       selection_end: 0,
+      caret_position: 0,
       anchor_rel: "",
       head_rel: "",
       typing: false
@@ -111,6 +112,7 @@ export class TexCollaborationRoom {
     if (type === "presence") {
       participant.selection_start = clampPosition(payload.selection_start);
       participant.selection_end = clampPosition(payload.selection_end);
+      participant.caret_position = clampPosition(payload.caret_position);
       participant.anchor_rel = safeRelativePosition(payload.anchor_rel);
       participant.head_rel = safeRelativePosition(payload.head_rel);
       participant.typing = payload.typing === true;
@@ -244,6 +246,7 @@ export class TexCollaborationRoom {
         avatar_url: participant.avatar_url,
         selection_start: clampPosition(participant.selection_start),
         selection_end: clampPosition(participant.selection_end),
+        caret_position: clampPosition(participant.caret_position),
         anchor_rel: safeRelativePosition(participant.anchor_rel),
         head_rel: safeRelativePosition(participant.head_rel),
         typing: participant.typing === true
