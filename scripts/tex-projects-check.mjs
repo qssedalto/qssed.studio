@@ -134,18 +134,71 @@ try{
   assert(archive.length < 42*1024,"Fixture must replicate a small ZIP that exceeds the old file-count limit.");
   const github=await create(asZip(archive));
   assert.equal(github.response.status,201,JSON.stringify(github.body));
-  assert.equal(github.body.document.files.length,23,"Import must retain all 23 supporting files.");
+  assert.equal(github.body.document.files.length,25,"Import must retain all 25 supporting files from the current GitHub repository.");
   assert.equal(github.body.document.files.filter(f=>f.name.endsWith(".py")).length,7,"Python scripts must be retained as text.");
   assert(github.body.document.files.some(f=>f.name==="main.pdf"),"Project PDF must be retained.");
   assert(github.body.document.files.some(f=>f.name==="README.md"),"Markdown readme must be retained.");
-  assert.equal(github.body.skipped.length,2,"GitHub workflows and .gitignore are metadata, not TeX assets.");
-  assert(github.body.skipped.every(x=>x.includes(".github")||x.endsWith(".gitignore")));
-  const tooMany=zip(Array.from({length:26},(_,i)=>({
+  assert.equal(github.body.skipped.length,0,"GitHub workflow and .gitignore are now supported text files.");
+  assert(github.body.document.files.some(f=>f.name===".github/workflows/latex.yml"));
+  assert(github.body.document.files.some(f=>f.name===".gitignore"));
+  const tooMany=zip(Array.from({length:501},(_,i)=>({
     name:"limit-test/"+(i===0?"main.tex":"chapter"+i+".tex"),data:"Hello"
   })));
   const overCount=await create(asZip(tooMany));
-  assert.equal(overCount.response.status,400,"More than 25 importable files must be rejected.");
-  assert.match(overCount.body.error,/25 importable files/,"File-count failure must explain the true limit.");
+  assert.equal(overCount.response.status,400,"More than 500 importable files must be rejected.");
+  assert.match(overCount.body.error,/500 importable files/,"File-count failure must explain the 500-file limit.");
+
+  // The actual user-uploaded Machine-Learning-main.zip has 36 ZIP records:
+  // 15 substantive files, 15 macOS AppleDouble copies, and 6 directories.
+  const actualFiles=[
+    "references.bib","main.tex",".gitignore","README.md",
+    "config/preamble.tex","config/titlepage.tex",
+    "chapters/least_squares.tex","chapters/foundations.tex",
+    "chapters/preface.tex","chapters/gradient_methods.tex",
+    "chapters/generalization.tex","chapters/logistic_regression.tex",
+    "appendices/notation.tex","appendices/development_log.tex",
+    ".github/workflows/latex.yml"
+  ];
+  const actualEntries=[
+    "Machine-Learning-main/","Machine-Learning-main/config/",
+    "Machine-Learning-main/chapters/","Machine-Learning-main/appendices/",
+    "Machine-Learning-main/.github/","Machine-Learning-main/.github/workflows/"
+  ].map(name=>({name,data:""}));
+  for(const name of actualFiles){
+    actualEntries.push({name:"Machine-Learning-main/"+name,
+      data:name==="main.tex"?"\\\\documentclass{article}\\n\\\\begin{document}ML\\\\end{document}":"Project source"});
+    actualEntries.push({name:"__MACOSX/Machine-Learning-main/"+name.split("/").slice(0,-1).concat("._"+name.split("/").at(-1)).join("/"),
+      data:"macOS AppleDouble"});
+  }
+  const uploaded=await create(asZip(zip(actualEntries)));
+  assert.equal(uploaded.response.status,201,JSON.stringify(uploaded.body));
+  assert.equal(uploaded.body.document.files.length,14,"The uploaded ZIP must retain all 14 supporting files.");
+  assert.equal(uploaded.body.skipped.length,15,"AppleDouble metadata should not become project files.");
+  assert(uploaded.body.document.files.some(x=>x.name===".gitignore"),"The ZIP's gitignore must be preserved.");
+  assert(uploaded.body.document.files.some(x=>x.name===".github/workflows/latex.yml"),"The ZIP's YAML workflow must be preserved.");
+  assert(uploaded.body.document.files.some(x=>x.name==="chapters/gradient_methods.tex"));
+
+  const maximum=zip(Array.from({length:500},(_,i)=>({
+    name:i===0?"project/main.tex":"project/src/file-"+i+".js",
+    data:i===0?"\\\\documentclass{article}":"export const number = "+i+";"
+  })));
+  const maxUpload=await create(asZip(maximum));
+  assert.equal(maxUpload.response.status,201,JSON.stringify(maxUpload.body));
+  assert.equal(maxUpload.body.document.files.length,499,"Exactly 500 total project files must be accepted.");
+
+  const office=await create(asZip(zip([
+    {name:"mixed/main.tex",data:"\\\\documentclass{article}"},
+    ...["report.docx","budget.xlsx","slides.pptx","records.csv","src/main.cpp",
+      "src/Main.java","src/app.js","config/settings.json","README.md"].map(name=>({
+        name:"mixed/"+name,
+        data:/\\.(docx|xlsx|pptx)$/.test(name)?Buffer.from([0x50,0x4b,0x03,0x04,0,0]):"Example content"
+      }))
+  ])));
+  assert.equal(office.response.status,201,JSON.stringify(office.body));
+  assert.equal(office.body.document.files.filter(x=>x.encoding==="base64").length,3,"Office files must be stored as binary.");
+  for(const ext of [".csv",".cpp",".java",".js",".json"])
+    assert(office.body.document.files.some(x=>x.name.endsWith(ext)&&x.encoding==="utf8"),ext+" must import as UTF-8 source.");
+
   const hiddenTraversal=await create(asZip(zip([{name:"../.github/workflows/test.yml",data:"hidden"},
     {name:"main.tex",data:"valid"}])));
   assert.equal(hiddenTraversal.response.status,400,"Ignored metadata must not bypass ZIP Slip validation.");
@@ -154,7 +207,7 @@ try{
   assert.equal(refused.response.status,400,"Traversal paths must be rejected.");
   const nonZip=await create(asZip(Buffer.from("not a zip")));
   assert.equal(nonZip.response.status,400,"Invalid ZIP must be rejected.");
-  assert.equal(writes.length,4,"Only successfully validated projects can reach R2.");
+  assert.equal(writes.length,7,"Only successfully validated projects can reach R2.");
   console.log("TeX project creation, legal-name gate, sample files, ZIP import and traversal checks passed.");
 }finally{
   globalThis.fetch=realFetch;
