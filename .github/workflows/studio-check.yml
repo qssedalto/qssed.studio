@@ -29,6 +29,7 @@ on:
       - "scripts/native-intelligence-chat-check.mjs"
       - "scripts/lab-check.mjs"
       - "scripts/tex-workbench-check.mjs"
+      - "scripts/tex-toolbar-actions-check.mjs"
       - "scripts/tex-pdf-auto-theme-check.mjs"
       - "scripts/work-local-bridge-check.mjs"
       - "scripts/work-subdomain-check.mjs"
@@ -90,6 +91,7 @@ on:
       - "scripts/native-intelligence-chat-check.mjs"
       - "scripts/lab-check.mjs"
       - "scripts/tex-workbench-check.mjs"
+      - "scripts/tex-toolbar-actions-check.mjs"
       - "scripts/tex-pdf-auto-theme-check.mjs"
       - "scripts/work-local-bridge-check.mjs"
       - "scripts/work-subdomain-check.mjs"
@@ -169,6 +171,7 @@ jobs:
           node scripts/native-intelligence-chat-check.mjs
           node --check scripts/lab-check.mjs
           node --check scripts/tex-workbench-check.mjs
+          node --check scripts/tex-toolbar-actions-check.mjs
           node --check scripts/tex-pdf-auto-theme-check.mjs
           node --check scripts/work-local-bridge-check.mjs
           node --check scripts/work-subdomain-check.mjs
@@ -235,7 +238,9 @@ jobs:
         run: node scripts/lab-check.mjs
 
       - name: Verify TeX Workbench
-        run: node scripts/tex-workbench-check.mjs
+        run: |
+          node scripts/tex-workbench-check.mjs
+          node scripts/tex-toolbar-actions-check.mjs
 
       - name: Verify site-synced PDF colors and preserved images
         run: node scripts/tex-pdf-auto-theme-check.mjs
