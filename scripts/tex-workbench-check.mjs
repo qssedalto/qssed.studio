@@ -255,5 +255,51 @@ assert(versionApi.includes('action === "restore"'), "Version API must support ro
 assert(versionApi.includes("purgeLegacyPdfResults"), "Version history must remove legacy persistent PDFs");
 assert(!versionApi.includes('Content-Type", "application/pdf"'), "Version API must never persist PDF data");
 
+// Touch-only iPad/Safari repair: the generated style and script must be
+// isolated from fine-pointer desktop and work without HTML injection.
+const { enhanceWorkTexMobileQa } = await import("../studio/ui-work-tex-mobile-qa.js");
+const { WORK_TEX_EXPLORER_TREE } = await import("../studio/ui-work-tex-explorer-tree.js");
+const responsive = enhanceWorkTexMobileQa("<main class='tex-work-app'></main>");
+const css = responsive.match(/<style id="aertex-tex-mobile-qa">([\\s\\S]*?)<\\/style>/)?.[1] || "";
+const script = responsive.match(/<script id="aertex-tex-mobile-qa-runtime">([\\s\\S]*?)<\\/script>/)?.[1] || "";
+assert(css.includes("(max-width:1280px) and (pointer:coarse)"), "Layout changes must be touch only outside phone breakpoints.");
+assert(css.includes("grid-template-columns:46px minmax(0,1fr) 46px"), "Collapsed tablet side rails must not overlap the editor.");
+assert(css.includes("overflow-y:auto!important"), "Document tree must scroll independently.");
+assert(css.includes(".tex-tree-file"), "Nested files must be aligned within their folders.");
+assert(css.includes(".tex-editor-footer") && css.includes("display:none!important"), "Obsolete mobile footer must be hidden.");
+assert(css.includes(".tex-editor-commandbar") && css.includes("overflow-x:auto!important"), "Toolbar must scroll horizontally instead of expanding the page.");
+assert(css.includes("#tex-source:focus"), "Touch editor focus glow must be removed.");
+assert(script.includes("__aertexMobileMarkdown"), "Mobile-only improved Markdown renderer missing.");
+new Function(script);
+assert(WORK_TEX_EXPLORER_TREE.includes("!touchCompact()&&openProjects.size===0"), "Mobile must never auto-open every folder.");
+assert(WORK_TEX_EXPLORER_TREE.includes("sub.hidden=touchCompact()"), "Nested folders must initially be closed on touch screens.");
+assert(WORK_TEX_EXPLORER_TREE.includes("pendingDocuments"), "First project expansion must reuse pending requests.");
+assert(WORK_TEX_EXPLORER_TREE.includes("window.__aertexMobileMarkdown"), "Mobile Markdown preview must use the safe parser.");
+assert(entry.includes("enhanceWorkTexMobileQa(enhanceTexProjectControls(markup, zh))"), "Only Work TeX pages should load the mobile repair.");
+const fakeMedia = { matches: true, addEventListener(){} };
+const fakeFooter = { prepend(n){n.parentElement=this;},insertBefore(n){n.parentElement=this;} };
+const fakeSave = { parentElement: fakeFooter, nextSibling:null };
+const fakeToolbar = { append(n){n.parentElement=this;} };
+const fakeList = { addEventListener(){} };
+const fakeRoot = { querySelector(selector){return ({
+  ".tex-editor-toolbar":fakeToolbar, ".tex-editor-footer":fakeFooter,
+  ".tex-save-state":fakeSave, "#tex-document-list":fakeList
+})[selector]||null;} };
+const fakeWindow = { matchMedia:()=>fakeMedia };
+const fakeDocument = { querySelector:s=>s===".tex-work-app"?fakeRoot:null };
+const vm = await import("node:vm");
+vm.runInNewContext(script,{window:fakeWindow,document:fakeDocument});
+const markdown = fakeWindow.__aertexMobileMarkdown;
+assert(typeof markdown==="function", "Markdown renderer must initialize on touch screens.");
+const sampleMd = markdown("# Title\\n\\n**bold** and \\u0060code\\u0060\\n\\n- item\\n- [x] done\\n\\n| key | value |\\n| --- | --- |\\n| a | b |\\n\\n\\u0060\\u0060\\u0060js\\nconst x=1;\\n\\u0060\\u0060\\u0060");
+assert(sampleMd.includes("<h1>Title</h1>"), "Markdown headings should render.");
+assert(sampleMd.includes("<strong>bold</strong>"), "Markdown emphasis should render.");
+assert(sampleMd.includes("<table>") && sampleMd.includes("<td>b</td>"), "Markdown tables should render.");
+assert(sampleMd.includes("<pre><code>const x=1;"), "Fenced code should render literally.");
+assert(sampleMd.includes('type="checkbox"'), "Markdown task lists should render.");
+assert(!markdown("<script>alert(1)</script>").includes("<script>"), "Markdown must escape raw HTML.");
+const presenceSource = fs.readFileSync(new URL("../studio/ui-work-tex-realtime.js",import.meta.url),"utf8");
+assert(presenceSource.includes("const people = new Map()") && presenceSource.includes("person?.id || person?.client_id"), "Online indicator must count unique accounts instead of connections.");
+
 console.log("TeX Workbench checks passed.");
 function assert(condition, message) { if (!condition) throw new Error(message); }
