@@ -45,8 +45,8 @@ function blankSource(projectName, author) {
     "\\date{" + date + "}\n\n" +
     "\\begin{document}\n\n\\maketitle\n\n\\section{Introduction}\n\n\\end{document}\n";
 }
-async function ownerName(token) {
-  const response = await fetch(SUPABASE_URL + "/rest/v1/profiles?select=first_name,last_name", {
+async function ownerName(token,userId) {
+  const response = await fetch(SUPABASE_URL + "/rest/v1/profiles?select=first_name,last_name&id=eq." + encodeURIComponent(userId), {
     headers:{ apikey:SUPABASE_KEY, authorization:"Bearer " + token, accept:"application/json" }
   });
   if(!response.ok) return "";
@@ -138,6 +138,7 @@ async function createDocument(env,userId,title,source,files,type) {
     httpMetadata:{contentType:"application/json;charset=UTF-8"},
     customMetadata:{ownerId:userId,hidden:"true",kind:"tex-document",
       title,engine:"xelatex",preview:source.replace(/\s+/g," ").trim().slice(0,220),
+      projectType:type,fileCount:String(1+(files?.length||0)),
       createdAt:now,updatedAt:now}
   });
   return json({document:record,created:true},201);
@@ -168,7 +169,7 @@ export async function handleTexProjects(request,env,userId,accessToken) {
       ];
       return await createDocument(env,userId,title,SAMPLE_MAIN,files,"example");
     }
-    const author=await ownerName(accessToken);
+    const author=await ownerName(accessToken,userId);
     if(!author)return problem("Please complete your legal first and last name in account settings before creating a blank project.",422);
     return await createDocument(env,userId,title,blankSource(title,author),[],"blank");
   } catch(error) {

@@ -1,34 +1,34 @@
 export function polishTexWorkbenchApp(markup, zh) {
   const copy = zh ? {
-    startTitle: "开始一份 TeX 文档",
-    startLead: "开始一份",
-    startAccent: "TeX 文档",
+    startTitle: "开始一个 TeX 项目",
+    startLead: "开始一个",
+    startAccent: "TeX 项目",
     startKicker: "从灵感到排版",
-    chooseTemplate: "选择模板",
+    chooseTemplate: "选择项目类型",
     startDetail: "选择一种结构，直接进入写作与排版。",
-    blank: "空白文档",
-    blankDetail: "最简 article 结构，适合从零开始",
-    article: "中文文稿",
-    articleDetail: "预设中文排版、章节与常用页面设置",
-    math: "数学笔记",
-    mathDetail: "预设公式环境，适合推导与课程记录",
+    blank: "空白项目",
+    blankDetail: "基础 article 结构，自动填入项目名与真实姓名",
+    article: "示例项目",
+    articleDetail: "包含 main.tex、sample.bib 和 frog.jpg",
+    math: "上传项目",
+    mathDetail: "上传 ZIP 文件，保留项目内的多个文件",
     local: "本机编译",
     autosave: "自动保存",
     preview: "PDF 预览",
     previewToggle: "自动预览"
   } : {
-    startTitle: "Start a TeX document",
+    startTitle: "Start a TeX project",
     startLead: "Start a",
-    startAccent: "TeX document",
+    startAccent: "TeX project",
     startKicker: "FROM IDEA TO TYPESET",
-    chooseTemplate: "Choose a template",
+    chooseTemplate: "Choose a project type",
     startDetail: "Choose a structure and start writing and typesetting.",
-    blank: "Blank",
+    blank: "Blank project",
     blankDetail: "A minimal article structure for a clean start",
-    article: "Chinese Document",
-    articleDetail: "Chinese typesetting, sections, and common page settings",
-    math: "Math Notes",
-    mathDetail: "Formula environments for derivations and course notes",
+    article: "Example project",
+    articleDetail: "Includes main.tex, sample.bib and frog.jpg",
+    math: "Upload project",
+    mathDetail: "Upload a ZIP archive with your project files",
     local: "Local compile",
     autosave: "Autosave",
     preview: "PDF preview",
@@ -63,7 +63,7 @@ export function polishTexWorkbenchApp(markup, zh) {
         </div>
       </div>
       <div class="qtex-templates">
-        <div class="qtex-templates-header"><strong>${copy.chooseTemplate}</strong><span>03 / TEMPLATES</span></div>
+        <div class="qtex-templates-header"><strong>${copy.chooseTemplate}</strong><span>03 / PROJECT TYPES</span></div>
         <div class="qtex-template-grid">
           <button type="button" class="qtex-template qtex-template-blank" data-tex-start-template="blank">
             <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">+</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
@@ -132,6 +132,11 @@ export function polishTexWorkbenchApp(markup, zh) {
         for (const button of document.querySelectorAll('[data-tex-start-template]')) {
           button.addEventListener('click', () => {
             if (!template || !create) return;
+            if(typeof window.__aertexTexProjectOpenDialog === 'function'){
+              const kind=button.dataset.texStartTemplate;
+              window.__aertexTexProjectOpenDialog(kind==='article'?'example':kind==='math'?'upload':'blank');
+              return;
+            }
             template.value = button.dataset.texStartTemplate || 'blank';
             create.click();
           });
