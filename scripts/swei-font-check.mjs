@@ -110,7 +110,7 @@ function emulate(locale) {
   assert(!latin.properties.has("font-family"), "English-only text must not be touched");
   assert(editor.properties.get("font-family").includes("ui-monospace, Menlo"), "Editor Latin monospace must remain");
   assert(codeMirror.properties.get("font-family").includes("ui-monospace, Menlo"), "CodeMirror English monospace must remain");
-  assert.equal((important.properties.get("font-family").match(/AERTEX Swei Han SC/g) || []).length, 1);
+  assert.equal(important.properties.get("font-family").split(expectedFace).length - 1, 1, "Existing Swei prefix may not be duplicated");
   const fresh = body.append(new FakeElement("SPAN", "动态插入中文 English"));
   observer.callback([{ type: "childList", addedNodes: [fresh] }]);
   assert(fresh.properties.get("font-family").startsWith(expectedFace), "New elements must be styled");
