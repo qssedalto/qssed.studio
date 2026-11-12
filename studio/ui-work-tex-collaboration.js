@@ -161,7 +161,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
       .tex-work-app .tex-collaboration-button:hover:not(:disabled){background:var(--card)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 30%,var(--border))!important}
       .tex-work-app .tex-collaboration-button:active:not(:disabled){transform:scale(.97)}
       .tex-work-app .tex-collaboration-button:disabled{opacity:.38!important;cursor:not-allowed!important}
-      .tex-work-app .tex-collaboration-button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+      .tex-work-app .tex-collaboration-button svg.tex-collaboration-people{width:25px!important;height:23px!important;flex:0 0 25px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
       .tex-collaboration-avatars{display:flex;align-items:center;margin-left:1px}
       .tex-collaboration-avatar-dot{display:grid;place-items:center;width:21px;height:21px;margin-left:-5px;border:2px solid var(--fill);border-radius:50%;background:var(--surface);color:var(--muted);font-size:8px;font-weight:800;overflow:hidden}
       .tex-collaboration-avatar-dot:first-child{margin-left:0}.tex-collaboration-avatar-dot img{width:100%;height:100%;object-fit:cover}
@@ -269,7 +269,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         openButton.className = 'tex-collaboration-button';
         openButton.type = 'button';
         openButton.disabled = true;
-        openButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 19c0-2.4-2-4-4.5-4S7 16.6 7 19"></path><circle cx="11.5" cy="9" r="3"></circle><path d="M18 8v6M15 11h6"></path></svg><span>' + labels.open + '</span><span class="tex-collaboration-avatars" aria-hidden="true"></span>';
+        openButton.innerHTML = '<svg class="tex-collaboration-people" viewBox="0 0 48 36" aria-hidden="true"><circle cx="16" cy="11" r="5.2"/><circle cx="32.2" cy="10.3" r="5.7"/><path d="M4.4 29.9V27c0-6.3 4.6-10.2 11.6-10.2 4.6 0 7.5 1.4 9.3 4.1"/><path d="M20.3 29.9v-1.5c0-6.3 4.7-10.8 11.9-10.8 7.3 0 11.7 4.3 11.7 10.8v1.5Z"/><path d="M4.4 29.9h15.9"/></svg><span>' + labels.open + '</span><span class="tex-collaboration-avatars" aria-hidden="true"></span>';
         toolbar.append(openButton);
 
         const backdrop = document.createElement('div');

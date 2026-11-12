@@ -12,7 +12,7 @@ const LIMIT_FILES = 24;
 const SOURCE_LIMIT = 180000;
 const MAX_DOCS = 120;
 const BINARY_EXT = /\.(png|jpe?g|pdf)$/i;
-const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|png|jpe?g|pdf)$/i;
+const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|md|markdown|png|jpe?g|pdf)$/i;
 const utf8 = new TextDecoder("utf-8", { fatal: true });
 
 function problem(message, status = 400) { return json({ error: message }, status); }

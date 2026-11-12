@@ -5,7 +5,7 @@ import { isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
-const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|png|jpe?g|pdf)$/i;
+const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|md|markdown|png|jpe?g|pdf)$/i;
 const BINARY = /\.(png|jpe?g|pdf)$/i;
 const MAX_FILES = 24; // extras; main.tex is the 25th entry
 const MAX_SINGLE_BYTES = 3 * 1024 * 1024;
@@ -69,7 +69,9 @@ export async function handleTexProjectFiles(request, env, userId) {
   } catch { return fail("Invalid file upload request."); }
   const documentId = input?.document_id;
   if (!isStorageObjectId(documentId)) return fail("Select a project first.");
-  if (!Array.isArray(input?.files) || !input.files.length || input.files.length > MAX_FILES) {
+  const operation = input?.operation || "add";
+  const modifyingEntry = operation === "rename" || operation === "delete";
+  if (!modifyingEntry && (!Array.isArray(input?.files) || !input.files.length || input.files.length > MAX_FILES)) {
     return fail("Select between 1 and 24 files.");
   }
   const key = DOCUMENT_ROOT + userId + "/" + documentId + ".json";
@@ -83,25 +85,46 @@ export async function handleTexProjectFiles(request, env, userId) {
     if (!existing.every(f=>validName(f.name) && ["utf8","base64"].includes(f.encoding))) {
       return fail("This project's stored file list is invalid.", 409);
     }
-    let added;
-    try { added = input.files.map(validatedFile); }
-    catch (error) { return fail(error.message); }
-    const replacing = input.operation === "replace";
+    let added = [];
     let next;
-    if (replacing) {
-      if (added.length !== 1) return fail("Replace exactly one file.");
-      const index = existing.findIndex(f=>f.name === added[0].name);
-      if (index < 0) return fail("The file to edit was not found.", 404);
-      next = existing.map((f,i)=>i===index?added[0]:f);
-    } else {
-      if (input.operation && input.operation !== "add") return fail("Unknown file operation.");
-      const seen = new Set(["main.tex", ...existing.map(f=>f.name.toLowerCase())]);
-      for (const f of added) {
-        if (seen.has(f.name.toLowerCase())) return fail("File already exists: " + f.name, 409);
-        seen.add(f.name.toLowerCase());
+    if (modifyingEntry) {
+      // main.tex is the project root entry point and cannot be renamed/deleted.
+      const oldName = input.name;
+      if (!validName(oldName) || oldName.toLowerCase() === "main.tex") {
+        return fail("The main.tex entry point cannot be renamed or deleted.", 400);
       }
-      if (existing.length + added.length > MAX_FILES) return fail("A project can contain at most 25 files including main.tex.", 409);
-      next = [...existing, ...added];
+      const index = existing.findIndex(file => file.name === oldName);
+      if (index < 0) return fail("File not found.", 404);
+      if (operation === "delete") next = existing.filter((_, i) => i !== index);
+      else {
+        const newName = input.new_name;
+        if (!validName(newName) || newName.toLowerCase() === "main.tex" ||
+            existing.some((file, i) => i !== index && file.name.toLowerCase() === newName.toLowerCase())) {
+          return fail("Invalid or duplicate destination filename.", 409);
+        }
+        if (BINARY.test(newName) !== BINARY.test(oldName)) {
+          return fail("Cannot rename a text file to a binary type or vice versa.", 400);
+        }
+        next = existing.map((file, i) => i === index ? { ...file, name: newName } : file);
+      }
+    } else {
+      try { added = input.files.map(validatedFile); }
+      catch (error) { return fail(error.message); }
+      if (operation === "replace") {
+        if (added.length !== 1) return fail("Replace exactly one file.");
+        const index = existing.findIndex(f=>f.name === added[0].name);
+        if (index < 0) return fail("The file to edit was not found.", 404);
+        next = existing.map((f,i)=>i===index?added[0]:f);
+      } else {
+        if (operation !== "add") return fail("Unknown file operation.");
+        const seen = new Set(["main.tex", ...existing.map(f=>f.name.toLowerCase())]);
+        for (const f of added) {
+          if (seen.has(f.name.toLowerCase())) return fail("File already exists: " + f.name, 409);
+          seen.add(f.name.toLowerCase());
+        }
+        if (existing.length + added.length > MAX_FILES) return fail("A project can contain at most 25 files including main.tex.", 409);
+        next = [...existing, ...added];
+      }
     }
     const total = encoder.encode(String(doc.source || "")).length +
       next.reduce((n,f)=>n+sizeOf(f),0);
@@ -121,7 +144,7 @@ export async function handleTexProjectFiles(request, env, userId) {
         updatedAt:doc.updated_at
       }
     });
-    return json({ document:doc, added:added.map(x=>x.name) }, 200);
+    return json({ document:doc, operation, added:added.map(x=>x.name) }, 200);
   } catch(error) {
     workerLog("error", "tex.files.add.failed", {
       user_id:userId, document_id:documentId,

@@ -66,6 +66,20 @@ for(const test of invalidCases){
   assert.equal(r.status,test.status,test.name+" "+JSON.stringify(r.body));
   assert.equal(objects.get(key).files.length,4,"Failed writes must not mutate project files.");
 }
+const renamed=await invoke({document_id:id,operation:"rename",name:"chapter1.tex",new_name:"chapters/chapter1.tex"});
+assert.equal(renamed.status,200,"Renaming a supplementary file must succeed.");
+assert(objects.get(key).files.some(f=>f.name==="chapters/chapter1.tex"),"Renamed file must persist under its nested folder.");
+assert.equal(objects.get(key).files.find(f=>f.name==="chapters/chapter1.tex").content,"\\\\section{Updated}","Rename must not discard file contents.");
+const protectedMain=await invoke({document_id:id,operation:"delete",name:"main.tex"});
+assert.equal(protectedMain.status,400,"Required main.tex entry point must not be removable.");
+const invalidRename=await invoke({document_id:id,operation:"rename",name:"chapters/chapter1.tex",new_name:"../unsafe.tex"});
+assert.equal(invalidRename.status,409,"Rename must reject unsafe paths.");
+const removed=await invoke({document_id:id,operation:"delete",name:"chapters/chapter1.tex"});
+assert.equal(removed.status,200,"Deleting an extra project file must succeed.");
+assert(!objects.get(key).files.some(f=>f.name==="chapters/chapter1.tex"),"Deleted file must no longer be stored.");
+const markdown=await invoke({document_id:id,files:[file("notes/README.md","# Heading")]});
+assert.equal(markdown.status,200,"Markdown text files must be supported for inline reading.");
+assert.equal((await invoke({document_id:id,operation:"delete",name:"notes/README.md"})).status,200);
 const outsider=await invoke({document_id:id,files:[file("steal.tex","") ]},other);
 assert.equal(outsider.status,404,"Files must only be writable within the authenticated owner's namespace.");
 const unknown=await invoke({document_id:"not-an-id",files:[file("a.tex","")]});

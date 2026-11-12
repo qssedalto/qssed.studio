@@ -144,7 +144,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
       .tex-editor-command svg.tex-fluent-icon .tex-fluent-accent{fill:var(--primary)!important;stroke:none!important}
       .tex-editor-command svg.tex-fluent-icon .tex-fluent-accent-ring{stroke:var(--primary)!important;stroke-width:1.5!important;fill:none!important}
       .tex-editor-command svg.tex-fluent-icon .tex-fluent-accent-line{stroke:var(--primary)!important;stroke-width:1.35!important;stroke-linecap:round!important;stroke-linejoin:round!important;fill:none!important}
-      .tex-editor-command.is-history svg{width:25px!important;height:25px!important}
+      .tex-editor-command.is-history svg{width:30px!important;height:30px!important;display:block!important;margin:auto!important;transform:translateY(0)!important}
       .tex-editor-command svg.tex-icon-mirror{transform:scaleX(-1);transform-origin:center}
       .tex-editor-command.is-delete:hover:not(:disabled){background:color-mix(in srgb,var(--danger,#ac4137) 10%,transparent)!important;color:var(--danger,#ac4137)!important}
       .tex-delete-dialog{
@@ -354,7 +354,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           delete: '<svg class="tex-fluent-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="tex-fluent-neutral" d="M10 5H14C14 3.89543 13.1046 3 12 3C10.8954 3 10 3.89543 10 5ZM8.5 5C8.5 3.067 10.067 1.5 12 1.5C13.933 1.5 15.5 3.067 15.5 5H21.25C21.6642 5 22 5.33579 22 5.75C22 6.16421 21.6642 6.5 21.25 6.5H19.9309L18.7589 18.6112C18.5729 20.5334 16.9575 22 15.0263 22H8.97369C7.04254 22 5.42715 20.5334 5.24113 18.6112L4.06908 6.5H2.75C2.33579 6.5 2 6.16421 2 5.75C2 5.33579 2.33579 5 2.75 5H8.5ZM10.5 9.75C10.5 9.33579 10.1642 9 9.75 9C9.33579 9 9 9.33579 9 9.75V17.25C9 17.6642 9.33579 18 9.75 18C10.1642 18 10.5 17.6642 10.5 17.25V9.75ZM14.25 9C14.6642 9 15 9.33579 15 9.75V17.25C15 17.6642 14.6642 18 14.25 18C13.8358 18 13.5 17.6642 13.5 17.25V9.75C13.5 9.33579 13.8358 9 14.25 9ZM6.73416 18.4667C6.84577 19.62 7.815 20.5 8.97369 20.5H15.0263C16.185 20.5 17.1542 19.62 17.2658 18.4667L18.4239 6.5H5.57608L6.73416 18.4667Z"/></svg>',
           undo: undoSvg,
           redo: undoSvg.replace('class="tex-fluent-icon"', 'class="tex-fluent-icon tex-icon-mirror"'),
-          history: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v5h5"/><path d="M5.2 9.6A8 8 0 1 1 4 14"/><path class="tex-icon-accent" d="M12 8v5l3 2"/></svg>'
+          history: '<svg class="tex-fluent-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="tex-fluent-neutral" d="M12 4.5C16.1421 4.5 19.5 7.85786 19.5 12C19.5 16.1421 16.1421 19.5 12 19.5C7.85786 19.5 4.5 16.1421 4.5 12C4.5 11.6236 4.52772 11.2538 4.58123 10.8923C4.64845 10.4382 4.31609 10 3.85708 10C3.48623 10 3.161 10.2562 3.10471 10.6228C3.03576 11.0718 3 11.5317 3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C9.69494 3 7.59227 3.86656 6 5.29168V4.25C6 3.83579 5.66421 3.5 5.25 3.5C4.83579 3.5 4.5 3.83579 4.5 4.25V7.25C4.5 7.66421 4.83579 8 5.25 8H8.25C8.66421 8 9 7.66421 9 7.25C9 6.83579 8.66421 6.5 8.25 6.5H6.90093C8.23907 5.25883 10.0309 4.5 12 4.5ZM12.5 7.75C12.5 7.33579 12.1642 7 11.75 7C11.3358 7 11 7.33579 11 7.75V12.25C11 12.6642 11.3358 13 11.75 13H14.75C15.1642 13 15.5 12.6642 15.5 12.25C15.5 11.8358 15.1642 11.5 14.75 11.5H12.5V7.75Z"/></svg>'
         };
 
         const bar = document.createElement('div');
@@ -447,63 +447,37 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           } finally { saveButton.disabled = false; }
         }
 
-        async function saveAs(name) {
-          if (saveAsPending || saveAsButton.disabled) return;
-          const nextTitle = String(name || '').trim();
-          if (!nextTitle) {
-            saveAsError.textContent = labels.saveAsNameRequired;
-            saveAsError.hidden = false;
-            saveAsInput.focus();
-            return;
+        // Save As is a local file download, never a cloud document duplicate.
+        function saveAsLocal() {
+          const asset = window.__aertexTexCurrentAsset;
+          const name = asset?.name || 'main.tex';
+          const safeFile = String(name).split('/').pop().replace(/[\\/:*?"<>|]/g, '_') || 'main.tex';
+          let data = source.value || '';
+          let type = 'text/plain;charset=UTF-8';
+          if (asset && !asset.main) {
+            if (asset.encoding === 'base64') {
+              const decoded = atob(asset.content || '');
+              data = Uint8Array.from(decoded, c => c.charCodeAt(0));
+              type = /\\.pdf$/i.test(name) ? 'application/pdf' :
+                /\\.png$/i.test(name) ? 'image/png' : 'image/jpeg';
+            } else data = String(window.__aertexTexExplorerEditableText?.() ?? asset.content ?? '');
           }
-          saveAsPending = true;
-          saveAsButton.disabled = true;
-          saveAsCancel.disabled = true;
-          saveAsConfirm.disabled = true;
-          saveAsConfirm.textContent = labels.saving;
-          saveAsError.hidden = true;
-          try {
-            const data = await api('/api/tex/documents', { method: 'POST', body: JSON.stringify({ ...snapshot(), title: nextTitle }) });
-            const createdId = String(data?.document?.id || '').trim();
-            if (!createdId) throw new Error(labels.saveAsFailed);
-            // Close only on success. If the request fails, the error is visible
-            // inside the dialog rather than silently disappearing.
-            dialog.close('created');
-            location.assign(workDocumentRoute(createdId));
-          } catch (error) {
-            saveAsError.textContent = error?.message || labels.saveAsFailed;
-            saveAsError.hidden = false;
-            showMessage(saveAsError.textContent, true);
-          } finally {
-            saveAsPending = false;
-            saveAsCancel.disabled = false;
-            saveAsConfirm.disabled = false;
-            saveAsConfirm.textContent = labels.create;
-            saveAsButton.disabled = !canEditSource();
-          }
+          const url = URL.createObjectURL(new Blob([data], { type }));
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = safeFile;
+          document.body.append(a);
+          a.click();
+          a.remove();
+          window.setTimeout(() => URL.revokeObjectURL(url), 3000);
         }
 
         saveButton.addEventListener('click', () => void saveNow());
         saveAsButton.addEventListener('click', event => {
           event.preventDefault();
-          if (saveAsButton.disabled || dialog.open) return;
-          saveAsInput.value = (title.value || 'TeX') + labels.copySuffix;
-          saveAsError.hidden = true;
-          saveAsError.textContent = '';
-          try {
-            dialog.showModal();
-            window.setTimeout(() => { saveAsInput.focus(); saveAsInput.select(); }, 20);
-          } catch (error) {
-            showMessage(error?.message || labels.saveAsFailed, true);
-          }
+          if (saveAsButton.disabled) return;
+          saveAsLocal();
         });
-        saveAsForm.addEventListener('submit', event => {
-          event.preventDefault();
-          void saveAs(saveAsInput.value);
-        });
-        saveAsCancel.addEventListener('click', () => { if (!saveAsPending) dialog.close('cancel'); });
-        dialog.addEventListener('cancel', event => { if (saveAsPending) event.preventDefault(); });
-
         undoButton.addEventListener('click', () => { source.focus(); document.execCommand('undo'); });
         redoButton.addEventListener('click', () => { source.focus(); document.execCommand('redo'); });
 
@@ -571,8 +545,13 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           event.preventDefault();
           if (copyButton.disabled) return;
           const { start, end } = sourceSelection();
-          const text = start !== end ? source.value.slice(start, end) : source.value;
-          if (await writeClipboard(text)) showMessage(labels.copied);
+          if (start === end) return;
+          const text = source.value.slice(start, end);
+          if (await writeClipboard(text)) {
+            window.__aertexTexClipboardKnown = text;
+            window.dispatchEvent(new CustomEvent('aertex:tex-clipboard-changed'));
+            showMessage(labels.copied);
+          }
           else showMessage(labels.copyFailed, true);
         });
 
@@ -597,15 +576,12 @@ export function enhanceWorkTexEditorTools(markup, zh) {
 
         renameButton.addEventListener('click', () => {
           if (!canEditSource()) return;
-          title.focus();
-          title.select();
+          window.dispatchEvent(new CustomEvent('aertex:tex-rename-file'));
         });
 
         deleteButton.addEventListener('click', () => {
-          if (editor.hidden || !activeDocumentId() || root.dataset.texCollaborationAccessRole === 'viewer' ||
-              root.dataset.texCollaborationAccessRole === 'editor') return;
-          const footerDelete = document.getElementById('tex-delete');
-          if (footerDelete && !footerDelete.disabled) footerDelete.click();
+          if (deleteButton.disabled) return;
+          window.dispatchEvent(new CustomEvent('aertex:tex-delete-file'));
         });
 
         historyButton.addEventListener('click', () => {
@@ -650,14 +626,15 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         const syncDisabled = () => {
           const noDocument = editor.hidden || !activeDocumentId();
           const readOnly = source.readOnly || root.dataset.texCollaborationAccessRole === 'viewer';
-          [saveButton, saveAsButton, undoButton, redoButton, pasteButton, renameButton].forEach(button => {
+          [saveButton, undoButton, redoButton, renameButton].forEach(button => {
             button.disabled = noDocument || readOnly;
           });
-          [copyButton, historyButton].forEach(button => { button.disabled = noDocument; });
-          const footerDelete = document.getElementById('tex-delete');
-          deleteButton.disabled = noDocument || readOnly || root.dataset.texCollaborationAccessRole === 'editor' || Boolean(footerDelete?.disabled);
+          [saveAsButton, historyButton].forEach(button => { button.disabled = noDocument; });
           const { start, end } = sourceSelection();
+          copyButton.disabled = noDocument || start === end;
           cutButton.disabled = noDocument || readOnly || start === end;
+          pasteButton.disabled = noDocument || readOnly || !Boolean(window.__aertexTexClipboardKnown);
+          deleteButton.disabled = noDocument || readOnly || root.dataset.texCollaborationAccessRole === 'editor';
         };
         new MutationObserver(syncDisabled).observe(editor, { attributes: true, attributeFilter: ['hidden'] });
         new MutationObserver(syncDisabled).observe(root, { attributes: true, attributeFilter: ['data-tex-collaboration-access-role', 'data-tex-collaboration-document-id'] });
@@ -667,6 +644,20 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         // CodeMirror forwards selection changes to the underlying textarea.
         // The basic textarea uses native select/keyup/pointerup events.
         ['select', 'keyup', 'pointerup', 'input'].forEach(type => source.addEventListener(type, syncDisabled));
+        window.addEventListener('aertex:tex-clipboard-changed', syncDisabled);
+        window.addEventListener('aertex:tex-project-asset-selected', syncDisabled);
+        // Browser clipboard-read permission is not universal; only check it
+        // when the current browser explicitly grants access, without prompting.
+        async function checkExternalClipboard() {
+          try {
+            const permission = await navigator.permissions?.query?.({ name: 'clipboard-read' });
+            if (permission?.state !== 'granted') return;
+            const text = await navigator.clipboard?.readText?.();
+            window.__aertexTexClipboardKnown = String(text || '');
+            syncDisabled();
+          } catch {}
+        }
+        window.addEventListener('focus', () => void checkExternalClipboard());
         syncDisabled();
       })();
     </script>`;

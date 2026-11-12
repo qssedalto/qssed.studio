@@ -39,7 +39,7 @@ for (const zh of [true, false]) {
   assert(html.includes("tex-delete-dialog-header") && html.includes("tex-delete-dialog-confirm") && html.includes("tex-delete-file-name"), "Delete dialog must have title, filename and confirm action");
   assert(html.includes("window.__qssedaTexConfirmDelete = filename =>"), "Delete confirmation must use the custom dialog");
   assert(html.includes("deleteButton.disabled = noDocument || readOnly"), "Delete must follow document and collaborator permissions");
-  assert(html.includes("footerDelete.click()"), "Toolbar Delete must reuse the existing document delete action");
+  assert(html.includes("aertex:tex-delete-file") && html.includes("tex-command-delete-project"), "File delete must be distinct from deleting the entire project.");
   assert(html.includes("cutButton.disabled = noDocument || readOnly || start === end"), "Cut must require selected editable source text");
   assert(html.includes("bridge?.getSelection?.()"), "Cut must read CodeMirror selections as well as textarea selections");
   assert(html.includes("if (!await writeClipboard(selectionText))"), "Failed clipboard writes must never delete text");

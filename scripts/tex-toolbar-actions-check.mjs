@@ -2,8 +2,7 @@ import assert from "node:assert/strict";
 import { enhanceWorkTexEditorTools } from "../studio/ui-work-tex-editor-tools.js";
 
 // Exercise the generated browser runtime, not just source-code substrings.
-// In particular Copy must never invoke Save As, and Save As must POST only
-// after explicit form submission and open the new document's correct route.
+// Copy only selected text; Save As downloads a local .tex file and must never POST.
 for (const zh of [true, false]) {
   const html = enhanceWorkTexEditorTools("", zh);
   const script = html.match(/<script id="qsseda-work-tex-editor-tools-runtime">([\s\S]*?)<\/script>/)?.[1];
@@ -12,6 +11,7 @@ for (const zh of [true, false]) {
   const buttons = new Map();
   const requests = [];
   const navigations = [];
+  const downloads = [];
   let clipboard = "";
   let copyCount = 0;
 
@@ -31,7 +31,7 @@ for (const zh of [true, false]) {
         const e = { type, target: this, preventDefault() {}, stopPropagation() {}, key: "" };
         return (listeners.get(type) || []).map(fn => fn(e));
       },
-      click() { if (!this.disabled) return this.emit("click"); },
+      click() { if (this.tag === "a") downloads.push({filename:this.download,href:this.href}); if (!this.disabled) return this.emit("click"); },
       showModal() { this.open = true; },
       close(value = "") { this.open = false; this.returnValue = value; this.emit("close"); },
       querySelector() { return null; }
@@ -103,6 +103,7 @@ for (const zh of [true, false]) {
   const window = {
     setTimeout(callback) { callback(); },
     requestAnimationFrame(callback) { callback(); },
+    addEventListener() {},
     dispatchEvent() {}
   };
   const navigator = { clipboard: {
@@ -140,27 +141,19 @@ for (const zh of [true, false]) {
   assert.equal(requests.length, 0, "Copy must not create a document");
 
   button("save-as").click();
-  assert.equal(saveAsDialog.open, true, "Save As must open a dialog");
-  assert.equal(requests.length, 0, "Opening Save As must not immediately submit");
-  input.value = "  ";
-  form.emit("submit");
-  await flush();
-  assert.equal(requests.length, 0, "Blank names must not create a document");
-  assert.equal(error.hidden, false, "Blank-name error must be visible");
-
-  input.value = "My Copy";
-  form.emit("submit");
-  await flush();
-  const created = requests.filter(item => item.url === "/api/tex/documents" && item.options.method === "POST");
-  assert.equal(created.length, 1, "Save As must create exactly one document");
-  assert.equal(JSON.parse(created[0].options.body).title, "My Copy", "Save As must use the new title");
-  assert.equal(navigations[0], "/" + locale + "/d/new-document-id",
-    "Save As must navigate to the newly created document in the same locale");
-  assert.equal(saveAsDialog.open, false, "Save As should close after success");
+  assert.equal(saveAsDialog.open, false, "Save As must no longer open the cloud-duplicate dialog");
+  assert.equal(downloads.length, 1, "Save As must initiate exactly one local file download");
+  assert.equal(downloads[0].filename, "main.tex", "Local file download must retain filename");
+  assert.equal(requests.length, 0, "Save As must not create a cloud document");
+  assert.equal(navigations.length, 0, "Save As must not navigate away from the editor");
+  source.selectionStart = 0; source.selectionEnd = 0;
+  source.emit("select");
+  assert.equal(button("copy").disabled, true, "Selection-only Copy must be disabled without a selection");
+  assert.equal(button("save-as").disabled, false, "Local Save As must remain available without a selection");
 
   assert(html.includes("svg.tex-fluent-icon"), "Missing actual Microsoft Fluent SVG geometry");
   assert(html.includes("saveAs:") && html.includes("copy:"), "Distinct copy and Save As icons required");
   assert(!html.includes("M9 29V18.8c0-.8"), "Old save-as pencil-crossing line must not return");
   assert(html.includes("tex-fluent-icon .tex-fluent-accent{fill:var(--primary)!important"), "Copy highlight must follow user theme color");
 }
-console.log("Work TeX toolbar Copy / Save As interaction checks passed.");
+console.log("Work TeX selected Copy and local Save As checks passed.");

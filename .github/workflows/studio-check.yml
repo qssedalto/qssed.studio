@@ -29,6 +29,8 @@ on:
       - "scripts/native-intelligence-chat-check.mjs"
       - "scripts/lab-check.mjs"
       - "scripts/tex-workbench-check.mjs"
+      - "scripts/tex-explorer-check.mjs"
+      - "scripts/tex-file-manager-check.mjs"
       - "scripts/tex-toolbar-actions-check.mjs"
       - "scripts/tex-pdf-auto-theme-check.mjs"
       - "scripts/work-local-bridge-check.mjs"
@@ -91,6 +93,8 @@ on:
       - "scripts/native-intelligence-chat-check.mjs"
       - "scripts/lab-check.mjs"
       - "scripts/tex-workbench-check.mjs"
+      - "scripts/tex-explorer-check.mjs"
+      - "scripts/tex-file-manager-check.mjs"
       - "scripts/tex-toolbar-actions-check.mjs"
       - "scripts/tex-pdf-auto-theme-check.mjs"
       - "scripts/work-local-bridge-check.mjs"
@@ -171,6 +175,8 @@ jobs:
           node scripts/native-intelligence-chat-check.mjs
           node --check scripts/lab-check.mjs
           node --check scripts/tex-workbench-check.mjs
+          node --check scripts/tex-explorer-check.mjs
+          node --check scripts/tex-file-manager-check.mjs
           node --check scripts/tex-toolbar-actions-check.mjs
           node --check scripts/tex-pdf-auto-theme-check.mjs
           node --check scripts/work-local-bridge-check.mjs
@@ -241,6 +247,8 @@ jobs:
         run: |
           node scripts/tex-workbench-check.mjs
           node scripts/tex-toolbar-actions-check.mjs
+          node scripts/tex-file-manager-check.mjs
+          node scripts/tex-explorer-check.mjs
 
       - name: Verify TeX add-file workflows and authorization
         run: node scripts/tex-file-manager-check.mjs
