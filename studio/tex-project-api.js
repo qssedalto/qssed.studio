@@ -8,11 +8,11 @@ import { VERIFIED_SAMPLE_FROG_BASE64 } from "./tex-example-frog.js";
 const ROOT = "_system/tex-documents/";
 const LIMIT_ZIP = 3 * 1024 * 1024;
 const LIMIT_TOTAL = 4 * 1024 * 1024;
-const LIMIT_FILES = 24;
+const LIMIT_FILES = 25; // same as project-file API: main.tex plus at most 24 supporting files
 const SOURCE_LIMIT = 180000;
 const MAX_DOCS = 120;
 const BINARY_EXT = /\.(png|jpe?g|pdf)$/i;
-const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|md|markdown|png|jpe?g|pdf)$/i;
+const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|md|markdown|py|png|jpe?g|pdf)$/i;
 const utf8 = new TextDecoder("utf-8", { fatal: true });
 
 function problem(message, status = 400) { return json({ error: message }, status); }
@@ -86,7 +86,7 @@ async function unzip(raw) {
   const total=v.getUint16(tail+10,true);
   const cd=v.getUint32(tail+16,true);
   if(total<1||total>LIMIT_FILES+16||cd>=tail)throw new Error("ZIP contains too many files.");
-  const entries=[];let offset=cd;let totalBytes=0;
+  const entries=[];const skipped=[];let offset=cd;let totalBytes=0;
   for(let i=0;i<total;i++){
     if(offset+46>tail||v.getUint32(offset,true)!==0x02014b50)throw new Error("Invalid ZIP entry.");
     const flag=v.getUint16(offset+8,true),method=v.getUint16(offset+10,true);
@@ -98,10 +98,23 @@ async function unzip(raw) {
     if(offset+46+nameLen+extra+comment>tail||pos+30>raw.length)throw new Error("ZIP entry is incomplete.");
     const name=utf8.decode(raw.subarray(offset+46,offset+46+nameLen));
     offset+=46+nameLen+extra+comment;
+    // Reject traversal even in skipped entries. GitHub source archives often
+    // contain workflow/configuration metadata that is not a TeX project asset.
+    // Do not count those entries against the 25-file project storage limit.
+    if(name.startsWith("/")||name.includes("\\")||
+       name.split("/").some(part=>part==="."||part===".."))
+      throw new Error("Unsafe project path in ZIP: "+name);
     if(name.endsWith("/"))continue;
+    const parts=name.split("/");
+    const isRepoMetadata=parts.some(part=>part===".github"||part==="__MACOSX")||
+      parts.at(-1)===".gitignore"||parts.at(-1)===".DS_Store";
+    if(isRepoMetadata){skipped.push(name);continue;}
     totalBytes+=plain;
-    if(totalBytes>LIMIT_TOTAL||plain>1024*1024||packed>LIMIT_ZIP||entries.length>=LIMIT_FILES)
-      throw new Error("ZIP exceeds safe project limits.");
+    if(plain>1024*1024)throw new Error("ZIP entry exceeds the 1 MB limit: "+name);
+    if(totalBytes>LIMIT_TOTAL)throw new Error("ZIP contents exceed the 4 MB decompressed limit.");
+    if(packed>LIMIT_ZIP)throw new Error("ZIP entry exceeds the 3 MB compressed limit: "+name);
+    if(entries.length>=LIMIT_FILES)
+      throw new Error("ZIP contains more than 25 importable files (including main.tex).");
     if(v.getUint32(pos,true)!==0x04034b50)throw new Error("ZIP local header missing.");
     const start=pos+30+v.getUint16(pos+26,true)+v.getUint16(pos+28,true);
     if(start+packed>raw.length)throw new Error("ZIP file data truncated.");
@@ -132,9 +145,9 @@ async function unzip(raw) {
     if(BINARY_EXT.test(e.name))extras.push({name:e.name,encoding:"base64",content:toBase64(e.data)});
     else extras.push({name:e.name,encoding:"utf8",content:utf8.decode(e.data)});
   }
-  return {source,extras};
+  return {source,extras,skipped};
 }
-async function createDocument(env,userId,title,source,files,type) {
+async function createDocument(env,userId,title,source,files,type,skipped=[]) {
   const prefix=ROOT+userId+"/";
   const page=await env.STORAGE.list({prefix,limit:MAX_DOCS+1});
   if(page.objects.length>=MAX_DOCS)return problem("Project limit reached.",409);
@@ -148,7 +161,7 @@ async function createDocument(env,userId,title,source,files,type) {
       projectType:type,fileCount:String(1+(files?.length||0)),
       createdAt:now,updatedAt:now}
   });
-  return json({document:record,created:true},201);
+  return json({document:record,created:true,skipped},201);
 }
 export async function handleTexProjects(request,env,userId,accessToken) {
   if(request.method!=="POST")return problem("Method not allowed.",405);
@@ -159,8 +172,8 @@ export async function handleTexProjects(request,env,userId,accessToken) {
       const title=titleText(decodeURIComponent(request.headers.get("x-tex-project-name")||""));
       if(!title)return problem("Project name is required.");
       if(Number(request.headers.get("content-length")||0)>LIMIT_ZIP)return problem("ZIP must be under 3 MB.",413);
-      const {source,extras}=await unzip(await boundedZip(request.body));
-      return await createDocument(env,userId,title,source,extras,"imported");
+      const {source,extras,skipped}=await unzip(await boundedZip(request.body));
+      return await createDocument(env,userId,title,source,extras,"imported",skipped);
     }
     if(Number(request.headers.get("content-length")||0)>4096)return problem("Invalid project input.",413);
     const raw=await request.text();
