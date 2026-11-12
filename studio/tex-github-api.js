@@ -104,9 +104,13 @@ function strictOrigin(request) {
   return request.headers.get("sec-fetch-site") === "same-origin";
 }
 
+// Keep Work admin visibility and the unlimited quota policy aligned with
+// the independently verified Admin console session. The legacy public.is_admin()
+// is intentionally not executable by authenticated users; it always yielded
+// a 403 here and silently hid the admin quota button.
 async function isVerifiedAdmin(accessToken) {
   try {
-    const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/is_admin", {
+    const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/verify_admin_session", {
       method:"POST",
       headers:{apikey:SUPABASE_KEY,authorization:"Bearer " + accessToken,
         "content-type":"application/json",accept:"application/json"},
