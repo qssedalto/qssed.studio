@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { createHash } from "node:crypto";
+import { gunzipSync } from "node:zlib";
 import { managedTexRepoName, MANAGED_TEX_WORKFLOW, MANAGED_TEX_WORKFLOW_PATH } from "../studio/tex-github-workflow.js";
 import { enhanceTexGithubWorkbench } from "../studio/ui-tex-github.js";
 import vm from "node:vm";
@@ -74,8 +76,18 @@ assert(projectBackend.includes('Asia/Shanghai') && projectBackend.includes('\\\\
 assert(projectBackend.includes('new DecompressionStream("deflate-raw")') &&
   projectBackend.includes('segments.some') === false && projectBackend.includes('safeName(e.name)'),
   "ZIP imports must be bounded and reject traversal paths");
-assert(projectBackend.includes('SAMPLE_BIB') && projectBackend.includes('SAMPLE_FROG_JPG'),
-  "Example project needs BibTeX and a real image");
+assert(projectBackend.includes('SAMPLE_BIB_GZIP') && projectBackend.includes('SAMPLE_FROG_JPG'),
+  "Example project needs the source bibliography and a frog image");
+for (const [label,expected] of [
+  ["MAIN","98adacccd32d21bba43c108784e0516cb177f30db5a4ad080cf69c9d02b114d9"],
+  ["BIB","8749e6a3009dbbdc5886644c8de1eb8ad98c993cb0613ee349b7b31e83750dd1"]
+]){
+  const matched=projectBackend.match(new RegExp('const SAMPLE_'+label+'_GZIP="([A-Za-z0-9+/=]+)"'));
+  assert(matched,"Example "+label+" compressed source missing");
+  const decoded=gunzipSync(Buffer.from(matched[1],"base64"));
+  assert.equal(createHash("sha256").update(decoded).digest("hex"),expected,
+    "Bundled "+label+" source must match uploaded sample.zip exactly");
+}
 assert(weekSql.includes("quota_week_start") && weekSql.includes("weekly_used<100") &&
   weekSql.includes("is_operator") && weekSql.includes("quota_total +"),
   "Atomic weekly cap, admin exemption and carried balance must be enforced by database");
