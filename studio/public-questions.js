@@ -108,6 +108,35 @@ export const QUESTIONS = Object.freeze([
     }
   },
   {
+    id:"ac429c78-7e82-4cea-9b12-90188b0c0c60", category:"products", product:"AERTEX Work", status:"published", updated:"2026-11-12",
+    translations:{
+      "zh-cn":{question:"Windows 上如何安装 TeX Live 和 AERTEX Work 连接组件？",short:"按照“先安装 TeX Live，再安装 AERTEX Bridge，最后返回 Work 检查连接”的顺序配置 Windows 本机 TeX 编译。",answer:[
+        "先了解两者的区别：TeX Live 是提供 XeLaTeX、pdfLaTeX、宏包和字体支持的 TeX 发行版；AERTEX Bridge 是连接 AERTEX Work 网页与这台 Windows 电脑的本机程序。下载 TeX Live 的 ISO 并不等于安装。Bridge 本身即使没有 TeX Live 也可以连接，但要使用本机 TeX 编译就必须先有可检测到的 TeX 引擎。",
+        "步骤 1｜下载 TeX Live：在 AERTEX Work 的“本机连接”页面点击“下载 TeX Live（ISO）”，确认网络提示后前往 Microsoft OneDrive 下载 texlive.iso。该下载链接可能受到当前网络环境影响；请核对下载文件名称、来源和容量，且预留足够的磁盘空间。ISO 是安装镜像，不是 Windows 连接组件，也不是直接双击即可完成安装的程序。",
+        "步骤 2｜安装 TeX Live：在 Windows 文件资源管理器中双击或右键“装载” texlive.iso，打开出现的虚拟光驱，在镜像根目录找到 install-tl-windows.bat 并运行。按照安装向导选择安装方案和位置，等待安装完成；建议将 TeX Live 安装在不含中文及其他非 ASCII 字符的路径。镜像装载完成后仍需要运行安装器，不能直接跳过这一步。",
+        "步骤 3｜验证编译器：安装结束后重新打开“命令提示符”或 PowerShell，运行 xelatex --version；若计划使用 pdfLaTeX，也可以运行 pdflatex --version。能显示版本信息才说明相应命令可以被当前终端找到。若提示找不到命令，请检查 TeX Live 是否安装完成、Windows PATH 中是否包含其 bin/windows 目录，并重新打开终端；修复环境变量后可能需要重启 Bridge。",
+        "步骤 4｜安装 Windows 连接组件：回到 AERTEX Work 的“本机连接”页面，点击“安装 Windows 连接组件”，下载 AERTEX-Bridge.exe 并在本机运行一次。连接程序会安装到当前 Windows 用户的本地应用数据目录，设置登录后后台自动启动；不要求另外安装 Node.js 或 PowerShell。请只从 AERTEX Work 的官方页面获取该 EXE，不要运行来源不明的同名程序。",
+        "步骤 5｜检查连接：仍在安装了组件的同一台 Windows 电脑上打开 Work 的“本机连接”页面，点击“重新检查”。正常情况下，本机连接状态显示“已连接”，TeX 状态显示“可用”。“已连接”只表示网页找到 Bridge；如果 TeX 仍显示“不可用”，请重点排查 TeX Live 安装、编译器路径、环境变量以及 Bridge 是否需要重新启动。",
+        "步骤 6｜开始使用：在 AERTEX Work 中打开 TeX 工作台，编辑文档并选用 XeLaTeX 或 pdfLaTeX 编译。对于中文 LaTeX 文档通常优先尝试 XeLaTeX。当前 Windows 本机 Bridge 支持的本地编译引擎为 XeLaTeX 和 pdfLaTeX；网页中的其他引擎选项不代表本机 Bridge 已支持。",
+        "常见问题｜状态一直未连接：确认 Bridge 已在本机启动，然后刷新页面再检查；浏览器需要能够访问这台电脑上的本机地址 127.0.0.1:32145。请检查浏览器对本机连接的限制及安全软件提示，不要为排错而关闭系统整体防护。连接成功但编译失败时，应查看 TeX 编译日志，排查缺失的宏包、字体或源代码错误。",
+        "隐私与适用范围｜连接检查只查询本机组件的可用状态，不会把 AERTEX 账号凭据或文档内容作为连接检测数据发送给 Bridge。实际使用本机编译时，Work 会向本机 Bridge 提交待编译的 TeX 源码；这与网页文档自身的云端保存机制是两回事。本指南针对 Windows 本机连接，不能直接套用于 macOS 或 Linux。",
+        "参考｜TeX Live 安装细节以 TeX Users Group 的官方文档 tug.org/texlive 为准；AERTEX Bridge 的下载与连接状态以 AERTEX Work 的“本机连接”页面为准。OneDrive ISO 的具体版本和可访问性可能变化。"
+      ]},
+      "en-us":{question:"How do I install TeX Live and the AERTEX Work Windows connector?",short:"Install TeX Live first, install AERTEX Bridge second, then return to Work to verify the Windows local connection and TeX availability.",answer:[
+        "Understand the two components: TeX Live is a TeX distribution providing engines such as XeLaTeX and pdfLaTeX, packages, and font support. AERTEX Bridge is the local Windows component connecting the Work website to that computer. Downloading an ISO does not install TeX Live. Bridge can connect without TeX Live, but local TeX compilation requires a detectable TeX engine.",
+        "Step 1 | Download TeX Live: On AERTEX Work's Local Connection page, select Download TeX Live (ISO), acknowledge the network warning, and open the supplied Microsoft OneDrive page to obtain texlive.iso. Access may depend on your network. Verify the filename and download source and allow sufficient disk space. An ISO is installation media, not the Bridge executable or an already installed program.",
+        "Step 2 | Install TeX Live: In Windows File Explorer, double-click the ISO or choose Mount, open the virtual drive, and run install-tl-windows.bat from the image root. Follow the installer, select a scheme and destination, and wait for the installation to finish. Prefer an installation path without non-ASCII characters. Mounting the image alone is not an installation.",
+        "Step 3 | Verify the compiler: Open a new Command Prompt or PowerShell window and run xelatex --version. For pdfLaTeX, optionally run pdflatex --version. If the command cannot be found, verify the installation and that TeX Live's bin/windows directory is on PATH, then open a new terminal. You may need to restart Bridge after changing the environment.",
+        "Step 4 | Install AERTEX Bridge: Return to Work's Local Connection page, select Install Windows component, download AERTEX-Bridge.exe, and run it once. It installs into the current Windows user's local application data and configures background startup at sign-in. It does not need a separate Node.js or PowerShell installation. Obtain the executable only from the official AERTEX Work page.",
+        "Step 5 | Check the connection: On the same Windows computer, choose Check again on the Local Connection page. The expected result is Connected for the bridge and Available for TeX. Connected means only that the website can reach Bridge; if TeX is still unavailable, investigate the TeX installation, compiler path, environment, and whether Bridge needs restarting.",
+        "Step 6 | Compile documents: Open AERTEX Work's TeX workbench, edit a document, and choose XeLaTeX or pdfLaTeX to compile. XeLaTeX is often suitable for Chinese documents. The current native Windows Bridge allows local XeLaTeX and pdfLaTeX only; other engines appearing in the web interface are not automatically supported for local compilation.",
+        "Troubleshooting | If Bridge remains disconnected, confirm it has started, reload the page, and check whether the browser can access loopback address 127.0.0.1:32145. Review local-network browser permissions and security-software prompts without disabling system-wide protection. If the bridge connects but compilation fails, read the TeX log for missing packages, fonts, or source errors.",
+        "Privacy and scope | A connection check only inspects local service availability; it does not pass account credentials or document contents as connection-check data. An actual local compilation sends the TeX source to the Bridge on that computer, which is separate from any cloud document-saving features. This guide applies to Windows and is not a setup guide for macOS or Linux.",
+        "References | For TeX Live installation details, refer to the TeX Users Group documentation at tug.org/texlive. For the AERTEX Bridge download and connection status, use the official AERTEX Work Local Connection page. The version and availability of the linked OneDrive ISO may change."
+      ]}
+    }
+  },
+  {
     id:"7928a208-d804-4fe1-9558-bda2ed45bb08", category:"products", product:"AERTEX Intelligence", status:"published", updated:"2026-10-03",
     translations:{
       "zh-cn":{question:"AERTEX Intelligence 是什么？",short:"AERTEX Intelligence 是 AERTEX 的 AI 对话与工作空间产品，模型与提供方访问权限按账户配置。",answer:[

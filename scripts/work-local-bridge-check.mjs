@@ -46,6 +46,10 @@ for (const markup of [zhNativeLocal, enNativeLocal]) {
   assert(markup.includes("window.confirm(warning)") && markup.includes("event.preventDefault()"), "TeX Live ISO download must require confirmation and permit cancel");
   assert(markup.indexOf('id="work-native-texlive-download"') > markup.indexOf('id="work-native-bridge-download"'), "TeX Live ISO button must be placed next to the Windows installer");
   assert(markup.includes('id="work-native-texlive-group"') && markup.includes('class="work-texlive-prerequisite"'), "TeX Live prerequisite note must be under its ISO button");
+  assert(markup.includes('id="work-native-texlive-guide" href="https://qsseda.com/'), "TeX Live help link must open the main-site FAQ.");
+  assert(markup.includes('/q/ac429c78-7e82-4cea-9b12-90188b0c0c60"'), "TeX Live help link must target the newly published question.");
+  assert(markup.indexOf('id="work-native-texlive-guide"') > markup.indexOf('id="work-native-texlive-download"'), "TeX Live help link must be adjacent to the ISO button.");
+  assert(markup.includes("work-texlive-action-row") && markup.includes("color:#007aff"), "Help link must remain blue beside the button.");
   assert(markup.includes("font-size:11px") && markup.includes("work-texlive-download-group[hidden]"), "Prerequisite note must remain small and hide with the Windows-only control");
   assert(markup.includes("texliveGroup.hidden = !isWindows"), "Prerequisite note must not remain visible outside Windows");
 }
@@ -53,6 +57,8 @@ assert(zhNativeLocal.includes("下载 TeX Live（ISO）") && zhNativeLocal.inclu
 assert(enNativeLocal.includes("Download TeX Live (ISO)") && enNativeLocal.includes("additional network access"), "English TeX Live button and network warning are missing");
 assert(zhNativeLocal.includes("此为 Windows 连接组件使用的前置条件，请先安装完此内容再打开 Windows 连接组件。"), "Chinese TeX Live prerequisite caption is missing");
 assert(enNativeLocal.includes("This is a prerequisite for the Windows connection component."), "English TeX Live prerequisite caption is missing");
+assert(zhNativeLocal.includes('id="work-native-texlive-guide" href="https://qsseda.com/zh-cn/q/ac429c78-7e82-4cea-9b12-90188b0c0c60"'), "Chinese setup guide must use the Chinese FAQ route.");
+assert(enNativeLocal.includes('id="work-native-texlive-guide" href="https://qsseda.com/en-us/q/ac429c78-7e82-4cea-9b12-90188b0c0c60"'), "English setup guide must use the English FAQ route.");
 assert(zhNativeLocal.includes("不要求安装 Node.js"), "Native Bridge UI must explain that Node.js is not required");
 assert(zhNativeLocal.includes("window.setTimeout(() => void probe(), 260)"), "Work page should probe localhost automatically on load");
 

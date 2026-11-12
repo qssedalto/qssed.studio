@@ -11,7 +11,7 @@ import { questionDetailPage, questionHubPage } from "../studio/public-question-p
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const published = publishedQuestions();
-assert(published.length === 59, "Questions must ship the complete 59-entry first-party knowledge base.");
+assert(published.length === 60, "Questions must ship the complete 60-entry first-party knowledge base.");
 assert(new Set(QUESTIONS.map(item => item.id)).size === QUESTIONS.length, "Question UUIDs must be unique.");
 for (const item of QUESTIONS) {
   assert(UUID.test(item.id), "Question id must be a UUID: " + item.id);
@@ -53,7 +53,7 @@ assert(questionHubPage("en-au").includes('/en-us/q'), "en-au Questions must cano
 
 const expectedSitemapCount = 56 + QUESTION_INDEX_LOCALES.length * (1 + published.length);
 const sitemap = publicSitemapUrls();
-assert(expectedSitemapCount === 176, "The 59-question bilingual sitemap should contain 176 canonical URLs.");
+assert(expectedSitemapCount === 178, "The 60-question bilingual sitemap should contain 178 canonical URLs.");
 assert(sitemap.length === expectedSitemapCount, "Question sitemap expansion count mismatch.");
 for (const locale of QUESTION_INDEX_LOCALES) {
   assert(sitemap.includes("https://qsseda.com/" + locale + "/q"), "Question hub missing from sitemap for " + locale);
@@ -61,6 +61,22 @@ for (const locale of QUESTION_INDEX_LOCALES) {
 }
 assert(!sitemap.some(url => url.includes("/en-gb/q")), "Duplicate en-gb Questions must not be listed in sitemap.");
 assert(!sitemap.some(url => url.includes("/en-au/q")), "Duplicate en-au Questions must not be listed in sitemap.");
+
+const bridgeGuideId = "ac429c78-7e82-4cea-9b12-90188b0c0c60";
+const bridgeGuideZh = questionTranslation(questionById(bridgeGuideId), "zh-cn");
+const bridgeGuideEn = questionTranslation(questionById(bridgeGuideId), "en-us");
+assert(bridgeGuideZh?.question.includes("TeX Live") && bridgeGuideEn?.question.includes("TeX Live"), "Bilingual TeX Live / Bridge guide is missing.");
+for (const guide of [bridgeGuideZh, bridgeGuideEn]) {
+  assert(guide.answer.some(line => line.includes("install-tl-windows.bat")), "Guide must explain installing from the ISO.");
+  assert(guide.answer.some(line => line.includes("xelatex --version")), "Guide must explain verifying the TeX compiler.");
+  assert(guide.answer.some(line => line.includes("AERTEX-Bridge.exe")), "Guide must explain installing the native Bridge.");
+  assert(guide.answer.some(line => line.includes("127.0.0.1:32145")), "Guide must cover local connection troubleshooting.");
+}
+for (const locale of QUESTION_INDEX_LOCALES) {
+  assert(sitemap.includes("https://qsseda.com/" + locale + "/q/" + bridgeGuideId), "Published Bridge setup guide must be in the public sitemap.");
+  const page = questionDetailPage(locale, bridgeGuideId);
+  assert(page.includes("install-tl-windows.bat") && page.includes("AERTEX-Bridge.exe"), "Guide must render in " + locale);
+}
 
 const hub = questionHubPage("zh-cn");
 assert(hub.includes("问题与解答") && hub.includes("data-category-filter"), "Question hub must render searchable categories.");

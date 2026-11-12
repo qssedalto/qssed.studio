@@ -6,17 +6,23 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
     .replace("Connection checks do not send account cookies, bearer tokens, or document content.", "Connection checks do not send your account credentials or document content.");
 
   const nativeButton = `<a class="work-button secondary" id="work-native-bridge-download" href="/api/work/bridge/windows" download="AERTEX-Bridge.exe" data-qsseda-native-bridge-download="1">${zh ? "安装 Windows 连接组件" : "Install Windows component"}</a>`;
-  const texliveButton = `<span class="work-texlive-download-group" id="work-native-texlive-group"><a class="work-button secondary" id="work-native-texlive-download" href="https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=w9mHFn" target="_blank" rel="noopener noreferrer">${zh ? "下载 TeX Live（ISO）" : "Download TeX Live (ISO)"}</a><small class="work-texlive-prerequisite">${zh ? "此为 Windows 连接组件使用的前置条件，请先安装完此内容再打开 Windows 连接组件。" : "This is a prerequisite for the Windows connection component. Please complete the installation before opening the Windows component."}</small></span>`;
+  const guideHref = `https://qsseda.com/${zh ? "zh-cn" : "en-us"}/q/ac429c78-7e82-4cea-9b12-90188b0c0c60`;
+  const texliveButton = `<span class="work-texlive-download-group" id="work-native-texlive-group"><span class="work-texlive-action-row"><a class="work-button secondary" id="work-native-texlive-download" href="https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=w9mHFn" target="_blank" rel="noopener noreferrer">${zh ? "下载 TeX Live（ISO）" : "Download TeX Live (ISO)"}</a><a class="work-texlive-help-link" id="work-native-texlive-guide" href="${guideHref}" target="_blank" rel="noopener noreferrer">${zh ? "安装前必读：组件使用指南 ↗" : "Setup guide for both components ↗"}</a></span><small class="work-texlive-prerequisite">${zh ? "此为 Windows 连接组件使用的前置条件，请先安装完此内容再打开 Windows 连接组件。" : "This is a prerequisite for the Windows connection component. Please complete the installation before opening the Windows component."}</small></span>`;
   output = output.replace("<!--QSSedaWorkNativeAction-->", nativeButton + texliveButton);
   output += `
     <style id="work-texlive-prerequisite-style">
       #work-local-root .work-actions{align-items:flex-start}
-      #work-local-root .work-texlive-download-group{display:inline-flex;flex:0 1 340px;flex-direction:column;align-items:flex-start;gap:6px;max-width:100%}
+      #work-local-root .work-texlive-download-group{display:inline-flex;flex:0 1 580px;flex-direction:column;align-items:flex-start;gap:6px;max-width:100%}
+      #work-local-root .work-texlive-action-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;max-width:100%}
+      #work-local-root .work-texlive-help-link{display:inline-flex;align-items:center;min-height:44px;color:#007aff;text-decoration:underline;text-underline-offset:3px;font-size:13px;font-weight:600;line-height:1.4}
+      #work-local-root .work-texlive-help-link:hover{color:#005bc7}
+      #work-local-root .work-texlive-help-link:focus-visible{outline:2px solid #007aff;outline-offset:3px;border-radius:4px}
       #work-local-root .work-texlive-prerequisite{display:block;color:var(--muted,#6e6e73);font-size:11px;line-height:1.5;font-weight:400}
       #work-local-root .work-texlive-download-group[hidden]{display:none!important}
       @media(max-width:560px){
         #work-local-root .work-texlive-download-group{width:100%;flex-basis:100%}
-        #work-local-root .work-texlive-download-group>.work-button{width:100%}
+        #work-local-root .work-texlive-action-row{width:100%}
+        #work-local-root .work-texlive-action-row>.work-button{width:100%}
       }
     </style>`;
 
