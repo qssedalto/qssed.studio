@@ -309,6 +309,12 @@ assert(touchCss.includes("span:not(.tex-project-chevron)"),"Folder label must no
 assert(touchCss.includes(".tex-shell.is-left-collapsed.is-right-collapsed"),"Two collapsed tablet rails need a 46px grid.");
 assert(touchCss.includes("body.os-shell:has(.tex-work-app)"),"Touch-specific grid overrides must outrank old desktop rules.");
 assert(touchCss.includes("tex-right-panel-restore-touch"),"Collapsed right sidebar must expose a reachable restore control.");
+assert(touchCss.includes(".tex-work-app #tex-right-panel-restore-touch{display:none!important}"),
+  "Never show a full-width recovery plus on portrait or desktop.");
+assert(touchCss.includes("clamp(318px,32vw,390px)"),
+  "Landscape preview must not be restricted to an unusable 208px width.");
+assert(touchCss.includes(".aertex-pdf-toolbar"),
+  "Landscape toolbar should scroll within PDF column rather than clipping editor.");
 assert(touchScript.includes("event.stopImmediatePropagation()"),"Tapping project folder must not open main.tex.");
 assert(touchScript.includes("window.__aertexAllowProjectActivation"),"Explicit cross-project file selection must remain possible.");
 new Function(touchScript);

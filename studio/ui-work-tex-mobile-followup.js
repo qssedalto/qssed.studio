@@ -3,6 +3,9 @@
 export function enhanceWorkTexMobileFollowup(markup) {
   return String(markup || "") + `
 <style id="aertex-tex-mobile-followup">
+/* This recovery button is added to the DOM for landscape only. Prevent its
+   generic mobile button styles from making a full-width purple + in portrait. */
+.tex-work-app #tex-right-panel-restore-touch{display:none!important}
 @media (max-width:1280px) and (pointer:coarse), (max-width:760px) {
   /* The old generic >span rule stretched the chevron to half the folder row,
      moving the folder glyph into the middle of the sidebar. */
@@ -41,14 +44,14 @@ export function enhanceWorkTexMobileFollowup(markup) {
      desktop-oriented 460px editor minimum. Otherwise collapsed 46px rails
      still occupy the full expanded column and cover the editor. */
   body.os-shell:has(.tex-work-app) .tex-work-app .tex-shell{
-    grid-template-columns:208px minmax(0,1fr) 208px!important;
+    grid-template-columns:210px minmax(0,1fr) clamp(318px,32vw,390px)!important;
     min-width:0!important;max-width:100%!important;
   }
   body.os-shell:has(.tex-work-app) .tex-work-app .tex-shell.is-left-collapsed{
-    grid-template-columns:46px minmax(0,1fr) 208px!important;
+    grid-template-columns:46px minmax(0,1fr) clamp(318px,32vw,390px)!important;
   }
   body.os-shell:has(.tex-work-app) .tex-work-app .tex-shell.is-right-collapsed{
-    grid-template-columns:208px minmax(0,1fr) 46px!important;
+    grid-template-columns:210px minmax(0,1fr) 46px!important;
   }
   body.os-shell:has(.tex-work-app) .tex-work-app .tex-shell.is-left-collapsed.is-right-collapsed{
     grid-template-columns:46px minmax(0,1fr) 46px!important;
@@ -95,6 +98,16 @@ export function enhanceWorkTexMobileFollowup(markup) {
   body.os-shell:has(.tex-work-app) .tex-work-app .tex-shell:not(.is-right-collapsed)>.tex-runs-panel{
     overflow-x:hidden!important;overflow-y:auto!important;
     -webkit-overflow-scrolling:touch!important;
+  }
+  /* PDF toolbar is wider than 208px: keep the whole PDF column usable rather
+     than covering the editor, while allowing its controls to scroll. */
+  body.os-shell:has(.tex-work-app) .tex-work-app .aertex-pdf-reader,
+  body.os-shell:has(.tex-work-app) .tex-work-app .tex-live-preview-card,
+  body.os-shell:has(.tex-work-app) .tex-work-app .tex-live-preview-viewport{
+    min-width:0!important;max-width:100%!important;
+  }
+  body.os-shell:has(.tex-work-app) .tex-work-app .aertex-pdf-toolbar{
+    max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;
   }
   body.os-shell:has(.tex-work-app) .tex-work-app .tex-shell>.tex-editor-panel .tex-editor{
     grid-template-rows:auto auto minmax(0,1fr)!important;
