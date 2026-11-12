@@ -105,7 +105,8 @@ function pageTemplate(config,doc,owner,token,access){
    config.request_access?"此文档仅限受邀成员访问。你可以申请访问并等待所有者批准。":"此文档仅限受邀成员访问。";
  const cta=allow ?
    (access.directlyAllowed?'<a class="button primary" href="'+escape(visit)+'">在 AERTEX Work 中打开</a>':
-     editor?'<button class="button primary" id="join" type="button">登录并加入编辑</button>':''):
+     '<button class="button primary" id="join" type="button">'+
+       (editor?'登录并加入编辑':'在工作台中只读打开')+'</button>'):
    config.request_access?'<button class="button primary" id="request" type="button">请求访问权限</button>':'';
  const meta=JSON.stringify({owner_id:owner,document_id:doc.id,token}).replace(/</g,"\\u003c");
  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow"><title>${title} · AERTEX Work</title>
