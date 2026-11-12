@@ -94,8 +94,8 @@ export function enhanceWorkTexCollaboration(markup, zh) {
   output = output.replace(
     "let documents=[];let runs=[];let activeId='';let activeDocument=null;let dirty=false;let saveTimer=null;let saveSequence=0;let compilerAvailable=false;",
     "let documents=[];let runs=[];let activeId='';let activeDocument=null;let dirty=false;let saveTimer=null;let saveSequence=0;let compilerAvailable=false;"+
-    "const workLocale=location.pathname.startsWith('/en/')?'en':'zh-cn';"+
-    "const routeDocumentId=()=>{const match=location.pathname.match(/^\\/(?:zh-cn|en)\\/d\\/(?:huawei-exempt\\/)?([0-9a-f-]{36})$/i);return match?match[1]:''};"+
+    "const workLocale=location.pathname.split('/')[1]||'zh-cn';"+
+    "const routeDocumentId=()=>{const match=location.pathname.match(/^\\/[a-z]{2}(?:-[a-z]{2})?\\/d\\/(?:huawei-exempt\\/)?([0-9a-f-]{36})$/i);return match?match[1]:''};"+
     "const documentRoute=id=>'/'+workLocale+'/d/'+(location.pathname.includes('/huawei-exempt/')?'huawei-exempt/':'')+encodeURIComponent(id);"+
     "const workRootRoute=()=>'/'+workLocale+'/tex';"+
     "const syncDocumentRoute=(id,replace=false)=>{if(!id)return;const next=documentRoute(id);if(location.pathname===next)return;history[replace?'replaceState':'pushState']({texDocumentId:id},'',next)};"
