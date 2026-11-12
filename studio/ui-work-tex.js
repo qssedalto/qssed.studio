@@ -445,6 +445,14 @@ const WORK_TEX_VISUAL_STYLE = `
       background:linear-gradient(180deg,color-mix(in srgb,var(--work-panel) 99%,#fff 1%),var(--work-panel))!important;
       caret-color:var(--primary)!important;
     }
+    /* The generic textarea focus rule adds a second external blue glow.
+       Keep only the editor's existing inset blue focus stroke. */
+    body.os-shell:has(.tex-work-app) #tex-source:focus,
+    body.os-shell:has(.tex-work-app) #tex-source:focus-visible{
+      outline:none!important;
+      outline-offset:0!important;
+      box-shadow:inset 0 0 0 1px var(--primary)!important;
+    }
     body.os-shell:has(.tex-work-app) .tex-editor-footer{
       background:color-mix(in srgb,var(--glass-heavy) 91%,transparent)!important;
       -webkit-backdrop-filter:blur(22px) saturate(150%);
