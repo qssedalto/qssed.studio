@@ -541,6 +541,27 @@ async function listRuns(env, userId) {
     id: run.id, status: run.status, conclusion: run.conclusion,
     created_at: run.created_at, updated_at: run.updated_at
   }));
+  // Only report actual GitHub Actions job/step states. The UI must never
+  // invent a percentage or imply that dispatch guarantees a finished PDF.
+  let jobs = [];
+  if (runs[0]?.id) {
+    try {
+      const details = await github(env, repoPath + "/actions/runs/" + encodeURIComponent(runs[0].id) + "/jobs?per_page=10");
+      jobs = (Array.isArray(details?.jobs) ? details.jobs : []).slice(0, 10).map(job => ({
+        name: String(job.name || "").slice(0, 100),
+        status: job.status || "queued",
+        conclusion: job.conclusion || null,
+        steps: (Array.isArray(job.steps) ? job.steps : []).slice(0, 20).map(step => ({
+          name: String(step.name || "").slice(0, 100),
+          number: Number(step.number) || 0,
+          status: step.status || "queued",
+          conclusion: step.conclusion || null
+        }))
+      }));
+    } catch {
+      // Run status remains useful while GitHub is indexing its job details.
+    }
+  }
 
   // The old "any run created recently" heuristic is unsafe: it can release
   // another dispatch's credit. Match the authoritative ID; a stored commit
@@ -558,6 +579,7 @@ async function listRuns(env, userId) {
   }
   return json({
     runs: normalized,
+    jobs,
     active: Boolean(row.active_nonce) && activeRun?.status !== "completed",
     active_run_id: row.active_run_id || activeRun?.id || null
   });
