@@ -20,14 +20,14 @@ export function sweiFontAssetResponse(path, method = "GET") {
 
 export function injectSweiFontMarkup(markup) {
   const html = String(markup || "");
-  if (!/<\\/head\\s*>/i.test(html) || html.includes('id="aertex-swei-css"')) return html;
+  if (!/<\/head\s*>/i.test(html) || html.includes('id="aertex-swei-css"')) return html;
   const assets = '<link id="aertex-swei-css" rel="stylesheet" href="/_aertex/swei-han.css?v=1">' +
     '<script id="aertex-swei-runtime" src="/_aertex/swei-han.js?v=1" defer></script>';
-  return html.replace(/<\\/head\\s*>/i, assets + "</head>");
+  return html.replace(/<\/head\s*>/i, assets + "</head>");
 }
 
 export async function injectSweiFontResponse(response, method = "GET") {
-  if (!response || method === "HEAD" || !/text\\/html/i.test(response.headers.get("content-type") || "")) return response;
+  if (!response || method === "HEAD" || !/text\/html/i.test(response.headers.get("content-type") || "")) return response;
   const source = await response.text();
   const markup = injectSweiFontMarkup(source);
   const headers = new Headers(response.headers);
@@ -36,8 +36,8 @@ export async function injectSweiFontResponse(response, method = "GET") {
   if (source !== markup) {
     headers.delete("etag");
     const csp = headers.get("content-security-policy");
-    if (csp && !/font-src\\s+[^;]*https:\\/\\/cdn\\.jsdelivr\\.net/i.test(csp)) {
-      const existing = /(^|;)\\s*font-src\\s+[^;]*/i;
+    if (csp && !/font-src\s+[^;]*https:\/\/cdn\.jsdelivr\.net/i.test(csp)) {
+      const existing = /(^|;)\s*font-src\s+[^;]*/i;
       headers.set("content-security-policy", existing.test(csp)
         ? csp.replace(existing, matched => matched + " https://cdn.jsdelivr.net")
         : csp + "; font-src 'self' https://cdn.jsdelivr.net");
