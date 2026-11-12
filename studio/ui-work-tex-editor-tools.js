@@ -27,6 +27,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     saveFailed: "保存失败",
     saveAsTitle: "另存为新文档",
     saveAsName: "文档名称",
+    saveAsNameRequired: "请输入新文档的名称。",
+    saveAsFailed: "无法创建文档副本，请检查名称或稍后重试。",
     cancel: "取消",
     create: "另存",
     copySuffix: " 副本",
@@ -56,6 +58,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     saveFailed: "Save failed",
     saveAsTitle: "Save as a new document",
     saveAsName: "Document name",
+    saveAsNameRequired: "Enter a name for the new document.",
+    saveAsFailed: "Could not create a copy. Check the name or try again.",
     cancel: "Cancel",
     create: "Save Copy",
     copySuffix: " Copy",
@@ -186,6 +190,9 @@ export function enhanceWorkTexEditorTools(markup, zh) {
       .tex-save-as-dialog::backdrop{background:rgba(0,0,0,.26);backdrop-filter:blur(3px)}
       .tex-save-as-sheet{display:grid;gap:16px;padding:20px}
       .tex-save-as-sheet strong{font-size:18px;letter-spacing:-.02em}
+      .tex-save-as-error{margin:0!important;padding:10px 12px;border-radius:9px;background:color-mix(in srgb,var(--danger,#a5453a) 12%,var(--surface));color:var(--danger,#a5453a);font-size:12px;line-height:1.5}
+      .tex-save-as-error[hidden]{display:none!important}
+      .tex-save-as-actions button:disabled{opacity:.55;cursor:progress}
       .tex-save-as-sheet label{display:grid;gap:7px;color:var(--muted);font-size:11px}
       .tex-save-as-sheet input{box-sizing:border-box;width:100%;height:44px;margin:0;padding:0 12px;border:0;border-radius:12px;background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);outline:none}
       .tex-save-as-sheet input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 12%,transparent),inset 0 0 0 1px var(--primary)}
@@ -310,7 +317,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         const snapshot = () => ({ title: title.value, engine: engine.value, source: source.value });
         const safeName = value => String(value || 'qsseda-tex').replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'qsseda-tex';
         const workDocumentRoute = id => {
-          const locale = location.pathname.startsWith('/en/') ? 'en' : 'zh-cn';
+          // Preserve the actual route locale (including en-us) on Save As.
+          const locale = String(location.pathname.split('/')[1] || 'zh-cn');
           const exempt = location.pathname.includes('/huawei-exempt/') ? 'huawei-exempt/' : '';
           return '/' + locale + '/d/' + exempt + encodeURIComponent(id);
         };
@@ -369,9 +377,15 @@ export function enhanceWorkTexEditorTools(markup, zh) {
 
         const dialog = document.createElement('dialog');
         dialog.className = 'tex-save-as-dialog';
-        dialog.innerHTML = '<form method="dialog" class="tex-save-as-sheet"><strong>' + labels.saveAsTitle + '</strong><label><span>' + labels.saveAsName + '</span><input maxlength="180" autocomplete="off"></label><div class="tex-save-as-actions"><button value="cancel">' + labels.cancel + '</button><button class="is-primary" value="confirm">' + labels.create + '</button></div></form>';
+        dialog.innerHTML = '<form class="tex-save-as-sheet"><strong id="tex-save-as-title">' + labels.saveAsTitle + '</strong><label><span>' + labels.saveAsName + '</span><input name="newTitle" maxlength="180" autocomplete="off" required></label><p class="tex-save-as-error" role="alert" hidden></p><div class="tex-save-as-actions"><button type="button" data-action="cancel">' + labels.cancel + '</button><button type="submit" class="is-primary" data-action="create">' + labels.create + '</button></div></form>';
+        dialog.setAttribute('aria-labelledby', 'tex-save-as-title');
         document.body.append(dialog);
+        const saveAsForm = dialog.querySelector('form');
         const saveAsInput = dialog.querySelector('input');
+        const saveAsError = dialog.querySelector('.tex-save-as-error');
+        const saveAsCancel = dialog.querySelector('[data-action="cancel"]');
+        const saveAsConfirm = dialog.querySelector('[data-action="create"]');
+        let saveAsPending = false;
 
         const deleteDialog = document.createElement('dialog');
         deleteDialog.className = 'tex-delete-dialog';
@@ -433,26 +447,61 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         }
 
         async function saveAs(name) {
+          if (saveAsPending || saveAsButton.disabled) return;
           const nextTitle = String(name || '').trim();
-          if (!nextTitle) return;
+          if (!nextTitle) {
+            saveAsError.textContent = labels.saveAsNameRequired;
+            saveAsError.hidden = false;
+            saveAsInput.focus();
+            return;
+          }
+          saveAsPending = true;
           saveAsButton.disabled = true;
+          saveAsCancel.disabled = true;
+          saveAsConfirm.disabled = true;
+          saveAsConfirm.textContent = labels.saving;
+          saveAsError.hidden = true;
           try {
             const data = await api('/api/tex/documents', { method: 'POST', body: JSON.stringify({ ...snapshot(), title: nextTitle }) });
-            if (data?.document?.id) {
-              location.assign(workDocumentRoute(data.document.id));
-            }
+            const createdId = String(data?.document?.id || '').trim();
+            if (!createdId) throw new Error(labels.saveAsFailed);
+            // Close only on success. If the request fails, the error is visible
+            // inside the dialog rather than silently disappearing.
+            dialog.close('created');
+            location.assign(workDocumentRoute(createdId));
           } catch (error) {
-            showMessage(error?.message || labels.saveFailed, true);
-          } finally { saveAsButton.disabled = false; }
+            saveAsError.textContent = error?.message || labels.saveAsFailed;
+            saveAsError.hidden = false;
+            showMessage(saveAsError.textContent, true);
+          } finally {
+            saveAsPending = false;
+            saveAsCancel.disabled = false;
+            saveAsConfirm.disabled = false;
+            saveAsConfirm.textContent = labels.create;
+            saveAsButton.disabled = !canEditSource();
+          }
         }
 
         saveButton.addEventListener('click', () => void saveNow());
-        saveAsButton.addEventListener('click', () => {
+        saveAsButton.addEventListener('click', event => {
+          event.preventDefault();
+          if (saveAsButton.disabled || dialog.open) return;
           saveAsInput.value = (title.value || 'TeX') + labels.copySuffix;
-          dialog.showModal();
-          window.setTimeout(() => { saveAsInput.focus(); saveAsInput.select(); }, 20);
+          saveAsError.hidden = true;
+          saveAsError.textContent = '';
+          try {
+            dialog.showModal();
+            window.setTimeout(() => { saveAsInput.focus(); saveAsInput.select(); }, 20);
+          } catch (error) {
+            showMessage(error?.message || labels.saveAsFailed, true);
+          }
         });
-        dialog.addEventListener('close', () => { if (dialog.returnValue === 'confirm') void saveAs(saveAsInput.value); });
+        saveAsForm.addEventListener('submit', event => {
+          event.preventDefault();
+          void saveAs(saveAsInput.value);
+        });
+        saveAsCancel.addEventListener('click', () => { if (!saveAsPending) dialog.close('cancel'); });
+        dialog.addEventListener('cancel', event => { if (saveAsPending) event.preventDefault(); });
 
         undoButton.addEventListener('click', () => { source.focus(); document.execCommand('undo'); });
         redoButton.addEventListener('click', () => { source.focus(); document.execCommand('redo'); });
@@ -515,7 +564,11 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           syncDisabled();
         });
 
-        copyButton.addEventListener('click', async () => {
+        copyButton.addEventListener('click', async event => {
+          // Copy is a pure clipboard command. Never open another document or
+          // invoke the Save As dialog (including via parent click handlers).
+          event.preventDefault();
+          if (copyButton.disabled) return;
           const { start, end } = sourceSelection();
           const text = start !== end ? source.value.slice(start, end) : source.value;
           if (await writeClipboard(text)) showMessage(labels.copied);
