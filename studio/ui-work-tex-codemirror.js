@@ -360,7 +360,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           const selfId = inferSelf(remoteParticipants);
           let labelOffset = 0;
           for (const person of remoteParticipants) {
-            if (!person || person.self || (selfId && String(person.id || '') === selfId)) continue;
+            if (!person || person.self || (selfId && String(person.client_id || '') === selfId)) continue;
             const start = clamp(person.selection_start, docLength);
             const end = clamp(person.selection_end, docLength);
             const from = Math.min(start, end);
