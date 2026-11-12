@@ -13,6 +13,7 @@
  */
 
 import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
+import { injectSweiFontMarkup, sweiFontAssetResponse } from "./studio/swei-font.js";
 import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
@@ -40,6 +41,8 @@ export default {
 
     if (FAVICON_PATHS.has(pathname)) return faviconResponse(request);
     if (LOGO_PATHS.has(pathname)) return logoResponse(request);
+    const sweiAsset = sweiFontAssetResponse(pathname, request.method);
+    if (sweiAsset) return sweiAsset;
 
     if (pathname === "/health") {
       return json({
@@ -277,13 +280,13 @@ function securityHeaders(contentType) {
     "x-frame-options": "DENY",
     "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
     "strict-transport-security": "max-age=31536000; includeSubDomains",
-    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net data:; img-src 'self' data: https:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    "content-security-policy": "default-src 'none'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net data:; img-src 'self' data: https:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
   });
 }
 
 function html(markup, status = 200) {
   return new Response(
-    injectBrandLogoRuntime(injectAccountMenuRuntime(markup)),
+    injectSweiFontMarkup(injectBrandLogoRuntime(injectAccountMenuRuntime(markup))),
     { status, headers: securityHeaders("text/html;charset=UTF-8") }
   );
 }
