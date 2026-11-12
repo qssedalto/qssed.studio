@@ -9,6 +9,9 @@ import { polishWorkTexViewportEdges } from "../studio/ui-work-tex-viewport-edges
 import { polishWorkTexWelcome } from "../studio/ui-work-tex-welcome.js";
 import { polishWorkTexPdfControls } from "../studio/ui-work-tex-pdf-controls.js";
 import { LAB_TOOLS } from "../studio/lab-tools.js";
+import { prepareWorkTexDocumentShell } from "../studio/ui-work-tex-persistent-cache.js";
+import { workLocalBridgeContent } from "../studio/ui-work.js";
+import { enhanceWorkLocalBridgeNative } from "../studio/ui-work-native.js";
 
 const controlStyles = enhanceWorkTexDesktopTypography("");
 const toolbarControls = controlStyles.match(/<style id="qsseda-work-tex-toolbar-control-heights">([\s\S]*?)<\/style>/)?.[1] || "";
@@ -50,6 +53,36 @@ for (const zh of [true, false]) {
     zh ? "zh-cn" : "en-us",
     "https://qsseda.com"
   ))));
+
+  const fullWork = prepareWorkTexDocumentShell(workPageMarkup, {
+    userId: "123e4567-e89b-12d3-a456-426614174000",
+    documentId: "5c5d5a4d-32aa-43fb-a7f8-aabcde0ab123",
+    zh
+  });
+  assert(fullWork.includes('data-tex-cache-user="123e4567-e89b-12d3-a456-426614174000"'), "Document cache must bind to the server-authenticated account");
+  assert(fullWork.includes('id="tex-editor-placeholder" class="tex-editor-placeholder" hidden'), "Deep-link first paint must not show the welcome page");
+  assert(fullWork.includes('id="tex-document-restore"'), "Deep link needs a loading state if no cached copy exists");
+  assert(fullWork.includes("#tex-editor-placeholder[hidden]{display:none!important}"), "Welcome CSS must not override the first-paint hidden state");
+  assert(fullWork.includes("restorePreviouslyOpenedDocument()"), "Document cache should hydrate before the network list finishes");
+  assert(fullWork.includes("openDocument(requested,'replace',true)"), "Fresh document data must refresh the cached snapshot");
+  assert(fullWork.includes("editor.inert=true"), "Cached documents must remain read-only pending the server fetch");
+  assert(fullWork.includes("editor.inert=false"), "Freshly verified documents must become interactive");
+  assert(fullWork.includes("indexedDB.open(databaseName, 1)"), "Previously opened source files must be cached persistently");
+  assert(fullWork.includes("url.pathname === '/api/tex/collaboration/shared'"), "Shared documents must also enter the local cache");
+  assert(fullWork.includes("url.pathname === '/api/auth/logout'"), "Logging out must delete this account's cached sources");
+  const cacheScript = fullWork.match(/<script id="qsseda-work-tex-document-cache">([\s\S]*?)<\/script>/)?.[1];
+  assert(cacheScript, "Work cache runtime should be injected exactly once");
+  new Function(cacheScript);
+  const publicWork = prepareWorkTexDocumentShell(workPageMarkup, { userId: "123e4567-e89b-12d3-a456-426614174000", zh });
+  assert(!publicWork.includes('id="tex-document-restore"'), "The normal Work start must still show templates");
+  assert(!publicWork.includes('id="tex-editor-placeholder" class="tex-editor-placeholder" hidden'), "The normal start page must not hide its welcome view");
+  assert(prepareWorkTexDocumentShell(workPageMarkup, { userId: "unverified", documentId: "5c5d5a4d-32aa-43fb-a7f8-aabcde0ab123", zh }) === workPageMarkup, "Unauthenticated markup must not expose a cache");
+  const local = enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, "zh-cn"));
+  assert(!local.includes('class="work-panel"'), "Redundant bridge information cards must be removed");
+  assert(!local.includes('id="work-local-capabilities"'), "Remove the capabilities card from local bridge UI");
+  assert(local.includes('id="work-local-log"') && local.includes('id="work-local-status-card"'), "Connection status must remain functional");
+  assert(local.includes('id="work-bridge-upgrade-note"'), "Bridge outdated-version warning must be preserved");
+
   assert(workPageMarkup.includes('id="qsseda-work-tex-home-links"'), "Work TeX must install shared main-site exit styling");
   for (const selector of [
     ".tex-documents-panel .tex-panel-head",
