@@ -60,4 +60,6 @@ assert.equal(view.getUint32(eocd, true), 0x06054b50, "ZIP needs a valid end-of-c
 assert.equal(view.getUint16(eocd + 10, true), 3, "ZIP must contain main and nested supporting files");
 assert.equal(view.getUint32(eocd + 16, true) > 0, true, "ZIP must link to its central directory");
 assert(bytes.length > 150, "ZIP must retain encoded file contents");
+assert(WORK_TEX_EXPLORER_COMMANDS.includes("central.length>500"),
+  "Project ZIP download must accept up to 500 files.");
 console.log("Work TeX Explorer, project actions, inline Markdown reading and ZIP structure validated.");
