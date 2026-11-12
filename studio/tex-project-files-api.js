@@ -86,16 +86,27 @@ export async function handleTexProjectFiles(request, env, userId) {
     let added;
     try { added = input.files.map(validatedFile); }
     catch (error) { return fail(error.message); }
-    const seen = new Set(["main.tex", ...existing.map(f=>f.name.toLowerCase())]);
-    for (const f of added) {
-      if (seen.has(f.name.toLowerCase())) return fail("File already exists: " + f.name, 409);
-      seen.add(f.name.toLowerCase());
+    const replacing = input.operation === "replace";
+    let next;
+    if (replacing) {
+      if (added.length !== 1) return fail("Replace exactly one file.");
+      const index = existing.findIndex(f=>f.name === added[0].name);
+      if (index < 0) return fail("The file to edit was not found.", 404);
+      next = existing.map((f,i)=>i===index?added[0]:f);
+    } else {
+      if (input.operation && input.operation !== "add") return fail("Unknown file operation.");
+      const seen = new Set(["main.tex", ...existing.map(f=>f.name.toLowerCase())]);
+      for (const f of added) {
+        if (seen.has(f.name.toLowerCase())) return fail("File already exists: " + f.name, 409);
+        seen.add(f.name.toLowerCase());
+      }
+      if (existing.length + added.length > MAX_FILES) return fail("A project can contain at most 25 files including main.tex.", 409);
+      next = [...existing, ...added];
     }
-    if (existing.length + added.length > MAX_FILES) return fail("A project can contain at most 25 files including main.tex.", 409);
     const total = encoder.encode(String(doc.source || "")).length +
-      [...existing,...added].reduce((n,f)=>n+sizeOf(f),0);
+      next.reduce((n,f)=>n+sizeOf(f),0);
     if (total > MAX_TOTAL_BYTES) return fail("Project file content cannot exceed 4 MB.", 413);
-    doc.files = [...existing, ...added];
+    doc.files = next;
     doc.updated_at = new Date().toISOString();
     await env.STORAGE.put(key, JSON.stringify(doc), {
       httpMetadata: { contentType:"application/json;charset=UTF-8" },
