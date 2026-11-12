@@ -1,0 +1,51 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import { managedTexRepoName, MANAGED_TEX_WORKFLOW, MANAGED_TEX_WORKFLOW_PATH } from "../studio/tex-github-workflow.js";
+import { enhanceTexGithubWorkbench } from "../studio/ui-tex-github.js";
+
+const userA = "11111111-1111-4111-8111-111111111111";
+const userB = "22222222-2222-4222-8222-222222222222";
+const a = managedTexRepoName(userA);
+const b = managedTexRepoName(userB);
+assert.notEqual(a, b, "distinct users must never share a repository");
+assert.equal(a, "aertex-tex-11111111111141118111111111111111");
+assert.throws(() => managedTexRepoName("../../admin"), /Invalid/);
+assert.throws(() => managedTexRepoName(""), /Invalid/);
+assert.equal(MANAGED_TEX_WORKFLOW_PATH, ".github/workflows/aertex-compile.yml");
+
+assert.match(MANAGED_TEX_WORKFLOW, /workflow_dispatch:/);
+assert.match(MANAGED_TEX_WORKFLOW, /persist-credentials: false/);
+assert.match(MANAGED_TEX_WORKFLOW, /latexmk_shell_escape: false/);
+assert.match(MANAGED_TEX_WORKFLOW, /timeout-minutes: 15/);
+assert.match(MANAGED_TEX_WORKFLOW, /needs: compile/);
+assert.match(MANAGED_TEX_WORKFLOW, /ref: pdf-output/);
+assert.match(MANAGED_TEX_WORKFLOW, /git add -- main\.pdf/);
+assert(!MANAGED_TEX_WORKFLOW.includes("pull_request_target"), "no privileged PR execution");
+assert(!MANAGED_TEX_WORKFLOW.includes("secrets."), "compile never receives secrets");
+
+const html = enhanceTexGithubWorkbench('<aside class="tex-runs-panel">hello</aside>', true);
+assert(html.includes('id="tex-gh-card"'), "GitHub panel must appear");
+assert(html.includes("创建我的唯一仓库"), "Chinese locale must render");
+assert(html.includes('/api/tex/github/pdf'), "PDF preview must use authenticated proxy");
+assert(!html.includes("__COPY_JSON__"), "injected copy placeholder must be resolved");
+const en = enhanceTexGithubWorkbench('<aside class="tex-runs-panel">hello</aside>', false);
+assert(en.includes("Create my only repository"), "English locale must render");
+
+const api = fs.readFileSync(new URL("../studio/tex-github-api.js", import.meta.url), "utf8");
+const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
+const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
+const schema = fs.readFileSync(new URL("../docs/tex-github-allowance-schema.sql", import.meta.url), "utf8");
+assert(worker.includes('pathname.startsWith("/api/tex/github/")'), "GitHub API route missing");
+assert(entry.includes("enhanceTexGithubWorkbench("), "GitHub UI not injected into Work");
+assert(api.includes("verifyTexUser(session.accessToken)"), "server identity verification required");
+assert(api.includes("readRow(env, userId)"), "repository access must be bound to authenticated user");
+assert(api.includes('doc?.owner_id !== userId'), "shared documents cannot be compiled as own");
+assert(api.includes('await reserveCredit(env, userId, nonce)'), "quota reservation must be atomic");
+assert(api.includes('githubRepoPath(env, row.repo_name)'), "server-derived repository binding required");
+assert(!api.includes("body.repo_name"), "client must never select a different repository");
+assert(!api.includes("body.owner"), "client must never choose GitHub owner");
+assert(schema.includes("user_id uuid primary key"), "one repository per user is enforced by database key");
+assert(schema.includes("enable row level security"), "user allocations must enable RLS");
+assert(schema.includes("revoke all on public.tex_github_allowances from anon, authenticated"), "no direct user table access");
+assert(schema.includes("active_nonce is null or active_since"), "concurrent compilation must be serialized");
+console.log("AERTEX GitHub TeX isolation, quota and panel checks passed.");
