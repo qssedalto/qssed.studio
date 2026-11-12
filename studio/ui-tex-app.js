@@ -66,11 +66,11 @@ export function polishTexWorkbenchApp(markup, zh) {
         <div class="qtex-templates-header"><strong>${copy.chooseTemplate}</strong><span>03 / TEMPLATES</span></div>
         <div class="qtex-template-grid">
           <button type="button" class="qtex-template qtex-template-blank" data-tex-start-template="blank">
-            <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">＋</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
+            <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">+</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
             <span class="qtex-template-info"><strong>${copy.blank}</strong><span>${copy.blankDetail}</span></span>
           </button>
           <button type="button" class="qtex-template qtex-template-article" data-tex-start-template="article">
-            <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">文</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
+            <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">${zh ? "文" : "A"}</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
             <span class="qtex-template-info"><strong>${copy.article}</strong><span>${copy.articleDetail}</span></span>
           </button>
           <button type="button" class="qtex-template qtex-template-math" data-tex-start-template="math">
