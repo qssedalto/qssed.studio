@@ -264,14 +264,18 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           return button;
         }
 
+        // Large, independently drawn Windows Explorer-style vector icons.
+        // Muted strokes follow the page theme; their colored details use --primary.
         const icons = {
-          save: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>',
-          saveAs: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10l3 3v12H4z"/><path d="M7 5v5h7V5M15.5 15.5h5M18 13v5"/></svg>',
+          save: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path class="tex-icon-accent" d="M8 4v6h8V4M8 20v-6h8v6"/></svg>',
+          saveAs: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10l3 3v12H4z"/><path d="M7 5v5h7V5"/><path class="tex-icon-accent" d="M15.5 15.5h5M18 13v5"/></svg>',
           undo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4 11l5 4"/><path d="M5 11h8a6 6 0 0 1 6 6"/></svg>',
           redo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 7 5 4-5 4"/><path d="M19 11h-8a6 6 0 0 0-6 6"/></svg>',
-          copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
-          paste: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h6M9 3h6v4H9z"/><path d="M8 5H6v16h12V5h-2"/></svg>',
-          history: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v5h5"/><path d="M5.2 9.6A8 8 0 1 1 4 14"/><path d="M12 8v5l3 2"/></svg>'
+          cut: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7.4 3.2 20.8 21M24.6 3.2 11.2 21"/><circle class="tex-icon-accent" cx="8.8" cy="24.5" r="4.2"/><circle class="tex-icon-accent" cx="23.2" cy="24.5" r="4.2"/></svg>',
+          copy: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M17 26H7.5A3.5 3.5 0 0 1 4 22.5v-13A3.5 3.5 0 0 1 7.5 6H11"/><rect class="tex-icon-accent" x="13" y="3.5" width="15" height="22" rx="3"/></svg>',
+          paste: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10.5 6H6.5A3.5 3.5 0 0 0 3 9.5v16A3.5 3.5 0 0 0 6.5 29H12"/><path d="M21.5 6h3A3.5 3.5 0 0 1 28 9.5"/><rect x="10" y="3.5" width="12" height="5.5" rx="2"/><rect class="tex-icon-accent" x="13.5" y="11.5" width="15" height="18" rx="2"/></svg>',
+          rename: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 6H6.5A3.5 3.5 0 0 0 3 9.5v13A3.5 3.5 0 0 0 6.5 26H11M21 6h4.5A3.5 3.5 0 0 1 29 9.5v13a3.5 3.5 0 0 1-3.5 3.5H21"/><path d="m8.5 20 4.5-10 4.5 10M10 17h6"/><path class="tex-icon-accent" d="M21 2.5v27M17.5 2.5h7M17.5 29.5h7"/></svg>',
+          history: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v5h5"/><path d="M5.2 9.6A8 8 0 1 1 4 14"/><path class="tex-icon-accent" d="M12 8v5l3 2"/></svg>'
         };
 
         const bar = document.createElement('div');
@@ -280,11 +284,13 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         const saveAsButton = createButton(labels.saveAs, icons.saveAs);
         const undoButton = createButton(labels.undo, icons.undo);
         const redoButton = createButton(labels.redo, icons.redo);
+        const cutButton = createButton(labels.cut, icons.cut);
         const copyButton = createButton(labels.copy, icons.copy);
         const pasteButton = createButton(labels.paste, icons.paste);
+        const renameButton = createButton(labels.rename, icons.rename);
         const historyButton = createButton(labels.history, icons.history, 'is-history');
-        const separator = () => { const node = document.createElement('span'); node.className = 'tex-editor-command-separator'; return node; };
-        bar.append(saveButton, saveAsButton, separator(), undoButton, redoButton, separator(), copyButton, pasteButton, separator(), historyButton);
+        const separator = () => { const node = document.createElement('span'); node.className = 'tex-editor-command-separator'; node.setAttribute('aria-hidden', 'true'); return node; };
+        bar.append(saveButton, saveAsButton, separator(), undoButton, redoButton, separator(), cutButton, copyButton, pasteButton, renameButton, separator(), historyButton);
         const counts = sourceLabel.lastElementChild;
         if (counts) sourceLabel.insertBefore(bar, counts);
         else sourceLabel.append(bar);
