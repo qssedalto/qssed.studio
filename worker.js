@@ -28,6 +28,8 @@ import { handleTexGithubApi } from "./studio/tex-github-api.js";
 import { handleTexCollaborationApi } from "./studio/tex-collaboration-api.js";
 import { handleTexSharedCollaboration } from "./studio/tex-collaboration-shared.js";
 import { handleTexCollaborationRealtime } from "./studio/tex-collaboration-realtime.js";
+import { handleTexLinkSharingApi } from "./studio/tex-link-sharing-api.js";
+import { handleTexLinkPublic } from "./studio/tex-link-public.js";
 import { handleWorkApi } from "./studio/work-api.js";
 import { handleCuratedFavorites } from "./studio/favorites-api.js";
 import { handleRegistrationUsernameCheck } from "./studio/registration-check-api.js";
@@ -90,6 +92,12 @@ async function routeStudioRequest(request, env, ctx) {
   let url = new URL(request.url);
   let pathname = url.pathname;
   const workHost = isWorkSubdomainRequest(request);
+  // Capability pages are intentionally separate from the authenticated editor
+  // shell. A token alone never bypasses the editing or WebSocket ACL.
+  if (workHost && (pathname.startsWith("/share/tex/") || pathname === "/api/tex/link/download")) {
+    return handleTexLinkPublic(request,env);
+  }
+
 
   if (!workHost && isMainHost(url.hostname) && (pathname === "/wallpapers/proled-xdr" || pathname.startsWith("/wallpapers/proled-xdr/"))) return handleProledWallpaperRoute(request, env);
 
@@ -166,6 +174,7 @@ async function routeStudioRequest(request, env, ctx) {
     return nativeApiResponse(result);
   }
   if (pathname === "/api/workbench/overview") return handleWorkbenchOverview(request, env);
+  if (pathname === "/api/tex/link") return handleTexLinkSharingApi(request, env);
   if (pathname === "/api/tex/collaboration/realtime") return handleTexCollaborationRealtime(request, env);
   if (pathname === "/api/tex/collaboration/shared") return handleTexSharedCollaboration(request, env);
   if (pathname === "/api/tex/collaboration") return handleTexCollaborationRoute(request, env);
