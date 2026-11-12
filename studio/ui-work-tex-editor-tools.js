@@ -4,7 +4,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
   // confirmation dialog, so the footer and toolbar cannot disagree.
   output = output.replace(
     "window.confirm(copy.deleteConfirm)",
-    "window.__qssedaTexConfirmDelete?.(activeDocument?.title || title.value || copy.untitled)"
+    "await window.__qssedaTexConfirmDelete?.(activeDocument?.title || title.value || copy.untitled)"
   );
   const copy = zh ? {
     save: "保存",
@@ -358,6 +358,38 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         document.body.append(dialog);
         const saveAsInput = dialog.querySelector('input');
 
+        const deleteDialog = document.createElement('dialog');
+        deleteDialog.className = 'tex-delete-dialog';
+        deleteDialog.setAttribute('aria-labelledby', 'tex-delete-dialog-title');
+        deleteDialog.innerHTML = '<div class="tex-delete-dialog-header"><strong id="tex-delete-dialog-title">' + labels.deleteDialogTitle + '</strong><button type="button" class="tex-delete-dialog-close" aria-label="' + labels.deleteClose + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg></button></div>' +
+          '<div class="tex-delete-dialog-body"><p>' + labels.deleteQuestion + '</p><ul><li class="tex-delete-file-name"></li></ul></div>' +
+          '<div class="tex-delete-dialog-actions"><button type="button" class="tex-delete-dialog-cancel">' + labels.deleteCancel + '</button><button type="button" class="tex-delete-dialog-confirm">' + labels.deleteAction + '</button></div>';
+        document.body.append(deleteDialog);
+        const deleteFileName = deleteDialog.querySelector('.tex-delete-file-name');
+        let resolveDelete = null;
+        const closeDelete = accepted => { if (deleteDialog.open) deleteDialog.close(accepted ? 'delete' : 'cancel'); };
+        deleteDialog.querySelector('.tex-delete-dialog-close').addEventListener('click', () => closeDelete(false));
+        deleteDialog.querySelector('.tex-delete-dialog-cancel').addEventListener('click', () => closeDelete(false));
+        deleteDialog.querySelector('.tex-delete-dialog-confirm').addEventListener('click', () => closeDelete(true));
+        deleteDialog.addEventListener('click', event => { if (event.target === deleteDialog) closeDelete(false); });
+        deleteDialog.addEventListener('close', () => {
+          const resolve = resolveDelete;
+          resolveDelete = null;
+          if (resolve) resolve(deleteDialog.returnValue === 'delete');
+        });
+        window.__qssedaTexConfirmDelete = filename => {
+          if (!activeDocumentId() || root.dataset.texCollaborationAccessRole === 'viewer' ||
+              root.dataset.texCollaborationAccessRole === 'editor' || deleteDialog.open) return Promise.resolve(false);
+          const name = String(filename || title.value || 'main.tex').trim();
+          deleteFileName.textContent = /\.tex$/i.test(name) ? name : name + '.tex';
+          deleteDialog.returnValue = 'cancel';
+          return new Promise(resolve => {
+            resolveDelete = resolve;
+            try { deleteDialog.showModal(); }
+            catch { resolveDelete = null; resolve(false); }
+          });
+        };
+
         async function saveNow() {
           const id = activeDocumentId();
           if (!id) return;
@@ -500,6 +532,13 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           title.select();
         });
 
+        deleteButton.addEventListener('click', () => {
+          if (editor.hidden || !activeDocumentId() || root.dataset.texCollaborationAccessRole === 'viewer' ||
+              root.dataset.texCollaborationAccessRole === 'editor') return;
+          const footerDelete = document.getElementById('tex-delete');
+          if (footerDelete && !footerDelete.disabled) footerDelete.click();
+        });
+
         historyButton.addEventListener('click', () => {
           const rightToggle = document.getElementById('tex-right-panel-toggle');
           if (rightToggle?.getAttribute('aria-expanded') === 'false') rightToggle.click();
@@ -546,6 +585,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
             button.disabled = noDocument || readOnly;
           });
           [copyButton, historyButton].forEach(button => { button.disabled = noDocument; });
+          const footerDelete = document.getElementById('tex-delete');
+          deleteButton.disabled = noDocument || readOnly || root.dataset.texCollaborationAccessRole === 'editor' || Boolean(footerDelete?.disabled);
           const { start, end } = sourceSelection();
           cutButton.disabled = noDocument || readOnly || start === end;
         };
