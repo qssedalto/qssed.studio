@@ -205,7 +205,8 @@ async function routeStudioRequest(request, env, ctx) {
   let response = await studio.fetch(request, env, ctx);
   if (workHost && workPageNext && response.status === 401) return workSessionRedirect(request, workPageNext);
   if (workHost && workPageNext && response.status === 200) response = await suppressWorkClientSessionBounce(response);
-  return hardenGlobalBrowserResponse(await injectSweiFontResponse(response, request.method));
+  response = await injectSweiFontResponse(response, request.method);
+  return hardenGlobalBrowserResponse(response);
 }
 
 async function handleTexCollaborationRoute(request, env) {
