@@ -96,6 +96,7 @@ export function hasStudioSessionCookie(request) {
 
 export function requestBodyLimit(pathname) {
   if (pathname === "/api/storage/upload") return 52 * MIB;
+  if (pathname === "/api/tex/files") return 5 * MIB;
   if (pathname === "/api/profile/media") return 10 * MIB;
   if (pathname === "/api/auth/signup") return 6 * MIB;
   if (pathname.startsWith("/api/") || pathname === "/auth/handoff") return 2 * MIB;
