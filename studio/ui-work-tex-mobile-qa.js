@@ -150,7 +150,7 @@ export function enhanceWorkTexMobileQa(markup) {
   .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head {flex-direction:column!important;align-items:center!important;gap:5px!important;padding:8px 4px!important}
   .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-title,
   .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel>:not(.tex-panel-head),
-  .tex-work-app .tex-shell.is-left-collapsed .tex-panel-home-link,
+  .tex-work-app .tex-shell.is-left-collapsed .tex-documents-panel .tex-panel-home-link,
   .tex-work-app .tex-shell.is-right-collapsed .tex-runs-panel>:not(.tex-right-panel-toggle) {display:none!important}
   .tex-work-app .tex-shell.is-left-collapsed .tex-left-panel-toggle {margin:0!important}
   .tex-work-app .tex-shell.is-right-collapsed .tex-right-panel-toggle {left:8px!important;top:10px!important}
