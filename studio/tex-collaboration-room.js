@@ -45,6 +45,7 @@ export class TexCollaborationRoom {
     const server = pair[1];
     const participant = {
       id: userId,
+      client_id: crypto.randomUUID(),
       owner_id: ownerId,
       document_id: documentId,
       role,
@@ -55,6 +56,9 @@ export class TexCollaborationRoom {
       expires_at: Date.now() + AUTH_LEASE_MS,
       selection_start: 0,
       selection_end: 0,
+      caret_position: 0,
+      anchor_rel: "",
+      head_rel: "",
       typing: false
     };
 
@@ -80,6 +84,7 @@ export class TexCollaborationRoom {
       sequence,
       updates,
       role,
+      client_id: participant.client_id,
       lease_ms: AUTH_LEASE_MS
     }));
     this.broadcastPresence();
@@ -107,6 +112,9 @@ export class TexCollaborationRoom {
     if (type === "presence") {
       participant.selection_start = clampPosition(payload.selection_start);
       participant.selection_end = clampPosition(payload.selection_end);
+      participant.caret_position = clampPosition(payload.caret_position);
+      participant.anchor_rel = safeRelativePosition(payload.anchor_rel);
+      participant.head_rel = safeRelativePosition(payload.head_rel);
       participant.typing = payload.typing === true;
       participant.expires_at = Math.min(Number(participant.expires_at) || 0, Date.now() + AUTH_LEASE_MS);
       socket.serializeAttachment(participant);
@@ -134,6 +142,7 @@ export class TexCollaborationRoom {
             sequence,
             updates: await this.readUpdatesAfter(Number(existing.through_sequence) || 0),
             role: participant.role,
+            client_id: participant.client_id,
             lease_ms: AUTH_LEASE_MS
           }));
           return;
@@ -230,12 +239,16 @@ export class TexCollaborationRoom {
       if (!this.ensureLease(socket, participant)) continue;
       participants.push({
         id: participant.id,
+        client_id: participant.client_id,
         role: participant.role,
         username: participant.username,
         display_name: participant.display_name,
         avatar_url: participant.avatar_url,
         selection_start: clampPosition(participant.selection_start),
         selection_end: clampPosition(participant.selection_end),
+        caret_position: clampPosition(participant.caret_position),
+        anchor_rel: safeRelativePosition(participant.anchor_rel),
+        head_rel: safeRelativePosition(participant.head_rel),
         typing: participant.typing === true
       });
     }
@@ -252,4 +265,10 @@ function clampPosition(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
   return Math.max(0, Math.min(MAX_PRESENCE_POSITION, Math.floor(parsed)));
+}
+
+// A bounded Yjs RelativePosition is a transport hint only, never an authorization token.
+function safeRelativePosition(value) {
+  const text = typeof value === "string" ? value : "";
+  return text.length <= 512 && /^[A-Za-z0-9+/=]*$/.test(text) ? text : "";
 }

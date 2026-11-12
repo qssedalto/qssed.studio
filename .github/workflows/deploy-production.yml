@@ -123,7 +123,9 @@ jobs:
           node --check scripts/lab-check.mjs
           node scripts/lab-check.mjs
           node --check scripts/tex-workbench-check.mjs
+          node --check scripts/tex-live-collaboration-check.mjs
           node scripts/tex-workbench-check.mjs
+          node scripts/tex-live-collaboration-check.mjs
           node --check scripts/work-local-bridge-check.mjs
           node scripts/work-local-bridge-check.mjs
           node --check scripts/work-subdomain-check.mjs

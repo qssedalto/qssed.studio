@@ -223,6 +223,15 @@ export function enhanceWorkTexRealtime(markup, zh) {
           }
           const button = document.getElementById('tex-collaboration-open');
           button?.classList.toggle('is-live', kind === 'live' || kind === 'readonly');
+          const detail = {
+            document_id: connection?.id || '',
+            role: connection?.role || '',
+            kind,
+            connected: kind === 'live' || kind === 'readonly',
+            participants: connection?.presence?.length || 0
+          };
+          window.__qssedaTexRealtimeSnapshot = detail;
+          window.dispatchEvent(new CustomEvent('qsseda:tex-realtime-status', { detail }));
         }
 
         function applyAccessRole(role) {
@@ -260,11 +269,42 @@ export function enhanceWorkTexRealtime(markup, zh) {
           return (text.slice(0, 2) || '?').toUpperCase();
         }
 
+        function relativeIndex(current, encoded, fallback) {
+          if (!current?.ready || !encoded || !Y?.decodeRelativePosition) return fallback;
+          try {
+            const position = Y.decodeRelativePosition(base64ToBytes(encoded));
+            const resolved = Y.createAbsolutePositionFromRelativePosition(position, current.ydoc);
+            return resolved?.type === current.ytext ? resolved.index : fallback;
+          } catch { return fallback; }
+        }
+
+        function publishPresence(items) {
+          const id = connection?.id || '';
+          const snapshot = {
+            document_id: id, role: connection?.role || 'owner',
+            participants: items, at: Date.now()
+          };
+          window.__qssedaTexPresenceSnapshot = snapshot;
+          window.dispatchEvent(new CustomEvent('qsseda:tex-presence', { detail: snapshot }));
+        }
+
         function renderPresence(participants) {
-          const items = Array.isArray(participants) ? participants : [];
+          const current = connection;
+          const items = Array.isArray(participants) ? participants.map(person => {
+            const a = relativeIndex(current, person?.anchor_rel, Number(person?.selection_start) || 0);
+            const h = relativeIndex(current, person?.head_rel, Number(person?.caret_position ?? person?.selection_end) || 0);
+            return {
+              ...person,
+              self: Boolean(current?.clientId && person?.client_id === current.clientId),
+              selection_start: Math.min(a, h),
+              selection_end: Math.max(a, h),
+              caret_position: h
+            };
+          }) : [];
           const count = items.length;
-          if (connection) connection.presence = items;
-          const role = connection?.role || 'owner';
+          if (current) current.presence = items;
+          publishPresence(items);
+          const role = current?.role || 'owner';
           setStatus(role === 'viewer' ? 'readonly' : 'live', role === 'viewer' ? labels.readOnly : labels.connected, count);
 
           const page = document.querySelector('.tex-collaboration-page[data-page="live"] .tex-collaboration-section');
@@ -277,8 +317,19 @@ export function enhanceWorkTexRealtime(markup, zh) {
           }
           host.replaceChildren();
           for (const person of items) {
-            const chip = document.createElement('span');
-            chip.className = 'tex-realtime-person' + (person?.typing ? ' is-typing' : '');
+            const chip = document.createElement(person?.self ? 'span' : 'button');
+            chip.className = 'tex-realtime-person' +
+              (person?.typing ? ' is-typing' : '') + (person?.self ? ' is-self' : '');
+            if (!person?.self) {
+              chip.type = 'button';
+              chip.dataset.clientId = String(person?.client_id || '');
+              chip.title = String(person?.display_name || person?.username || labels.live);
+              chip.addEventListener('click', () => {
+                window.dispatchEvent(new CustomEvent('qsseda:tex-follow-toggle', {
+                  detail: { client_id: String(person?.client_id || '') }
+                }));
+              });
+            }
             const avatar = document.createElement('span');
             avatar.className = 'tex-realtime-person-avatar';
             if (person?.avatar_url) {
@@ -291,7 +342,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
             const name = document.createElement('span');
             name.textContent = person?.display_name || person?.username || labels.live;
             chip.append(avatar, name);
-            if (person?.typing) chip.title = labels.typing;
+            if (person?.typing && person?.self) chip.title = labels.typing;
             host.append(chip);
           }
         }
@@ -366,13 +417,29 @@ export function enhanceWorkTexRealtime(markup, zh) {
           if (!connection?.socket || connection.socket.readyState !== WebSocket.OPEN) return;
           const send = () => {
             presenceTimer = 0;
-            if (!connection?.socket || connection.socket.readyState !== WebSocket.OPEN) return;
+            const current = connection;
+            if (!current?.socket || current.socket.readyState !== WebSocket.OPEN) return;
             const source = document.getElementById('tex-source');
-            connection.socket.send(JSON.stringify({
+            const bridge = window.__qssedaTexEditorBridge;
+            const editorSelection = bridge?.getSelection?.();
+            const maximum = current.ytext?.length || source?.value?.length || 0;
+            const rangeStart = Math.max(0, Math.min(maximum, Number(source?.selectionStart) || 0));
+            const rangeEnd = Math.max(0, Math.min(maximum, Number(source?.selectionEnd) || 0));
+            const anchor = Math.max(0, Math.min(maximum, Number(editorSelection?.anchor ?? (source?.selectionDirection === 'backward' ? rangeEnd : rangeStart)) || 0));
+            const head = Math.max(0, Math.min(maximum, Number(editorSelection?.head ?? (source?.selectionDirection === 'backward' ? rangeStart : rangeEnd)) || 0));
+            const relative = offset => {
+              if (!current.ready || !Y?.createRelativePositionFromTypeIndex) return '';
+              try { return bytesToBase64(Y.encodeRelativePosition(Y.createRelativePositionFromTypeIndex(current.ytext, offset))); }
+              catch { return ''; }
+            };
+            current.socket.send(JSON.stringify({
               type: 'presence',
-              selection_start: source?.selectionStart || 0,
-              selection_end: source?.selectionEnd || 0,
-              typing: Date.now() - (connection.lastInputAt || 0) < 1300
+              selection_start: Math.min(anchor, head),
+              selection_end: Math.max(anchor, head),
+              caret_position: head,
+              anchor_rel: relative(anchor),
+              head_rel: relative(head),
+              typing: Date.now() - (current.lastInputAt || 0) < 1300
             }));
           };
           window.clearTimeout(presenceTimer);
@@ -404,6 +471,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           }
           try { connection?.ydoc?.destroy(); } catch {}
           connection = null;
+          publishPresence([]);
           setStatus('', '');
         }
 
@@ -449,6 +517,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
             pendingLocalEdit: false,
             role: sharedDocuments.get(id)?.collaboration_role || 'owner',
             serverSequence: 0,
+            clientId: '',
             presence: [],
             lastInputAt: 0,
             intentionalClose: false
@@ -462,7 +531,9 @@ export function enhanceWorkTexRealtime(markup, zh) {
             current.socket.send(JSON.stringify({ type: 'update', data: bytesToBase64(update) }));
           });
           ytext.observe(() => {
-            if (current.ready && !current.applyingRemote) renderYState(current);
+            if (!current.ready || current.applyingRemote) return;
+            renderYState(current);
+            if (current.presence.length) renderPresence(current.presence);
           });
           ymeta.observe(() => {
             if (current.ready && !current.applyingRemote) renderYState(current);
@@ -485,6 +556,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
             let payload;
             try { payload = JSON.parse(event.data); } catch { return; }
             if (payload.type === 'sync') {
+              current.clientId = String(payload.client_id || '');
               current.role = ['owner', 'editor', 'viewer'].includes(payload.role) ? payload.role : current.role;
               applyAccessRole(current.role);
               current.serverSequence = Math.max(current.serverSequence, Number(payload.sequence) || 0);
@@ -551,6 +623,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           socket.addEventListener('close', event => {
             if (connection !== current) return;
             current.ready = false;
+            publishPresence([]);
             setStatus('offline', labels.offline);
             updateLiveSettingsSurface('offline');
             if (current.intentionalClose) return;
