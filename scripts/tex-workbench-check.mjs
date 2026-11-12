@@ -3,11 +3,24 @@ import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
 import { polishTexWorkbenchApp } from "../studio/ui-tex-app.js";
 import { enhanceWorkTexCollapsiblePanels } from "../studio/ui-work-tex-panels.js";
+import { enhanceWorkTexDesktopTypography } from "../studio/ui-work-tex-desktop-type.js";
 import { injectWorkTexHomeLinks } from "../studio/ui-work-tex.js";
 import { polishWorkTexViewportEdges } from "../studio/ui-work-tex-viewport-edges.js";
 import { polishWorkTexWelcome } from "../studio/ui-work-tex-welcome.js";
 import { polishWorkTexPdfControls } from "../studio/ui-work-tex-pdf-controls.js";
 import { LAB_TOOLS } from "../studio/lab-tools.js";
+
+const controlStyles = enhanceWorkTexDesktopTypography("");
+const toolbarControls = controlStyles.match(/<style id="qsseda-work-tex-toolbar-control-heights">([\s\S]*?)<\/style>/)?.[1] || "";
+assert(toolbarControls.includes("@media (min-width:761px)"), "Desktop height contract must remain scoped to desktop");
+for (const selector of [">label select", ">#tex-collaboration-open", ">.tex-panel-home-link"]) {
+  assert(toolbarControls.includes(selector), "Toolbar height contract missing " + selector);
+}
+const desktopHeights = toolbarControls.split("@media (max-width:760px)")[0];
+for (const key of ["height", "min-height", "max-height"]) {
+  assert(desktopHeights.includes(key + ":38px!important"), "Desktop controls should match the original 38px XeLaTeX select");
+  assert(!desktopHeights.includes(key + ":64px!important"), "Toolbar controls must not be stretched to the old 64px height");
+}
 
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
