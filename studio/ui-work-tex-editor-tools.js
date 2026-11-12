@@ -1,5 +1,11 @@
 export function enhanceWorkTexEditorTools(markup, zh) {
-  const output = String(markup || "");
+  let output = String(markup || "");
+  // Route the existing document deletion flow through the same accessible
+  // confirmation dialog, so the footer and toolbar cannot disagree.
+  output = output.replace(
+    "window.confirm(copy.deleteConfirm)",
+    "window.__qssedaTexConfirmDelete?.(activeDocument?.title || title.value || copy.untitled)"
+  );
   const copy = zh ? {
     save: "保存",
     saveAs: "另存为",
@@ -10,6 +16,12 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     paste: "粘贴",
     rename: "重命名文档",
     history: "历史版本",
+    delete: "删除文件",
+    deleteDialogTitle: "删除",
+    deleteQuestion: "确定要永久删除以下文件吗？",
+    deleteCancel: "取消",
+    deleteAction: "删除",
+    deleteClose: "关闭",
     saved: "已保存",
     saving: "正在保存…",
     saveFailed: "保存失败",
@@ -33,6 +45,12 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     paste: "Paste",
     rename: "Rename document",
     history: "Version History",
+    delete: "Delete document",
+    deleteDialogTitle: "Delete",
+    deleteQuestion: "Permanently delete the following file?",
+    deleteCancel: "Cancel",
+    deleteAction: "Delete",
+    deleteClose: "Close",
     saved: "Saved",
     saving: "Saving…",
     saveFailed: "Save failed",
@@ -112,6 +130,39 @@ export function enhanceWorkTexEditorTools(markup, zh) {
       .tex-editor-command svg .tex-icon-accent{stroke:var(--primary)!important}
       .tex-editor-command svg .tex-icon-accent-fill{fill:var(--primary)!important;stroke:none!important}
       .tex-editor-command.is-history svg{width:25px!important;height:25px!important}
+      .tex-editor-command svg.tex-icon-mirror{transform:scaleX(-1);transform-origin:center}
+      .tex-editor-command.is-delete:hover:not(:disabled){background:color-mix(in srgb,var(--danger,#ac4137) 10%,transparent)!important;color:var(--danger,#ac4137)!important}
+      .tex-delete-dialog{
+        box-sizing:border-box;
+        width:min(640px,calc(100vw - 32px));
+        max-height:calc(100dvh - 32px);
+        padding:0;
+        border:1px solid var(--border,#d8d8df);
+        border-radius:7px;
+        background:var(--surface,#fff);
+        color:var(--text,#1c1c22);
+        box-shadow:0 24px 80px rgba(0,0,0,.24);
+        overflow:auto;
+      }
+      .tex-delete-dialog::backdrop{background:rgba(10,14,22,.48)}
+      .tex-delete-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 24px;border-bottom:1px solid var(--border,#ddd)}
+      .tex-delete-dialog-header strong{font-size:21px;font-weight:730;letter-spacing:-.02em}
+      .tex-delete-dialog-close{display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;background:transparent;color:var(--text);cursor:pointer}
+      .tex-delete-dialog-close svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+      .tex-delete-dialog-body{padding:24px;min-height:132px}
+      .tex-delete-dialog-body p{margin:0 0 20px;color:var(--muted,#616775);font-size:17px;line-height:1.5}
+      .tex-delete-dialog-body ul{margin:0;padding-left:29px;color:var(--muted,#616775);font-size:17px;line-height:1.6;overflow-wrap:anywhere}
+      .tex-delete-dialog-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--border,#ddd)}
+      .tex-delete-dialog-actions button{appearance:none;min-width:80px;min-height:40px;padding:0 18px;border-radius:999px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+      .tex-delete-dialog-cancel{background:transparent;border:1px solid var(--muted,#687080);color:var(--text)}
+      .tex-delete-dialog-confirm{background:var(--danger,#a5453a);border:1px solid transparent;color:#fff}
+      .tex-delete-dialog-confirm:hover{filter:brightness(.94)}
+      .tex-delete-dialog button:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+      @media(max-width:560px){
+        .tex-delete-dialog-header{padding:16px 18px}
+        .tex-delete-dialog-body{padding:19px 18px}
+        .tex-delete-dialog-actions{padding:14px 18px}
+      }
 
       .tex-save-as-dialog{
         width:min(420px,calc(100vw - 28px));
