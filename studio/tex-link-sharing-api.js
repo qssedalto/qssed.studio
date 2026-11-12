@@ -33,7 +33,7 @@ async function bodyOf(request){
     return data&&typeof data==="object"?data:null;
   } catch {return null;}
 }
-async function authorizedUser(token){
+export async function authorizedUser(token){
   const h={apikey:SUPABASE_KEY,Authorization:"Bearer "+token};
   try {
     const response=await fetch(SUPABASE_URL+"/auth/v1/user",{headers:h});
