@@ -32,10 +32,11 @@ export class TexCollaborationRoom {
     if (request.method === "POST" && new URL(request.url).pathname === "/revoke-links") {
       const owner=request.headers.get("X-Qsseda-Collab-Owner");
       const doc=request.headers.get("X-Qsseda-Collab-Document");
+      const target=request.headers.get("X-Qsseda-Collab-Target");
       // This endpoint is only addressed through the internal DO stub.
       for(const socket of this.state.getWebSockets()){
         const p=socket.deserializeAttachment()||{};
-        if(p.link_grant && p.owner_id===owner && p.document_id===doc){
+        if(p.link_grant && p.owner_id===owner && p.document_id===doc && (!target||p.id===target)){
           try{socket.close(4003,"Link-sharing permission changed");}catch{}
         }
       }
