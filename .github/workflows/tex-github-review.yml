@@ -36,6 +36,8 @@ jobs:
           node --check studio/entry.js
       - name: Verify GitHub tenant isolation and quota contract
         run: node scripts/tex-github-isolation-check.mjs
+      - name: Verify new project creation, ZIP extraction and legal name gates
+        run: node scripts/tex-projects-check.mjs
       - name: Verify existing TeX workspace rendering
         run: |
           node scripts/tex-workbench-check.mjs
