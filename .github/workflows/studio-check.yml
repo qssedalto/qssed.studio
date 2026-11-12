@@ -257,6 +257,7 @@ jobs:
         run: |
           node scripts/tex-workbench-check.mjs
           node scripts/tex-live-collaboration-check.mjs
+          node scripts/tex-link-sharing-check.mjs
           node scripts/tex-toolbar-actions-check.mjs
           node scripts/tex-file-manager-check.mjs
           node scripts/tex-explorer-check.mjs

@@ -2,6 +2,7 @@ import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
+import { resolveLinkGrant } from "./tex-link-capabilities.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 
@@ -34,6 +35,7 @@ export async function handleTexCollaborationRealtime(request, env) {
   headers.set("X-Qsseda-Collab-Owner", access.owner_id);
   headers.set("X-Qsseda-Collab-Document", documentId);
   headers.set("X-Qsseda-Collab-Role", access.role);
+  headers.set("X-Qsseda-Collab-Link-Grant", access.via_link === true ? "1" : "0");
   headers.set("X-Qsseda-Collab-Username", cleanText(auth.profile?.username, 80));
   headers.set("X-Qsseda-Collab-Display-Name", cleanText(auth.profile?.display_name, 120));
   headers.set("X-Qsseda-Collab-Avatar", cleanUrl(auth.profile?.avatar_url));
@@ -55,7 +57,9 @@ async function resolveDocumentAccess(env, userId, documentId, accessToken) {
   const rows = await response.json().catch(() => []);
   const row = Array.isArray(rows) ? rows[0] : null;
   const ownerId = cleanObjectId(row?.owner_id);
-  if (!ownerId || cleanObjectId(row?.document_id) !== documentId) return null;
+  if (!ownerId || cleanObjectId(row?.document_id) !== documentId) {
+    return resolveLinkGrant(env,userId,documentId);
+  }
   try {
     if (!(await env.STORAGE.head(documentKey(ownerId, documentId)))) return null;
   } catch {
