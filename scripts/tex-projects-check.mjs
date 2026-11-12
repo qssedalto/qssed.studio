@@ -191,7 +191,7 @@ try{
     ...["report.docx","budget.xlsx","slides.pptx","records.csv","src/main.cpp",
       "src/Main.java","src/app.js","config/settings.json","README.md"].map(name=>({
         name:"mixed/"+name,
-        data:/\\.(docx|xlsx|pptx)$/.test(name)?Buffer.from([0x50,0x4b,0x03,0x04,0,0]):"Example content"
+        data:/\.(docx|xlsx|pptx)$/.test(name)?Buffer.from([0x50,0x4b,0x03,0x04,0,0]):"Example content"
       }))
   ])));
   assert.equal(office.response.status,201,JSON.stringify(office.body));
