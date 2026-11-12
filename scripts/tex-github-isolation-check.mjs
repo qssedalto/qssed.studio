@@ -108,6 +108,14 @@ assert(adminUi.includes("直接分配额度") && adminUi.includes("texCredits()"
 assert(adminWorker.includes('pathname === "/api/admin/tex-credits"'), "Protected quota API route missing");
 assert(adminApi.includes("session.accessToken") && !adminApi.includes("getSupabaseSecret"), "Admin RPC must use administrator JWT rather than a service-role secret");
 assert(adminSql.includes("if not public.is_admin()") && adminSql.includes("security definer"), "RPCs must verify database administrator role");
+const adminSessionSource = fs.readFileSync(new URL("../admin/session.js", import.meta.url), "utf8");
+assert(adminSessionSource.includes('/rest/v1/rpc/verify_admin_session'),
+  "Admin console must use the verified live admin session");
+assert(api.includes('"/rest/v1/rpc/verify_admin_session"') &&
+  !api.includes('"/rest/v1/rpc/is_admin"'),
+  "Work GitHub admin status must use the same authenticated RPC as Admin, not the inaccessible is_admin() RPC");
+assert(api.includes("response.ok && (await response.json()) === true"),
+  "Admin privileges must fail closed on denied/invalid RPC response");
 assert(api.includes("verifyTexUser(session.accessToken)"), "server identity verification required");
 assert(api.includes("readRow(env, userId)"), "repository access must be bound to authenticated user");
 assert(api.includes('doc?.owner_id !== userId'), "shared documents cannot be compiled as own");
