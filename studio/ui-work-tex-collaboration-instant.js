@@ -8,6 +8,7 @@ import { enhanceWorkTexPreviewFastPath } from "./ui-work-tex-preview-fastpath.js
 import { enhanceWorkTexPreviewDirectCache } from "./ui-work-tex-preview-direct-cache.js";
 import { enhanceWorkTexRealtime } from "./ui-work-tex-realtime.js";
 import { enhanceWorkTexCodeMirror } from "./ui-work-tex-codemirror.js";
+import { enhanceWorkTexLiveControls } from "./ui-work-tex-live-controls.js";
 import { enhanceWorkTexSharedStable } from "./ui-work-tex-shared-stable.js";
 import { accelerateWorkTexDocumentSwitch } from "./ui-work-tex-document-switch.js";
 import { enhanceWorkTexPersistentCache } from "./ui-work-tex-persistent-cache.js";
@@ -337,7 +338,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     zh
   );
 
-  return enhanceWorkTexExplorer(enhanceWorkTexPersistentCache(optimizeCollaborationSwitching(
+  return enhanceWorkTexLiveControls(enhanceWorkTexExplorer(enhanceWorkTexPersistentCache(optimizeCollaborationSwitching(
     refineCollaborationMobileUx(stabilizeInvitedCollaborationControls(accelerateWorkTexDocumentSwitch(output)), zh)
-  )), zh);
+  )), zh), zh);
 }
