@@ -49,6 +49,40 @@ assert(script.includes("originalLink.addEventListener('click',event=>"),
 assert(script.includes("event.preventDefault();"), "Prevent opening a separate native viewer from the preview link");
 assert(script.includes("URL.createObjectURL(pdfBlob)"), "PDF download must retain the untouched original data");
 
+assert(script.includes("const paths = {"), "Native-style PDF icons must be SVG path drawings rather than text symbols");
+for (const iconName of ["pages","previous","next","minus","plus","fit","rotate","search","print","save"]) {
+  assert(script.includes(iconName + ":'<"), "Missing hand-drawn SVG icon for " + iconName);
+}
+assert(script.includes('class="aertex-pdf-icon" viewBox="0 0 24 24"'),
+  "All toolbar SVG icons should use a consistent 24px drawing coordinate system");
+assert(script.includes('class="aertex-pdf-section aertex-pdf-section-center"'),
+  "The central page/zoom group should align independently of the side controls");
+assert(script.includes('class="aertex-pdf-section aertex-pdf-section-right"'),
+  "Search, print and save need the right-aligned native viewer grouping");
+assert(!script.includes('data-pdf-action="pen"') &&
+       !script.includes('data-pdf-action="highlight"'),
+  "Do not show unavailable native PDF annotation or drawing buttons");
+assert(script.includes("buttons.get('pages').addEventListener('click'"),
+  "Sidebar icon must open a functioning page list");
+assert(script.includes("buttons.get('rotate').addEventListener('click'"),
+  "Rotation icon must rotate pages");
+assert(script.includes("buttons.get('search-toggle').addEventListener('click'"),
+  "Search icon must open a working search field");
+assert(script.includes("searchInput.hidden=true"),
+  "Escape should close the search field");
+assert(style.includes("background:#3b3b3b!important"),
+  "Toolbar background should match native Edge PDF charcoal (#3b3b3b)");
+assert(style.includes("grid-template-columns:minmax(40px,1fr) max-content minmax(120px,1fr)"),
+  "Toolbar should independently align left, middle and right sections");
+assert(style.includes("height:44px!important"), "Toolbar should use a consistent compact 44px height");
+assert(style.includes(".aertex-pdf-icon{") && style.includes("stroke-width:1.75"),
+  "Native-style icons must use thin consistent stroke artwork");
+assert(style.includes("input.aertex-pdf-search[hidden]"),
+  "Search field must collapse until the user requests it");
+assert(style.includes(".aertex-pdf-outline[hidden]"),
+  "Page sidebar must be hidden until explicitly opened");
+
+
 // Build the same pure PDF.js operator masks as the browser runtime, without a DOM.
 // Bitmap / image XObjects must remain in the background, text and black equation
 // vector strokes must be white-ink-only; explicit white page rectangles disappear.
