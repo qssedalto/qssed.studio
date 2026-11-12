@@ -281,7 +281,7 @@ const fakeFooter = { prepend(n){n.parentElement=this;},insertBefore(n){n.parentE
 const fakeSave = { parentElement: fakeFooter, nextSibling:null };
 const fakeToolbar = { append(n){n.parentElement=this;} };
 const fakeList = { addEventListener(){} };
-const fakeRoot = { querySelector(selector){return ({
+const fakeRoot = { addEventListener(){}, querySelector(selector){return ({
   ".tex-editor-toolbar":fakeToolbar, ".tex-editor-footer":fakeFooter,
   ".tex-save-state":fakeSave, "#tex-document-list":fakeList
 })[selector]||null;} };
