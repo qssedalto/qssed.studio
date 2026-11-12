@@ -19,6 +19,7 @@ assert.match(MANAGED_TEX_WORKFLOW, /latexmk_shell_escape: false/);
 assert.match(MANAGED_TEX_WORKFLOW, /timeout-minutes: 15/);
 assert.match(MANAGED_TEX_WORKFLOW, /needs: compile/);
 assert.match(MANAGED_TEX_WORKFLOW, /ref: pdf-output/);
+assert.match(MANAGED_TEX_WORKFLOW, /return_run_details/);
 assert.match(MANAGED_TEX_WORKFLOW, /git add -- main\.pdf/);
 assert(!MANAGED_TEX_WORKFLOW.includes("pull_request_target"), "no privileged PR execution");
 assert(!MANAGED_TEX_WORKFLOW.includes("secrets."), "compile never receives secrets");
@@ -49,6 +50,8 @@ assert(schema.includes("enable row level security"), "user allocations must enab
 assert(/revoke all on public\.tex_github_allowances from PUBLIC, anon, authenticated/.test(schema), "no direct user table access");
 assert(schema.includes("grant select, insert, update, delete on public.tex_github_allowances to service_role"),"server-only database access");
 assert(schema.includes("and active_nonce is null"), "concurrent compilation must be serialized");
+assert(schema.includes("active_run_id bigint"), "quota reservation must store exact workflow run ID");
+assert(schema.includes("active_commit_sha text"), "quota reservation must store source commit SHA");
 assert(schema.includes("  repo_state text not null default"), "repository state must be declared");
 assert.equal((schema.match(/create or replace function public\.tex_gh_reserve_credit/g) || []).length, 1, "no duplicate quota functions");
 console.log("AERTEX GitHub TeX isolation, quota and panel checks passed.");
