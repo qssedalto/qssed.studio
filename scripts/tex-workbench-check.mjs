@@ -200,7 +200,8 @@ assert(workMarkup.includes("touch-action:pan-y!important"), "Mobile collaboratio
   assert(workMarkup.includes("routeDocumentId") && workMarkup.includes("/d/"), "Work runtime must restore a document from its deep-link route.");
   assert(workMarkup.includes("history[replace?'replaceState':'pushState']"), "Work document switches must keep browser history in sync.");
   assert(workMarkup.includes("window.addEventListener('popstate'"), "Browser back/forward must reopen the routed Work document.");
-  assert(workMarkup.includes("location.assign(workDocumentRoute(createdId))"), "Save As must navigate to a confirmed new document ID, preserving its locale.");
+  assert(workMarkup.includes("function saveAsLocal()") && workMarkup.includes("a.download = safeFile"), "Save As must download the active file locally without creating a cloud document.");
+  assert(workMarkup.includes("id=\"aertex-work-tex-explorer-tree\"") && workMarkup.includes("id=\"aertex-work-tex-explorer-commands\""), "Work TeX must load compact project Explorer and extended actions.");
   assert(workMarkup.includes("setRangeText"), "Mobile TeX quick input must insert at the current selection");
   assert(workMarkup.includes("pointerdown") && workMarkup.includes("preventDefault"), "Mobile TeX quick input must preserve textarea focus while tapping toolbar buttons");
   assert(workMarkup.includes('id="qsseda-work-tex-version-history-runtime"'), "Work TeX must install cloud source version history");
