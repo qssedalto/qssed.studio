@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { createHash } from "node:crypto";
-import { deflateRawSync } from "node:zlib";
+import { deflateRawSync, gunzipSync } from "node:zlib";
 import { handleTexProjects } from "../studio/tex-project-api.js";
 
 const userId="11111111-1111-4111-8111-111111111111";
@@ -43,19 +44,23 @@ try{
   assert.equal(incomplete.response.status,422,"Unknown author must not be made up.");
   profile={first_name:"名",last_name:"姓"};
 
+  // Offline CI must never silently generate a substituted frog.jpg.
+  // The exact main.tex and bibliography are reproducible from the pinned source.
   const example=await create(postJson({type:"example",title:"我的示例"}));
-  assert.equal(example.response.status,201);
-  const document=example.body.document;
-  assert.equal(document.title,"我的示例");
-  assert.deepEqual(["main.tex",...document.files.map(f=>f.name)].sort(),
-    ["frog.jpg","main.tex","sample.bib"]);
-  assert.equal(createHash("sha256").update(document.source).digest("hex"),
-    "98adacccd32d21bba43c108784e0516cb177f30db5a4ad080cf69c9d02b114d9",
-    "Example main.tex must match user-provided sample.");
-  assert.equal(createHash("sha256").update(document.files.find(f=>f.name==="sample.bib").content).digest("hex"),
-    "8749e6a3009dbbdc5886644c8de1eb8ad98c993cb0613ee349b7b31e83750dd1",
-    "Example sample.bib must match user-provided sample.");
-  assert(document.files.find(f=>f.name==="frog.jpg").content.startsWith("/9j/"),"Example frog must be a JPEG.");
+  assert.equal(example.response.status,400,"A missing verified image fails closed.");
+  const sourceFile=fs.readFileSync(new URL("../studio/tex-project-api.js",import.meta.url),"utf8");
+  const embedded=name=>{
+    const match=sourceFile.match(new RegExp('const '+name+'="([A-Za-z0-9+/=]+)"'));
+    assert(match,"Pinned sample fixture missing: "+name);
+    return gunzipSync(Buffer.from(match[1],"base64"));
+  };
+  const fileMain=embedded("SAMPLE_MAIN_GZIP");
+  const fileBib=embedded("SAMPLE_BIB_GZIP");
+  assert.equal(createHash("sha256").update(fileMain).digest("hex"),
+    "98adacccd32d21bba43c108784e0516cb177f30db5a4ad080cf69c9d02b114d9");
+  assert.equal(createHash("sha256").update(fileBib).digest("hex"),
+    "8749e6a3009dbbdc5886644c8de1eb8ad98c993cb0613ee349b7b31e83750dd1");
+  assert(sourceFile.includes("2913cb8ca0c77173737a5f2d0c9b80c0034e09a6c8708af1a8737dfcd8e8bc44"));
 
   // Generate a minimal 2-entry ZIP. This checks the same import path real users hit,
   // with an intentionally untrusted archive, but no external ZIP package dependency.
@@ -101,7 +106,7 @@ try{
   assert.equal(refused.response.status,400,"Traversal paths must be rejected.");
   const nonZip=await create(asZip(Buffer.from("not a zip")));
   assert.equal(nonZip.response.status,400,"Invalid ZIP must be rejected.");
-  assert.equal(writes.length,3,"Only successfully validated projects can reach R2.");
+  assert.equal(writes.length,2,"Only successfully validated projects can reach R2.");
   console.log("TeX project creation, legal-name gate, sample files, ZIP import and traversal checks passed.");
 }finally{
   globalThis.fetch=realFetch;
