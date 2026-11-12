@@ -6,8 +6,10 @@ export function enhanceWorkTexPersistentCache(markup) {
   let source = String(markup || "");
   const anchors = [
     ["function renderEditor(){const open=Boolean(activeDocument);", "function renderEditor(){if(activeDocument)document.getElementById('tex-document-restore')?.remove();const open=Boolean(activeDocument);"],
+    ["placeholder.hidden=open;", "placeholder.hidden=open||Boolean(routeDocumentId());"],
     ["async function initialize(){try{", hydrateSource + "async function initialize(){void restorePreviouslyOpenedDocument();try{"],
     ["if(requested)await openDocument(requested,'replace');", "if(requested)await openDocument(requested,'replace',true);"],
+    ["showMessage(error?.message||copy.error,true);}}\n          title.addEventListener", "showMessage(error?.message||copy.error,true);const loader=document.getElementById('tex-document-restore');if(loader)loader.textContent=error?.message||copy.error;}}\n          title.addEventListener"],
     ["if(ticket!==documentOpenTicket)return;\n    if(!data?.document)throw new Error(copy.error);", "if(ticket!==documentOpenTicket)return;\n    if(!data?.document)throw new Error(copy.error);"],
     ["    renderEditor();\n    renderDocuments();\n    if(routeMode)syncDocumentRoute(id,routeMode==='replace');", "    renderEditor();\n    editor.inert=false;\n    delete root.dataset.texCachePreview;\n    renderDocuments();\n    if(routeMode)syncDocumentRoute(id,routeMode==='replace');"]
   ];
