@@ -4,6 +4,7 @@ import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { handleTexProjects } from "./tex-project-api.js";
+import { handleTexProjectFiles } from "./tex-project-files-api.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const RUN_ROOT = "_system/tex-runs/";
@@ -31,6 +32,7 @@ export async function handleTexApi(request, env, action) {
   if (action === "status") response = handleStatus(request, env);
   else if (action === "documents") response = await handleDocuments(request, env, auth.user.id);
   else if (action === "projects") response = await handleTexProjects(request, env, auth.user.id, session.accessToken);
+  else if (action === "files") response = await handleTexProjectFiles(request, env, auth.user.id);
   else if (action === "runs") response = await handleRuns(request, env, auth.user.id);
   else if (action === "compile") response = await handleCompile(request, env, auth.user.id);
   else if (action === "result") response = await handleResult(request, env, auth.user.id);
