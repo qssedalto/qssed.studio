@@ -3,6 +3,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
+import { resolveLinkGrant } from "./tex-link-capabilities.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const ENGINES = new Set(["xelatex", "lualatex", "pdflatex"]);
@@ -34,7 +35,8 @@ async function handleGet(request, env, auth, accessToken) {
   const documentId = cleanObjectId(url.searchParams.get("document"));
   if (!documentId) return listSharedDocuments(env, auth.user.id, accessToken);
 
-  const access = await resolveSharedAccess(auth.user.id, documentId, accessToken);
+  const access = await resolveSharedAccess(auth.user.id, documentId, accessToken) ||
+    await resolveLinkGrant(env, auth.user.id, documentId);
   if (!access) return json({ error: "Shared TeX document not found." }, 404);
 
   if (url.searchParams.get("participants") === "1") {
@@ -68,7 +70,8 @@ async function handleUpdate(request, env, auth, accessToken) {
   const documentId = cleanObjectId(url.searchParams.get("document"));
   if (!documentId) return json({ error: "Invalid TeX document identifier." }, 400);
 
-  const access = await resolveSharedAccess(auth.user.id, documentId, accessToken);
+  const access = await resolveSharedAccess(auth.user.id, documentId, accessToken) ||
+    await resolveLinkGrant(env, auth.user.id, documentId);
   if (!access) return json({ error: "Shared TeX document not found." }, 404);
   if (access.role !== "editor") return json({ error: "This shared TeX document is read-only." }, 403);
 
@@ -111,9 +114,9 @@ async function listSharedDocuments(env, userId, accessToken) {
   if (!response.ok) return json({ error: "Could not load shared TeX documents." }, response.status === 401 || response.status === 403 ? 401 : 503);
 
   const rows = await response.json().catch(() => []);
-  if (!Array.isArray(rows) || !rows.length) return json({ documents: [], count: 0, scope: "shared" });
+  const membershipRows = Array.isArray(rows) ? rows : [];
 
-  const summaries = await Promise.all(rows.map(async row => {
+  const summaries = await Promise.all(membershipRows.map(async row => {
     const ownerId = cleanObjectId(row?.owner_id);
     const documentId = cleanObjectId(row?.document_id);
     const role = row?.role === "editor" ? "editor" : "viewer";
@@ -129,7 +132,30 @@ async function listSharedDocuments(env, userId, accessToken) {
     }
   }));
 
-  const documents = summaries.filter(Boolean).sort((a, b) => String(b.updated_at || "").localeCompare(String(a.updated_at || "")));
+  // Link-derived grants are indexed per authenticated account. Recheck the
+  // live config on every list request so revocation is immediate.
+  const grantIndex = await env.STORAGE.list({
+    prefix: "_system/tex-share-grants/" + userId + "/",
+    limit: MAX_SHARED_DOCUMENTS
+  });
+  const granted = await Promise.all(grantIndex.objects.map(async item => {
+    const match = item.key.match(/\/([0-9a-f-]{36})\.json$/i);
+    const docId = match?.[1];
+    if (!docId || !cleanObjectId(docId)) return null;
+    const access = await resolveLinkGrant(env, userId, docId);
+    if (!access) return null;
+    const entry = await env.STORAGE.head(documentKey(access.owner_id, docId));
+    if (!entry) return null;
+    const summary = documentFromMetadata(entry.customMetadata, access.owner_id, docId);
+    return summary ? { ...summary, shared: true, owner_id: access.owner_id, collaboration_role: access.role } : null;
+  }));
+  const seen = new Set();
+  const documents = [...summaries,...granted].filter(item => {
+    if (!item) return false;
+    const key=item.owner_id+":"+item.id;
+    if(seen.has(key))return false;
+    seen.add(key);return true;
+  }).sort((a, b) => String(b.updated_at || "").localeCompare(String(a.updated_at || "")));
   return json({ documents, count: documents.length, scope: "shared" });
 }
 
@@ -213,7 +239,9 @@ async function readOwnerDocument(env, ownerId, documentId) {
       engine: ENGINES.has(parsed.engine) ? parsed.engine : "xelatex",
       source: cleanSource(parsed.source),
       created_at: cleanTimestamp(parsed.created_at),
-      updated_at: cleanTimestamp(parsed.updated_at)
+      updated_at: cleanTimestamp(parsed.updated_at),
+      files: Array.isArray(parsed.files) ? parsed.files : [],
+      project_type: parsed.project_type || "legacy"
     };
   } catch {
     return null;
@@ -227,6 +255,7 @@ function normalizeSharedDocument(input, previous) {
   return {
     ok: true,
     value: {
+      ...previous,
       id: previous.id,
       owner_id: previous.owner_id,
       title: cleanText(source.title, 180) || "Untitled TeX document",
