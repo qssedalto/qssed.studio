@@ -444,9 +444,8 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           return applyHistorySnapshot(snapshot, undoStack);
         }
 
-        // Remote ESM dependencies can be delayed or blocked on mobile networks.
-        // A bounded fallback prevents an endless "loading" state and retains
-        // the normal textarea editor when both CDNs are unavailable.
+        // Self-hosted ESM can still fail due to browser networking or storage
+        // restrictions. The existing timeout/retry keeps the textarea usable.
         let mounting = false;
         function announceEditor(kind, reason = '') {
           const detail = { kind, reason, at: Date.now() };
@@ -466,49 +465,23 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             if (timer) window.clearTimeout(timer);
           }
         }
-        async function resilientModule(primary, alternate, timeout = 4500) {
-          try { return await timedModule(primary, timeout); }
-          catch (first) {
-            console.warn('AERTEX editor primary CDN unavailable', first);
-            return timedModule(alternate, timeout);
-          }
-        }
-
+        // Production editor code is bundled in this repository at build time
+        // and served from the same AERTEX Work origin as the protected page.
         async function mount() {
           if (mounting || view) return;
           mounting = true;
           announceEditor('loading');
           let cm;
-          let syntax = null;
           try {
-            // Language highlighting is optional; a grammar CDN failure must
-            // never prevent basic CodeMirror typing or cursor display.
-            const grammar = Promise.all([
-              resilientModule(
-                'https://cdn.jsdelivr.net/npm/@codemirror/language@6.12.4/+esm',
-                'https://esm.sh/@codemirror/language@6.12.4?bundle',
-                3300
-              ),
-              resilientModule(
-                'https://cdn.jsdelivr.net/npm/@codemirror/legacy-modes@6.5.3/mode/stex/+esm',
-                'https://esm.sh/@codemirror/legacy-modes@6.5.3/mode/stex?bundle',
-                3300
-              )
-            ]).then(modules => modules).catch(() => null);
-            cm = await resilientModule(
-              'https://cdn.jsdelivr.net/npm/codemirror@6.0.2/+esm',
-              'https://esm.sh/codemirror@6.0.2?bundle',
-              5500
-            );
-            syntax = await grammar;
+            cm = await timedModule('/assets/tex/codemirror.js', 11000);
           } catch (error) {
             mounting = false;
             console.warn(labels.failed, error);
-            announceEditor('failed', 'module-unavailable');
+            announceEditor('failed', 'self-hosted-module-unavailable');
             return;
           }
 
-          const { EditorView, basicSetup } = cm || {};
+          const { EditorView, basicSetup, StreamLanguage, stex } = cm || {};
           if (!EditorView || !basicSetup) {
             mounting = false;
             console.warn(labels.failed, 'Invalid CodeMirror module exports');
@@ -536,11 +509,10 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             EditorView.updateListener.of(publishViewToBridge)
           ];
           try {
-            const [language, latex] = syntax || [];
             let extensions = baseExtensions;
-            if (language?.StreamLanguage && latex?.stex) {
+            if (StreamLanguage && stex) {
               try {
-                extensions = [basicSetup, language.StreamLanguage.define(latex.stex),
+                extensions = [basicSetup, StreamLanguage.define(stex),
                   theme, EditorView.lineWrapping, EditorView.updateListener.of(publishViewToBridge)];
                 view = new EditorView({ parent: host, doc: nativeValue(), extensions });
               } catch (syntaxError) {
