@@ -5,7 +5,7 @@ import { isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
-const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|md|markdown|png|jpe?g|pdf)$/i;
+const ALLOWED = /\.(tex|bib|sty|cls|bst|txt|md|markdown|py|png|jpe?g|pdf)$/i;
 const BINARY = /\.(png|jpe?g|pdf)$/i;
 const MAX_FILES = 24; // extras; main.tex is the 25th entry
 const MAX_SINGLE_BYTES = 3 * 1024 * 1024;
