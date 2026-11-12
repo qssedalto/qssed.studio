@@ -142,7 +142,7 @@ assert(progressHtml.includes('id="tex-gh-view-work"'),"Compact touch devices nee
 assert(progressHtml.includes("String.fromCharCode(...magic) !== '%PDF-'"),"PDF must be validated before preview.");
 assert(progressHtml.includes("window.setInterval(poll, 5000)"),"Compile status must poll promptly.");
 assert(progressHtml.includes("result.jobs || []"),"Progress must come from actual GitHub job steps.");
-const progressScript = progressHtml.match(/<script id="tex-gh-runtime">([\\s\\S]*?)<\\/script>/)?.[1];
+const progressScript = progressHtml.split('<script id="tex-gh-runtime">')[1]?.split('</script>')[0];
 assert(progressScript, "GitHub runtime missing");
 new vm.Script(progressScript,{filename:"tex-github-progress.js"});
 assert(api.includes("actions/runs/") && api.includes("/jobs?per_page=10"),"GitHub backend must supply actual job statuses.");
