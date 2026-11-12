@@ -78,44 +78,59 @@ export function polishWorkTexViewportEdges(markup) {
           transform:translateX(-50%)!important;
         }
       }
-      /* Four-corner surface contract. The outer .os-main and inner .tex-shell
-         previously each had an independent rounded border/background. The
-         resulting nested arcs exposed mismatched substrate at every corner.
-         Leave one rounded clip (.tex-shell); each pane paints up to its edge.
-         Scope to TeX and preserve the existing mobile full-bleed behavior. */
-      @media (min-width:761px) {
-        body.os-shell:has(.tex-work-app) .os-main {
-          border:0!important;
-          border-radius:0!important;
-          background:transparent!important;
-          box-shadow:none!important;
-          -webkit-backdrop-filter:none!important;
-          backdrop-filter:none!important;
-        }
-        body.os-shell:has(.tex-work-app) .tex-workbench .tex-shell {
-          border-radius:24px!important;
-          background:var(--work-panel-soft)!important;
-          overflow:hidden!important;
-        }
-        body.os-shell:has(.tex-work-app) .tex-shell > .tex-documents-panel {
-          background:var(--work-panel-soft)!important;
-          background-clip:border-box!important;
-        }
-        body.os-shell:has(.tex-work-app) .tex-shell > .tex-editor-panel {
-          background:var(--work-panel)!important;
-        }
-        body.os-shell:has(.tex-work-app) .tex-shell > .tex-runs-panel {
-          background:var(--work-panel-soft)!important;
-        }
+      @media (min-width:951px), (min-width:761px) and (pointer:fine) {
+      /* Full-bleed four-corner contract: the former 8px page gutter plus
+         the shell's 24px corner clipping exposed the site's gradient in all
+         four corners. Color matching just one parent cannot fix this.
+         The workbench itself now paints the entire viewport edge-to-edge;
+         retain rounded corners only on its interior interactive cards. */
+      body.os-shell:has(.tex-work-app) {
+        padding:0!important;
+        background:var(--work-panel-soft)!important;
       }
-      /* At two-column tablet widths, the outer right corner belongs to the
-         editor (not the third preview rail). Match the shell underpaint too. */
-      @media (min-width:761px) and (max-width:1080px) {
-        body.os-shell:has(.tex-work-app) .tex-workbench .tex-shell {
-          background:linear-gradient(to right,
-            var(--work-panel-soft) 0%,var(--work-panel-soft) 50%,
-            var(--work-panel) 50%,var(--work-panel) 100%)!important;
-        }
+      body.os-shell:has(.tex-work-app) .os-layout,
+      body.os-shell:has(.tex-work-app) .os-main,
+      body.os-shell:has(.tex-work-app) #os-content,
+      body.os-shell:has(.tex-work-app) .tex-workbench {
+        margin:0!important;
+        min-height:100dvh!important;
+      }
+      body.os-shell:has(.tex-work-app) .os-main {
+        border:0!important;
+        border-radius:0!important;
+        background:transparent!important;
+        box-shadow:none!important;
+        -webkit-backdrop-filter:none!important;
+        backdrop-filter:none!important;
+        scrollbar-gutter:auto!important;
+        scrollbar-width:none!important;
+      }
+      body.os-shell:has(.tex-work-app) .os-main::-webkit-scrollbar {
+        display:none!important;
+        width:0!important;
+        height:0!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-workbench .tex-shell {
+        width:100%!important;
+        height:100dvh!important;
+        min-height:100dvh!important;
+        margin:0!important;
+        border:0!important;
+        border-radius:0!important;
+        background:var(--work-panel-soft)!important;
+        box-shadow:none!important;
+        overflow:hidden!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-shell > .tex-documents-panel {
+        background:var(--work-panel-soft)!important;
+        background-clip:border-box!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-shell > .tex-editor-panel {
+        background:var(--work-panel)!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-shell > .tex-runs-panel {
+        background:var(--work-panel-soft)!important;
+      }
       }
       /* A single continuous surface, not a contrasting white header strip. */
       body.os-shell:has(.tex-work-app) .tex-documents-panel {
