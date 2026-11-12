@@ -11,6 +11,19 @@ for (const zh of [true, false]) {
   assert(html.includes('data-tex-action') && html.includes("copy-all"), "Copy All must be installed");
   assert(html.includes("rename-project") && html.includes("delete-project") && html.includes("save-project-zip"),
     "File and project commands must remain distinct");
+  assert(html.includes('class="tex-fluent-icon tex-project-rename-icon"'),
+    "Project Rename must use the approved standalone Σ / I-beam SVG");
+  assert(html.includes('class="tex-project-rename-sigma"') &&
+    html.includes('class="tex-project-rename-ibeam"') &&
+    html.includes('class="tex-project-rename-frame"'),
+    "The project Rename icon must retain its three vector components");
+  assert(!html.includes('<text class="tex-action-symbol" x="7.25"'),
+    "Do not regress to the misaligned font glyph");
+  assert(WORK_TEX_EXPLORER_STYLE.includes('tex-project-rename-sigma{fill:none!important;stroke:var(--primary)!important'),
+    "Sigma must use the user-selected accent color");
+  assert(html.includes("const renameProject=make('rename-project',t.renameProject,sigmaSvg)"),
+    "Project Rename must still invoke the existing action and preserve permissions");
+
   assert(html.includes("fileOperation('rename',asset.name,name)"), "Supplementary file rename must call the authorized file API");
   assert(html.includes("projectQuestion"), "Project deletion must warn about all related data");
   assert(html.includes("sourceMode") || html.includes("data-mode="), "Inline code/preview tabs must exist");
