@@ -34,7 +34,10 @@ for (const zh of [true, false]) {
   assert(html.includes("tex-source-gray{fill:none!important;stroke:currentColor!important}"), "Neutral strokes must adapt to light and dark mode.");
   assert(!html.includes("tex-pixel-traced-icon") && !html.includes("fill-rule=\"evenodd\""), "Raster stair-step contours must not return.");
   assert(html.includes("M6.6 3.5 18.7 20.9") && html.includes("M18.1 13.2h9.3"), "Cut and Paste smooth contours must match the supplied Explorer references.");
-  assert(html.includes("M4.6 4.5v10.4h10.2") && html.includes("m18.1 26.5 8.8-8.8"), "Undo and Save As must remain smooth line-work.");
+  assert(html.includes("M4.6 4.5v10.4h10.2") && html.includes("m19 25.1 7.4-7.4"), "Undo and Save As must use refined smooth line-work.");
+  assert(html.includes("button.dataset.texAction = action"), "Toolbar actions must be explicitly mapped to each button.");
+  assert(html.includes("button.addEventListener('click', event => event.stopPropagation())"), "Toolbar clicks must be isolated from parent handlers.");
+  assert(html.includes("saveAsForm.addEventListener('submit'") && html.includes("saveAsError.hidden = false"), "Save As must expose its own submit flow and visible errors.");
   assert(html.includes("icons.saveAs") && html.includes("icons.save"), "Both custom floppy SVG commands must be available");
   assert(html.includes("tex-delete-dialog-header") && html.includes("tex-delete-dialog-confirm") && html.includes("tex-delete-file-name"), "Delete dialog must have title, filename and confirm action");
   assert(html.includes("window.__qssedaTexConfirmDelete = filename =>"), "Delete confirmation must use the custom dialog");
