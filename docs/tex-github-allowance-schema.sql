@@ -24,6 +24,7 @@ create table if not exists public.tex_github_allowances (
 );
 alter table public.tex_github_allowances enable row level security;
 revoke all on public.tex_github_allowances from anon, authenticated;
+grant select, insert, update, delete on public.tex_github_allowances to service_role;
 -- No RLS policies: only service_role may access this sensitive control table.
 -- Revoke functions from PUBLIC because SECURITY DEFINER bypasses RLS.
 create or replace function public.tex_gh_reserve_credit(p_user_id uuid, p_nonce uuid)
