@@ -1,3 +1,4 @@
+import { resolveLinkGrant } from "./tex-link-capabilities.js";
 const MAX_MESSAGE_BYTES = 1024 * 1024;
 const MAX_PRESENCE_POSITION = 180000;
 const AUTH_LEASE_MS = 90 * 1000;
@@ -28,6 +29,19 @@ export class TexCollaborationRoom {
   }
 
   async fetch(request) {
+    if (request.method === "POST" && new URL(request.url).pathname === "/revoke-links") {
+      const owner=request.headers.get("X-Qsseda-Collab-Owner");
+      const doc=request.headers.get("X-Qsseda-Collab-Document");
+      // This endpoint is only addressed through the internal DO stub.
+      for(const socket of this.state.getWebSockets()){
+        const p=socket.deserializeAttachment()||{};
+        if(p.link_grant && p.owner_id===owner && p.document_id===doc){
+          try{socket.close(4003,"Link-sharing permission changed");}catch{}
+        }
+      }
+      this.broadcastPresence();
+      return new Response(null,{status:204});
+    }
     if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
       return new Response("WebSocket upgrade required.", { status: 426 });
     }
@@ -49,6 +63,7 @@ export class TexCollaborationRoom {
       owner_id: ownerId,
       document_id: documentId,
       role,
+      link_grant: request.headers.get("X-Qsseda-Collab-Link-Grant") === "1",
       username: safeText(request.headers.get("X-Qsseda-Collab-Username"), 80),
       display_name: safeText(request.headers.get("X-Qsseda-Collab-Display-Name"), 120),
       avatar_url: safeText(request.headers.get("X-Qsseda-Collab-Avatar"), 500),
@@ -95,6 +110,15 @@ export class TexCollaborationRoom {
   async webSocketMessage(socket, message) {
     const participant = socket.deserializeAttachment() || {};
     if (!this.ensureLease(socket, participant)) return;
+    if (participant.link_grant) {
+      // Fail closed on every message; closing/rekeying or demoting a sharing
+      // link cannot leave an old editor socket with stale write authority.
+      const current=await resolveLinkGrant(this.env,participant.id,participant.document_id);
+      if(!current || current.owner_id!==participant.owner_id || current.role!==participant.role){
+        try{socket.close(4003,"Link-sharing permission revoked");}catch{}
+        return;
+      }
+    }
     if (typeof message !== "string" || new TextEncoder().encode(message).byteLength > MAX_MESSAGE_BYTES) {
       socket.close(1009, "Message too large");
       return;
