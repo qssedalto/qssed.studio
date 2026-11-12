@@ -618,7 +618,6 @@ export function enhanceWorkTexCollaboration(markup, zh) {
 
         function setBusy(value) {
           loading = value;
-          add.disabled = value || saving || !activeDocumentId();
           username.disabled = value || saving;
           role.disabled = value || saving;
           updateSaveState();
