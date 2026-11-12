@@ -41,15 +41,25 @@ export async function handleTexGithubApi(request, env, action) {
   try {
     let response;
     if (action === "status" && request.method === "GET") {
-      const row = await readRow(env, userId);
+      let row = await readRow(env, userId);
+      const refreshed = row?.approval_status === "approved" && !admin
+        ? await data(env, "rpc/tex_gh_refresh_allowance", "POST", {p_user_id:userId}) : null;
+      if(refreshed !== null) row = await readRow(env, userId);
+      const weeklyUsed = row?.weekly_used || 0;
+      const available = admin ? -1 : Math.min(Math.max(0,(row?.quota_total||0)-(row?.quota_used||0)),100-weeklyUsed);
       response = json({
         configured: configured(env),
         is_admin: admin,
-        approval_status: row?.approval_status || "none",
+        approval_status: admin ? "approved" : row?.approval_status || "none",
         requested_credits: row?.requested_credits || 0,
         quota_total: row?.quota_total || 0,
         quota_used: row?.quota_used || 0,
-        remaining: Math.max(0, (row?.quota_total || 0) - (row?.quota_used || 0)),
+        remaining: available,
+        unlimited: admin,
+        balance: admin ? null : Math.max(0,(row?.quota_total||0)-(row?.quota_used||0)),
+        weekly_used: admin ? null : weeklyUsed,
+        weekly_credits: admin ? null : row?.weekly_credits || 0,
+        week_renews_at: nextChinaMonday(),
         repository_created: Boolean(row?.repo_id && row?.repo_state === "ready"),
         repository_state: row?.repo_state || "none",
         repository_name: row?.repo_state === "ready" ? row.repo_name : null,
@@ -57,9 +67,9 @@ export async function handleTexGithubApi(request, env, action) {
         engine: "xelatex"
       });
     } else if (action === "apply" && request.method === "POST") {
-      response = await apply(request, env, userId);
+      response = admin ? fail(403, "Administrators do not need to apply for credits.") : await apply(request, env, userId);
     } else if (action === "repository" && request.method === "POST") {
-      response = await createRepository(env, userId);
+      response = await createRepository(env, userId, admin);
     } else if (action === "repository" && request.method === "DELETE") {
       response = await deleteRepository(request, env, userId);
     } else if (action === "compile" && request.method === "POST") {
@@ -104,6 +114,12 @@ async function isVerifiedAdmin(accessToken) {
     });
     return response.ok && (await response.json()) === true;
   } catch { return false; }
+}
+
+function nextChinaMonday(){
+  const now=new Date();const china=new Date(now.getTime()+8*3600*1000);
+  const d=china.getUTCDay()||7;
+  return new Date(Date.UTC(china.getUTCFullYear(),china.getUTCMonth(),china.getUTCDate())+(8-d)*86400000-8*3600000).toISOString();
 }
 
 function configured(env) {
@@ -177,7 +193,7 @@ async function apply(request, env, userId) {
   const body = await inputBody(request);
   const amount = Number(body?.credits);
   if (!configured(env)) return fail(503, "GitHub compilation has not been enabled by the administrator.");
-  if (!Number.isInteger(amount) || amount < 1 || amount > 30) return fail(400, "Request between 1 and 30 compilation credits.");
+  if (!Number.isInteger(amount) || amount < 1 || amount > 100) return fail(400, "Request between 1 and 100 weekly compilation credits.");
   const existing = await readRow(env, userId);
   if (existing?.approval_status === "pending") return fail(409, "Your earlier request is pending.");
   if (existing?.active_nonce) return fail(409, "A build is still active.");
@@ -256,14 +272,14 @@ function b64(value) {
   return btoa(output);
 }
 
-async function putFile(env, repoPath, name, value, branch) {
+async function putFile(env, repoPath, name, value, branch, alreadyBase64 = false) {
   const path = repoPath + "/contents/" + name.split("/").map(encodeURIComponent).join("/");
   let sha;
   try { sha = (await github(env, path + "?ref=" + encodeURIComponent(branch))).sha; }
   catch (error) { if (error.status !== 404) throw error; }
   return github(env, path, "PUT", {
     message: "docs(tex): update managed " + name,
-    branch, content: b64(value),
+    branch, content: alreadyBase64 ? value : b64(value),
     ...(sha ? { sha } : {})
   });
 }
@@ -275,8 +291,18 @@ async function verifyOwner(env) {
   }
 }
 
-async function createRepository(env, userId) {
-  const row = await readRow(env, userId);
+async function createRepository(env, userId, admin = false) {
+  let row = await readRow(env, userId);
+  if(admin && !row){
+    try{await data(env, TABLE, "POST", [{user_id:userId,approval_status:"approved",requested_credits:100,
+      quota_total:0,quota_used:0,weekly_credits:100}]);}catch(error){
+      row = await readRow(env,userId);if(!row)throw error;
+    }
+    row = await readRow(env,userId);
+  }
+  if(admin && row?.approval_status!=="approved"){
+    row = await updateRow(env,userId,{approval_status:"approved"});
+  }
   if (!row || row.approval_status !== "approved") return fail(403, "Compilation approval is required.");
   if (!configured(env)) return fail(503, "GitHub service credentials are not configured.");
   if (row.repo_state === "ready") return fail(409, "This account already has a repository.");
@@ -411,6 +437,28 @@ async function compile(request, env, userId) {
     const actual = await github(env, repoPath);
     if (actual?.id !== row.repo_id || !actual.private) throw httpError(409, "repository_identity_mismatch");
 
+    // Upload validated per-project files before the final main.tex commit.
+    // Never accept user-controlled GitHub workflow paths or repository names.
+    const extras = Array.isArray(doc.files) ? doc.files : [];
+    if(extras.length>24) throw httpError(400,"too_many_project_files");
+    let totalExtras=0;const usedNames=new Set();
+    for(const asset of extras){
+      const name=String(asset?.name||"");const segments=name.split("/");
+      if(name==="main.tex"||name.length>140||segments.some(p=>!p||p==="."||p===".."||p.startsWith("."))||
+         name.includes("\\")||!(/\.(?:bib|sty|cls|bst|txt|png|jpe?g|pdf|tex)$/i.test(name))||
+         usedNames.has(name.toLowerCase()))throw httpError(400,"unsafe_project_path");
+      usedNames.add(name.toLowerCase());
+      if(asset?.encoding==="utf8"&&typeof asset.content==="string"){
+        totalExtras+=new TextEncoder().encode(asset.content).byteLength;
+        if(totalExtras>4*1024*1024)throw httpError(400,"project_too_large");
+        await putFile(env,repoPath,name,asset.content,row.source_branch||"main");
+      }else if(asset?.encoding==="base64"&&typeof asset.content==="string"&&
+        /^[A-Za-z0-9+/]*={0,2}$/.test(asset.content)){
+        totalExtras+=Math.floor(asset.content.length*3/4);
+        if(totalExtras>4*1024*1024)throw httpError(400,"project_too_large");
+        await putFile(env,repoPath,name,asset.content,row.source_branch||"main",true);
+      }else throw httpError(400,"invalid_project_file");
+    }
     // Persist the unique Git commit before dispatch. A timed-out HTTP call may
     // have queued an Actions run; never refund a potentially successful dispatch.
     const committed = await putFile(env, repoPath, "main.tex", doc.source, row.source_branch || "main");

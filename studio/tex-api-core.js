@@ -3,6 +3,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
+import { handleTexProjects } from "./tex-project-api.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const RUN_ROOT = "_system/tex-runs/";
@@ -29,6 +30,7 @@ export async function handleTexApi(request, env, action) {
   let response;
   if (action === "status") response = handleStatus(request, env);
   else if (action === "documents") response = await handleDocuments(request, env, auth.user.id);
+  else if (action === "projects") response = await handleTexProjects(request, env, auth.user.id, session.accessToken);
   else if (action === "runs") response = await handleRuns(request, env, auth.user.id);
   else if (action === "compile") response = await handleCompile(request, env, auth.user.id);
   else if (action === "result") response = await handleResult(request, env, auth.user.id);
@@ -383,6 +385,8 @@ function normalizeDocument(input, userId, documentId, previous) {
       title: cleanText(source.title, 180) || "Untitled TeX document",
       engine,
       source: cleanSource(source.source),
+      files: Array.isArray(previous?.files) ? previous.files : [],
+      project_type: previous?.project_type || "legacy",
       created_at: previous?.created_at || now,
       updated_at: now
     }
@@ -432,6 +436,8 @@ function documentMetadata(document) {
     title: document.title,
     engine: document.engine,
     preview: document.source.replace(/\s+/g, " ").trim().slice(0, 220),
+    projectType: document.project_type || "legacy",
+    fileCount: String(1+(document.files?.length||0)),
     createdAt: document.created_at,
     updatedAt: document.updated_at
   };
@@ -445,6 +451,8 @@ function documentFromMetadata(meta, userId, documentId) {
     title: cleanText(meta.title, 180),
     engine,
     preview: cleanText(meta.preview, 220),
+    file_count: Math.max(1,Math.min(25,Number(meta.fileCount)||1)),
+    project_type: cleanText(meta.projectType,24)||"legacy",
     created_at: cleanTimestamp(meta.createdAt),
     updated_at: cleanTimestamp(meta.updatedAt)
   };
