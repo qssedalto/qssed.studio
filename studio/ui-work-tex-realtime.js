@@ -317,8 +317,19 @@ export function enhanceWorkTexRealtime(markup, zh) {
           }
           host.replaceChildren();
           for (const person of items) {
-            const chip = document.createElement('span');
-            chip.className = 'tex-realtime-person' + (person?.typing ? ' is-typing' : '');
+            const chip = document.createElement(person?.self ? 'span' : 'button');
+            chip.className = 'tex-realtime-person' +
+              (person?.typing ? ' is-typing' : '') + (person?.self ? ' is-self' : '');
+            if (!person?.self) {
+              chip.type = 'button';
+              chip.dataset.clientId = String(person?.client_id || '');
+              chip.title = String(person?.display_name || person?.username || labels.live);
+              chip.addEventListener('click', () => {
+                window.dispatchEvent(new CustomEvent('qsseda:tex-follow-toggle', {
+                  detail: { client_id: String(person?.client_id || '') }
+                }));
+              });
+            }
             const avatar = document.createElement('span');
             avatar.className = 'tex-realtime-person-avatar';
             if (person?.avatar_url) {
@@ -331,7 +342,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
             const name = document.createElement('span');
             name.textContent = person?.display_name || person?.username || labels.live;
             chip.append(avatar, name);
-            if (person?.typing) chip.title = labels.typing;
+            if (person?.typing && person?.self) chip.title = labels.typing;
             host.append(chip);
           }
         }
@@ -520,7 +531,9 @@ export function enhanceWorkTexRealtime(markup, zh) {
             current.socket.send(JSON.stringify({ type: 'update', data: bytesToBase64(update) }));
           });
           ytext.observe(() => {
-            if (current.ready && !current.applyingRemote) renderYState(current);
+            if (!current.ready || current.applyingRemote) return;
+            renderYState(current);
+            if (current.presence.length) renderPresence(current.presence);
           });
           ymeta.observe(() => {
             if (current.ready && !current.applyingRemote) renderYState(current);
