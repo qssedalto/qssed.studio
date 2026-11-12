@@ -85,6 +85,23 @@ export function enhanceWorkTexSharedStable(markup, zh) {
         color:var(--text)!important;
         box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 22%,var(--border))!important;
       }
+      .tex-collaboration-drawer .tex-collaboration-invite>.tex-role-segment{
+        height:46px!important;
+        min-height:46px!important;
+        max-height:46px!important;
+        padding:3px!important;
+        align-self:center!important;
+      }
+      .tex-collaboration-drawer .tex-collaboration-invite>.tex-role-segment button{
+        height:40px!important;
+        min-height:40px!important;
+        max-height:40px!important;
+      }
+      .tex-collaboration-drawer #tex-collaboration-add:disabled{
+        cursor:not-allowed!important;
+        opacity:.4!important;
+        filter:saturate(.65)!important;
+      }
       .tex-collaboration-drawer .tex-role-segment button:disabled{
         opacity:.72!important;
         cursor:not-allowed!important;
@@ -128,7 +145,7 @@ export function enhanceWorkTexSharedStable(markup, zh) {
         color:var(--danger)!important;
         box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--danger) 18%,var(--border))!important;
       }
-      .tex-collaboration-drawer.is-invited-view #tex-collaboration-username,
+      .tex-collaboration-drawer.is-invited-view #tex-collaboration-member-search,
       .tex-collaboration-drawer.is-invited-view #tex-collaboration-role,
       .tex-collaboration-drawer.is-invited-view #tex-collaboration-add,
       .tex-collaboration-drawer.is-invited-view .tex-collaboration-invite>.tex-role-segment button{
@@ -183,8 +200,9 @@ export function enhanceWorkTexSharedStable(markup, zh) {
         .tex-collaboration-drawer .tex-collaboration-invite>.tex-role-segment{
           width:132px!important;
           min-width:132px!important;
-          height:38px!important;
-          min-height:38px!important;
+          height:46px!important;
+          min-height:46px!important;
+          max-height:46px!important;
         }
         .tex-collaboration-drawer .tex-collaboration-member-actions{
           grid-template-columns:140px 72px!important;
@@ -235,12 +253,12 @@ export function enhanceWorkTexSharedStable(markup, zh) {
         ).trim();
 
         const lockInvite = locked => {
-          const username = document.getElementById('tex-collaboration-username');
+          const username = document.getElementById('tex-collaboration-member-search');
           const role = document.getElementById('tex-collaboration-role');
           const add = document.getElementById('tex-collaboration-add');
           if (username) username.disabled = locked;
           if (role) role.disabled = locked;
-          if (add) add.disabled = locked;
+          if (add) add.disabled = locked || Boolean(username?.disabled) || !String(username?.value || '').trim().replace(/^@+/, '') || !activeDocumentId();
           const inviteSegment = drawer.querySelector('.tex-collaboration-invite>.tex-role-segment');
           inviteSegment?.querySelectorAll('button').forEach(button => {
             button.disabled = locked;
