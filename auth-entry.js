@@ -1,4 +1,5 @@
 import authWorker from "./auth-worker.js";
+import { injectSweiFontResponse, sweiFontAssetResponse } from "./studio/swei-font.js";
 import { handlePkceTestRequest } from "./auth-pkce-test.js";
 import { handleIdentifierLogin, rewriteIdentifierLoginPage } from "./auth-login-identifier.js";
 import { protectAuthEdgeRequest, applyAuthEdgeHeaders } from "./auth-edge-protection.js";
@@ -24,13 +25,15 @@ export default {
     if (blocked) return applyAuthEdgeHeaders(request, blocked);
 
     const response = await routeAuthRequest(request, env, ctx);
-    return applyAuthEdgeHeaders(request, response);
+    return applyAuthEdgeHeaders(request, await injectSweiFontResponse(response, request.method));
   }
 };
 
 async function routeAuthRequest(request, env, ctx) {
   const url = new URL(request.url);
   const pathname = normalizePath(url.pathname);
+  const sweiAsset = sweiFontAssetResponse(pathname, request.method);
+  if (sweiAsset) return sweiAsset;
   const pendingReturn = safeNextPath(readCookie(request, RETURN_COOKIE));
   const requestedReturn = safeNextPath(url.searchParams.get("next"));
   const effectiveReturn = requestedReturn || pendingReturn;
