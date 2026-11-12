@@ -405,7 +405,7 @@ async function listRuns(env, userId) {
     created_at: run.created_at, updated_at: run.updated_at
   }));
   if (row.active_nonce && normalized.some(run =>
-    run.status === "completed" && Date.parse(run.created_at) >= Date.parse(row.active_since || "") - MINUTE
+    run.status === "completed" && Date.parse(run.created_at) >= Date.parse(row.active_since || "") - 5000
   )) {
     await releaseCredit(env, userId, row.active_nonce, false).catch(() => {});
   }
