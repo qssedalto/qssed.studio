@@ -59,7 +59,8 @@ assert(zhNativeLocal.includes("此为 Windows 连接组件使用的前置条件�
 assert(enNativeLocal.includes("This is a prerequisite for the Windows connection component."), "English TeX Live prerequisite caption is missing");
 assert(zhNativeLocal.includes('id="work-native-texlive-guide" href="https://qsseda.com/zh-cn/q/ac429c78-7e82-4cea-9b12-90188b0c0c60"'), "Chinese setup guide must use the Chinese FAQ route.");
 assert(enNativeLocal.includes('id="work-native-texlive-guide" href="https://qsseda.com/en-us/q/ac429c78-7e82-4cea-9b12-90188b0c0c60"'), "English setup guide must use the English FAQ route.");
-assert(zhNativeLocal.includes("不要求安装 Node.js"), "Native Bridge UI must explain that Node.js is not required");
+assert(!zhNativeLocal.includes('class="work-panel"') && !enNativeLocal.includes('class="work-panel"'), "Native Bridge must not render the deleted capabilities/privacy cards");
+assert(zhNativeLocal.includes("安装前必读：组件使用指南") && zhNativeLocal.includes('id="work-bridge-upgrade-note"'), "Windows setup FAQ and obsolete-version warning must remain available after cards are removed");
 assert(zhNativeLocal.includes("window.setTimeout(() => void probe(), 260)"), "Work page should probe localhost automatically on load");
 
 for (const required of [

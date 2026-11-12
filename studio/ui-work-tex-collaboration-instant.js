@@ -10,6 +10,7 @@ import { enhanceWorkTexRealtime } from "./ui-work-tex-realtime.js";
 import { enhanceWorkTexCodeMirror } from "./ui-work-tex-codemirror.js";
 import { enhanceWorkTexSharedStable } from "./ui-work-tex-shared-stable.js";
 import { accelerateWorkTexDocumentSwitch } from "./ui-work-tex-document-switch.js";
+import { enhanceWorkTexPersistentCache } from "./ui-work-tex-persistent-cache.js";
 
 function stabilizeInvitedCollaborationControls(markup) {
   let output = String(markup || "");
@@ -335,7 +336,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     zh
   );
 
-  return optimizeCollaborationSwitching(
+  return enhanceWorkTexPersistentCache(optimizeCollaborationSwitching(
     refineCollaborationMobileUx(stabilizeInvitedCollaborationControls(accelerateWorkTexDocumentSwitch(output)), zh)
-  );
+  ));
 }

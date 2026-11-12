@@ -26,9 +26,8 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
       }
     </style>`;
 
-  const nativeNote = zh
-    ? `<details class="work-details" id="work-native-install-details"><summary>Windows 安装说明</summary><div class="work-detail-grid"><div><span>安装</span><span>下载后双击一次即可</span></div><div><span>启动</span><span>以后随当前用户自动启动</span></div><div><span>依赖</span><span>不要求安装 Node.js，也不需要 PowerShell</span></div></div></details><div class="work-connection-message" id="work-bridge-upgrade-note" hidden>检测到连接组件版本较旧。请安装新版后重新检查连接。</div>`
-    : `<details class="work-details" id="work-native-install-details"><summary>Windows installation</summary><div class="work-detail-grid"><div><span>Install</span><span>Download and run once</span></div><div><span>Startup</span><span>Starts automatically for this user</span></div><div><span>Dependencies</span><span>No Node.js or PowerShell required</span></div></div></details><div class="work-connection-message" id="work-bridge-upgrade-note" hidden>This connection component is out of date. Install the latest version, then check the connection again.</div>`;
+  // Keep the version-update alert in the hero; remove the two redundant informational cards.
+  const nativeNote = `<div class="work-connection-message" id="work-bridge-upgrade-note" hidden>${zh ? "检测到连接组件版本较旧。请安装新版后重新检查连接。" : "This connection component is out of date. Install the latest version, then check the connection again."}</div>`;
   output = output.replace("<!--QSSedaWorkNativeNote-->", nativeNote);
 
   output = output.replace(
@@ -47,14 +46,12 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
         const download = document.getElementById("work-native-bridge-download");
         const texliveDownload = document.getElementById("work-native-texlive-download");
         const texliveGroup = document.getElementById("work-native-texlive-group");
-        const installDetails = document.getElementById("work-native-install-details");
         if (!version || !note || !download || !texliveDownload) return;
 
         const isWindows = /Windows/i.test(navigator.userAgent || "");
         download.hidden = !isWindows;
         texliveDownload.hidden = !isWindows;
         if (texliveGroup) texliveGroup.hidden = !isWindows;
-        if (installDetails) installDetails.hidden = !isWindows;
 
         // Do not navigate away on cancellation; confirmation opens a new tab.
         texliveDownload.addEventListener("click", (event) => {
