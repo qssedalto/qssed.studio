@@ -14,6 +14,14 @@ assert(style && script, "Themed viewer needs both pre-paint CSS and a client con
 assert(html.indexOf('id="aertex-work-pdf-auto-theme"') < html.indexOf("</head>"),
   "Theme CSS must arrive before first paint to avoid a white flash");
 new Function(script);
+assert(script.includes("const faithfulTouch = window.matchMedia("),
+  "Small touch screens must bypass the destructive split-mask renderer");
+assert(script.includes("if (paintTheme === 'dark' && !faithfulTouch)"),
+  "Desktop dark PDF stays unchanged while touch uses exact PDF painting");
+assert(script.includes("task = cell.page.render({canvasContext:ctx,viewport:vp,background:'#fff'})"),
+  "Mobile rendering must preserve all original PDF text, image, and vector operations");
+assert(style.includes("Faithful PDF paint on iPad/iPhone"),
+  "Touch-only PDF paper must use source colors, while viewer chrome stays dark");
 
 assert(style.includes(':root[data-theme="dark"]'), "Dark PDF must follow the existing resolved site theme");
 assert(style.includes('background:#1b1c20!important'), "Dark reader background must be dark at first paint");
