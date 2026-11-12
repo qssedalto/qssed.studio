@@ -1,6 +1,9 @@
 export function polishTexWorkbenchApp(markup, zh) {
   const copy = zh ? {
     startTitle: "开始一份 TeX 文档",
+    startLead: "开始一份",
+    startAccent: "TeX 文档",
+    startKicker: "AERTEX / 创作空间",
     startDetail: "选择一种结构，直接进入写作与排版。",
     blank: "空白文档",
     blankDetail: "最简 article 结构，适合从零开始",
@@ -14,6 +17,9 @@ export function polishTexWorkbenchApp(markup, zh) {
     previewToggle: "自动预览"
   } : {
     startTitle: "Start a TeX document",
+    startLead: "Start a",
+    startAccent: "TeX document",
+    startKicker: "AERTEX / CREATIVE WORKSPACE",
     startDetail: "Choose a structure and start writing and typesetting.",
     blank: "Blank",
     blankDetail: "A minimal article structure for a clean start",
@@ -32,12 +38,13 @@ export function polishTexWorkbenchApp(markup, zh) {
     : '<div id="tex-editor-placeholder" class="tex-editor-placeholder"><div>TeX</div><strong>Select a document to start editing</strong><span>Or create one from a template on the left.</span></div>';
 
   const startSurface = `<div id="tex-editor-placeholder" class="tex-editor-placeholder tex-start-surface">
+    <div class="tex-start-kicker"><span class="tex-start-signal" aria-hidden="true"></span>${copy.startKicker}</div>
     <div class="tex-start-mark">TeX</div>
-    <div class="tex-start-copy"><strong>${copy.startTitle}</strong><span>${copy.startDetail}</span></div>
+    <div class="tex-start-copy"><strong>${copy.startLead} <em>${copy.startAccent}</em></strong><span>${copy.startDetail}</span></div>
     <div class="tex-start-grid">
-      <button type="button" class="tex-start-card" data-tex-start-template="blank"><b>${copy.blank}</b><span>${copy.blankDetail}</span></button>
-      <button type="button" class="tex-start-card" data-tex-start-template="article"><b>${copy.article}</b><span>${copy.articleDetail}</span></button>
-      <button type="button" class="tex-start-card" data-tex-start-template="math"><b>${copy.math}</b><span>${copy.mathDetail}</span></button>
+      <button type="button" class="tex-start-card" data-tex-start-template="blank"><span class="tex-start-card-icon" aria-hidden="true">＋</span><b>${copy.blank}</b><span>${copy.blankDetail}</span></button>
+      <button type="button" class="tex-start-card" data-tex-start-template="article"><span class="tex-start-card-icon" aria-hidden="true">文</span><b>${copy.article}</b><span>${copy.articleDetail}</span></button>
+      <button type="button" class="tex-start-card" data-tex-start-template="math"><span class="tex-start-card-icon" aria-hidden="true">∑</span><b>${copy.math}</b><span>${copy.mathDetail}</span></button>
     </div>
     <div class="tex-start-features"><span>● ${copy.local}</span><span>● ${copy.autosave}</span><span>● ${copy.preview}</span></div>
   </div>`;

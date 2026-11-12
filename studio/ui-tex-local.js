@@ -21,6 +21,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     previewUpdated: "预览已更新",
     previewPaused: "自动预览已暂停",
     previewUnavailable: "当前引擎暂不能本机预览",
+    previewSelectDocument: "选择或新建 TeX 文档后，即可使用本机 Bridge 预览 PDF",
     previewError: "当前源码编译失败，已保留上一版 PDF",
     previewEmpty: "修改 TeX 后，这里会显示本机生成的 PDF。",
     previewHint: "停止输入约 1.5 秒后刷新；连续编辑时每 10 秒兜底同步一次。",
@@ -48,6 +49,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     previewUpdated: "Preview updated",
     previewPaused: "Auto preview paused",
     previewUnavailable: "The current engine cannot be previewed locally",
+    previewSelectDocument: "Open or create a TeX document to preview its PDF with the local Bridge",
     previewError: "The current source failed to compile; the last good PDF is still shown",
     previewEmpty: "Edit the TeX source and the locally generated PDF will appear here.",
     previewHint: "Refreshes about 1.5 seconds after you stop typing, with a 10-second dirty fallback while editing continuously.",
@@ -219,10 +221,15 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
           }
 
           function syncPreviewAvailability() {
-            const supported = supportsCurrentEngine() && hasDocument();
+            const selected = hasDocument();
+            const supported = selected && supportsCurrentEngine();
             previewToggle.disabled = !supported;
             previewCard?.classList.toggle('is-unavailable', !supported);
-            if (!previewEnabled) {
+            // No selected document is not an unsupported LaTeX engine.
+            // Show a truthful neutral state even when Bridge is connected.
+            if (!selected) {
+              setPreviewStatus('idle', localCopy.previewSelectDocument);
+            } else if (!previewEnabled) {
               setPreviewStatus('idle', localCopy.previewPaused);
             } else if (!supported && !localBusy) {
               setPreviewStatus('idle', localCopy.previewUnavailable);
@@ -480,8 +487,26 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
           // browser's local-network permission prompt. Refresh adapter state
           // without navigating away from the active document or losing edits.
           let recheckPromise = null;
-          const refreshCompilerInPlace = () => {
-            if (destroyed || recheckPromise) return;
+          const refreshCompilerInPlace = (event) => {
+            if (destroyed) return;
+            // Connection-check UI already verified /health and /tex/status.
+            // Accept only a known loopback endpoint and the supported engines;
+            // the local adapter should not immediately erase this valid result
+            // by issuing a second, potentially permission-blocked probe.
+            const host = String(event?.detail?.host || '');
+            const base = endpoints.find(endpoint => endpoint.replace(/^https?:\\/\\//, '') === host);
+            const engines = Array.isArray(event?.detail?.engines)
+              ? event.detail.engines.map(value => String(value).toLowerCase())
+                .filter(value => value === 'xelatex' || value === 'pdflatex')
+              : [];
+            if (base && engines.length) {
+              localBase = base;
+              localEngines = engines;
+              syncCompiler();
+              if (previewEnabled && supportsCurrentEngine() && hasDocument()) schedulePreview(240);
+              return;
+            }
+            if (recheckPromise) return;
             recheckPromise = Promise.all([probeCloud(), probeLocal()])
               .then(() => {
                 if (destroyed) return;

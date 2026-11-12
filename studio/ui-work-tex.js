@@ -232,7 +232,9 @@ export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "http
               // The existing editor/preview must stay mounted. Tell the local
               // compiler adapter to re-probe its connection in place instead of
               // losing unsaved editor state with a full page reload.
-              window.dispatchEvent(new Event('qsseda:tex-local-recheck'));
+              window.dispatchEvent(new CustomEvent('qsseda:tex-local-recheck', {
+                detail: { host: local.host, engines: local.engines }
+              }));
               checking = false;
               button.disabled = false;
               button.textContent = copy.recheck;

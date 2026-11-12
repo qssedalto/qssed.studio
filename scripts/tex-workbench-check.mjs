@@ -14,6 +14,7 @@ const edge = fs.readFileSync(new URL("../studio/edge-protection.js", import.meta
 const api = fs.readFileSync(new URL("../studio/tex-api-core.js", import.meta.url), "utf8");
 const apiWrapper = fs.readFileSync(new URL("../studio/tex-api.js", import.meta.url), "utf8");
 const versionApi = fs.readFileSync(new URL("../studio/tex-version-api.js", import.meta.url), "utf8");
+const workNavigationUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
 
 for (const zh of [true, false]) {
   const markup = texWorkbenchContent(zh);
@@ -57,12 +58,25 @@ for (const zh of [true, false]) {
   assert(workPageMarkup.includes('id="qsseda-work-tex-viewport-edges"'), "Work must apply the final flush-edge layout layer.");
   assert(workPageMarkup.includes("scrollbar-width:none!important"), "Right PDF panel must hide visible scrollbars without disabling scrolling.");
   assert(workPageMarkup.includes("scrollbar-gutter:auto!important"), "Right PDF panel must not reserve a blank stable scrollbar gutter.");
-  assert(workPageMarkup.includes("calc(100% - 24px)!important"), "PDF card must fill the right column with only the intended symmetric margins.");
+  assert(workPageMarkup.includes("calc(100% - 10px)!important"), "PDF card must occupy the right column without the extra 24px gutter.");
+  assert(workPageMarkup.includes("margin:8px 2px 8px 8px!important"), "PDF card must not reserve a visible right edge strip.");
   assert(workPageMarkup.includes("left:50%!important") && workPageMarkup.includes("translateX(-50%)"), "Right collapsed plus button must be horizontally centered.");
+  assert(workPageMarkup.includes("right:10px!important") && workPageMarkup.includes("margin-right:33px!important"), "Expanded preview collapse control must align at the right end of the preview action row.");
+  assert(workPageMarkup.includes(".tex-start-card:nth-child(1) {background:#cbf476") &&
+    workPageMarkup.includes(".tex-start-card:nth-child(2) {background:#c9b2ff") &&
+    workPageMarkup.includes(".tex-start-card:nth-child(3) {background:#a9c6ff"), "Welcome templates must use the QssedA DEV green, violet and blue palette.");
+  assert(workPageMarkup.includes("font-family:Inter,ui-sans-serif"), "Welcome heading must reuse QssedA DEV's Inter/system typography.");
+  assert(workPageMarkup.includes("start-grid") && workPageMarkup.includes("tex-start-kicker"), "Welcome page must contain an editorial kicker and template tiles.");
+  assert(workMarkup.includes("class=\"tex-start-card-icon\""), "Colorful template cards must retain their accessible label and icon.");
+
   assert(workPageMarkup.includes(".tex-documents-panel > .tex-panel-head"), "Document header must share the full-width sidebar background.");
   assert(workMarkup.includes("openingDocument(id)") && workMarkup.includes("fastDocument(id)"), "Document selection must show immediate feedback and reuse prefetches.");
   assert(workMarkup.includes("void loadRuns();"), "Document detail must appear before run history fetch finishes.");
   assert(workMarkup.includes("window.addEventListener('qsseda:tex-local-recheck'"), "Local TeX must support in-place connection recovery.");
+  assert(workMarkup.includes("localCopy.previewSelectDocument"), "No document selected must not be mislabeled an unsupported engine.");
+  assert(workNavigationUi.includes("detail: { host: local.host, engines: local.engines }"), "Bridge connection checker must share the verified local endpoint with preview.");
+  assert(workMarkup.includes("localEngines = engines") && workMarkup.includes("localBase = base"), "Preview adapter must accept the verified Bridge engines without a redundant failing probe.");
+
   assert(workMarkup.includes("tex-work-app"), "Work TeX route must render the dedicated app surface");
   assert(workMarkup.includes("tex-live-preview-switch"), "Live preview must use the custom switch instead of a native checkbox UI");
   assert(!workMarkup.includes('class="tex-live-switch"'), "Live preview switch class must match its CSS selector");
@@ -115,7 +129,7 @@ assert(config.includes('"/work/tex"'), "Work TeX route is missing from protected
 assert(config.includes('["/workspace/experiments/tex", "/work/tex"]'), "Legacy TeX route must redirect to Work TeX");
 assert(entry.includes('pathname === "/work/tex"'), "Studio entry does not mount the Work TeX app");
 assert(entry.includes("polishWorkTexViewportEdges(markup)"), "Entry must apply the final Work viewport edge-fix CSS after the main theme.");
-const workUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
+const workUi = workNavigationUi;
 assert(!workUi.includes("window.location.reload()"), "Bridge connection check must not force-refresh the Work editor.");
 assert(workUi.includes("qsseda:tex-local-recheck"), "Bridge connection check must dispatch the in-place re-probe signal.");
 assert(entry.includes("enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh)"), "Work TeX collapsible panel renderer is not wired");
