@@ -294,6 +294,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           // Presence counts people, not sockets. Keep the local tab as the
           // preferred representative so self/follow state remains consistent.
           const people = new Map();
+          const sockets = [];
           for (const person of Array.isArray(participants) ? participants : []) {
             const identity = String(person?.id || person?.client_id || '').trim();
             if (!identity) continue;
@@ -306,10 +307,14 @@ export function enhanceWorkTexRealtime(markup, zh) {
               selection_end: Math.max(a, h),
               caret_position: h
             };
+            sockets.push(entry);
             const earlier = people.get(identity);
             if (!earlier || (!earlier.self && entry.self)) people.set(identity, entry);
           }
-          const items = [...people.values()];
+          // Preserve existing desktop socket-level display: only compact touch
+          // screens collapse duplicate tabs into one online person.
+          const compactTouch = window.matchMedia('(max-width:1280px) and (pointer:coarse), (max-width:760px)').matches;
+          const items = compactTouch ? [...people.values()] : sockets;
           const count = items.length;
           if (current) current.presence = items;
           publishPresence(items);
