@@ -91,14 +91,14 @@ function browserHarness(fixture) {
       const center=bar?.querySelector('.aertex-pdf-section-center');
       const right=bar?.querySelector('.aertex-pdf-section-right');
       const icons=bar?.querySelectorAll('button.aertex-pdf-tool svg.aertex-pdf-icon');
-      if (!bar||!left||!center||!right||icons.length!==10) {
+      if (!bar||!left||!center||!right||icons.length!==11) {
         throw Error('Native PDF toolbar SVG icons/3 groups missing: '+(icons?.length||0));
       }
       const groups=[left,center,right].map(e=>e.getBoundingClientRect());
       if (Math.abs(bar.getBoundingClientRect().height-44)>1 ||
           groups[0].right>groups[1].left+2 ||
           groups[1].right>groups[2].left+2 ||
-          getComputedStyle(bar).backgroundColor!=='rgb(59, 59, 59)') {
+          getComputedStyle(bar).backgroundColor!=='rgb(247, 247, 247)') {
         throw Error('Native PDF toolbar sizing or alignment differs: '+JSON.stringify(groups.map(r=>[r.left,r.right])));
       }
       if(bar.querySelector('[data-pdf-action="highlight"]')||
@@ -120,11 +120,39 @@ function browserHarness(fixture) {
       if(search.hidden || document.activeElement!==search) throw Error('Search icon does not reveal/focus the field');
       search.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
       if(!search.hidden) throw Error('Escape does not close PDF search');
+      // Native outline label and pixel-traced glyph details.
+      if(pageToggle.title!=='目录' ||
+         !bar.querySelector('[data-pdf-action="rotate"] svg circle[cx="12"]') ||
+         !bar.querySelector('[data-pdf-action="expand"] svg path')) {
+        throw Error('Directory title or native rotation/expand glyph is incorrect');
+      }
+      if(getComputedStyle(bar.querySelector('[data-pdf-action="rotate"]')).color!=='rgb(37, 37, 37)') {
+        throw Error('Light toolbar icons must be dark, not forced white');
+      }
+      const legacy=document.getElementById('tex-preview-expand');
+      const newExpand=bar.querySelector('[data-pdf-action="expand"]');
+      if(getComputedStyle(legacy).display!=='none') {
+        throw Error('Old PDF expand icon must not appear outside the toolbar');
+      }
+      newExpand.click();
+      if(!document.body.classList.contains('tex-preview-expanded') ||
+         newExpand.getAttribute('aria-expanded')!=='true') {
+        throw Error('Native expand icon did not activate the existing preview fullscreen');
+      }
+      newExpand.click();
+      if(document.body.classList.contains('tex-preview-expanded')) {
+        throw Error('Native expand icon did not restore the preview');
+      }
       report.push({step:'native-toolbar',icons:icons.length,groups:groups.map(r=>Math.round(r.left))});
       document.documentElement.dataset.themeMode='dark';
       document.documentElement.dataset.theme='dark';
       window.dispatchEvent(new Event('aertex-themechange'));
       const dark=await waitFor('dark');
+      const darkBar=getComputedStyle(bar);
+      if(darkBar.backgroundColor!=='rgb(59, 59, 59)' ||
+         getComputedStyle(bar.querySelector('[data-pdf-action="rotate"]')).color!=='rgb(243, 243, 243)') {
+        throw Error('Dark PDF toolbar/icons did not inherit the site theme');
+      }
       report.push({step:'dark',dark});
       document.documentElement.dataset.themeMode='light';
       document.documentElement.dataset.theme='light';
@@ -158,6 +186,8 @@ const base='<html lang="zh-cn" data-theme="light"><head><meta charset="utf-8">'+
 '#tex-live-preview-frame{display:block;width:100%;height:100%}'+
 '#tex-live-preview-placeholder{display:none}</style></head><body class="os-shell">'+
 '<section class="tex-work-app"><div class="tex-live-preview-viewport">'+
+'<button id="tex-preview-expand" type="button" aria-label="Expand">Legacy expand</button>'+
+'<script>document.getElementById("tex-preview-expand").addEventListener("click",()=>document.body.classList.toggle("tex-preview-expanded"));</script>'+
 '<iframe id="tex-live-preview-frame" hidden></iframe>'+
 '<div id="tex-live-preview-placeholder" hidden></div></div></section>';
 const harness='('+browserHarness.toString()+')('+JSON.stringify(fixture)+');';
