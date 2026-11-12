@@ -363,6 +363,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             else step.removeAttribute('aria-current');
           });
           if (pageIndex !== 0) hideSearchResults();
+          window.dispatchEvent(new CustomEvent("qsseda:tex-collaboration-page", { detail: { index: pageIndex } }));
         }
 
         async function api(path, options = {}) {
