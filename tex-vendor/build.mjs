@@ -12,7 +12,8 @@ await mkdir(outdir, { recursive: true });
 const builds = [
   ["codemirror", "src/codemirror.js"],
   ["yjs", "src/yjs.js"],
-  ["katex", "src/katex.js"]
+  ["katex", "src/katex.js"],
+  ["markdown-visual", "src/markdown-visual.js"]
 ];
 for (const [name, entry] of builds) {
   const result = await build({
