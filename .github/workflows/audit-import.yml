@@ -15,15 +15,15 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24.x'
-      - name: Apply third hash-verified source batch
+      - name: Apply fourth hash-verified source batch
         run: |
           python3 <<'PY'
           import base64, gzip, hashlib, json, pathlib, subprocess
           root=pathlib.Path.cwd()
-          text=''.join((root/f'.audit-transfer/batch03-{i}.b64').read_text() for i in range(2))
+          text=''.join((root/f'.audit-transfer/batch04-{i}.b64').read_text() for i in range(2))
           payload=gzip.decompress(base64.b64decode(text,validate=True))
           digest=lambda x: hashlib.sha256(x).hexdigest()
-          assert digest(payload)=='e3361275e177a7bbf82fe6e46b19343c2015f10879443abd8442aa457ca3d1d7'
+          assert digest(payload)=='ce94d0c557c5917fffd6f2ba91bc16a1e11c58dfdfa93d597d9deec22a261d76'
           data=json.loads(payload)
           paths=[]
           for change in data['changes']:
@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix: retain sessions during outages and protect supplementary drafts'
+          git commit -m 'fix: fence chat lifecycle races and preserve pending message drafts'
           git push origin HEAD:refs/heads/audit/p0-p1-stability-20261113
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
       - name: Build pinned browser and server modules
