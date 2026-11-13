@@ -670,10 +670,9 @@ export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https
         <section class="os-nav-group os-nav-entry ${isWork ? "is-active" : ""}" data-qsseda-work-nav="1" data-nav-section="work">
           <a class="os-nav-title" href="${mainOrigin}${prefix}/work">
             ${dashboardIcon("work")}
-            <span>Work</span>
+            <span>AERTEX Work</span>
           </a>
           <div class="os-nav-items">
-            <a href="${mainOrigin}${prefix}">${dashboardIcon("home")}<span>${activeLocale === "zh-cn" ? "AERTEX 主站" : "AERTEX Home"}</span></a>
             <a href="${mainOrigin}${prefix}/work"${rootCurrent}>${dashboardIcon("work")}<span>${navCopy.overview}</span></a>
             <a href="${mainOrigin}${prefix}/work/local"${localCurrent}>${dashboardIcon("computer")}<span>${navCopy.computer}</span></a>
             <a href="${workTexUrl}">${dashboardIcon("tex")}<span>${navCopy.tex}</span></a>
@@ -687,7 +686,10 @@ export function decorateWorkNavigation(markup, zh, pathname, mainOrigin = "https
   const settingsMarker = 'data-nav-section="settings"';
   const settingsIndex = output.indexOf(settingsMarker);
   const sectionIndex = settingsIndex >= 0 ? output.lastIndexOf('<section', settingsIndex) : -1;
-  if (sectionIndex >= 0) output = output.slice(0, sectionIndex) + group + output.slice(sectionIndex);
+  // Nest Work subpages beneath the product entry instead of duplicating it.
+  const existingWorkLink = /<a class="os-nav-title os-nav-product-link"[^>]*data-product-link="work"[\s\S]*?<\/a>/;
+  if (existingWorkLink.test(output)) output = output.replace(existingWorkLink, group);
+  else if (sectionIndex >= 0) output = output.slice(0, sectionIndex) + group + output.slice(sectionIndex);
   else output = output.replace("</nav>", group + "</nav>");
 
   if (!isWork) return output;
