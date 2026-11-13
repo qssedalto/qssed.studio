@@ -153,7 +153,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
       .tex-work-app .tex-editor-toolbar{align-items:end!important}\n      .tex-work-app .tex-document-item{text-decoration:none!important;cursor:pointer!important}
       .tex-work-app .tex-collaboration-button{
         appearance:none!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;
-        flex:0 0 auto!important;width:auto!important;min-width:94px!important;height:40px!important;min-height:40px!important;margin:0!important;padding:0 14px!important;
+        flex:0 0 232px!important;box-sizing:border-box!important;width:232px!important;min-width:232px!important;max-width:232px!important;height:40px!important;min-height:40px!important;margin:0!important;padding:0 10px!important;
         border:0!important;border-radius:12px!important;background:var(--fill)!important;color:var(--text)!important;
         box-shadow:inset 0 0 0 1px var(--border)!important;font-size:12px!important;font-weight:700!important;white-space:nowrap!important;
         cursor:pointer!important;transition:background .16s ease,box-shadow .16s ease,transform .16s ease,opacity .16s ease!important
@@ -161,10 +161,12 @@ export function enhanceWorkTexCollaboration(markup, zh) {
       .tex-work-app .tex-collaboration-button:hover:not(:disabled){background:var(--card)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 30%,var(--border))!important}
       .tex-work-app .tex-collaboration-button:active:not(:disabled){transform:scale(.97)}
       .tex-work-app .tex-collaboration-button:disabled{opacity:.38!important;cursor:not-allowed!important}
-      .tex-work-app .tex-collaboration-button svg.tex-collaboration-people{width:25px!important;height:23px!important;flex:0 0 25px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
-      .tex-collaboration-avatars{display:flex;align-items:center;margin-left:1px}
-      .tex-collaboration-avatar-dot{display:grid;place-items:center;width:21px;height:21px;margin-left:-5px;border:2px solid var(--fill);border-radius:50%;background:var(--surface);color:var(--muted);font-size:8px;font-weight:800;overflow:hidden}
+      .tex-work-app .tex-collaboration-button svg.tex-collaboration-people{width:31px!important;height:27px!important;flex:0 0 31px;fill:none;stroke:currentColor;stroke-width:2.35;stroke-linecap:round;stroke-linejoin:round}
+      .tex-collaboration-avatars{display:flex;align-items:center;justify-content:flex-end;flex:1 1 auto;min-width:98px;min-height:28px;overflow:visible;margin:0 0 0 auto;padding-right:2px}
+      .tex-collaboration-avatar-dot{display:grid;place-items:center;flex:0 0 27px;box-sizing:border-box;width:27px;height:27px;margin-left:-8px;border:2px solid var(--surface);border-radius:50%;background:color-mix(in srgb,var(--primary) 12%,var(--surface));color:var(--muted);font-size:9px;font-weight:800;overflow:hidden}
       .tex-collaboration-avatar-dot:first-child{margin-left:0}.tex-collaboration-avatar-dot img{width:100%;height:100%;object-fit:cover}
+      .tex-collaboration-avatar-overflow{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;margin-left:-8px;box-sizing:border-box;border:2px solid var(--surface);border-radius:50%;background:var(--fill);color:var(--muted);font-size:9px;font-weight:750}
+      @media(max-width:760px){.tex-work-app .tex-collaboration-button{flex-basis:218px!important;width:218px!important;min-width:218px!important;max-width:218px!important;padding:0 8px!important}.tex-collaboration-avatars{min-width:85px}}
 
       body.tex-collaboration-open{overflow:hidden!important}
       .tex-collaboration-backdrop{position:fixed;inset:0;z-index:2147482000;background:rgba(0,0,0,.20);opacity:0;pointer-events:none;transition:opacity .2s ease}
@@ -263,13 +265,14 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         let searchTimer = 0;
         let searchSequence = 0;
         let selectedSearchPerson = null;
+        let previousActiveDocumentId = null;
 
         const openButton = document.createElement('button');
         openButton.id = 'tex-collaboration-open';
         openButton.className = 'tex-collaboration-button';
         openButton.type = 'button';
         openButton.disabled = true;
-        openButton.innerHTML = '<svg class="tex-collaboration-people" viewBox="0 0 48 36" aria-hidden="true"><circle cx="14.6" cy="10.3" r="5.2"/><circle cx="34.3" cy="9.8" r="5.8"/><path d="M4.1 30.1v-.6c0-6.5 4.2-10.2 10.5-10.2 3.1 0 5.8 1.1 7.5 3"/><path d="M4.1 30.1h16.9"/><path d="M25.2 30.1v-.8c0-6.5 3.8-10.2 9.2-10.2 5.5 0 9.6 3.7 9.6 10.2v.8Z"/></svg><span>' + labels.open + '</span><span class="tex-collaboration-avatars" aria-hidden="true"></span>';
+        openButton.innerHTML = '<svg class="tex-collaboration-people" viewBox="0 0 48 36" aria-hidden="true"><circle cx="14.2" cy="10" r="5.25"/><circle cx="34.3" cy="9.4" r="5.75"/><path d="M3.9 29.8C4 23.25 8 19.35 14.15 19.35C19.05 19.35 22.65 22.8 23.05 29.8Z"/><path d="M25.65 29.8C25.75 22.55 29.2 18.65 34.3 18.65C40.55 18.65 44.45 22.9 44.7 29.8Z"/></svg><span>' + labels.open + '</span><span class="tex-collaboration-avatars" aria-hidden="true"></span>';
         toolbar.append(openButton);
 
         const backdrop = document.createElement('div');
@@ -457,9 +460,22 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         }
 
         function renderAvatars() {
-          avatars.replaceChildren();
           const participants = (opened ? draftParticipants : snapshot?.participants) || [];
-          for (const participant of participants.slice(0, 3)) avatars.append(makeAvatar(participant, 'tex-collaboration-avatar-dot'));
+          const people = new Map();
+          for (const person of participants) {
+            const id = String(person?.id || person?.username || '');
+            if (id && !people.has(id)) people.set(id, person);
+          }
+          const members = [...people.values()];
+          avatars.replaceChildren();
+          for (const person of members.slice(0, 4)) avatars.append(makeAvatar(person, 'tex-collaboration-avatar-dot'));
+          if (members.length > 4) {
+            const extra = document.createElement('span');
+            extra.className = 'tex-collaboration-avatar-overflow';
+            extra.textContent = '+' + (members.length - 4);
+            avatars.append(extra);
+          }
+          avatars.title = members.length ? String(members.length) + ' ' + labels.members : '';
         }
 
         function renderParticipants() {
@@ -782,6 +798,12 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           openButton.disabled = !id;
           openButton.title = id ? labels.open : labels.noDocument;
           documentLabel.textContent = titleInput?.value?.trim() || id || labels.noDocument;
+          // Explorer re-renders, file highlights and presence updates can each
+          // mutate the document tree. Those are NOT document switches: never
+          // erase the member avatars or refetch membership for each mutation.
+          if (id === previousActiveDocumentId) return;
+          previousActiveDocumentId = id;
+          requestSequence += 1;
           snapshot = null;
           draftParticipants = [];
           username.value = '';
@@ -789,7 +811,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           hideSearchResults();
           renderAvatars();
           updateSaveState();
-          if (opened) void loadSnapshot(true);
+          if (id) void loadSnapshot(opened);
         }
 
         openButton.addEventListener('click', openDrawer);
