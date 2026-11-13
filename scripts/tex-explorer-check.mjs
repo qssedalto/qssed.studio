@@ -43,7 +43,7 @@ for (const zh of [true, false]) {
     "Dark PDF borders must not emit a white shadow");
   assert(!html.includes("__ZH__"), "Locale placeholders must be resolved");
   const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)];
-  assert.equal(scripts.length, 2);
+  assert.equal(scripts.length, 3, "Explorer now includes the fixed editor mode and archive runtime");
   for (const [, code] of scripts) new Function(code);
 }
 const source = WORK_TEX_EXPLORER_COMMANDS;
