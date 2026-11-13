@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { enhanceWorkTexPdfAutoTheme } from "../studio/ui-work-tex-pdf-auto-theme.js";
+import { enhanceTexGithubWorkbench } from "../studio/ui-tex-github.js";
 
 const original = "<!doctype html><html><head></head><body>" +
   '<section class="tex-work-app"><iframe id="tex-live-preview-frame"></iframe></section></body></html>';
@@ -11,6 +12,18 @@ assert.equal(enhanceWorkTexPdfAutoTheme("bad input"), "bad input");
 const style = html.match(/<style id="aertex-work-pdf-auto-theme">([\s\S]*?)<\/style>/)?.[1];
 const script = html.match(/<script id="aertex-work-pdf-auto-theme-runtime">([\s\S]*?)<\/script>/)?.[1];
 assert(style && script, "Themed viewer needs both pre-paint CSS and a client controller");
+assert(style.includes(".tex-work-app:has(#tex-editor[hidden]) .aertex-pdf-reader{display:none!important}"),
+  "Welcome must hide the independent PDF.js reader, not just the native iframe.");
+assert(script.includes("const activeDocumentId = () =>") &&
+  script.includes("frameObserver.observe(editor,{attributes:true,attributeFilter:['hidden']})") &&
+  script.includes("frameObserver.observe(workRoot,{attributes:true,attributeFilter:['data-tex-collaboration-document-id']})"),
+  "Reader lifecycle must follow document and editor visibility changes.");
+assert(script.includes("frame.removeAttribute('src');") &&
+  script.includes("pagesElement.replaceChildren(notice);"),
+  "Returning home or switching projects must discard stale PDF.js pages and iframe URLs.");
+assert(script.includes("if (!activeDocumentId() || !(blob instanceof Blob) || !blob.size) return false;"),
+  "A verified historical PDF cannot reopen on the welcome screen.");
+
 assert(html.indexOf('id="aertex-work-pdf-auto-theme"') < html.indexOf("</head>"),
   "Theme CSS must arrive before first paint to avoid a white flash");
 new Function(script);
@@ -230,5 +243,60 @@ assert.equal(masks.foreground[13], true, "Black math strokes must be white in da
 const wrapper = fs.readFileSync(new URL("../studio/ui-work-tex-pdf-controls.js",import.meta.url),"utf8");
 assert(wrapper.includes("enhanceWorkTexPdfAutoTheme(source.replace("),
   "Work PDF wrapper must install the themed viewer after the original PDF controls");
+
+// Regression: the GitHub account's latest successful Actions run must not be
+// replayed into the Work PDF pane when the user is on the welcome screen.
+const ghHtml = enhanceTexGithubWorkbench('<div class="tex-compiler-card"></div>', true);
+const ghRuntime = ghHtml.match(/<script id="tex-gh-runtime">([\\s\\S]*?)<\\/script>/)?.[1];
+assert(ghRuntime, "GitHub status runtime must be present");
+new Function(ghRuntime);
+assert(ghRuntime.includes("if (allowInlineRun(version)) window.__aertexOpenGithubPdf?.(blob, version);") &&
+  ghRuntime.includes("requestedInlineDocument === activeWorkDocumentId()"),
+  "Historical GitHub results must not automatically become the active Work PDF");
+
+const mockNodes = new Map();
+const mockNode = id => {
+  if (!mockNodes.has(id)) mockNodes.set(id, {
+    hidden: id === "tex-editor", textContent: "", value: "", dataset: {}, style: {},
+    classList: { add() {}, remove() {}, contains() { return false; } },
+    addEventListener() {}, setAttribute() {}, removeAttribute() {},
+    append() {}, appendChild() {}, replaceChildren() {}
+  });
+  return mockNodes.get(id);
+};
+let unwantedPdfOpens = 0;
+const fetched = [];
+const previousPdf = new Blob(["%PDF-1.7\\nold successful project"], { type: "application/pdf" });
+const mockFetch = async url => {
+  fetched.push(url);
+  if (url.endsWith("/status")) return { ok: true, json: async () => ({
+    repository_created: true, approval_status: "approved", repository_state: "ready",
+    remaining: 5, weekly_credits: 15, configured: true, active: false,
+    repository_name: "old-repository", is_admin: false
+  }) };
+  if (url.endsWith("/runs")) return { ok: true, json: async () => ({
+    runs: [{ id: 123, status: "completed", conclusion: "success" }], jobs: []
+  }) };
+  if (url.includes("/pdf?run=")) return { ok: true, blob: async () => previousPdf };
+  return { ok: false, json: async () => ({ error: "Unexpected URL" }) };
+};
+const mockWindow = {
+  __aertexOpenGithubPdf() { unwantedPdfOpens++; return true; },
+  matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
+  addEventListener() {}, setInterval() { return 1; }, setTimeout() { return 1; },
+  open() { return null; }, prompt() { return null; }
+};
+const mockDocument = {
+  getElementById: mockNode, querySelector() { return null; },
+  addEventListener() {}, hidden: false, documentElement: { lang: "zh-CN" }
+};
+new Function("window", "document", "location", "fetch", "URL", "Blob", "Uint8Array", ghRuntime)(
+  mockWindow, mockDocument, {hostname:"work.qsseda.com",pathname:"/zh-cn/tex"},
+  mockFetch, URL, Blob, Uint8Array
+);
+for (let n = 0; n < 50; n++) await Promise.resolve();
+assert(fetched.some(url => url.includes("/pdf?run=")), "Regression fixture must load an older GitHub PDF");
+assert.equal(unwantedPdfOpens, 0, "Welcome must never show a previous GitHub Actions PDF");
+assert.equal(mockNode("tex-gh-frame").hidden, true, "The old GitHub PDF iframe must remain hidden");
 
 console.log("Themed PDF: CSS-first, shared mode, no manual switch, no image inversion, PDF operator separation passed.");
