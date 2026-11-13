@@ -37,6 +37,7 @@ for (const zh of [true,false]) {
   let activeFile="main.tex";
   const panel=simple("aside");
   panel.querySelector=selector=>{
+    if(selector===".chat-toggle-help")return get("chat-toggle-help");
     assert(selector.startsWith("#aertex-chat-"),"No close button should be queried");
     return get(selector.slice(1));
   };

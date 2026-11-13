@@ -96,8 +96,34 @@ const assertion={type:"public-key",id:credId,rawId:credId,
   response:{clientDataJSON:clientGet,authenticatorData:b64(authenticatorData),signature:b64(signature)}};
 const relogin=await send("verify",{challenge_id:next.body.challenge_id,credential:assertion});
 assert.equal(relogin.status,200,JSON.stringify(relogin.body));
-assert.equal((await send("messages",{token})).status,401,"Old grant must be revoked when the same file is Passkey-verified again");
+assert.equal((await send("messages",{token})).status,200,"Independent verified devices must retain valid grants");
 const latestToken=relogin.body.token;
+const enroll=await send("begin",{action:"enroll-device",token:latestToken});
+assert.equal(enroll.status,200,JSON.stringify(enroll.body));
+assert.equal(enroll.body.mode,"create-add");
+assert.equal(enroll.body.public_key.excludeCredentials[0].id,credId);
+assert.equal((await send("begin",{action:"enroll-device",token:"bad"})).status,401,
+  "Adding new device Passkeys requires an existing verified file credential");
+const newPasskey=await crypto.subtle.generateKey({name:"ECDSA",namedCurve:"P-256"},true,["sign","verify"]);
+const newPub=await crypto.subtle.exportKey("jwk",newPasskey.publicKey);
+const newId=crypto.getRandomValues(new Uint8Array(32)),newCredId=b64(newId);
+const newCose=new Map([[1,2],[3,-7],[-1,1],[-2,unb64(newPub.x)],[-3,unb64(newPub.y)]]);
+const newAtt=concat(rpHash,Uint8Array.of(0x45,0,0,0,0),new Uint8Array(16),
+  Uint8Array.of(0,newId.length),newId,cbor(newCose));
+const newAttestation=cbor(new Map([["fmt","none"],["attStmt",new Map()],["authData",newAtt]]));
+const secondEnroll=await send("begin",{action:"enroll-device",token:latestToken});
+const addClient=b64(enc.encode(JSON.stringify({type:"webauthn.create",
+  challenge:secondEnroll.body.public_key.challenge,origin:"https://work.qsseda.com",crossOrigin:false})));
+const added=await send("verify",{challenge_id:secondEnroll.body.challenge_id,token:latestToken,
+  credential:{id:newCredId,rawId:newCredId,type:"public-key",
+  response:{clientDataJSON:addClient,attestationObject:b64(newAttestation)}}});
+assert.equal(added.status,200,JSON.stringify(added.body));
+assert.equal((await send("status")).body.passkey_count,2,"Each device must have a separate file credential");
+const multiple=await send("begin");
+assert.equal(multiple.body.mode,"get");
+assert.equal(multiple.body.public_key.allowCredentials.length,2);
+assert.equal((await send("messages",{token:latestToken})).status,200,
+  "Registering a second device must not invalidate another device grant");
 const invalidSignature={...assertion,response:{...assertion.response,signature:b64(new Uint8Array(64))}};
 const third=await send("begin");
 assert.equal((await send("verify",{challenge_id:third.body.challenge_id,credential:invalidSignature})).status,403,
@@ -146,7 +172,8 @@ assert.doesNotThrow(()=>new vm.Script(runtime),"Client chat runtime must parse")
 for(const marker of ["navigator.credentials.create","navigator.credentials.get","indexedDB.open",
   "deriveBits","AES-GCM","envelope-put","envelope-get","aertex:tex-chat-toggle","file_name",
   "aertex:tex-project-asset-selected","pagehide"])assert(runtime.includes(marker),"Missing "+marker);
-assert(!runtime.includes("localStorage"),"Never persist room secret in localStorage");
+assert(runtime.includes("localStorage.setItem(HINT_PREF"),"Non-sensitive UI preference should be persisted");
+assert(!runtime.includes("localStorage.setItem('filechat-key"),"Never persist room keys in localStorage");
 assert(!runtime.includes("sessionStorage"),"Passkey verification must not survive page reload");
 assert(runtime.includes("function toggleChat()"),"Popup should use a single toolbar toggle");
 assert(!runtime.includes("panel.querySelector(\'.close\')"),"No close button can bypass the toolbar icon");
