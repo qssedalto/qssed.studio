@@ -1,8 +1,9 @@
 // Keep one CodeMirror 6 dependency graph, including every language parser.
 // Served from the Work origin; no CDN ESM and no duplicated @codemirror/state.
 export { EditorView, basicSetup } from "codemirror";
-export { EditorState } from "@codemirror/state";
-export { StreamLanguage } from "@codemirror/language";
+export { EditorState, Compartment } from "@codemirror/state";
+export { StreamLanguage, HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+export { tags } from "@lezer/highlight";
 export { stex } from "@codemirror/legacy-modes/mode/stex";
 
 import { python } from "@codemirror/legacy-modes/mode/python";
