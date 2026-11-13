@@ -2,7 +2,7 @@
 ; Bundles the original-engine successor with sandboxed multi-file TeX support.
 ; The download is ALWAYS a Setup executable, never a portable daemon.
 
-#define AppVersion "0.5.1"
+#define AppVersion "0.5.2"
 #define AppName "AERTEX Bridge"
 
 [Setup]
