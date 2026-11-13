@@ -150,6 +150,9 @@ const batchRecreated=await invoke({document_id:batchId,files:[
   file("chapters/intro.tex","\\\\section{Introduction}")
 ]});
 assert.equal(batchRecreated.status,200,JSON.stringify(batchRecreated.body).slice(0,500));
+assert.match(String(batchRecreated.body.document.realtime_epoch||""),
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+  "Importing main.tex must rotate the source room instead of reviving an old Yjs snapshot.");
 assert.equal(batchRecreated.body.document.main_deleted,false,
   "Root main.tex in a batch must revive the real compile entry.");
 assert.equal(batchRecreated.body.document.main_filename,"main.tex");
@@ -160,6 +163,8 @@ assert.deepEqual(batchRecreated.body.document.files.map(f=>f.name),
 assert.equal(new Set(batchRecreated.body.document.files.map(f=>f.name.toLowerCase())).size,2);
 const batchRemoval=await invoke({document_id:batchId,operation:"delete",name:"main.tex"});
 assert.equal(batchRemoval.status,200,"The repaired canonical entry must be deletable again.");
+assert.notEqual(batchRemoval.body.document.realtime_epoch,batchRecreated.body.document.realtime_epoch,
+  "Deleting the main entry must also isolate stale collaboration state.");
 assert.equal(objects.get(batchKey).main_deleted,true);
 assert.equal(objects.get(batchKey).source,"");
 assert.equal(reconcileTexMainEntry(objects.get(batchKey)).main_deleted,true,
