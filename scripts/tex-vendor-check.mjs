@@ -137,6 +137,12 @@ assert(codeRuntime.includes("const brandWordmark =") &&
 assert(codeRuntime.includes("controls[mode].closest('.tex-code-theme-card').dataset.brandSelected") &&
   themedMarkup.includes('.tex-code-theme-native-wordmark>svg'),
   "AERTEX SVG selected label must update when a user changes palettes");
+assert(themedMarkup.includes("grid-template-rows:36px") &&
+  themedMarkup.includes("position:relative;inset:auto;grid-column:1;grid-row:1;z-index:1") &&
+  themedMarkup.includes("grid-column:1;grid-row:1;") &&
+  themedMarkup.includes(".tex-code-theme-native-wrap:focus-within .tex-code-theme-native-brand") &&
+  !themedMarkup.includes("position:absolute;inset:1px 30px 1px 8px"),
+  "Selected AERTEX wordmark must not float above its native dropdown or cover native focus text");
 console.log("Native OS palette dropdown contrast and rendered AERTEX selected wordmark verified.");
 
 console.log("Work TeX code theme picker, live syntax recoloring and 4.5:1 palette contrast verified.");
