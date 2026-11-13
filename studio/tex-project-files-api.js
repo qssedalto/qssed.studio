@@ -4,7 +4,7 @@ import { json } from "./routing.js";
 import { isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { reconcileTexMainEntry } from "./tex-main-entry.js";
-import { texRealtimeEpoch, rotateTexRealtimeEpoch } from "./tex-realtime-epoch.js";
+import { texRealtimeEpoch, rotateTexRealtimeEpoch, texRealtimeRoomName } from "./tex-realtime-epoch.js";
 import { MAX_PROJECT_EXTRA_FILES, MAX_PROJECT_FILES, MAX_PROJECT_BYTES, MAX_SINGLE_FILE_BYTES, MAX_JSON_UPLOAD_BYTES, MAX_TEXT_CHARACTERS, isSafeProjectFilename, isBinaryProjectFile } from "./tex-project-file-types.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
@@ -194,6 +194,7 @@ export async function handleTexProjectFiles(request, env, userId) {
       next.reduce((n,f)=>n+sizeOf(f),0);
     if (total > MAX_TOTAL_BYTES) return fail("Project file content cannot exceed 32 MB.", 413);
     doc.files = next;
+    const priorRealtimeEpoch = texRealtimeEpoch(doc);
     // A canonical root-file replacement is a NEW Yjs collaboration history.
     // Ordinary companion-file additions do not reset active collaborator rooms.
     doc.realtime_epoch = mainEntryRebased ? rotateTexRealtimeEpoch() : texRealtimeEpoch(doc);
@@ -213,6 +214,26 @@ export async function handleTexProjectFiles(request, env, userId) {
         realtimeEpoch:doc.realtime_epoch
       }
     });
+    if (mainEntryRebased && env?.TEX_COLLAB_ROOMS?.idFromName && env?.TEX_COLLAB_ROOMS?.get) {
+      // Notify all tabs still connected to the old room. A stale editor's
+      // autosaves are rejected by the epoch check in tex-api-core rather than
+      // silently overwriting the new main.tex.
+      try {
+        const name = texRealtimeRoomName(userId, documentId, priorRealtimeEpoch);
+        const stub = env.TEX_COLLAB_ROOMS.get(env.TEX_COLLAB_ROOMS.idFromName(name));
+        await stub.fetch(new Request("https://tex-collaboration-room.internal/source-rebased",{
+          method:"POST",
+          headers:{
+            "X-Qsseda-Collab-Owner":userId,
+            "X-Qsseda-Collab-Document":documentId
+          }
+        }));
+      } catch (error) {
+        workerLog("warn","tex.files.realtime_reset_notification_failed",{
+          user_id:userId,document_id:documentId,message:String(error?.message||error)
+        });
+      }
+    }
     return json({ document:doc, operation, added:added.map(x=>x.name) }, 200);
   } catch(error) {
     workerLog("error", "tex.files.add.failed", {
