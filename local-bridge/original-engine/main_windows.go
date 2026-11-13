@@ -37,11 +37,11 @@ const (
 	maxSourceBytes   = 512 * 1024
 	maxSourceRunes   = 180000
 	maxResultBytes   = 16 * 1024 * 1024
-	compileTimeout   = 20 * time.Second
+	compileTimeout   = 100 * time.Second
 	maxDiagnosticLen = 24000
 )
 
-var version = "0.3.1-dev"
+var version = "0.3.2-dev"
 var compileSlots = make(chan struct{}, 2)
 
 var allowedOrigins = map[string]bool{
@@ -319,7 +319,7 @@ func runBridge() error {
 		Handler:           secureHandler(mux),
 		ReadHeaderTimeout: 3 * time.Second,
 		ReadTimeout:       8 * time.Second,
-		WriteTimeout:      30 * time.Second,
+		WriteTimeout:      115 * time.Second,
 		IdleTimeout:       30 * time.Second,
 	}
 	return server.ListenAndServe()
@@ -498,6 +498,8 @@ func handleTexCompile(w http.ResponseWriter, r *http.Request) {
 	started := time.Now()
 	ctx, cancel := context.WithTimeout(r.Context(), compileTimeout)
 	defer cancel()
+	// Each request has a fresh directory. One TeX pass leaves an empty TOC
+	// and unresolved citations; keep every pass in this same disposable workspace.
 	args := []string{
 		"-no-shell-escape",
 		"-interaction=nonstopmode",
@@ -506,23 +508,41 @@ func handleTexCompile(w http.ResponseWriter, r *http.Request) {
 		"-output-directory=" + workDir,
 		"main.tex",
 	}
-	cmd := exec.CommandContext(ctx, executable, args...)
-	cmd.Dir = workDir
-	cmd.Env = texEnvironment(workDir)
-	hideWindow(cmd)
 	var output bytes.Buffer
-	cmd.Stdout = &output
-	cmd.Stderr = &output
-	err = cmd.Run()
+	var stageError string
+	for pass := 1; pass <= 3; pass++ {
+		_, _ = fmt.Fprintf(&output, "\n=== TeX pass %d of 3 ===\n", pass)
+		if err = runLocalTeXTool(ctx, executable, args, workDir, &output); err != nil {
+			stageError = fmt.Sprintf("TeX pass %d failed.", pass)
+			break
+		}
+		if pass == 1 {
+			// Biber produces a .bcf; classic BibTeX marks main.aux with \bibdata.
+			// Neither the executable name nor its arguments come from the source.
+			bibliography := bibliographyBackend(workDir)
+			if bibliography != "" {
+				tool := findBibliographyExecutable(bibliography, executable)
+				if tool == "" {
+					stageError = bibliography + " is needed for this document but is not installed next to the TeX engine or on PATH."
+					err = errors.New(stageError)
+					break
+				}
+				_, _ = fmt.Fprintf(&output, "\n=== %s bibliography pass ===\n", bibliography)
+				if err = runLocalTeXTool(ctx, tool, []string{"main"}, workDir, &output); err != nil {
+					stageError = bibliography + " bibliography pass failed."
+					break
+				}
+			}
+		}
+	}
 	elapsed := time.Since(started)
 	logText := cleanCompileLog(output.String(), workDir)
-
 	if ctx.Err() == context.DeadlineExceeded {
 		sendJSON(w, http.StatusRequestTimeout, map[string]any{"error": "Local TeX compilation timed out.", "log": logText})
 		return
 	}
 	if err != nil {
-		sendJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": "Local TeX compilation failed.", "log": logText})
+		sendJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": stageError, "log": logText})
 		return
 	}
 
@@ -549,6 +569,44 @@ func handleTexCompile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Qsseda-Compile-Ms", strconv.FormatInt(elapsed.Milliseconds(), 10))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(pdf)
+}
+
+// Only fixed bibliography backends may be selected by generated TeX aux files.
+func bibliographyBackend(workDir string) string {
+	if fileExists(filepath.Join(workDir, "main.bcf")) {
+		return "biber"
+	}
+	aux, err := os.ReadFile(filepath.Join(workDir, "main.aux"))
+	if err == nil && bytes.Contains(aux, []byte("\\bibdata{")) {
+		return "bibtex"
+	}
+	return ""
+}
+
+// Prefer the matching TeX Live / MiKTeX installation, even if it is not on PATH.
+func findBibliographyExecutable(name, engineExecutable string) string {
+	if name != "bibtex" && name != "biber" {
+		return ""
+	}
+	exe := name + ".exe"
+	sibling := filepath.Join(filepath.Dir(engineExecutable), exe)
+	if fileExists(sibling) {
+		return sibling
+	}
+	if path, err := exec.LookPath(exe); err == nil && fileExists(path) {
+		return path
+	}
+	return ""
+}
+
+func runLocalTeXTool(ctx context.Context, executable string, args []string, workDir string, output *bytes.Buffer) error {
+	cmd := exec.CommandContext(ctx, executable, args...)
+	cmd.Dir = workDir
+	cmd.Env = texEnvironment(workDir)
+	hideWindow(cmd)
+	cmd.Stdout = output
+	cmd.Stderr = output
+	return cmd.Run()
 }
 
 func detectLocalEngines() []string {
