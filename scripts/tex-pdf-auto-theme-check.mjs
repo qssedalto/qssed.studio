@@ -247,7 +247,7 @@ assert(wrapper.includes("enhanceWorkTexPdfAutoTheme(source.replace("),
 // Regression: the GitHub account's latest successful Actions run must not be
 // replayed into the Work PDF pane when the user is on the welcome screen.
 const ghHtml = enhanceTexGithubWorkbench('<div class="tex-compiler-card"></div>', true);
-const ghRuntime = ghHtml.match(/<script id="tex-gh-runtime">([\\s\\S]*?)<\\/script>/)?.[1];
+const ghRuntime = ghHtml.match(/<script id="tex-gh-runtime">([\s\S]*?)<\/script>/)?.[1];
 assert(ghRuntime, "GitHub status runtime must be present");
 new Function(ghRuntime);
 assert(ghRuntime.includes("if (allowInlineRun(version)) window.__aertexOpenGithubPdf?.(blob, version);") &&
