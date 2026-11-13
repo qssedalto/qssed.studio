@@ -69,7 +69,7 @@ const html=enhanceWorkTexOrganizeUi('<main class="tex-work-app"></main>',true);
 assert(html.includes('id="aertex-tex-organize-runtime"'));
 const script=html.match(/<script id="aertex-tex-organize-runtime">([\s\S]*?)<\/script>/)?.[1];
 assert(script);new Function(script);
-for(const phrase of ["tex-row-menu-trigger","tex-mode-segment","tex-organize-pins","tex-organize-archives",
+for(const phrase of ["tex-row-menu-trigger","tex-editor-mode","tex-organize-pins","tex-organize-archives","tex-archive-toggle","tex-runs-panel",
   "window.__aertexTexSetVisualMode","PBKDF2","AES-GCM","900000","account_password"]){
   assert(html.includes(phrase),"Missing "+phrase);
 }
