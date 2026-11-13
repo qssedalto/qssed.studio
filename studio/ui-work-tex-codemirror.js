@@ -465,6 +465,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           popover.hidden=false;
           pickerButton.setAttribute('aria-expanded','true');
           positionPopover();
+          controls[modeForSite()].focus({preventScroll:true});
         });
         closeButton.addEventListener('click',()=>closePopover(true));
         for (const mode of ['light','dark']) controls[mode].addEventListener('change',() => {
