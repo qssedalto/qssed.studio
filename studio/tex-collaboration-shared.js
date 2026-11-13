@@ -83,7 +83,7 @@ async function handleUpdate(request, env, auth, accessToken) {
   if (!previous) return json({ error: "Shared TeX document not found." }, 404);
   if (previous.locked) return json({ error: "This project is locked by its owner." }, 423);
   if (previous.main_deleted === true) return json({error:"This project has no TeX entry. Add a root .tex file first."},409);
-  if (texRealtimeEpoch(parsed.value?.realtime_epoch) !== texRealtimeEpoch(previous))
+  if ((typeof parsed.value?.realtime_epoch !== "string" || texRealtimeEpoch(parsed.value.realtime_epoch) !== texRealtimeEpoch(previous)))
     return json({error:"The main TeX entry changed. Reopen the project before saving.",code:"main_revision_changed"},409);
 
   const normalized = normalizeSharedDocument(parsed.value, previous);
