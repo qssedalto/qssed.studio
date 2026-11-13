@@ -1,3 +1,52 @@
+// Map an existing UTF-16 cursor offset through a Y.TextEvent.delta.
+// Positive affinity places a caret after a concurrent insertion at its exact
+// offset; negative affinity leaves it before the insertion.
+export function mapTexPositionThroughYDelta(delta, offset, affinity = 1) {
+  const target = Math.max(0, Number.isFinite(Number(offset)) ? Math.floor(Number(offset)) : 0);
+  if (!Array.isArray(delta)) return target;
+  let oldIndex = 0;
+  let newIndex = 0;
+  for (const op of delta) {
+    if (typeof op.retain === 'number' && op.retain > 0) {
+      if (target < oldIndex + op.retain) return newIndex + target - oldIndex;
+      oldIndex += op.retain;
+      newIndex += op.retain;
+    } else if (op.insert !== undefined) {
+      const length = typeof op.insert === 'string' ? op.insert.length :
+        Array.isArray(op.insert) ? op.insert.length : 1;
+      if (target === oldIndex && affinity < 0) return newIndex;
+      newIndex += length;
+    } else if (typeof op.delete === 'number' && op.delete > 0) {
+      if (target < oldIndex + op.delete) return newIndex;
+      oldIndex += op.delete;
+    }
+  }
+  return newIndex + Math.max(0, target - oldIndex);
+}
+
+// Initial WebSocket hydration has no Y.TextEvent; map the same selection
+// through a single minimal text difference instead of resetting its offset.
+export function mapTexPositionThroughTextChange(previous, updated, offset, affinity = 1) {
+  const oldText = String(previous ?? '');
+  const newText = String(updated ?? '');
+  if (oldText === newText) return Math.max(0, Math.min(oldText.length, Number(offset) || 0));
+  let start = 0;
+  while (start < oldText.length && start < newText.length &&
+    oldText.charCodeAt(start) === newText.charCodeAt(start)) start += 1;
+  let oldEnd = oldText.length;
+  let newEnd = newText.length;
+  while (oldEnd > start && newEnd > start &&
+    oldText.charCodeAt(oldEnd - 1) === newText.charCodeAt(newEnd - 1)) {
+    oldEnd -= 1;
+    newEnd -= 1;
+  }
+  const delta = [];
+  if (start) delta.push({ retain: start });
+  if (oldEnd > start) delta.push({ delete: oldEnd - start });
+  if (newEnd > start) delta.push({ insert: newText.slice(start, newEnd) });
+  return Math.min(newText.length, mapTexPositionThroughYDelta(delta, offset, affinity));
+}
+
 export function enhanceWorkTexRealtime(markup, zh) {
   const copy = zh ? {
     live: "实时协作",
@@ -70,6 +119,9 @@ export function enhanceWorkTexRealtime(markup, zh) {
 
         const REMOTE_ORIGIN = { qsseda: 'remote' };
         const LOCAL_ORIGIN = { qsseda: 'local' };
+        // Shared pure cursor transforms (also exercised in Node tests).
+        ${mapTexPositionThroughYDelta.toString()}
+        ${mapTexPositionThroughTextChange.toString()}
 
         function responseJson(data, status = 200) {
           return new Response(JSON.stringify(data), {
@@ -385,17 +437,39 @@ export function enhanceWorkTexRealtime(markup, zh) {
           element.dispatchEvent(new Event(type, { bubbles: true }));
         }
 
-        function renderYState(current) {
+        function renderYState(current, delta = null) {
           if (!current?.ready || !current?.ytext || !current?.ymeta) return;
           const { source, title, engine } = activeElements();
           current.applyingRemote = true;
           try {
             if (source && source.value !== current.ytext.toString()) {
-              const start = source.selectionStart;
-              const end = source.selectionEnd;
-              source.value = current.ytext.toString();
-              const limit = source.value.length;
-              source.setSelectionRange(Math.min(start, limit), Math.min(end, limit));
+              const oldText = source.value;
+              const newText = current.ytext.toString();
+              const bridge = window.__qssedaTexEditorBridge;
+              // The displayed CodeMirror selection wins over its hidden
+              // textarea mirror. Asset editors use their own independent doc.
+              const cmSelection = bridge?.getActiveAsset?.() ? null : bridge?.getSelection?.();
+              const reversed = source.selectionDirection === 'backward';
+              const oldAnchor = Number(cmSelection?.anchor ??
+                (reversed ? source.selectionEnd : source.selectionStart)) || 0;
+              const oldHead = Number(cmSelection?.head ??
+                (reversed ? source.selectionStart : source.selectionEnd)) || 0;
+              const map = (position, affinity) => Array.isArray(delta)
+                ? mapTexPositionThroughYDelta(delta, position, affinity)
+                : mapTexPositionThroughTextChange(oldText, newText, position, affinity);
+              // A remote insertion BEFORE the caret moves its logical offset
+              // forward. Keeping the old numeric offset caused every peer's
+              // caret to jump one character left per insertion.
+              const collapsed = oldAnchor === oldHead;
+              const anchorAffinity = collapsed ? 1 : (oldAnchor < oldHead ? 1 : -1);
+              const headAffinity = collapsed ? 1 : (oldHead < oldAnchor ? 1 : -1);
+              const anchor = Math.min(newText.length, map(oldAnchor, anchorAffinity));
+              const head = Math.min(newText.length, map(oldHead, headAffinity));
+              source.value = newText;
+              try {
+                source.setSelectionRange(Math.min(anchor, head), Math.max(anchor, head),
+                  anchor <= head ? 'forward' : 'backward');
+              } catch {}
               dispatchSyntheticInput(source);
             }
             const remoteTitle = String(current.ymeta.get('title') ?? '');
@@ -546,9 +620,9 @@ export function enhanceWorkTexRealtime(markup, zh) {
             if (!current.socket || current.socket.readyState !== WebSocket.OPEN) return;
             current.socket.send(JSON.stringify({ type: 'update', data: bytesToBase64(update) }));
           });
-          ytext.observe(() => {
+          ytext.observe(event => {
             if (!current.ready || current.applyingRemote) return;
-            renderYState(current);
+            renderYState(current, event.delta);
             if (current.presence.length) renderPresence(current.presence);
           });
           ymeta.observe(() => {
