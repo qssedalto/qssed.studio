@@ -84,10 +84,10 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $setup = (Resolve-Path 'bridge-setup/AERTEX-Bridge-Setup.exe').Path
-          $home = Join-Path $env:LOCALAPPDATA 'QssedA\LocalBridge'
-          $engine = Join-Path $home 'AERTEX-Bridge.exe'
-          $ctl = Join-Path $home 'AERTEX-Bridge-Control.exe'
-          $uninstall = Join-Path $home 'unins000.exe'
+          $appDir = Join-Path $env:LOCALAPPDATA 'QssedA\LocalBridge'
+          $engine = Join-Path $appDir 'AERTEX-Bridge.exe'
+          $ctl = Join-Path $appDir 'AERTEX-Bridge-Control.exe'
+          $uninstall = Join-Path $appDir 'unins000.exe'
           $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
           function Health {
             $h = Invoke-RestMethod -Uri 'http://127.0.0.1:32145/health' -TimeoutSec 3
@@ -101,7 +101,7 @@ jobs:
             $p = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -PassThru
             if (-not $p.WaitForExit(60000)) { $p.Kill(); throw 'Installer timed out' }
             if ($p.ExitCode -ne 0) {
-              $log=Join-Path $home 'install.log'
+              $log=Join-Path $appDir 'install.log'
               if(Test-Path $log){Get-Content $log -Tail 25}
               throw "Setup failed with exit $($p.ExitCode)"
             }
