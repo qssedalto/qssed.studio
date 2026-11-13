@@ -161,7 +161,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
       .tex-work-app .tex-collaboration-button:hover:not(:disabled){background:var(--card)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 30%,var(--border))!important}
       .tex-work-app .tex-collaboration-button:active:not(:disabled){transform:scale(.97)}
       .tex-work-app .tex-collaboration-button:disabled{opacity:.38!important;cursor:not-allowed!important}
-      .tex-work-app .tex-collaboration-button svg.tex-collaboration-people{width:31px!important;height:27px!important;flex:0 0 31px;fill:none;stroke:currentColor;stroke-width:3.8;stroke-linecap:round;stroke-linejoin:round}
+      .tex-work-app .tex-collaboration-button svg.tex-collaboration-people{width:31px!important;height:27px!important;flex:0 0 31px;fill:none;stroke:currentColor;stroke-width:3.7;stroke-linecap:round;stroke-linejoin:round}
       .tex-collaboration-avatars{display:flex;align-items:center;justify-content:flex-end;flex:1 1 auto;min-width:98px;min-height:28px;overflow:visible;margin:0 0 0 auto;padding-right:2px}
       .tex-collaboration-avatar-dot{display:grid;place-items:center;flex:0 0 27px;box-sizing:border-box;width:27px;height:27px;margin-left:-8px;border:2px solid var(--surface);border-radius:50%;background:color-mix(in srgb,var(--primary) 12%,var(--surface));color:var(--muted);font-size:9px;font-weight:800;overflow:hidden}
       .tex-collaboration-avatar-dot:first-child{margin-left:0}.tex-collaboration-avatar-dot img{width:100%;height:100%;object-fit:cover}
@@ -272,7 +272,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         openButton.className = 'tex-collaboration-button';
         openButton.type = 'button';
         openButton.disabled = true;
-        openButton.innerHTML = '<svg class="tex-collaboration-people" viewBox="0 0 120 98" aria-hidden="true"><circle cx="33" cy="35.4" r="12.9"/><circle cx="77" cy="33" r="15"/><path d="M46.8 61.4C42.5 58.2 37.6 56.8 32.5 56.8C17.3 56.8 6 68 6 81.7C6 83 6.8 83.5 8 83.5H39"/><path d="M46 83.5C46 68 59.8 56.7 77 56.7C94.2 56.7 108.5 68.1 108.5 83C108.5 83.8 108 84 107.3 84H47.5C46.5 84 46 83.9 46 83.5Z"/></svg><span>' + labels.open + '</span><span class="tex-collaboration-avatars" aria-hidden="true"></span>';
+        openButton.innerHTML = '<svg class="tex-collaboration-people" viewBox="0 0 120 88" aria-hidden="true"><circle cx="34" cy="27.9" r="12.7"/><circle cx="82" cy="25.4" r="15.1"/><path d="M49 50.6C44.2 47.4 38.6 45.9 33.1 45.9C17.7 45.9 5.5 58.7 5.5 75C5.5 76.8 7 78.2 9.1 78.2H42"/><path d="M53 78.2C53 60.7 66.3 47.5 82.2 47.5C99.2 47.5 113 60.7 113 76.5C113 77.4 112.2 78.2 111.4 78.2H53.6C53.2 78.2 53 78.2 53 78.2Z"/></svg><span>' + labels.open + '</span><span class="tex-collaboration-avatars" aria-hidden="true"></span>';
         toolbar.append(openButton);
 
         const backdrop = document.createElement('div');
