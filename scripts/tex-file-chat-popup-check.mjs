@@ -15,6 +15,9 @@ for (const zh of [true,false]) {
   assert(!css.includes('position:fixed;top:0;bottom:0;left:0;right:0'),"Popup must not be fullscreen");
   assert(css.includes('width:min(408px,calc(100vw - 24px))'),"Mobile popup must leave a visible border");
   assert(css.includes('z-index:100080'),"Popup must overlay editor content without changing its layout");
+  assert(css.includes('grid-template-columns:minmax(0,1fr) 70px!important'),"Composer should allocate visible text area and a compact send button");
+  assert(css.includes('.chat-toggle-help input[type=checkbox]'),"No-reminder checkbox must have fixed geometry");
+  assert(css.includes('resize:none!important'),"Composer must not expose a draggable resize handle");
   assert(css.includes('.aertex-filechat [hidden]{display:none!important}'),
     "Locked composer must remain hidden even though body is flex");
 
