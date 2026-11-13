@@ -197,7 +197,9 @@ assert(cachedPreviewRuntime.includes("clearPreviewCache();") &&
   "No browser may resurrect an old PDF automatically before fresh compilation");
 new vm.Script(cachedPreviewRuntime);
 const perfMarkup = enhanceWorkTexDesktopTypography("<section class='tex-work-app'></section>");
-const perfScript = perfMarkup.match(/<script id="qsseda-work-tex-runtime-performance">([\\s\\S]*?)<\\/script>/)?.[1] || "";
+const perfMarker = '<script id="qsseda-work-tex-runtime-performance">';
+const perfStart = perfMarkup.indexOf(perfMarker);
+const perfScript = perfStart < 0 ? "" : perfMarkup.slice(perfStart + perfMarker.length, perfMarkup.indexOf('</script>', perfStart));
 assert(perfScript && !perfScript.includes("cachedPdfResponse(") &&
   !perfScript.includes("restorePreview(root)") && !perfScript.includes("cachePdfResponse("),
   "Legacy browser PDF CacheStorage must not intercept Bridge compile or prepaint stale PDF");
