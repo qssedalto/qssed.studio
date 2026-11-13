@@ -40,6 +40,13 @@ assert(script.includes("if (iosNativeObjectUrl) disposeIosNativePdf();"),
   "Native PDF URLs must be released on close and navigation.");
 assert(script.includes("const pdfjs = await loadLibrary();"),
   "Desktop PDF.js renderer must remain available unchanged.");
+assert(script.includes("cMapUrl:'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/cmaps/'") &&
+       script.includes("cMapPacked:true") &&
+       script.includes("standardFontDataUrl:'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/standard_fonts/'") &&
+       script.includes("useSystemFonts:true"),
+  "PDF.js must load Adobe CMaps and font fallbacks so preview does not drop CJK glyphs while native saved PDF remains intact.");
+assert(!script.includes("getDocument({data:bytes})"),
+  "Never regress to PDF.js without CJK character-map support.");
 assert(script.includes("window.__aertexOpenCompiledPdf = blob =>"),
   "Compiled historical PDFs should open inside the primary reader");
 assert(script.includes("console.warn('[AERTEX PDF] unable to load document', error);") &&
