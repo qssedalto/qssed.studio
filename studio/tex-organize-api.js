@@ -58,7 +58,7 @@ export async function handleTexOrganize(request, env, userId) {
       return json({error:"Unlock the parent folder first."},423);
     const set = action === "pin-file" ? pinnedFiles : lockedFiles;
     if (body.value === true && !set.includes(name)) set.push(name);
-    if (body.value === false) set.splice(set.indexOf(name), 1);
+    if (body.value === false) { const index=set.indexOf(name); if(index>=0)set.splice(index,1); }
     doc[action === "pin-file" ? "pinned_files" : "locked_files"] = uniqueNames(set);
   } else if (["pin-folder","lock-folder"].includes(action)) {
     if (!folders.has(name)) return json({error:"Folder not found."},404);
