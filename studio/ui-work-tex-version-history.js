@@ -10,7 +10,7 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
     manual: "手动版本",
     restore: "已恢复版本",
     beforeRestore: "恢复前保护",
-    downloadPdf: "下载 PDF",
+    downloadPdf: "编译并下载 PDF",
     downloadTex: "下载 .tex",
     restoreVersion: "恢复此版本",
     restoreConfirm: "恢复这个历史版本？当前版本会先自动保存到历史记录，因此之后仍可恢复回来。",
@@ -32,7 +32,7 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
     manual: "Manual",
     restore: "Restored",
     beforeRestore: "Before restore",
-    downloadPdf: "Download PDF",
+    downloadPdf: "Compile & download PDF",
     downloadTex: "Download .tex",
     restoreVersion: "Restore this version",
     restoreConfirm: "Restore this version? The current state will be protected in history first, so you can return to it later.",
@@ -146,8 +146,28 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
           document.body.append(link);
           link.click();
           link.remove();
-          window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+          window.setTimeout(() => URL.revokeObjectURL(url), 12000);
         };
+
+        // Preserve the generated PDF in the primary preview even when the
+        // independent PDF.js controller is temporarily unavailable.
+        let compiledPreviewUrl = '';
+        function showCompiledPreview(blob) {
+          if (window.__aertexOpenCompiledPdf?.(blob)) return;
+          const frame = document.getElementById('tex-live-preview-frame');
+          if (!frame) return;
+          if (compiledPreviewUrl) URL.revokeObjectURL(compiledPreviewUrl);
+          compiledPreviewUrl = URL.createObjectURL(blob);
+          frame.src = compiledPreviewUrl + '#zoom=page-width';
+          frame.hidden = false;
+          const placeholder = document.getElementById('tex-live-preview-placeholder');
+          if (placeholder) placeholder.hidden = true;
+          const open = document.getElementById('tex-live-preview-open');
+          if (open) { open.href = compiledPreviewUrl; open.hidden = false; }
+        }
+        window.addEventListener('pagehide', () => {
+          if (compiledPreviewUrl) URL.revokeObjectURL(compiledPreviewUrl);
+        }, { once: true });
 
         async function getVersion(documentId, versionId) {
           const data = await api('/api/tex/versions?document=' + encodeURIComponent(documentId) + '&version=' + encodeURIComponent(versionId));
@@ -168,15 +188,22 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
         }
 
         async function compileVersionPdf(version) {
+          const projectFiles = window.__aertexLoadTexCompileFiles;
+          if (typeof projectFiles !== 'function')
+            throw new Error("TeX 工程文件尚未加载，请刷新页面后重试。");
+          const files = await projectFiles(version.document_id);
           let lastError = null;
           for (const base of endpoints) {
             try {
               const healthResponse = await loopbackFetch(base, '/health');
               const health = await healthResponse.json().catch(() => ({}));
               if (!healthResponse.ok || health?.service !== 'qsseda-local-bridge') continue;
+              if (files.length && !health?.capabilities?.includes('tex.project-files')) {
+                throw new Error("本机 Bridge 版本过旧，无法编译包含子文件的 TeX 工程。请从 https://qsseda.com/api/work/bridge/windows 安装新版 Bridge。");
+              }
               const response = await loopbackFetch(base, '/tex/compile', {
                 method: 'POST', accept: 'application/pdf, application/json',
-                body: JSON.stringify({ engine: version.engine, source: version.source, title: version.title })
+                body: JSON.stringify({ engine: version.engine, source: version.source, title: version.title, files })
               });
               if (!response.ok) {
                 const payload = await response.json().catch(() => ({}));
@@ -252,6 +279,7 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
               button.textContent = labels.compiling;
               const full = await getVersion(version.document_id, version.id);
               const pdf = await compileVersionPdf(full);
+              showCompiledPreview(pdf);
               downloadBlob(pdf, safeName(full.title) + '.pdf');
             }));
             actions.append(actionButton(labels.downloadTex, '', async () => {
