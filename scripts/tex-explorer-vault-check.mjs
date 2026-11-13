@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { webcrypto } from "node:crypto";
 import { enhanceWorkTexOrganizeUi } from "../studio/ui-work-tex-organize-ui.js";
+import { enhanceWorkTexCompileToolbar } from "../studio/ui-work-tex-compile-toolbar.js";
 import { handleTexArchive } from "../studio/tex-archive-api.js";
 import { handleTexOrganize } from "../studio/tex-organize-api.js";
 import { handleTexProjectFiles } from "../studio/tex-project-files-api.js";
@@ -92,13 +93,16 @@ assert(!script.includes("tex-v-raw-document") && !script.includes("直接编辑 
   "Do not add duplicate source editors or redundant visual-mode disclaimer labels");
 assert(script.includes("隐藏文档导言区") && script.includes("aria-expanded"),
   "The preamble button must switch between show and hide labels");
-assert(html.includes("grid-template-rows:auto auto minmax(0,1fr) auto!important"),
-  "Editor must allocate a shrinking scroll region and an independent bottom footer");
 assert(html.includes("is-visual-mode.is-asset-mode.is-codemirror-asset"),
   "Visual TeX mode must hide the shared CodeMirror host even for non-main TeX files");
-assert(html.includes("#tex-editor>.tex-editor-footer") &&
-  html.includes("display:flex!important"),
-  "Footer actions must remain visible in visual mode");
+const finalEditor = enhanceWorkTexCompileToolbar(html,true);
+assert(finalEditor.includes("body.os-shell:has(.tex-work-app) .tex-work-app #tex-editor>.tex-editor-footer") &&
+  finalEditor.includes("display:none!important;height:0!important"),
+  "Visual mode must hide the obsolete footer even if an earlier style makes it visible");
+assert(finalEditor.includes("grid-template-rows:auto auto minmax(0,1fr)!important"),
+  "Source and visual editors must consume the freed footer space without overflow");
+assert(finalEditor.includes("titleStack.append(heading,saveState)"),
+  "Visual mode must share the same live save label directly under the project title");
 assert(script.includes("bridge.replaceRange(from,to,next,false)"),
   "Visual edits must use the CodeMirror transaction bridge for realtime and undo");
 assert(script.includes("import('/assets/tex/katex.js')"),
