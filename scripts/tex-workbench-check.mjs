@@ -320,5 +320,40 @@ assert(touchScript.includes("window.__aertexAllowProjectActivation"),"Explicit c
 new Function(touchScript);
 assert(WORK_TEX_EXPLORER_TREE.includes("window.__aertexAllowProjectActivation=true"),"Explicit file click must bypass folder-only mode.");
 assert(entry.includes("enhanceWorkTexMobileFollowup(enhanceWorkTexMobileQa"),"Followup must only be injected on Work TeX.");
+// First-compile onboarding must not mislead mobile users into installing Bridge.
+const { enhanceWorkTexDeviceReadiness } = await import("../studio/ui-work-tex-device-readiness.js");
+const deviceZh = enhanceWorkTexDeviceReadiness('<body><div class="tex-work-app"></div></body>', true);
+const deviceEn = enhanceWorkTexDeviceReadiness('<body><div class="tex-work-app"></div></body>', false);
+const deviceJs = deviceZh.split('<script id="tex-device-readiness-script">')[1]?.split('</script>')[0] || "";
+assert(deviceZh.includes('id="tex-device-readiness-style"') &&
+  deviceJs.includes("root.classList.add('is-tex-mobile')"),
+  "Mobile workbench must suppress local compiler diagnostics.");
+assert(deviceZh.includes("PDF 预览") &&
+  deviceZh.includes("下载 TeX Live（ISO）") &&
+  deviceZh.includes("安装 Windows 连接组件"),
+  "Chinese mobile text and Windows installer actions missing.");
+assert(deviceEn.includes("PDF Preview") &&
+  deviceEn.includes("Download TeX Live (ISO)"),
+  "English fallback must provide equivalent device guidance.");
+assert(deviceJs.includes("qsseda:tex-compiler-probed") &&
+  deviceJs.includes("panel.hidden=Boolean(data.localSupported)"),
+  "Windows installer UI must respond to a completed probe and hide when ready.");
+assert(deviceJs.includes("navigator.maxTouchPoints") &&
+  deviceJs.includes("/Windows NT/i.test(ua)&&!mobile"),
+  "iPadOS desktop user agents and Windows devices must be distinguished.");
+assert(deviceJs.includes("https://qsseda.com/zh-cn/work/local") &&
+  deviceJs.includes("https://qsseda.com/api/work/bridge/windows"),
+  "Setup links must remain on the existing AERTEX main site.");
+assert(deviceZh.includes(".tex-work-app.is-tex-mobile .tex-compiler-card") &&
+  deviceZh.includes(".tex-live-preview-foot>span"),
+  "Mobile redundant Bridge status and refresh-cadence copy must be hidden.");
+new Function(deviceJs);
+const localWorkSource = fs.readFileSync(new URL("../studio/ui-tex-local.js",import.meta.url),"utf8");
+assert(localWorkSource.includes("mobileDevice ? Promise.resolve() : probeLocal()") &&
+  localWorkSource.includes("probesReady = true;") &&
+  localWorkSource.includes("window.__aertexTexCompilerProbe = result;"),
+  "Mobile must skip impossible Bridge probing while Windows sees a settled readiness result.");
+assert(entry.includes("enhanceWorkTexDeviceReadiness(enhanceWorkTexMobileFollowup("),
+  "Device guidance must be scoped to the Work TeX route.");
 console.log("TeX Workbench checks passed.");
 function assert(condition, message) { if (!condition) throw new Error(message); }
