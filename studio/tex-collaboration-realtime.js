@@ -3,6 +3,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
+import { texRealtimeRoomName, texRealtimeEpoch } from "./tex-realtime-epoch.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 
@@ -27,13 +28,23 @@ export async function handleTexCollaborationRealtime(request, env) {
   const access = await resolveDocumentAccess(env, auth.user.id, documentId, session.accessToken);
   if (!access) return withStudioSessionCookies(json({ error: "TeX document not found or collaboration access was removed." }, 404), session.cookies);
 
-  const roomId = env.TEX_COLLAB_ROOMS.idFromName(`${access.owner_id}:${documentId}`);
+  // Historic rooms kept a Yjs snapshot forever, even when a user replaced
+  // main.tex through the authoritative file API. Never reuse that stale room
+  // for a freshly opened project. The epoch lives in R2 custom metadata,
+  // so a handshake needs only HEAD rather than reading a large project file.
+  let documentHead;
+  try { documentHead = await env.STORAGE.head(documentKey(access.owner_id, documentId)); }
+  catch { return withStudioSessionCookies(json({ error: "Could not verify TeX source revision." }, 503), session.cookies); }
+  if (!documentHead) return withStudioSessionCookies(json({ error: "TeX document no longer exists." }, 404), session.cookies);
+  const realtimeEpoch = texRealtimeEpoch(documentHead.customMetadata?.realtimeEpoch);
+  const roomId = env.TEX_COLLAB_ROOMS.idFromName(texRealtimeRoomName(access.owner_id, documentId, realtimeEpoch));
   const room = env.TEX_COLLAB_ROOMS.get(roomId);
   const headers = new Headers();
   headers.set("Upgrade", "websocket");
   headers.set("X-Qsseda-Collab-User", auth.user.id);
   headers.set("X-Qsseda-Collab-Owner", access.owner_id);
   headers.set("X-Qsseda-Collab-Document", documentId);
+  headers.set("X-Qsseda-Collab-Epoch", realtimeEpoch);
   headers.set("X-Qsseda-Collab-Role", access.role);
   headers.set("X-Qsseda-Collab-Link-Grant", access.via_link === true ? "1" : "0");
   headers.set("X-Qsseda-Collab-Username", cleanText(auth.profile?.username, 80));
