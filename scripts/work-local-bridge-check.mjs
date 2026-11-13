@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import vm from "node:vm";
 import { enhanceWorkTexPreviewSession } from "../studio/ui-work-tex-preview-session.js";
+import { enhanceWorkTexDesktopTypography } from "../studio/ui-work-tex-desktop-type.js";
 import { workHubContent, workLocalBridgeContent } from "../studio/ui-work.js";
 import { enhanceWorkLocalBridgeNative } from "../studio/ui-work-native.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
@@ -191,9 +192,17 @@ const cachedPreviewRuntime = previewScriptOffset >= 0
     cachedPreviewMarkup.indexOf('</script>', previewScriptOffset))
   : "";
 assert(cachedPreviewRuntime, "The preview refresh protection script must load");
-assert(cachedPreviewRuntime.includes("if (mobilePreviewClient) void restoreImmediately();"),
-  "Mobile devices must retain a last-PDF fallback when local compilation is unavailable");
+assert(cachedPreviewRuntime.includes("clearPreviewCache();") &&
+  !cachedPreviewRuntime.includes("if (mobilePreviewClient) void restoreImmediately();"),
+  "No browser may resurrect an old PDF automatically before fresh compilation");
 new vm.Script(cachedPreviewRuntime);
+const perfMarkup = enhanceWorkTexDesktopTypography("<section class='tex-work-app'></section>");
+const perfScript = perfMarkup.match(/<script id="qsseda-work-tex-runtime-performance">([\\s\\S]*?)<\\/script>/)?.[1] || "";
+assert(perfScript && !perfScript.includes("cachedPdfResponse(") &&
+  !perfScript.includes("restorePreview(root)") && !perfScript.includes("cachePdfResponse("),
+  "Legacy browser PDF CacheStorage must not intercept Bridge compile or prepaint stale PDF");
+new vm.Script(perfScript);
+
 const oldPdf = new Blob(["%PDF-1.7\\n% previous preview may have missing CJK glyphs"], { type: "application/pdf" });
 const cachedState = {
   __qssedaTexPreviewBlobV2: { version: 2, userId: "same-user", blob: oldPdf,
