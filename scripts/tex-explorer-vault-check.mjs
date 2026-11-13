@@ -107,6 +107,35 @@ assert(script.includes("bridge.replaceRange(from,to,next,false)"),
   "Visual edits must use the CodeMirror transaction bridge for realtime and undo");
 assert(script.includes("import('/assets/tex/katex.js')"),
   "Math formulas must be typeset by a self-hosted MathML renderer");
+
+assert(script.includes("const displayMath=vMathDisplaySource(math)") &&
+  script.includes("b.dataset.mathTex=displayMath") &&
+  script.includes("if(displayMath!==math)b.textContent=vMath(displayMath)"),
+  "KaTeX and its early text fallback must omit equation labels without changing source ranges");
+const mathHelperStart=script.indexOf("  function vMathDisplaySource(");
+const mathHelperEnd=script.indexOf("  function vChip(",mathHelperStart);
+const closeHelperStart=script.indexOf("  function vClose(");
+const closeHelperEnd=script.indexOf("  function vEnvEnd(",closeHelperStart);
+assert(mathHelperStart>0&&mathHelperEnd>mathHelperStart&&closeHelperEnd>closeHelperStart,
+  "Visual math source sanitizer must have a balanced-label parser");
+const sanitizeMath=new Function(
+  script.slice(closeHelperStart,closeHelperEnd)+script.slice(mathHelperStart,mathHelperEnd)+
+  "\nreturn vMathDisplaySource;"
+)();
+const labelledEquation="\\label{eq:finite-difference}\\frac{\\partial J}{\\partial \\beta_j}";
+assert.equal(sanitizeMath(labelledEquation),"\\frac{\\partial J}{\\partial \\beta_j}",
+  "Cross-reference label must not be printed as a red TeX command");
+assert.equal(sanitizeMath("\\label{a}\\alpha \\label {b}\\beta"),"\\alpha \\beta",
+  "Multiple labels and label-space-brace forms must be hidden");
+assert.equal(sanitizeMath("x+\\label{eq:{nested}}y"),"x+y",
+  "Nested braces must not leak label content into preview");
+assert.equal(sanitizeMath("a\\notag b\\nonumber"),"a b",
+  "AMS no-number metadata must not appear in typeset math");
+assert.equal(sanitizeMath("x+\\label{unfinished"),"x+\\label{unfinished",
+  "Malformed labels must remain visible/editable instead of silently disappearing");
+assert(labelledEquation.includes("\\label{eq:finite-difference}"),
+  "Sanitization must never mutate the original TeX source");
+
 const parserStart=script.indexOf("  function vClose("),parserEnd=script.indexOf("  function vChip(",parserStart);
 assert(parserStart>=0&&parserEnd>parserStart,"Visual parser must be present");
 const parseVisual=new Function("maxVisualBlocks",
