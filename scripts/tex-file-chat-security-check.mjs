@@ -125,6 +125,34 @@ assert.equal(multiple.body.mode,"get");
 assert.equal(multiple.body.public_key.allowCredentials.length,2);
 assert.equal((await send("messages",{token:latestToken})).status,200,
   "Registering a second device must not invalidate another device grant");
+// A credential from another project must not authenticate this room,
+// even when it signs the current challenge correctly.
+const wrongProjectKey=await crypto.subtle.generateKey(
+  {name:"ECDSA",namedCurve:"P-256"},true,["sign","verify"]);
+const wrongProjectCredentialId=b64(crypto.getRandomValues(new Uint8Array(32)));
+const wrongProjectChallenge=await send("begin");
+assert.equal(wrongProjectChallenge.body.mode,"get");
+assert(!wrongProjectChallenge.body.public_key.allowCredentials
+  .some(item=>item.id===wrongProjectCredentialId),
+  "The browser may only request credentials enrolled for this project");
+const wrongProjectClient=b64(enc.encode(JSON.stringify({
+  type:"webauthn.get",challenge:wrongProjectChallenge.body.public_key.challenge,
+  origin:"https://work.qsseda.com",crossOrigin:false
+})));
+const wrongProjectSignature=b64(new Uint8Array(await crypto.subtle.sign(
+  {name:"ECDSA",hash:"SHA-256"},wrongProjectKey.privateKey,
+  concat(authenticatorData,await crypto.subtle.digest("SHA-256",unb64(wrongProjectClient))))));
+const wrongProjectAttempt=await send("verify",{
+  challenge_id:wrongProjectChallenge.body.challenge_id,
+  credential:{id:wrongProjectCredentialId,rawId:wrongProjectCredentialId,
+    type:"public-key",response:{clientDataJSON:wrongProjectClient,
+      authenticatorData:b64(authenticatorData),signature:wrongProjectSignature}}
+});
+assert.equal(wrongProjectAttempt.status,403,
+  "A validly signed but foreign project Passkey must never unlock this project");
+assert(!wrongProjectAttempt.body.token,
+  "Rejecting a foreign project credential must never issue a chat token");
+
 const invalidSignature={...assertion,response:{...assertion.response,signature:b64(new Uint8Array(64))}};
 const third=await send("begin");
 assert.equal((await send("verify",{challenge_id:third.body.challenge_id,credential:invalidSignature})).status,403,
