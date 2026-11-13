@@ -188,7 +188,7 @@ for (const zh of [true, false]) {
   assert(workMarkup.includes("openingDocument(id)") && workMarkup.includes("fastDocument(id)"), "Document selection must show immediate feedback and reuse prefetches.");
   assert(workMarkup.includes("void loadRuns();"), "Document detail must appear before run history fetch finishes.");
   assert(workMarkup.includes("window.addEventListener('qsseda:tex-local-recheck'"), "Local TeX must support in-place connection recovery.");
-  assert(workMarkup.includes("localCopy.previewSelectDocument"), "No document selected must not be mislabeled an unsupported engine.");
+  assert(workMarkup.includes("const supported = selected && supportsCurrentEngine()") && workMarkup.includes("setPreviewStatus(\'idle\', localCopy.previewNever)"), "No document selected must not be mislabeled an unsupported engine.");
   assert(workNavigationUi.includes("detail: { host: local.host, engines: local.engines }"), "Bridge connection checker must share the verified local endpoint with preview.");
   assert(workMarkup.includes("localEngines = engines") && workMarkup.includes("localBase = base"), "Preview adapter must accept the verified Bridge engines without a redundant failing probe.");
 
