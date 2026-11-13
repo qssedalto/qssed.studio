@@ -20,7 +20,7 @@ const storage={
   async put(k,content,options){
     assert.equal(options.customMetadata.kind,"tex-document");
     const doc=JSON.parse(content);
-    assert.equal(Number(options.customMetadata.fileCount),doc.files.length+1);
+    assert.equal(Number(options.customMetadata.fileCount),doc.files.length+(doc.main_deleted?0:1));
     objects.set(k,doc);
   }
 };
@@ -70,8 +70,22 @@ const renamed=await invoke({document_id:id,operation:"rename",name:"chapter1.tex
 assert.equal(renamed.status,200,"Renaming a supplementary file must succeed.");
 assert(objects.get(key).files.some(f=>f.name==="chapters/chapter1.tex"),"Renamed file must persist under its nested folder.");
 assert.equal(objects.get(key).files.find(f=>f.name==="chapters/chapter1.tex").content,"\\\\section{Updated}","Rename must not discard file contents.");
-const protectedMain=await invoke({document_id:id,operation:"delete",name:"main.tex"});
-assert.equal(protectedMain.status,400,"Required main.tex entry point must not be removable.");
+const renamedMain=await invoke({document_id:id,operation:"rename",name:"main.tex",new_name:"entry.tex"});
+assert.equal(renamedMain.status,200,"The root TeX file must be renameable.");
+assert.equal(renamedMain.body.document.main_filename,"entry.tex");
+assert.equal(renamedMain.body.document.source,original.source,"Renaming the root entry must not lose its source.");
+const collidingMain=await invoke({document_id:id,operation:"rename",name:"entry.tex",new_name:"sample.bib"});
+assert.equal(collidingMain.status,409,"The root TeX entry must keep its extension and avoid duplicate names.");
+const removedMain=await invoke({document_id:id,operation:"delete",name:"entry.tex"});
+assert.equal(removedMain.status,200,"Deleting the root entry must not delete the entire project.");
+assert.equal(objects.get(key).main_deleted,true);
+assert.equal(objects.get(key).source,"","Deleting the root entry must remove its content.");
+assert.equal(objects.get(key).files.length,4,"Root deletion must preserve supporting files.");
+const restoredMain=await invoke({document_id:id,files:[file("main.tex",original.source)]});
+assert.equal(restoredMain.status,200,"A root TeX entry can be created again after deletion.");
+assert.equal(objects.get(key).main_deleted,false);
+assert.equal(objects.get(key).main_filename,"main.tex");
+assert.equal(objects.get(key).source,original.source);
 const invalidRename=await invoke({document_id:id,operation:"rename",name:"chapters/chapter1.tex",new_name:"../unsafe.tex"});
 assert.equal(invalidRename.status,409,"Rename must reject unsafe paths.");
 const removed=await invoke({document_id:id,operation:"delete",name:"chapters/chapter1.tex"});
