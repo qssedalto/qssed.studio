@@ -42,7 +42,7 @@ Source: "..\dist\AERTEX-Bridge.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\AERTEX-Bridge-Control.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; Also extract the controller before Files installation so we can safely
 ; stop a previous installed daemon before replacing its executable.
-Source: "..\dist\AERTEX-Bridge-Control.exe"; Flags: dontcopy
+Source: "..\dist\AERTEX-Bridge-Control.exe"; DestDir: "{tmp}"; Flags: dontcopy
 
 [Registry]
 ; Required for every install. The native engine starts at each Windows user
@@ -86,7 +86,7 @@ begin
     Helper := ExpandConstant('{app}\AERTEX-Bridge-Control.exe');
     Engine := ExpandConstant('{app}\AERTEX-Bridge.exe');
 
-    ;Remove the outdated uninstall record created by the old portable/self-installing EXE.
+    // Remove the outdated uninstall record created by the old portable/self-installing EXE.
     RegDeleteKeyIncludingSubkeys(HKCU,
       'Software\Microsoft\Windows\CurrentVersion\Uninstall\QssedALocalBridge');
 
