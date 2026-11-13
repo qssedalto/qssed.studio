@@ -194,8 +194,8 @@ async function send(storage,a,body){
     iv:body.iv,ct:body.ct};
   if(body.v===3){
     const from=String(body.from_device||"");
-    if(!UUID.test(from)||!await storage.get(key(a.project,"device",a.user+":"+from)))
-      return bad("Authenticated sender encryption device required",403);
+    const sender=UUID.test(from)?await storage.get(key(a.project,"device",a.user+":"+from)):null;
+    if(!sender)return bad("Authenticated sender encryption device required",403);
     const list=await storage.list({prefix:key(a.project,"device")+":"});
     const accepted=[...list.values()].filter(d=>a.members.includes(d.user));
     const recipients=body.envelopes;
@@ -210,6 +210,7 @@ async function send(storage,a,body){
     }
     if(mustCover.size)return bad("Missing encrypted recipient",409);
     record.v=3;record.from_device=from;
+    record.sender_public={x:sender.x,y:sender.y};
     record.envelopes=recipients.map(e=>({
       to_user:e.to_user,to_device:e.to_device,iv:e.iv,ct:e.ct
     }));
@@ -234,7 +235,7 @@ async function messages(storage,a,body){
     // device; legacy room history is still stored but not silently rekeyed.
     const mine=(msg.envelopes||[]).find(e=>e.to_user===a.user&&e.to_device===id);
     return {id:msg.id,at:msg.at,user_id:msg.user_id,sender_name:msg.sender_name,
-      v:3,from_device:msg.from_device,iv:msg.iv,ct:msg.ct,
+      v:3,from_device:msg.from_device,sender_public:msg.sender_public,iv:msg.iv,ct:msg.ct,
       envelope:mine?{iv:mine.iv,ct:mine.ct}:null};
   });
   return res({messages:records});
