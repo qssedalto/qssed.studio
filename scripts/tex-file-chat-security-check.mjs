@@ -96,6 +96,8 @@ const assertion={type:"public-key",id:credId,rawId:credId,
   response:{clientDataJSON:clientGet,authenticatorData:b64(authenticatorData),signature:b64(signature)}};
 const relogin=await send("verify",{challenge_id:next.body.challenge_id,credential:assertion});
 assert.equal(relogin.status,200,JSON.stringify(relogin.body));
+assert.equal((await send("messages",{token})).status,401,"Old grant must be revoked when the same file is Passkey-verified again");
+const latestToken=relogin.body.token;
 const invalidSignature={...assertion,response:{...assertion.response,signature:b64(new Uint8Array(64))}};
 const third=await send("begin");
 assert.equal((await send("verify",{challenge_id:third.body.challenge_id,credential:invalidSignature})).status,403,
@@ -110,31 +112,31 @@ assert.equal((await send("verify",{challenge_id:changedOrigin.body.challenge_id,
 const idDevice="22222222-2222-4222-8222-222222222222";
 const ecdh=await crypto.subtle.generateKey({name:"ECDH",namedCurve:"P-256"},true,["deriveBits"]);
 const jwk=await crypto.subtle.exportKey("jwk",ecdh.publicKey);
-assert.equal((await send("device",{token,device_id:idDevice,x:jwk.x,y:jwk.y})).status,200);
+assert.equal((await send("device",{token:latestToken,device_id:idDevice,x:jwk.x,y:jwk.y})).status,200);
 const alternate=await crypto.subtle.generateKey({name:"ECDH",namedCurve:"P-256"},true,["deriveBits"]);
 const alternateJwk=await crypto.subtle.exportKey("jwk",alternate.publicKey);
-assert.equal((await send("device",{token,device_id:idDevice,x:alternateJwk.x,y:alternateJwk.y})).status,409,
+assert.equal((await send("device",{token:latestToken,device_id:idDevice,x:alternateJwk.x,y:alternateJwk.y})).status,409,
   "Previously pinned device public keys cannot be silently replaced");
-let listed=await send("devices",{token});assert.equal(listed.body.devices.length,1);
+let listed=await send("devices",{token:latestToken});assert.equal(listed.body.devices.length,1);
 assert.equal(listed.body.initialized,false);
-assert.equal((await send("envelope-put",{token,to_user:owner,to_device:idDevice,from_device:idDevice,
+assert.equal((await send("envelope-put",{token:latestToken,to_user:owner,to_device:idDevice,from_device:idDevice,
   iv:b64(new Uint8Array(12)),ct:b64(new Uint8Array(48))})).status,200);
-assert.equal((await send("envelope-get",{token,device_id:idDevice})).body.ready,true);
-listed=await send("devices",{token});
+assert.equal((await send("envelope-get",{token:latestToken,device_id:idDevice})).body.ready,true);
+listed=await send("devices",{token:latestToken});
 assert.equal(listed.body.initialized,true);
 assert.equal(listed.body.devices[0].ready,true);
-assert.equal((await send("envelope-put",{token,to_user:owner,to_device:idDevice,from_device:idDevice,
+assert.equal((await send("envelope-put",{token:latestToken,to_user:owner,to_device:idDevice,from_device:idDevice,
   iv:b64(new Uint8Array(12)),ct:b64(new Uint8Array(48))})).status,409);
 
 const aes=await crypto.subtle.generateKey({name:"AES-GCM",length:256},true,["encrypt","decrypt"]);
 const msgId=crypto.randomUUID(),iv=crypto.getRandomValues(new Uint8Array(12));
 const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},aes,enc.encode("Hello E2EE"));
-assert.equal((await send("send",{token,message_id:msgId,iv:b64(iv),ct:b64(ct)})).status,200);
-assert.equal((await send("send",{token,message_id:crypto.randomUUID(),text:"PLAINTEXT"})).status,422);
-const history=await send("messages",{token});assert.equal(history.body.messages.length,1);
+assert.equal((await send("send",{token:latestToken,message_id:msgId,iv:b64(iv),ct:b64(ct)})).status,200);
+assert.equal((await send("send",{token:latestToken,message_id:crypto.randomUUID(),text:"PLAINTEXT"})).status,422);
+const history=await send("messages",{token:latestToken});assert.equal(history.body.messages.length,1);
 assert.equal(history.body.messages[0].text,undefined);
 assert.equal(history.body.messages[0].ct,b64(ct));
-assert.equal((await send("devices",{token},auth(file,"viewer"))).status,403,
+assert.equal((await send("devices",{token:latestToken},auth(file,"viewer"))).status,403,
   "Only project owners can send room key envelopes");
 
 const markup=enhanceWorkTexFileChat("",true);
