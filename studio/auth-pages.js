@@ -347,7 +347,12 @@ export function signUpPage(t, links, ipInfo) {
     showPassword: "显示密码",
     hidePassword: "隐藏密码",
     creating: "正在创建账户…",
-    avatarFailed: "账户已创建，但头像保存失败，你可以稍后重新设置。"
+    avatarFailed: "账户已创建，但头像保存失败，你可以稍后重新设置。",
+    signupCompletedTitle: "注册申请已提交",
+    signupCompletedHelp: "请按照页面提示等待账号审核。无需重复注册，也不要更换用户名。",
+    signupUncertainTitle: "正在确认注册结果",
+    signupUncertainHelp: "服务器未能确认本次提交的结果。账户可能已经创建，请勿重复提交。请先检查邮箱，或尝试使用刚才填写的邮箱登录。",
+    goToLogin: "前往登录"
   } : {
     usernameHelp: "Your username must be unique and cannot contain Tianguo, admin, administrator, or any case variation that includes admin.",
     usernameChecking: "Checking username…",
@@ -386,7 +391,12 @@ export function signUpPage(t, links, ipInfo) {
     showPassword: "Show password",
     hidePassword: "Hide password",
     creating: "Creating account…",
-    avatarFailed: "Your account was created, but the profile photo could not be saved. You can set it later."
+    avatarFailed: "Your account was created, but the profile photo could not be saved. You can set it later.",
+    signupCompletedTitle: "Registration request submitted",
+    signupCompletedHelp: "Please follow the instructions and await account review. There is no need to register again or change your username.",
+    signupUncertainTitle: "Registration status not yet confirmed",
+    signupUncertainHelp: "The server could not confirm whether this submission succeeded. Your account may already exist. Do not submit again; check your inbox or try signing in with the same email.",
+    goToLogin: "Go to sign in"
   };
 
   return `
@@ -398,6 +408,10 @@ export function signUpPage(t, links, ipInfo) {
     .signup-help{display:block;margin:6px 0 2px;color:var(--quiet);font-size:13px;line-height:1.55}
     .signup-status{min-height:22px;margin-top:8px;font-size:13px;color:var(--muted)}
     .signup-status.is-good{color:#2f9b63}.signup-status.is-bad{color:var(--danger)}
+    .signup-complete{padding:12px 0 8px;text-align:center}
+    .signup-complete h2{font-size:clamp(24px,5vw,32px);font-weight:750;line-height:1.25;margin:8px 0 12px;color:var(--text)}
+    .signup-complete p{font-size:15px;line-height:1.65;color:var(--muted);margin:8px 0}
+    .signup-complete .completion-icon{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);font-size:27px;font-weight:700}
     .signup-input-shell{position:relative;margin-top:12px}
     .signup-input-shell input{margin-top:0;padding-right:50px}
     .signup-validity{position:absolute;right:15px;top:50%;display:grid;place-items:center;width:24px;height:24px;transform:translateY(-50%);font-size:19px;font-weight:900;line-height:1;opacity:0;pointer-events:none;transition:opacity .15s ease,color .15s ease,transform .15s ease}
@@ -689,9 +703,15 @@ export function signUpPage(t, links, ipInfo) {
       <button id="create-account-btn" disabled>${t.getStarted}</button>
     </div>
 
-    <div id="message"></div>
+    <div id="signup-complete" class="signup-complete" style="display:none;" role="status" aria-live="polite" tabindex="-1">
+      <span class="completion-icon" aria-hidden="true">✓</span>
+      <h2 id="signup-complete-title">${copy.signupCompletedTitle}</h2>
+      <p id="signup-complete-description">${copy.signupCompletedHelp}</p>
+      <p id="signup-complete-detail"></p>
+    </div>
+    <div id="message" role="alert"></div>
     <div id="post-signup-actions" style="display:none;">
-      <a class="button secondary" href="${links.login}">${t.alreadyHaveAccount}</a>
+      <a class="button secondary" href="${links.login}">${copy.goToLogin}</a>
     </div>
   </div>
 
@@ -715,6 +735,9 @@ export function signUpPage(t, links, ipInfo) {
     let usernameCheckTimer = 0;
     let usernameCheckSequence = 0;
     let usernameIsAvailable = false;
+    // Submission state cannot be reverted by typing, blur, or validation updates.
+    // A successful POST creates an account; never allow an accidental second POST.
+    let registrationPhase = "editing"; // editing | submitting | completed | uncertain
 
     const message = document.getElementById("message");
     const postSignupActions = document.getElementById("post-signup-actions");
@@ -726,6 +749,25 @@ export function signUpPage(t, links, ipInfo) {
       document.getElementById(id).style.display = "block";
       message.innerText = "";
       postSignupActions.style.display = "none";
+      document.getElementById("signup-complete").style.display = "none";
+    }
+
+    function showRegistrationResult(kind, detail = "") {
+      ["step-username","step-name","step-avatar","step-birthday","step-gender","step-email","step-password"].forEach(step => {
+        document.getElementById(step).style.display = "none";
+      });
+      const uncertain = kind === "uncertain";
+      const panel = document.getElementById("signup-complete");
+      document.getElementById("signup-complete-title").textContent = uncertain
+        ? ${JSON.stringify(copy.signupUncertainTitle)} : ${JSON.stringify(copy.signupCompletedTitle)};
+      document.getElementById("signup-complete-description").textContent = uncertain
+        ? ${JSON.stringify(copy.signupUncertainHelp)} : ${JSON.stringify(copy.signupCompletedHelp)};
+      document.getElementById("signup-complete-detail").textContent = detail;
+      panel.querySelector(".completion-icon").textContent = uncertain ? "…" : "✓";
+      panel.style.display = "block";
+      postSignupActions.style.display = "block";
+      message.textContent = "";
+      panel.focus({ preventScroll: true });
     }
 
     function setButtonState(button, enabled) {
@@ -1089,7 +1131,7 @@ export function signUpPage(t, links, ipInfo) {
       passwordMeterFill.style.width = percent + "%";
       passwordMeterFill.style.background = percent === 100 ? "#2f9b63" : percent >= 60 ? "#d99a2b" : "var(--danger)";
       Object.entries(checks).forEach(([key, met]) => passwordRuleEls[key].classList.toggle("is-met", met));
-      setButtonState(createAccountBtn, percent === 100 && passwordConfirmationValid);
+      setButtonState(createAccountBtn, registrationPhase === "editing" && document.getElementById("step-password").style.display !== "none" && percent === 100 && passwordConfirmationValid);
     }
 
     passwordInput.addEventListener("input", () => {
@@ -1125,12 +1167,16 @@ export function signUpPage(t, links, ipInfo) {
     });
 
     createAccountBtn.addEventListener("click", async () => {
+      // Lock before the first await. iPadOS keyboard blur and password strength
+      // updates can fire while fetch is pending, but must not re-enable submit.
+      if (registrationPhase !== "editing") return;
       updatePasswordStrength();
       if (createAccountBtn.disabled) return;
-
+      registrationPhase = "submitting";
       const originalLabel = createAccountBtn.textContent;
-      createAccountBtn.disabled = true;
+      setButtonState(createAccountBtn, false);
       createAccountBtn.textContent = ${JSON.stringify(copy.creating)};
+      createAccountBtn.setAttribute("aria-busy", "true");
       message.textContent = "";
 
       const form = new FormData();
@@ -1147,9 +1193,19 @@ export function signUpPage(t, links, ipInfo) {
       if (avatarFile) form.set("avatar", avatarFile, avatarFile.name);
 
       try {
-        const response = await fetch("/api/auth/signup", { method: "POST", body: form });
-        const payload = await response.json().catch(() => ({}));
+        const response = await fetch("/api/auth/signup", {
+          method: "POST", body: form, credentials: "same-origin", cache: "no-store"
+        });
+        const payload = await response.json().catch(() => null);
         if (!response.ok) {
+          // 5xx / 429 can be sent after Supabase created the account. Treat
+          // this as unknown, not as permission to send the same POST again.
+          if (response.status >= 500 || response.status === 429) {
+            registrationPhase = "uncertain";
+            showRegistrationResult("uncertain");
+            return;
+          }
+          registrationPhase = "editing";
           if (payload?.field === "username") {
             showStep("step-username");
             setStatus(usernameStatus, usernameMessage(payload?.error || "username_taken"), "is-bad");
@@ -1162,15 +1218,27 @@ export function signUpPage(t, links, ipInfo) {
           return;
         }
 
-        const randomEmail = adminEmails[Math.floor(Math.random() * adminEmails.length)];
-        message.textContent = ${JSON.stringify(t.adminApprovalMessage + " ")} + randomEmail;
-        if (payload?.avatar_status === "failed") {
-          message.textContent += " " + ${JSON.stringify(copy.avatarFailed)};
+        if (payload?.success !== true) {
+          registrationPhase = "uncertain";
+          showRegistrationResult("uncertain");
+          return;
         }
-        postSignupActions.style.display = "block";
+        registrationPhase = "completed";
+        const randomEmail = adminEmails[Math.floor(Math.random() * adminEmails.length)];
+        const detail = ${JSON.stringify(t.adminApprovalMessage + " ")} + randomEmail +
+          (payload?.avatar_status === "failed" ? " " + ${JSON.stringify(copy.avatarFailed)} : "");
+        showRegistrationResult("success", detail);
+      } catch {
+        // A dropped response does not mean signup failed. Do not redirect back
+        // to username availability or submit again on an unknown outcome.
+        registrationPhase = "uncertain";
+        showRegistrationResult("uncertain");
       } finally {
-        createAccountBtn.textContent = originalLabel;
-        updatePasswordStrength();
+        createAccountBtn.removeAttribute("aria-busy");
+        if (registrationPhase === "editing") {
+          createAccountBtn.textContent = originalLabel;
+          updatePasswordStrength();
+        }
       }
     });
 
