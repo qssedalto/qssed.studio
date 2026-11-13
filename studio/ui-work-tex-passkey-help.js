@@ -13,7 +13,7 @@ export function enhanceWorkTexPasskeyHelp(markup, zh) {
     {
       number: "02",
       title: t("在 Windows 安全中心点击「选择其他通行密钥」", "In Windows Security, select “Choose another passkey”"),
-      detail: t("默认显示的通行密钥不一定属于当前项目；不要直接选择不确定的项目密钥。", "The default passkey may belong to another project. Do not select a key you cannot identify."),
+      detail: t("默认显示的通行密钥不一定属于当前项目；不要直接选择不确定的项目密钥。旧版本创建的密钥可能仍显示「独立文件聊天」，不代表它在项目之间通用。", "The default passkey may belong to another project. Do not select a key you cannot identify."),
       image: PASSKEY_GUIDE_SCREENSHOTS.windows,
       alt: t("Windows 安全中心的「选择其他通行密钥」操作", "Windows Security passkey dialog showing Choose another passkey")
     },
