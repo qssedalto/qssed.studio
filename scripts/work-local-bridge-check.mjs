@@ -62,6 +62,17 @@ assert(enNativeLocal.includes('id="work-native-texlive-guide" href="https://qsse
 assert(!zhNativeLocal.includes('class="work-panel"') && !enNativeLocal.includes('class="work-panel"'), "Native Bridge must not render the deleted capabilities/privacy cards");
 assert(zhNativeLocal.includes("安装前必读：组件使用指南") && zhNativeLocal.includes('id="work-bridge-upgrade-note"'), "Windows setup FAQ and obsolete-version warning must remain available after cards are removed");
 assert(zhNativeLocal.includes("window.setTimeout(() => void probe(), 260)"), "Work page should probe localhost automatically on load");
+assert(zhNativeLocal.includes('id="work-mobile-local-note"') &&
+  zhNativeLocal.includes("work-native-mobile-copy-script") &&
+  zhNativeLocal.includes("work.qsseda.com/"),
+  "Mobile visitors to Work/local need a useful TeX redirect rather than a dead Bridge dashboard.");
+assert(zhNativeLocal.includes("is-mobile-local #work-local-status-card") &&
+  zhNativeLocal.includes("is-mobile-local #work-local-connect"),
+  "Mobile Work/local must hide unavailable desktop connection diagnostics.");
+assert(zhNativeLocal.includes('if (!(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent') &&
+  zhNativeLocal.includes("window.setTimeout(() => void probe(), 260)"),
+  "Local Bridge should auto-probe on Windows, not ask iPadOS for an unavailable service.");
+
 
 for (const required of [
   "http://127.0.0.1:32145",
