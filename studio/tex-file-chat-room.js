@@ -1,7 +1,7 @@
 import { randomKey, hashText, verifyRegistration, verifyAssertion } from "./tex-file-chat-webauthn.js";
 // Durable Object receives authority context ONLY from verified Work Worker.
 // Store ciphertext and wrapped AES keys, never message text or raw room keys.
-const BASE="filechat:v1:",CHALLENGE_MS=120000,LEASE_MS=600000;
+const BASE="filechat:v1:",CHALLENGE_MS=120000,LEASE_MS=600000,GRANT_LIMIT=12,MAX_PASSKEYS=5;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const HASH=/^[A-Za-z0-9_-]{43}$/;
 const res=(body,status=200)=>Response.json(body,{status,headers:{"cache-control":"no-store","x-content-type-options":"nosniff"}});
@@ -23,25 +23,46 @@ function authority(request){
 }
 async function tokenOK(storage,a,token){
   if(!HASH.test(String(token||"")))return false;
-  const hashed=await hashText(token),record=await storage.get(key(a.file,"grant",a.user));
-  // Only the most recently Passkey-verified in-memory grant is accepted;
-  // do not accumulate historic bearer hashes in Durable Object storage.
-  return !!record&&record.digest===hashed&&record.expires>Date.now()&&record.user===a.user;
+  const digest=await hashText(token);
+  const k=key(a.file,"grant",a.user+":"+digest),record=await storage.get(k);
+  if(!record)return false;
+  if(record.user!==a.user||record.digest!==digest||record.expires<=Date.now()){
+    await storage.delete(k);return false;
+  }
+  return true;
 }
-async function begin(storage,a){
-  const existing=await storage.get(key(a.file,"credential",a.user));
-  const mode=existing?"get":"create",challenge=randomKey(),id=crypto.randomUUID();
-  await storage.put(key(a.file,"challenge",a.user),{mode,challenge,id,created:Date.now(),origin:a.origin,rp:a.rp});
-  const publicKey=mode==="create"?{
+async function credentialsFor(storage,a){
+  const result=[];
+  const legacyKey=key(a.file,"credential",a.user),legacy=await storage.get(legacyKey);
+  if(legacy)result.push({key:legacyKey,record:legacy});
+  const extras=await storage.list({prefix:key(a.file,"credential-extra",a.user)+":"});
+  for(const [k,record] of extras)result.push({key:k,record});
+  return result;
+}
+async function begin(storage,a,body={}){
+  const existing=await credentialsFor(storage,a);
+  const enroll=body.action==="enroll-device";
+  if(enroll){
+    if(!existing.length||!await tokenOK(storage,a,body.token))
+      return bad("Verify an existing file Passkey before adding a new device",401);
+    if(existing.length>=MAX_PASSKEYS)return bad("Five Passkeys limit reached for this file",429);
+  }
+  const mode=enroll?"create-add":existing.length?"get":"create";
+  const challenge=randomKey(),id=crypto.randomUUID();
+  await storage.put(key(a.file,"challenge",a.user),
+    {mode,challenge,id,created:Date.now(),origin:a.origin,rp:a.rp});
+  const publicKey=mode!=="get"?{
     rp:{id:a.rp,name:"AERTEX Work 文件协作聊天"},
     user:{id:(await hashText("filechat:"+a.file+":"+a.user)).slice(0,43),
       name:a.user.slice(0,8)+"-"+a.file.slice(0,9),displayName:"AERTEX · 独立文件聊天"},
     challenge,pubKeyCredParams:[{type:"public-key",alg:-7}],
     timeout:90000,attestation:"none",
-    authenticatorSelection:{residentKey:"required",requireResidentKey:true,userVerification:"required"}
+    authenticatorSelection:{residentKey:"required",requireResidentKey:true,userVerification:"required"},
+    excludeCredentials:mode==="create-add"?
+      existing.map(x=>({id:x.record.id,type:"public-key"})):[]
   }:{
     challenge,rpId:a.rp,timeout:90000,userVerification:"required",
-    allowCredentials:[{id:existing.id,type:"public-key"}]
+    allowCredentials:existing.map(x=>({id:x.record.id,type:"public-key"}))
   };
   return res({mode,challenge_id:id,public_key:publicKey});
 }
@@ -56,22 +77,41 @@ async function verify(state,a,body){
       pending.origin!==a.origin||pending.rp!==a.rp)return bad("WebAuthn challenge expired or reused",403);
   const credentialKey=key(a.file,"credential",a.user);
   try{
-    if(pending.mode==="create"){
-      if(await storage.get(credentialKey))return bad("This file already has a Passkey",409);
+    const registered=await credentialsFor(storage,a);
+    if(pending.mode==="create"||pending.mode==="create-add"){
+      if(pending.mode==="create"&&registered.length)return bad("This file already has a Passkey",409);
+      if(pending.mode==="create-add"){
+        if(!await tokenOK(storage,a,body.token))
+          return bad("Existing file Passkey authorization is required",401);
+        if(!registered.length||registered.length>=MAX_PASSKEYS)
+          return bad("No existing Passkey or Passkey device limit reached",409);
+      }
       const record=await verifyRegistration(body.credential,pending.challenge,a.origin,a.rp);
-      await storage.put(credentialKey,{...record,rp:a.rp,created:Date.now()});
-    }else{
-      const record=await storage.get(credentialKey);
-      if(!record||record.rp!==a.rp)return bad("File Passkey not found",403);
-      const checked=await verifyAssertion(body.credential,pending.challenge,a.origin,a.rp,record);
-      await storage.put(credentialKey,{...record,...checked});
-    }
+      if(registered.some(x=>x.record.id===record.id))
+        return bad("Passkey already registered for this file",409);
+      const k=pending.mode==="create"?credentialKey:
+        key(a.file,"credential-extra",a.user+":"+await hashText(record.id));
+      await storage.put(k,{...record,rp:a.rp,created:Date.now()});
+    }else if(pending.mode==="get"){
+      const selected=registered.find(x=>x.record.id===body.credential?.rawId);
+      if(!selected||selected.record.rp!==a.rp)return bad("File Passkey not found",403);
+      const checked=await verifyAssertion(body.credential,pending.challenge,a.origin,a.rp,selected.record);
+      await storage.put(selected.key,{...selected.record,...checked});
+    }else return bad("Unsupported Passkey operation",400);
   }catch{return bad("File Passkey verification failed",403)}
-  const token=randomKey();
-  await storage.put(key(a.file,"grant",a.user),{
-    user:a.user,digest:await hashText(token),expires:Date.now()+LEASE_MS
-  });
+  const token=randomKey(),digest=await hashText(token),now=Date.now();
+  const prefix=key(a.file,"grant",a.user)+":";
+  const grants=await storage.list({prefix});
+  const live=[];
+  for(const [k,v] of grants){
+    if(v.expires<=now)await storage.delete(k);
+    else live.push([k,v]);
+  }
+  live.sort((x,y)=>x[1].created-y[1].created);
+  for(let i=0;i<=live.length-GRANT_LIMIT;i++)await storage.delete(live[i][0]);
+  await storage.put(prefix+digest,{user:a.user,digest,created:now,expires:now+LEASE_MS});
   return res({verified:true,token,expires_in:Math.floor(LEASE_MS/1000),
+    new_credential:pending.mode!=="get",
     owner_id:a.owner,user_id:a.user,role:a.role});
 }
 async function device(storage,a,body){
@@ -161,9 +201,11 @@ export async function handleTexFileChatRoom(state,request){
     if(!body||typeof body!=="object"||Array.isArray(body))throw Error("bad request");
   }catch{return bad("Invalid or oversized request",400)}
   const storage=state.storage;
-  if(body.op==="status")return res({registered:!!await storage.get(key(a.file,"credential",a.user)),
-    user_id:a.user,owner_id:a.owner,role:a.role,rp_id:a.rp});
-  if(body.op==="begin")return begin(storage,a);
+  if(body.op==="status"){const registered=await credentialsFor(storage,a);
+    return res({registered:registered.length>0,passkey_count:registered.length,
+      user_id:a.user,owner_id:a.owner,role:a.role,rp_id:a.rp});
+  }
+  if(body.op==="begin")return begin(storage,a,body);
   if(body.op==="verify")return verify(state,a,body);
   if(!await tokenOK(storage,a,body.token))return bad("Passkey verification required for this file",401);
   if(body.op==="device")return device(storage,a,body);
