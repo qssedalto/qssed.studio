@@ -27,17 +27,17 @@ export function enhanceWorkTexRealtime(markup, zh) {
 
   return String(markup || "") + `
     <style id="qsseda-work-tex-realtime-style">
-      .tex-work-app .tex-realtime-status{
-        display:none;align-items:center;gap:6px;margin-left:auto;padding:4px 8px;border-radius:999px;
-        background:var(--fill);color:var(--muted);font-size:9px;font-weight:700;white-space:nowrap;
+      /* Keep only the collaboration button's always-reserved status dot. */
+      .tex-work-app #tex-realtime-status{display:none!important}
+      .tex-work-app .tex-collaboration-button::after{
+        content:"";display:block;flex:0 0 8px;width:8px;height:8px;
+        margin:0 1px 0 0;border-radius:50%;background:var(--quiet);
+        box-shadow:none;transition:background-color .2s ease,box-shadow .2s ease;
       }
-      .tex-work-app .tex-realtime-status.is-visible{display:flex}
-      .tex-work-app .tex-realtime-status i{width:6px;height:6px;border-radius:50%;background:var(--quiet)}
-      .tex-work-app .tex-realtime-status.is-live{color:var(--primary)}
-      .tex-work-app .tex-realtime-status.is-live i{background:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 12%,transparent)}
-      .tex-work-app .tex-realtime-status.is-readonly{color:var(--muted)}
-      .tex-work-app .tex-collaboration-button.is-live{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 30%,var(--border))!important}
-      .tex-work-app .tex-collaboration-button.is-live:after{content:"";width:6px;height:6px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 10%,transparent)}
+      .tex-work-app .tex-collaboration-button.is-live::after{
+        background:var(--primary);
+        box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 10%,transparent);
+      }
       .tex-work-app[data-tex-collaboration-access-role="viewer"] #tex-source{cursor:default}
       .tex-work-app[data-tex-collaboration-access-role="viewer"] #tex-delete{display:none!important}
       .tex-realtime-presence{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
@@ -62,6 +62,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
         let reconnectAttempt = 0;
         let documentGeneration = 0;
         let presenceTimer = 0;
+        let connectionDotTimer = 0;
         let compactCounter = 0;
 
         const REMOTE_ORIGIN = { qsseda: 'remote' };
@@ -199,30 +200,18 @@ export function enhanceWorkTexRealtime(markup, zh) {
           return String(list?.querySelector('.tex-document-item.is-active')?.dataset?.texDocumentId || '').trim();
         }
 
-        function ensureStatusNode() {
-          let node = document.getElementById('tex-realtime-status');
-          if (node) return node;
-          const sourceLabel = document.querySelector('.tex-work-app .tex-source-label');
-          if (!sourceLabel) return null;
-          node = document.createElement('span');
-          node.id = 'tex-realtime-status';
-          node.className = 'tex-realtime-status';
-          node.innerHTML = '<i></i><span></span>';
-          sourceLabel.insertBefore(node, sourceLabel.lastElementChild || null);
-          return node;
-        }
-
         function setStatus(kind, text, count = 0) {
-          const node = ensureStatusNode();
-          if (node) {
-            node.classList.toggle('is-visible', Boolean(text));
-            node.classList.toggle('is-live', kind === 'live');
-            node.classList.toggle('is-readonly', kind === 'readonly');
-            const label = node.querySelector('span');
-            if (label) label.textContent = text + (count > 0 ? ' · ' + count + ' ' + labels.online : '');
-          }
+          // Events describe the actual state immediately, while the dot keeps
+          // its blue color through very short WebSocket reconnects.
           const button = document.getElementById('tex-collaboration-open');
-          button?.classList.toggle('is-live', kind === 'live' || kind === 'readonly');
+          window.clearTimeout(connectionDotTimer);
+          if (kind === 'live' || kind === 'readonly') {
+            button?.classList.add('is-live');
+          } else if (kind === '') {
+            button?.classList.remove('is-live');
+          } else if (kind === 'offline' && button?.classList.contains('is-live')) {
+            connectionDotTimer = window.setTimeout(() => button?.classList.remove('is-live'), 1800);
+          }
           const detail = {
             document_id: connection?.id || '',
             role: connection?.role || '',
@@ -294,7 +283,6 @@ export function enhanceWorkTexRealtime(markup, zh) {
           // Presence counts people, not sockets. Keep the local tab as the
           // preferred representative so self/follow state remains consistent.
           const people = new Map();
-          const sockets = [];
           for (const person of Array.isArray(participants) ? participants : []) {
             const identity = String(person?.id || person?.client_id || '').trim();
             if (!identity) continue;
@@ -307,14 +295,11 @@ export function enhanceWorkTexRealtime(markup, zh) {
               selection_end: Math.max(a, h),
               caret_position: h
             };
-            sockets.push(entry);
             const earlier = people.get(identity);
             if (!earlier || (!earlier.self && entry.self)) people.set(identity, entry);
           }
-          // Preserve existing desktop socket-level display: only compact touch
-          // screens collapse duplicate tabs into one online person.
-          const compactTouch = window.matchMedia('(max-width:1280px) and (pointer:coarse), (max-width:760px)').matches;
-          const items = compactTouch ? [...people.values()] : sockets;
+          // Presence is one avatar per account, not one per browser tab.
+          const items = [...people.values()];
           const count = items.length;
           if (current) current.presence = items;
           publishPresence(items);
@@ -706,7 +691,6 @@ export function enhanceWorkTexRealtime(markup, zh) {
             return;
           }
           installInputBindings();
-          ensureStatusNode();
           const observer = new MutationObserver(scheduleDocumentConnection);
           observer.observe(root, { attributes: true, attributeFilter: ['data-tex-collaboration-document-id'] });
           observer.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-tex-document-id'] });
