@@ -5,31 +5,25 @@ on:
     paths: ['.audit-transfer/**', '.github/workflows/audit-import.yml']
 permissions:
   contents: write
-  actions: read
 jobs:
   import-and-test:
     if: github.repository == 'qssedalto/qssed.studio' && github.ref == 'refs/heads/audit/p0-p1-stability-20261113'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: '24.x'
-      - name: Recover exact tested dependency lock
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh run download 43424716093 --repo qssedalto/qssed.studio --name p0-p1-build-037a543c43cbb7011750c2c50698ade6e7e7181e --dir /tmp/p0-p1-original-build
-      - name: Apply hash-verified source edits
+      - name: Apply second hash-verified source batch
         run: |
           python3 <<'PY'
-          import base64, gzip, hashlib, json, pathlib, subprocess, tarfile
+          import base64, gzip, hashlib, json, pathlib, subprocess
           root=pathlib.Path.cwd()
-          text=''.join((root/f'.audit-transfer/batch01-{i}.b64').read_text() for i in range(5))
+          text=''.join((root/f'.audit-transfer/batch02-{i}.b64').read_text() for i in range(4))
           payload=gzip.decompress(base64.b64decode(text,validate=True))
           digest=lambda x: hashlib.sha256(x).hexdigest()
-          assert digest(payload)=='64e73fff936ac740d5320bfa2ebd9a67efd15dfe3290c721fd802c63d001814e'
+          assert digest(payload)=='b957046438db994a4e53548d2362a1bbc0682e83cbb4fd85b4beff18fb3e0078'
           data=json.loads(payload)
           paths=[]
           for change in data['changes']:
@@ -50,11 +44,6 @@ jobs:
               target.parent.mkdir(parents=True,exist_ok=True)
               target.write_bytes(encoded)
               paths.append(str(relative))
-          with tarfile.open('/tmp/p0-p1-original-build/review.tar.gz') as archive:
-              lock=archive.extractfile('./tex-vendor/package-lock.json').read()
-          assert digest(lock)=='eca1141e8b6aae11c1b4d93d1c355902e0ef0b34fa01ab0595cb2c461db03ac2'
-          (root/'tex-vendor/package-lock.json').write_bytes(lock)
-          paths.append('tex-vendor/package-lock.json')
           subprocess.run(['git','add','--',*paths],check=True)
           print('Verified and staged',len(paths),'source files')
           PY
@@ -62,19 +51,21 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix: protect document integrity, collaboration and encrypted archives'
+          git commit -m 'fix: enforce collaborative save revisions and preserve reconnect drafts'
           git push origin HEAD:refs/heads/audit/p0-p1-stability-20261113
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
       - name: Build pinned browser and server modules
         run: |
           npm ci --prefix tex-vendor --no-audit --no-fund
           node tex-vendor/build.mjs
-      - name: Execute regressions and browser verification
+      - name: Install fonts for readable Chinese visual evidence
+        run: sudo apt-get update -qq && sudo apt-get install -y fonts-noto-cjk
+      - name: Execute regressions and full-page browser verification
         shell: bash
         run: |
           mkdir -p /tmp/p0-p1-results
           failed=0
-          for file in scripts/*-check.mjs scripts/tex-compile-toolbar-browser.mjs scripts/tex-file-chat-popup-browser.mjs; do
+          for file in scripts/*-check.mjs scripts/tex-compile-toolbar-browser.mjs scripts/tex-file-chat-popup-browser.mjs scripts/tex-workbench-browser.mjs; do
             name=$(basename "$file" .mjs)
             if timeout -k 10 120 node "$file" > "/tmp/p0-p1-results/${name}.log" 2>&1; then
               echo "PASS $file" | tee -a /tmp/p0-p1-results/summary.txt
@@ -99,5 +90,6 @@ jobs:
             /tmp/p0-p1-results/
             /tmp/aertex-filechat-visual/*.png
             /tmp/aertex-compile-toolbar-visual/*.png
+            /tmp/aertex-workbench-visual/
           if-no-files-found: warn
           retention-days: 7
