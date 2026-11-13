@@ -831,24 +831,15 @@ function authPage(pathname, request) {
     .shell{width:min(100%,460px)}.brand{display:flex;align-items:center;gap:12px;width:max-content;max-width:100%;margin:0 0 18px 4px;padding:6px 8px 6px 6px;border-radius:14px;color:var(--text);text-decoration:none;transition:.16s ease background,.16s ease transform}.brand:hover,.brand:focus-visible{background:var(--surface);outline:0}.brand:active{transform:scale(.985)}.mark{width:42px;height:42px;display:block;object-fit:contain}.brand-copy strong{display:block;font-size:15px}.brand-copy span{display:block;margin-top:2px;color:var(--muted);font-size:12px}
     .card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);backdrop-filter:blur(30px) saturate(150%);-webkit-backdrop-filter:blur(30px) saturate(150%);box-shadow:var(--shadow);padding:30px}.card:before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);opacity:.65}h1{margin:0;font-size:31px;line-height:1.08;letter-spacing:-.04em;font-weight:760}.lead{margin:10px 0 24px;color:var(--muted);font-size:14px;line-height:1.55}.hidden{display:none!important}
     .loading{display:flex;align-items:center;gap:12px;color:var(--muted);padding:8px 0}.spinner{width:18px;height:18px;border:2px solid var(--line-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}label{display:block;margin:0 0 8px;color:var(--muted);font-size:13px;font-weight:600}.field{margin-top:16px}input{width:100%;height:50px;border-radius:var(--control);border:1px solid var(--line);padding:0 14px;background:var(--surface);color:var(--text);font:inherit;font-size:15px;outline:none;transition:.18s ease border-color,.18s ease box-shadow,.18s ease background}input:focus{border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent);background:var(--panel-strong)}
-    /* WebKit on iPadOS can paint native password bullets using a substituted
-       glyph from the inherited UI font (visible as dense horizontal boxes).
-       Pin a platform-safe Latin font + normal glyph metrics exclusively for
-       password inputs. Keep native type=password and Apple Password AutoFill. */
+    /* Use WebKit's native secure-entry masking exactly once.
+       Setting -webkit-text-security on an input[type=password] can cause
+       duplicated or corrupted masking glyphs on iPadOS Safari. Do not change
+       its type or autocomplete: Apple Password AutoFill must keep working. */
     #loginForm input[type="password"]{
-      font-family:Arial,"Helvetica Neue",Helvetica,sans-serif!important;
-      font-size:16px!important;
-      font-style:normal!important;
-      font-weight:400!important;
-      font-variant:normal!important;
-      font-feature-settings:normal!important;
-      font-kerning:normal!important;
-      letter-spacing:normal!important;
-      line-height:normal!important;
-      text-transform:none!important;
-      text-rendering:auto!important;
-      -webkit-text-security:disc;
-      -webkit-text-size-adjust:100%;
+      font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+      font-size:16px;
+      font-weight:400;
+      letter-spacing:normal;
     }
     button,.button{width:100%;min-height:50px;margin-top:18px;border:0;border-radius:var(--control);padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.16s ease transform,.16s ease background,.16s ease opacity}button:hover,.button:hover{background:var(--accent-hover)}button:active,.button:active{transform:scale(.985)}button:disabled{opacity:.48;cursor:not-allowed}.secondary{background:var(--surface);color:var(--text);border:1px solid var(--line)}.secondary:hover{background:var(--surface-hover)}.message{min-height:20px;margin:13px 0 0;color:var(--muted);font-size:13px;line-height:1.45}.message.error{color:var(--danger)}
     .account{display:flex;align-items:center;gap:14px;padding:16px;border-radius:17px;background:var(--surface);border:1px solid var(--line)}.avatar{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#5e5ce6,#0a84ff);color:#fff;font-weight:800;font-size:17px}.avatar img{width:100%;height:100%;object-fit:cover}.identity{min-width:0;flex:1}.identity strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.identity span{display:block;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px}.badge{display:inline-flex;align-items:center;gap:6px;margin-top:9px;color:var(--muted);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(48,209,88,.12)}.dot.warning{background:var(--warning);box-shadow:none}.dot.danger{background:var(--danger);box-shadow:none}.details{margin-top:18px;border:1px solid var(--line);border-radius:17px;overflow:hidden;background:var(--surface)}.detail{display:flex;justify-content:space-between;gap:18px;padding:13px 15px;border-bottom:1px solid var(--line);font-size:13px}.detail:last-child{border-bottom:0}.detail span{color:var(--muted)}.detail strong{min-width:0;text-align:right;overflow-wrap:anywhere}.security-note{margin:14px 2px 0;color:var(--quiet);font-size:12px;line-height:1.55}.divider{height:1px;background:var(--line);margin:22px 0}.app-box{padding:16px;border:1px solid var(--line);border-radius:17px;background:var(--surface)}.app-name{font-weight:700;font-size:15px}.app-id{margin-top:5px;color:var(--quiet);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.permissions{margin:16px 0 0;padding:0;list-style:none}.permissions li{display:flex;gap:10px;padding:9px 0;color:var(--muted);font-size:13px;border-bottom:1px solid var(--line)}.permissions li:last-child{border-bottom:0}.tick{color:var(--accent);font-weight:900}.foot{margin:16px 2px 0;text-align:center;color:var(--quiet);font-size:11px;line-height:1.5}
