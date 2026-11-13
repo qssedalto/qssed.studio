@@ -47,8 +47,13 @@ export function enhanceTexProjectControls(markup,zh=true){
     'window.clearTimeout(saveTimer);if(dirty)await saveCurrent(true);'+
     'if(dirty)throw new Error("Please save the document before adding files.");'+
     '}});window.__aertexFileApplyDocument=doc=>{'+
-    'if(!doc?.id||doc.id!==activeId)return;activeDocument=doc;updateLocal(doc);'+
-    'window.__aertexProjectRenderFiles?.(doc);window.__aertexFileSetActive?.(doc);'+
+    'if(!doc?.id||doc.id!==activeId)return;'+
+    'const previous=activeDocument;const entryChanged=previous?.main_deleted!==doc.main_deleted||previous?.main_filename!==doc.main_filename;'+
+    'activeDocument=doc;'+
+    'if(entryChanged&&!dirty){source.value=doc.main_deleted===true?"":String(doc.source||"");updateStats();setSaveState(copy.saved);'+
+    'if(doc.main_deleted!==true)showMessage("");}'+
+    'updateLocal(doc);window.__aertexProjectRenderFiles?.(doc);'+
+    'window.__aertexFileSetActive?.(doc);window.__aertexTexExplorerRefresh?.(doc);'+
     '};';
   source=source.replace(binding,binding+fileBridge+bus);
   if(!source.includes("</body>"))throw new Error("TeX outer page body missing.");
