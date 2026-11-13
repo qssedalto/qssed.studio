@@ -100,7 +100,7 @@ assert(zhTexLocal.includes("bridgeDetected = true") &&
   zhTexLocal.includes("localDetected: Boolean(bridgeDetected || localBase)") &&
   zhTexLocal.includes("localEngineReady: Boolean(localBase)"),
   "A running Bridge with TeX Live missing must not be misreported as no local service");
-const readinessHtml = enhanceWorkTexDeviceReadiness("<div class='tex-work-app'></div>", true);
+const readinessHtml = enhanceWorkTexDeviceReadiness("<body><div class='tex-work-app'></div></body>", true);
 assert(readinessHtml.includes("Bridge 已连接，但未发现可用的 XeLaTeX") &&
   readinessHtml.includes("const engineReady=Boolean(data.localEngineReady)") &&
   readinessHtml.includes("steps.children[1].hidden=hasBridge"),
