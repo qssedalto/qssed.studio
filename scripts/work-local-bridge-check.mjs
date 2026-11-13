@@ -164,7 +164,8 @@ assert(!nativeBridge.includes("powershell.exe"), "Native Bridge must not depend 
 assert(!nativeBridge.includes("node.exe"), "Native Bridge must not depend on Node.js");
 
 assert(worker.includes('pathname.startsWith("/api/work/")'), "Worker is missing the Work API boundary");
-assert(workApi.includes("verifyStudioApiSession"), "Bridge download must require a AERTEX session");
+assert(!workApi.includes("verifyStudioApiSession") && !workApi.includes("withStudioSessionCookies"), "Public Bridge installer must not require a login or issue session cookies");
+assert(workApi.includes('if (action !== "bridge/windows")'), "Anonymous installer access must remain scoped to the fixed release route");
 assert(workApi.includes("_system/releases/local-bridge/windows-amd64/QssedA-Local-Bridge.exe"), "Bridge download must read the fixed hidden R2 release key");
 assert(workApi.includes("application/vnd.microsoft.portable-executable"), "Bridge download must use an executable content type");
 assert(nativeWorkflow.includes("runs-on: windows-latest"), "Native Bridge installer must build and test on Windows.");
