@@ -294,6 +294,8 @@ assert(css.includes(".tex-editor-footer") && css.includes("display:none!importan
 assert(css.includes(".tex-editor-commandbar") && css.includes("overflow-x:auto!important"), "Toolbar must scroll horizontally instead of expanding the page.");
 assert(css.includes("#tex-source:focus"), "Touch editor focus glow must be removed.");
 assert(script.includes("__aertexMobileMarkdown"), "Mobile-only improved Markdown renderer missing.");
+assert(!script.includes("toolbar.append(save)") && !script.includes("footer.prepend(save)"),
+  "Touch resize must never move the live save status away from the project title");
 new Function(script);
 assert(WORK_TEX_EXPLORER_TREE.includes("!touchCompact()&&openProjects.size===0"), "Mobile must never auto-open every folder.");
 assert(WORK_TEX_EXPLORER_TREE.includes("sub.hidden=touchCompact()"), "Nested folders must initially be closed on touch screens.");
