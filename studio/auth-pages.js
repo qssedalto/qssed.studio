@@ -1131,7 +1131,7 @@ export function signUpPage(t, links, ipInfo) {
       passwordMeterFill.style.width = percent + "%";
       passwordMeterFill.style.background = percent === 100 ? "#2f9b63" : percent >= 60 ? "#d99a2b" : "var(--danger)";
       Object.entries(checks).forEach(([key, met]) => passwordRuleEls[key].classList.toggle("is-met", met));
-      setButtonState(createAccountBtn, registrationPhase === "editing" && percent === 100 && passwordConfirmationValid);
+      setButtonState(createAccountBtn, registrationPhase === "editing" && document.getElementById("step-password").style.display !== "none" && percent === 100 && passwordConfirmationValid);
     }
 
     passwordInput.addEventListener("input", () => {
