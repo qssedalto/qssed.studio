@@ -841,6 +841,25 @@ function authPage(pathname, request) {
       font-weight:400;
       letter-spacing:normal;
     }
+
+    /* iPadOS WebKit can draw the native password bullets as stacked bars.
+       Keep the real password input fully native for Passwords AutoFill and
+       credential submission. Only the visual mask is replaced on touch WebKit.
+       Circles are drawn with CSS geometry rather than font glyphs. */
+    .password-entry{position:relative;min-width:0}
+    .password-entry>input{display:block}
+    .password-visual-mask{display:none;position:absolute;inset:0 14px;z-index:2;
+      pointer-events:none;align-items:center;gap:3px;overflow:hidden;white-space:nowrap}
+    .password-visual-mask .password-visual-dot{display:block;flex:0 0 7px;width:7px;height:7px;
+      border-radius:50%;background:var(--text)}
+    html[data-safari-password-mask="on"] #loginForm input[type="password"]{
+      color:transparent!important;-webkit-text-fill-color:transparent!important;
+      text-shadow:none!important;caret-color:var(--text)!important;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      font-size:16px;letter-spacing:0
+    }
+    html[data-safari-password-mask="on"] .password-visual-mask{display:flex}
+
     button,.button{width:100%;min-height:50px;margin-top:18px;border:0;border-radius:var(--control);padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.16s ease transform,.16s ease background,.16s ease opacity}button:hover,.button:hover{background:var(--accent-hover)}button:active,.button:active{transform:scale(.985)}button:disabled{opacity:.48;cursor:not-allowed}.secondary{background:var(--surface);color:var(--text);border:1px solid var(--line)}.secondary:hover{background:var(--surface-hover)}.message{min-height:20px;margin:13px 0 0;color:var(--muted);font-size:13px;line-height:1.45}.message.error{color:var(--danger)}
     .account{display:flex;align-items:center;gap:14px;padding:16px;border-radius:17px;background:var(--surface);border:1px solid var(--line)}.avatar{width:48px;height:48px;flex:0 0 48px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#5e5ce6,#0a84ff);color:#fff;font-weight:800;font-size:17px}.avatar img{width:100%;height:100%;object-fit:cover}.identity{min-width:0;flex:1}.identity strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.identity span{display:block;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px}.badge{display:inline-flex;align-items:center;gap:6px;margin-top:9px;color:var(--muted);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(48,209,88,.12)}.dot.warning{background:var(--warning);box-shadow:none}.dot.danger{background:var(--danger);box-shadow:none}.details{margin-top:18px;border:1px solid var(--line);border-radius:17px;overflow:hidden;background:var(--surface)}.detail{display:flex;justify-content:space-between;gap:18px;padding:13px 15px;border-bottom:1px solid var(--line);font-size:13px}.detail:last-child{border-bottom:0}.detail span{color:var(--muted)}.detail strong{min-width:0;text-align:right;overflow-wrap:anywhere}.security-note{margin:14px 2px 0;color:var(--quiet);font-size:12px;line-height:1.55}.divider{height:1px;background:var(--line);margin:22px 0}.app-box{padding:16px;border:1px solid var(--line);border-radius:17px;background:var(--surface)}.app-name{font-weight:700;font-size:15px}.app-id{margin-top:5px;color:var(--quiet);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.permissions{margin:16px 0 0;padding:0;list-style:none}.permissions li{display:flex;gap:10px;padding:9px 0;color:var(--muted);font-size:13px;border-bottom:1px solid var(--line)}.permissions li:last-child{border-bottom:0}.tick{color:var(--accent);font-weight:900}.foot{margin:16px 2px 0;text-align:center;color:var(--quiet);font-size:11px;line-height:1.5}
     @media(max-width:520px){.card{padding:24px 20px;border-radius:20px}h1{font-size:28px}.brand{margin-left:2px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;transition-duration:.001ms!important}}
@@ -861,7 +880,7 @@ function authPage(pathname, request) {
         <h1>${copy.loginTitle}</h1><p id="signedOutLead" class="lead">${copy.loginLead}</p>
         <form id="loginForm" autocomplete="on">
           <div class="field"><label for="email">${copy.email}</label><input id="email" name="email" type="email" autocomplete="username" inputmode="email" required></div>
-          <div class="field"><label for="password">${copy.password}</label><input id="password" name="password" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required></div>
+          <div class="field"><label for="password">${copy.password}</label><div class="password-entry"><input id="password" name="password" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required><div id="passwordVisualMask" class="password-visual-mask" aria-hidden="true"></div></div></div>
           <button id="loginButton" type="submit">${copy.continue}</button><div id="loginMessage" class="message" role="status" aria-live="polite"></div>
         </form>
         <a class="button secondary" href="${mainOrigin}/${locale}/sign-up">${copy.create}</a>
@@ -883,6 +902,50 @@ function authPage(pathname, request) {
   var page=document.body.dataset.page||"home";
   var loading=document.getElementById("loading"),signedOut=document.getElementById("signedOut"),signedIn=document.getElementById("signedIn"),loginForm=document.getElementById("loginForm"),loginButton=document.getElementById("loginButton"),loginMessage=document.getElementById("loginMessage"),logoutButton=document.getElementById("logoutButton"),homeLogoutButton=document.getElementById("homeLogoutButton");
   var copy=${JSON.stringify(copy)};
+  // Work around iPadOS native U+25CF password glyph rendering without ever
+  // changing the input to type=text or putting actual password characters
+  // into a second DOM node. Native credentials/AutoFill remain untouched.
+  function installSafariPasswordVisualMask(){
+    var input=document.getElementById("password");
+    var visual=document.getElementById("passwordVisualMask");
+    if(!input||!visual)return;
+    var touchWebKit=!!(navigator.maxTouchPoints>0 && window.CSS &&
+      window.CSS.supports("(-webkit-touch-callout: none)"));
+    if(!touchWebKit)return;
+    document.documentElement.setAttribute("data-safari-password-mask","on");
+    var rendered=0;
+    function synchronize(){
+      // Only the length is used; the secret never enters the overlay DOM.
+      var count=Math.min(input.value.length,256);
+      if(count!==rendered){
+        while(visual.childElementCount<count){
+          var dot=document.createElement("i");
+          dot.className="password-visual-dot";
+          dot.setAttribute("aria-hidden","true");
+          visual.appendChild(dot);
+        }
+        while(visual.childElementCount>count){
+          visual.removeChild(visual.lastElementChild);
+        }
+        rendered=count;
+      }
+      if(visual.scrollLeft!==input.scrollLeft)visual.scrollLeft=input.scrollLeft;
+    }
+    ["input","change","focus","blur","keyup","click","scroll"].forEach(function(name){
+      input.addEventListener(name,synchronize,{passive:true});
+    });
+    window.addEventListener("pageshow",synchronize);
+    document.addEventListener("visibilitychange",synchronize);
+    // iCloud Passwords may fill a secure field without a reliable input
+    // event. Check only its length, never its contents, while the page is open.
+    var refresh=window.setInterval(function(){
+      if(!document.hidden)synchronize();
+    },350);
+    window.addEventListener("pagehide",function(){window.clearInterval(refresh);},{once:true});
+    synchronize();
+  }
+  installSafariPasswordVisualMask();
+
   function initials(name){var chars=Array.from(String(name||"Q").trim());return(chars.slice(0,2).join("")||"Q").toUpperCase()}
   function statusLabel(status){if(status==="active")return copy.active;if(status==="suspended")return copy.suspended;if(status==="banned")return copy.banned;return status||copy.active}
   function showLoggedOut(){loading.classList.add("hidden");signedIn.classList.add("hidden");signedOut.classList.remove("hidden");if(page==="authorize")document.getElementById("signedOutLead").textContent=copy.signInFirst}

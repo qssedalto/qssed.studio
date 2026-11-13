@@ -16,6 +16,7 @@ on:
       - "auth-edge-protection.js"
       - "scripts/auth-edge-protection-check.mjs"
       - "scripts/auth-password-mask-check.mjs"
+      - "scripts/auth-ipados-secure-mask-check.mjs"
       - "scripts/native-app-profile-api-check.mjs"
       - "scripts/appearance-check.mjs"
       - "scripts/brand-check.mjs"
@@ -84,6 +85,9 @@ jobs:
 
       - name: Verify iPad Safari password mask rendering contract
         run: node scripts/auth-password-mask-check.mjs
+
+      - name: Verify iPadOS native secure mask visual overlay
+        run: node scripts/auth-ipados-secure-mask-check.mjs
 
       - name: Verify Auth edge anti-crawl and surge protection
         run: node scripts/auth-edge-protection-check.mjs

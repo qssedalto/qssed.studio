@@ -44,6 +44,7 @@ on:
       - auth-sso.js
       - auth-worker.js
       - scripts/auth-safari-password-mask-check.mjs
+      - scripts/auth-ipados-secure-mask-check.mjs
       - auth-login-identifier.js
       - auth-oauth.js
       - auth-pkce-test.js
@@ -171,6 +172,7 @@ jobs:
           node --check auth-sso.js
           node --check auth-worker.js
           node scripts/auth-safari-password-mask-check.mjs
+          node scripts/auth-ipados-secure-mask-check.mjs
           node --check scripts/native-app-profile-api-check.mjs
           node scripts/native-app-profile-api-check.mjs
           node --check auth-login-identifier.js
