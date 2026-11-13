@@ -32,7 +32,7 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
 
   output = output.replace(
     "void autoProbeWhenAlreadyAllowed();",
-    "window.setTimeout(() => void probe(), 260);"
+    "if (!(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || \"\") || (navigator.platform === \"MacIntel\" && Number(navigator.maxTouchPoints) > 1))) window.setTimeout(() => void probe(), 260);"
   );
 
   output = output.replace(
@@ -77,5 +77,40 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
     </script>`
   );
 
+  // Device-specific local setup: the offline dashboard is not actionable
+  // on iPad/phone, so link to the existing Work remote compilation flow.
+  const mobileTitle = zh ? "移动设备无需安装本机连接组件" : "Local Bridge setup is for computers";
+  const mobileDetail = zh
+    ? "本机 Bridge 和 TeX Live 需要安装在电脑上。iPad 和手机可在 Work 编辑 TeX；需要生成 PDF 时，可按额度规则使用远程编译。"
+    : "Install TeX Live and Bridge on a computer. On mobile, edit TeX in Work and use remote compilation when quota is available.";
+  const mobileUrl = "https://work.qsseda.com/" + (zh ? "zh-cn" : "en") + "/tex";
+  const mobileGuide = '<div class="work-mobile-local-note" id="work-mobile-local-note" hidden>' +
+    '<strong>' + mobileTitle + '</strong><p>' + mobileDetail + '</p>' +
+    '<a class="work-button primary" href="' + mobileUrl + '">' +
+    (zh ? "打开 TeX 工作台" : "Open TeX Workbench") + '</a></div>';
+  output=output.replace('<div class="work-native-slot" id="work-native-note-slot">',
+    mobileGuide + '<div class="work-native-slot" id="work-native-note-slot">');
+  output += '<style id="work-native-mobile-copy">' +
+    '#work-local-root.is-mobile-local #work-local-status-card,' +
+    '#work-local-root.is-mobile-local #work-local-connect,' +
+    '#work-local-root.is-mobile-local #work-native-bridge-download,' +
+    '#work-local-root.is-mobile-local #work-native-texlive-group,' +
+    '#work-local-root.is-mobile-local #work-native-note-slot{display:none!important}' +
+    '#work-local-root.is-mobile-local #work-mobile-local-note{' +
+    'display:grid;gap:12px;margin-top:18px;max-width:650px;padding:16px;' +
+    'border:1px solid var(--border);border-radius:14px;background:var(--surface)}' +
+    '#work-local-root.is-mobile-local #work-mobile-local-note strong{font-size:15px}' +
+    '#work-local-root.is-mobile-local #work-mobile-local-note p{' +
+    'margin:0;color:var(--muted);line-height:1.6;font-size:13px}' +
+    '#work-local-root.is-mobile-local #work-mobile-local-note a{justify-self:start}' +
+    '</style><script id="work-native-mobile-copy-script">(()=>{' +
+    'const ua=navigator.userAgent||"";' +
+    'const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||' +
+    '(navigator.platform==="MacIntel"&&Number(navigator.maxTouchPoints)>1);' +
+    'if(!mobile)return;' +
+    'const root=document.getElementById("work-local-root");' +
+    'if(root)root.classList.add("is-mobile-local");' +
+    'const note=document.getElementById("work-mobile-local-note");if(note)note.hidden=false;' +
+    '})();</script>';
   return output;
 }
