@@ -6,6 +6,7 @@ import { workerLog } from "./server-runtime.js";
 import { handleTexProjects } from "./tex-project-api.js";
 import { handleTexProjectFiles } from "./tex-project-files-api.js";
 import { reconcileTexMainEntry } from "./tex-main-entry.js";
+import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
 import { handleTexOrganize, removeTexProjectPins } from "./tex-organize-api.js";
 import { handleTexArchive } from "./tex-archive-api.js";
 
@@ -317,6 +318,10 @@ async function updateDocument(request, env, userId) {
     const previous = await readDocument(env, userId, documentId);
     if (!previous) return json({ error: "TeX document not found." }, 404);
     if (previous.main_deleted === true) return json({error:"This project has no TeX entry. Add a root .tex file before editing the main source."},409);
+    // An older tab must not overwrite a replacement of main.tex with its
+    // own stale autosave payload. Only a freshly opened revision may write.
+    if (texRealtimeEpoch(parsed.value?.realtime_epoch) !== texRealtimeEpoch(previous))
+      return json({ error: "This project's main TeX file changed. Reopen it before saving; your older editor has not overwritten the new version.", code: "main_revision_changed" }, 409);
     if (previous.locked || previous.locked_files?.includes("main.tex") || previous.locked_files?.includes(previous.main_filename || "main.tex"))
       return json({ error: "Unlock main.tex or the project before editing.", }, 423);
     const normalized = normalizeDocument(parsed.value, userId, documentId, previous);
@@ -402,6 +407,7 @@ function normalizeDocument(input, userId, documentId, previous) {
       title: cleanText(source.title, 180) || "Untitled TeX document",
       engine,
       source: cleanSource(source.source),
+      realtime_epoch: texRealtimeEpoch(previous),
       main_filename: previous?.main_filename || "main.tex",
       main_deleted: previous?.main_deleted === true,
       files: Array.isArray(previous?.files) ? previous.files : [],
@@ -465,7 +471,8 @@ function documentMetadata(document) {
     pinned: document.pinned ? "true" : "false",
     locked: document.locked ? "true" : "false",
     createdAt: document.created_at,
-    updatedAt: document.updated_at
+    updatedAt: document.updated_at,
+    realtimeEpoch: texRealtimeEpoch(document)
   };
 }
 
