@@ -395,9 +395,12 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             return files;
           }
           window.__aertexLoadTexCompileFiles = loadProjectAssets;
-          window.addEventListener('aertex:tex-file-updated', () => {
+          window.addEventListener('aertex:tex-file-updated', (event) => {
             projectAssetCache.clear();
-            previewUserEdited = true;
+            // File-list hydration and remote sync can emit this signal during
+            // page startup. Only explicit user-originated edits may set the
+            // header's compilation status; boot refresh stays visually neutral.
+            if (event?.detail?.userInitiated === true) previewUserEdited = true;
             if (previewEnabled) markPreviewDirty(250);
           });
           window.addEventListener('aertex:tex-project-asset-selected', () => projectAssetCache.clear());
