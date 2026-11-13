@@ -84,7 +84,7 @@ let browser;
 try{
  browser=await openBrowser('about:blank');
  const results=[];
- for(const [width,height,mobile]of[[320,740,true],[390,844,true],[768,1024,true],[1440,900,false]]){
+ for(const [width,height,mobile]of[[320,740,true],[390,844,true],[768,1024,true],[1024,768,false],[1440,900,false],[1920,1080,false]]){
   await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile});
   await browser.command('Emulation.setTouchEmulationEnabled',{enabled:mobile,maxTouchPoints:mobile?5:1});
   await browser.command('Page.navigate',{url:origin+'/en-us/d/'+id});
@@ -93,13 +93,24 @@ try{
   await sleep(150);
   for(const theme of ['light','dark']){
    await browser.evaluate(`document.documentElement.dataset.theme='${theme}';document.body.dataset.theme='${theme}';`);await sleep(120);
-   const report=await browser.evaluate(`(()=>{const rect=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom,display:getComputedStyle(e).display};};return{width:innerWidth,height:innerHeight,scroll:document.documentElement.scrollWidth,editor:rect('#tex-editor'),toolbar:rect('.tex-source-label'),commandbar:rect('.tex-editor-commandbar'),errors:__qaErrors,mask:document.documentElement.dataset.aertexTexBoot};})()`);
+   const report=await browser.evaluate(`(()=>{const rect=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom,display:getComputedStyle(e).display};};return{width:innerWidth,height:innerHeight,scroll:document.documentElement.scrollWidth,editor:rect('#tex-editor'),toolbar:rect('.tex-source-label'),commandbar:rect('.tex-editor-commandbar'),header:rect('.tex-editor-toolbar'),controls:['#tex-title-static','#tex-editor-mode','#tex-engine','#tex-collaboration-open','#tex-code-theme-toggle','.tex-editor-toolbar>.tex-panel-home-link'].map(selector=>({selector,...rect(selector)})),errors:__qaErrors,mask:document.documentElement.dataset.aertexTexBoot};})()`);
    results.push({width,height,mobile,theme,...report});
    await browser.screenshot(path.join(artifacts,`workbench-${width}-${theme}.png`));
    assert(report.editor?.width>100&&report.editor?.height>80,'Editor unavailable at '+width+': '+JSON.stringify(report));
    assert(report.scroll<=report.width+2,'Horizontal document overflow: '+JSON.stringify(report));
    assert(report.editor.x>=-1&&report.editor.right<=report.width+2,'Editor escaped viewport: '+JSON.stringify(report));
    assert.equal(report.mask,undefined,'First-paint mask did not release');
+   for(const control of report.controls){
+    assert(control.width>35&&control.height>12,'Missing or collapsed header control: '+JSON.stringify(control));
+    assert(control.x>=report.editor.x-1&&control.right<=report.editor.right+1,'Header control outside editor pane: '+JSON.stringify({control,editor:report.editor}));
+    assert(control.y>=report.header.y-1&&control.bottom<=report.header.bottom+1,'Header control vertically clipped: '+JSON.stringify(control));
+   }
+   for(let i=0;i<report.controls.length;i++)for(let j=i+1;j<report.controls.length;j++){
+    const a=report.controls[i],b=report.controls[j];
+    const x=Math.min(a.right,b.right)-Math.max(a.x,b.x),y=Math.min(a.bottom,b.bottom)-Math.max(a.y,b.y);
+    assert(!(x>1&&y>1),'Overlapping editor controls: '+JSON.stringify([a,b]));
+   }
+
   }
  }
  // Exercise the supplementary file editor while its network save is held.
@@ -129,7 +140,7 @@ try{
  assert.equal(await browser.evaluate(`(()=>{const e=new Event('beforeunload',{cancelable:true});window.dispatchEvent(e);return e.defaultPrevented;})()`),true,'Unsaved changes must retain navigation warning');
  const errors=await browser.evaluate('__qaErrors');writeFileSync(path.join(artifacts,'results.json'),JSON.stringify({results,errors,exceptions:browser.exceptions},null,2));
  assert.deepEqual(errors,[],'Uncaught runtime errors in the rendered Work application');
- console.log('PASS: full production Work markup, four viewport/touch modes, light/dark themes, main/file edit-during-save, cancelled file switch and failed-save preservation');
+ console.log('PASS: full production Work markup, six viewport/touch modes and non-overlapping header controls, light/dark themes, main/file edit-during-save, cancelled file switch and failed-save preservation');
 }catch(error){
  if(browser){
   await browser.screenshot(path.join(artifacts,'failure.png')).catch(()=>{});
