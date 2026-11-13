@@ -1,5 +1,6 @@
 import { json } from "./routing.js";
 import { isSafeProjectFilename } from "./tex-project-file-types.js";
+import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
 
 const ROOT = "_system/tex-documents/";
 const PIN_ROOT = "_system/tex-pins/";
@@ -35,7 +36,8 @@ const metadata = (doc, userId) => ({
   title: doc.title, engine: doc.engine, preview: doc.source.replace(/\s+/g, " ").trim().slice(0,220),
   projectType: doc.project_type || "legacy", fileCount: String(1+(doc.files?.length||0)),
   pinned: doc.pinned ? "true" : "false", locked: doc.locked ? "true" : "false",
-  createdAt: doc.created_at, updatedAt: doc.updated_at
+  createdAt: doc.created_at, updatedAt: doc.updated_at,
+  realtimeEpoch: texRealtimeEpoch(doc)
 });
 const uniqueNames = list => [...new Set((list || []).filter(x => typeof x === "string" && x.length <= 240))].slice(0,500);
 
