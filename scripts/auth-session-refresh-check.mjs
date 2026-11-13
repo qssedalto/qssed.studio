@@ -82,7 +82,9 @@ const hold=new Promise(resolve=>{release=resolve;});
 const pendingFetch=async()=>{times++;await hold;return json(fresh);};
 const first=refreshBrowserAuthSession("parallel-recovery-token",pendingFetch);
 const second=refreshBrowserAuthSession("parallel-recovery-token",pendingFetch);
-await Promise.resolve();
+// Allow both asynchronous SHA-256 key derivations to join the in-flight
+// request before releasing the mocked upstream response.
+await new Promise(resolve => setTimeout(resolve, 40));
 release();
 const both=await Promise.all([first,second]);
 assert.equal(times,1,"Concurrent refresh of one token on one isolate must be coalesced");
