@@ -5,7 +5,7 @@ import { WORK_TEX_EXPLORER_STYLE } from "../studio/ui-work-tex-explorer-style.js
 
 const code=WORK_TEX_EXPLORER_TREE.replace("__ZH__","true");
 assert.doesNotThrow(()=>new vm.Script(code),"Explorer selection runtime must parse");
-const start=code.indexOf("  function syncSelectedTree(){");
+const start=code.indexOf("  function syncSelectedTree(reveal=false){");
 const end=code.indexOf("\n  window.__aertexTexSyncSelectedTree=",start);
 assert(start>=0&&end>start,"A dedicated hierarchical selection updater must exist");
 const body=code.slice(start,end);
