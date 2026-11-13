@@ -315,7 +315,8 @@ async function updateDocument(request, env, userId) {
   try {
     const previous = await readDocument(env, userId, documentId);
     if (!previous) return json({ error: "TeX document not found." }, 404);
-    if (previous.locked) return json({ error: "Unlock the project before editing." }, 423);
+    if (previous.locked || previous.locked_files?.includes("main.tex"))
+      return json({ error: "Unlock main.tex or the project before editing.", }, 423);
     const normalized = normalizeDocument(parsed.value, userId, documentId, previous);
     if (!normalized.ok) return json({ error: normalized.error }, 400);
     await writeDocument(env, normalized.value);
