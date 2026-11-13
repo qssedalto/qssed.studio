@@ -63,6 +63,9 @@ export function enhanceWorkTexRealtime(markup, zh) {
         let documentGeneration = 0;
         let presenceTimer = 0;
         let connectionDotTimer = 0;
+        let scheduledConnectTimer = 0;
+        let scheduledConnectId = '';
+        let connectingDocumentId = '';
         let compactCounter = 0;
 
         const REMOTE_ORIGIN = { qsseda: 'remote' };
@@ -482,10 +485,12 @@ export function enhanceWorkTexRealtime(markup, zh) {
         }
 
         async function connectDocument(id) {
+          connectingDocumentId = id;
           const generation = ++documentGeneration;
           window.clearTimeout(reconnectTimer);
           const elements = activeElements();
           if (!id || !elements.source || !elements.title || !elements.engine) {
+            connectingDocumentId = '';
             closeConnection();
             return;
           }
@@ -496,12 +501,16 @@ export function enhanceWorkTexRealtime(markup, zh) {
           try { module = await loadYjs(); }
           catch {
             if (generation === documentGeneration) {
+              connectingDocumentId = '';
               setStatus('offline', labels.offline);
               updateLiveSettingsSurface('offline');
             }
             return;
           }
-          if (generation !== documentGeneration) return;
+          if (generation !== documentGeneration) {
+            if (connectingDocumentId === id) connectingDocumentId = '';
+            return;
+          }
 
           if (connection?.socket) {
             try { connection.intentionalClose = true; connection.socket.close(1000, 'Document changed'); } catch {}
@@ -529,6 +538,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
             intentionalClose: false
           };
           connection = current;
+          connectingDocumentId = '';
           applyAccessRole(current.role);
 
           ydoc.on('update', (update, origin) => {
@@ -648,15 +658,26 @@ export function enhanceWorkTexRealtime(markup, zh) {
           const { root, list } = activeElements();
           const id = activeDocumentId(root, list);
           if (!id) {
+            window.clearTimeout(scheduledConnectTimer);
+            scheduledConnectId = '';
+            connectingDocumentId = '';
             closeConnection();
             return;
           }
-          if (connection?.id === id && connection.socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(connection.socket.readyState)) return;
-          window.setTimeout(() => {
+          if (connectingDocumentId === id || scheduledConnectId === id) return;
+          if (connection?.id === id) {
+            if (connection.socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(connection.socket.readyState)) return;
+            if (reconnectTimer) return; // The close handler owns retries.
+          }
+          window.clearTimeout(scheduledConnectTimer);
+          scheduledConnectId = id;
+          scheduledConnectTimer = window.setTimeout(() => {
+            scheduledConnectId = '';
             const current = activeElements();
-            const resolved = activeDocumentId(current.root, current.list);
-            if (resolved === id) void connectDocument(id);
-          }, 20);
+            if (activeDocumentId(current.root, current.list) !== id) return;
+            if (connectingDocumentId === id || (connection?.id === id && reconnectTimer)) return;
+            void connectDocument(id);
+          }, 70);
         }
 
         function installInputBindings() {
@@ -698,7 +719,13 @@ export function enhanceWorkTexRealtime(markup, zh) {
             return;
           }
           installInputBindings();
-          const observer = new MutationObserver(scheduleDocumentConnection);
+          const observer = new MutationObserver(changes => {
+            // A nested file highlight/chevron is not a document switch.
+            if (changes.some(change => change.target === root || change.target === list ||
+                change.target?.classList?.contains('tex-document-item'))) {
+              scheduleDocumentConnection();
+            }
+          });
           observer.observe(root, { attributes: true, attributeFilter: ['data-tex-collaboration-document-id'] });
           observer.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-tex-document-id'] });
           document.addEventListener('visibilitychange', () => {
