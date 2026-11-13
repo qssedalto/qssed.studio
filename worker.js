@@ -28,6 +28,7 @@ import { handleTexGithubApi } from "./studio/tex-github-api.js";
 import { handleTexCollaborationApi } from "./studio/tex-collaboration-api.js";
 import { handleTexSharedCollaboration } from "./studio/tex-collaboration-shared.js";
 import { handleTexCollaborationRealtime } from "./studio/tex-collaboration-realtime.js";
+import { handleTexFileChatApi } from "./studio/tex-file-chat-api.js";
 import { handleTexLinkSharingApi } from "./studio/tex-link-sharing-api.js";
 import { handleTexLinkPublic } from "./studio/tex-link-public.js";
 import { handleWorkApi } from "./studio/work-api.js";
@@ -175,6 +176,7 @@ async function routeStudioRequest(request, env, ctx) {
   }
   if (pathname === "/api/workbench/overview") return handleWorkbenchOverview(request, env);
   if (pathname === "/api/tex/link") return workHost ? handleTexLinkSharingApi(request, env) : new Response("Not Found", { status: 404 });
+  if (pathname === "/api/tex/file-chat") return handleTexFileChatApi(request,env);
   if (pathname === "/api/tex/collaboration/realtime") return handleTexCollaborationRealtime(request, env);
   if (pathname === "/api/tex/collaboration/shared") return handleTexSharedCollaboration(request, env);
   if (pathname === "/api/tex/collaboration") return handleTexCollaborationRoute(request, env);

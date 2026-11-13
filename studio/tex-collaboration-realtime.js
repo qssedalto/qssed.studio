@@ -43,7 +43,7 @@ export async function handleTexCollaborationRealtime(request, env) {
   return room.fetch(new Request("https://tex-collaboration-room.internal/connect", { method: "GET", headers }));
 }
 
-async function resolveDocumentAccess(env, userId, documentId, accessToken) {
+export async function resolveDocumentAccess(env, userId, documentId, accessToken) {
   try {
     const own = await env.STORAGE.head(documentKey(userId, documentId));
     if (own) return { owner_id: userId, role: "owner" };
@@ -68,7 +68,7 @@ async function resolveDocumentAccess(env, userId, documentId, accessToken) {
   return { owner_id: ownerId, role: row?.role === "editor" ? "editor" : "viewer" };
 }
 
-async function verifyActiveUser(accessToken) {
+export async function verifyActiveUser(accessToken) {
   const token = String(accessToken || "").trim();
   if (!token) return { error: json({ error: "Authentication required." }, 401) };
   const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` };
@@ -99,11 +99,11 @@ async function supabaseRequest(path, accessToken) {
   });
 }
 
-function documentKey(ownerId, documentId) {
+export function documentKey(ownerId, documentId) {
   return `${DOCUMENT_ROOT}${ownerId}/${documentId}.json`;
 }
 
-function cleanObjectId(value) {
+export function cleanObjectId(value) {
   const text = String(value || "").trim();
   return isStorageObjectId(text) ? text : "";
 }
