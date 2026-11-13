@@ -100,6 +100,10 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
         let previewEnabled = true;
         let previewDirty = false;
         let previewPending = false;
+        // Initial page-load preview is a background warm-up, not an explicit
+        // build result. Do not paint a scary red failure badge on every reload.
+        // Subsequent previews caused by an actual edit DO report their result.
+        let previewUserEdited = false;
         let previewTimer = 0;
         let lastEditorInputAt = 0;
         let previewUrl = "";
@@ -393,6 +397,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
           window.__aertexLoadTexCompileFiles = loadProjectAssets;
           window.addEventListener('aertex:tex-file-updated', () => {
             projectAssetCache.clear();
+            previewUserEdited = true;
             if (previewEnabled) markPreviewDirty(250);
           });
           window.addEventListener('aertex:tex-project-asset-selected', () => projectAssetCache.clear());
@@ -434,9 +439,12 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             const sourceText = source.value || '';
             const snapshot = currentPreviewSnapshot();
             const compilingDocumentId = String(root.dataset.texCollaborationDocumentId || '');
-            window.dispatchEvent(new CustomEvent('aertex:tex-build-started', {
-              detail: { documentId: compilingDocumentId, engine: engineName, automatic: previewOnly }
-            }));
+            const showTitleBuildResult = !previewOnly || previewUserEdited;
+            if (showTitleBuildResult) {
+              window.dispatchEvent(new CustomEvent('aertex:tex-build-started', {
+                detail: { documentId: compilingDocumentId, engine: engineName, automatic: previewOnly }
+              }));
+            }
             if (previewOnly) {
               previewDirty = false;
               setPreviewStatus('busy', localCopy.previewCompiling);
@@ -450,9 +458,11 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
               const stale = snapshot !== currentPreviewSnapshot();
               if (!stale) {
                 installPreviewBlob(result.blob, snapshot, result.elapsed);
-                window.dispatchEvent(new CustomEvent('aertex:tex-build-result', {
-                  detail: { documentId: compilingDocumentId, engine: engineName, ok: true, automatic: previewOnly }
-                }));
+                if (showTitleBuildResult) {
+                  window.dispatchEvent(new CustomEvent('aertex:tex-build-result', {
+                    detail: { documentId: compilingDocumentId, engine: engineName, ok: true, automatic: previewOnly }
+                  }));
+                }
               } else {
                 previewDirty = true;
                 previewPending = true;
@@ -467,7 +477,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             } catch (error) {
               const diagnostic = String(error?.payload?.log || '').trim().split(/\\r?\\n/).filter(Boolean).slice(-2).join(' · ');
               const display = String(error?.message || localCopy.localFailed) + (diagnostic ? ' · ' + diagnostic.slice(0, 420) : '');
-              if (snapshot === currentPreviewSnapshot()) {
+              if (showTitleBuildResult && snapshot === currentPreviewSnapshot()) {
                 window.dispatchEvent(new CustomEvent('aertex:tex-build-result', {
                   detail: {
                     documentId: compilingDocumentId,
@@ -542,8 +552,12 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             }, 420);
           });
 
-          source.addEventListener('input', () => markPreviewDirty(1500));
+          source.addEventListener('input', () => {
+            previewUserEdited = true;
+            markPreviewDirty(1500);
+          });
           engine.addEventListener('change', () => {
+            previewUserEdited = true;
             window.setTimeout(() => {
               syncCompiler();
               markPreviewDirty(260);
