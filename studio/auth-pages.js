@@ -421,6 +421,22 @@ export function signUpPage(t, links, ipInfo) {
     .password-heading span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
     .password-input-shell{position:relative;margin-top:12px}
     .password-input-shell input{margin-top:0;padding-right:54px}
+    /* iPadOS Safari: stabilize native secure mask glyphs without replacing
+       the password input or disabling Apple Password AutoFill. */
+    .password-input-shell input[type="password"],
+    .password-input-shell input[type="text"]{
+      font-family:Arial,"Helvetica Neue",Helvetica,sans-serif!important;
+      font-size:16px!important;
+      font-style:normal!important;
+      font-weight:400!important;
+      font-variant:normal!important;
+      font-feature-settings:normal!important;
+      font-kerning:normal!important;
+      letter-spacing:normal!important;
+      text-transform:none!important;
+      text-rendering:auto!important;
+      -webkit-text-size-adjust:100%;
+    }
     .password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:40px;height:40px;min-height:0;margin:0;padding:0;border:0;border-radius:10px;background:transparent;color:var(--muted);box-shadow:none;cursor:pointer}
     .password-toggle:hover{background:var(--surface-soft);color:var(--text)}
     .password-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -644,7 +660,7 @@ export function signUpPage(t, links, ipInfo) {
         <span id="password-strength">${copy.passwordStrength}：0%</span>
       </div>
       <div class="password-input-shell">
-        <input id="password" type="password" placeholder="${t.passwordPlaceholder}" autocomplete="new-password">
+        <input id="password" type="password" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="${t.passwordPlaceholder}">
         <button id="password-toggle" class="password-toggle" type="button" aria-label="${copy.showPassword}" title="${copy.showPassword}">
           <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
           <svg class="eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.2A11 11 0 0 1 12 6c6.5 0 10 6 10 6a17.7 17.7 0 0 1-2.1 2.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.5 6 10 6c1.6 0 3-.4 4.2-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
@@ -661,7 +677,7 @@ export function signUpPage(t, links, ipInfo) {
       <div class="confirm-password-block">
         <label class="confirm-password-label" for="confirm-password">${copy.confirmPassword}</label>
         <div class="password-input-shell">
-          <input id="confirm-password" type="password" placeholder="${copy.confirmPassword}" autocomplete="new-password" aria-describedby="confirm-password-status" aria-invalid="false">
+          <input id="confirm-password" type="password" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="${copy.confirmPassword}" aria-describedby="confirm-password-status" aria-invalid="false">
           <span id="confirm-password-validity" class="signup-validity password-confirm-validity" aria-hidden="true"></span>
           <button id="confirm-password-toggle" class="password-toggle" type="button" aria-label="${copy.showPassword}" title="${copy.showPassword}">
             <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>

@@ -26,6 +26,21 @@ assert.equal((zhSignup.match(/class="signup-vip-entry"/g) || []).length, 1);
 assert.match(zhSignup, />VIP注册通道<\/a>/);
 assert.ok(zhSignup.indexOf('class="signup-vip-entry"') < zhSignup.indexOf('id="step-username"'), "VIP entry must stay outside stage toggling");
 assert.match(zhSignup, /\.signup-vip-entry\{[\s\S]*?position:fixed/);
+// Safari secure-entry regression: keep two native password controls and a
+// deterministic 16px glyph font for password/confirm and reveal toggles.
+for (const id of ["password", "confirm-password"]) {
+  assert.match(zhSignup, new RegExp('id="'+id+'" type="password" autocomplete="new-password"'));
+  assert.match(zhSignup, new RegExp('id="'+id+'" type="password"[^>]*autocapitalize="none"'));
+  assert.match(zhSignup, new RegExp('id="'+id+'" type="password"[^>]*autocorrect="off"'));
+}
+assert.match(zhSignup, /\.password-input-shell input\[type="password"\]/);
+assert.match(zhSignup, /\.password-input-shell input\[type="text"\]/);
+assert.match(zhSignup, /font-family:Arial,"Helvetica Neue",Helvetica,sans-serif!important/);
+assert.match(zhSignup, /font-size:16px!important/);
+assert.match(zhSignup, /letter-spacing:normal!important/);
+assert.doesNotMatch(zhSignup, /-webkit-text-security:\s*square/,
+  "Password text must use native secure input masking, never square glyphs.");
+
 const enLinks = buildLinks("en", "/sign-up", "en-us");
 const enSignup = signUpPage(TEXT.en, enLinks, { country: "US" });
 assert.match(enSignup, /class="signup-vip-entry" href="\/en-us\/sign-up\/odd"/);
