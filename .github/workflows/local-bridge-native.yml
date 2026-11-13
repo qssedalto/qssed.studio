@@ -117,7 +117,21 @@ jobs:
               throw "Unexpected process owns Bridge port"
             }
             Write-Host "Installed and verified Bridge PID $firstPid, version $($health.version)"
-            Stop-Process -Id $firstPid -Force
+            # Re-running the downloaded installer exercises the real update path:
+            # verify the old image, stop that exact PID, atomically replace it,
+            # register startup again, and confirm a new native process.
+            $upgrade = Start-Process -FilePath $exe -ArgumentList "--install-silent" -PassThru
+            if(-not $upgrade.WaitForExit(25000)) { $upgrade.Kill(); throw "Native upgrade never returned" }
+            if($upgrade.ExitCode -ne 0) {
+              if(Test-Path $log) { Get-Content $log -Tail 20 }
+              throw "Native upgrade exited with $($upgrade.ExitCode)"
+            }
+            $health = Wait-Bridge
+            $upgradedPid = [int]$health.pid
+            $knownPids += $upgradedPid
+            if($upgradedPid -eq $firstPid) { throw "Upgrade did not restart the installed daemon" }
+            Write-Host "Verified in-place upgrade PID $upgradedPid"
+            Stop-Process -Id $upgradedPid -Force
             Start-Sleep -Milliseconds 700
 
             # Simulate the login Run command. The installed binary must run
@@ -125,7 +139,7 @@ jobs:
             $background = Start-Process -FilePath $installed -ArgumentList "--background" -PassThru
             $knownPids += $background.Id
             $health = Wait-Bridge
-            if([int]$health.pid -eq $firstPid) { throw "Old process unexpectedly survived restart" }
+            if([int]$health.pid -eq $upgradedPid) { throw "Old upgraded process unexpectedly survived restart" }
             if(-not (Get-Process -Id ([int]$health.pid) -ErrorAction SilentlyContinue)) {
               throw "Bridge reported health without a running process"
             }
