@@ -52,6 +52,23 @@ export class TexCollaborationRoom {
       this.broadcastPresence();
       return new Response(null,{status:204});
     }
+    if (request.method === "POST" && new URL(request.url).pathname === "/source-rebased") {
+      // Internal Worker->Durable Object event (no public HTTP route).
+      // When a root TeX entry is deleted, renamed or imported, collaborators
+      // must not continue editing a Yjs document from the previous revision.
+      const owner = request.headers.get("X-Qsseda-Collab-Owner");
+      const doc = request.headers.get("X-Qsseda-Collab-Document");
+      if (!owner || !doc) return new Response("Missing source identity.", {status:403});
+      for (const socket of this.state.getWebSockets()) {
+        const participant = socket.deserializeAttachment() || {};
+        if (participant.owner_id !== owner || participant.document_id !== doc) continue;
+        try {
+          socket.send(JSON.stringify({type:"source-rebased",document_id:doc}));
+          socket.close(4004, "TeX entry revision changed");
+        } catch {}
+      }
+      return new Response(null, {status:204});
+    }
     if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
       return new Response("WebSocket upgrade required.", { status: 426 });
     }
