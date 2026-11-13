@@ -108,9 +108,10 @@ for (const zh of [true, false]) {
   assert(fullWork.includes('id="tex-editor-placeholder" class="tex-editor-placeholder" hidden'), "Deep-link first paint must not show the welcome page");
   assert(fullWork.includes('id="tex-document-restore"'), "Deep link needs a loading state if no cached copy exists");
   assert(fullWork.includes("#tex-editor-placeholder[hidden]{display:none!important}"), "Welcome CSS must not override the first-paint hidden state");
-  assert(fullWork.includes("restorePreviouslyOpenedDocument()"), "Document cache should hydrate before the network list finishes");
+  assert(fullWork.includes("restorePreviouslyOpenedDocument()"), "Deep link must retain an explicit first-paint restore guard");
+  assert(!fullWork.includes("activeDocument=cached"), "Old IndexedDB snapshots must never paint deleted or replaced main.tex before server validation");
   assert(fullWork.includes("openDocument(requested,'replace',true)"), "Fresh document data must refresh the cached snapshot");
-  assert(fullWork.includes("editor.inert=true"), "Cached documents must remain read-only pending the server fetch");
+  assert(!fullWork.includes("editor.inert=true"), "The editor must remain hidden, rather than showing a stale cached source as read-only");
   assert(fullWork.includes("editor.inert=false"), "Freshly verified documents must become interactive");
   assert(fullWork.includes("indexedDB.open(databaseName, 1)"), "Previously opened source files must be cached persistently");
   assert(fullWork.includes("url.pathname === '/api/tex/collaboration/shared'"), "Shared documents must also enter the local cache");
