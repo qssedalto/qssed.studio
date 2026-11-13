@@ -55,7 +55,7 @@ assert(!gpt.includes("AERTEX AI"), "AERTEX AI must not replace the approved Inte
 assert(knowledge.includes("AERTEX Knowledge"), "Knowledge UI must use AERTEX Knowledge");
 assert(tools.includes('"AERTEX Tools"'), "Lab tools must use AERTEX Tools");
 assert(favicon.includes('aria-label="AERTEX"'), "Favicon accessible brand must be AERTEX");
-assert(workApi.includes('filename="AERTEX-Bridge.exe"'), "Bridge download filename must be AERTEX-Bridge.exe");
+assert(workApi.includes('filename="AERTEX-Bridge-Setup.exe"'), "Bridge download must be the installed-only AERTEX-Bridge-Setup.exe, not a portable executable");
 assert(native.includes('appName          = "AERTEX Bridge"'), "Native bridge visible name must be AERTEX Bridge");
 assert(native.includes('bridgeService    = "qsseda-local-bridge"'), "Bridge service ID must remain qsseda-local-bridge");
 
