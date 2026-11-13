@@ -52,26 +52,51 @@ export function enhanceWorkTexPasskeyHelp(markup, zh) {
     .aertex-filechat .passkey-help-back:focus-visible {
       outline:2px solid var(--primary,#839bf4); outline-offset:3px
     }
-    .aertex-filechat .passkey-help-view {
-      display:flex; flex:1 1 auto; flex-direction:column;
-      min-height:0; overflow:hidden; background:var(--surface,#fff)
+    /* A dedicated two-column header prevents broad Work button width rules
+       from squeezing the title into a one-character vertical column. */
+    .aertex-filechat #aertex-chat-help-view.passkey-help-view {
+      display:flex!important; flex:1 1 auto!important; flex-direction:column!important;
+      width:100%!important; max-width:100%!important;
+      min-width:0!important; min-height:0!important;
+      overflow:hidden!important; box-sizing:border-box!important;
+      background:var(--surface,#fff);
     }
-    .aertex-filechat .passkey-help-heading {
-      display:flex; flex:0 0 auto; align-items:center;
-      justify-content:space-between; gap:8px; padding:11px 13px;
-      border-bottom:1px solid var(--border,#e6e7eb)
+    .aertex-filechat #aertex-chat-help-view .passkey-help-heading {
+      display:grid!important; grid-template-columns:minmax(0,1fr) max-content!important;
+      flex:0 0 auto!important; align-items:center!important;
+      justify-content:stretch!important; column-gap:12px!important;
+      width:100%!important; min-width:0!important; max-width:100%!important;
+      box-sizing:border-box!important;
+      margin:0!important; padding:12px 14px!important;
+      border-bottom:1px solid var(--border,#e6e7eb);
+      min-height:50px!important; height:auto!important;
+      writing-mode:horizontal-tb!important;
     }
-    .aertex-filechat .passkey-help-heading strong {
-      font-size:13px; min-width:0; overflow-wrap:anywhere
+    .aertex-filechat #aertex-chat-help-view .passkey-help-heading>strong {
+      display:block!important; min-width:0!important; width:auto!important;
+      max-width:100%!important;
+      font-size:13px!important; line-height:1.4!important;
+      font-weight:650!important; white-space:normal!important;
+      overflow-wrap:normal!important; word-break:normal!important;
+      writing-mode:horizontal-tb!important;
     }
-    .aertex-filechat .passkey-help-back {
-      flex:0 0 auto; background:transparent; color:var(--primary,#627ee6);
-      border:0; padding:6px 4px; font:inherit; font-size:12px; font-weight:600;
-      cursor:pointer
+    .aertex-filechat #aertex-chat-help-view .passkey-help-back {
+      display:inline-flex!important; flex:0 0 auto!important; align-items:center!important;
+      justify-content:center!important; justify-self:end!important;
+      width:max-content!important; min-width:0!important; max-width:120px!important;
+      height:32px!important; min-height:32px!important;
+      margin:0!important; padding:0 4px!important;
+      border:0!important; background:transparent!important;
+      box-shadow:none!important; color:var(--primary,#627ee6)!important;
+      font:inherit!important; font-size:12px!important; font-weight:600!important;
+      line-height:1.3!important; white-space:nowrap!important;
+      writing-mode:horizontal-tb!important; cursor:pointer
     }
-    .aertex-filechat .passkey-help-scroll {
-      flex:1 1 auto; overflow-y:auto; overscroll-behavior:contain;
-      padding:14px 13px 25px; min-height:0;
+    .aertex-filechat #aertex-chat-help-view .passkey-help-scroll {
+      display:block!important; flex:1 1 auto!important;
+      width:100%!important; min-width:0!important; min-height:0!important;
+      box-sizing:border-box!important; overflow-x:hidden!important; overflow-y:auto!important;
+      overscroll-behavior:contain; padding:14px 13px 25px!important;
       scrollbar-width:thin
     }
     .aertex-filechat .passkey-help-step {
