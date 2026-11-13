@@ -379,6 +379,12 @@ assert(localWorkSource.includes("mobileDevice ? Promise.resolve() : probeLocal()
   localWorkSource.includes("probesReady = true;") &&
   localWorkSource.includes("window.__aertexTexCompilerProbe = result;"),
   "Mobile must skip impossible Bridge probing while Windows sees a settled readiness result.");
+assert(localWorkSource.includes("const showTitleBuildResult = !previewOnly || previewUserEdited") &&
+  localWorkSource.includes("if (showTitleBuildResult && snapshot === currentPreviewSnapshot())") &&
+  localWorkSource.includes("if (event?.detail?.userInitiated === true) previewUserEdited = true") &&
+  localWorkSource.includes("source.addEventListener('input', () => {") &&
+  localWorkSource.includes("previewUserEdited = true;"),
+  "Refreshing an untouched TeX project may preview in the background, but must not display a misleading title failure badge; edits must still report build status.");
 assert(entry.includes("enhanceWorkTexDeviceReadiness(enhanceWorkTexMobileFollowup("),
   "Device guidance must be scoped to the Work TeX route.");
 console.log("TeX Workbench checks passed.");
