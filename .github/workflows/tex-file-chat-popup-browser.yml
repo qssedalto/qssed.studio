@@ -1,0 +1,36 @@
+name: Work TeX File Chat Floating UI QA
+
+on:
+  pull_request:
+    paths:
+      - 'studio/ui-work-tex-file-chat.js'
+      - 'studio/ui-work-tex-toolbar-scroll.js'
+      - 'studio/entry.js'
+      - 'scripts/tex-file-chat-popup-browser.mjs'
+      - 'scripts/tex-file-chat-browser-crypto-check.mjs'
+      - '.github/workflows/tex-file-chat-popup-browser.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  floating-popup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Chromium UI behavior and floating chat screenshots
+        run: node scripts/tex-file-chat-popup-browser.mjs
+      - name: Chromium E2EE message, file Passkey, and reload integration
+        run: node scripts/tex-file-chat-browser-crypto-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tex-file-chat-floating-qa
+          path: /tmp/aertex-filechat-visual/*.png
+          retention-days: 7
