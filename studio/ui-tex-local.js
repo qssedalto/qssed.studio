@@ -476,7 +476,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
                     automatic: previewOnly,
                     // Full bounded compiler output stays in browser memory until
                     // the user explicitly downloads the log as a local file.
-                    log: [String(error?.message || localCopy.localFailed), String(error?.payload?.log || '')].filter(Boolean).join('\n\n')
+                    log: [String(error?.message || localCopy.localFailed), String(error?.payload?.log || '')].filter(Boolean).join('\\n\\n')
                   }
                 }));
               }
