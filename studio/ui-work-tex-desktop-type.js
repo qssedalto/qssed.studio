@@ -407,7 +407,9 @@ export function enhanceWorkTexDesktopTypography(markup) {
             more.textContent = '+' + String(participants.length - 4);
             host.append(more);
           }
-          host.title = participants.length ? participants.length + ' participants' : '';
+          // Hover presence is rendered by the main collaboration controller.
+          // Do not cover it with the browser's old generic member-count title.
+          host.removeAttribute('title');
         }
 
         async function prefetchCollaboration(root, documentList) {

@@ -5,6 +5,11 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     close: "关闭协作设置",
     noDocument: "先打开一份 TeX 文档",
     members: "成员",
+    presenceHeading: "成员在线状态",
+    presenceOnline: "在线",
+    presenceOffline: "离线",
+    presenceUnknown: "状态未知",
+    presenceLoading: "正在读取成员…",
     membersDetail: "管理谁可以参与这份文档。成员设置会绑定到当前文档。",
     invite: "邀请成员",
     username: "搜索成员",
@@ -50,6 +55,11 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     close: "Close collaboration settings",
     noDocument: "Open a TeX document first",
     members: "People",
+    presenceHeading: "Member availability",
+    presenceOnline: "Online",
+    presenceOffline: "Offline",
+    presenceUnknown: "Status unavailable",
+    presenceLoading: "Loading members…",
     membersDetail: "Manage who can participate in this document. Membership is scoped to the active document.",
     invite: "Invite people",
     username: "Search members",
@@ -168,6 +178,24 @@ export function enhanceWorkTexCollaboration(markup, zh) {
       .tex-collaboration-avatar-dot{display:grid;place-items:center;flex:0 0 27px;box-sizing:border-box;width:27px;height:27px;margin-left:-8px;border:2px solid var(--surface);border-radius:50%;background:color-mix(in srgb,var(--primary) 12%,var(--surface));color:var(--muted);font-size:9px;font-weight:800;overflow:hidden}
       .tex-collaboration-avatar-dot:first-child{margin-left:0}.tex-collaboration-avatar-dot img{width:100%;height:100%;object-fit:cover}
       .tex-collaboration-avatar-overflow{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;margin-left:-8px;box-sizing:border-box;border:2px solid var(--surface);border-radius:50%;background:var(--fill);color:var(--muted);font-size:9px;font-weight:750}
+      /* A non-interactive fixed tooltip avoids clipping inside horizontally
+         scrollable editor toolbars. It never covers the collaboration button. */
+      .tex-collaboration-presence-tooltip{position:fixed;z-index:2147481900;box-sizing:border-box;width:min(290px,calc(100vw - 16px));max-height:min(480px,75vh);overflow:auto;padding:13px;border:1px solid var(--border);border-radius:15px;background:var(--surface);color:var(--text);box-shadow:0 15px 42px rgba(0,0,0,.20);white-space:normal;text-align:left;font-size:12px;line-height:1.35;pointer-events:none;overscroll-behavior:contain}
+      .tex-collaboration-presence-tooltip[hidden],body.tex-collaboration-open .tex-collaboration-presence-tooltip{display:none!important}
+      .tex-collaboration-presence-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:1px 2px 10px;border-bottom:1px solid var(--border)}
+      .tex-collaboration-presence-heading strong{font-size:12px;font-weight:750}
+      .tex-collaboration-presence-heading span{color:var(--muted);font-size:11px}
+      .tex-collaboration-presence-summary{padding:9px 2px 3px;color:var(--muted);font-size:11px}
+      .tex-collaboration-presence-person{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:9px;min-height:37px;padding:4px 2px}
+      .tex-collaboration-presence-person .tex-collaboration-avatar-dot{width:27px;height:27px;margin:0!important;flex:none}
+      .tex-collaboration-presence-person-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-size:12px}
+      .tex-collaboration-presence-state{display:inline-flex;align-items:center;gap:5px;flex:none;white-space:nowrap;color:var(--muted);font-size:11px}
+      .tex-collaboration-presence-state:before{content:"";display:block;width:7px;height:7px;border-radius:50%;background:var(--border-strong)}
+      .tex-collaboration-presence-state[data-status="online"]{color:var(--text)}
+      .tex-collaboration-presence-state[data-status="online"]:before{background:#31b45e;box-shadow:0 0 0 2px color-mix(in srgb,#31b45e 12%,transparent)}
+      .tex-collaboration-presence-state[data-status="unknown"]:before{background:var(--muted);opacity:.5}
+      .tex-collaboration-presence-loading{padding:11px 2px 2px;color:var(--muted);font-size:12px}
+
       @media(max-width:760px){.tex-work-app .tex-editor-toolbar>#tex-collaboration-open{grid-column:1/-1!important;justify-self:stretch!important;flex:1 1 auto!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;padding:0 10px!important}.tex-collaboration-avatars{min-width:90px}}
 
       body.tex-collaboration-open{overflow:hidden!important}
@@ -276,6 +304,16 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         openButton.disabled = true;
         openButton.innerHTML = '<svg class="tex-collaboration-people" viewBox="0 0 120 88" aria-hidden="true"><circle cx="34" cy="27.9" r="12.7"/><circle cx="82" cy="25.4" r="15.1"/><path d="M49 50.6C44.2 47.4 38.6 45.9 33.1 45.9C17.7 45.9 5.5 58.7 5.5 75C5.5 76.8 7 78.2 9.1 78.2H42"/><path d="M53 78.2C53 60.7 66.3 47.5 82.2 47.5C99.2 47.5 113 60.7 113 76.5C113 77.4 112.2 78.2 111.4 78.2H53.6C53.2 78.2 53 78.2 53 78.2Z"/></svg><span>' + labels.open + '</span><span class="tex-collaboration-avatars" aria-hidden="true"></span>';
         toolbar.append(openButton);
+
+        // A hover/focus status list is separate from the actual edit dialog.
+        // Append to <body> so PDF/toolbar overflow never clips the popover.
+        const presenceTooltip = document.createElement('div');
+        presenceTooltip.id = 'tex-collaboration-presence-tooltip';
+        presenceTooltip.className = 'tex-collaboration-presence-tooltip';
+        presenceTooltip.setAttribute('role', 'tooltip');
+        presenceTooltip.hidden = true;
+        document.body.append(presenceTooltip);
+        let presenceTooltipKey = '';
 
         const backdrop = document.createElement('div');
         backdrop.className = 'tex-collaboration-backdrop';
@@ -461,6 +499,106 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           return draftParticipants.some(item => (id && String(item?.id || '') === id) || (handle && String(item?.username || '').toLowerCase() === handle));
         }
 
+        // This is live WebSocket room presence, NOT membership. A member can
+        // have access while offline. When the channel is disconnected the
+        // correct result is unknown, never a fabricated offline diagnosis.
+        function presenceMemberState(person, documentId, liveState, presence) {
+          if (!documentId || !liveState?.connected ||
+              liveState.document_id !== documentId ||
+              presence?.document_id !== documentId ||
+              !Array.isArray(presence.participants)) return 'unknown';
+          const id = String(person?.id || '');
+          // Authenticate by stable account id; display names are not unique.
+          return id && presence.participants.some(item => String(item?.id || '') === id)
+            ? 'online' : 'offline';
+        }
+
+        function paintPresenceTooltip() {
+          if (presenceTooltip.hidden) return;
+          const id = activeDocumentId();
+          if (!id) { hidePresenceTooltip(); return; }
+          const people = new Map();
+          for (const person of Array.isArray(snapshot?.participants) ? snapshot.participants : []) {
+            const key = String(person?.id || person?.username || '');
+            if (key && !people.has(key)) people.set(key, person);
+          }
+          const members = [...people.values()];
+          const live = window.__qssedaTexRealtimeSnapshot;
+          const presence = window.__qssedaTexPresenceSnapshot;
+          const states = members.map(person => presenceMemberState(person,id,live,presence));
+          const signature = JSON.stringify([id,members.map(p=>[p.id,p.username,p.display_name,p.avatar_url]),states,Boolean(snapshot)]);
+          if (signature === presenceTooltipKey) return;
+          presenceTooltipKey = signature;
+          presenceTooltip.replaceChildren();
+          const heading = document.createElement('div');
+          heading.className = 'tex-collaboration-presence-heading';
+          const headingTitle = document.createElement('strong');
+          headingTitle.textContent = labels.presenceHeading;
+          const total = document.createElement('span');
+          total.textContent = members.length + ' ' + labels.members;
+          heading.append(headingTitle,total);
+          presenceTooltip.append(heading);
+          if (!snapshot) {
+            const loading = document.createElement('div');
+            loading.className = 'tex-collaboration-presence-loading';
+            loading.textContent = labels.presenceLoading;
+            presenceTooltip.append(loading);
+            return;
+          }
+          const online = states.filter(value => value === 'online').length;
+          const offline = states.filter(value => value === 'offline').length;
+          const summary = document.createElement('div');
+          summary.className = 'tex-collaboration-presence-summary';
+          summary.textContent = states.includes('unknown')
+            ? labels.presenceUnknown
+            : labels.presenceOnline + ' ' + online + ' · ' + labels.presenceOffline + ' ' + offline;
+          presenceTooltip.append(summary);
+          for (let index=0;index<members.length;index++) {
+            const person = members[index],state = states[index];
+            const row = document.createElement('div');
+            row.className = 'tex-collaboration-presence-person';
+            row.append(makeAvatar(person,'tex-collaboration-avatar-dot'));
+            const display = document.createElement('span');
+            display.className = 'tex-collaboration-presence-person-name';
+            display.textContent = person?.display_name || person?.username || labels.members;
+            display.title = person?.username || display.textContent;
+            const status = document.createElement('span');
+            status.className = 'tex-collaboration-presence-state';
+            status.dataset.status = state;
+            status.textContent = state === 'online' ? labels.presenceOnline :
+              state === 'offline' ? labels.presenceOffline : labels.presenceUnknown;
+            row.append(display,status);
+            presenceTooltip.append(row);
+          }
+        }
+
+        function positionPresenceTooltip() {
+          if (presenceTooltip.hidden) return;
+          const rect = openButton.getBoundingClientRect();
+          const width = Math.min(290,window.innerWidth-16);
+          const left = Math.max(8,Math.min(rect.right-width,window.innerWidth-width-8));
+          // Prefer below the button; flip above near the bottom edge.
+          const below = rect.bottom+8;
+          const above = rect.top-8-presenceTooltip.offsetHeight;
+          const top = below+presenceTooltip.offsetHeight <= window.innerHeight-8 || above<8 ? below : above;
+          presenceTooltip.style.left = left+'px';
+          presenceTooltip.style.top = Math.max(8,top)+'px';
+        }
+
+        function showPresenceTooltip() {
+          if (!activeDocumentId() || opened || openButton.disabled) return;
+          presenceTooltipKey = '';
+          presenceTooltip.hidden = false;
+          paintPresenceTooltip();
+          positionPresenceTooltip();
+          openButton.setAttribute('aria-describedby',presenceTooltip.id);
+        }
+
+        function hidePresenceTooltip() {
+          presenceTooltip.hidden = true;
+          openButton.removeAttribute('aria-describedby');
+        }
+
         function renderAvatars() {
           const participants = (opened ? draftParticipants : snapshot?.participants) || [];
           const people = new Map();
@@ -477,7 +615,9 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             extra.textContent = '+' + (members.length - 4);
             avatars.append(extra);
           }
-          avatars.title = members.length ? String(members.length) + ' ' + labels.members : '';
+          // Avoid the old browser-native "2 members" hint over our live status list.
+          avatars.removeAttribute('title');
+          if (!presenceTooltip.hidden) { paintPresenceTooltip(); positionPresenceTooltip(); }
         }
 
         function renderParticipants() {
@@ -828,6 +968,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           setPage(0);
           drawer.hidden = false;
           backdrop.hidden = false;
+          hidePresenceTooltip();
           document.body.classList.add('tex-collaboration-open');
           documentLabel.textContent = titleInput?.value?.trim() || activeDocumentId();
           window.requestAnimationFrame(() => {
@@ -860,7 +1001,9 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         function syncDocument() {
           const id = activeDocumentId();
           openButton.disabled = !id;
-          openButton.title = id ? labels.open : labels.noDocument;
+          openButton.setAttribute('aria-label',id ? labels.open : labels.noDocument);
+          openButton.removeAttribute('title');
+          if (!id) hidePresenceTooltip();
           documentLabel.textContent = titleInput?.value?.trim() || id || labels.noDocument;
           // Explorer re-renders, file highlights and presence updates can each
           // mutate the document tree. Those are NOT document switches: never
@@ -878,7 +1021,23 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           if (id) void loadSnapshot(opened);
         }
 
-        openButton.addEventListener('click', openDrawer);
+        openButton.addEventListener('click', () => { hidePresenceTooltip(); openDrawer(); });
+        openButton.addEventListener('mouseenter', () => {
+          if (window.matchMedia?.('(hover:hover) and (pointer:fine)')?.matches) showPresenceTooltip();
+        });
+        openButton.addEventListener('mouseleave',hidePresenceTooltip);
+        openButton.addEventListener('focus',showPresenceTooltip);
+        openButton.addEventListener('blur',hidePresenceTooltip);
+        window.addEventListener('scroll',positionPresenceTooltip,true);
+        window.addEventListener('resize',positionPresenceTooltip);
+        // Both events come from the authenticated room for the active document.
+        // Presence is based on people rather than their browser tabs/sockets.
+        const updatePresenceTooltip=() => {
+          if (!presenceTooltip.hidden) { paintPresenceTooltip(); positionPresenceTooltip(); }
+        };
+        window.addEventListener('qsseda:tex-presence',updatePresenceTooltip);
+        window.addEventListener('qsseda:tex-realtime-status',updatePresenceTooltip);
+        window.addEventListener('qsseda:tex-collaboration-committed',updatePresenceTooltip);
         closeButton.addEventListener('click', () => closeDrawer(false));
         backdrop.addEventListener('click', () => closeDrawer(false));
         cancelButton.addEventListener('click', () => closeDrawer(false));
