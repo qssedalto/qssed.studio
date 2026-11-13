@@ -41,6 +41,22 @@ for (const zh of [true, false]) {
     "Project list must be compact, not oversized cards");
   assert(WORK_TEX_EXPLORER_STYLE.includes(".tex-tree-folder-children"),
     "Nested directories must have separate collapsible content");
+
+  assert(WORK_TEX_EXPLORER_TREE.includes("label.scrollWidth<=label.clientWidth+1"),
+    "Only truncated filenames must show the full-name tooltip");
+  assert(WORK_TEX_EXPLORER_TREE.includes("filenameTooltip.textContent=name") &&
+    WORK_TEX_EXPLORER_TREE.includes("setAttribute('role','tooltip')") &&
+    WORK_TEX_EXPLORER_TREE.includes("row.setAttribute('aria-describedby',filenameTooltip.id)"),
+    "Full filenames must be shown safely and accessibly");
+  assert(WORK_TEX_EXPLORER_TREE.includes("list.addEventListener('pointerover'") &&
+    WORK_TEX_EXPLORER_TREE.includes("list.addEventListener('focusin'") &&
+    WORK_TEX_EXPLORER_TREE.includes("list.addEventListener('scroll',hideFilenameTooltip"),
+    "Dynamic tree rows must support pointer, keyboard, and scrolling");
+  assert(WORK_TEX_EXPLORER_STYLE.includes(".tex-tree-name-tooltip") &&
+    WORK_TEX_EXPLORER_STYLE.includes("position:fixed;") &&
+    WORK_TEX_EXPLORER_STYLE.includes("pointer-events:none;"),
+    "Full-name tooltip should appear above the clipped sidebar without intercepting clicks");
+
   // Supplementary text/PDF/image files must occupy the SAME editor viewport.
   // A second inline card above an unhidden CodeMirror was showing both files at once.
   assert(WORK_TEX_EXPLORER_STYLE.includes("#tex-editor.is-asset-mode > .tex-codemirror-host"),
