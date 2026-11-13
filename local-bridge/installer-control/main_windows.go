@@ -21,8 +21,9 @@ import (
  "unsafe"
 )
 
+var expectedVersion="0.3.2-multipass"
+
 const (
- expectedVersion="0.3.1-project"
  serviceName="qsseda-local-bridge"
  healthURL="http://127.0.0.1:32145/health"
  localAddress="127.0.0.1:32145"
