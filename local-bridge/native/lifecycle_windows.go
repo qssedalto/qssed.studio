@@ -84,7 +84,7 @@ func preflightUpgrade() error {
   // A manual launch of the installed executable is a status/restart operation,
   // not a reason to kill an otherwise healthy bridge.
   if samePath(current,installed) {return nil}
-  health,err:=probeNativeHealth()
+  _,err=probeNativeHealth()
   if err==nil {
     if err:=stopVerifiedBridgeForUpgrade();err!=nil {
       return fmt.Errorf("existing Bridge could not be stopped safely: %w",err)
