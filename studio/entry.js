@@ -28,6 +28,7 @@ import { enhanceWorkLocalBridgeNative } from "./ui-work-native.js";
 import { injectWorkTexHomeLinks, polishWorkHubTexRoute, polishWorkTexNavigation, polishWorkTexVisualTheme } from "./ui-work-tex.js";
 import { polishWorkTexViewportEdges } from "./ui-work-tex-viewport-edges.js";
 import { polishWorkTexWelcome } from "./ui-work-tex-welcome.js";
+import { guardWorkTexFirstPaint } from "./ui-work-tex-paint-guard.js";
 import { prepareWorkTexDocumentShell } from "./ui-work-tex-persistent-cache.js";
 import { polishWorkTexPdfControls } from "./ui-work-tex-pdf-controls.js";
 import { enhanceWorkTexCollapsiblePanels } from "./ui-work-tex-panels.js";
@@ -281,6 +282,7 @@ export default {
           `<div id="tex-message" class="tex-message is-error" role="status">${notice}</div>`
         );
       }
+      if (pathname === "/work/tex") markup = guardWorkTexFirstPaint(markup);
       const pageOptions = pathname === "/work/local" || pathname === "/work/tex" || pathname === "/workspace/experiments/tex" ? { allowLoopback: true } : {};
       return withStudioSessionCookies(localizedPage(markup, locale, 200, pageOptions), gate.cookies);
     }
