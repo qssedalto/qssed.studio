@@ -22,6 +22,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     noMatches: "没有找到相关用户",
     alreadyMember: "已在成员中",
     userNotFound: "没有找到这个用户名对应的活跃用户。",
+    memberAdded: "成员已添加并保存。关闭协作面板后仍会保留。",
     liveTitle: "实时共同编辑",
     livePreparing: "CodeMirror + Yjs 实时协作",
     liveDetail: "已接入 CodeMirror 6 与 Yjs。当前文档的实时同步、在线成员、彩色光标和选区由受权限保护的协作通道提供。",
@@ -34,7 +35,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     linkDetail: "公开或受控分享链接暂时保持关闭，避免在权限模型完成前产生绕过成员列表的入口。",
     shareAfter: "成员权限验证完成后再开放分享链接。",
     ownerHint: "所有者拥有完整管理权限",
-    permissionHint: "成员和权限调整需要点击“保存更改”才会生效。文档正文通过 Yjs 实时同步；只读成员无法编辑。",
+    permissionHint: "点击“添加”会立即保存新成员；修改角色或移除成员后，点击“保存更改”。只读成员无法编辑。",
     saved: "协作设置已更新",
     saving: "正在保存更改…",
     unavailable: "协作服务暂时不可用，请稍后重试。",
@@ -66,6 +67,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     noMatches: "No matching users",
     alreadyMember: "Already a member",
     userNotFound: "No active user matches that username.",
+    memberAdded: "Collaborator added and saved. They will remain after closing the panel.",
     liveTitle: "Live co-editing",
     livePreparing: "CodeMirror + Yjs live collaboration",
     liveDetail: "CodeMirror 6 and Yjs are integrated. Live text, online members, colored cursors and selections use an authenticated collaboration channel.",
@@ -78,7 +80,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
     linkDetail: "Public or controlled share links stay disabled until the permission model is fully enforced, so there is no alternate path around the member list.",
     shareAfter: "Share links will be enabled after member access is fully enforced.",
     ownerHint: "The owner has full management access",
-    permissionHint: "Membership and permission changes take effect after Save changes. Document text uses Yjs live synchronization; viewers cannot edit.",
+    permissionHint: "Add saves a new member immediately. Use Save changes after modifying roles or removing members. Viewers cannot edit.",
     saved: "Collaboration settings updated",
     saving: "Saving changes…",
     unavailable: "Collaboration is temporarily unavailable. Please try again.",
@@ -679,15 +681,47 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           return (Array.isArray(data?.results) ? data.results : []).find(person => String(person?.username || '').toLowerCase() === normalized) || null;
         }
 
+        // Adding a person is a real permission write, NOT an unsaved draft.
+        // The old handler appended an avatar locally and discarded it on close.
+        function acceptCommittedSnapshot(data, id, previousDraft, previousServer) {
+          if (!data || data.document_id !== id || !Array.isArray(data.participants)) {
+            throw new Error(labels.error);
+          }
+          // Discard GET responses that started before this access-control write.
+          requestSequence += 1;
+          snapshotDocumentId = id;
+          snapshotLoadedAt = Date.now();
+          snapshotPromise = null;
+          snapshotPromiseDocumentId = '';
+          snapshot = data;
+          const desiredById = new Map((previousDraft || []).map(item => [String(item.id), item]));
+          const pendingRemovals = new Set((previousServer || [])
+            .filter(item => !item.is_owner && !desiredById.has(String(item.id)))
+            .map(item => String(item.id)));
+          draftParticipants = cloneParticipants(data.participants)
+            .filter(item => item.is_owner || !pendingRemovals.has(String(item.id)))
+            .map(item => {
+              const pending = desiredById.get(String(item.id));
+              return pending && !item.is_owner ? { ...item, role: pending.role } : item;
+            });
+          renderParticipants();
+          window.dispatchEvent(new CustomEvent('qsseda:tex-collaboration-committed', {
+            detail: data
+          }));
+        }
+
         form.addEventListener('submit', async event => {
           event.preventDefault();
           const id = activeDocumentId();
           const handle = username.value.trim().replace(/^@+/, '');
           if (!id || !handle || loading || saving || snapshot?.can_manage !== true) return;
           hideSearchResults();
+          saving = true;
           setBusy(true);
           add.textContent = labels.adding;
           showMessage('');
+          const previousDraft = cloneParticipants(draftParticipants);
+          const previousServer = cloneParticipants(snapshot?.participants);
           try {
             const person = await resolveDraftPerson(handle);
             if (!person) {
@@ -698,22 +732,45 @@ export function enhanceWorkTexCollaboration(markup, zh) {
               showMessage(labels.alreadyMember, true);
               return;
             }
-            draftParticipants.push({
-              ...person,
-              role: role.value === 'viewer' ? 'viewer' : 'editor',
-              is_owner: false,
-              created_at: '',
-              updated_at: ''
-            });
+            // No optimistic avatar: the database must acknowledge the grant.
+            let data;
+            try {
+              data = await api('/api/tex/collaboration', {
+                method: 'POST',
+                body: JSON.stringify({
+                  document_id: id,
+                  username: person.username,
+                  role: role.value === 'viewer' ? 'viewer' : 'editor'
+                })
+              });
+            } catch (error) {
+              // A write can succeed even if its final response fails. Re-read
+              // before reporting that the invitation was lost or retrying it.
+              const verified = await api('/api/tex/collaboration?document=' + encodeURIComponent(id))
+                .catch(() => null);
+              if (!verified?.participants?.some(item => String(item.id) === String(person.id))) throw error;
+              data = verified;
+            }
+            if (!data?.participants?.some(item => String(item.id) === String(person.id))) {
+              throw new Error(labels.error);
+            }
+            if (id !== activeDocumentId()) {
+              window.dispatchEvent(new CustomEvent('qsseda:tex-collaboration-committed', {
+                detail: data
+              }));
+              return;
+            }
+            acceptCommittedSnapshot(data, id, previousDraft, previousServer);
             username.value = '';
             selectedSearchPerson = null;
-            renderParticipants();
-            updateSaveState();
+            showMessage(labels.memberAdded);
           } catch (error) {
             showMessage(friendlyError(error), true);
           } finally {
             add.textContent = labels.add;
+            saving = false;
             setBusy(false);
+            renderParticipants();
           }
         });
 
@@ -744,7 +801,14 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             for (const item of removals) {
               await api('/api/tex/collaboration?document=' + encodeURIComponent(id) + '&member=' + encodeURIComponent(item.id), { method: 'DELETE' });
             }
-            await loadSnapshot(false);
+            const committed = await loadSnapshot(false);
+            if (!committed || !Array.isArray(committed.participants)) {
+              throw new Error(labels.error);
+            }
+            syncDraftFromSnapshot();
+            window.dispatchEvent(new CustomEvent('qsseda:tex-collaboration-committed', {
+              detail: committed
+            }));
             showMessage(labels.saved);
             closeDrawer(true);
           } catch (error) {
