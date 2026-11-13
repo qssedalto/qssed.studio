@@ -320,7 +320,7 @@ async function updateDocument(request, env, userId) {
     if (previous.main_deleted === true) return json({error:"This project has no TeX entry. Add a root .tex file before editing the main source."},409);
     // An older tab must not overwrite a replacement of main.tex with its
     // own stale autosave payload. Only a freshly opened revision may write.
-    if (texRealtimeEpoch(parsed.value?.realtime_epoch) !== texRealtimeEpoch(previous))
+    if ((typeof parsed.value?.realtime_epoch !== "string" || texRealtimeEpoch(parsed.value.realtime_epoch) !== texRealtimeEpoch(previous)))
       return json({ error: "This project's main TeX file changed. Reopen it before saving; your older editor has not overwritten the new version.", code: "main_revision_changed" }, 409);
     if (previous.locked || previous.locked_files?.includes("main.tex") || previous.locked_files?.includes(previous.main_filename || "main.tex"))
       return json({ error: "Unlock main.tex or the project before editing.", }, 423);
