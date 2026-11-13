@@ -174,7 +174,7 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
 
         async function loopbackFetch(base, path, options = {}) {
           const controller = new AbortController();
-          const timer = window.setTimeout(() => controller.abort(), options.method === 'POST' ? 23000 : 1800);
+          const timer = window.setTimeout(() => controller.abort(), options.method === 'POST' ? 110000 : 1800);
           try {
             const request = new Request(base + path, {
               method: options.method || 'GET', mode: 'cors', cache: 'no-store', credentials: 'omit',
