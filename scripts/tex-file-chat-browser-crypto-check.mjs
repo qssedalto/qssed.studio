@@ -13,80 +13,63 @@ if(!binary)throw Error("Chrome required for live E2EE browser integration test")
 const owner="11111111-1111-4111-8111-111111111111";
 const projectA="22222222-2222-4222-8222-222222222222";
 const projectB="33333333-3333-4333-8333-333333333333";
-const memory={registered:new Set(),device:new Map(),envelopes:new Map(),messages:[],
-  sentPlaintext:false,sentFileSelector:false,verified:0};
+const memory={device:new Map(),envelopes:new Map(),messages:[],sentPlaintext:false,
+  sentFileSelector:false,passkeyCalls:0};
 const setup=[
   "<script>",
   "window.__qaActiveFile='main.tex';",
   "window.__aertexTexExplorerAsset=()=>({name:window.__qaActiveFile});",
-  "const fakeId=new Uint8Array(32).fill(7);",
-  "window.__passkeyCreateCount=0;window.__passkeyGetCount=0;",
-  "const fakeCredentials={",
-  " create:async()=>{window.__passkeyCreateCount++;return {type:'public-key',id:'fake',rawId:fakeId.buffer,",
-  "   response:{clientDataJSON:new Uint8Array([123,125]).buffer,attestationObject:new Uint8Array([160]).buffer}}},",
-  " get:async()=>{window.__passkeyGetCount++;return {type:'public-key',id:'fake',rawId:fakeId.buffer,",
-  "   response:{clientDataJSON:new Uint8Array([123,125]).buffer,",
-  "     authenticatorData:new Uint8Array(37).buffer,signature:new Uint8Array(64).buffer}}}",
-  "};",
-  "Object.defineProperty(navigator,'credentials',{configurable:true,value:fakeCredentials});",
-  "Object.defineProperty(window,'PublicKeyCredential',{configurable:true,value:class {}});",
+  "Object.defineProperty(navigator,'credentials',{configurable:true,value:{",
+  "create:()=>{throw Error('Unexpected Passkey CREATE')},",
+  "get:()=>{throw Error('Unexpected Passkey GET')}}});",
   "</script>"
 ].join("\n");
 const qa=[
   "<script>",
   "(async()=>{",
   " const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));",
-  " async function until(predicate,ms=9000){const s=Date.now();while(Date.now()-s<ms){",
-  "  if(predicate())return;await sleep(70)}throw Error('Timed out waiting for chat state')}",
+  " async function until(fn,ms=10000){const t=Date.now();while(Date.now()-t<ms){",
+  "  if(fn())return;await sleep(70)}throw Error('Timed out waiting for encrypted chat state')}",
   " try{",
-  "  const round=new URL(location.href).searchParams.get('round');",
-  "  await until(()=>document.getElementById('tex-command-chat-shortcut'));",
-  "  const toolbar=document.getElementById('tex-command-chat-shortcut');",
-  "  toolbar.click();",
-  "  await until(()=>document.getElementById('aertex-filechat')?.hidden===false);",
-  "  const panel=document.getElementById('aertex-filechat');",
-  "  const conversation=document.getElementById('aertex-chat-conversation');",
-  "  const passkey=document.getElementById('aertex-chat-passkey');",
-  "  await until(()=>!passkey.disabled);",
-  "  if(conversation.hidden!==true)throw Error('Chat was unlocked without Passkey');",
-  "  if(round==='first'&&!passkey.textContent.includes('创建'))throw Error('First-use Passkey creation missing');",
-  "  if(round==='second'&&!passkey.textContent.includes('验证'))throw Error('Reload did not require fresh Passkey');",
-  "  passkey.click();",
-  "  if(round==='fresh'){",
-  "    // A new browser profile has no IndexedDB ECDH key, but the server already has a Passkey.",
-  "    // It must verify via GET without opening Windows Security's second CREATE dialog.",
-  "    await until(()=>window.__passkeyGetCount===1,9000);",
-  "    await sleep(700);",
-  "    if(window.__passkeyCreateCount!==0)throw Error('Existing project Passkey triggered a second save-passkey dialog');",
-  "    if(document.getElementById('aertex-chat-status').textContent.includes('检测到新设备'))",
-  "      throw Error('Browser ECDH identity misclassified as new physical device');",
-  "    document.body.dataset.filechatCryptoQa='PASS';return;",
-  "  }",
-  "  await until(()=>!conversation.hidden,9000);",
-  "  if(round==='first'){",
-  "    document.getElementById('aertex-chat-input').value='Private browser-to-browser encrypted message';",
-  "    document.getElementById('aertex-chat-send').click();",
-  "    await until(()=>document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'),9000);",
-  "  }else{",
-  "    await until(()=>document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'),9000);",
-  "    const roomTitle=document.getElementById('aertex-chat-filename').textContent;",
-  "    window.__qaActiveFile='chapters/new.tex';",
-  "    window.dispatchEvent(new Event('aertex:tex-project-asset-selected'));",
-  "    await sleep(220);",
-  "    if(panel.hidden||conversation.hidden)throw Error('Changing files relocked the project conversation');",
-  "    if(document.getElementById('aertex-chat-filename').textContent!==roomTitle)",
-  "      throw Error('File changed the displayed chat identity');",
-  "    if(!document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'))",
-  "      throw Error('File switch lost the project chat history');",
-  "    document.querySelector('.tex-work-app').dataset.texCollaborationDocumentId='33333333-3333-4333-8333-333333333333';",
-  "    await until(()=>conversation.hidden&&passkey.textContent.includes('创建'),9000);",
-  "    if(panel.hidden)throw Error('Project switch closed the floating panel');",
-  "    if(document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'))",
-  "      throw Error('Project switch leaked the previous project messages');",
-  "  }",
-  "  document.body.dataset.filechatCryptoQa='PASS';",
+  "   const round=new URL(location.href).searchParams.get('round');",
+  "   await until(()=>document.getElementById('tex-command-chat-shortcut'));",
+  "   const button=document.getElementById('tex-command-chat-shortcut');",
+  "   button.click();",
+  "   await until(()=>!document.getElementById('aertex-filechat').hidden);",
+  "   const panel=document.getElementById('aertex-filechat');",
+  "   const conversation=document.getElementById('aertex-chat-conversation');",
+  "   const send=document.getElementById('aertex-chat-send');",
+  "   const status=document.getElementById('aertex-chat-status');",
+  "   if(panel.querySelector('#aertex-chat-passkey'))throw Error('Passkey UI must be removed');",
+  "   if(panel.querySelector('#aertex-chat-help-view'))throw Error('Legacy Passkey help must be removed');",
+  "   if(round==='fresh'){",
+  "     await until(()=>status.textContent.includes('等待项目密钥同步'));",
+  "     if(panel.hidden||!send.disabled)throw Error('New encryption identity must wait for owner key');",
+  "     document.body.dataset.filechatCryptoQa='PASS';return;",
+  "   }",
+  "   await until(()=>!send.disabled,10000);",
+  "   if(conversation.hidden)throw Error('Authorized project chat did not open automatically');",
+  "   if(round==='first'){",
+  "     document.getElementById('aertex-chat-input').value='Private browser-to-browser encrypted message';",
+  "     send.click();",
+  "     await until(()=>document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'));",
+  "   }else{",
+  "     await until(()=>document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'));",
+  "     const roomTitle=document.getElementById('aertex-chat-filename').textContent;",
+  "     window.__qaActiveFile='chapters/new.tex';",
+  "     window.dispatchEvent(new Event('aertex:tex-project-asset-selected'));",
+  "     await sleep(250);",
+  "     if(panel.hidden||conversation.hidden||send.disabled)throw Error('File switch relocked project chat');",
+  "     if(document.getElementById('aertex-chat-filename').textContent!==roomTitle)",
+  "       throw Error('File switch changed project chat identity');",
+  "     document.querySelector('.tex-work-app').dataset.texCollaborationDocumentId='33333333-3333-4333-8333-333333333333';",
+  "     await until(()=>!document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'));",
+  "     if(panel.hidden)throw Error('Project switch closed floating popup');",
+  "   }",
+  "   document.body.dataset.filechatCryptoQa='PASS';",
   " }catch(e){document.body.dataset.filechatCryptoQa='FAIL';",
-  "  document.body.dataset.filechatCryptoReason=(e.message||String(e))+' | status: '+(document.getElementById('aertex-chat-status')?.textContent||'')+' | button: '+(document.getElementById('aertex-chat-passkey')?.textContent||'')+' | composer: '+document.getElementById('aertex-chat-conversation')?.hidden}",
+  "  document.body.dataset.filechatCryptoReason=(e.message||String(e))+' | status: '+",
+  "    (document.getElementById('aertex-chat-status')?.textContent||'')}",
   "})();",
   "</script>"
 ].join("\n");
@@ -110,58 +93,46 @@ const server=createServer(async(req,res)=>{
     res.writeHead(200,{"content-type":"text/html;charset=utf-8","cache-control":"no-store"});
     res.end(markup);return;
   }
-  if(req.method!=="POST"||req.url!=="/api/tex/file-chat"){
-    return json(res,{error:"Not found"},404);
-  }
-  let raw="";
-  for await(const chunk of req){raw+=chunk;if(raw.length>35000)break}
-  let body;
-  try{body=JSON.parse(raw)}catch{return json(res,{error:"Bad request"},400)}
-  const op=body.op;
-  if(Object.hasOwn(body,"file_name"))memory.sentFileSelector=true;
-  if(op==="status")return json(res,{registered:memory.registered.has(body.document_id),
-    user_id:owner,owner_id:owner,role:"owner"});
-  if(op==="begin")return json(res,{
-    mode:memory.registered.has(body.document_id)?"get":"create",
-    challenge_id:"one-time-test",public_key:{
-      rp:{id:"127.0.0.1",name:"AERTEX file chat test"},
-      user:{id:"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",name:"test",displayName:"test"},
-      challenge:"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-      pubKeyCredParams:[{type:"public-key",alg:-7}],timeout:90000,attestation:"none",
-      authenticatorSelection:{residentKey:"required",userVerification:"required"},
-      rpId:"127.0.0.1",userVerification:"required",allowCredentials:[]
-    }
-  });
-  if(op==="verify"){memory.registered.add(body.document_id);
-    memory.verified++;
-    return json(res,{verified:true,owner_id:owner,user_id:owner,role:"owner",token:"Z".repeat(43),expires_in:600});
-  }
-  if(body.token!=="Z".repeat(43))return json(res,{error:"Passkey required"},401);
+  if(req.method!=="POST"||req.url!=="/api/tex/file-chat")return json(res,{error:"Not found"},404);
+  let raw="";for await(const chunk of req){raw+=chunk;if(raw.length>35000)break}
+  let b;try{b=JSON.parse(raw)}catch{return json(res,{error:"Bad request"},400)}
+  const op=b.op,project=b.document_id;
+  if(Object.hasOwn(b,"file_name"))memory.sentFileSelector=true;
+  if(op==="begin"||op==="verify"){memory.passkeyCalls++;return json(res,{error:"Passkey removed"},410)}
+  if(op==="status")return json(res,{user_id:owner,owner_id:owner,role:"owner"});
   if(op==="device"){
-    memory.device.set(body.device_id,{id:body.device_id,x:body.x,y:body.y});
+    memory.device.set(project+":"+b.device_id,{id:b.device_id,x:b.x,y:b.y,project});
     return json(res,{registered:true});
   }
   if(op==="devices"){
-    return json(res,{initialized:memory.envelopes.size>0,
-      devices:[...memory.device.values()].map(x=>({user_id:owner,device_id:x.id,x:x.x,y:x.y,
-        ready:memory.envelopes.has(x.id)}))});
+    return json(res,{initialized:[...memory.envelopes.values()].some(e=>e.project===project),
+      devices:[...memory.device.values()].filter(d=>d.project===project).map(d=>({
+        user_id:owner,device_id:d.id,x:d.x,y:d.y,
+        ready:memory.envelopes.has(project+":"+d.id)}))});
   }
   if(op==="envelope-put"){
-    if(memory.envelopes.has(body.to_device))return json(res,{error:"Already initialized"},409);
-    memory.envelopes.set(body.to_device,{to_user:body.to_user,to_device:body.to_device,
-      from_device:body.from_device,iv:body.iv,ct:body.ct});
+    if(memory.envelopes.has(project+":"+b.to_device))return json(res,{error:"Already initialized"},409);
+    memory.envelopes.set(project+":"+b.to_device,{
+      to_user:b.to_user,to_device:b.to_device,from_device:b.from_device,
+      iv:b.iv,ct:b.ct,project
+    });
     return json(res,{saved:true});
   }
   if(op==="envelope-get"){
-    const envelope=memory.envelopes.get(body.device_id);
-    if(!envelope)return json(res,{ready:false});
-    const from=memory.device.get(envelope.from_device);
-    return json(res,{ready:true,envelope,owner_public:{x:from.x,y:from.y}});
+    const e=memory.envelopes.get(project+":"+b.device_id);
+    if(!e)return json(res,{ready:false});
+    const from=memory.device.get(project+":"+e.from_device);
+    return json(res,{ready:true,envelope:e,owner_public:{x:from.x,y:from.y}});
   }
-  if(op==="messages")return json(res,{messages:memory.messages});
+  if(op==="messages")return json(res,{messages:memory.messages.filter(m=>m.project===project)});
+  if(op==="latest"){
+    const messages=memory.messages.filter(m=>m.project===project);
+    const last=messages.at(-1);
+    return json(res,{last:last?{id:last.id,at:last.at,user_id:last.user_id,sender_name:"Owner"}:null});
+  }
   if(op==="send"){
-    if(body.text||body.message||!body.ct||!body.iv)memory.sentPlaintext=true;
-    memory.messages.push({id:body.message_id,user_id:owner,iv:body.iv,ct:body.ct,at:Date.now()});
+    if(b.text||b.message||!b.ct||!b.iv)memory.sentPlaintext=true;
+    memory.messages.push({id:b.message_id,project,user_id:owner,iv:b.iv,ct:b.ct,at:Date.now()});
     return json(res,{sent:true});
   }
   return json(res,{error:"Unknown op"},404);
@@ -258,16 +229,15 @@ async function browserRound(round){
 
 try{
   await browserRound("first");
-  assert(memory.registered.has(projectA),"Initial project Passkey creation must complete");
-  assert.equal(memory.messages.length,1,"Must send encrypted message");
-  assert(!memory.sentPlaintext,"Server must not see plaintext message field");
+  assert.equal(memory.messages.length,1,"Must send a fully encrypted message");
+  assert(!memory.sentPlaintext,"Server must never see message plaintext");
   assert(!JSON.stringify(memory.messages).includes("Private browser-to-browser"),
-    "Server must only store ciphertext");
+    "Messages must be ciphertext only");
   await browserRound("second");
   await browserRound("fresh");
-  assert(memory.verified>=3,"Page reload and fresh browser profile must revalidate project Passkey");
-  assert(!memory.sentFileSelector,"Project chat API must not send a file selector");
-  console.log("REAL CHROME E2EE integration: project Passkey, ciphertext, reload and fresh-profile verification without duplicate Passkey creation PASS");
+  assert.equal(memory.passkeyCalls,0,"No WebAuthn calls allowed in any browser");
+  assert(!memory.sentFileSelector,"Project chat API never selects rooms by filename");
+  console.log("REAL CHROME E2EE: direct project entry, encrypted send, refresh decrypt, fresh profile without Passkey and project isolation PASS");
 }finally{
   await new Promise(resolve=>server.close(resolve));
   rmSync(profile,{recursive:true,force:true});

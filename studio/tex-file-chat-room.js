@@ -1,7 +1,6 @@
-import { randomKey, hashText, verifyRegistration, verifyAssertion } from "./tex-file-chat-webauthn.js";
 // Durable Object receives authority context ONLY from verified Work Worker.
 // Store ciphertext and wrapped AES keys, never message text or raw room keys.
-const BASE="projectchat:v2:",CHALLENGE_MS=120000,LEASE_MS=600000,GRANT_LIMIT=12,MAX_PASSKEYS=5;
+const BASE="projectchat:v2:";
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const HASH=/^[A-Za-z0-9_-]{43}$/;
 const res=(body,status=200)=>Response.json(body,{status,headers:{"cache-control":"no-store","x-content-type-options":"nosniff"}});
@@ -10,109 +9,22 @@ const key=(project,kind,id="")=>BASE+project+":"+kind+(id?":"+id:"");
 const goodCipher=(o,max=12000)=>o&&typeof o.iv==="string"&&/^[A-Za-z0-9_-]{16}$/.test(o.iv)
   &&typeof o.ct==="string"&&o.ct.length<=max&&/^[A-Za-z0-9_-]{24,12000}$/.test(o.ct);
 const goodPub=o=>HASH.test(String(o?.x||""))&&HASH.test(String(o?.y||""));
+function decodeDisplayName(value){
+  try{return decodeURIComponent(value).replace(/[\u0000-\u001f\u007f]/g," ").trim().slice(0,80)}
+  catch{return ""}
+}
 function authority(request){
   const h=request.headers,u=h.get("X-Qsseda-Chat-User")||"",own=h.get("X-Qsseda-Chat-Owner")||"",
     project=h.get("X-Qsseda-Chat-Project")||"",rp=h.get("X-Qsseda-Chat-Rp")||"",
     origin=h.get("X-Qsseda-Chat-Origin")||"",role=h.get("X-Qsseda-Chat-Role")||"",
-    members=(h.get("X-Qsseda-Chat-Allowed")||"").split(",").filter(Boolean);
+    members=(h.get("X-Qsseda-Chat-Allowed")||"").split(",").filter(Boolean),
+    displayName=decodeDisplayName(h.get("X-Qsseda-Chat-Display-Name")||""),
+    username=(h.get("X-Qsseda-Chat-Username")||"").replace(/[^a-zA-Z0-9_.-]/g,"").slice(0,40);
   if(!UUID.test(u)||!UUID.test(own)||!HASH.test(project)||
     !["owner","editor","viewer"].includes(role)||!members.includes(u)||
     members.length>100||!members.every(m=>UUID.test(m))||
     !/^work\.qsseda\.(com|studio)$/.test(rp)||origin!=="https://"+rp)return null;
-  return {user:u,owner:own,project,rp,origin,role,members};
-}
-async function tokenOK(storage,a,token){
-  if(!HASH.test(String(token||"")))return false;
-  const digest=await hashText(token);
-  const k=key(a.project,"grant",a.user+":"+digest),record=await storage.get(k);
-  if(!record)return false;
-  if(record.user!==a.user||record.digest!==digest||record.expires<=Date.now()){
-    await storage.delete(k);return false;
-  }
-  return true;
-}
-async function credentialsFor(storage,a){
-  const result=[];
-  const legacyKey=key(a.project,"credential",a.user),legacy=await storage.get(legacyKey);
-  if(legacy)result.push({key:legacyKey,record:legacy});
-  const extras=await storage.list({prefix:key(a.project,"credential-extra",a.user)+":"});
-  for(const [k,record] of extras)result.push({key:k,record});
-  return result;
-}
-async function begin(storage,a,body={}){
-  const existing=await credentialsFor(storage,a);
-  const enroll=body.action==="enroll-device";
-  if(enroll){
-    if(!existing.length||!await tokenOK(storage,a,body.token))
-      return bad("Verify an existing project Passkey before adding a new device",401);
-    if(existing.length>=MAX_PASSKEYS)return bad("Five Passkeys limit reached for this project",429);
-  }
-  const mode=enroll?"create-add":existing.length?"get":"create";
-  const challenge=randomKey(),id=crypto.randomUUID();
-  await storage.put(key(a.project,"challenge",a.user),
-    {mode,challenge,id,created:Date.now(),origin:a.origin,rp:a.rp});
-  const publicKey=mode!=="get"?{
-    rp:{id:a.rp,name:"AERTEX Work 项目协作聊天"},
-    user:{id:(await hashText("projectchat:"+a.project+":"+a.user)).slice(0,43),
-      name:a.user.slice(0,8)+"-"+a.project.slice(0,9),displayName:"AERTEX · 项目协作聊天"},
-    challenge,pubKeyCredParams:[{type:"public-key",alg:-7}],
-    timeout:90000,attestation:"none",
-    authenticatorSelection:{residentKey:"required",requireResidentKey:true,userVerification:"required"},
-    excludeCredentials:mode==="create-add"?
-      existing.map(x=>({id:x.record.id,type:"public-key"})):[]
-  }:{
-    challenge,rpId:a.rp,timeout:90000,userVerification:"required",
-    allowCredentials:existing.map(x=>({id:x.record.id,type:"public-key"}))
-  };
-  return res({mode,challenge_id:id,public_key:publicKey});
-}
-async function verify(state,a,body){
-  const storage=state.storage,challengeKey=key(a.project,"challenge",a.user);
-  let pending;
-  await state.blockConcurrencyWhile(async()=>{
-    pending=await storage.get(challengeKey);
-    if(pending)await storage.delete(challengeKey);
-  });
-  if(!pending||pending.id!==body.challenge_id||Date.now()-pending.created>CHALLENGE_MS||
-      pending.origin!==a.origin||pending.rp!==a.rp)return bad("WebAuthn challenge expired or reused",403);
-  const credentialKey=key(a.project,"credential",a.user);
-  try{
-    const registered=await credentialsFor(storage,a);
-    if(pending.mode==="create"||pending.mode==="create-add"){
-      if(pending.mode==="create"&&registered.length)return bad("This project already has a Passkey",409);
-      if(pending.mode==="create-add"){
-        if(!await tokenOK(storage,a,body.token))
-          return bad("Existing project Passkey authorization is required",401);
-        if(!registered.length||registered.length>=MAX_PASSKEYS)
-          return bad("No existing Passkey or Passkey device limit reached",409);
-      }
-      const record=await verifyRegistration(body.credential,pending.challenge,a.origin,a.rp);
-      if(registered.some(x=>x.record.id===record.id))
-        return bad("Passkey already registered for this project",409);
-      const k=pending.mode==="create"?credentialKey:
-        key(a.project,"credential-extra",a.user+":"+await hashText(record.id));
-      await storage.put(k,{...record,rp:a.rp,created:Date.now()});
-    }else if(pending.mode==="get"){
-      const selected=registered.find(x=>x.record.id===body.credential?.rawId);
-      if(!selected||selected.record.rp!==a.rp)return bad("Project Passkey not found",403);
-      const checked=await verifyAssertion(body.credential,pending.challenge,a.origin,a.rp,selected.record);
-      await storage.put(selected.key,{...selected.record,...checked});
-    }else return bad("Unsupported Passkey operation",400);
-  }catch{return bad("Project Passkey verification failed",403)}
-  const token=randomKey(),digest=await hashText(token),now=Date.now();
-  const prefix=key(a.project,"grant",a.user)+":";
-  const grants=await storage.list({prefix});
-  const live=[];
-  for(const [k,v] of grants){
-    if(v.expires<=now)await storage.delete(k);
-    else live.push([k,v]);
-  }
-  live.sort((x,y)=>x[1].created-y[1].created);
-  for(let i=0;i<=live.length-GRANT_LIMIT;i++)await storage.delete(live[i][0]);
-  await storage.put(prefix+digest,{user:a.user,digest,created:now,expires:now+LEASE_MS});
-  return res({verified:true,token,expires_in:Math.floor(LEASE_MS/1000),
-    new_credential:pending.mode!=="get",
-    owner_id:a.owner,user_id:a.user,role:a.role});
+  return {user:u,owner:own,project,rp,origin,role,members,displayName,username};
 }
 async function device(storage,a,body){
   const id=String(body.device_id||"");
@@ -182,8 +94,16 @@ async function send(storage,a,body){
   if(!goodCipher(body,8000)||!UUID.test(body.message_id))return bad("Only sealed AES-GCM messages accepted",422);
   const timestamp=Date.now();
   await storage.put(key(a.project,"msg",String(timestamp).padStart(13,"0")+":"+body.message_id),
-    {id:body.message_id,at:timestamp,user_id:a.user,iv:body.iv,ct:body.ct});
+    {id:body.message_id,at:timestamp,user_id:a.user,
+    sender_name:a.displayName||a.username||a.user.slice(0,8),
+    iv:body.iv,ct:body.ct});
   return res({sent:true});
+}
+async function latest(storage,a){
+  const rows=await storage.list({prefix:key(a.project,"msg")+":",reverse:true,limit:1});
+  const last=[...rows.values()][0];
+  return res({last:last?{id:last.id,at:last.at,user_id:last.user_id,
+    sender_name:last.sender_name||last.user_id?.slice(0,8)}:null});
 }
 async function messages(storage,a){
   const rows=await storage.list({prefix:key(a.project,"msg")+":",reverse:true,limit:80});
@@ -201,13 +121,14 @@ export async function handleTexFileChatRoom(state,request){
     if(!body||typeof body!=="object"||Array.isArray(body))throw Error("bad request");
   }catch{return bad("Invalid or oversized request",400)}
   const storage=state.storage;
-  if(body.op==="status"){const registered=await credentialsFor(storage,a);
-    return res({registered:registered.length>0,passkey_count:registered.length,
-      user_id:a.user,owner_id:a.owner,role:a.role,rp_id:a.rp});
-  }
-  if(body.op==="begin")return begin(storage,a,body);
-  if(body.op==="verify")return verify(state,a,body);
-  if(!await tokenOK(storage,a,body.token))return bad("Passkey verification required for this project",401);
+  // The Worker already verified the signed-in active account, same-origin
+  // request, project ACL and current named-collaborator membership before
+  // forwarding. Never accept browser-supplied authority headers directly.
+  if(body.op==="status")return res({user_id:a.user,owner_id:a.owner,role:a.role,
+    username:a.username,display_name:a.displayName});
+  if(body.op==="begin"||body.op==="verify")
+    return bad("Project chat does not require a Passkey",410);
+  if(body.op==="latest")return latest(storage,a);
   if(body.op==="device")return device(storage,a,body);
   if(body.op==="devices")return devices(storage,a);
   if(body.op==="envelope-put")return envelopePut(state,a,body);
