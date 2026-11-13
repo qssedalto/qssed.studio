@@ -5,7 +5,7 @@ import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { handleTexProjects } from "./tex-project-api.js";
 import { handleTexProjectFiles } from "./tex-project-files-api.js";
-import { handleTexOrganize } from "./tex-organize-api.js";
+import { handleTexOrganize, removeTexProjectPins } from "./tex-organize-api.js";
 import { handleTexArchive } from "./tex-archive-api.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
@@ -335,6 +335,7 @@ async function deleteDocument(request, env, userId) {
     if (!existing) return json({ error: "TeX document not found." }, 404);
     if (existing.locked) return json({ error: "Unlock the project before deleting." }, 423);
     await env.STORAGE.delete(documentKey(userId, documentId));
+    await removeTexProjectPins(env,userId,documentId);
     await purgeDocumentArtifacts(env, userId, documentId);
     return json({ deleted: true, id: documentId });
   } catch (error) {
