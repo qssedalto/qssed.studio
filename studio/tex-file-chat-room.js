@@ -52,9 +52,9 @@ async function begin(storage,a,body={}){
   await storage.put(key(a.project,"challenge",a.user),
     {mode,challenge,id,created:Date.now(),origin:a.origin,rp:a.rp});
   const publicKey=mode!=="get"?{
-    rp:{id:a.rp,name:"AERTEX Work 文件协作聊天"},
+    rp:{id:a.rp,name:"AERTEX Work 项目协作聊天"},
     user:{id:(await hashText("projectchat:"+a.project+":"+a.user)).slice(0,43),
-      name:a.user.slice(0,8)+"-"+a.project.slice(0,9),displayName:"AERTEX · 独立文件聊天"},
+      name:a.user.slice(0,8)+"-"+a.project.slice(0,9),displayName:"AERTEX · 项目协作聊天"},
     challenge,pubKeyCredParams:[{type:"public-key",alg:-7}],
     timeout:90000,attestation:"none",
     authenticatorSelection:{residentKey:"required",requireResidentKey:true,userVerification:"required"},
@@ -79,7 +79,7 @@ async function verify(state,a,body){
   try{
     const registered=await credentialsFor(storage,a);
     if(pending.mode==="create"||pending.mode==="create-add"){
-      if(pending.mode==="create"&&registered.length)return bad("This file already has a Passkey",409);
+      if(pending.mode==="create"&&registered.length)return bad("This project already has a Passkey",409);
       if(pending.mode==="create-add"){
         if(!await tokenOK(storage,a,body.token))
           return bad("Existing project Passkey authorization is required",401);

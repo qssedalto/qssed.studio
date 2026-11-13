@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import vm from "node:vm";
 import { enhanceWorkTexFileChat } from "../studio/ui-work-tex-file-chat.js";
+import { PASSKEY_GUIDE_SCREENSHOTS } from "../studio/ui-work-tex-passkey-guide-images.js";
 
 for (const zh of [true,false]) {
   const html=enhanceWorkTexFileChat("",zh);
@@ -8,6 +9,26 @@ for (const zh of [true,false]) {
   const css=html.match(/<style id="aertex-file-chat-style">([\s\S]*?)<\/style>/)?.[1];
   assert(code && css,"Popup markup, CSS and runtime must exist");
   new vm.Script(code);
+  const helpOpen='<script id="aertex-project-passkey-help-script">';
+  const helpStart=html.indexOf(helpOpen);
+  const helpCode=helpStart>=0
+    ? html.slice(helpStart+helpOpen.length,html.indexOf('</script>',helpStart)) : '';
+  assert(helpCode,"Registered Passkey tutorial runtime must be present");
+  new vm.Script(helpCode);
+  assert(helpCode.includes('setRegistered(value)') && helpCode.includes('link.hidden = !registered'),
+    "Verification help link must appear only when this project is registered");
+  assert(helpCode.includes('reset()') && code.includes('window.__aertexPasskeyHelp?.reset()'),
+    "Changing projects must hide the verification tutorial and its link");
+  for(const [step,encoded] of Object.entries(PASSKEY_GUIDE_SCREENSHOTS)){
+    const image=Buffer.from(encoded,"base64");
+    assert(image.length>1800&&image.subarray(0,4).toString("ascii")==="RIFF"&&
+      image.subarray(8,12).toString("ascii")==="WEBP",
+      "Help screenshot "+step+" must contain real, sanitized WebP bytes");
+    assert(html.includes('data:image/webp;base64,'+encoded),
+      "Windows tutorial must embed redacted screenshot "+step);
+  }
+  assert(html.split("data:image/webp;base64,").length-1===3,
+    "The tutorial must include the three user-provided Windows screenshots");
   assert(!html.includes('class="close"'),"No close X allowed: toolbar icon is sole toggle");
   assert(!code.includes('chat.qsseda.com'),"Editor must not navigate to external chat website");
   assert(!code.includes('auth.qsseda.com'),"Editor must not navigate to external authentication website");
