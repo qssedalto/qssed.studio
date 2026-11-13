@@ -95,9 +95,10 @@ async function devices(storage,a){
     user_id:v.user,device_id:v.id,x:v.x,y:v.y,
     ready:!!await storage.get(key(a.file,"envelope",v.user+":"+v.id))
   })));
-  return res({devices,initialized:devices.some(d=>d.ready)});
+  return res({devices,initialized:!!await storage.get(key(a.file,"seed"))});
 }
-async function envelopePut(storage,a,body){
+async function envelopePut(state,a,body){
+  const storage=state.storage;
   if(a.role!=="owner")return bad("Owner authorization required",403);
   const recipient=String(body.to_user||""),to=String(body.to_device||""),from=String(body.from_device||"");
   if(!a.members.includes(recipient)||!UUID.test(to)||!UUID.test(from)||!goodCipher(body,1500))
@@ -105,11 +106,24 @@ async function envelopePut(storage,a,body){
   const recipientKey=await storage.get(key(a.file,"device",recipient+":"+to));
   const senderKey=await storage.get(key(a.file,"device",a.user+":"+from));
   if(!recipientKey||!senderKey)return bad("Device not registered",403);
-  const k=key(a.file,"envelope",recipient+":"+to),existing=await storage.get(k);
-  if(existing)return bad("This encryption device already has a wrapped key",409);
-  await storage.put(k,{to_user:recipient,to_device:to,from_device:from,
-    iv:body.iv,ct:body.ct,created:Date.now()});
-  return res({saved:true});
+  // Serialize the first room-key envelope. Two owner tabs must not generate
+  // divergent AES root keys for the same document/file at the same time.
+  let result;
+  await state.blockConcurrencyWhile(async()=>{
+    const k=key(a.file,"envelope",recipient+":"+to);
+    const existing=await storage.get(k);
+    if(existing){result=bad("This encryption device already has a wrapped key",409);return}
+    const firstKey=key(a.file,"seed");
+    const first=await storage.get(firstKey);
+    const bootstrap=recipient===a.owner&&from===to;
+    if(!first&&!bootstrap){result=bad("Owner must initialize room key before sharing",409);return}
+    if(first && bootstrap && first!==from){result=bad("Room key already initialized on another owner device",409);return}
+    await storage.put(k,{to_user:recipient,to_device:to,from_device:from,
+      iv:body.iv,ct:body.ct,created:Date.now()});
+    if(!first)await storage.put(firstKey,from);
+    result=res({saved:true});
+  });
+  return result;
 }
 async function envelopeGet(storage,a,body){
   const id=String(body.device_id||"");
@@ -151,7 +165,7 @@ export async function handleTexFileChatRoom(state,request){
   if(!await tokenOK(storage,a,body.token))return bad("Passkey verification required for this file",401);
   if(body.op==="device")return device(storage,a,body);
   if(body.op==="devices")return devices(storage,a);
-  if(body.op==="envelope-put")return envelopePut(storage,a,body);
+  if(body.op==="envelope-put")return envelopePut(state,a,body);
   if(body.op==="envelope-get")return envelopeGet(storage,a,body);
   if(body.op==="send")return send(storage,a,body);
   if(body.op==="messages")return messages(storage,a);
