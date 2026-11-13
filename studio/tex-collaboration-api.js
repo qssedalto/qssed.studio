@@ -389,14 +389,17 @@ function cleanRole(value) {
   return ROLES.has(role) ? role : "";
 }
 
+// Usernames may be email addresses, and user lookup also searches
+// multilingual display names. Do not silently reject '@' or Unicode before
+// calling the authenticated, parameterized Supabase RPC.
 function cleanUsername(value) {
-  const username = String(value || "").trim().replace(/^@+/, "").slice(0, 80);
-  return /^[a-zA-Z0-9._-]{2,80}$/.test(username) ? username : "";
+  const username = String(value ?? "").trim().replace(/^@+/, "");
+  return /^[\p{L}\p{M}\p{N}._@+\-]{2,80}$/u.test(username) ? username : "";
 }
 
 function cleanSearchQuery(value) {
-  const query = String(value || "").trim().replace(/^@+/, "").slice(0, 80);
-  return /^[a-zA-Z0-9._-]{1,80}$/.test(query) ? query : "";
+  const query = String(value ?? "").trim().replace(/^@+/, "");
+  return /^[\p{L}\p{M}\p{N} ._@+\-·'’]{1,80}$/u.test(query) ? query : "";
 }
 
 function cleanText(value, maximum) {
