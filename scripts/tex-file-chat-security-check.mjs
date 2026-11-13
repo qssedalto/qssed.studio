@@ -294,7 +294,8 @@ assert(runtime.includes("'AERTEX-projectchat-v2:'"),"Room KDF must depend on pro
 assert(!runtime.includes("state.file"),"File switches must not reset project E2EE state");
 assert(gateway.includes("if(access.via_link===true)"));
 // Time-based expiry is enforced on the server as well as in the browser.
-const grantKey=[...cache.keys()].find(k=>k.includes(":grant:")&&k.endsWith(":"+await hashText(latestToken)));
+const grantDigest=await hashText(latestToken);
+const grantKey=[...cache.keys()].find(k=>k.includes(":grant:")&&k.endsWith(":"+grantDigest));
 assert(grantKey,"A project/user/digest-bound lease must exist");
 const grantRecord=cache.get(grantKey);
 const originalExpiry=grantRecord.expires;
