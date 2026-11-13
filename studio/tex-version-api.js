@@ -3,6 +3,7 @@ import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
+import { texRealtimeEpoch, texRealtimeRoomName } from "./tex-realtime-epoch.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const VERSION_ROOT = "_system/tex-versions/";
@@ -148,8 +149,12 @@ async function handleVersionPost(request, env, userId) {
 
     await snapshotDocumentVersion(env, userId, current, { reason: "before_restore", force: true });
     const restored = {
+      ...current,
       id: documentId,
       owner_id: userId,
+      // A historical restore is a source replacement, not a Yjs edit.
+      // Never let the prior room merge the rolled-back version away.
+      realtime_epoch: crypto.randomUUID(),
       title: cleanText(version.title, 180) || "Untitled TeX document",
       engine: ENGINES.has(version.engine) ? version.engine : "xelatex",
       source: cleanSource(version.source),
@@ -157,6 +162,22 @@ async function handleVersionPost(request, env, userId) {
       updated_at: new Date().toISOString()
     };
     await writeCurrentDocument(env, restored);
+    if (env?.TEX_COLLAB_ROOMS?.idFromName && env?.TEX_COLLAB_ROOMS?.get) {
+      try {
+        const stub = env.TEX_COLLAB_ROOMS.get(env.TEX_COLLAB_ROOMS.idFromName(
+          texRealtimeRoomName(userId,documentId,texRealtimeEpoch(current))));
+        await stub.fetch(new Request("https://tex-collaboration-room.internal/source-rebased",{
+          method:"POST",headers:{
+            "X-Qsseda-Collab-Owner":userId,
+            "X-Qsseda-Collab-Document":documentId
+          }
+        }));
+      } catch (error) {
+        workerLog("warn","tex.version.realtime_notification_failed",{
+          user_id:userId,document_id:documentId,message:String(error?.message||error)
+        });
+      }
+    }
     const restoredVersion = await snapshotDocumentVersion(env, userId, restored, {
       reason: "restore",
       force: true,
@@ -368,6 +389,7 @@ async function readCurrentDocument(env, userId, documentId) {
       title: cleanText(value.title, 180) || "Untitled TeX document",
       engine: ENGINES.has(value.engine) ? value.engine : "xelatex",
       source: cleanSource(value.source),
+      realtime_epoch: texRealtimeEpoch(value),
       created_at: cleanTimestamp(value.created_at),
       updated_at: cleanTimestamp(value.updated_at)
     };
@@ -387,7 +409,8 @@ async function writeCurrentDocument(env, document) {
       engine: document.engine,
       preview: document.source.replace(/\s+/g, " ").trim().slice(0, 220),
       createdAt: document.created_at,
-      updatedAt: document.updated_at
+      updatedAt: document.updated_at,
+      realtimeEpoch: texRealtimeEpoch(document)
     }
   });
 }
