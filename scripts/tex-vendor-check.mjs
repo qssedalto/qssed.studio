@@ -12,7 +12,8 @@ assert.equal(pkg.private, true, "Vendor modules must not be accidentally publish
 
 for (const [name, symbols] of [
   ["codemirror", ["EditorView", "basicSetup", "StreamLanguage", "stex"]],
-  ["yjs", ["Doc", "applyUpdate", "encodeStateAsUpdate", "createRelativePositionFromTypeIndex"]]
+  ["yjs", ["Doc", "applyUpdate", "encodeStateAsUpdate", "createRelativePositionFromTypeIndex"]],
+  ["katex", ["renderTexMath"]]
 ]) {
   const pathname = resolve(root, "tex-vendor/dist/assets/tex/" + name + ".js");
   const info = await stat(pathname);
@@ -27,11 +28,14 @@ for (const [name, symbols] of [
 }
 const editor = await readFile(resolve(root, "studio/ui-work-tex-codemirror.js"), "utf8");
 const realtime = await readFile(resolve(root, "studio/ui-work-tex-realtime.js"), "utf8");
+const visual = await readFile(resolve(root, "studio/ui-work-tex-organize-ui.js"), "utf8");
 assert(editor.includes("import('/assets/tex/codemirror.js')") ||
   editor.includes("timedModule('/assets/tex/codemirror.js'"),
   "CodeMirror must load exclusively from the Work origin");
 assert(realtime.includes("import('/assets/tex/yjs.js')"),
   "Yjs must load exclusively from the Work origin");
+assert(visual.includes("import('/assets/tex/katex.js')"), "Visual math must use the self-hosted KaTeX bundle");
+assert(!/(?:cdn\.jsdelivr\.net|esm\.sh)/.test(visual), "Visual mode must not use external math CDNs");
 assert(!/(?:cdn\.jsdelivr\.net|esm\.sh)/.test(editor+realtime),
   "Runtime must not import either TeX module from a CDN.");
 console.log("TeX self-hosted asset bundling and same-origin runtime checks passed.");
