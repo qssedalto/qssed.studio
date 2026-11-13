@@ -152,6 +152,8 @@ async function handleVersionPost(request, env, userId) {
       ...current,
       id: documentId,
       owner_id: userId,
+      main_deleted: false,
+      main_filename: current.main_filename || "main.tex",
       // A historical restore is a source replacement, not a Yjs edit.
       // Never let the prior room merge the rolled-back version away.
       realtime_epoch: crypto.randomUUID(),
@@ -384,6 +386,7 @@ async function readCurrentDocument(env, userId, documentId) {
     const value = JSON.parse(await object.text());
     if (value?.owner_id !== userId || value?.id !== documentId) return null;
     return {
+      ...value,
       id: documentId,
       owner_id: userId,
       title: cleanText(value.title, 180) || "Untitled TeX document",
