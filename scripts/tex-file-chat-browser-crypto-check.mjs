@@ -14,7 +14,7 @@ const owner="11111111-1111-4111-8111-111111111111";
 const projectA="22222222-2222-4222-8222-222222222222";
 const projectB="33333333-3333-4333-8333-333333333333";
 const memory={registered:new Set(),device:new Map(),envelopes:new Map(),messages:[],
-  sentPlaintext:false,sentFileSelector:false,verified:0,created:0,asserted:0};
+  sentPlaintext:false,sentFileSelector:false,verified:0,created:0,asserted:0,resumed:0};
 const setup=[
   "<script>",
   "window.__qaActiveFile='main.tex';",
@@ -45,25 +45,29 @@ const qa=[
   "  const passkey=document.getElementById('aertex-chat-passkey');",
   "  const conversation=document.getElementById('aertex-chat-conversation');",
   "  const send=document.getElementById('aertex-chat-send');",
-  "  await until(()=>passkey&&!passkey.disabled);",
-  "  if(!conversation.hidden||!send.disabled)throw Error('Unverified chat access');",
-  "  if(round==='first'&&!passkey.textContent.includes('创建'))",
-  "    throw Error('First project visit must create a dedicated Passkey');",
-  "  if(round!=='first'&&!passkey.textContent.includes('验证'))",
-  "    throw Error('Page reload must reverify this project Passkey');",
-  "  passkey.click();",
-  "  await until(()=>!conversation.hidden&&!send.disabled);",
-  "  if(round==='first'&&!window.__passkeyCreateCount)",
+  "  const reloaded=round==='first'&&sessionStorage.getItem('qa:refreshed')==='1';",
+  "  await until(()=>!conversation.hidden||(passkey&&!passkey.disabled));",
+  "  if(conversation.hidden){",
+  "    if(round==='first'&&!reloaded&&!passkey.textContent.includes('创建'))",
+  "      throw Error('First project visit must create a dedicated Passkey');",
+  "    if((round!=='first'||reloaded)&&!passkey.textContent.includes('验证'))",
+  "      throw Error('Existing project needs the project Passkey when no lease exists');",
+  "    passkey.click();",
+  "    await until(()=>!conversation.hidden&&!send.disabled);",
+  "  }else if(round==='first'&&!reloaded)throw Error('First-ever access bypassed Passkey');",
+  "  if(round==='first'&&!reloaded&&!window.__passkeyCreateCount)",
   "    throw Error('WebAuthn create() was not invoked');",
-  "  if(round!=='first'&&!window.__passkeyGetCount)",
-  "    throw Error('WebAuthn get() was not invoked');",
+  "  if(reloaded&&(window.__passkeyCreateCount||window.__passkeyGetCount))",
+  "    throw Error('Reload inside the verified 3-hour window prompted Passkey again');",
   "  if(document.getElementById('aertex-chat-status').textContent.includes('等待项目所有者'))",
   "    throw Error('Owner key wait was wrongly retained');",
   "  if(round==='first'){",
   "    document.getElementById('aertex-chat-input').value='Private browser-to-browser encrypted message';",
   "    send.click();",
   "    await until(()=>document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'));",
-  "  }else if(round==='second'){",
+  "    sessionStorage.setItem('qa:refreshed','1');",
+  "    location.reload();return;",
+  "  }else if(round==='second'||reloaded){",
   "    await until(()=>document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'));",
   "    const roomTitle=document.getElementById('aertex-chat-filename').textContent;",
   "    window.__qaActiveFile='chapters/new.tex';",
@@ -142,11 +146,13 @@ const server=createServer(async(req,res)=>{
     const wasRegistered=memory.registered.has(project);
     memory.registered.add(project);memory.verified++;
     if(wasRegistered)memory.asserted++;else memory.created++;
-    return json(res,{verified:true,token:"authorized-"+project,role:"owner",owner_id:owner,
-      user_id:owner,new_credential:!wasRegistered});
+    return json(res,{verified:true,token:(project===projectA?"A":"B").repeat(43),
+      expires_in:10800,role:"owner",owner_id:owner,user_id:owner,new_credential:!wasRegistered});
   }
-  if(b.token!=="authorized-"+project||!memory.registered.has(project))
+  if(b.token!==(project===projectA?"A":"B").repeat(43)||!memory.registered.has(project))
     return json(res,{error:"Project Passkey required"},401);
+  if(op==="resume"){memory.resumed++;return json(res,{verified:true,expires_in:10799,
+    role:"owner",owner_id:owner,user_id:owner})}
   if(op==="device"){
     memory.device.set(project+":"+b.device_id,{id:b.device_id,x:b.x,y:b.y,project});
     return json(res,{registered:true});
@@ -290,12 +296,13 @@ try{
     "Stored data must be ciphertext only");
   await browserRound("second");
   await browserRound("fresh");
-  assert(memory.created>=1&&memory.asserted>=2,
-    "First project must create a Passkey; reload and fresh profile must verify");
-  assert(memory.verified>=3,"Each fresh page requires server-side Passkey verification");
+  assert(memory.created>=1&&memory.asserted>=1,
+    "Initial setup and an independent fresh browser still require WebAuthn");
+  assert(memory.resumed>=1,"Same-tab reload must resume with server validation, not WebAuthn");
+  assert(memory.verified>=2,"A fresh browser must still verify a registered project Passkey");
   assert.equal(memory.messages.length,2,"Fresh device must send without owner key sharing");
   assert(!memory.sentFileSelector,"Project chat must never send an editor filename");
-  console.log("CHROME E2EE: mandatory project Passkey on reload, sender/recipient envelopes, no owner key wait, fresh-device message PASS");
+  console.log("CHROME E2EE: 3-hour project Passkey resume, fresh-browser reverify, ciphertext envelopes and sender/recipient isolation PASS");
 }finally{
   await new Promise(resolve=>server.close(resolve));
   rmSync(profile,{recursive:true,force:true});
