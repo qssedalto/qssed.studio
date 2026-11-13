@@ -137,9 +137,9 @@ for (const zh of [true,false]) {
     "Stale document snapshots must not be mistaken for live presence");
   assert.equal(memberState({username:"Same Name"},activeDoc,liveState,onlineList),"offline",
     "Only stable account IDs may prove somebody is online");
-  assert(markup.includes(zh ? 'presenceOnline: "在线"' : 'presenceOnline: "Online"') &&
-    markup.includes(zh ? 'presenceOffline: "离线"' : 'presenceOffline: "Offline"'),
-    "Availability must be localized for light/dark site languages");
+  assert(markup.includes(zh ? '"presenceOnline":"在线"' : '"presenceOnline":"Online"') &&
+    markup.includes(zh ? '"presenceOffline":"离线"' : '"presenceOffline":"Offline"'),
+    "Availability labels must appear in the emitted locale-specific runtime");
 
   assert.doesNotThrow(() => new Function(collaboration), "Collaboration runtime must be valid JavaScript");
   const submitAt = collaboration.indexOf("form.addEventListener('submit', async event => {");
