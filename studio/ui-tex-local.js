@@ -108,6 +108,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
         let lastEditorInputAt = 0;
         let previewUrl = "";
         let lastPreviewSnapshot = "";
+        let previewDocumentId = null;
         let destroyed = false;
 
         const start = async () => {
@@ -194,8 +195,37 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             return !editor.hidden && Boolean(source);
           }
 
+          function selectedPreviewDocumentId() {
+            return String(root.dataset.texCollaborationDocumentId ||
+              root.querySelector('.tex-document-item.is-active')?.dataset?.texDocumentId || '').trim();
+          }
+
+          // A PDF belongs to a document, not merely to matching TeX source.
+          // Two projects may contain identical source and still have different
+          // assets, permission boundaries and compilation results.
           function currentPreviewSnapshot() {
-            return JSON.stringify([String(engine.value || '').toLowerCase(), source.value || '']);
+            return JSON.stringify([selectedPreviewDocumentId(), String(engine.value || '').toLowerCase(), source.value || '']);
+          }
+
+          function clearDocumentPreview() {
+            window.clearTimeout(previewTimer);
+            previewPending = false;
+            previewDirty = false;
+            if (previewUrl) {
+              try { URL.revokeObjectURL(previewUrl); } catch {}
+              localUrls.delete(previewUrl);
+              previewUrl = '';
+            }
+            lastPreviewSnapshot = '';
+            // Explicitly unload Chromium's PDF plugin; hiding the iframe alone
+            // leaves the last PDF rendered after returning to the welcome page.
+            previewFrame.src = 'about:blank';
+            previewFrame.hidden = true;
+            if (previewPlaceholder) previewPlaceholder.hidden = false;
+            if (previewOpen) {
+              previewOpen.hidden = true;
+              previewOpen.removeAttribute('href');
+            }
           }
 
           function setCompilerSurface(kind) {
@@ -227,6 +257,15 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
 
           function syncPreviewAvailability() {
             const selected = hasDocument();
+            const currentId = selected ? selectedPreviewDocumentId() : '';
+            // Clear the prior document's PDF on project switch and on the
+            // welcome screen, including back/forward browser navigation.
+            // Never let a stale iframe survive merely because its CSS is hidden.
+            if (previewDocumentId !== currentId || (!selected &&
+                (previewUrl || !previewFrame.hidden || previewFrame.getAttribute('src') !== 'about:blank'))) {
+              previewDocumentId = currentId;
+              clearDocumentPreview();
+            }
             if (mobileDevice) {
               previewToggle.disabled = true;
               previewCard?.classList.add('is-tex-mobile-preview');
@@ -348,7 +387,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
           }
 
           function installPreviewBlob(blob, snapshot, elapsed) {
-            if (snapshot !== currentPreviewSnapshot()) return false;
+            if (!hasDocument() || snapshot !== currentPreviewSnapshot()) return false;
             const nextUrl = URL.createObjectURL(blob);
             localUrls.add(nextUrl);
             if (previewUrl) {
@@ -587,6 +626,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
           const observer = new MutationObserver(() => syncCompiler());
           observer.observe(editor, { attributes: true, attributeFilter: ['hidden'] });
           observer.observe(compile, { attributes: true, attributeFilter: ['disabled'] });
+          observer.observe(root, { attributes: true, attributeFilter: ['data-tex-collaboration-document-id'] });
 
           // Connection-check UI can restore local compiler access after the
           // browser's local-network permission prompt. Refresh adapter state
