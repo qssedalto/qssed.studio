@@ -183,6 +183,15 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         let redoStack = [];
         let historyGroupStartedAt = 0;
         let inferredSelfId = String(window.__qssedaTexSelfParticipantId || '');
+        // The same CodeMirror view edits main.tex or any supplementary UTF-8 file.
+        // The main source bridge must never receive supplementary text.
+        let currentAsset = null;
+        let parkedMainState = null;
+        let parkedMainHistory = null;
+        let parkedMainDocumentId = '';
+        let EditorStateClass = null;
+        let texExtensions = null;
+        let textExtensions = null;
 
         const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
         const nativeFocus = source.focus.bind(source);
@@ -238,6 +247,17 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
 
         function publishViewToBridge(update) {
           if (!view || syncingFromSource) return;
+          if (currentAsset) {
+            if (update.docChanged) recordUndo(update.startState);
+            if (update.docChanged || update.selectionSet) {
+              window.dispatchEvent(new CustomEvent('aertex:tex-code-asset-updated', {
+                detail: { name: currentAsset.name, document_id: currentAsset.documentId,
+                  content: update.state.doc.toString(), changed: update.docChanged }
+              }));
+            }
+            applyReadOnly();
+            return;
+          }
           resetHistoryIfDocumentChanged();
           if (update.docChanged) recordUndo(update.startState);
           const selection = update.state.selection.main;
@@ -258,7 +278,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         }
 
         function syncViewFromSource() {
-          if (!view || syncingToSource) return;
+          if (!view || syncingToSource || currentAsset) return;
           const next = nativeValue();
           resetHistoryIfDocumentChanged(next);
           const current = view.state.doc.toString();
@@ -290,7 +310,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
 
         function applyReadOnly() {
           if (!view || !host) return;
-          const readOnly = source.readOnly || accessRole() === 'viewer';
+          const readOnly = source.readOnly || accessRole() === 'viewer' || (currentAsset && accessRole() === 'editor');
           host.classList.toggle('is-readonly', readOnly);
           if (view.contentDOM.contentEditable !== String(!readOnly)) view.contentDOM.contentEditable = String(!readOnly);
           view.contentDOM.setAttribute('aria-readonly', String(readOnly));
@@ -354,7 +374,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           remoteFrame = 0;
           if (!view || !host || !remoteLayer) return;
           remoteLayer.replaceChildren();
-          if (editor.hidden || !activeDocumentId()) return;
+          if (editor.hidden || !activeDocumentId() || currentAsset) return;
           const hostRect = host.getBoundingClientRect();
           const docLength = view.state.doc.length;
           const selfId = inferSelf(remoteParticipants);
@@ -444,6 +464,61 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           return applyHistorySnapshot(snapshot, undoStack);
         }
 
+
+        // Swap CodeMirror EditorState, not DOM editors. Restore main.tex's state,
+        // native undo history, source synchronization and collaboration on return.
+        function openAssetEditor(asset) {
+          if (!view || !EditorStateClass || !asset || asset.encoding !== 'utf8' || !asset.name) return false;
+          const documentId = activeDocumentId();
+          if (!currentAsset) {
+            parkedMainState = view.state;
+            parkedMainDocumentId = documentId;
+            parkedMainHistory = { undo: undoStack, redo: redoStack, startedAt: historyGroupStartedAt };
+          }
+          currentAsset = { name: String(asset.name), documentId };
+          undoStack = [];
+          redoStack = [];
+          historyGroupStartedAt = 0;
+          const isTeX = /\.(?:tex|ltx|sty|cls|dtx|ins)$/i.test(currentAsset.name);
+          view.setState(EditorStateClass.create({
+            doc: String(asset.content ?? ''),
+            extensions: isTeX ? texExtensions : textExtensions
+          }));
+          host?.classList.add('is-project-asset');
+          remoteLayer?.replaceChildren();
+          applyReadOnly();
+          return true;
+        }
+
+        function closeAssetEditor() {
+          if (!view || !currentAsset) return false;
+          const sameProject = parkedMainDocumentId === activeDocumentId();
+          currentAsset = null;
+          const savedState = parkedMainState;
+          const savedHistory = parkedMainHistory;
+          parkedMainState = null;
+          parkedMainHistory = null;
+          parkedMainDocumentId = '';
+          if (sameProject && savedHistory) {
+            undoStack = savedHistory.undo;
+            redoStack = savedHistory.redo;
+            historyGroupStartedAt = savedHistory.startedAt;
+          } else {
+            undoStack = [];
+            redoStack = [];
+            historyGroupStartedAt = 0;
+          }
+          view.setState(sameProject && savedState ? savedState : EditorStateClass.create({
+            doc: nativeValue(), extensions: texExtensions
+          }));
+          host?.classList.remove('is-project-asset');
+          syncViewFromSource();
+          resetHistoryIfDocumentChanged(nativeValue());
+          applyReadOnly();
+          scheduleRemoteRender();
+          return true;
+        }
+
         // Self-hosted ESM can still fail due to browser networking or storage
         // restrictions. The existing timeout/retry keeps the textarea usable.
         let mounting = false;
@@ -481,8 +556,8 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             return;
           }
 
-          const { EditorView, basicSetup, StreamLanguage, stex } = cm || {};
-          if (!EditorView || !basicSetup) {
+          const { EditorView, EditorState, basicSetup, StreamLanguage, stex } = cm || {};
+          if (!EditorView || !EditorState || !basicSetup) {
             mounting = false;
             console.warn(labels.failed, 'Invalid CodeMirror module exports');
             announceEditor('failed', 'module-invalid');
@@ -508,6 +583,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             EditorView.lineWrapping,
             EditorView.updateListener.of(publishViewToBridge)
           ];
+          let resolvedExtensions = baseExtensions;
           try {
             let extensions = baseExtensions;
             if (StreamLanguage && stex) {
@@ -522,11 +598,13 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
                 try { view?.destroy(); } catch {}
                 view = null;
                 host.replaceChildren();
+                extensions = baseExtensions;
               }
             }
             if (!view) view = new EditorView({
               parent: host, doc: nativeValue(), extensions: baseExtensions
             });
+            resolvedExtensions = extensions;
           } catch (error) {
             mounting = false;
             host.remove();
@@ -536,6 +614,9 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             return;
           }
 
+          EditorStateClass = EditorState;
+          texExtensions = resolvedExtensions;
+          textExtensions = baseExtensions;
           remoteLayer = document.createElement('div');
           remoteLayer.className = 'tex-cm-remote-layer';
           remoteLayer.setAttribute('aria-hidden', 'true');
@@ -602,6 +683,10 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             focus: () => view?.focus(),
             undo,
             redo,
+            openAssetEditor,
+            closeAssetEditor,
+            getActiveAsset: () => currentAsset ? { ...currentAsset } : null,
+            getAssetValue: () => currentAsset ? view?.state.doc.toString() : null,
             getValue: () => view?.state.doc.toString() || nativeValue(),
             getSelection: () => {
               const selection = view?.state.selection.main;
@@ -609,7 +694,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             },
             syncFromSource: syncViewFromSource,
             scrollToRemote(position) {
-              if (!view || !activeDocumentId()) return false;
+              if (!view || !activeDocumentId() || currentAsset) return false;
               const at = clamp(position, view.state.doc.length);
               try {
                 view.dispatch({ effects: EditorView.scrollIntoView(at, { y: 'center', x: 'nearest' }) });
@@ -618,7 +703,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
               } catch { return false; }
             },
             replaceSelection(text) {
-              if (!view || source.readOnly || accessRole() === 'viewer') return false;
+              if (!view || source.readOnly || accessRole() === 'viewer' || (currentAsset && accessRole() === 'editor')) return false;
               const selection = view.state.selection.main;
               const insert = String(text ?? '');
               view.dispatch({ changes: { from: selection.from, to: selection.to, insert }, selection: { anchor: selection.from + insert.length }, scrollIntoView: true });
