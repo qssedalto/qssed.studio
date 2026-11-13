@@ -86,12 +86,11 @@ for (const required of [
   "tex-live-preview-frame",
   "PDF 实时预览",
   "markPreviewDirty(1500)",
-  "setInterval(() =>",
-  "}, 10000)",
   "lastPreviewSnapshot",
   "当前源码编译失败，已保留上一版 PDF"
 ]) assert(zhTexLocal.includes(required), `Local TeX Workbench is missing: ${required}`);
 assert(!zhTexLocal.includes("Authorization"), "Local TeX compilation must not send browser bearer credentials to localhost");
+assert(!zhTexLocal.includes("}, 10000)"), "Idle-triggered preview must not use the removed ten-second continuous fallback.");
 assert(zhTexLocal.includes("previewOnly") && zhTexLocal.includes("if (!previewOnly)"), "Automatic preview jobs must stay separate from manual compile history");
 assert(zhTexLocal.includes("snapshot !== currentPreviewSnapshot()"), "Live preview must discard stale compile results");
 assert(zhTexLocal.includes("URL.revokeObjectURL(previewUrl)"), "Live preview must release replaced PDF object URLs");
