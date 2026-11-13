@@ -42,8 +42,17 @@ for (const zh of [true, false]) {
   assert(WORK_TEX_EXPLORER_STYLE.includes(".tex-tree-folder-children"),
     "Nested directories must have separate collapsible content");
 
-  assert(WORK_TEX_EXPLORER_TREE.includes("label.scrollWidth<=label.clientWidth+1"),
-    "Only truncated filenames must show the full-name tooltip");
+  assert(WORK_TEX_EXPLORER_TREE.includes("function isFilenameClipped(row)") &&
+    WORK_TEX_EXPLORER_TREE.includes("range.selectNodeContents(label)") &&
+    WORK_TEX_EXPLORER_TREE.includes("!isFilenameClipped(row)"),
+    "Tooltip must detect ellipsis even when flexbox reports inaccurate scrollWidth");
+  assert(WORK_TEX_EXPLORER_TREE.includes("row.title=name") &&
+    WORK_TEX_EXPLORER_TREE.includes("row.addEventListener('mouseenter'") &&
+    WORK_TEX_EXPLORER_TREE.includes("row.addEventListener('mouseleave'"),
+    "Every project file must have a native tooltip fallback and robust row hover");
+  assert(WORK_TEX_EXPLORER_TREE.includes("attachFilenameTooltip(row,asset.name)") &&
+    WORK_TEX_EXPLORER_TREE.includes("attachFilenameTooltip(row,prefix)"),
+    "All nested file and folder rows must register their full original names");
   assert(WORK_TEX_EXPLORER_TREE.includes("filenameTooltip.textContent=name") &&
     WORK_TEX_EXPLORER_TREE.includes("setAttribute('role','tooltip')") &&
     WORK_TEX_EXPLORER_TREE.includes("row.setAttribute('aria-describedby',filenameTooltip.id)"),
