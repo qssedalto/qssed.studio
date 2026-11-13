@@ -355,12 +355,6 @@ export function enhanceWorkTexDesktopTypography(markup) {
           }
 
           const response = await nativeFetch(input, init);
-              if (response.ok) void cachePdfResponse(engine, source, response.clone());
-              return response;
-            }
-          }
-
-          const response = await nativeFetch(input, init);
           if (parsedUrl && parsedUrl.origin === location.origin && parsedUrl.pathname === '/api/tex/collaboration' && ['POST', 'PATCH', 'DELETE'].includes(parts.method) && response.ok) {
             void response.clone().json().then(data => {
               if (data?.document_id) writeCollaborationSnapshot(data.document_id, data);
