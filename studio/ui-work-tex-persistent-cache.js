@@ -5,10 +5,10 @@ const cacheRuntime = "(() => {\n  if (window.__aertexTexDocumentCache) return;\n
 // source has no trustworthy main_deleted/main_filename/file list and can
 // show the WRONG main.tex after the entry was deleted, replaced or renamed.
 // Wait for the already-in-flight authenticated API GET before painting source.
-const hydrateSource = "function restorePreviouslyOpenedDocument(){\\n" +
-  "  // The server-authorized document loader remains visible until the\\n" +
-  "  // authoritative GET returns. Do not inject a stale cached source.\\n" +
-  "}\\n";
+const hydrateSource = "function restorePreviouslyOpenedDocument(){\n" +
+  "  // The server-authorized document loader remains visible until the\n" +
+  "  // authoritative GET returns. Do not inject a stale cached source.\n" +
+  "}\n";
 
 export function enhanceWorkTexPersistentCache(markup) {
   let source = String(markup || "");
