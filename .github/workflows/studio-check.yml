@@ -275,6 +275,7 @@ jobs:
           node scripts/tex-toolbar-actions-check.mjs
           node scripts/tex-file-manager-check.mjs
           node scripts/tex-explorer-check.mjs
+          node scripts/tex-explorer-vault-check.mjs
           node scripts/tex-github-compile-project-check.mjs
 
       - name: Verify TeX add-file workflows and authorization
