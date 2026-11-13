@@ -13,6 +13,40 @@ const realtime = load("ui-work-tex-realtime.js");
 const codeMirror = load("ui-work-tex-codemirror.js");
 const live = load("ui-work-tex-live-controls.js");
 
+const collaborationApi = load("tex-collaboration-api.js");
+const validatorsStart=collaborationApi.indexOf("function cleanUsername(value) {");
+const validatorsEnd=collaborationApi.indexOf("function cleanText(", validatorsStart);
+assert(validatorsStart>0 && validatorsEnd>validatorsStart,"Collaborator request validators must exist");
+const {cleanUsername,cleanSearchQuery}=new Function(
+  collaborationApi.slice(validatorsStart,validatorsEnd) +
+  "\nreturn {cleanUsername,cleanSearchQuery};"
+)();
+assert.equal(cleanSearchQuery("210713206@qq.com"),"210713206@qq.com",
+  "Email-style handles must reach the server's directory RPC, not be silently rejected");
+assert.equal(cleanSearchQuery("梦"),"梦",
+  "Single-character Chinese searches must be passed to the server");
+assert.equal(cleanSearchQuery("张梦怡"),"张梦怡",
+  "Chinese display names must be searchable");
+assert.equal(cleanUsername("210713206@qq.com"),"210713206@qq.com",
+  "Inviting a selected email-style username must pass POST validation");
+assert.equal(cleanUsername("@210713206@qq.com"),"210713206@qq.com",
+  "A leading @ mention must normalize while keeping the email @");
+assert.equal(cleanUsername("梦"),"",
+  "A display-name fragment must not be submitted as an exact username");
+assert.equal(cleanSearchQuery("John Smith"),"John Smith",
+  "Display name searches may contain spaces");
+for (const rejected of ["<script>","\n", "a".repeat(81)]) {
+  assert.equal(cleanSearchQuery(rejected),"","Invalid search input must be rejected");
+}
+assert(collaborationApi.includes("tex_search_collaborators") &&
+  collaborationApi.includes("tex_resolve_collaborator"),
+  "Search and add must use authenticated directory RPCs");
+const perfSource=load("ui-work-tex-collaboration-performance.js");
+assert(perfSource.includes("userSearchCache.delete(key)") &&
+  perfSource.includes("if (results.length &&"),
+  "Negative or eight-row prefix caches must never conceal newly discoverable accounts");
+
+
 assert.match(room, /client_id:\s*crypto\.randomUUID\(\)/, "Each socket needs an independent identity.");
 assert.match(room, /client_id:\s*participant\.client_id/, "Broadcasts and sync must expose socket identity.");
 assert.match(room, /safeRelativePosition\(payload\.anchor_rel\)/, "Server must validate remote anchor position.");
