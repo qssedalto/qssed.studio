@@ -53,13 +53,14 @@ function simulate(html) {
   let shortcut,collabClicks=0,opened=[];
   collab.click=()=>collabClicks++;
   const document={
-    querySelector(s){return s===".tex-work-app[data-tex-root]"?root:null;},
+    body:{append(){}},
+    querySelector(s){return s===".tex-work-app[data-tex-root]"?root:null;}
     getElementById(s){
       if(s==="tex-collaboration-open")return collab;
       if(s==="tex-command-chat-shortcut")return shortcut;
       return null;
     },
-    createElement(name){const el=makeNode(name);Object.defineProperty(el,"id",{
+    createElement(name){const el=makeNode(name);el.remove=()=>{};el.click=()=>{if(name==='a')opened.push([el.href,el.target,el.rel]);};if(name==='button')Object.defineProperty(el,"id",{
       get(){return this._id;},set(value){this._id=value; shortcut=this;}
     });return el;}
   };
@@ -83,7 +84,7 @@ function simulate(html) {
   shortcut.events.click({stopPropagation(){stopped=true;}});
   assert(stopped);
   assert.equal(collabClicks,0,"Bubble must never open collaboration settings");
-  assert.deepEqual(opened.map(x=>Array.from(x)),[["https://chat.qsseda.com/","_blank","noopener,noreferrer"]],"Bubble must open separate encrypted chat application");
+  assert.deepEqual(opened.map(x=>Array.from(x)),[["https://chat.qsseda.com/","_blank","noopener noreferrer"]],"Bubble must open separate encrypted chat application");
   bar.events.keydown({target:bar,key:"ArrowRight",preventDefault(){}});
   assert.equal(bar.scrollLeft,125,"Keyboard users can horizontally pan icon group");
   bar.events.keydown({target:bar,key:"ArrowLeft",preventDefault(){}});
