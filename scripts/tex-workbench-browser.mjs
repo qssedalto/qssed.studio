@@ -118,12 +118,12 @@ try{
  await browser.wait(`!document.getElementById('tex-file-text-editor').open`,4000);
  assert.equal(await browser.evaluate(`__qa.documents.get(${JSON.stringify(id)}).files.find(f=>f.name==='chapters/intro.tex').content`),'Typed during file save');
  // Exercise real save queue and UI, while the mocked network request is held.
- await browser.evaluate(`__qa.delay=true;const s=document.getElementById('tex-source');s.value='First pending save';s.dispatchEvent(new Event('input',{bubbles:true}));window.__qaFlush=window.__aertexFlushTexSave?.();`);
+ await browser.evaluate(`__qa.delay=true;var s=document.getElementById('tex-source');s.value='First pending save';s.dispatchEvent(new Event('input',{bubbles:true}));window.__qaFlush=window.__aertexFlushTexSave?.();`);
  await browser.wait('__qa.saves.length>=1',6000);
- await browser.evaluate(`const s=document.getElementById('tex-source');s.value='Typed during request';s.dispatchEvent(new Event('input',{bubbles:true}));__qa.delay=false;__qa.releases.splice(0).forEach(fn=>fn());`);
+ await browser.evaluate(`var s=document.getElementById('tex-source');s.value='Typed during request';s.dispatchEvent(new Event('input',{bubbles:true}));__qa.delay=false;__qa.releases.splice(0).forEach(fn=>fn());`);
  await browser.wait(`__qa.documents.get(${JSON.stringify(id)})?.source==='Typed during request'`,6000);
  assert.equal(await browser.evaluate(`document.getElementById('tex-source').value`),'Typed during request');
- await browser.evaluate(`__qa.fail=true;const s=document.getElementById('tex-source');s.value='Unsaved after outage';s.dispatchEvent(new Event('input',{bubbles:true}));window.__qaFailedSave=window.__aertexFlushTexSave?.();`);
+ await browser.evaluate(`__qa.fail=true;var s=document.getElementById('tex-source');s.value='Unsaved after outage';s.dispatchEvent(new Event('input',{bubbles:true}));window.__qaFailedSave=window.__aertexFlushTexSave?.();`);
  await browser.wait(`document.getElementById('tex-save-state')?.textContent.includes('outage')`,6000);
  assert.equal(await browser.evaluate(`document.getElementById('tex-source').value`),'Unsaved after outage');
  assert.equal(await browser.evaluate(`(()=>{const e=new Event('beforeunload',{cancelable:true});window.dispatchEvent(e);return e.defaultPrevented;})()`),true,'Unsaved changes must retain navigation warning');
