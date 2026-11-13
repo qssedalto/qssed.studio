@@ -94,29 +94,49 @@ export async function handleTexProjectFiles(request, env, userId) {
     if (!existing.every(f=>validName(f.name) && ["utf8","base64"].includes(f.encoding))) {
       return fail("This project's stored file list is invalid.", 409);
     }
+    const entryName = doc.main_deleted === true ? "" : (typeof doc.main_filename === "string" && doc.main_filename ? doc.main_filename : "main.tex");
     let added = [];
     let next;
     if (modifyingEntry) {
-      // main.tex is the project root entry point and cannot be renamed/deleted.
       const oldName = input.name;
-      if (!validName(oldName) || oldName.toLowerCase() === "main.tex") {
-        return fail("The main.tex entry point cannot be renamed or deleted.", 400);
-      }
+      if (!validName(oldName)) return fail("Invalid file name.");
+      const entry = Boolean(entryName && oldName === entryName);
       const index = existing.findIndex(file => file.name === oldName);
-      if (index < 0) return fail("File not found.", 404);
-      if (isLocked(oldName)) return fail("Unlock this file before changing it.", 423);
-      if (operation === "delete") next = existing.filter((_, i) => i !== index);
-      else {
+      if (!entry && index < 0) return fail("File not found.", 404);
+      if (isLocked(oldName) || (entry && isLocked("main.tex")))
+        return fail("Unlock this file before changing it.", 423);
+      if (operation === "delete") {
+        if (entry) {
+          // The canonical TeX compiler still uses an internal main.tex. Deleting
+          // the visible entry removes its source and hides it until a new root
+          // .tex file is added; it never silently deletes the entire project.
+          doc.main_deleted = true;
+          doc.source = "";
+          doc.main_filename = "main.tex";
+        }
+        next = entry ? existing : existing.filter((_, i) => i !== index);
+      } else {
         const newName = input.new_name;
-        if (isLocked(newName)) return fail("The destination is locked.",423);
-        if (!validName(newName) || newName.toLowerCase() === "main.tex" ||
-            existing.some((file, i) => i !== index && file.name.toLowerCase() === newName.toLowerCase())) {
+        if (!validName(newName) || isLocked(newName) ||
+            existing.some((file, i) => i !== index && file.name.toLowerCase() === newName.toLowerCase()) ||
+            (!entry && newName.toLowerCase() === entryName.toLowerCase()) ||
+            (!entry && newName.toLowerCase() === "main.tex")) {
           return fail("Invalid or duplicate destination filename.", 409);
         }
-        if (BINARY.test(newName) !== BINARY.test(oldName)) {
-          return fail("Cannot rename a text file to a binary type or vice versa.", 400);
+        if (entry) {
+          // Keep the root TeX entry as a .tex document; the display name is
+          // persisted while the local/compiler API retains main.tex internally.
+          if (!/^[^/\\]+\.tex$/i.test(newName)) return fail("The TeX entry filename must end in .tex and stay at the project root.");
+          doc.main_filename = newName;
+          doc.main_deleted = false;
+          doc.pinned_files = (doc.pinned_files || []).map(name => name === oldName ? newName : name);
+          doc.locked_files = (doc.locked_files || []).map(name => name === oldName ? newName : name);
+          next = existing;
+        } else {
+          if (BINARY.test(newName) !== BINARY.test(oldName))
+            return fail("Cannot rename a text file to a binary type or vice versa.", 400);
+          next = existing.map((file, i) => i === index ? { ...file, name: newName } : file);
         }
-        next = existing.map((file, i) => i === index ? { ...file, name: newName } : file);
       }
     } else {
       try { added = input.files.map(validatedFile); }
@@ -129,14 +149,26 @@ export async function handleTexProjectFiles(request, env, userId) {
         next = existing.map((f,i)=>i===index?added[0]:f);
       } else {
         if (operation !== "add") return fail("Unknown file operation.");
-        const seen = new Set(["main.tex", ...existing.map(f=>f.name.toLowerCase())]);
+        const seen = new Set(["main.tex", ...(entryName ? [entryName.toLowerCase()] : []), ...existing.map(f=>f.name.toLowerCase())]);
         for (const f of added) {
           if (seen.has(f.name.toLowerCase())) return fail("File already exists: " + f.name, 409);
           if (isLocked(f.name)) return fail("The destination folder is locked.",423);
           seen.add(f.name.toLowerCase());
         }
-        if (existing.length + added.length > MAX_FILES) return fail("A project can contain at most 500 files including main.tex.", 409);
-        next = [...existing, ...added];
+        // After deleting the root entry, the next standalone .tex file
+        // recreates the canonical compile entry without fabricating a file.
+        const replacementEntry = doc.main_deleted === true && added.length === 1 &&
+          /^[^/\\]+\.tex$/i.test(added[0].name) && !isLocked("main.tex");
+        if (replacementEntry) {
+          doc.source = added[0].content;
+          doc.main_filename = added[0].name;
+          doc.main_deleted = false;
+          next = existing;
+        } else {
+          if (existing.length + added.length > MAX_FILES)
+            return fail("A project can contain at most 500 files including the TeX entry.", 409);
+          next = [...existing, ...added];
+        }
       }
     }
     const total = encoder.encode(String(doc.source || "")).length +
@@ -152,7 +184,7 @@ export async function handleTexProjectFiles(request, env, userId) {
         engine:String(doc.engine || "xelatex").slice(0,24),
         preview:String(doc.source || "").replace(/\s+/g," ").trim().slice(0,220),
         projectType:doc.project_type || "legacy",
-        fileCount:String(1+doc.files.length),
+        fileCount:String((doc.main_deleted ? 0 : 1)+doc.files.length),
         pinned:doc.pinned?"true":"false",locked:doc.locked?"true":"false",
         createdAt:doc.created_at || doc.updated_at,
         updatedAt:doc.updated_at
