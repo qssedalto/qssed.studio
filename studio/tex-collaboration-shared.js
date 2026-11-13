@@ -1,4 +1,4 @@
-import { validateTexSourceSave, finalizeTexSourceSave } from "./tex-collaboration-save.js";
+import { commitTexSourceSave } from "./tex-collaboration-save.js";
 import { readJsonBounded } from "./request-json-bounded.js";
 import { sourceInputError, isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
@@ -92,9 +92,7 @@ async function handleUpdate(request, env, auth, accessToken) {
   const normalized = normalizeSharedDocument(parsed.value, previous);
   if (!normalized.ok) return json({ error: normalized.error }, 400);
   try {
-    const savePlan = await validateTexSourceSave(env, previous, parsed.value, normalized.value);
-    await writeDocument(env, normalized.value, previous.storage_revision);
-    await finalizeTexSourceSave(env, previous, savePlan);
+    await commitTexSourceSave(env, previous, parsed.value, normalized.value);
     return json({
       document: {
         ...normalized.value,

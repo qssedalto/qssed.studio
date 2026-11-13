@@ -1,6 +1,7 @@
+import { commitTexSourceSave } from "./tex-collaboration-save.js";
 import { readJsonBounded } from "./request-json-bounded.js";
 import { isTexMainLocked, sourceInputError, countLiveTexDocuments } from "./tex-document-guards.js";
-import { texRealtimeEpoch, texRealtimeRoomName } from "./tex-realtime-epoch.js";
+import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
 import { verifyNativeAppSession, nativeJson } from "./native-mobile-auth.js";
 import { snapshotDocumentVersion } from "./tex-version-api.js";
 
@@ -148,6 +149,7 @@ export async function handleNativeWorkDocuments(request, env) {
       if (previous.main_deleted) return nativeJson({error:"Add a TeX entry before editing this project."},409);
       const match = request.headers.get("If-Match");
       if (!match || match !== obj.etag) return nativeJson({ error: "Document changed elsewhere; reload first." }, 409);
+      previous.storage_revision = obj.etag;
       onlyIf = { etagMatches: obj.etag };
     } else {
       if (await countLiveTexDocuments(env.STORAGE, ROOT + userId + "/", 120) >= 120) return nativeJson({ error: "Work document limit reached." }, 409);
@@ -158,32 +160,31 @@ export async function handleNativeWorkDocuments(request, env) {
     const document = {
       ...previous,
       id: docId, owner_id: userId,
-      // Native writes replace plain text, not a Yjs update. Isolate the old
-      // room so it cannot replay its snapshot over the native edit.
-      realtime_epoch: previous && (previous.source !== input.source || previous.title !== input.title.trim() || previous.engine !== input.engine) ? crypto.randomUUID() : texRealtimeEpoch(previous),
+      realtime_epoch: texRealtimeEpoch(previous),
       title: input.title.trim() || "Untitled TeX document",
       engine: input.engine, source: input.source,
       created_at: previous?.created_at || now, updated_at: now
     };
-    const saved = await env.STORAGE.put(key(userId, docId), JSON.stringify(document), {
-      onlyIf, httpMetadata: { contentType: "application/json;charset=UTF-8" },
-      customMetadata: metadata(document)
-    });
-    if (!saved) return nativeJson({ error: "Document changed elsewhere; reload first." }, 409);
-    if (previous && document.realtime_epoch !== texRealtimeEpoch(previous) && env?.TEX_COLLAB_ROOMS?.get) {
-      try {
-        const room = env.TEX_COLLAB_ROOMS.get(env.TEX_COLLAB_ROOMS.idFromName(
-          texRealtimeRoomName(userId, docId, texRealtimeEpoch(previous))));
-        await room.fetch(new Request("https://tex-collaboration-room.internal/source-rebased", {method:"POST", headers:{
-          "X-Qsseda-Collab-Owner":userId, "X-Qsseda-Collab-Document":docId
-        }}));
-      } catch { /* Old tabs are still blocked by the persisted epoch check. */ }
+    let saved;
+    if (previous) {
+      // A matching R2 ETag is not enough: live browser edits can exist in the
+      // room journal before the next autosave projects them into R2.
+      await commitTexSourceSave(env, previous, { storage_revision: previous.storage_revision }, document);
+      saved = { etag: document.storage_revision };
+    } else {
+      saved = await env.STORAGE.put(key(userId, docId), JSON.stringify(document), {
+        onlyIf, httpMetadata: { contentType: "application/json;charset=UTF-8" },
+        customMetadata: metadata(document)
+      });
+      if (!saved) return nativeJson({ error: "Document changed elsewhere; reload first." }, 409);
     }
     try { await snapshotDocumentVersion(env, userId, document, {
       reason: previous ? "autosave" : "created", force: true
     }); } catch { /* The document is saved even if version recording is unavailable. */ }
     return nativeJson({ document, etag: saved.etag }, previous ? 200 : 201);
-  } catch {
+  } catch (error) {
+    if ([400, 409, 413, 423, 428].includes(error?.status))
+      return nativeJson({ error: error.message, code: error.code }, error.status);
     return nativeJson({ error: "Work document request failed." }, 503);
   }
 }

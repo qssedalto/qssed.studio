@@ -1,4 +1,4 @@
-import { validateTexSourceSave, finalizeTexSourceSave } from "./tex-collaboration-save.js";
+import { commitTexSourceSave } from "./tex-collaboration-save.js";
 import { readJsonBounded } from "./request-json-bounded.js";
 import { sourceInputError, isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT, retireTexDocument, countLiveTexDocuments } from "./tex-document-guards.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
@@ -330,9 +330,7 @@ async function updateDocument(request, env, userId) {
       return json({ error: "Unlock main.tex or the project before editing.", }, 423);
     const normalized = normalizeDocument(parsed.value, userId, documentId, previous);
     if (!normalized.ok) return json({ error: normalized.error }, 400);
-    const savePlan = await validateTexSourceSave(env, previous, parsed.value, normalized.value);
-    await writeDocument(env, normalized.value, previous.storage_revision);
-    await finalizeTexSourceSave(env, previous, savePlan);
+    await commitTexSourceSave(env, previous, parsed.value, normalized.value);
     return json({ document: normalized.value, saved: true });
   } catch (error) {
     if ([400, 409, 413, 423, 428].includes(error?.status)) return json({ error: error.message, code: error.code }, error.status);

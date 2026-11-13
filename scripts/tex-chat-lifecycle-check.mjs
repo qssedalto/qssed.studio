@@ -16,6 +16,10 @@ const functions={
 };
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
+const until=async predicate=>{
+ const deadline=Date.now()+4000;
+ while(!predicate()&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,5));
+};
 const base=()=>({state:{generation:1,document:'project-a',token:'grant',user:'user',owner:'owner',role:'owner',
  device:{deviceId:'device-a'},ready:true,unlocking:false,sending:false,key:{},seen:null},
  crypto,TextEncoder,TextDecoder,enc:new TextEncoder(),AbortController,requests:new Set(),
@@ -78,7 +82,7 @@ let groups=0;
   sealMessageEnvelope:async()=>({to_user:'user',to_device:'device-a',iv:'sealed-iv',ct:'sealed-key'}),
   readMessages:async()=>{},api:async(op,body)=>{calls.push({op,body});if(op==='devices')return{devices:[{device_id:'device-a'}]};return sent.promise;}});
  ctx.state.unlocking=true;const call=ctx.sendMessage({preventDefault(){}});
- for(let i=0;i<50&&!calls.some(c=>c.op==='send');i++)await tick();
+ await until(()=>calls.some(c=>c.op==='send'));
  assert(calls.some(c=>c.op==='send'),'An enabled Send must work even if unlock cleanup is pending');
  assert.equal(ctx.state.sending,true);ctx.field.value='typed while saving ciphertext';sent.resolve({sent:true});await call;
  assert.equal(ctx.field.value,'typed while saving ciphertext','New draft must survive earlier send completion');
@@ -90,7 +94,7 @@ let groups=0;
  const ctx=context(['sendMessage'],{toB64:bytes=>Buffer.from(bytes).toString('base64url'),
   messageAad3:()=>new Uint8Array(),sealMessageEnvelope:async()=>({}),readMessages:async()=>{},
   api:async op=>{if(op==='devices')return{devices:[{}]};started=true;return sent.promise;}});
- const call=ctx.sendMessage({preventDefault(){}});for(let i=0;i<50&&!started;i++)await tick();assert(started);
+ const call=ctx.sendMessage({preventDefault(){}});await until(()=>started);assert(started);
  ctx.state.generation=2;ctx.state.document='project-b';ctx.state.sending=true;ctx.field.value='project-b draft';
  sent.resolve({sent:true});await call;
  assert.equal(ctx.field.value,'project-b draft');assert.equal(ctx.state.sending,true,'Old send cannot unlock the new send');groups++;

@@ -332,9 +332,10 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
         return;
       }
 
-      const name = data.user.user_metadata.username || data.user.user_metadata.display_name || data.user.email;
+      const name = data.user.user_metadata?.username || data.user.user_metadata?.display_name || data.user.email || "User";
       const userLabel = "@" + name;
-      document.getElementById("os-user-name").innerText = userLabel;
+      const userNameElement = document.getElementById("os-user-name");
+      if (userNameElement) userNameElement.innerText = userLabel;
       try {
         document.cookie = "qssed-os-user-name=" + encodeURIComponent(userLabel) + "; Path=/; Max-Age=2592000; SameSite=Lax; Secure";
         sessionStorage.removeItem("qssed-os-user-name");

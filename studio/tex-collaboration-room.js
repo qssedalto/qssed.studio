@@ -68,7 +68,7 @@ export class TexCollaborationRoom {
   }
 
   async fetch(request) {
-    if (request.method === "POST" && new URL(request.url).pathname === "/validate-save")
+    if (request.method === "POST" && ["/validate-save", "/commit-save"].includes(new URL(request.url).pathname))
       return handleRoomSaveValidation(request, this.state, this.env, payload => this.broadcast(payload));
     if(new URL(request.url).pathname==="/vault"){
       const id=request.headers.get("X-Qsseda-Vault-User"), raw=request.headers.get("X-Qsseda-Vault-Email")||"";

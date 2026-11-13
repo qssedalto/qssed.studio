@@ -75,7 +75,8 @@ function simulate(html) {
   class ResizeObserver {constructor(cb){this.cb=cb;lastObserved=this} observe(node){assert.equal(node,header)}disconnect(){}}
   class MutationObserver {constructor(cb){this.cb=cb} observe(node){assert.equal(node,collab)}disconnect(){}}
   const win={addEventListener(){},matchMedia(){return {matches:false}},setTimeout(){throw Error("Unexpected deferred retry")},open(...args){opened.push(args);return {}},location:{assign(url){opened.push([url])}}};
-  vm.runInNewContext(match[1],{document,window:win,ResizeObserver,MutationObserver,Event:class{constructor(type){this.type=type}}},{timeout:1000});
+  const frames=[];
+  vm.runInNewContext(match[1],{document,window:win,ResizeObserver,MutationObserver,requestAnimationFrame:fn=>{frames.push(fn);return frames.length;},cancelAnimationFrame(){},Event:class{constructor(type){this.type=type}}},{timeout:1000});
   assert.equal(shortcut.id,"tex-command-chat-shortcut");
   assert.equal(shortcut.attrs["aria-label"],html.includes("打开或收起当前文件的加密聊天浮窗")?"打开或收起当前文件的加密聊天浮窗":"Toggle encrypted chat popup for this file");
   assert.equal(shortcut.type,"button");
@@ -89,7 +90,10 @@ function simulate(html) {
   assert.equal(bar.attrs.tabindex,"0");
   assert(header.classList.contains("tex-toolbar-compact"),"690px editor must suppress file label to keep stats fixed");
   assert(!header.classList.contains("tex-toolbar-tight"));
-  header.width=290;lastObserved.cb();
+  header.width=290;lastObserved.cb();lastObserved.cb();
+  assert.equal(frames.length,1,"Observer notifications must coalesce into one animation frame");
+  assert(!header.classList.contains("tex-toolbar-tiny"),"ResizeObserver must not synchronously mutate observed layout");
+  frames.shift()();
   assert(header.classList.contains("tex-toolbar-tiny"),"290px editor must reserve room for badge and count");
   let stopped=false;
   shortcut.events.click({stopPropagation(){stopped=true;}});

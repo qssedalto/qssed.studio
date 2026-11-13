@@ -1,7 +1,8 @@
+import { reconcileTexMainEntry } from './tex-main-entry.js';
 import { registerTexRoomEpoch } from "./tex-collaboration-history.js";
 import { Doc, applyUpdate, encodeStateAsUpdate, encodeStateVector } from '../tex-vendor/server-yjs.mjs';
 import { readJsonBounded } from './request-json-bounded.js';
-import { isTexMainLocked, sourceInputError, texWriteConflict } from './tex-document-guards.js';
+import { isTexMainLocked, sourceInputError, texWriteConflict, putTexDocument } from './tex-document-guards.js';
 import { texRealtimeEpoch, texRealtimeRoomName } from './tex-realtime-epoch.js';
 import { invalidateTexCollaboration } from './tex-collaboration-invalidate.js';
 
@@ -34,6 +35,32 @@ function encode(bytes) {
 // document hours earlier. Require its base ETag. An old ETag is allowed only
 // when the submitted CRDT state demonstrably contains the current server state.
 export async function validateTexSourceSave(env, previous, input, document) {
+  return requestSourceSave(env, previous, input, document, false);
+}
+
+// Validation and R2 publication must share the room's critical section. A
+// separate validate-then-put would allow an acknowledged WebSocket update to
+// arrive between the two and be discarded by a plain-text epoch replacement.
+export async function commitTexSourceSave(env, previous, input, document) {
+  const plan = await requestSourceSave(env, previous, input, document, true);
+  if (!plan.committed) {
+    await putTexDocument(env.STORAGE, documentKey(document), document, writeOptions(document), previous.storage_revision);
+  }
+  await finalizeTexSourceSave(env, previous, plan);
+  return plan;
+}
+const documentKey = doc => `_system/tex-documents/${doc.owner_id}/${doc.id}.json`;
+function writeOptions(doc, originalMetadata = {}) {
+  return { httpMetadata: { contentType: 'application/json;charset=UTF-8' }, customMetadata: {
+    ...originalMetadata, ownerId: doc.owner_id, hidden: 'true', kind: 'tex-document',
+    title: doc.title, engine: doc.engine,
+    preview: doc.source.replace(/\s+/g, ' ').trim().slice(0, 220),
+    projectType: doc.project_type || 'legacy', fileCount: String((doc.main_deleted ? 0 : 1) + (doc.files?.length || 0)),
+    pinned: doc.pinned ? 'true' : 'false', locked: doc.locked ? 'true' : 'false',
+    createdAt: doc.created_at || '', updatedAt: doc.updated_at || '', realtimeEpoch: texRealtimeEpoch(doc)
+  } };
+}
+async function requestSourceSave(env, previous, input, document, commit) {
   if (typeof input.storage_revision !== 'string' || !input.storage_revision || input.storage_revision.length > 256)
     throw Object.assign(new Error('This editor must be refreshed before saving. Download your local source first; no server content was changed.'), { status: 428, code: 'save_revision_required' });
   if (!env?.TEX_COLLAB_ROOMS?.idFromName || !env?.TEX_COLLAB_ROOMS?.get) {
@@ -47,7 +74,7 @@ export async function validateTexSourceSave(env, previous, input, document) {
     texRealtimeRoomName(previous.owner_id, previous.id, texRealtimeEpoch(previous))));
   let response;
   try {
-    response = await room.fetch(new Request('https://tex-collaboration-room.internal/validate-save', {
+    response = await room.fetch(new Request('https://tex-collaboration-room.internal/' + (commit ? 'commit-save' : 'validate-save'), {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
         owner_id: previous.owner_id, document_id: previous.id, epoch: texRealtimeEpoch(previous),
         previous_revision: previous.storage_revision, client_revision: input.storage_revision,
@@ -60,7 +87,14 @@ export async function validateTexSourceSave(env, previous, input, document) {
   const result = await response.json().catch(() => null);
   if (!response.ok || !result?.ok) throw Object.assign(new Error(result?.error || 'Could not verify the collaboration state.'),
     { status: [400, 409, 413, 423, 428].includes(response.status) ? response.status : 503, code: result?.code || 'collaboration_unavailable' });
-  if (result.rebase) document.realtime_epoch = crypto.randomUUID();
+  if (commit) {
+    if (result.committed !== true || typeof result.storage_revision !== 'string' || !result.storage_revision ||
+        typeof result.realtime_epoch !== 'string' || typeof result.updated_at !== 'string')
+      throw Object.assign(new Error('The save acknowledgement was incomplete. Preserve your local source and reopen the project before retrying.'), { status: 503, code: 'collaboration_unavailable' });
+    document.storage_revision = result.storage_revision;
+    document.realtime_epoch = result.realtime_epoch;
+    document.updated_at = result.updated_at;
+  } else if (result.rebase) document.realtime_epoch = crypto.randomUUID();
   return result;
 }
 export async function finalizeTexSourceSave(env, previous, plan) {
@@ -74,16 +108,36 @@ export async function handleRoomSaveValidation(request, state, env, broadcast) {
   let input;
   try { input = await readJsonBounded(request, 3 * 1024 * 1024); }
   catch (error) { return reply({ error: 'Invalid save verification payload.' }, error?.status === 413 ? 413 : 400); }
-  if (!idPattern.test(input.owner_id || '') || !idPattern.test(input.document_id || '') ||
-      sourceInputError(input.candidate) || typeof input.candidate.title !== 'string' ||
+  if (!input || typeof input !== 'object' || !idPattern.test(input.owner_id || '') || !idPattern.test(input.document_id || '') ||
+      sourceInputError(input.candidate) || typeof input.candidate.title !== 'string' || input.candidate.title.length > 180 ||
       !['xelatex', 'lualatex', 'pdflatex'].includes(input.candidate.engine)) return reply({ error: 'Invalid save fields.' }, 400);
   return state.blockConcurrencyWhile(async () => {
     const object = await env.STORAGE.get(`_system/tex-documents/${input.owner_id}/${input.document_id}.json`);
     if (!object || object.etag !== input.previous_revision) return conflict();
-    const previous = await object.json();
+    const previous = reconcileTexMainEntry(await object.json());
     if (previous.document_deleted || previous.owner_id !== input.owner_id || previous.id !== input.document_id ||
         texRealtimeEpoch(previous) !== input.epoch) return conflict();
     if (isTexMainLocked(previous) || previous.main_deleted) return reply({ error: 'The TeX entry is locked or unavailable.' }, 423);
+    const commit = new URL(request.url).pathname === '/commit-save';
+    const publish = async rebase => {
+      if (!commit) return reply({ ok: true, rebase });
+      // Preserve the exact files, pins and locks from the CAS-protected R2 read;
+      // source saves never import a client-supplied project or attachment list.
+      const document = { ...previous, ...fields(input.candidate),
+        realtime_epoch: rebase ? crypto.randomUUID() : texRealtimeEpoch(previous),
+        updated_at: new Date().toISOString() };
+      try {
+        await putTexDocument(env.STORAGE, documentKey(document), document,
+          writeOptions(document, object.customMetadata), object.etag);
+      } catch (error) {
+        return reply({ error: error?.status === 409 ? error.message : 'Document storage is temporarily unavailable. Preserve your local source.',
+          code: error?.status === 409 ? error.code : 'storage_unavailable' }, error?.status === 409 ? 409 : 503);
+      }
+      // R2's new epoch already prevents any queued old-room edit from being
+      // acknowledged. The outer gateway closes those old sockets afterwards.
+      return reply({ ok: true, committed: true, rebase, storage_revision: document.storage_revision,
+        realtime_epoch: document.realtime_epoch, updated_at: document.updated_at });
+    };
     const snapshot = await state.storage.get('snapshot');
     const currentRevision = input.client_revision === object.etag;
     // Establish the new contract with a current R2 reader, never by trusting a
@@ -103,15 +157,16 @@ export async function handleRoomSaveValidation(request, state, env, broadcast) {
         applyUpdate(doc, data);
       }
       const before = encodeStateVector(doc);
-      const existing = snapshot?.data ? yFields(doc, previous) : fields(previous);
+      const existing = snapshot?.data || journal.size ? yFields(doc, previous) : fields(previous);
       if (!input.update) {
         if (equal(existing, input.candidate)) {
           await state.storage.put('save_contract', 2);
-          return reply({ ok: true, rebase: false });
+          return publish(false);
         }
         // Plain/offline replacement is safe only if both the R2 revision and
-        // the live room still equal the caller's base. Rebase after the R2 CAS.
-        if (currentRevision && equal(existing, fields(previous))) return reply({ ok: true, rebase: true });
+        // the live room still equal the caller's base. Hold this same room
+        // lock through the R2 CAS; no acknowledged update can enter the gap.
+        if (currentRevision && equal(existing, fields(previous))) return publish(true);
         return conflict();
       }
       applyUpdate(doc, decode(input.update));
@@ -128,7 +183,7 @@ export async function handleRoomSaveValidation(request, state, env, broadcast) {
       const keys = [...journal.keys()];
       for (let i = 0; i < keys.length; i += 128) await state.storage.delete(keys.slice(i, i + 128));
       broadcast({ type: snapshot?.data ? 'update' : 'initialized', data: encode(snapshot?.data ? delta : full), sequence });
-      return reply({ ok: true, rebase: false });
+      return publish(false);
     } catch {
       return reply({ error: 'The collaboration state could not be verified. Your local source is still available.', code: 'collaboration_state_changed' }, 409);
     } finally { doc.destroy(); }
