@@ -111,7 +111,9 @@ const idDevice="22222222-2222-4222-8222-222222222222";
 const ecdh=await crypto.subtle.generateKey({name:"ECDH",namedCurve:"P-256"},true,["deriveBits"]);
 const jwk=await crypto.subtle.exportKey("jwk",ecdh.publicKey);
 assert.equal((await send("device",{token,device_id:idDevice,x:jwk.x,y:jwk.y})).status,200);
-assert.equal((await send("device",{token,device_id:idDevice,x:jwk.y,y:jwk.x})).status,409,
+const alternate=await crypto.subtle.generateKey({name:"ECDH",namedCurve:"P-256"},true,["deriveBits"]);
+const alternateJwk=await crypto.subtle.exportKey("jwk",alternate.publicKey);
+assert.equal((await send("device",{token,device_id:idDevice,x:alternateJwk.x,y:alternateJwk.y})).status,409,
   "Previously pinned device public keys cannot be silently replaced");
 let listed=await send("devices",{token});assert.equal(listed.body.devices.length,1);
 assert.equal(listed.body.initialized,false);
