@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import vm from "node:vm";
 import { enhanceWorkTexPreviewSession } from "../studio/ui-work-tex-preview-session.js";
+import { enhanceWorkTexDeviceReadiness } from "../studio/ui-work-tex-device-readiness.js";
 import { enhanceWorkTexDesktopTypography } from "../studio/ui-work-tex-desktop-type.js";
 import { workHubContent, workLocalBridgeContent } from "../studio/ui-work.js";
 import { enhanceWorkLocalBridgeNative } from "../studio/ui-work-native.js";
@@ -95,6 +96,18 @@ for (const required of [
   "lastPreviewSnapshot",
   "当前源码编译失败，已保留上一版 PDF"
 ]) assert(zhTexLocal.includes(required), `Local TeX Workbench is missing: ${required}`);
+assert(zhTexLocal.includes("bridgeDetected = true") &&
+  zhTexLocal.includes("localDetected: Boolean(bridgeDetected || localBase)") &&
+  zhTexLocal.includes("localEngineReady: Boolean(localBase)"),
+  "A running Bridge with TeX Live missing must not be misreported as no local service");
+const readinessHtml = enhanceWorkTexDeviceReadiness("<div class='tex-work-app'></div>", true);
+assert(readinessHtml.includes("Bridge 已连接，但未发现可用的 XeLaTeX") &&
+  readinessHtml.includes("const engineReady=Boolean(data.localEngineReady)") &&
+  readinessHtml.includes("steps.children[1].hidden=hasBridge"),
+  "Windows setup must distinguish a missing TeX engine from an absent Bridge and not suggest reinstalling a running Bridge");
+const readinessScript = readinessHtml.match(/<script id="tex-device-readiness-script">([\s\S]*?)<\/script>/)?.[1];
+assert(readinessScript, "Missing device readiness runtime");
+new vm.Script(readinessScript);
 assert(!zhTexLocal.includes("Authorization"), "Local TeX compilation must not send browser bearer credentials to localhost");
 assert(zhTexLocal.includes("previewOnly") && zhTexLocal.includes("if (!previewOnly)"), "Automatic preview jobs must stay separate from manual compile history");
 assert(zhTexLocal.includes("snapshot !== currentPreviewSnapshot()"), "Live preview must discard stale compile results");
