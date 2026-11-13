@@ -18,7 +18,7 @@ class MemoryR2 {
   }
   async get(key){
     const entry=this.records.get(key);
-    return entry?{text:async()=>entry.body,customMetadata:entry.customMetadata}:null;
+    return entry?{text:async()=>entry.body,json:async()=>JSON.parse(entry.body),customMetadata:entry.customMetadata}:null;
   }
   async head(key){return this.records.get(key)||null;}
   async delete(key){
