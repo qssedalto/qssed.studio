@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { enhanceWorkTexCollaboration } from "../studio/ui-work-tex-collaboration-instant.js";
 import { mapTexPositionThroughYDelta, mapTexPositionThroughTextChange } from "../studio/ui-work-tex-realtime.js";
-import { TexCollaborationRoom } from "../studio/tex-collaboration-room.js";
+import { TexCollaborationRoom, safeCollaborationAccent } from "../studio/tex-collaboration-room.js";
+import { IPHONE_THEME_PALETTE } from "../studio/iphone-theme-palette.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
 import { polishTexWorkbenchApp } from "../studio/ui-tex-app.js";
@@ -54,6 +55,49 @@ assert.match(room, /safeRelativePosition\(payload\.anchor_rel\)/, "Server must v
 assert.match(room, /safeRelativePosition\(payload\.head_rel\)/, "Server must validate remote caret position.");
 assert.match(room, /participant\.caret_position/, "Directional caret position must be preserved.");
 assert.match(realtime, /person\?\.client_id === current\.clientId/, "Self must be identified by connection, not by cursor coordinates.");
+// A cursor is colored using the remote USER's current AERTEX accent, not the
+// local viewer's theme or a hash of the other user's name.
+const accents=new Map(IPHONE_THEME_PALETTE.map(color=>[color.id,color]));
+for(const themeId of ["iphone-faf6f2","iphone-4d1821","iphone-9aadf6"]){
+  assert(accents.has(themeId),"Expected test accents must belong to the canonical AERTEX palette");
+  assert.equal(safeCollaborationAccent(themeId),themeId,
+    "The presence server must preserve a user's exact palette identity");
+}
+for(const invalid of ["#ff0000","red","iphone-123456;position:absolute","iphone-abcdef",null,{}, ""]){
+  assert.equal(safeCollaborationAccent(invalid),"",
+    "The presence server must not broadcast untrusted CSS or unknown palette IDs");
+}
+assert.match(room,/accent_id:\s*safeCollaborationAccent\(participant\.accent_id\)/,
+  "WebSocket presence must rebroadcast the sender's validated accent");
+assert.match(room,/participant\.accent_id = safeCollaborationAccent\(payload\.accent_id\)/,
+  "WebSocket must validate the theme ID before preserving it");
+assert.match(realtime,/accent_id: accentId/,
+  "Each client's presence must announce its own selected accent");
+assert.match(realtime,/window\.AERTEXTheme\?\.getAccent\?\.\(\)/,
+  "The sent color must be sourced from account appearance settings");
+assert.match(realtime,/aertex-themechange.*sendPresence\(true\)/,
+  "Changing accent while connected must rebroadcast immediately");
+assert.match(codeMirror,/const palette = collaboratorColor\(person\)/,
+  "Remote selection, label and caret must share the collaborator's palette");
+assert.match(codeMirror,/label\.style\.setProperty\('--tex-remote-label-ink', palette\.ink\)/,
+  "Pale theme colors must render a readable dark text label");
+const paletteStart=codeMirror.indexOf("        function colorFor(person) {");
+const paletteEnd=codeMirror.indexOf("        function inferSelf(participants)",paletteStart);
+assert(paletteStart>0&&paletteEnd>paletteStart,"A deterministic legacy fallback and palette resolver are required");
+const remoteTheme=new Function("window",
+  codeMirror.slice(paletteStart,paletteEnd)+"\nreturn collaboratorColor;")({
+    AERTEXTheme:{colors:Object.fromEntries(IPHONE_THEME_PALETTE.map(color=>[color.id,color]))}
+  });
+assert.equal(remoteTheme({id:"user-A",accent_id:"iphone-faf6f2"}).caret,"#FAF6F2");
+assert.equal(remoteTheme({id:"user-A",accent_id:"iphone-faf6f2"}).ink,"#111111",
+  "Pastel labels must use the palette's readable ink, not forced white");
+assert.equal(remoteTheme({id:"user-B",accent_id:"iphone-4d1821"}).caret,"#4D1821");
+assert.notEqual(remoteTheme({id:"user-A",accent_id:"iphone-faf6f2"}).caret,
+  remoteTheme({id:"user-B",accent_id:"iphone-4d1821"}).caret,
+  "Two users with different themes must not inherit the viewer's own color");
+assert.match(remoteTheme({id:"legacy-client"}).caret,/^hsl\(/,
+  "Older clients without an accent must keep deterministic cursor colors");
+
 // Regression: when A inserts one character before B's caret, B's caret
 // must advance with the original text, not appear to move backward by one.
 for (const [delta,position,bias,expected] of [
