@@ -4,6 +4,7 @@ import { json } from "./routing.js";
 import { isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { reconcileTexMainEntry } from "./tex-main-entry.js";
+import { texRealtimeEpoch, rotateTexRealtimeEpoch } from "./tex-realtime-epoch.js";
 import { MAX_PROJECT_EXTRA_FILES, MAX_PROJECT_FILES, MAX_PROJECT_BYTES, MAX_SINGLE_FILE_BYTES, MAX_JSON_UPLOAD_BYTES, MAX_TEXT_CHARACTERS, isSafeProjectFilename, isBinaryProjectFile } from "./tex-project-file-types.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
@@ -85,7 +86,9 @@ export async function handleTexProjectFiles(request, env, userId) {
     if (!stored) return fail("Project not found or unavailable for editing.", 404);
     // Repair in-memory before every file action; the write at the end of this
     // authenticated mutation persists the canonical entry consistently.
-    const doc = reconcileTexMainEntry(JSON.parse(await stored.text()));
+    const storedRecord = JSON.parse(await stored.text());
+    const doc = reconcileTexMainEntry(storedRecord);
+    let mainEntryRebased = storedRecord.main_deleted === true && doc.main_deleted !== true;
     if (doc?.id !== documentId || doc?.owner_id !== userId) return fail("Project not found.", 404);
     if (doc.locked) return fail("Unlock the project before modifying files.", 423);
     const lockedNames = new Set(Array.isArray(doc.locked_files) ? doc.locked_files : []);
@@ -113,6 +116,7 @@ export async function handleTexProjectFiles(request, env, userId) {
           // The canonical TeX compiler still uses an internal main.tex. Deleting
           // the visible entry removes its source and hides it until a new root
           // .tex file is added; it never silently deletes the entire project.
+          mainEntryRebased = true;
           doc.main_deleted = true;
           doc.source = "";
           doc.main_filename = "main.tex";
@@ -130,6 +134,7 @@ export async function handleTexProjectFiles(request, env, userId) {
           // Keep the root TeX entry as a .tex document; the display name is
           // persisted while the local/compiler API retains main.tex internally.
           if (!/^[^/\\]+\.tex$/i.test(newName)) return fail("The TeX entry filename must end in .tex and stay at the project root.");
+          mainEntryRebased = true;
           doc.main_filename = newName;
           doc.main_deleted = false;
           doc.pinned_files = (doc.pinned_files || []).map(name => name === oldName ? newName : name);
@@ -168,6 +173,7 @@ export async function handleTexProjectFiles(request, env, userId) {
           /^[^/\\]+\.tex$/i.test(added[0].name) ? added[0] : null;
         const replacementEntry = !isLocked("main.tex") && (rootMain || loneRootTex);
         if (replacementEntry) {
+          mainEntryRebased = true;
           if (encoder.encode(replacementEntry.content).byteLength > MAX_SINGLE_BYTES)
             return fail("The TeX entry is too large.", 413);
           const otherFiles = added.filter(file => file !== replacementEntry);
@@ -188,6 +194,9 @@ export async function handleTexProjectFiles(request, env, userId) {
       next.reduce((n,f)=>n+sizeOf(f),0);
     if (total > MAX_TOTAL_BYTES) return fail("Project file content cannot exceed 32 MB.", 413);
     doc.files = next;
+    // A canonical root-file replacement is a NEW Yjs collaboration history.
+    // Ordinary companion-file additions do not reset active collaborator rooms.
+    doc.realtime_epoch = mainEntryRebased ? rotateTexRealtimeEpoch() : texRealtimeEpoch(doc);
     doc.updated_at = new Date().toISOString();
     await env.STORAGE.put(key, JSON.stringify(doc), {
       httpMetadata: { contentType:"application/json;charset=UTF-8" },
@@ -200,7 +209,8 @@ export async function handleTexProjectFiles(request, env, userId) {
         fileCount:String((doc.main_deleted ? 0 : 1)+doc.files.length),
         pinned:doc.pinned?"true":"false",locked:doc.locked?"true":"false",
         createdAt:doc.created_at || doc.updated_at,
-        updatedAt:doc.updated_at
+        updatedAt:doc.updated_at,
+        realtimeEpoch:doc.realtime_epoch
       }
     });
     return json({ document:doc, operation, added:added.map(x=>x.name) }, 200);
