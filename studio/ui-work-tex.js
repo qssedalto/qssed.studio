@@ -182,6 +182,11 @@ export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "http
             return;
           }
           if (document.getElementById('tex-connection-check')) return;
+          // The connection indicator is a compact first-row status strip;
+          // details are kept in the tooltip and still updated by setSurface().
+          const rail = card.closest('.tex-runs-panel');
+          if (rail && rail.firstElementChild !== card) rail.prepend(card);
+          card.title = detail.textContent || '';
 
           void readLoopbackPermission().then(value => { loopbackPermission = value; });
 
@@ -265,6 +270,7 @@ export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "http
             const stateText = state.querySelector('strong');
             if (stateText) stateText.textContent = label;
             detail.textContent = description;
+            card.title = [label,description].filter(Boolean).join(' · ');
             state.classList.toggle('is-ready', Boolean(ready));
             const pill = document.getElementById('tex-compiler-pill');
             const pillText = pill?.querySelector('span');
@@ -476,7 +482,40 @@ const WORK_TEX_VISUAL_STYLE = `
       box-shadow:var(--work-shadow-soft)!important;
     }
     body.os-shell:has(.tex-work-app) .tex-live-preview-card{border-radius:20px!important}
-    body.os-shell:has(.tex-work-app) .tex-compiler-card{border-radius:18px!important}
+    body.os-shell:has(.tex-work-app) .tex-compiler-card{border-radius:10px!important}
+    /* Local TeX status: one slim row, not an oversized secondary card. */
+    body.os-shell:has(.tex-work-app) .tex-runs-panel>.tex-compiler-card{
+      box-sizing:border-box!important;display:flex!important;flex:0 0 auto!important;
+      align-items:center!important;justify-content:space-between!important;
+      flex-wrap:nowrap!important;gap:10px!important;
+      width:calc(100% - 20px)!important;min-height:37px!important;height:auto!important;
+      margin:8px 10px!important;padding:5px 9px!important;
+      box-shadow:inset 0 0 0 1px var(--work-line)!important;
+      border:0!important;border-radius:10px!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-compiler-card .tex-compiler-state{
+      box-sizing:border-box!important;display:flex!important;flex:1 1 auto!important;
+      min-width:0!important;gap:7px!important;align-items:center!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-compiler-card .tex-compiler-state i{
+      flex:0 0 7px!important;width:7px!important;height:7px!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-compiler-card .tex-compiler-state strong{
+      min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;
+      white-space:nowrap!important;font-size:11px!important;font-weight:650!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-compiler-card>p,
+    body.os-shell:has(.tex-work-app) .tex-compiler-card>small{display:none!important}
+    body.os-shell:has(.tex-work-app) .tex-compiler-card>.tex-connection-actions{
+      display:flex!important;flex:0 0 auto!important;margin:0!important;padding:0!important;
+      align-items:center!important;gap:0!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-compiler-card .tex-connection-check{
+      box-sizing:border-box!important;min-width:0!important;min-height:27px!important;
+      height:27px!important;padding:0 8px!important;border-radius:7px!important;
+      font-size:10px!important;font-weight:600!important;
+      background:var(--fill)!important;box-shadow:none!important;
+    }
     body.os-shell:has(.tex-work-app) .tex-compiler-state.is-ready{color:var(--primary)!important}
     body.os-shell:has(.tex-work-app) .tex-compiler-state.is-ready i{
       background:var(--primary)!important;
