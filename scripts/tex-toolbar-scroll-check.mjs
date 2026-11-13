@@ -10,8 +10,8 @@ assert(entry.includes("enhanceWorkTexToolbarScroll(enhanceWorkTexDeviceReadiness
   "Responsive toolbar must run after device/mobile CSS for /work/tex");
 assert(page.includes('id="aertex-tex-scrollable-toolbar"'));
 assert(page.includes('id="aertex-tex-scrollable-toolbar-runtime"'));
-assert(page.includes('打开端到端加密聊天'));
-assert(enPage.includes('Open encrypted chat'));
+assert(page.includes('打开此文件的端到端加密协作聊天'));
+assert(enPage.includes('Open encrypted chat for this file'));
 assert(page.includes('tex-command-chat-svg'));
 assert(page.includes('stroke:currentColor!important'),"Outline bubble must use theme currentColor");
 assert(page.includes('stroke-width:1.7!important'),"Bubble outline must match neighboring Fluent icons");
@@ -54,6 +54,7 @@ function simulate(html) {
   collab.click=()=>collabClicks++;
   const document={
     body:{append(){}},
+    dispatchEvent(event){opened.push(event.type);},
     querySelector(s){return s===".tex-work-app[data-tex-root]"?root:null;},
     getElementById(s){
       if(s==="tex-collaboration-open")return collab;
@@ -67,9 +68,9 @@ function simulate(html) {
   class ResizeObserver {constructor(cb){this.cb=cb;lastObserved=this} observe(node){assert.equal(node,header)}disconnect(){}}
   class MutationObserver {constructor(cb){this.cb=cb} observe(node){assert.equal(node,collab)}disconnect(){}}
   const win={addEventListener(){},matchMedia(){return {matches:false}},setTimeout(){throw Error("Unexpected deferred retry")},open(...args){opened.push(args);return {}},location:{assign(url){opened.push([url])}}};
-  vm.runInNewContext(match[1],{document,window:win,ResizeObserver,MutationObserver},{timeout:1000});
+  vm.runInNewContext(match[1],{document,window:win,ResizeObserver,MutationObserver,Event:class{constructor(type){this.type=type}}},{timeout:1000});
   assert.equal(shortcut.id,"tex-command-chat-shortcut");
-  assert.equal(shortcut.attrs["aria-label"],html.includes("打开端到端加密聊天")?"打开端到端加密聊天":"Open encrypted chat");
+  assert.equal(shortcut.attrs["aria-label"],html.includes("打开此文件的端到端加密协作聊天")?"打开此文件的端到端加密协作聊天":"Open encrypted chat for this file");
   assert.equal(shortcut.type,"button");
   assert.equal(shortcut.dataset.texAction,"open-encrypted-chat");
   assert(shortcut.innerHTML.includes('<svg'));
@@ -84,7 +85,7 @@ function simulate(html) {
   shortcut.events.click({stopPropagation(){stopped=true;}});
   assert(stopped);
   assert.equal(collabClicks,0,"Bubble must never open collaboration settings");
-  assert.deepEqual(opened.map(x=>Array.from(x)),[["https://chat.qsseda.com/","_blank","noopener noreferrer"]],"Bubble must open separate encrypted chat application");
+  assert.deepEqual(opened,["aertex:tex-chat-open"],"Bubble must open the current file's encrypted chat drawer");
   bar.events.keydown({target:bar,key:"ArrowRight",preventDefault(){}});
   assert.equal(bar.scrollLeft,125,"Keyboard users can horizontally pan icon group");
   bar.events.keydown({target:bar,key:"ArrowLeft",preventDefault(){}});
@@ -94,4 +95,4 @@ function simulate(html) {
 }
 simulate(page);
 simulate(enPage);
-console.log("Outlined SVG, independent encrypted chat launcher, fixed realtime/count status and responsive horizontal scroll passed.");
+console.log("Outlined SVG, file-scoped E2EE chat drawer, fixed realtime/count status and horizontal scroll passed.");
