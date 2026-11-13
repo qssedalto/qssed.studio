@@ -79,6 +79,7 @@ async function handleUpdate(request, env, auth, accessToken) {
   if (parsed.error) return parsed.error;
   const previous = await readOwnerDocument(env, access.owner_id, documentId);
   if (!previous) return json({ error: "Shared TeX document not found." }, 404);
+  if (previous.locked) return json({ error: "This project is locked by its owner." }, 423);
 
   const normalized = normalizeSharedDocument(parsed.value, previous);
   if (!normalized.ok) return json({ error: normalized.error }, 400);
@@ -241,7 +242,12 @@ async function readOwnerDocument(env, ownerId, documentId) {
       created_at: cleanTimestamp(parsed.created_at),
       updated_at: cleanTimestamp(parsed.updated_at),
       files: Array.isArray(parsed.files) ? parsed.files : [],
-      project_type: parsed.project_type || "legacy"
+      project_type: parsed.project_type || "legacy",
+      pinned:parsed.pinned===true,locked:parsed.locked===true,
+      pinned_files:Array.isArray(parsed.pinned_files)?parsed.pinned_files:[],
+      locked_files:Array.isArray(parsed.locked_files)?parsed.locked_files:[],
+      pinned_folders:Array.isArray(parsed.pinned_folders)?parsed.pinned_folders:[],
+      locked_folders:Array.isArray(parsed.locked_folders)?parsed.locked_folders:[]
     };
   } catch {
     return null;
@@ -282,6 +288,7 @@ function documentMetadata(document) {
     title: document.title,
     engine: document.engine,
     preview: document.source.replace(/\s+/g, " ").trim().slice(0, 220),
+    pinned:document.pinned?"true":"false",locked:document.locked?"true":"false",
     createdAt: document.created_at,
     updatedAt: document.updated_at
   };
