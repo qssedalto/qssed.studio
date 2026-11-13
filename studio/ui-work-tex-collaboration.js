@@ -272,7 +272,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         openButton.className = 'tex-collaboration-button';
         openButton.type = 'button';
         openButton.disabled = true;
-        openButton.innerHTML = '<svg class="tex-collaboration-people" viewBox="0 0 48 36" aria-hidden="true"><circle cx="14.2" cy="10" r="5.25"/><circle cx="34.3" cy="9.4" r="5.75"/><path d="M3.9 29.8C4 23.25 8 19.35 14.15 19.35C19.05 19.35 22.65 22.8 23.05 29.8Z"/><path d="M25.65 29.8C25.75 22.55 29.2 18.65 34.3 18.65C40.55 18.65 44.45 22.9 44.7 29.8Z"/></svg><span>' + labels.open + '</span><span class="tex-collaboration-avatars" aria-hidden="true"></span>';
+        openButton.innerHTML = '<svg class="tex-collaboration-people" viewBox="0 0 48 36" aria-hidden="true"><circle cx="14.2" cy="10" r="5.25"/><circle cx="34.3" cy="9.4" r="5.75"/><path d="M4 29.7C4.1 23.25 8.1 19.65 14.15 19.65C18.9 19.65 21.45 23.15 21.55 29.7Z"/><path d="M26.4 29.7C26.45 22.55 29.15 18.65 34.3 18.65C40.35 18.65 44.55 22.95 44.65 29.7Z"/></svg><span>' + labels.open + '</span><span class="tex-collaboration-avatars" aria-hidden="true"></span>';
         toolbar.append(openButton);
 
         const backdrop = document.createElement('div');
