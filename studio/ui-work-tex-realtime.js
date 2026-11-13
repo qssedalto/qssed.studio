@@ -204,13 +204,20 @@ export function enhanceWorkTexRealtime(markup, zh) {
           // Events describe the actual state immediately, while the dot keeps
           // its blue color through very short WebSocket reconnects.
           const button = document.getElementById('tex-collaboration-open');
-          window.clearTimeout(connectionDotTimer);
           if (kind === 'live' || kind === 'readonly') {
+            window.clearTimeout(connectionDotTimer);
+            connectionDotTimer = 0;
             button?.classList.add('is-live');
           } else if (kind === '') {
+            window.clearTimeout(connectionDotTimer);
+            connectionDotTimer = 0;
             button?.classList.remove('is-live');
-          } else if (kind === 'offline' && button?.classList.contains('is-live')) {
-            connectionDotTimer = window.setTimeout(() => button?.classList.remove('is-live'), 1800);
+          } else if (button?.classList.contains('is-live') && !connectionDotTimer) {
+            // Keep the offline timer alive during subsequent "connecting" events.
+            connectionDotTimer = window.setTimeout(() => {
+              button.classList.remove('is-live');
+              connectionDotTimer = 0;
+            }, 1800);
           }
           const detail = {
             document_id: connection?.id || '',
