@@ -1026,7 +1026,9 @@ export function enhanceWorkTexCollaboration(markup, zh) {
           if (window.matchMedia?.('(hover:hover) and (pointer:fine)')?.matches) showPresenceTooltip();
         });
         openButton.addEventListener('mouseleave',hidePresenceTooltip);
-        openButton.addEventListener('focus',showPresenceTooltip);
+        openButton.addEventListener('focus', () => {
+          if (openButton.matches(':focus-visible')) showPresenceTooltip();
+        });
         openButton.addEventListener('blur',hidePresenceTooltip);
         window.addEventListener('scroll',positionPresenceTooltip,true);
         window.addEventListener('resize',positionPresenceTooltip);

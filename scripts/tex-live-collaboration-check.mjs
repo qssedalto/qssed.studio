@@ -94,6 +94,53 @@ for (const zh of [true,false]) {
   assert(!markup.includes("This phase establishes members and permissions first"), "English phase copy must be removed.");
   const collaboration = markup.split('<script id="qsseda-work-tex-collaboration-runtime">')[1]?.split('</script>')[0];
   assert(collaboration, "The active collaboration dialog runtime must exist");
+
+  assert(markup.includes('class="tex-collaboration-presence-tooltip"') ||
+    markup.includes("presenceTooltip.className = 'tex-collaboration-presence-tooltip'"),
+    "The collaboration toolbar must provide a status tooltip");
+  assert(markup.includes("openButton.addEventListener('mouseenter'") &&
+    markup.includes("openButton.addEventListener('focus'") &&
+    markup.includes("openButton.addEventListener('mouseleave'"),
+    "Pointer hover and keyboard focus must expose, and pointer leave hide, member availability");
+  assert(markup.includes("window.addEventListener('qsseda:tex-presence',updatePresenceTooltip)") &&
+    markup.includes("window.addEventListener('qsseda:tex-realtime-status',updatePresenceTooltip)"),
+    "The hover statuses must refresh from live WebSocket presence and connection state");
+  assert(markup.includes("presenceTooltip.setAttribute('role', 'tooltip')") &&
+    markup.includes("presenceTooltip.hidden = true") &&
+    markup.includes("openButton.setAttribute('aria-describedby',presenceTooltip.id)"),
+    "The member-status tooltip must be accessible and hidden by default");
+  assert(!markup.includes("avatars.title = members.length"),
+    "Old browser-native count tooltip must not cover the detailed presence list");
+  const helperStart = collaboration.indexOf("        function presenceMemberState(");
+  const helperEnd = collaboration.indexOf("        function paintPresenceTooltip()",helperStart);
+  assert(helperStart>=0 && helperEnd>helperStart,
+    "Availability helper must be present in the active collaboration runtime");
+  const memberState = new Function(collaboration.slice(helperStart,helperEnd) +
+    "\nreturn presenceMemberState;")();
+  const activeDoc = "doc-a";
+  const liveState = {document_id:activeDoc, connected:true};
+  const onlineList = {document_id:activeDoc,participants:[
+    {id:"user-1",client_id:"tab-a",display_name:"Same Name"},
+    {id:"user-1",client_id:"tab-b",display_name:"Same Name"},
+    {id:"user-4",display_name:"Same Name"}
+  ]};
+  assert.equal(memberState({id:"user-1"},activeDoc,liveState,onlineList),"online");
+  assert.equal(memberState({id:"user-2",display_name:"Same Name"},activeDoc,liveState,onlineList),"offline",
+    "Display name collisions must not spoof online identity");
+  assert.equal(memberState({id:"user-4"},activeDoc,liveState,onlineList),"online",
+    "Another online member must be recognized");
+  assert.equal(memberState({id:"user-2"},activeDoc,{...liveState,connected:false},onlineList),"unknown",
+    "Disconnected channel must not mark every member falsely offline");
+  assert.equal(memberState({id:"user-1"},"doc-b",liveState,onlineList),"unknown",
+    "Presence from another document must never leak into the active project");
+  assert.equal(memberState({id:"user-1"},activeDoc,liveState,{document_id:"doc-b",participants:onlineList.participants}),"unknown",
+    "Stale document snapshots must not be mistaken for live presence");
+  assert.equal(memberState({username:"Same Name"},activeDoc,liveState,onlineList),"offline",
+    "Only stable account IDs may prove somebody is online");
+  assert(markup.includes(zh ? 'presenceOnline: "在线"' : 'presenceOnline: "Online"') &&
+    markup.includes(zh ? 'presenceOffline: "离线"' : 'presenceOffline: "Offline"'),
+    "Availability must be localized for light/dark site languages");
+
   assert.doesNotThrow(() => new Function(collaboration), "Collaboration runtime must be valid JavaScript");
   const submitAt = collaboration.indexOf("form.addEventListener('submit', async event => {");
   const saveAt = collaboration.indexOf("async function saveDraft()");
