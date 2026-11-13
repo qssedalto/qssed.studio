@@ -285,14 +285,7 @@ export function enhanceWorkTexDesktopTypography(markup) {
         const collaborationMemory = new Map();
         const collaborationMaxAge = 5 * 60 * 1000;
         const collaborationRevalidateAge = 30 * 1000;
-        const previewCacheName = 'qsseda-tex-preview-v1';
-        const previewPrefix = location.origin + '/__qsseda_tex_preview_cache__/';
-        let restoredPreviewUrl = '';
-        let restoredPreviewKey = '';
-        let restoreSequence = 0;
-
         const isZh = String(document.documentElement.lang || '').toLowerCase().startsWith('zh');
-        const restoredLabel = isZh ? '已恢复上次预览' : 'Restored previous preview';
         const loadingLabels = new Set(['正在读取协作设置…', 'Loading collaboration settings…']);
 
         function collaborationStorageKey(id) {
@@ -330,52 +323,6 @@ export function enhanceWorkTexDesktopTypography(markup) {
           });
         }
 
-        async function digestText(value) {
-          const bytes = new TextEncoder().encode(String(value || ''));
-          if (globalThis.crypto?.subtle) {
-            const digest = await crypto.subtle.digest('SHA-256', bytes);
-            return Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2, '0')).join('');
-          }
-          let hash = 2166136261;
-          for (const byte of bytes) {
-            hash ^= byte;
-            hash = Math.imul(hash, 16777619);
-          }
-          return (hash >>> 0).toString(16);
-        }
-
-        async function previewCacheKey(engine, source) {
-          return previewPrefix + await digestText(String(engine || '').toLowerCase() + String.fromCharCode(10) + String(source || ''));
-        }
-
-        async function cachePdfResponse(engine, source, response) {
-          if (!('caches' in window) || !response?.ok) return;
-          const type = String(response.headers.get('content-type') || '').toLowerCase();
-          if (!type.includes('application/pdf')) return;
-          try {
-            const cache = await caches.open(previewCacheName);
-            const key = await previewCacheKey(engine, source);
-            await cache.put(new Request(key), response.clone());
-            const keys = await cache.keys();
-            while (keys.length > 12) {
-              const oldest = keys.shift();
-              if (oldest) await cache.delete(oldest);
-            }
-          } catch {}
-        }
-
-        async function cachedPdfResponse(engine, source) {
-          if (!('caches' in window)) return null;
-          try {
-            const cache = await caches.open(previewCacheName);
-            const key = await previewCacheKey(engine, source);
-            const response = await cache.match(new Request(key));
-            return response ? { key, response } : null;
-          } catch {
-            return null;
-          }
-        }
-
         async function requestParts(input, init) {
           const request = input instanceof Request ? input : null;
           const url = request ? request.url : String(input || '');
@@ -407,16 +354,7 @@ export function enhanceWorkTexDesktopTypography(markup) {
             }
           }
 
-          const isLocalCompile = parsedUrl && parts.method === 'POST' && (parsedUrl.hostname === '127.0.0.1' || parsedUrl.hostname === 'localhost') && parsedUrl.port === '32145' && parsedUrl.pathname === '/tex/compile';
-          if (isLocalCompile) {
-            let payload = null;
-            try { payload = JSON.parse(String(parts.body || '{}')); } catch {}
-            const engine = String(payload?.engine || '').toLowerCase();
-            const source = String(payload?.source || '');
-            if (engine) {
-              const cached = await cachedPdfResponse(engine, source);
-              if (cached?.response) return cached.response.clone();
-              const response = await nativeFetch(input, init);
+          const response = await nativeFetch(input, init);
               if (response.ok) void cachePdfResponse(engine, source, response.clone());
               return response;
             }
@@ -499,38 +437,6 @@ export function enhanceWorkTexDesktopTypography(markup) {
           } catch {}
         }
 
-        async function restorePreview(root) {
-          const source = document.getElementById('tex-source');
-          const engine = document.getElementById('tex-engine');
-          const editor = document.getElementById('tex-editor');
-          const frame = document.getElementById('tex-live-preview-frame');
-          const placeholder = document.getElementById('tex-live-preview-placeholder');
-          const open = document.getElementById('tex-live-preview-open');
-          const status = document.getElementById('tex-live-preview-status');
-          const statusRow = status?.closest('.tex-live-preview-status');
-          if (!source || !engine || !editor || !frame || editor.hidden) return;
-          const current = ++restoreSequence;
-          const cached = await cachedPdfResponse(engine.value, source.value || '');
-          if (current !== restoreSequence || !cached?.response) return;
-          if (cached.key === restoredPreviewKey && !frame.hidden) return;
-          const blob = await cached.response.blob();
-          if (current !== restoreSequence) return;
-          const url = URL.createObjectURL(blob);
-          if (restoredPreviewUrl) URL.revokeObjectURL(restoredPreviewUrl);
-          restoredPreviewUrl = url;
-          restoredPreviewKey = cached.key;
-          frame.src = url + '#zoom=page-width';
-          frame.hidden = false;
-          if (placeholder) placeholder.hidden = true;
-          if (open) {
-            open.href = url;
-            open.hidden = false;
-          }
-          if (status) status.textContent = restoredLabel;
-          statusRow?.classList.add('is-ready');
-          statusRow?.classList.remove('is-busy', 'is-error');
-        }
-
         function initRuntimeRefinements() {
           const root = document.querySelector('.tex-work-app[data-tex-root]');
           const documentList = document.getElementById('tex-document-list');
@@ -553,7 +459,6 @@ export function enhanceWorkTexDesktopTypography(markup) {
               const cached = readCollaborationSnapshot(id);
               if (cached?.data) renderWarmAvatars(cached.data);
               void prefetchCollaboration(root, documentList);
-              void restorePreview(root);
             }, 80);
           };
 
@@ -577,15 +482,8 @@ export function enhanceWorkTexDesktopTypography(markup) {
           const observer = new MutationObserver(warm);
           observer.observe(root, { attributes: true, attributeFilter: ['data-tex-collaboration-document-id'] });
           observer.observe(documentList, { subtree: true, attributes: true, attributeFilter: ['class', 'data-tex-document-id'], childList: true });
-          document.getElementById('tex-source')?.addEventListener('input', () => {
-            window.setTimeout(() => void restorePreview(root), 40);
-          });
-          document.getElementById('tex-engine')?.addEventListener('change', () => {
-            window.setTimeout(() => void restorePreview(root), 40);
-          });
           window.addEventListener('pagehide', () => {
             observer.disconnect();
-            if (restoredPreviewUrl) URL.revokeObjectURL(restoredPreviewUrl);
           }, { once: true });
           warm();
         }
