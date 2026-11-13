@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { WORK_TEX_EXPLORER_TREE } from "../studio/ui-work-tex-explorer-tree.js";
+import { enhanceWorkTexCodeMirror } from "../studio/ui-work-tex-codemirror.js";
+import { readFileSync } from "node:fs";
 import { WORK_TEX_EXPLORER_COMMANDS } from "../studio/ui-work-tex-explorer-commands.js";
 import { enhanceWorkTexExplorer } from "../studio/ui-work-tex-explorer.js";
 import { WORK_TEX_EXPLORER_STYLE } from "../studio/ui-work-tex-explorer-style.js";
@@ -51,6 +53,16 @@ for (const zh of [true, false]) {
     "The selected file must fill the existing editor row without a floating second card");
   assert(WORK_TEX_EXPLORER_STYLE.includes("margin:0;border:0;border-radius:0"),
     "The selected file must not look like a separate popup window");
+  assert(WORK_TEX_EXPLORER_STYLE.includes("#tex-editor.is-asset-mode.is-codemirror-asset > .tex-codemirror-host") &&
+    WORK_TEX_EXPLORER_STYLE.includes("display:block!important;grid-row:3;grid-column:1"),
+    "Supplementary UTF-8 files must reuse the existing CodeMirror viewport");
+  assert(WORK_TEX_EXPLORER_TREE.includes("bridge?.openAssetEditor?.(asset)") &&
+    WORK_TEX_EXPLORER_TREE.includes("bridge?.closeAssetEditor?.()") &&
+    WORK_TEX_EXPLORER_TREE.includes("viewer.hidden=enhanced"),
+    "Project files must switch the same CodeMirror view without overlaying a second textarea");
+  assert(WORK_TEX_EXPLORER_TREE.includes("aertex:tex-code-asset-updated") &&
+    WORK_TEX_EXPLORER_TREE.includes("const documentId=activeId(),name=selected.name,content=activeTextValue()"),
+    "Supplementary file edits must persist through their own file API");
   assert(WORK_TEX_EXPLORER_TREE.includes("viewer.hidden=true;editor.classList.remove('is-asset-mode')") &&
     WORK_TEX_EXPLORER_TREE.includes("editor.classList.add('is-asset-mode');viewer.hidden=false"),
     "Switching between main.tex and supplementary assets must restore exactly one visible editor");
@@ -62,6 +74,18 @@ for (const zh of [true, false]) {
   assert.equal(scripts.length, 3, "Explorer now includes the fixed editor mode and archive runtime");
   for (const [, code] of scripts) new Function(code);
 }
+const cmRuntime=enhanceWorkTexCodeMirror("<main class=\"tex-work-app\"></main>",true);
+assert(cmRuntime.includes("function openAssetEditor(asset)") &&
+  cmRuntime.includes("function closeAssetEditor()") &&
+  cmRuntime.includes("if (!view || syncingToSource || currentAsset) return;") &&
+  cmRuntime.includes("view.setState(EditorStateClass.create("),
+  "Project file editor must preserve main.tex and reuse one CodeMirror instance");
+assert(cmRuntime.includes("if (currentAsset) {") &&
+  cmRuntime.includes("aertex:tex-code-asset-updated"),
+  "Supplementary edits must not dispatch main.tex input events");
+assert(readFileSync(new URL("../tex-vendor/src/codemirror.js",import.meta.url),"utf8")
+  .includes('export { EditorState } from "@codemirror/state";'),
+  "The vendor bundle must export EditorState to isolate per-file undo history");
 const source = WORK_TEX_EXPLORER_COMMANDS;
 const start = source.indexOf("function crc32(bytes)");
 const end = source.indexOf("zipButton.addEventListener(", start);

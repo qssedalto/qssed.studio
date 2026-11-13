@@ -18,7 +18,7 @@ assert(body.includes("projectRow?.classList?.add('is-file-active')"));
 assert(body.includes("parent.hidden=false"),"Selected nested files must expand collapsed ancestors");
 assert(code.includes("syncSelectedTree();\n    window.dispatchEvent(new Event('aertex:tex-project-asset-selected'));"),
   "Selecting main.tex must update highlighted hierarchy");
-assert(code.includes("    syncSelectedTree();\n  }\n  window.__aertexTexExplorerShowAsset="),
+assert(code.includes("window.dispatchEvent(new Event('aertex:tex-project-asset-selected'));\n    syncSelectedTree();"),
   "Switching to supplementary files must update the highlighted hierarchy");
 assert(code.includes("    syncSelectedTree();\n  }\n  async function expand("),
   "Rebuilt folder contents must restore selection");

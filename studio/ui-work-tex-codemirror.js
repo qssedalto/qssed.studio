@@ -687,7 +687,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             closeAssetEditor,
             getActiveAsset: () => currentAsset ? { ...currentAsset } : null,
             getAssetValue: () => currentAsset ? view?.state.doc.toString() : null,
-            getValue: () => view?.state.doc.toString() || nativeValue(),
+            getValue: () => view ? view.state.doc.toString() : nativeValue(),
             getSelection: () => {
               const selection = view?.state.selection.main;
               return selection ? { anchor: selection.anchor, head: selection.head } : { anchor: source.selectionStart || 0, head: source.selectionEnd || 0 };
