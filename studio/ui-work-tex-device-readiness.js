@@ -7,6 +7,7 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
     missing:'未检测到可用的本机 TeX 环境。如需本机编译，请按顺序安装；已安装则检查浏览器的本地网络权限后重试。也可使用下方需要额度的远程编译。',
     cloud:'本机编译尚不可用，但云端编译服务已连接。仅在需要本机编译时安装以下组件。',
     unsupported:'已连接 Bridge，但当前 TeX 引擎不受支持。请切换引擎后重新检测。',
+    noEngine:'Windows Bridge 已连接，但未发现可用的 XeLaTeX。请检查 TeX Live 是否安装完整，再重新检测。',
     step1:'第 1 步：安装 TeX Live',step2:'第 2 步：安装 Windows 连接组件',
     iso:'下载 TeX Live（ISO）',bridge:'安装 Windows 连接组件',
     guide:'在 AERTEX 主站查看安装指南',retry:'重新检测连接',
@@ -19,6 +20,7 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
     missing:'No working local TeX environment was found. Install the components in order for local builds, or check browser permissions if already installed. Quota-based remote compilation remains an alternative below.',
     cloud:'Local compilation is unavailable, but cloud compilation is connected. Install these only if you need local compilation.',
     unsupported:'Bridge is connected, but the selected TeX engine is unsupported. Select a supported engine and retry.',
+    noEngine:'Windows Bridge is connected, but XeLaTeX is unavailable. Check that TeX Live is installed and retry.',
     step1:'Step 1: Install TeX Live',step2:'Step 2: Install Windows Bridge',
     iso:'Download TeX Live (ISO)',bridge:'Install Windows component',
     guide:'View the AERTEX setup guide',retry:'Check connection again',
@@ -111,9 +113,14 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
       root.classList.toggle('is-tex-windows-setup',!data.localSupported && !data.cloudAvailable);
       if(panel.hidden)return;
       const hasBridge=Boolean(data.localDetected);
-      description.textContent=hasBridge?copy.unsupported:
+      const engineReady=Boolean(data.localEngineReady);
+      description.textContent=hasBridge?(engineReady?copy.unsupported:copy.noEngine):
         data.cloudAvailable?copy.cloud:copy.missing;
-      steps.hidden=hasBridge;hint.hidden=hasBridge;
+      steps.hidden=hasBridge && engineReady;
+      // When the Bridge exists but TeX Live does not, offer only the TeX
+      // installation link; do not ask the user to reinstall a running service.
+      if(steps.children[1])steps.children[1].hidden=hasBridge;
+      hint.hidden=hasBridge;
     }
     window.addEventListener('qsseda:tex-compiler-probed',event=>sync(event.detail));
     sync(window.__aertexTexCompilerProbe);
