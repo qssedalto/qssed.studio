@@ -244,6 +244,16 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         display:block;width:100%;height:100%;color:inherit
       }
       .tex-code-theme-native-wordmark>svg path{fill:currentColor}
+      @media(forced-colors:active){
+        /* High-contrast OS mode owns the native select's selected text, too. */
+        .tex-code-theme-card[data-brand-selected="true"] .tex-code-theme-native-brand{
+          display:none!important
+        }
+        .tex-code-theme-popover .tex-code-theme-card select,
+        .tex-code-theme-popover .tex-code-theme-card select option{
+          forced-color-adjust:auto!important
+        }
+      }
       .tex-code-theme-popover .tex-code-theme-card select:focus-visible,
       .tex-code-theme-close:focus-visible{
         outline:2px solid var(--primary)!important;outline-offset:2px
