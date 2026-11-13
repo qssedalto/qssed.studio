@@ -25,6 +25,8 @@ for (const key of ["height", "min-height", "max-height"]) {
   assert(!desktopHeights.includes(key + ":64px!important"), "Toolbar controls must not be stretched to the old 64px height");
 }
 
+const workNavUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
+assert(workNavUi.includes('one slim row') && workNavUi.includes('rail.prepend(card)'),"Local TeX status must be a compact first-row strip");
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
 const entry = fs.readFileSync(new URL("../studio/entry.js", import.meta.url), "utf8");
 const config = fs.readFileSync(new URL("../studio/config.js", import.meta.url), "utf8");
