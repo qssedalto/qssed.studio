@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
-import { mkdtempSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, existsSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import assert from "node:assert/strict";
@@ -148,28 +148,91 @@ await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
 const origin="http://127.0.0.1:"+server.address().port;
 const profile=mkdtempSync(path.join(tmpdir(),"aertex-filechat-e2ee-chrome-"));
 
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function browserRound(round){
-  return new Promise((resolve,reject)=>{
-    let stdout="",stderr="";
-    const child=spawn(binary,[
-      "--headless=new","--no-sandbox","--disable-dev-shm-usage","--disable-gpu",
-      "--no-first-run","--user-data-dir="+profile,"--window-size=900,780",
-      "--virtual-time-budget=12000","--dump-dom",origin+"/?round="+round
-    ],{stdio:["ignore","pipe","pipe"]});
-    child.stdout.on("data",d=>{stdout+=String(d)});
-    child.stderr.on("data",d=>{stderr=(stderr+String(d)).slice(-4000)});
-    const timer=setTimeout(()=>child.kill("SIGKILL"),28000);
-    child.on("close",code=>{
-      clearTimeout(timer);
-      if(code!==0)return reject(Error("Chrome exit "+code+": "+stderr));
-      if(!stdout.includes('data-filechat-crypto-qa="PASS"')){
-        const reason=stdout.match(/data-filechat-crypto-reason="([^"]*)"/)?.[1];
-        return reject(Error("File E2EE browser round "+round+" failed: "+(reason||"no PASS marker")));
-      }
-      resolve();
+  const portFile=path.join(profile,"DevToolsActivePort");
+  rmSync(portFile,{force:true});
+  const child=spawn(binary,[
+    "--headless=new","--no-sandbox","--disable-dev-shm-usage","--disable-gpu",
+    "--no-first-run","--user-data-dir="+profile,"--window-size=900,780",
+    "--remote-debugging-port=0",origin+"/?round="+round
+  ],{stdio:["ignore","ignore","pipe"]});
+  let stderr="",websocket=null,messageId=0;
+  const callbacks=new Map(),exceptions=[];
+  child.stderr.on("data",d=>{stderr=(stderr+String(d)).slice(-6500)});
+  const deadline=Date.now()+37000;
+  async function command(method,params={}){
+    return new Promise((resolve,reject)=>{
+      if(!websocket||websocket.readyState!==WebSocket.OPEN)return reject(Error("CDP closed"));
+      const id=++messageId;
+      const timeout=setTimeout(()=>{callbacks.delete(id);reject(Error("CDP timeout: "+method))},4000);
+      callbacks.set(id,{resolve,reject,timeout});
+      websocket.send(JSON.stringify({id,method,params}));
     });
-  });
+  }
+  try{
+    let port="";
+    while(Date.now()<deadline){
+      if(child.exitCode!==null)throw Error("Chrome exited: "+stderr);
+      if(existsSync(portFile)){port=readFileSync(portFile,"utf8").split("\n")[0];break}
+      await sleep(100);
+    }
+    if(!port)throw Error("Chrome DevTools port unavailable: "+stderr);
+    let tab=null;
+    while(Date.now()<deadline){
+      try{
+        const tabs=await (await fetch("http://127.0.0.1:"+port+"/json")).json();
+        tab=tabs.find(x=>x.type==="page"&&x.url.includes("round="+round));
+        if(tab)break;
+      }catch{}
+      await sleep(120);
+    }
+    if(!tab)throw Error("E2EE test tab not found: "+stderr);
+    websocket=new WebSocket(tab.webSocketDebuggerUrl);
+    await new Promise((resolve,reject)=>{
+      websocket.addEventListener("open",resolve,{once:true});
+      websocket.addEventListener("error",reject,{once:true});
+    });
+    websocket.addEventListener("message",event=>{
+      let data;
+      try{data=JSON.parse(event.data)}catch{return}
+      if(data.id){
+        const callback=callbacks.get(data.id);
+        if(callback){
+          clearTimeout(callback.timeout);callbacks.delete(data.id);
+          if(data.error)callback.reject(Error(JSON.stringify(data.error)));
+          else callback.resolve(data.result||{});
+        }
+      }
+      if(data.method==="Runtime.exceptionThrown")
+        exceptions.push(data.params?.exceptionDetails?.text||"JS exception");
+    });
+    await command("Runtime.enable");
+    let report={};
+    while(Date.now()<deadline){
+      const response=await command("Runtime.evaluate",{
+        expression:"JSON.stringify({status:document.body?.dataset?.filechatCryptoQa||'',reason:document.body?.dataset?.filechatCryptoReason||'',banner:document.getElementById('aertex-chat-status')?.textContent||'',passkey:document.getElementById('aertex-chat-passkey')?.textContent||''})",
+        returnByValue:true
+      });
+      if(response.result?.value){
+        report=JSON.parse(response.result.value);
+        if(report.status)break;
+      }
+      await sleep(190);
+    }
+    if(report.status!=="PASS")throw Error("File E2EE browser round "+round+" failed: "+
+      JSON.stringify(report)+" exceptions="+exceptions.join(" | ")+" stderr="+stderr.slice(-1700));
+  }finally{
+    try{websocket?.close()}catch{}
+    child.kill("SIGTERM");
+    await Promise.race([
+      new Promise(resolve=>child.once("close",resolve)),
+      sleep(1800)
+    ]);
+    if(child.exitCode===null)child.kill("SIGKILL");
+  }
 }
+
 try{
   await browserRound("first");
   assert(memory.registered,"Initial Passkey creation must complete");
