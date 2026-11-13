@@ -71,7 +71,7 @@ export async function handleTexGithubApi(request, env, action) {
     } else if (action === "apply" && request.method === "POST") {
       response = admin ? fail(403, "Administrators do not need to apply for credits.") : await apply(request, env, userId);
     } else if (action === "repository" && request.method === "POST") {
-      response = await createRepository(env, userId, admin);
+      response = await createRepository(request, env, userId, admin);
     } else if (action === "repository" && request.method === "DELETE") {
       response = await deleteRepository(request, env, userId);
     } else if (action === "compile" && request.method === "POST") {
@@ -269,6 +269,54 @@ function githubRepoPath(env, repoName) {
   return "/repos/" + env.AERTEX_TEX_GITHUB_OWNER + "/" + repoName;
 }
 
+// Bind every operation to the recorded GitHub repository ID and the operator.
+// The legacy private repos remain operational until explicitly migrated;
+// never silently publish a previous user's source history on ordinary requests.
+function verifyManagedRepo(env, actual, repoId, name) {
+  if (String(actual?.id ?? "") !== String(repoId ?? "") ||
+      actual?.name !== name ||
+      String(actual?.owner?.login || "").toLowerCase() !==
+        String(env.AERTEX_TEX_GITHUB_OWNER || "").toLowerCase() ||
+      typeof actual?.private !== "boolean") {
+    throw httpError(409, "repository_identity_mismatch");
+  }
+  return actual;
+}
+
+// Keep all of a user's projects in one GitHub repo, but each document on
+// its own branch. The pinned workflow compiles only that branch's main.tex.
+// Compiling project B will not replace the source tree of project A.
+function projectBranchName(documentId) {
+  if (!isStorageObjectId(documentId)) throw httpError(400, "invalid_project_id");
+  return "tex-project-" + documentId.replace(/-/g, "").toLowerCase();
+}
+
+async function ensureProjectBranch(env, repoPath, rootBranch, documentId) {
+  const branch = projectBranchName(documentId);
+  try {
+    const ref = await github(env, repoPath + "/git/ref/heads/" + branch);
+    if (!/^[a-f0-9]{40}$/.test(String(ref?.object?.sha || ""))) {
+      throw httpError(503, "project_branch_unavailable");
+    }
+    return branch;
+  } catch (error) {
+    if (error.status !== 404) throw error;
+  }
+  const main = await github(env, repoPath + "/git/ref/heads/" + encodeURIComponent(rootBranch));
+  const sha = String(main?.object?.sha || "");
+  if (!/^[a-f0-9]{40}$/.test(sha)) throw httpError(503, "source_branch_unavailable");
+  try {
+    await github(env, repoPath + "/git/refs", "POST", { ref:"refs/heads/" + branch, sha });
+  } catch (error) {
+    if (error.status !== 409) throw error;
+    const recovered = await github(env, repoPath + "/git/ref/heads/" + branch);
+    if (!/^[a-f0-9]{40}$/.test(String(recovered?.object?.sha || ""))) {
+      throw httpError(503, "project_branch_unavailable");
+    }
+  }
+  return branch;
+}
+
 function b64(value) {
   const bytes = new TextEncoder().encode(value);
   let output = "";
@@ -341,7 +389,12 @@ async function verifyOwner(env) {
   }
 }
 
-async function createRepository(env, userId, admin = false) {
+async function createRepository(request, env, userId, admin = false) {
+  // Publishing source and full Git history is irreversible in practice.
+  // The new public default needs fresh, explicit opt-in by the signed-in user.
+  const acknowledgement = await inputBody(request);
+  if (acknowledgement?.ack_public !== true)
+    return fail(400, "Confirm that source code and compiled PDFs will be publicly visible.");
   let row = await readRow(env, userId);
   if(admin && !row){
     try{await data(env, TABLE, "POST", [{user_id:userId,approval_status:"approved",requested_credits:100,
@@ -382,22 +435,25 @@ async function createRepository(env, userId, admin = false) {
       }
       if (!created) {
         created = await github(env, "/user/repos", "POST", {
-          name, private: true, auto_init: true,
-          description: "Private TeX workspace managed by AERTEX",
+          name, private: false, auto_init: true,
+          description: "Public compilation-only TeX workspace managed by AERTEX",
           has_issues: false, has_wiki: false,
           has_projects: false, allow_auto_merge: false
         });
       }
-      if (!created?.private || created.owner?.login?.toLowerCase() !== env.AERTEX_TEX_GITHUB_OWNER.toLowerCase()) {
+      if (created?.name !== name || typeof created?.private !== "boolean" ||
+          created.owner?.login?.toLowerCase() !== env.AERTEX_TEX_GITHUB_OWNER.toLowerCase()) {
         throw httpError(503, "unexpected_repository_owner");
       }
+      // A resumed creation may discover a legacy private repository. It
+      // stays private until a separately authorized migration is performed.
       repoId = created.id;
       branch = created.default_branch || "main";
       await updateRow(env, userId, { repo_id: repoId, source_branch: branch });
     }
     const repoPath = githubRepoPath(env, name);
     const actual = await github(env, repoPath);
-    if (actual?.id !== repoId || !actual.private) throw httpError(409, "repository_identity_mismatch");
+    verifyManagedRepo(env, actual, repoId, name);
     await putFile(env, repoPath, "main.tex", INITIAL_TEX_SOURCE, branch);
     await putFile(env, repoPath, "README.md", INITIAL_TEX_README, branch);
     await putFile(env, repoPath, MANAGED_TEX_WORKFLOW_PATH, MANAGED_TEX_WORKFLOW, branch);
@@ -433,7 +489,7 @@ async function deleteRepository(request, env, userId) {
   const repoPath = githubRepoPath(env, row.repo_name);
   try {
     const actual = await github(env, repoPath);
-    if (actual?.id !== row.repo_id || !actual.private) throw httpError(409, "repository_identity_mismatch");
+    verifyManagedRepo(env, actual, row.repo_id, row.repo_name);
     await github(env, repoPath, "DELETE");
   } catch (error) {
     // A 404 can mean revoked credentials, not necessarily successful deletion.
@@ -463,7 +519,7 @@ async function releaseCredit(env, userId, nonce, refund) {
 async function compile(request, env, userId) {
   const row = await readRow(env, userId);
   if (!row || row.approval_status !== "approved" || row.repo_state !== "ready" || !row.repo_id) {
-    return fail(403, "A private repository and an approved quota are required.");
+    return fail(403, "A managed repository and an approved quota are required.");
   }
   if (!hasStorageBinding(env)) return fail(503, "Document storage unavailable.");
   const body = await inputBody(request);
@@ -491,11 +547,12 @@ async function compile(request, env, userId) {
   try {
     const repoPath = githubRepoPath(env, row.repo_name);
     const actual = await github(env, repoPath);
-    if (actual?.id !== row.repo_id || !actual.private) throw httpError(409, "repository_identity_mismatch");
+    verifyManagedRepo(env, actual, row.repo_id, row.repo_name);
 
-    // Atomically create a clean repository tree with one commit. Validate
-    // branch ancestry before dispatch; failed pre-dispatch writes refund quota.
-    const committed=await commitCompileSnapshot(env,repoPath,row.source_branch||"main",selected);
+    // Keep the user's saved projects isolated. This compilation only touches
+    // the selected project's branch, never another project's source files.
+    const projectBranch=await ensureProjectBranch(env,repoPath,row.source_branch||"main",docId);
+    const committed=await commitCompileSnapshot(env,repoPath,projectBranch,selected);
     // Persist the unique Git commit before dispatch. A timed-out HTTP call may
     // have queued an Actions run; never refund a potentially successful dispatch.
     const sourceSha = String(committed.sha || "");
@@ -507,7 +564,7 @@ async function compile(request, env, userId) {
 
     dispatchAttempted = true;
     const dispatched = await github(env, repoPath + "/actions/workflows/aertex-compile.yml/dispatches", "POST", {
-      ref: row.source_branch || "main",
+      ref: projectBranch,
       return_run_details: true
     });
     const runId = Number(dispatched?.workflow_run_id);
@@ -519,7 +576,7 @@ async function compile(request, env, userId) {
     }, "&active_nonce=eq." + encodeURIComponent(nonce));
     if (!recorded) throw httpError(503, "run_id_persistence_failed");
     return json({ queued: true, remaining, run_id: runId, document_id: docId,
-      synced_files: selected.included, skipped_files: selected.skipped }, 202);
+      project_branch: projectBranch, synced_files: selected.included, skipped_files: selected.skipped }, 202);
   } catch (error) {
     // A non-returning dispatch may still have started a GitHub run.
     // The recorded commit SHA lets the owner/admin reconcile the exact run;
