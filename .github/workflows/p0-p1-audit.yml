@@ -3,14 +3,15 @@ name: P0 P1 Stability Audit
 on:
   pull_request:
     branches: [main]
-    paths: ['studio/**', 'scripts/**', 'tex-vendor/**', '*worker.js', 'auth-*.js', 'admin/**', 'wrangler*.jsonc', '.github/workflows/p0-p1-audit.yml']
+    paths: ['studio/**', 'scripts/**', 'tex-vendor/**', '*worker.js', 'auth-*.js', 'admin/**', 'wrangler*.jsonc', 'supabase/migrations/**', '.github/workflows/p0-p1-audit.yml', '.github/workflows/deploy-production.yml']
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: p0-p1-audit-${{ github.event.pull_request.number || github.ref }}
+  group: p0-p1-audit-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
