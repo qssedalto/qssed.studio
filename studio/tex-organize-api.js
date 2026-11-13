@@ -77,7 +77,7 @@ export async function handleTexOrganize(request, env, userId) {
           files.some(file => !file.name.startsWith(prefix) && file.name.startsWith(destination + "/")))
         return json({error:"Invalid or conflicting destination folder."},400);
       const renamed = files.map(file => file.name.startsWith(prefix)
-        ? {...file, name:destination + file.name.slice(prefix.length)} : file);
+        ? {...file, name:destination + "/" + file.name.slice(prefix.length)} : file);
       const seen=new Set(renamed.map(f=>f.name.toLowerCase()));
       if (seen.size !== renamed.length || !renamed.every(file => isSafeProjectFilename(file.name)))
         return json({error:"The destination creates duplicate or invalid filenames."},409);
@@ -87,7 +87,7 @@ export async function handleTexOrganize(request, env, userId) {
       doc.source = rewrite(doc.source);
       doc.files = renamed.map(file => file.encoding === "utf8" ?
         {...file, content:rewrite(file.content)} : file);
-      const move = value => value.startsWith(prefix) ? destination + value.slice(prefix.length) : value;
+      const move = value => value.startsWith(prefix) ? destination + "/" + value.slice(prefix.length) : value;
       doc.pinned_files = pinnedFiles.map(move); doc.locked_files = lockedFiles.map(move);
       doc.pinned_folders = pinnedFolders.map(move); doc.locked_folders = lockedFolders.map(move);
     } else {
