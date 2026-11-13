@@ -75,6 +75,9 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
         let rendering = false;
         let scheduled = 0;
         let compilePass = false;
+        let shownDocumentId = '';
+        let lastVersionFingerprint = '';
+        let lastFetchedId = '';
 
         const inheritedFetch = window.fetch.bind(window);
         window.fetch = async function qssedaVersionAwareFetch(input, init) {
@@ -235,6 +238,14 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
           const list = document.getElementById('tex-run-list');
           const empty = document.getElementById('tex-runs-empty');
           if (!list || !empty) return;
+          const currentId = activeDocumentId();
+          const fingerprint = JSON.stringify((versions || []).map(v =>
+            [v.id,v.is_current,v.created_at,v.source_chars,v.title]));
+          const foreignRows = Array.from(list.children).some(node =>
+            !node.matches?.('[data-tex-version-item]'));
+          if (shownDocumentId === currentId && lastVersionFingerprint === fingerprint && !foreignRows) return;
+          shownDocumentId = currentId;
+          lastVersionFingerprint = fingerprint;
           rendering = true;
           list.classList.add('is-version-history');
           list.replaceChildren();
@@ -320,10 +331,15 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
           const sequence = ++loadSequence;
           list.classList.add('is-version-history');
           empty.hidden = true;
-          if (!documentId) { renderVersions([]); return; }
-          rendering = true;
-          list.innerHTML = '<div class="tex-version-loading"><i></i><span>' + labels.loading + '</span></div>';
-          rendering = false;
+          if (!documentId) { lastFetchedId=''; renderVersions([]); return; }
+          // Repeated folder interactions must not erase the visible history.
+          // Show the spinner only when the actual document identifier changes.
+          if (lastFetchedId !== documentId) {
+            lastFetchedId = documentId;
+            rendering = true;
+            list.innerHTML = '<div class="tex-version-loading"><i></i><span>' + labels.loading + '</span></div>';
+            rendering = false;
+          }
           try {
             const data = await api('/api/tex/versions?document=' + encodeURIComponent(documentId));
             if (sequence !== loadSequence || documentId !== activeDocumentId()) return;
@@ -359,14 +375,14 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
           const runObserver = new MutationObserver(() => {
             if (rendering) return;
             const foreign = Array.from(list.children).some(node => !node.matches?.('[data-tex-version-item], .tex-version-loading'));
-            if (foreign) scheduleLoad(20);
+            if (foreign) scheduleLoad(120);
           });
           runObserver.observe(list, { childList: true });
 
           const documentObserver = new MutationObserver(() => scheduleLoad(80));
           documentObserver.observe(root, { attributes: true, attributeFilter: ['data-tex-collaboration-document-id'] });
-          const documentList = document.getElementById('tex-document-list');
-          if (documentList) documentObserver.observe(documentList, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+          // The file tree is not a history source. Never observe file rows or
+          // folders: their hover/expand/selection classes change constantly.
 
           window.addEventListener('qsseda:tex-version-created', () => scheduleLoad(20));
           window.addEventListener('pagehide', () => { runObserver.disconnect(); documentObserver.disconnect(); }, { once: true });
