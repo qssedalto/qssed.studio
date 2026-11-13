@@ -42,7 +42,7 @@ jobs:
           New-Item -Type Directory -Force local-bridge/dist | Out-Null
           Push-Location local-bridge/original-engine
           try {
-            go build -trimpath -ldflags="-s -w -H=windowsgui -X main.version=0.3.1-project" -o ../dist/AERTEX-Bridge.exe .
+            go build -trimpath -ldflags="-s -w -H=windowsgui -X main.version=0.3.2-multipass" -o ../dist/AERTEX-Bridge.exe .
             if ($LASTEXITCODE -ne 0) { throw 'Original engine build failed' }
           } finally { Pop-Location }
           Push-Location local-bridge/installer-control
@@ -92,7 +92,7 @@ jobs:
           function Health {
             $h = Invoke-RestMethod -Uri 'http://127.0.0.1:32145/health' -TimeoutSec 3
             if($h.service -ne 'qsseda-local-bridge' -or $h.protocol -ne 1 -or
-               $h.runtime -ne 'native-windows' -or $h.version -ne '0.3.1-project'){
+               $h.runtime -ne 'native-windows' -or $h.version -ne '0.3.2-multipass'){
               throw 'Wrong Bridge engine on loopback port'
             }
             return $h
