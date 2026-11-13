@@ -20,12 +20,13 @@ const setup=[
   "window.__qaActiveFile='main.tex';",
   "window.__aertexTexExplorerAsset=()=>({name:window.__qaActiveFile});",
   "const fakeId=new Uint8Array(32).fill(7);",
+  "window.__passkeyCreateCount=0;window.__passkeyGetCount=0;",
   "const fakeCredentials={",
-  " create:async()=>({type:'public-key',id:'fake',rawId:fakeId.buffer,",
-  "   response:{clientDataJSON:new Uint8Array([123,125]).buffer,attestationObject:new Uint8Array([160]).buffer}}),",
-  " get:async()=>({type:'public-key',id:'fake',rawId:fakeId.buffer,",
+  " create:async()=>{window.__passkeyCreateCount++;return {type:'public-key',id:'fake',rawId:fakeId.buffer,",
+  "   response:{clientDataJSON:new Uint8Array([123,125]).buffer,attestationObject:new Uint8Array([160]).buffer}}},",
+  " get:async()=>{window.__passkeyGetCount++;return {type:'public-key',id:'fake',rawId:fakeId.buffer,",
   "   response:{clientDataJSON:new Uint8Array([123,125]).buffer,",
-  "     authenticatorData:new Uint8Array(37).buffer,signature:new Uint8Array(64).buffer}})",
+  "     authenticatorData:new Uint8Array(37).buffer,signature:new Uint8Array(64).buffer}}}",
   "};",
   "Object.defineProperty(navigator,'credentials',{configurable:true,value:fakeCredentials});",
   "Object.defineProperty(window,'PublicKeyCredential',{configurable:true,value:class {}});",
@@ -51,6 +52,16 @@ const qa=[
   "  if(round==='first'&&!passkey.textContent.includes('创建'))throw Error('First-use Passkey creation missing');",
   "  if(round==='second'&&!passkey.textContent.includes('验证'))throw Error('Reload did not require fresh Passkey');",
   "  passkey.click();",
+  "  if(round==='fresh'){",
+  "    // A new browser profile has no IndexedDB ECDH key, but the server already has a Passkey.",
+  "    // It must verify via GET without opening Windows Security's second CREATE dialog.",
+  "    await until(()=>window.__passkeyGetCount===1,9000);",
+  "    await sleep(700);",
+  "    if(window.__passkeyCreateCount!==0)throw Error('Existing project Passkey triggered a second save-passkey dialog');",
+  "    if(document.getElementById('aertex-chat-status').textContent.includes('检测到新设备'))",
+  "      throw Error('Browser ECDH identity misclassified as new physical device');",
+  "    document.body.dataset.filechatCryptoQa='PASS';return;",
+  "  }",
   "  await until(()=>!conversation.hidden,9000);",
   "  if(round==='first'){",
   "    document.getElementById('aertex-chat-input').value='Private browser-to-browser encrypted message';",
@@ -165,7 +176,7 @@ async function browserRound(round){
   rmSync(portFile,{force:true});
   const child=spawn(binary,[
     "--headless=new","--no-sandbox","--disable-dev-shm-usage","--disable-gpu",
-    "--no-first-run","--user-data-dir="+profile,"--window-size=900,780",
+    "--no-first-run","--user-data-dir="+(round==="fresh"?profile+"-fresh":profile),"--window-size=900,780",
     "--remote-debugging-port=0",origin+"/?round="+round
   ],{stdio:["ignore","ignore","pipe"]});
   let stderr="",websocket=null,messageId=0;
@@ -252,10 +263,12 @@ try{
   assert(!JSON.stringify(memory.messages).includes("Private browser-to-browser"),
     "Server must only store ciphertext");
   await browserRound("second");
-  assert(memory.verified>=2,"Page reload must revalidate project Passkey");
+  await browserRound("fresh");
+  assert(memory.verified>=3,"Page reload and fresh browser profile must revalidate project Passkey");
   assert(!memory.sentFileSelector,"Project chat API must not send a file selector");
-  console.log("REAL CHROME E2EE integration: project Passkey, ciphertext, reload verification, same-project file continuity and cross-project lock PASS");
+  console.log("REAL CHROME E2EE integration: project Passkey, ciphertext, reload and fresh-profile verification without duplicate Passkey creation PASS");
 }finally{
   await new Promise(resolve=>server.close(resolve));
   rmSync(profile,{recursive:true,force:true});
+  rmSync(profile+"-fresh",{recursive:true,force:true});
 }
