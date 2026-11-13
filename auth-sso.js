@@ -46,7 +46,7 @@ async function startSync(request) {
 
   const session = await currentSession(request);
   const next = safeNextPath(url.searchParams.get("next"));
-  if (session.kind === "unavailable") return temporarilyUnavailableResponse();
+  if (session.kind === "unavailable") return withCookies(temporarilyUnavailableResponse(), session.cookies || []);
   if (session.kind !== "ok") {
     const login = new URL("/login", url.origin);
     if (next) login.searchParams.set("next", next);
@@ -119,7 +119,8 @@ async function currentSession(request) {
     user = rotated.user;
   }
   const profile = await fetchProfileStatus(accessToken, user.id);
-  if (profile.kind !== "ok") return { kind: profile.kind };
+  if (profile.kind !== "ok") return { kind: profile.kind,
+    cookies: rotated ? sessionCookies(accessToken, refreshToken) : [] };
   return {
     kind: "ok", accessToken, refreshToken, user,
     cookies: rotated ? sessionCookies(accessToken, refreshToken) : []
