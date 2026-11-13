@@ -191,6 +191,8 @@ const cachedPreviewRuntime = previewScriptOffset >= 0
     cachedPreviewMarkup.indexOf('</script>', previewScriptOffset))
   : "";
 assert(cachedPreviewRuntime, "The preview refresh protection script must load");
+assert(cachedPreviewRuntime.includes("if (mobilePreviewClient) void restoreImmediately();"),
+  "Mobile devices must retain a last-PDF fallback when local compilation is unavailable");
 new vm.Script(cachedPreviewRuntime);
 const oldPdf = new Blob(["%PDF-1.7\\n% previous preview may have missing CJK glyphs"], { type: "application/pdf" });
 const cachedState = {
