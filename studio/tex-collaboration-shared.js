@@ -4,6 +4,7 @@ import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
+import { reconcileTexMainEntry } from "./tex-main-entry.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const ENGINES = new Set(["xelatex", "lualatex", "pdflatex"]);
@@ -80,6 +81,7 @@ async function handleUpdate(request, env, auth, accessToken) {
   const previous = await readOwnerDocument(env, access.owner_id, documentId);
   if (!previous) return json({ error: "Shared TeX document not found." }, 404);
   if (previous.locked) return json({ error: "This project is locked by its owner." }, 423);
+  if (previous.main_deleted === true) return json({error:"This project has no TeX entry. Add a root .tex file first."},409);
 
   const normalized = normalizeSharedDocument(parsed.value, previous);
   if (!normalized.ok) return json({ error: normalized.error }, 400);
@@ -231,14 +233,17 @@ async function readOwnerDocument(env, ownerId, documentId) {
   const object = await env.STORAGE.get(documentKey(ownerId, documentId));
   if (!object) return null;
   try {
-    const parsed = JSON.parse(await object.text());
-    if (!parsed || parsed.owner_id !== ownerId || parsed.id !== documentId) return null;
+    const stored = JSON.parse(await object.text());
+    if (!stored || stored.owner_id !== ownerId || stored.id !== documentId) return null;
+    const parsed = reconcileTexMainEntry(stored);
     return {
       id: documentId,
       owner_id: ownerId,
       title: cleanText(parsed.title, 180) || "Untitled TeX document",
       engine: ENGINES.has(parsed.engine) ? parsed.engine : "xelatex",
       source: cleanSource(parsed.source),
+      main_filename: parsed.main_filename || "main.tex",
+      main_deleted: parsed.main_deleted === true,
       created_at: cleanTimestamp(parsed.created_at),
       updated_at: cleanTimestamp(parsed.updated_at),
       files: Array.isArray(parsed.files) ? parsed.files : [],
