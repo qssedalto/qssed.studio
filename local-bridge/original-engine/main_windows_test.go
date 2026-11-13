@@ -47,3 +47,38 @@ func TestWriteProjectAssets(t *testing.T) {
     {Name:"x.tex", Encoding:"utf8", Content:strings.Repeat("x", maxProjectFile+1)},
   }); err == nil { t.Fatal("oversized file accepted") }
 }
+
+
+func TestBibliographyBackend(t *testing.T) {
+	dir := t.TempDir()
+	if got := bibliographyBackend(dir); got != "" {
+		t.Fatalf("unreferenced document incorrectly requests %q", got)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "main.aux"), []byte("\\relax\n\\bibdata{references}\n\\bibstyle{plain}\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if got := bibliographyBackend(dir); got != "bibtex" {
+		t.Fatalf("expected bibtex, got %q", got)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "main.bcf"), []byte("<bcf:controlfile/>"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if got := bibliographyBackend(dir); got != "biber" {
+		t.Fatalf("biber must take precedence, got %q", got)
+	}
+}
+
+func TestBibliographyExecutableAllowlist(t *testing.T) {
+	dir := t.TempDir()
+	engine := filepath.Join(dir, "xelatex.exe")
+	tool := filepath.Join(dir, "bibtex.exe")
+	if err := os.WriteFile(tool, []byte("fixture"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if got := findBibliographyExecutable("bibtex", engine); got != tool {
+		t.Fatalf("expected sibling tex tool, got %q", got)
+	}
+	if got := findBibliographyExecutable("powershell", engine); got != "" {
+		t.Fatalf("unapproved executable allowed: %q", got)
+	}
+}
