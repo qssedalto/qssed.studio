@@ -1,7 +1,7 @@
 //go:build windows
 
 // This executable is used only by the Inno Setup installer. The running
-// Bridge payload stays the unmodified, lightweight 0.3.0-d5e4cfd engine.
+// Bridge payload extends the lightweight original engine with bounded, sandboxed project inputs.
 package main
 
 import (
@@ -22,7 +22,7 @@ import (
 )
 
 const (
- expectedVersion="0.3.0-d5e4cfd"
+ expectedVersion="0.3.1-project"
  serviceName="qsseda-local-bridge"
  healthURL="http://127.0.0.1:32145/health"
  localAddress="127.0.0.1:32145"
