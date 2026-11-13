@@ -14,22 +14,19 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '24.x'
-      - name: Export tracked source and pinned offline modules
+          fetch-depth: 0
+      - name: Export tracked source and comparison
         run: |
           mkdir -p /tmp/audit-snapshot
           git archive --format=tar.gz HEAD -o /tmp/audit-snapshot/source.tar.gz
           git rev-parse HEAD > /tmp/audit-snapshot/commit.txt
-          git fetch --no-tags --depth=1 origin main
           git archive --format=tar.gz origin/main -o /tmp/audit-snapshot/main.tar.gz
           git rev-parse origin/main > /tmp/audit-snapshot/main-commit.txt
-          npm ci --prefix tex-vendor --no-audit --no-fund
-          node tex-vendor/build.mjs
-          tar -czf /tmp/audit-snapshot/modules.tar.gz tex-vendor/node_modules tex-vendor/dist
+          git diff origin/main HEAD > /tmp/audit-snapshot/changes.patch
+          git diff --stat origin/main HEAD > /tmp/audit-snapshot/changes.txt
+          git log --oneline origin/main..HEAD > /tmp/audit-snapshot/commits.txt
       - uses: actions/upload-artifact@v6
         with:
-          name: p0-p1-review-snapshot-${{ github.sha }}
+          name: p0-p1-final-source-${{ github.sha }}
           path: /tmp/audit-snapshot/
           retention-days: 1
