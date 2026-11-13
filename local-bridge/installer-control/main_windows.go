@@ -115,7 +115,7 @@ func matchingProcessIDs(installed string)([]uint32,error){
  if ok==0{return nil,fmt.Errorf("Process32FirstW: %w",firstErr)}
  ids:=make([]uint32,0,2)
  for ok!=0 {
-  if strings.EqualFold(syscall.UTF16ToString(entry.ExeName[:]),"AERTEX-Bridge.exe"){
+  if strings.EqualFold(syscall.UTF16ToString(entry.ExeName[:]),filepath.Base(installed)){
    actual,e:=processPath(entry.ProcessID)
    if e==nil&&strings.EqualFold(filepath.Clean(actual),filepath.Clean(installed)){
     ids=append(ids,entry.ProcessID)
@@ -126,22 +126,48 @@ func matchingProcessIDs(installed string)([]uint32,error){
  }
  return ids,nil
 }
+// The pre-0.5.3 package wrote QssedA-Local-Bridge.exe into the SAME
+// installation directory. Its image name is different, so stopping only
+// AERTEX-Bridge.exe left an old process listening on port 32145 indefinitely.
+// Both names are ours, but only an EXACT executable path match is accepted.
+func migrationTargets(installed string) []string {
+ dir:=filepath.Dir(installed)
+ return []string{installed,filepath.Join(dir,"QssedA-Local-Bridge.exe")}
+}
 func stop(installed string)error{
- ids,err:=matchingProcessIDs(installed)
- if err!=nil{return err}
- for _,pid:=range ids {
-  h,_,openErr:=openProcess.Call(processTerminate|processQueryLimitedInformation,0,uintptr(pid))
-  if h==0{return fmt.Errorf("cannot stop installed Bridge PID %d: %w",pid,openErr)}
-  ok,_,termErr:=terminateProcess.Call(h,0)
-  if ok==0{
+ for _,target:=range migrationTargets(installed){
+  ids,err:=matchingProcessIDs(target)
+  if err!=nil{return err}
+  for _,pid:=range ids{
+   h,_,openErr:=openProcess.Call(processTerminate|processQueryLimitedInformation,0,uintptr(pid))
+   if h==0{return fmt.Errorf("cannot stop verified Bridge at %q PID %d: %w",target,pid,openErr)}
+   // Verify the executable path AGAIN after opening the process handle,
+   // to avoid terminating an unrelated process if a PID was recycled.
+   current,queryErr:=processPath(pid)
+   if queryErr!=nil||!strings.EqualFold(filepath.Clean(current),filepath.Clean(target)){
+    syscall.CloseHandle(syscall.Handle(h))
+    return fmt.Errorf("Bridge PID %d changed during validation; no unrelated process was terminated",pid)
+   }
+   ok,_,termErr:=terminateProcess.Call(h,0)
+   if ok==0{
+    syscall.CloseHandle(syscall.Handle(h))
+    return fmt.Errorf("TerminateProcess(%d): %w",pid,termErr)
+   }
+   _,_,_=waitForSingleObject.Call(h,5000)
    syscall.CloseHandle(syscall.Handle(h))
-   return fmt.Errorf("TerminateProcess(%d): %w",pid,termErr)
+   logEvent("stopped managed Bridge "+filepath.Base(target),nil)
   }
-  _,_,_=waitForSingleObject.Call(h,5000)
-  syscall.CloseHandle(syscall.Handle(h))
  }
- // Do not terminate an unrelated process that happens to own port 32145.
- time.Sleep(180*time.Millisecond)
+ // Allow Windows to release the listener. The installer must abort if
+ // anything else still owns the port, rather than terminating by port alone.
+ deadline:=time.Now().Add(3*time.Second)
+ for time.Now().Before(deadline){
+  if !portBusy(){return nil}
+  time.Sleep(100*time.Millisecond)
+ }
+ if portBusy(){
+  return errors.New("port 32145 is still occupied after stopping both verified Bridge executable names; unknown listener was not terminated")
+ }
  return nil
 }
 func start(installed string)error{
