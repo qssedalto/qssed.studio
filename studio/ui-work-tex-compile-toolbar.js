@@ -37,7 +37,7 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
     flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
     min-width:0;width:auto;min-height:28px;height:28px;padding:0 9px;
     border:0;border-radius:7px;background:#1677ff;color:#fff;
-    font:600 11px/1.15 inherit;cursor:pointer;white-space:nowrap;
+    font-family:inherit;font-size:11px;font-weight:600;line-height:1.15;cursor:pointer;white-space:nowrap;
     box-shadow:none
   }
   .tex-work-app .tex-build-log:hover{background:#0965df}
