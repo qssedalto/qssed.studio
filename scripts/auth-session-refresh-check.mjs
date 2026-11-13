@@ -37,7 +37,7 @@ await withFetch(upstream("ok"),async()=>{
   const sso=await handleAuthSsoRequest(request("https://auth.qsseda.com/sso/start?next=%2Fdashboard",expiredCookies));
   assert.equal(sso.status,302,"Expired access must be refreshed, not redirected to password login");
   assert.match(sso.headers.get("location"),/\/sso\/complete/);
-  assert.match(sso.headers.get("set-cookie")||"","new-access");
+  assert.match(sso.headers.get("set-cookie")||"",/new-access/);
   statuses.push("SSO recovered");
   const session=await authWorker.fetch(request("https://auth.qsseda.com/api/session",expiredCookies),{});
   assert.equal(session.status,200);
@@ -45,7 +45,7 @@ await withFetch(upstream("ok"),async()=>{
   statuses.push("Auth API recovered");
   const cont=await authWorker.fetch(request("https://auth.qsseda.com/continue",expiredCookies),{});
   assert.equal(cont.status,200,"/continue must handoff without login when refresh valid");
-  assert.match(cont.headers.get("set-cookie")||"","new-refresh");
+  assert.match(cont.headers.get("set-cookie")||"",/new-refresh/);
   statuses.push("Continue recovered");
 });
 for(const mode of ["transient","network"]){
@@ -73,7 +73,7 @@ await withFetch(upstream("invalid"),async()=>{
   const session=await authWorker.fetch(request("https://auth.qsseda.com/api/session",expiredCookies),{});
   assert.equal(session.status,200);
   assert.equal((await session.json()).authenticated,false);
-  assert.match(session.headers.get("set-cookie")||"","Max-Age=0","Invalid session must be cleared");
+  assert.match(session.headers.get("set-cookie")||"",/Max-Age=0/,"Invalid session must be cleared");
 });
 statuses.push("Revoked login enforcement");
 
