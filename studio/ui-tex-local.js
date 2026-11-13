@@ -433,6 +433,10 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             const engineName = String(engine.value || '').toLowerCase();
             const sourceText = source.value || '';
             const snapshot = currentPreviewSnapshot();
+            const compilingDocumentId = String(root.dataset.texCollaborationDocumentId || '');
+            window.dispatchEvent(new CustomEvent('aertex:tex-build-started', {
+              detail: { documentId: compilingDocumentId, engine: engineName, automatic: previewOnly }
+            }));
             if (previewOnly) {
               previewDirty = false;
               setPreviewStatus('busy', localCopy.previewCompiling);
@@ -444,8 +448,12 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             try {
               const result = await requestLocalPdf(engineName, sourceText);
               const stale = snapshot !== currentPreviewSnapshot();
-              if (!stale) installPreviewBlob(result.blob, snapshot, result.elapsed);
-              else {
+              if (!stale) {
+                installPreviewBlob(result.blob, snapshot, result.elapsed);
+                window.dispatchEvent(new CustomEvent('aertex:tex-build-result', {
+                  detail: { documentId: compilingDocumentId, engine: engineName, ok: true, automatic: previewOnly }
+                }));
+              } else {
                 previewDirty = true;
                 previewPending = true;
                 setPreviewStatus('idle', localCopy.previewWaiting);
@@ -459,6 +467,19 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             } catch (error) {
               const diagnostic = String(error?.payload?.log || '').trim().split(/\\r?\\n/).filter(Boolean).slice(-2).join(' · ');
               const display = String(error?.message || localCopy.localFailed) + (diagnostic ? ' · ' + diagnostic.slice(0, 420) : '');
+              if (snapshot === currentPreviewSnapshot()) {
+                window.dispatchEvent(new CustomEvent('aertex:tex-build-result', {
+                  detail: {
+                    documentId: compilingDocumentId,
+                    engine: engineName,
+                    ok: false,
+                    automatic: previewOnly,
+                    // Full bounded compiler output stays in browser memory until
+                    // the user explicitly downloads the log as a local file.
+                    log: [String(error?.message || localCopy.localFailed), String(error?.payload?.log || '')].filter(Boolean).join('\n\n')
+                  }
+                }));
+              }
               if (previewOnly) {
                 if (snapshot === currentPreviewSnapshot()) {
                   setPreviewStatus('error', display);
