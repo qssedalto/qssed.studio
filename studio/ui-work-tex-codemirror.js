@@ -192,6 +192,8 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         let EditorStateClass = null;
         let texExtensions = null;
         let textExtensions = null;
+        let languageParserForFilename = null;
+        let streamLanguageClass = null;
 
         const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
         const nativeFocus = source.focus.bind(source);
@@ -480,9 +482,18 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           redoStack = [];
           historyGroupStartedAt = 0;
           const isTeX = /\.(?:tex|ltx|sty|cls|dtx|ins)$/i.test(currentAsset.name);
+          let extensions = isTeX ? texExtensions : textExtensions;
+          if (!isTeX && languageParserForFilename && streamLanguageClass) {
+            try {
+              const parser = languageParserForFilename(currentAsset.name);
+              if (parser) extensions = [...textExtensions, streamLanguageClass.define(parser)];
+            } catch (error) {
+              console.warn('AERTEX: syntax mode unavailable for ' + currentAsset.name, error);
+            }
+          }
           view.setState(EditorStateClass.create({
             doc: String(asset.content ?? ''),
-            extensions: isTeX ? texExtensions : textExtensions
+            extensions
           }));
           host?.classList.add('is-project-asset');
           remoteLayer?.replaceChildren();
@@ -556,7 +567,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             return;
           }
 
-          const { EditorView, EditorState, basicSetup, StreamLanguage, stex } = cm || {};
+          const { EditorView, EditorState, basicSetup, StreamLanguage, stex, parserForFilename } = cm || {};
           if (!EditorView || !EditorState || !basicSetup) {
             mounting = false;
             console.warn(labels.failed, 'Invalid CodeMirror module exports');
@@ -615,6 +626,8 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           }
 
           EditorStateClass = EditorState;
+          streamLanguageClass = StreamLanguage;
+          languageParserForFilename = typeof parserForFilename === 'function' ? parserForFilename : null;
           texExtensions = resolvedExtensions;
           textExtensions = baseExtensions;
           remoteLayer = document.createElement('div');
