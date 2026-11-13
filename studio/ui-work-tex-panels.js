@@ -25,7 +25,7 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
 
   output = output.replace(
     /<div class="tex-panel-head"><strong>([^<]*)<\/strong><span id="tex-document-count">0<\/span><\/div>/,
-    (_match, label) => `<div class="tex-panel-head"><div class="tex-panel-title"><strong>${label}</strong><span id="tex-document-count">0</span></div><button id="tex-left-panel-toggle" class="tex-side-toggle tex-left-panel-toggle" type="button" aria-expanded="true" title="${copy.collapseDocuments}">−</button></div>`
+    (_match, _label) => `<div class="tex-panel-head"><div class="tex-panel-title"><strong>LaTex</strong><span id="tex-document-count" aria-hidden="true">0</span></div><button id="tex-left-panel-toggle" class="tex-side-toggle tex-left-panel-toggle" type="button" aria-expanded="true" title="${copy.collapseDocuments}">−</button></div>`
   );
 
   output = output.replace(
@@ -347,6 +347,91 @@ export function enhanceWorkTexCollapsiblePanels(markup, zh) {
           min-height:42px!important;
           max-height:42px!important;
         }
+      }
+</style>
+    <style id="aertex-tex-documents-header-layout">
+      /* Documents sidebar: collapse, compact Home badge, LaTex title.
+         Keep the hidden count node so existing document-list updates still work. */
+      .tex-work-app .tex-documents-panel>.tex-panel-head{
+        display:flex!important;
+        align-items:center!important;
+        justify-content:flex-start!important;
+        flex-wrap:nowrap!important;
+        gap:6px!important;
+      }
+      .tex-work-app .tex-documents-panel>.tex-panel-head>#tex-left-panel-toggle{
+        order:0!important;
+        flex:0 0 28px!important;
+        margin:0!important;
+      }
+      .tex-work-app .tex-documents-panel>.tex-panel-head>.tex-panel-home-link{
+        order:1!important;
+        flex:0 0 auto!important;
+        box-sizing:border-box!important;
+        min-width:0!important;
+        min-height:28px!important;
+        height:28px!important;
+        margin:0!important;
+        padding:0 7px!important;
+        gap:4px!important;
+        border:1px solid var(--border)!important;
+        border-radius:9px!important;
+        background:var(--fill)!important;
+        color:var(--muted)!important;
+        box-shadow:none!important;
+        white-space:nowrap!important;
+      }
+      .tex-work-app .tex-documents-panel>.tex-panel-head>.tex-panel-home-link:hover{
+        background:color-mix(in srgb,var(--muted) 18%,var(--fill))!important;
+        color:var(--text)!important;
+      }
+      /* The generic sidebar span/count styling previously made the brand name
+         look like a separate white pill. Every layer stays transparent. */
+      .tex-work-app .tex-documents-panel>.tex-panel-head>.tex-panel-home-link>span{
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        flex:0 0 auto!important;
+        width:auto!important;
+        min-width:0!important;
+        height:auto!important;
+        min-height:0!important;
+        margin:0!important;
+        padding:0!important;
+        border:0!important;
+        border-radius:0!important;
+        background:transparent!important;
+        box-shadow:none!important;
+        color:inherit!important;
+      }
+      .tex-work-app .tex-documents-panel>.tex-panel-head>.tex-panel-home-link .aertex-wordmark-token{
+        width:53px!important;
+        min-width:53px!important;
+        height:10.2px!important;
+        min-height:10.2px!important;
+        padding:0!important;
+        border:0!important;
+        border-radius:0!important;
+        background:transparent!important;
+        box-shadow:none!important;
+        color:inherit!important;
+      }
+      .tex-work-app .tex-documents-panel>.tex-panel-head>.tex-panel-home-link>svg{
+        width:12px!important;
+        height:12px!important;
+        flex:0 0 12px!important;
+      }
+      .tex-work-app .tex-documents-panel>.tex-panel-head>.tex-panel-title{
+        order:2!important;
+        flex:0 0 auto!important;
+        margin-left:auto!important;
+        gap:0!important;
+      }
+      .tex-work-app .tex-documents-panel>.tex-panel-head>.tex-panel-title>strong{
+        white-space:nowrap!important;
+      }
+      .tex-work-app .tex-documents-panel>.tex-panel-head #tex-document-count{
+        display:none!important;
       }
     </style>`;
 }
