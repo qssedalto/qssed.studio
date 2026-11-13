@@ -4,6 +4,7 @@
 
 - `/assets/tex/codemirror.js`
 - `/assets/tex/yjs.js`
+- `/assets/tex/katex.js`（可视化编辑器的数学公式，MathML 输出，无第三方 CDN、无外链字体）
 
 **用户访问 Work 时，浏览器只从 `work.qsseda.com` 请求这两个模块；不会向 jsDelivr 或 esm.sh 请求 CodeMirror/Yjs。**
 
