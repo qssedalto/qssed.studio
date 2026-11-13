@@ -10,11 +10,12 @@ assert(entry.includes("enhanceWorkTexToolbarScroll(enhanceWorkTexDeviceReadiness
   "Responsive toolbar must run after device/mobile CSS for /work/tex");
 assert(page.includes('id="aertex-tex-scrollable-toolbar"'));
 assert(page.includes('id="aertex-tex-scrollable-toolbar-runtime"'));
-assert(page.includes('打开协作面板'));
-assert(enPage.includes('Open collaboration panel'));
+assert(page.includes('打开端到端加密聊天'));
+assert(enPage.includes('Open encrypted chat'));
 assert(page.includes('tex-command-chat-svg'));
-assert(page.includes('fill:currentColor!important'),"Monochrome bubble must use theme currentColor");
-assert(page.includes("color:var(--text)!important"),"Icon must invert between light and dark palettes");
+assert(page.includes('stroke:currentColor!important'),"Outline bubble must use theme currentColor");
+assert(page.includes('stroke-width:1.7!important'),"Bubble outline must match neighboring Fluent icons");
+assert(page.includes("color:color-mix(in srgb,var(--text) 74%,var(--surface))!important"),"Icon must invert between light and dark palettes");
 assert(!page.includes("fill:#007"),"Message bubble SVG must not force iMessage blue");
 assert(page.includes("overflow-x:auto!important"),"Only the command group should scroll");
 assert(page.includes("touch-action:pan-x!important"),"iPad touch drags must scroll sideways");
@@ -49,27 +50,28 @@ function simulate(html) {
   header.width=690;
   root.querySelector=(s)=>s===".tex-source-label"?header:null;
   header.querySelector=(s)=>s===".tex-editor-commandbar"?bar:null;
-  let shortcut,collabClicks=0;
+  let shortcut,collabClicks=0,opened=[];
   collab.click=()=>collabClicks++;
   const document={
+    body:{append(){}},
     querySelector(s){return s===".tex-work-app[data-tex-root]"?root:null;},
     getElementById(s){
       if(s==="tex-collaboration-open")return collab;
       if(s==="tex-command-chat-shortcut")return shortcut;
       return null;
     },
-    createElement(name){const el=makeNode(name);Object.defineProperty(el,"id",{
+    createElement(name){const el=makeNode(name);el.remove=()=>{};el.click=()=>{if(name==='a')opened.push([el.href,el.target,el.rel]);};if(name==='button')Object.defineProperty(el,"id",{
       get(){return this._id;},set(value){this._id=value; shortcut=this;}
     });return el;}
   };
   class ResizeObserver {constructor(cb){this.cb=cb;lastObserved=this} observe(node){assert.equal(node,header)}disconnect(){}}
   class MutationObserver {constructor(cb){this.cb=cb} observe(node){assert.equal(node,collab)}disconnect(){}}
-  const win={addEventListener(){},matchMedia(){return {matches:false}},setTimeout(){throw Error("Unexpected deferred retry")}};
+  const win={addEventListener(){},matchMedia(){return {matches:false}},setTimeout(){throw Error("Unexpected deferred retry")},open(...args){opened.push(args);return {}},location:{assign(url){opened.push([url])}}};
   vm.runInNewContext(match[1],{document,window:win,ResizeObserver,MutationObserver},{timeout:1000});
   assert.equal(shortcut.id,"tex-command-chat-shortcut");
-  assert.equal(shortcut.attrs["aria-label"],html.includes("打开协作面板")?"打开协作面板":"Open collaboration panel");
+  assert.equal(shortcut.attrs["aria-label"],html.includes("打开端到端加密聊天")?"打开端到端加密聊天":"Open encrypted chat");
   assert.equal(shortcut.type,"button");
-  assert.equal(shortcut.dataset.texAction,"collaboration-shortcut");
+  assert.equal(shortcut.dataset.texAction,"open-encrypted-chat");
   assert(shortcut.innerHTML.includes('<svg'));
   assert.equal(bar.children[0],shortcut);
   assert.equal(bar.attrs.role,"group");
@@ -81,15 +83,15 @@ function simulate(html) {
   let stopped=false;
   shortcut.events.click({stopPropagation(){stopped=true;}});
   assert(stopped);
-  assert.equal(collabClicks,1,"Bubble must open existing permission-aware collaboration UI");
+  assert.equal(collabClicks,0,"Bubble must never open collaboration settings");
+  assert.deepEqual(opened.map(x=>Array.from(x)),[["https://chat.qsseda.com/","_blank","noopener noreferrer"]],"Bubble must open separate encrypted chat application");
   bar.events.keydown({target:bar,key:"ArrowRight",preventDefault(){}});
   assert.equal(bar.scrollLeft,125,"Keyboard users can horizontally pan icon group");
   bar.events.keydown({target:bar,key:"ArrowLeft",preventDefault(){}});
   assert.equal(bar.scrollLeft,0);
   collab.disabled=true;
-  shortcut.disabled=collab.disabled;
-  assert(shortcut.disabled,"Collaboration button disabled state must be respected");
+  assert.equal(shortcut.disabled,false,"Chat must not be disabled by editing or collaboration settings");
 }
 simulate(page);
 simulate(enPage);
-console.log("Monochrome SVG, fixed realtime/count status, pane-aware horizontal scroll and collaboration shortcut checks passed.");
+console.log("Outlined SVG, independent encrypted chat launcher, fixed realtime/count status and responsive horizontal scroll passed.");
