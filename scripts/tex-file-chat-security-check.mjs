@@ -26,10 +26,11 @@ function cbor(value){
   throw Error("CBOR helper cannot encode "+typeof value);
 }
 const owner="11111111-1111-4111-8111-111111111111";
-const file=await hashText("owner:project:chapters/example.tex"),fileB=await hashText("owner:project:main.tex");
+const file=await hashText("project-chat-v2:"+owner+":22222222-2222-4222-8222-222222222222");
+const fileB=await hashText("project-chat-v2:"+owner+":33333333-3333-4333-8333-333333333333");
 const auth=(fileHash=file,role="owner")=>({
  "X-Qsseda-Chat-User":owner,"X-Qsseda-Chat-Owner":owner,
- "X-Qsseda-Chat-File":fileHash,"X-Qsseda-Chat-Rp":"work.qsseda.com",
+ "X-Qsseda-Chat-Project":fileHash,"X-Qsseda-Chat-Rp":"work.qsseda.com",
  "X-Qsseda-Chat-Origin":"https://work.qsseda.com",
  "X-Qsseda-Chat-Role":role,"X-Qsseda-Chat-Allowed":owner,
  "content-type":"application/json"
@@ -82,7 +83,7 @@ assert.equal((await send("status")).body.registered,true);
 assert.equal((await send("verify",{challenge_id:first.body.challenge_id,credential})).status,403,
   "Challenge must be one-time and never reusable");
 assert.equal((await send("messages",{token},auth(fileB))).status,401,
-  "A passkey grant must be scoped to one file only");
+  "A project Passkey grant must not authorize another project");
 
 const next=await send("begin");assert.equal(next.body.mode,"get");
 assert.deepEqual(next.body.public_key.allowCredentials,[{type:"public-key",id:credId}]);
@@ -170,7 +171,7 @@ const runtime=markup.match(/<script id="aertex-file-chat-runtime">([\s\S]*?)<\/s
 assert(runtime,"Chat runtime must be loaded on TeX Work");
 assert.doesNotThrow(()=>new vm.Script(runtime),"Client chat runtime must parse");
 for(const marker of ["navigator.credentials.create","navigator.credentials.get","indexedDB.open",
-  "deriveBits","AES-GCM","envelope-put","envelope-get","aertex:tex-chat-toggle","file_name",
+  "deriveBits","AES-GCM","envelope-put","envelope-get","aertex:tex-chat-toggle","document_id",
   "aertex:tex-project-asset-selected","pagehide"])assert(runtime.includes(marker),"Missing "+marker);
 assert(runtime.includes("localStorage.setItem(HINT_PREF"),"Non-sensitive UI preference should be persisted");
 assert(!runtime.includes("localStorage.setItem('filechat-key"),"Never persist room keys in localStorage");
@@ -187,6 +188,10 @@ const gateway=readFileSync(new URL("../studio/tex-file-chat-api.js",import.meta.
 assert(gateway.includes("resolveDocumentAccess"));
 assert(gateway.includes("verifyStudioApiSession"));
 assert(gateway.includes("get(\"Origin\")!==url.origin"));
-assert(gateway.includes("file.name===fileName"));
+assert(gateway.includes('hashText("project-chat-v2:"+ownerId+":"+documentId)'));
+assert(gateway.includes('delete forwarded.file_name'),"File name is never a room selector");
+assert(!gateway.includes('file.name===fileName'),"Project chat must not require a selected file");
+assert(runtime.includes("'AERTEX-projectchat-v2:'"),"Room KDF must depend on project alone");
+assert(!runtime.includes("state.file"),"File switches must not reset project E2EE state");
 assert(gateway.includes("if(access.via_link===true)"));
-console.log("File-scoped WebAuthn create/get, replay/forgery rejection, isolated grants, ciphertext storage, secure UI and ACL contract: PASS");
+console.log("PROJECT-scoped WebAuthn create/get, replay/forgery rejection, isolated project grants, ciphertext storage, secure UI and ACL contract: PASS");
