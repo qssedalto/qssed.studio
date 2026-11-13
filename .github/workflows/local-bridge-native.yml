@@ -1,179 +1,167 @@
-name: Build AERTEX Bridge
-
+name: Build AERTEX Original Bridge Installer
 on:
   pull_request:
     paths:
-      - "local-bridge/native/**"
+      - "local-bridge/original-engine/**"
+      - "local-bridge/installer-control/**"
+      - "local-bridge/installer/**"
       - ".github/workflows/local-bridge-native.yml"
+      - "studio/work-api.js"
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - "local-bridge/native/**"
+      - "local-bridge/original-engine/**"
+      - "local-bridge/installer-control/**"
+      - "local-bridge/installer/**"
       - ".github/workflows/local-bridge-native.yml"
+      - "studio/work-api.js"
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
-  build-windows:
-    runs-on: ubuntu-latest
+  build-installer:
+    runs-on: windows-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "24.x"
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: "1.27.x"
-          cache-dependency-path: local-bridge/native/go.mod
-
-      - name: Vet native bridge
-        working-directory: local-bridge/native
-        env:
-          GOOS: windows
-          GOARCH: amd64
-          CGO_ENABLED: "0"
-        run: go vet ./...
-
-      - name: Build native Windows bridge
-        working-directory: local-bridge/native
-        env:
-          GOOS: windows
-          GOARCH: amd64
-          CGO_ENABLED: "0"
+          cache: false
+      - name: Verify original and installer control sources
+        shell: pwsh
         run: |
-          mkdir -p dist
-          go build -trimpath -ldflags "-s -w -H=windowsgui -X main.version=0.4.0-${GITHUB_SHA::7}" -o dist/AERTEX-Bridge.exe .
-          test -s dist/AERTEX-Bridge.exe
-
-      - name: Upload workflow artifact
-        uses: actions/upload-artifact@v7
+          Push-Location local-bridge/original-engine
+          try { go vet ./...; if ($LASTEXITCODE -ne 0) { throw 'Original engine vet failed' } }
+          finally { Pop-Location }
+          Push-Location local-bridge/installer-control
+          try { go vet ./...; if ($LASTEXITCODE -ne 0) { throw 'Controller vet failed' } }
+          finally { Pop-Location }
+      - name: Compile the unchanged original 0.3.0 engine
+        shell: pwsh
+        run: |
+          New-Item -Type Directory -Force local-bridge/dist | Out-Null
+          Push-Location local-bridge/original-engine
+          try {
+            go build -trimpath -ldflags="-s -w -H=windowsgui -X main.version=0.3.0-d5e4cfd" -o ../dist/AERTEX-Bridge.exe .
+            if ($LASTEXITCODE -ne 0) { throw 'Original engine build failed' }
+          } finally { Pop-Location }
+          Push-Location local-bridge/installer-control
+          try {
+            go build -trimpath -ldflags="-s -w" -o ../dist/AERTEX-Bridge-Control.exe .
+            if ($LASTEXITCODE -ne 0) { throw 'Setup controller build failed' }
+          } finally { Pop-Location }
+      - name: Compile native Windows installer
+        shell: pwsh
+        run: |
+          $root = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+          $iscc = Join-Path $root 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+          }
+          if (-not (Test-Path $iscc)) { throw 'Inno Setup compiler missing' }
+          & $iscc /Q 'local-bridge/installer/AERTEX-Bridge.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Installer build failed' }
+          if (-not (Test-Path 'local-bridge/dist/AERTEX-Bridge-Setup.exe')) { throw 'Missing compiled installer' }
+          Get-FileHash 'local-bridge/dist/AERTEX-Bridge-Setup.exe' -Algorithm SHA256
+      - uses: actions/upload-artifact@v7
         with:
-          name: qsseda-local-bridge-windows-amd64
-          path: local-bridge/native/dist/AERTEX-Bridge.exe
+          name: aertex-bridge-setup-win-x64
+          path: local-bridge/dist/AERTEX-Bridge-Setup.exe
           if-no-files-found: error
           retention-days: 30
 
-
   smoke-windows:
-    name: Verify actual Windows installation and login start
-    needs: build-windows
+    needs: build-installer
     runs-on: windows-latest
     steps:
-      - name: Download native Windows Bridge
-        uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v7
         with:
-          name: qsseda-local-bridge-windows-amd64
-          path: bridge-smoke
-
-      - name: Install, inspect startup, restart background and verify health
+          name: aertex-bridge-setup-win-x64
+          path: bridge-setup
+      - name: Install, verify startup, upgrade and uninstall
         shell: pwsh
         run: |
-          $ErrorActionPreference = "Stop"
-          $exe = (Resolve-Path "bridge-smoke/AERTEX-Bridge.exe").Path
-          $installed = Join-Path $env:LOCALAPPDATA "QssedA\LocalBridge\AERTEX-Bridge.exe"
-          $log = Join-Path $env:LOCALAPPDATA "QssedA\LocalBridge\bridge.log"
-          $runPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-          $knownPids = @()
-          function Read-BridgeHealth {
-            return Invoke-RestMethod -Uri "http://127.0.0.1:32145/health" -TimeoutSec 2
-          }
-          function Wait-Bridge {
-            for($i = 0; $i -lt 50; $i++) {
-              try {
-                $health = Read-BridgeHealth
-                if($health.service -eq "qsseda-local-bridge" -and
-                   $health.runtime -eq "native-windows" -and
-                   $health.version -like "0.4.0-*" -and
-                   [int]$health.pid -gt 0) { return $health }
-              } catch {}
-              Start-Sleep -Milliseconds 180
+          $ErrorActionPreference = 'Stop'
+          $setup = (Resolve-Path 'bridge-setup/AERTEX-Bridge-Setup.exe').Path
+          $appDir = Join-Path $env:LOCALAPPDATA 'QssedA\LocalBridge'
+          $engine = Join-Path $appDir 'AERTEX-Bridge.exe'
+          $ctl = Join-Path $appDir 'AERTEX-Bridge-Control.exe'
+          $uninstall = Join-Path $appDir 'unins000.exe'
+          $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+          function Health {
+            $h = Invoke-RestMethod -Uri 'http://127.0.0.1:32145/health' -TimeoutSec 3
+            if($h.service -ne 'qsseda-local-bridge' -or $h.protocol -ne 1 -or
+               $h.runtime -ne 'native-windows' -or $h.version -ne '0.3.0-d5e4cfd'){
+              throw 'Wrong Bridge engine on loopback port'
             }
-            throw "Native Bridge health check timed out. Log: $log"
+            return $h
+          }
+          function Setup {
+            $p = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -PassThru
+            if (-not $p.WaitForExit(60000)) { $p.Kill(); throw 'Installer timed out' }
+            if ($p.ExitCode -ne 0) {
+              $log=Join-Path $appDir 'install.log'
+              if(Test-Path $log){Get-Content $log -Tail 25}
+              throw "Setup failed with exit $($p.ExitCode)"
+            }
           }
           try {
-            $install = Start-Process -FilePath $exe -ArgumentList "--install-silent" -PassThru
-            if(-not $install.WaitForExit(25000)) { $install.Kill(); throw "Native installer never returned" }
-            if($install.ExitCode -ne 0) {
-              if(Test-Path $log) { Get-Content $log -Tail 20 }
-              throw "Native installer exited with $($install.ExitCode)"
+            Setup
+            foreach ($file in @($engine,$ctl,$uninstall)) {
+              if (-not (Test-Path $file)) { throw "Missing installed file $file" }
             }
-            if(-not (Test-Path $installed)) { throw "Executable missing after installation" }
-            $run = (Get-ItemProperty -Path $runPath -Name "AERTEX Bridge")."AERTEX Bridge"
-            if(-not $run.Contains($installed) -or -not $run.Contains("--background")) {
-              throw "Incorrect HKCU Run autostart registration: $run"
+            $startup=(Get-ItemProperty -Path $runKey -Name 'AERTEX Bridge' -ErrorAction Stop).'AERTEX Bridge'
+            if($startup -ne ('"' + $engine + '" --background')) { throw 'Login autostart missing or incorrect' }
+            $h=Health
+            & $ctl status $engine
+            if($LASTEXITCODE -ne 0){throw 'Installed PID validation failed'}
+            $tex=Invoke-RestMethod 'http://127.0.0.1:32145/tex/status'
+            if($tex.platform -ne 'win32'){throw 'Original local TeX API is broken'}
+            Write-Host 'Original installed engine verified'
+            Setup
+            $h=Health
+            Write-Host 'In-place upgrade verified'
+            & $ctl stop $engine
+            if($LASTEXITCODE -ne 0){throw 'Stop installed engine failed'}
+            Start-Process -FilePath $engine -ArgumentList '--background' | Out-Null
+            Start-Sleep -Seconds 2
+            $h=Health
+            Write-Host 'Windows-login background startup verified'
+            $u=Start-Process -FilePath $uninstall -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -PassThru
+            if(-not $u.WaitForExit(45000)){ $u.Kill(); throw 'Uninstall timed out' }
+            if($u.ExitCode -ne 0){throw 'Uninstaller exited with error'}
+            if(Test-Path $engine){throw 'Uninstaller left engine on disk'}
+            if(Get-ItemProperty -Path $runKey -Name 'AERTEX Bridge' -ErrorAction SilentlyContinue){
+              throw 'Uninstaller did not remove login autostart'
             }
-            $health = Wait-Bridge
-            $firstPid = [int]$health.pid
-            $knownPids += $firstPid
-            if((Get-Process -Id $firstPid -ErrorAction Stop).ProcessName -ne "AERTEX-Bridge") {
-              throw "Unexpected process owns Bridge port"
-            }
-            Write-Host "Installed and verified Bridge PID $firstPid, version $($health.version)"
-            # Re-running the downloaded installer exercises the real update path:
-            # verify the old image, stop that exact PID, atomically replace it,
-            # register startup again, and confirm a new native process.
-            $upgrade = Start-Process -FilePath $exe -ArgumentList "--install-silent" -PassThru
-            if(-not $upgrade.WaitForExit(25000)) { $upgrade.Kill(); throw "Native upgrade never returned" }
-            if($upgrade.ExitCode -ne 0) {
-              if(Test-Path $log) { Get-Content $log -Tail 20 }
-              throw "Native upgrade exited with $($upgrade.ExitCode)"
-            }
-            $health = Wait-Bridge
-            $upgradedPid = [int]$health.pid
-            $knownPids += $upgradedPid
-            if($upgradedPid -eq $firstPid) { throw "Upgrade did not restart the installed daemon" }
-            Write-Host "Verified in-place upgrade PID $upgradedPid"
-            Stop-Process -Id $upgradedPid -Force
-            Start-Sleep -Milliseconds 700
-
-            # Simulate the login Run command. The installed binary must run
-            # independently after the installing process has exited.
-            $background = Start-Process -FilePath $installed -ArgumentList "--background" -PassThru
-            $knownPids += $background.Id
-            $health = Wait-Bridge
-            if([int]$health.pid -eq $upgradedPid) { throw "Old upgraded process unexpectedly survived restart" }
-            if(-not (Get-Process -Id ([int]$health.pid) -ErrorAction SilentlyContinue)) {
-              throw "Bridge reported health without a running process"
-            }
-            Write-Host "Verified HKCU background startup PID $($health.pid)"
+            try{ $alive=Invoke-RestMethod 'http://127.0.0.1:32145/health' -TimeoutSec 1 }
+            catch{$alive=$null}
+            if($alive){throw 'Uninstaller left a running Bridge'}
+            Write-Host 'All Windows installer smoke checks passed'
           } finally {
-            foreach($bridgePid in $knownPids) {
-              Stop-Process -Id $bridgePid -Force -ErrorAction SilentlyContinue
-            }
-            Remove-ItemProperty -Path $runPath -Name "AERTEX Bridge" -ErrorAction SilentlyContinue
+            Get-Process -Name 'AERTEX-Bridge' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+            Remove-ItemProperty -Path $runKey -Name 'AERTEX Bridge' -ErrorAction SilentlyContinue
           }
 
-  publish-windows:
-    name: Replace EXE at existing authenticated Work download endpoint
-    needs: [build-windows, smoke-windows]
+  publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build-installer, smoke-windows]
     runs-on: ubuntu-latest
     steps:
-      - name: Download Windows Bridge artifact
-        uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v7
         with:
-          name: qsseda-local-bridge-windows-amd64
+          name: aertex-bridge-setup-win-x64
           path: bridge-release
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "24.x"
-
-      - name: Replace the existing R2 download object
+      - name: Replace existing download object with verified setup
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: >-
           npx --yes wrangler@4.136.3 r2 object put
           qsseda-studio-storage/_system/releases/local-bridge/windows-amd64/QssedA-Local-Bridge.exe
-          --file bridge-release/AERTEX-Bridge.exe
+          --file bridge-release/AERTEX-Bridge-Setup.exe
           --remote
