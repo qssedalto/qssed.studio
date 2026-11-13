@@ -790,37 +790,37 @@ export function renderOsNav(copy, activeSection, currentPath = "", productLinks 
     ...(adminHref ? [{ id: "admin-console", label: zh ? "管理员控制台" : "Admin Console", href: adminHref, icon: "admin" }] : [])
   ];
 
-  return `
-    <nav class="os-nav">
-      ${productGroups.length ? `<section class="os-nav-group os-nav-products">
-        ${productGroups.map(group => `
-          <a class="os-nav-title os-nav-product-link" href="${group.href}" target="_blank" rel="noopener noreferrer" data-product-link="${group.id}">
-            ${dashboardIcon(group.icon)}
-            <span>${group.label}</span>
-          </a>
-        `).join("")}
-      </section>` : ""}
-      ${copy.nav.map(group => {
-        const active = group.id === activeSection;
-        return `
-          <section class="os-nav-group os-nav-entry ${active ? "is-active" : ""}" data-nav-section="${group.id}">
-            <a class="os-nav-title${group.items.length ? " has-subnav" : ""}" href="${group.href}">
-              ${dashboardIcon(iconBySection[group.id] || "info")}
-              <span>${group.label}</span>
-            </a>
-            ${group.items.length && active ? `<div class="os-nav-items">
-              ${group.items.map(item => `
-                <a href="${item[1]}"${item[1].endsWith(currentPath) ? ` aria-current="page"` : ""}>
-                  ${dashboardIcon(iconForItem(item[1]))}
-                  <span>${item[0]}</span>
-                </a>
-              `).join("")}
-            </div>` : ""}
-          </section>
-        `;
-      }).join("")}
-    </nav>
-  `;
+  const byId = new Map(copy.nav.map(group => [group.id, group]));
+  const sections = [
+    { id:"products", title:zh ? "AERTEX 产品" : "AERTEX Products", ids:[] },
+    { id:"workspace", title:zh ? "工作空间" : "Workspace", ids:["dashboard","workspace"] },
+    { id:"content", title:zh ? "内容与分享" : "Content & Sharing", ids:["info","wishes"] },
+    { id:"account", title:zh ? "账户与偏好" : "Account & Preferences", ids:["profile","settings"] }
+  ];
+  const renderEntry = group => {
+    if (!group) return "";
+    const active = group.id === activeSection;
+    return `<section class="os-nav-group os-nav-entry ${active ? "is-active" : ""}" data-nav-section="${group.id}">
+      <a class="os-nav-title${group.items.length ? " has-subnav" : ""}" href="${group.href}"${active && group.href === "/" + locale + currentPath ? ' aria-current="page"' : ""}>
+        ${dashboardIcon(iconBySection[group.id] || "info")}<span>${group.label}</span>
+      </a>
+      ${group.items.length && active ? `<div class="os-nav-items">
+        ${group.items.map(item => `<a href="${item[1]}"${item[1] === "/" + locale + currentPath ? ' aria-current="page"' : ""}>
+          ${dashboardIcon(iconForItem(item[1]))}<span>${item[0]}</span></a>`).join("")}
+      </div>` : ""}
+    </section>`;
+  };
+  return `<nav class="os-nav" aria-label="${zh ? "网站导航" : "Site navigation"}">
+    ${sections.map(section => `<div class="os-nav-cluster" data-nav-cluster="${section.id}">
+      <div class="os-nav-cluster-heading">${section.title}</div>
+      ${section.id === "products" ? `<section class="os-nav-group os-nav-products">
+        ${productGroups.map(group => `<a class="os-nav-title os-nav-product-link" href="${group.href}" target="_blank" rel="noopener noreferrer" data-product-link="${group.id}">
+          ${dashboardIcon(group.icon)}<span>${group.label}</span>
+        </a>`).join("")}
+      </section>` : section.ids.map(id => renderEntry(byId.get(id))).join("")}
+    </div>`).join("")}
+  </nav>`;
+
 }
 
 export function renderOsContent(path, copy, productLinks = {}) {
