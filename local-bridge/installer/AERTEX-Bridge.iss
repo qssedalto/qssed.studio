@@ -1,8 +1,8 @@
 ; AERTEX Bridge Windows installation package.
-; Bundles the original 0.3.0-d5e4cfd engine as an installed application.
+; Bundles the original-engine successor with sandboxed multi-file TeX support.
 ; The download is ALWAYS a Setup executable, never a portable daemon.
 
-#define AppVersion "0.5.0"
+#define AppVersion "0.5.1"
 #define AppName "AERTEX Bridge"
 
 [Setup]
@@ -37,7 +37,7 @@ SetupLogging=yes
 
 [Files]
 ; Genuine original-source engine: main_windows.go + upgrade_windows.go from
-; commit d5e4cfd, built with the exact version seen in the user's ZIP.
+; Supports both standalone TeX and carefully validated multi-file projects.
 Source: "..\dist\AERTEX-Bridge.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\AERTEX-Bridge-Control.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; Also extract the controller before Files installation so we can safely

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,7 +30,10 @@ const (
 	protocol         = 1
 	appName          = "AERTEX Bridge"
 	exeName          = "AERTEX-Bridge.exe"
-	maxCompileBody   = 768 * 1024
+	maxCompileBody   = 48 * 1024 * 1024
+	maxProjectBytes  = 32 * 1024 * 1024
+	maxProjectFile   = 8 * 1024 * 1024
+	maxProjectCount  = 499
 	maxSourceBytes   = 512 * 1024
 	maxSourceRunes   = 180000
 	maxResultBytes   = 16 * 1024 * 1024
@@ -37,7 +41,7 @@ const (
 	maxDiagnosticLen = 24000
 )
 
-var version = "0.3.0-dev"
+var version = "0.3.1-dev"
 var compileSlots = make(chan struct{}, 2)
 
 var allowedOrigins = map[string]bool{
@@ -53,9 +57,85 @@ var allowedLocalEngines = map[string]bool{
 }
 
 type compileRequest struct {
-	Engine string `json:"engine"`
-	Source string `json:"source"`
-	Title  string `json:"title,omitempty"`
+	Engine string         `json:"engine"`
+	Source string         `json:"source"`
+	Title  string         `json:"title,omitempty"`
+	Files  []projectAsset `json:"files,omitempty"`
+}
+
+type projectAsset struct {
+	Name     string `json:"name"`
+	Encoding string `json:"encoding"`
+	Content  string `json:"content"`
+}
+
+var localTeXAssetExtensions = map[string]bool{
+	".tex": true, ".sty": true, ".cls": true, ".bib": true, ".bst": true,
+	".bbx": true, ".cbx": true, ".def": true, ".dtx": true, ".ins": true,
+	".ltx": true, ".tikz": true, ".pgf": true, ".png": true, ".jpg": true,
+	".jpeg": true, ".pdf": true, ".eps": true, ".ttf": true, ".otf": true,
+	".txt": true, ".csv": true, ".tsv": true, ".cfg": true,
+}
+
+// Reject traversal, Windows device names and alternate data streams before writing
+// any project asset into the disposable working directory.
+func safeProjectAssetName(name string) bool {
+	if name == "" || len(name) > 240 || strings.ContainsAny(name, "\\\\:<>\"|?*") ||
+		strings.HasPrefix(name, "/") {
+		return false
+	}
+	parts := strings.Split(name, "/")
+	if len(parts) > 20 { return false }
+	for _, part := range parts {
+		if part == "" || part == "." || part == ".." || len(part) > 100 ||
+			strings.HasSuffix(part, ".") || strings.HasSuffix(part, " ") { return false }
+		for _, r := range part { if r < 0x20 || r == 0x7f { return false } }
+		stem := strings.ToLower(strings.SplitN(part, ".", 2)[0])
+		if stem == "con" || stem == "prn" || stem == "aux" || stem == "nul" ||
+			stem == "com1" || stem == "com2" || stem == "com3" || stem == "com4" ||
+			stem == "com5" || stem == "com6" || stem == "com7" || stem == "com8" ||
+			stem == "com9" || stem == "lpt1" || stem == "lpt2" || stem == "lpt3" ||
+			stem == "lpt4" || stem == "lpt5" || stem == "lpt6" || stem == "lpt7" ||
+			stem == "lpt8" || stem == "lpt9" { return false }
+	}
+	lower := strings.ToLower(name)
+	return lower != "main.tex" && lower != "main.pdf" && localTeXAssetExtensions[strings.ToLower(filepath.Ext(name))]
+}
+
+func writeProjectAssets(workDir string, assets []projectAsset) error {
+	if len(assets) > maxProjectCount { return fmt.Errorf("too many project files") }
+	seen := make(map[string]bool, len(assets))
+	total := 0
+	for _, asset := range assets {
+		if !safeProjectAssetName(asset.Name) { return fmt.Errorf("unsafe or unsupported project file: %s", asset.Name) }
+		key := strings.ToLower(asset.Name)
+		if seen[key] { return fmt.Errorf("duplicate project file: %s", asset.Name) }
+		seen[key] = true
+		var data []byte
+		switch asset.Encoding {
+		case "utf8":
+			if !utf8.ValidString(asset.Content) { return fmt.Errorf("invalid UTF-8 in %s", asset.Name) }
+			data = []byte(asset.Content)
+		case "base64":
+			if len(asset.Content) > (maxProjectFile+2)/3*4+8 { return fmt.Errorf("project file too large") }
+			decoded, err := base64.StdEncoding.DecodeString(asset.Content)
+			if err != nil { return fmt.Errorf("invalid base64 project asset") }
+			data = decoded
+		default:
+			return fmt.Errorf("unsupported project asset encoding")
+		}
+		if len(data) > maxProjectFile { return fmt.Errorf("project asset exceeds 8 MiB") }
+		total += len(data)
+		if total > maxProjectBytes { return fmt.Errorf("project exceeds 32 MiB") }
+		target := filepath.Join(workDir, filepath.FromSlash(asset.Name))
+		rel, err := filepath.Rel(workDir, target)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return fmt.Errorf("project file escapes temporary directory")
+		}
+		if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil { return err }
+		if err := os.WriteFile(target, data, 0600); err != nil { return err }
+	}
+	return nil
 }
 
 func main() {
@@ -304,7 +384,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 		"protocol":     protocol,
 		"version":      version,
 		"runtime":      "native-windows",
-		"capabilities": []string{"health", "tex.status", "tex.compile", "native.autostart"},
+		"capabilities": []string{"health", "tex.status", "tex.compile", "tex.project-files", "native.autostart"},
 	})
 }
 
@@ -404,6 +484,10 @@ func handleTexCompile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer os.RemoveAll(workDir)
+	if err := writeProjectAssets(workDir, payload.Files); err != nil {
+		sendJSON(w, http.StatusBadRequest, map[string]any{"error": "Project files rejected: " + err.Error()})
+		return
+	}
 
 	sourcePath := filepath.Join(workDir, "main.tex")
 	if err := os.WriteFile(sourcePath, []byte(payload.Source), 0o600); err != nil {
