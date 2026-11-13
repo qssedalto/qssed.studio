@@ -43,7 +43,7 @@ for (const zh of [true, false]) {
   // A second inline card above an unhidden CodeMirror was showing both files at once.
   assert(WORK_TEX_EXPLORER_STYLE.includes("#tex-editor.is-asset-mode > .tex-codemirror-host"),
     "Selecting any non-main file must hide the actual CodeMirror host, not only a direct .cm-editor");
-  assert(/#tex-editor\\.is-asset-mode\\s*>\\s*\\.tex-codemirror-host[\\s\\S]*?display:none!important/.test(WORK_TEX_EXPLORER_STYLE),
+  assert(/#tex-editor\.is-asset-mode\s*>\s*\.tex-codemirror-host[\s\S]*?display:none!important/.test(WORK_TEX_EXPLORER_STYLE),
     "The main editor must be invisible while a supplementary asset occupies the editor");
   assert(WORK_TEX_EXPLORER_STYLE.includes("#tex-editor.is-asset-mode > .tex-inline-file-viewer") &&
     WORK_TEX_EXPLORER_STYLE.includes("grid-row:3;grid-column:1") &&
