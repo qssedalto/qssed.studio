@@ -61,31 +61,54 @@ type compileRequest struct {
 func main() {
 	args := os.Args[1:]
 	if hasArg(args, "--background") {
-		_ = runBridge()
+		logBridgeEvent("background worker invoked", nil)
+		if err := runBridge(); err != nil {
+			logBridgeEvent("background worker stopped", err)
+			os.Exit(2)
+		}
+		return
+	}
+	if hasArg(args, "--status") {
+		showMessage(appName+" · 状态检查", bridgeStatusText(), false)
 		return
 	}
 	if hasArg(args, "--uninstall") {
 		if err := uninstallAutostart(); err != nil {
-			showMessage(appName, "卸载自动启动失败：\n"+err.Error(), true)
+			logBridgeEvent("remove autostart failed", err)
+			showMessage(appName, "取消开机启动失败：\n"+err.Error(), true)
 			return
 		}
-		showMessage(appName, "已移除 AERTEX Bridge 的自动启动。\n已安装的 EXE 会保留在本机，便于检查或手动删除。", false)
+		logBridgeEvent("per-user autostart removed", nil)
+		showMessage(appName, "已取消当前用户的自动启动。\n这不会删除项目文件，也不会卸载 TeX Live。", false)
 		return
 	}
 
-	installedExe, err := installSelf()
+	silent := hasArg(args, "--install-silent") // Windows CI and managed installs.
+	health, err := installAndVerify()
 	if err != nil {
-		showMessage(appName, "安装失败：\n"+err.Error(), true)
+		logBridgeEvent("install/startup verification failed", err)
+		if silent {
+			os.Exit(1)
+		}
+		showMessage(appName, "安装或启动失败，不能确认 Bridge 正在后台运行。\n\n"+err.Error()+
+			"\n\n诊断日志：\n%LOCALAPPDATA%\\QssedA\\LocalBridge\\bridge.log", true)
 		return
 	}
-	_ = launchBackground(installedExe)
+	if silent {
+		return
+	}
 
 	tex := findTeXExecutable("xelatex")
-	message := "AERTEX Bridge 已安装。\n\n以后登录 Windows 后会自动在后台启动，不需要 Node.js，也不需要 PowerShell。"
+	message := "AERTEX Bridge 已安装并确认正在运行。\n" +
+		"进程 PID: " + strconv.Itoa(health.PID) + "\n" +
+		"当前版本: " + health.Version + "\n\n" +
+		"已注册当前 Windows 账户登录后的自动启动。\n" +
+		"这是无控制台的后台程序；可在任务管理器「详细信息」页找到 AERTEX-Bridge.exe。\n\n" +
+		"重新打开已安装程序并添加 --status 参数可以检查连接。"
 	if tex != "" {
 		message += "\n\n已检测到 XeLaTeX：\n" + tex
 	} else {
-		message += "\n\n暂未检测到 XeLaTeX；Bridge 本身仍可正常运行。"
+		message += "\n\n暂未检测到 XeLaTeX；Bridge 连接仍可正常运行。"
 	}
 	showMessage(appName, message, false)
 }
@@ -205,10 +228,9 @@ func copyFile(src, dst string) error {
 		_ = os.Remove(tmp)
 		return closeErr
 	}
-	_ = os.Remove(dst)
-	if err := os.Rename(tmp, dst); err != nil {
+	if err := replaceInstalledExecutable(tmp, dst); err != nil {
 		_ = os.Remove(tmp)
-		return err
+		return fmt.Errorf("replace installed executable: %w", err)
 	}
 	return nil
 }
@@ -217,16 +239,6 @@ func samePath(a, b string) bool {
 	return strings.EqualFold(filepath.Clean(a), filepath.Clean(b))
 }
 
-func launchBackground(executable string) error {
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort(bridgeHost, bridgePort), 250*time.Millisecond)
-	if err == nil {
-		_ = conn.Close()
-		return nil
-	}
-	cmd := exec.Command(executable, "--background")
-	hideWindow(cmd)
-	return cmd.Start()
-}
 
 func runBridge() error {
 	mux := http.NewServeMux()
@@ -242,7 +254,13 @@ func runBridge() error {
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       30 * time.Second,
 	}
-	return server.ListenAndServe()
+	listener, err := net.Listen("tcp", server.Addr)
+	if err != nil {
+		return fmt.Errorf("cannot bind local bridge on %s: %w", server.Addr, err)
+	}
+	defer listener.Close()
+	logBridgeEvent("listening on 127.0.0.1:"+bridgePort, nil)
+	return server.Serve(listener)
 }
 
 // 本机桥接先限制 Host 与 Origin，再路由到能力端点；localhost 并不代表任何网页都应获得调用权限。
@@ -304,6 +322,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 		"protocol":     protocol,
 		"version":      version,
 		"runtime":      "native-windows",
+		"pid":          os.Getpid(),
 		"capabilities": []string{"health", "tex.status", "tex.compile", "native.autostart"},
 	})
 }
