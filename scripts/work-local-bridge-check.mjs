@@ -199,12 +199,19 @@ assert(nativeWorkflow.includes('BRIDGE_VERSION: "0.3.2-multipass"') &&
   nativeWorkflow.includes("-X main.expectedVersion=$env:BRIDGE_VERSION") &&
   nativeWorkflow.includes("$h.version -ne $env:BRIDGE_VERSION"),
   "Bridge engine, Windows installer controller and health smoke test must share ONE version source");
+assert(bridgeControl.includes('filepath.Join(dir,"QssedA-Local-Bridge.exe")') &&
+  bridgeControl.includes('filepath.Base(installed)') &&
+  bridgeControl.includes('strings.EqualFold(filepath.Clean(current),filepath.Clean(target))'),
+  "Installer migration must stop only exact-path AERTEX and legacy Bridge processes");
+assert(installer.includes("DeleteFile(ExpandConstant('{app}\\QssedA-Local-Bridge.exe'))") &&
+  nativeWorkflow.includes("Legacy QssedA-Local-Bridge.exe upgrade verified"),
+  "After verifying the replacement engine, delete the retired executable and CI-test legacy upgrades");
 assert(bridgeControl.includes('var expectedVersion="0.3.2-multipass"'),
   "The Windows installer controller fallback version must match the compiled Bridge engine");
 assert(nativeBridge.includes("logBridgeStartupFailure(err)") &&
   nativeBridge.includes('"bridge.log"'),
   "A Windows-login Bridge start failure must leave a readable local diagnosis log");
-assert(installer.includes('#define AppVersion "0.5.3"'),
+assert(installer.includes('#define AppVersion "0.5.4"'),
   "The Windows installer version must change after fixing the previous failed-release controller");
 assert(nativeWorkflow.includes("-H=windowsgui"), "Native Bridge build should not open a console window for ordinary users");
 assert(nativeWorkflow.includes("wrangler@4.136.3 r2 object put"), "Native Bridge workflow must publish the built EXE to R2 with the pinned Wrangler version");
