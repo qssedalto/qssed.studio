@@ -722,7 +722,23 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           syncingFromSource = true;
           try {
             const transaction = {};
-            if (current !== next) transaction.changes = { from: 0, to: current.length, insert: next };
+            if (current !== next) {
+              // Remote Yjs changes are often only one character. Replacing the
+              // entire document made CodeMirror's selection mapping/viewport
+              // unstable, even though the hidden textarea contained new text.
+              // Apply the smallest changed span so peer cursors remain stable.
+              let from = 0;
+              while (from < current.length && from < next.length &&
+                current.charCodeAt(from) === next.charCodeAt(from)) from++;
+              let oldEnd = current.length;
+              let nextEnd = next.length;
+              while (oldEnd > from && nextEnd > from &&
+                current.charCodeAt(oldEnd - 1) === next.charCodeAt(nextEnd - 1)) {
+                oldEnd--;
+                nextEnd--;
+              }
+              transaction.changes = { from, to: oldEnd, insert: next.slice(from, nextEnd) };
+            }
             transaction.selection = { anchor, head };
             view.dispatch(transaction);
           } finally {
