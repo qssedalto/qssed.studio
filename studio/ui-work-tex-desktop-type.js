@@ -445,9 +445,17 @@ export function enhanceWorkTexDesktopTypography(markup) {
         function renderWarmAvatars(data) {
           const host = document.querySelector('#tex-collaboration-open .tex-collaboration-avatars');
           if (!host || !Array.isArray(data?.participants)) return;
+          const unique = new Map();
+          for (const person of data.participants) {
+            const id = String(person?.id || person?.username || '').trim();
+            if (id && !unique.has(id)) unique.set(id, person);
+          }
+          const participants = [...unique.values()];
+          const key = JSON.stringify(participants.map(p=>[p.id||p.username,p.display_name,p.avatar_url]));
+          if (host.dataset.memberKey === key) return;
+          host.dataset.memberKey = key;
           host.replaceChildren();
-          const participants = data.participants.slice(0, 3);
-          for (const participant of participants) {
+          for (const participant of participants.slice(0, 4)) {
             const avatar = document.createElement('span');
             avatar.className = 'tex-collaboration-avatar-dot';
             if (participant?.avatar_url) {
@@ -461,12 +469,13 @@ export function enhanceWorkTexDesktopTypography(markup) {
             }
             host.append(avatar);
           }
-          if (data.participants.length > 3) {
+          if (participants.length > 4) {
             const more = document.createElement('span');
-            more.className = 'tex-collaboration-avatar-dot';
-            more.textContent = '+' + String(data.participants.length - 3);
+            more.className = 'tex-collaboration-avatar-overflow';
+            more.textContent = '+' + String(participants.length - 4);
             host.append(more);
           }
+          host.title = participants.length ? participants.length + ' participants' : '';
         }
 
         async function prefetchCollaboration(root, documentList) {
@@ -474,6 +483,9 @@ export function enhanceWorkTexDesktopTypography(markup) {
           if (!id) return;
           const cached = readCollaborationSnapshot(id);
           if (cached?.data) renderWarmAvatars(cached.data);
+          // The collaboration controller already owns authenticated fetches.
+          // Do not start a second request for the same file on every tree event.
+          if (window.__qssedaCollaborationOwnsPrefetch) return;
           try {
             const response = await nativeFetch('/api/tex/collaboration?document=' + encodeURIComponent(id), {
               credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' }
@@ -529,10 +541,15 @@ export function enhanceWorkTexDesktopTypography(markup) {
           }
 
           let scheduled = 0;
+          let warmedDocumentId = null;
           const warm = () => {
+            const nextId = activeDocumentId(root, documentList);
+            if (nextId === warmedDocumentId) return;
+            warmedDocumentId = nextId;
             window.clearTimeout(scheduled);
             scheduled = window.setTimeout(() => {
               const id = activeDocumentId(root, documentList);
+              if (id !== nextId || !id) return;
               const cached = readCollaborationSnapshot(id);
               if (cached?.data) renderWarmAvatars(cached.data);
               void prefetchCollaboration(root, documentList);
