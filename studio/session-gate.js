@@ -77,6 +77,7 @@ export async function verifyStudioPageSession(request) {
   };
 
   let temporarilyUnavailable = false;
+  let refreshRecoveryCookies = [];
   if (accessToken) {
     const verified = await verifyAccessToken(accessToken);
     if (verified.ok && identityMatches(verified.user.id)) {
@@ -93,13 +94,14 @@ export async function verifyStudioPageSession(request) {
     if (result.kind === "unavailable") temporarilyUnavailable = true;
     if (result.kind === "ok") {
       const refreshed = result.payload;
+      refreshRecoveryCookies = studioSessionCookies(refreshed.access_token, refreshed.refresh_token, refreshed.expires_in, request);
       const verified = await verifyAccessToken(refreshed.access_token);
       if (verified.ok && identityMatches(verified.user.id)) {
         return {
           ok: true,
           user: verified.user,
           accessToken: refreshed.access_token,
-          cookies: studioSessionCookies(refreshed.access_token, refreshed.refresh_token, refreshed.expires_in, request)
+          cookies: refreshRecoveryCookies
         };
       }
       if (verified.temporary) temporarilyUnavailable = true;
@@ -110,7 +112,7 @@ export async function verifyStudioPageSession(request) {
   // session cookie. A retry can recover; only definitive invalidity clears it.
   if (temporarilyUnavailable) {
     workerLog("warn", "session_gate.temporarily_unavailable", { host: hostname });
-    return { ok: false, temporary: true, accessToken: "", cookies: [] };
+    return { ok: false, temporary: true, accessToken: "", cookies: refreshRecoveryCookies };
   }
   return {
     ok: false,
