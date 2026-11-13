@@ -15,6 +15,7 @@ on:
       - "auth-pkce-test.js"
       - "auth-edge-protection.js"
       - "scripts/auth-edge-protection-check.mjs"
+      - "scripts/auth-password-mask-check.mjs"
       - "scripts/native-app-profile-api-check.mjs"
       - "scripts/appearance-check.mjs"
       - "scripts/brand-check.mjs"
@@ -38,6 +39,7 @@ on:
       - "auth-pkce-test.js"
       - "auth-edge-protection.js"
       - "scripts/auth-edge-protection-check.mjs"
+      - "scripts/auth-password-mask-check.mjs"
       - "scripts/appearance-check.mjs"
       - "scripts/brand-check.mjs"
       - "wrangler.auth.jsonc"
@@ -72,12 +74,16 @@ jobs:
           node --check auth-pkce-test.js
           node --check auth-edge-protection.js
           node --check scripts/auth-edge-protection-check.mjs
+          node --check scripts/auth-password-mask-check.mjs
           node --check scripts/native-app-profile-api-check.mjs
           node --check scripts/appearance-check.mjs
           node --check scripts/brand-check.mjs
 
       - name: Verify native AERTEX profile API
         run: node scripts/native-app-profile-api-check.mjs
+
+      - name: Verify iPad Safari password mask rendering contract
+        run: node scripts/auth-password-mask-check.mjs
 
       - name: Verify Auth edge anti-crawl and surge protection
         run: node scripts/auth-edge-protection-check.mjs
