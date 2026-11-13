@@ -297,8 +297,8 @@ assert(script.includes("__aertexMobileMarkdown"), "Mobile-only improved Markdown
 assert(!script.includes("toolbar.append(save)") && !script.includes("footer.prepend(save)"),
   "Touch resize must never move the live save status away from the project title");
 new Function(script);
-assert(WORK_TEX_EXPLORER_TREE.includes("!touchCompact()&&openProjects.size===0"), "Mobile must never auto-open every folder.");
-assert(WORK_TEX_EXPLORER_TREE.includes("sub.hidden=touchCompact()"), "Nested folders must initially be closed on touch screens.");
+assert(WORK_TEX_EXPLORER_TREE.includes("!initialExpansionHandled&&buttons.length&&!touchCompact()") && WORK_TEX_EXPLORER_TREE.includes("id===initialId"), "Mobile must never auto-expand projects; desktop may expand only one initial project.");
+assert(WORK_TEX_EXPLORER_TREE.includes("sub.hidden=!openFolders.has(key)"), "Nested folders must remain closed unless a user explicitly expanded their folder.");
 assert(WORK_TEX_EXPLORER_TREE.includes("pendingDocuments"), "First project expansion must reuse pending requests.");
 assert(WORK_TEX_EXPLORER_TREE.includes("window.__aertexMobileMarkdown"), "Mobile Markdown preview must use the safe parser.");
 assert(entry.includes("enhanceWorkTexMobileQa(enhanceTexProjectControls(markup, zh))"), "Only Work TeX pages should load the mobile repair.");
