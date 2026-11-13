@@ -6,6 +6,7 @@ import (
   "encoding/json"
   "errors"
   "fmt"
+  "io"
   "net"
   "net/http"
   "os"
@@ -61,7 +62,7 @@ func probeNativeHealth() (nativeHealth,error) {
   defer resp.Body.Close()
   if resp.StatusCode!=http.StatusOK {return nativeHealth{},fmt.Errorf("health status HTTP %d",resp.StatusCode)}
   var health nativeHealth
-  if err:=json.NewDecoder(http.MaxBytesReader(nil,resp.Body,4*1024)).Decode(&health);err!=nil {return nativeHealth{},err}
+  if err:=json.NewDecoder(io.LimitReader(resp.Body,4*1024)).Decode(&health);err!=nil {return nativeHealth{},err}
   if health.Service!=bridgeService||health.Protocol!=protocol||health.Runtime!="native-windows" {
     return nativeHealth{},errors.New("localhost port belongs to an unexpected service")
   }
@@ -85,7 +86,6 @@ func preflightUpgrade() error {
   if samePath(current,installed) {return nil}
   health,err:=probeNativeHealth()
   if err==nil {
-    if health.Version==version {return nil}
     if err:=stopVerifiedBridgeForUpgrade();err!=nil {
       return fmt.Errorf("existing Bridge could not be stopped safely: %w",err)
     }
