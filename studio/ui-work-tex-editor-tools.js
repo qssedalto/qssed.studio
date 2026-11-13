@@ -481,12 +481,13 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         undoButton.addEventListener('click', () => { source.focus(); document.execCommand('undo'); });
         redoButton.addEventListener('click', () => { source.focus(); document.execCommand('redo'); });
 
+        const activeFileText=()=>String(window.__aertexTexExplorerEditableText?.() ?? source.value ?? '');
         function sourceSelection() {
           // CodeMirror mirrors the source into the hidden textarea, but its own
           // selection is authoritative when the enhanced editor is active.
           const bridge = window.__qssedaTexEditorBridge;
           const selection = bridge?.getSelection?.();
-          const maximum = source.value.length;
+          const maximum = activeFileText().length;
           const clamp = value => Math.max(0, Math.min(maximum, Number(value) || 0));
           const anchor = clamp(selection?.anchor ?? source.selectionStart);
           const head = clamp(selection?.head ?? source.selectionEnd);
@@ -494,7 +495,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         }
 
         const canEditSource = () => !editor.hidden && Boolean(activeDocumentId()) &&
-          !source.readOnly && root.dataset.texCollaborationAccessRole !== 'viewer';
+          !source.readOnly && root.dataset.texCollaborationAccessRole !== 'viewer' &&
+          !(window.__aertexTexExplorerAsset?.()?.main === false && root.dataset.texCollaborationAccessRole === 'editor');
 
         async function writeClipboard(text) {
           if (navigator.clipboard?.writeText) {
@@ -520,7 +522,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           if (!canEditSource()) return;
           const { start, end } = sourceSelection();
           if (start === end) return;
-          const selectionText = source.value.slice(start, end);
+          const selectedName = window.__aertexTexExplorerAsset?.()?.name;
+          const selectionText = activeFileText().slice(start, end);
           if (!await writeClipboard(selectionText)) {
             showMessage(labels.cutFailed, true);
             return;
@@ -529,7 +532,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           // trigger an accidental deletion after an asynchronous clipboard call.
           const current = sourceSelection();
           if (start !== current.start || end !== current.end ||
-              source.value.slice(start, end) !== selectionText || !canEditSource()) return;
+              activeFileText().slice(start, end) !== selectionText ||
+              selectedName !== window.__aertexTexExplorerAsset?.()?.name || !canEditSource()) return;
           const bridge = window.__qssedaTexEditorBridge;
           if (!bridge?.replaceSelection?.('')) {
             source.setRangeText('', start, end, 'start');
@@ -546,7 +550,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           if (copyButton.disabled) return;
           const { start, end } = sourceSelection();
           if (start === end) return;
-          const text = source.value.slice(start, end);
+          const text = activeFileText().slice(start, end);
           if (await writeClipboard(text)) {
             window.__aertexTexClipboardKnown = text;
             window.dispatchEvent(new CustomEvent('aertex:tex-clipboard-changed'));
@@ -625,7 +629,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
 
         const syncDisabled = () => {
           const noDocument = editor.hidden || !activeDocumentId();
-          const readOnly = source.readOnly || root.dataset.texCollaborationAccessRole === 'viewer';
+          const readOnly = source.readOnly || root.dataset.texCollaborationAccessRole === 'viewer' ||
+            (window.__aertexTexExplorerAsset?.()?.main === false && root.dataset.texCollaborationAccessRole === 'editor');
           [saveButton, undoButton, redoButton, renameButton].forEach(button => {
             button.disabled = noDocument || readOnly;
           });
@@ -646,6 +651,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         ['select', 'keyup', 'pointerup', 'input'].forEach(type => source.addEventListener(type, syncDisabled));
         window.addEventListener('aertex:tex-clipboard-changed', syncDisabled);
         window.addEventListener('aertex:tex-project-asset-selected', syncDisabled);
+        window.addEventListener('aertex:tex-asset-selection-changed', syncDisabled);
         // Browser clipboard-read permission is not universal; only check it
         // when the current browser explicitly grants access, without prompting.
         async function checkExternalClipboard() {
