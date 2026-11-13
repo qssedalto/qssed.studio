@@ -39,6 +39,16 @@ assert(editor.includes("streamLanguageClass.define(parser)") &&
   "Project files must receive matching CodeMirror syntax highlighting");
 
 const visual = await readFile(resolve(root, "studio/ui-work-tex-organize-ui.js"), "utf8");
+const markdownVisual = await readFile(resolve(root, "studio/ui-work-tex-markdown-visual.js"), "utf8");
+assert(markdownVisual.includes("document.createElement('select')") &&
+  markdownVisual.includes("viewSelect.id = 'tex-markdown-editor-mode'") &&
+  markdownVisual.includes("engineLabel.parentElement.insertBefore(tabs,engineLabel)") &&
+  markdownVisual.includes("viewSelect.addEventListener('change'"),
+  "Markdown files must reuse the native TeX-style editor selector next to the engine, not a file-header segmented control");
+assert(!markdownVisual.includes("sourceLabel.insertBefore(tabs") &&
+  !markdownVisual.includes("sourceButton.addEventListener"),
+  "No duplicate oversized Markdown buttons may clutter the file toolbar");
+
 assert(editor.includes("import('/assets/tex/codemirror.js')") ||
   editor.includes("timedModule('/assets/tex/codemirror.js'"),
   "CodeMirror must load exclusively from the Work origin");
