@@ -3,11 +3,11 @@
 // for existing autosave, history, deletion and compilation event handlers.
 export function enhanceWorkTexCompileToolbar(markup, zh) {
   const copy = zh ? {
-    compile: "立即编译", busy: "正在编译", success: "编译成功", failure: "编译失败",
+    compile: "立即编译", busy: "正在编译", success: "编译成功", failure: "编译失败", pending: "源码已修改，等待编译",
     download: "下载日志", unnamed: "未命名 TeX 文档",
     logFallback: "编译失败，但编译器没有返回详细日志。"
   } : {
-    compile: "Compile now", busy: "Compiling", success: "Compiled successfully", failure: "Compile failed",
+    compile: "Compile now", busy: "Compiling", success: "Compiled successfully", failure: "Compile failed", pending: "Changes waiting to compile",
     download: "Download log", unnamed: "Untitled TeX document",
     logFallback: "Compilation failed without a detailed compiler log."
   };
@@ -113,13 +113,31 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
     cursor:not-allowed!important;opacity:.34!important
   }
   .tex-work-app .tex-compile-vector{
-    display:block;width:31px;height:31px;position:absolute;top:4px;left:4px;
+    display:block;width:25px;height:25px;position:absolute;top:7px;left:7px;
     pointer-events:none;color:color-mix(in srgb,var(--text) 84%,var(--surface))
   }
   .tex-work-app .tex-compile-vector svg{display:block;width:100%;height:100%;overflow:visible}
   .tex-work-app .tex-compile-fixed:has(#tex-compile:disabled) .tex-compile-vector{opacity:.34}
   .tex-work-app .tex-compile-fixed:has(#tex-compile:hover:not(:disabled)) .tex-compile-vector{
     color:var(--text)
+  }
+  /* Every build (automatic preview or manual) uses the selected AERTEX
+     theme accent. Do not make the disabled native button fade its SVG while busy. */
+  body.os-shell:has(.tex-work-app) .tex-work-app .tex-compile-fixed.is-compiling .tex-compile-vector{
+    color:var(--primary,#9caefa)!important;opacity:1!important;
+    transform-origin:center;animation:aertex-tex-compile-breathe 1.15s ease-in-out infinite
+  }
+  body.os-shell:has(.tex-work-app) .tex-work-app .tex-compile-fixed.is-compiling #tex-compile:disabled{
+    opacity:1!important;cursor:progress!important
+  }
+  @keyframes aertex-tex-compile-breathe{
+    0%,100%{transform:scale(1);opacity:1}
+    50%{transform:scale(.93);opacity:.72}
+  }
+  @media(prefers-reduced-motion:reduce){
+    body.os-shell:has(.tex-work-app) .tex-work-app .tex-compile-fixed.is-compiling .tex-compile-vector{
+      animation:none!important;opacity:1!important
+    }
   }
   /* Remove the entire obsolete footer strip, including its minimum-height,
      borders and grid track. Never delete the original controls: commands
@@ -157,8 +175,13 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
   // No hand-redrawn paths: only replace the original blue brand fill with
   // currentColor so the 39px toolbar icon matches monochrome command icons.
   const workflowSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M10.984 13.836a.5.5 0 0 1-.353-.146l-.745-.743a.5.5 0 1 1 .706-.708l.392.391 1.181-1.18a.5.5 0 0 1 .708.707l-1.535 1.533a.504.504 0 0 1-.354.146zm9.353-.147l1.534-1.532a.5.5 0 0 0-.707-.707l-1.181 1.18-.392-.391a.5.5 0 1 0-.706.708l.746.743a.497.497 0 0 0 .706-.001zM4.527 7.452l2.557-1.585A1 1 0 0 0 7.09 4.17L4.533 2.56A1 1 0 0 0 3 3.406v3.196a1.001 1.001 0 0 0 1.527.85zm2.03-2.436L4 6.602V3.406l2.557 1.61zM24 12.5c0 1.93-1.57 3.5-3.5 3.5a3.503 3.503 0 0 1-3.46-3h-2.08a3.503 3.503 0 0 1-3.46 3 3.502 3.502 0 0 1-3.46-3h-.558c-.972 0-1.85-.399-2.482-1.042V17c0 1.654 1.346 3 3 3h.04c.244-1.693 1.7-3 3.46-3 1.93 0 3.5 1.57 3.5 3.5S13.43 24 11.5 24a3.502 3.502 0 0 1-3.46-3H8c-2.206 0-4-1.794-4-4V9.899A5.008 5.008 0 0 1 0 5c0-2.757 2.243-5 5-5s5 2.243 5 5a5.005 5.005 0 0 1-4.952 4.998A2.482 2.482 0 0 0 7.482 12h.558c.244-1.693 1.7-3 3.46-3a3.502 3.502 0 0 1 3.46 3h2.08a3.503 3.503 0 0 1 3.46-3c1.93 0 3.5 1.57 3.5 3.5zm-15 8c0 1.378 1.122 2.5 2.5 2.5s2.5-1.122 2.5-2.5-1.122-2.5-2.5-2.5S9 19.122 9 20.5zM5 9c2.206 0 4-1.794 4-4S7.206 1 5 1 1 2.794 1 5s1.794 4 4 4zm9 3.5c0-1.378-1.122-2.5-2.5-2.5S9 11.122 9 12.5s1.122 2.5 2.5 2.5 2.5-1.122 2.5-2.5zm9 0c0-1.378-1.122-2.5-2.5-2.5S18 11.122 18 12.5s1.122 2.5 2.5 2.5 2.5-1.122 2.5-2.5zm-13 8a.5.5 0 1 0 1 0 .5.5 0 0 0-1 0zm2 0a.5.5 0 1 0 1 0 .5.5 0 0 0-1 0zm12 0c0 1.93-1.57 3.5-3.5 3.5a3.503 3.503 0 0 1-3.46-3.002c-.007.001-.013.005-.021.005l-.506.017h-.017a.5.5 0 0 1-.016-.999l.506-.017c.018-.002.035.006.052.007A3.503 3.503 0 0 1 20.5 17c1.93 0 3.5 1.57 3.5 3.5zm-1 0c0-1.378-1.122-2.5-2.5-2.5S18 19.122 18 20.5s1.122 2.5 2.5 2.5 2.5-1.122 2.5-2.5z"/></svg>';
-  const successSvg = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="#4a894a"/><path d="m7.7 12.25 2.95 2.85 5.85-6.55" fill="none" stroke="#fff" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  const failedSvg = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="#b93535"/><path d="M8.2 8.2 15.8 15.8M15.8 8.2 8.2 15.8" fill="none" stroke="#fff" stroke-width="1.65" stroke-linecap="round"/></svg>';
+  // The reference warning glyph is a neutral slate disk with a softly
+  // rounded white triangle/exclamation. SVG stays crisp in light/dark modes.
+  const pendingSvg = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11.3" fill="#5e646e"/><path d="M10.65 7.04a1.55 1.55 0 0 1 2.7 0l4.35 7.63a1.7 1.7 0 0 1-1.48 2.53H7.78a1.7 1.7 0 0 1-1.48-2.53Z" fill="#f8f9fb"/><rect x="11.43" y="9.56" width="1.14" height="2.90" rx=".57" fill="#5e646e"/><circle cx="12" cy="14.16" r=".66" fill="#5e646e"/></svg>';
+  // Real cutouts, not painted-on white checks/crosses: any background under
+  // the icon stays visible through the transparent alpha mask.
+  const successSvg = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><defs><mask id="aertex-build-check-cutout" maskUnits="userSpaceOnUse"><rect width="24" height="24" fill="#fff"/><path d="m7.7 12.25 2.95 2.85 5.85-6.55" fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></mask></defs><circle cx="12" cy="12" r="11" fill="#4a894a" mask="url(#aertex-build-check-cutout)"/></svg>';
+  const failedSvg = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><defs><mask id="aertex-build-cross-cutout" maskUnits="userSpaceOnUse"><rect width="24" height="24" fill="#fff"/><path d="M8.2 8.2 15.8 15.8M15.8 8.2 8.2 15.8" fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round"/></mask></defs><circle cx="12" cy="12" r="11" fill="#b93535" mask="url(#aertex-build-cross-cutout)"/></svg>';
   const script = `
 <script id="aertex-tex-compile-toolbar-runtime">
 (() => {
@@ -168,6 +191,7 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
   const workflowSvg=__WORKFLOW__;
   const successSvg=__SUCCESS__;
   const failedSvg=__FAILED__;
+  const pendingSvg=__PENDING__;
   const start=()=>{
     const root=document.querySelector('.tex-work-app[data-tex-root]');
     const toolbar=root?.querySelector('.tex-editor-toolbar');
@@ -211,6 +235,9 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
     logButton.hidden=true;
     let currentLog='';
     let currentId='';
+    let sourceRevision=0;
+    let startedRevision=0;
+    let running=false;
     const activeId=()=>String(root.dataset.texCollaborationDocumentId||
       root.querySelector('.tex-document-item.is-active')?.dataset.texDocumentId||'');
     function resetIndicator(){
@@ -218,13 +245,37 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
       indicator.hidden=true;
       indicator.replaceChildren();
       indicator.removeAttribute('title');
+      indicator.removeAttribute('aria-label');
       logButton.hidden=true;
+    }
+    function pendingIndicator(){
+      currentLog='';
+      indicator.innerHTML=pendingSvg;
+      indicator.hidden=false;
+      indicator.title=labels.pending;
+      indicator.setAttribute('aria-label',labels.pending);
+      logButton.hidden=true;
+    }
+    function setRunning(value){
+      running=Boolean(value);
+      fixed.classList.toggle('is-compiling',running);
+      compile.title=running?labels.busy:labels.compile;
+      compile.setAttribute('aria-label',compile.title);
+    }
+    function markDirty(){
+      sourceRevision++;
+      pendingIndicator();
     }
     function syncTitle(){
       const id=activeId();
       const value=String(title.value||labels.unnamed);
       if(currentId!==id||heading.textContent!==value){
-        if(currentId!==id)resetIndicator();
+        if(currentId!==id){
+          sourceRevision=0;
+          startedRevision=0;
+          setRunning(false);
+          resetIndicator();
+        }
         currentId=id;
         heading.textContent=value;
         heading.title=value;
@@ -252,13 +303,34 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
       currentLog=ok?'':String(log||labels.logFallback);
       logButton.hidden=Boolean(ok);
     };
-    window.addEventListener('aertex:tex-build-result',event=>{
-      const data=event.detail||{};
-      if(data.documentId&&activeId()&&String(data.documentId)!==activeId())return;
+    // Actual events are emitted by the local preview/compiler for BOTH
+    // automatic and user-triggered builds. The native button may be disabled
+    // during execution, but the vector keeps pulsing in the chosen theme color.
+    const isActiveBuild=event=>{
+      const id=String(event?.detail?.documentId||'');
+      return !id||!activeId()||id===activeId();
+    };
+    window.addEventListener('aertex:tex-build-started',event=>{
+      if(!isActiveBuild(event))return;
       syncTitle();
-      status(Boolean(data.ok),data.log);
+      startedRevision=sourceRevision;
+      setRunning(true);
+      resetIndicator();
     });
-    window.addEventListener('aertex:tex-build-started',()=>resetIndicator());
+    window.addEventListener('aertex:tex-build-result',event=>{
+      if(!isActiveBuild(event))return;
+      syncTitle();
+      setRunning(false);
+      if(sourceRevision>startedRevision)pendingIndicator();
+      else status(Boolean(event.detail?.ok),event.detail?.log);
+    });
+    // A compile can become stale when the user continues editing; it then
+    // intentionally has no result event. Always remove blue on completion.
+    window.addEventListener('aertex:tex-build-finished',event=>{
+      if(!isActiveBuild(event))return;
+      setRunning(false);
+      if(sourceRevision>startedRevision)pendingIndicator();
+    });
     logButton.addEventListener('click',()=>{
       if(!currentLog)return;
       const fileName=(heading.textContent||'AERTEX')
@@ -273,14 +345,17 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
       link.remove();
       window.setTimeout(()=>URL.revokeObjectURL(url),1000);
     });
-    root.querySelector('#tex-source')?.addEventListener('input',resetIndicator);
+    root.querySelector('#tex-source')?.addEventListener('input',markDirty);
     title.addEventListener('input',syncTitle);
     const list=root.querySelector('#tex-document-list');
     const observer=list?new MutationObserver(syncTitle):null;
     observer?.observe(list,{childList:true,subtree:true,characterData:true});
     window.addEventListener('aertex:tex-file-updated',syncTitle);
     window.addEventListener('aertex:tex-project-asset-selected',syncTitle);
-    window.addEventListener('pagehide',()=>observer?.disconnect(),{once:true});
+    window.addEventListener('pagehide',()=>{
+      observer?.disconnect();
+      setRunning(false);
+    },{once:true});
     syncTitle();
   };
   start();
@@ -289,6 +364,7 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
     .replace('__LABELS__', JSON.stringify(copy))
     .replace('__WORKFLOW__', JSON.stringify(workflowSvg))
     .replace('__SUCCESS__', JSON.stringify(successSvg))
-    .replace('__FAILED__', JSON.stringify(failedSvg));
+    .replace('__FAILED__', JSON.stringify(failedSvg))
+    .replace('__PENDING__', JSON.stringify(pendingSvg));
   return String(markup||'')+stylesheet+script;
 }

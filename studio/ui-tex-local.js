@@ -511,6 +511,11 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
               localBusy = false;
               if (!previewOnly) compile.textContent = localCopy.compile;
               syncCompiler();
+              // Always signal completion even after a stale compile that
+              // intentionally cannot emit a success/error result.
+              window.dispatchEvent(new CustomEvent('aertex:tex-build-finished', {
+                detail: { documentId: compilingDocumentId, engine: engineName, automatic: previewOnly }
+              }));
               if ((previewPending || previewDirty) && previewEnabled && supportsCurrentEngine()) {
                 // Never start another preview until the last edit has settled.
                 schedulePreview(Math.max(180, 1500 - (Date.now() - lastEditorInputAt)));

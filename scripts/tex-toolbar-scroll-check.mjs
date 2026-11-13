@@ -20,7 +20,9 @@ assert(!page.includes("fill:#007"),"Message bubble SVG must not force iMessage b
 assert(page.includes("overflow-x:auto!important"),"Only the command group should scroll");
 assert(page.includes("touch-action:pan-x!important"),"iPad touch drags must scroll sideways");
 assert(page.includes("overscroll-behavior-x:contain!important"),"Avoid dragging the whole document horizontally");
-assert(page.includes("width:0!important"),"Command strip must shrink inside the actual editor width");
+assert(page.includes("width:max-content!important"),"Command strip must hug its icons on wide screens");
+assert(page.includes("flex:0 1 auto!important"),"Only shrink when viewport needs scroll; never stretch toward the right edge");
+assert(!page.includes("flex:1 1 0%!important"),"Growing scroll bar creates an unintended large gap before the fixed compile button");
 assert(page.includes("flex:0 0 auto!important"),"Realtime badge and character counter must not shrink");
 assert(page.includes("tex-toolbar-tiny"),"Narrow split-pane layout must be supported");
 assert(page.includes("ResizeObserver"),"Sizing must react to editor pane resizing");

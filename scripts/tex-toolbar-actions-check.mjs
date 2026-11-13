@@ -215,6 +215,9 @@ for(const zh of [true,false]){
   const listeners=new Map();
   const el=(id="")=>{
     const n={id,children:[],parentElement:null,dataset:{},textContent:"",hidden:false,
+      classList:{flags:new Set(),toggle(name,on){
+        if(on)this.flags.add(name);else this.flags.delete(name);
+      },contains(name){return this.flags.has(name)}},
       setAttribute(){},removeAttribute(){},addEventListener(type,fn){listeners.set("node:"+id+":"+type,fn)},
       append(...values){for(const value of values){if(value.parentElement){value.parentElement.children=value.parentElement.children.filter(v=>v!==value)}value.parentElement=this;this.children.push(value)}},
       insertBefore(value,ref){const i=this.children.indexOf(ref);if(value.parentElement)value.parentElement.children=value.parentElement.children.filter(v=>v!==value);value.parentElement=this;this.children.splice(i<0?this.children.length:i,0,value)},
@@ -226,7 +229,7 @@ for(const zh of [true,false]){
     return n;
   };
   const root=el("root"),toolbar=el("toolbar"),bar=el("bar"),title=el("tex-title");
-  const footer=el("footer"),saveState=el("save"),compile=el("tex-compile");
+  const footer=el("footer"),saveState=el("save"),compile=el("tex-compile"),source=el("source");
   const titleInput=title;titleInput.value="机器学习";
   footer.append(saveState);
   toolbar.append(titleInput);
@@ -235,7 +238,7 @@ for(const zh of [true,false]){
   root.querySelector=key=>({
     ".tex-editor-toolbar":toolbar,".tex-editor-commandbar":bar,
     ".tex-save-state":saveState,"#tex-document-list":null,
-    "#tex-source":null,".tex-document-item.is-active":null
+    "#tex-source":source,".tex-document-item.is-active":null
   })[key]||null;
   const browserDocument={
     querySelector:key=>key===".tex-work-app[data-tex-root]"?root:null,
@@ -255,6 +258,8 @@ for(const zh of [true,false]){
   assert.equal(stack.children[0].textContent,"机器学习");
   assert.equal(footer.children.length,0,"Footer must not retain its autosave content");
   assert.equal(compile.parentElement?.id,"tex-compile-fixed","Compile action must remain outside scrolling group");
+  const fixed=compile.parentElement;
+  assert.equal(typeof fixed.classList.toggle,"function","Build animation should use native classList semantics");
   assert.equal(titleInput.readOnly,true,"Title input may not be edited directly");
   assert.equal(titleInput.hidden,true,"The old title input is not visible");
   const titleRow=saveState.parentElement.parentElement;
@@ -268,6 +273,16 @@ for(const zh of [true,false]){
   listeners.get("aertex:tex-build-started")({detail:{documentId:"project-1",automatic:false}});
   assert.equal(indicator.hidden,true,"New compilation clears the prior failure badge");
   assert.equal(logButton.hidden,true,"New compilation clears the prior failure log button");
+  assert.equal(fixed.classList.contains("is-compiling"),true,
+    "Manual compiling should start the theme-accent animation");
+  listeners.get("aertex:tex-build-finished")({detail:{documentId:"project-1",automatic:false}});
+  assert.equal(fixed.classList.contains("is-compiling"),false,
+    "Stale completion must restore the normal compile icon");
+  const dirty=listeners.get("node:source:input");
+  assert.equal(typeof dirty,"function","Source edits must mark pending compilation");
+  dirty();
+  assert.equal(indicator.hidden,false,"Uncompiled changes must display reference warning SVG");
+  assert.equal(indicator.title,zh?"源码已修改，等待编译":"Changes waiting to compile");
   assert.equal(typeof listeners.get("aertex:tex-build-result"),"function","Compilation result listener missing");
 }
 console.log("Work TeX exact SVG, fixed compile toolbar and status/log checks passed.");

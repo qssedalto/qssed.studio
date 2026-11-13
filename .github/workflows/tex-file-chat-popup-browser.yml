@@ -5,7 +5,10 @@ on:
     paths:
       - 'studio/ui-work-tex-file-chat.js'
       - 'studio/ui-work-tex-toolbar-scroll.js'
+      - 'studio/ui-work-tex-compile-toolbar.js'
+      - 'studio/ui-tex-local.js'
       - 'studio/entry.js'
+      - 'scripts/tex-compile-toolbar-browser.mjs'
       - 'scripts/tex-file-chat-popup-browser.mjs'
       - 'scripts/tex-file-chat-browser-crypto-check.mjs'
       - '.github/workflows/tex-file-chat-popup-browser.yml'
@@ -28,9 +31,13 @@ jobs:
         run: node scripts/tex-file-chat-popup-browser.mjs
       - name: Chromium E2EE message, file Passkey, and reload integration
         run: node scripts/tex-file-chat-browser-crypto-check.mjs
+      - name: Chromium fixed compile toolbar, light/dark SVG and adaptive scroll regression
+        run: node scripts/tex-compile-toolbar-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: tex-file-chat-floating-qa
-          path: /tmp/aertex-filechat-visual/*.png
+          path: |
+            /tmp/aertex-filechat-visual/*.png
+            /tmp/aertex-compile-toolbar-visual/*.png
           retention-days: 7
