@@ -101,7 +101,10 @@ try{
    assert(report.editor.x>=-1&&report.editor.right<=report.width+2,'Editor escaped viewport: '+JSON.stringify(report));
    assert.equal(report.mask,undefined,'First-paint mask did not release');
    for(const control of report.controls){
-    assert(control.width>35&&control.height>12,'Missing or collapsed header control: '+JSON.stringify(control));
+    // The home control is intentionally a compact 33x28 icon on mobile.
+    // Check its actual target size rather than imposing a select's width.
+    const compactHome=control.selector==='.tex-editor-toolbar>.tex-panel-home-link';
+    assert(control.width>=(compactHome?24:36)&&control.height>=(compactHome?24:13),'Missing or collapsed header control: '+JSON.stringify(control));
     assert(control.x>=report.editor.x-1&&control.right<=report.editor.right+1,'Header control outside editor pane: '+JSON.stringify({control,editor:report.editor}));
     assert(control.y>=report.header.y-1&&control.bottom<=report.header.bottom+1,'Header control vertically clipped: '+JSON.stringify(control));
    }
