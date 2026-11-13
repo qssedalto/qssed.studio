@@ -1,4 +1,6 @@
 import fs from "node:fs";
+import vm from "node:vm";
+import { enhanceWorkTexPreviewSession } from "../studio/ui-work-tex-preview-session.js";
 import { workHubContent, workLocalBridgeContent } from "../studio/ui-work.js";
 import { enhanceWorkLocalBridgeNative } from "../studio/ui-work-native.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
@@ -179,6 +181,48 @@ assert(installer.includes("CreateUninstallRegKey=yes") && installer.includes("[U
   "Installer must register a Windows uninstaller that stops the background process.");
 assert(nativeWorkflow.includes("-H=windowsgui"), "Native Bridge build should not open a console window for ordinary users");
 assert(nativeWorkflow.includes("wrangler@4.136.3 r2 object put"), "Native Bridge workflow must publish the built EXE to R2 with the pinned Wrangler version");
+
+
+const cachedPreviewMarkup = enhanceWorkTexPreviewSession("", true);
+const previewScriptStart = '<script id="qsseda-work-tex-preview-session">';
+const previewScriptOffset = cachedPreviewMarkup.indexOf(previewScriptStart);
+const cachedPreviewRuntime = previewScriptOffset >= 0
+  ? cachedPreviewMarkup.slice(previewScriptOffset + previewScriptStart.length,
+    cachedPreviewMarkup.indexOf('</script>', previewScriptOffset))
+  : "";
+assert(cachedPreviewRuntime, "The preview refresh protection script must load");
+new vm.Script(cachedPreviewRuntime);
+const oldPdf = new Blob(["%PDF-1.7\\n% previous preview may have missing CJK glyphs"], { type: "application/pdf" });
+const cachedState = {
+  __qssedaTexPreviewBlobV2: { version: 2, userId: "same-user", blob: oldPdf,
+    documentId: "project-id", engine: "xelatex", sourceHash: "old-source" },
+  someOtherHistoryState: "preserve"
+};
+let removedSession = false;
+let restoredSrcCount = 0;
+const staleFrame = { hidden: true, get src() { return ""; }, set src(_value) { restoredSrcCount++; } };
+const fakeRoot = { dataset: { texCollaborationDocumentId: "project-id" } };
+const fakeWindow = {
+  history: { state: cachedState, replaceState(next) { this.state = next; } },
+  sessionStorage: { removeItem(key) { if (key === "qsseda.tex.preview-session.v2") removedSession = true; } },
+  addEventListener() {},
+  setTimeout() {}
+};
+const fakeDocument = {
+  title: "Work TeX",
+  querySelector(selector) { return selector.includes("[data-tex-root]") ? fakeRoot : null; },
+  getElementById(id) { return id === "tex-live-preview-frame" ? staleFrame : null; }
+};
+class FakeMutationObserver { observe() {} disconnect() {} }
+vm.runInNewContext(cachedPreviewRuntime, {
+  window: fakeWindow, document: fakeDocument, Blob,
+  MutationObserver: FakeMutationObserver, URL,
+});
+assert(restoredSrcCount === 0 && staleFrame.hidden,
+  "An unverified cached PDF must never flash on reload before full compilation");
+assert(removedSession && fakeWindow.history.state.someOtherHistoryState === "preserve" &&
+  !("__qssedaTexPreviewBlobV2" in fakeWindow.history.state),
+  "The refresh must clear stale preview blobs without removing unrelated history state");
 
 console.log("Work localhost bridge checks passed.");
 

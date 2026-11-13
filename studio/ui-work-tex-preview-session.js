@@ -214,7 +214,16 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
           }
         };
 
-        void restoreImmediately();
+        // Do not eagerly display a PDF cached in history.state/sessionStorage.
+        // The native Chromium/Edge PDF plugin can paint such a resurrected blob
+        // before its CJK font resources are ready: Latin digits appear but the
+        // Chinese text is temporarily invisible until a fresh compile replaces
+        // the iframe. The old path also rendered before project/source hydration
+        // and verified only document/engine (not sourceHash).
+        // Clear any unverified pre-refresh blob instead of showing a misleading
+        // partial page. installPreviewBlob() in the TeX compiler is the only
+        // automatic path that reveals the PDF after the complete Bridge response.
+        clearPreviewCache();
 
         const frameObserver = new MutationObserver(() => {
           const src = frame.getAttribute('src') || '';
