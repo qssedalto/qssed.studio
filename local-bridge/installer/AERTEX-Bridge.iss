@@ -2,7 +2,7 @@
 ; Bundles the original-engine successor with sandboxed multi-file TeX support.
 ; The download is ALWAYS a Setup executable, never a portable daemon.
 
-#define AppVersion "0.5.3"
+#define AppVersion "0.5.4"
 #define AppName "AERTEX Bridge"
 
 [Setup]
@@ -86,16 +86,20 @@ begin
     Helper := ExpandConstant('{app}\AERTEX-Bridge-Control.exe');
     Engine := ExpandConstant('{app}\AERTEX-Bridge.exe');
 
-    // Remove the outdated uninstall record created by the old portable/self-installing EXE.
-    RegDeleteKeyIncludingSubkeys(HKCU,
-      'Software\Microsoft\Windows\CurrentVersion\Uninstall\QssedALocalBridge');
-
     if not Exec(Helper, 'start "' + Engine + '"', '', SW_HIDE,
       ewWaitUntilTerminated, Status) then
       RaiseException('Could not launch the installed AERTEX Bridge.')
     else if Status <> 0 then
       RaiseException('AERTEX Bridge could not be verified after installation. ' +
-        'See %LOCALAPPDATA%\QssedA\LocalBridge\install.log. ' +
-        'Port 32145 may be occupied by another application.');
+        'Inspect %LOCALAPPDATA%\QssedA\LocalBridge\install.log for the exact cause.')
+    else
+    begin
+      // Only retire legacy installations AFTER the new engine is verified.
+      RegDeleteKeyIncludingSubkeys(HKCU,
+        'Software\Microsoft\Windows\CurrentVersion\Uninstall\QssedALocalBridge');
+      if FileExists(ExpandConstant('{app}\QssedA-Local-Bridge.exe')) and
+         (not DeleteFile(ExpandConstant('{app}\QssedA-Local-Bridge.exe'))) then
+        Log('The retired QssedA-Local-Bridge.exe could not be removed.');
+    end;
   end;
 end;
