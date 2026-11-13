@@ -86,8 +86,8 @@ for (const required of [
   "tex-live-preview-frame",
   "PDF 实时预览",
   "markPreviewDirty(1500)",
-  "setInterval(() =>",
-  "}, 10000)",
+  "schedulePreview(delay = 1500)",
+  "No polling or compilation during continuous typing.",
   "lastPreviewSnapshot",
   "当前源码编译失败，已保留上一版 PDF"
 ]) assert(zhTexLocal.includes(required), `Local TeX Workbench is missing: ${required}`);
