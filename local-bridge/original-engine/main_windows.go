@@ -141,7 +141,9 @@ func writeProjectAssets(workDir string, assets []projectAsset) error {
 func main() {
 	args := os.Args[1:]
 	if hasArg(args, "--background") {
-		_ = runBridge()
+		if err := runBridge(); err != nil {
+			logBridgeStartupFailure(err)
+		}
 		return
 	}
 	if hasArg(args, "--uninstall") {
@@ -168,6 +170,20 @@ func main() {
 		message += "\n\n暂未检测到 XeLaTeX；Bridge 本身仍可正常运行。"
 	}
 	showMessage(appName, message, false)
+}
+
+// A windowless auto-start process must never swallow listener errors. Record
+// only the startup error (not TeX source or request payloads) for diagnosis.
+func logBridgeStartupFailure(reason error) {
+  if reason == nil { return }
+  base := strings.TrimSpace(os.Getenv("LOCALAPPDATA"))
+  if base == "" { return }
+  dir := filepath.Join(base, "QssedA", "LocalBridge")
+  if os.MkdirAll(dir, 0700) != nil { return }
+  file, err := os.OpenFile(filepath.Join(dir, "bridge.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+  if err != nil { return }
+  defer file.Close()
+  _, _ = fmt.Fprintf(file, "%s Bridge startup failed: %v\n", time.Now().Format(time.RFC3339), reason)
 }
 
 func hasArg(args []string, target string) bool {
