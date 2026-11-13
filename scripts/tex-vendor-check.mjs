@@ -89,7 +89,7 @@ for (const [key,p] of colorPalettes) {
 }
 const themedMarkup = enhanceWorkTexCodeMirror(
   '<section class="tex-work-app"><section id="tex-editor"><div class="tex-editor-toolbar"></div></section></section>', true);
-const codeRuntime = themedMarkup.match(/<script id="qsseda-work-tex-codemirror-runtime">([\\s\\S]*?)<\\/script>/)?.[1];
+const codeRuntime = themedMarkup.match(/<script id="qsseda-work-tex-codemirror-runtime">([\s\S]*?)<\/script>/)?.[1];
 assert(codeRuntime, "Color selection must be bundled into the existing CodeMirror runtime");
 new Function(codeRuntime);
 assert(codeRuntime.includes("paletteSelect.id = 'tex-code-theme-select'") &&
