@@ -38,7 +38,11 @@ try{
   assert.equal(blank.response.status,201);
   assert.equal(blank.body.document.owner_id,userId);
   assert.equal(blank.body.document.title,"AERTEX 研究 & 课程");
-  assert.match(blank.body.document.source,/\\documentclass\{article\}/);
+  assert.match(blank.body.document.source,/\\documentclass\{ctexart\}/,
+    "A Chinese project title must use the CJK-aware document class, otherwise its title disappears from the PDF.");
+  assert.equal(blank.body.document.engine,"xelatex");
+  assert.match(blank.body.document.source,/\\maketitle/,
+    "Blank project must emit the title block.");
   assert.match(blank.body.document.source,/\\usepackage\{graphicx\}/);
   assert.match(blank.body.document.source,/\\author\{名 姓\}/);
   assert.match(blank.body.document.source,/\\title\{AERTEX 研究 \\& 课程\}/);
@@ -58,6 +62,8 @@ try{
   assert.equal(adminBlank.body.document.owner_id,userId);
   assert.match(adminBlank.body.document.source,/\\author\{\}/,
     "Administrator project must not fabricate a legal author name.");
+  assert.match(adminBlank.body.document.source,/\\documentclass\{ctexart\}/,
+    "Admin's Chinese project title must remain visible even when the author is blank.");
   assert.equal(adminBlank.body.document.project_type,"blank");
 
   adminRpcUnavailable=true;
@@ -70,6 +76,13 @@ try{
   const normal=await create(postJson({type:"blank",title:"Signed Name"}));
   assert.equal(normal.response.status,201);
   assert.equal(adminRpcCount,rpcBefore,"Complete author names should not require an admin RPC.");
+  profile={first_name:"Alice",last_name:"Smith"};
+  const englishOnly=await create(postJson({type:"blank",title:"Pacific Modeling Cup"}));
+  assert.equal(englishOnly.response.status,201);
+  assert.match(englishOnly.body.document.source,/\\documentclass\{article\}/,
+    "Latin-only documents must retain the original article class.");
+  assert.match(englishOnly.body.document.source,/\\title\{Pacific Modeling Cup\}/);
+  profile={first_name:"名",last_name:"姓"};
 
   // Offline example creation must succeed using the exact bundled frog.jpg.
   // Never silently generate or fetch a substituted image.

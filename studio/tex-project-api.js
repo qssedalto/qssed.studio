@@ -31,10 +31,17 @@ function texEscape(s) {
   }[ch]));
 }
 function blankSource(projectName, author) {
+  // Standard article + XeLaTeX does not configure Chinese glyph fonts:
+  // \maketitle still prints the English date, but silently drops Han titles.
+  // Use the project's already supported ctexart template when the project
+  // name OR author contains CJK, and preserve article for Latin-only work.
+  const hasCjk = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+    .test(String(projectName || "") + String(author || ""));
+  const documentClass = hasCjk ? "ctexart" : "article";
   const date = new Date().toLocaleDateString("en-US", {
     month:"long",year:"numeric",timeZone:"Asia/Shanghai"
   });
-  return "\\documentclass{article}\n" +
+  return "\\documentclass{" + documentClass + "}\n" +
     "\\usepackage{graphicx} % Required for inserting images\n\n" +
     "\\title{" + texEscape(projectName) + "}\n" +
     "\\author{" + texEscape(author) + "}\n" +
