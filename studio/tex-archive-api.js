@@ -109,12 +109,6 @@ export async function handleTexArchive(request,env,user) {
     }
     return fail("Invalid archive request.",404);
   }
-  if(request.method==="DELETE" && mode==="item"){
-    const id=url.searchParams.get("id");
-    if(!ID.test(id||""))return fail("Invalid archive ID.");
-    await env.STORAGE.delete(archiveKey(userId,id));
-    return json({deleted:true});
-  }
   if(request.method!=="POST")return fail("Method not allowed.",405);
   let body;
   try{body=await jsonObj(request,mode==="store"?MAX_BODY:mode==="restore"?MAX_BODY:4096);}
