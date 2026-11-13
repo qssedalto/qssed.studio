@@ -82,6 +82,23 @@ assert(html.includes("tex-project-rename-sigma"),"Project rename icon must retai
 assert(script.includes("function vBlocks(") && script.includes("function vPatch("),"Visual mode must parse source and patch original TeX offsets");
 assert(!script.includes("embedded.src=src") && !script.includes("The project PDF appears here"),
   "Visual mode must never be implemented as a compiled PDF overlay");
+
+assert(script.includes("isVisualTeX") && script.includes("syncVisualAvailability()"),
+  "Non-TeX files must use the existing CodeMirror editor instead of a second visual/source pane");
+assert(script.includes("editorChoice.hidden=!available") &&
+  script.includes("editorSelect.disabled=!available"),
+  "Hide and disable visual editor selector for Python, YAML, BibTeX and other non-TeX files");
+assert(!script.includes("tex-v-raw-document") && !script.includes("直接编辑 LaTeX 源码 · 不叠加 PDF"),
+  "Do not add duplicate source editors or redundant visual-mode disclaimer labels");
+assert(script.includes("隐藏文档导言区") && script.includes("aria-expanded"),
+  "The preamble button must switch between show and hide labels");
+assert(html.includes("grid-template-rows:auto auto minmax(0,1fr) auto!important"),
+  "Editor must allocate a shrinking scroll region and an independent bottom footer");
+assert(html.includes("is-visual-mode.is-asset-mode.is-codemirror-asset"),
+  "Visual TeX mode must hide the shared CodeMirror host even for non-main TeX files");
+assert(html.includes("#tex-editor>.tex-editor-footer") &&
+  html.includes("display:flex!important"),
+  "Footer actions must remain visible in visual mode");
 assert(script.includes("bridge.replaceRange(from,to,next,false)"),
   "Visual edits must use the CodeMirror transaction bridge for realtime and undo");
 assert(script.includes("import('/assets/tex/katex.js')"),
