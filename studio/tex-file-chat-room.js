@@ -1,7 +1,7 @@
 import { randomKey, hashText, verifyRegistration, verifyAssertion } from "./tex-file-chat-webauthn.js";
 // Durable Object receives authority context ONLY from verified Work Worker.
 // Store ciphertext and wrapped AES keys, never message text or raw room keys.
-const BASE="projectchat:v2:",CHALLENGE_MS=120000,LEASE_MS=600000,GRANT_LIMIT=12,MAX_PASSKEYS=5;
+const BASE="projectchat:v2:",CHALLENGE_MS=120000,LEASE_MS=3*60*60*1000,GRANT_LIMIT=12,MAX_PASSKEYS=5;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const HASH=/^[A-Za-z0-9_-]{43}$/;
 const res=(body,status=200)=>Response.json(body,{status,headers:{"cache-control":"no-store","x-content-type-options":"nosniff"}});
@@ -262,6 +262,15 @@ export async function handleTexFileChatRoom(state,request){
   if(body.op==="begin")return begin(storage,a,body);
   if(body.op==="verify")return verify(state,a,body);
   if(!await tokenOK(storage,a,body.token))return bad("Passkey verification required for this project",401);
+  // Server-side revalidation of a previously signed, project/user-scoped grant.
+  // Never extend the original three-hour absolute deadline on resume.
+  if(body.op==="resume"){
+    const digest=await hashText(body.token);
+    const grant=await storage.get(key(a.project,"grant",a.user+":"+digest));
+    if(!grant||grant.expires<=Date.now())return bad("Passkey grant expired",401);
+    return res({verified:true,expires_in:Math.max(1,Math.ceil((grant.expires-Date.now())/1000)),
+      owner_id:a.owner,user_id:a.user,role:a.role});
+  }
   if(body.op==="device")return device(storage,a,body);
   if(body.op==="devices")return devices(storage,a);
   if(body.op==="envelope-put")return envelopePut(state,a,body);
