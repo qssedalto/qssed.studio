@@ -54,6 +54,7 @@ export function enhanceTexProjectControls(markup,zh=true){
     'if(doc.main_deleted!==true)showMessage("");}'+
     'updateLocal(doc);window.__aertexProjectRenderFiles?.(doc);'+
     'window.__aertexFileSetActive?.(doc);window.__aertexTexExplorerRefresh?.(doc);'+
+    'window.dispatchEvent(new CustomEvent("aertex:tex-file-updated",{detail:{documentId:doc.id,userInitiated:true}}));'+
     '};';
   source=source.replace(binding,binding+fileBridge+bus);
   if(!source.includes("</body>"))throw new Error("TeX outer page body missing.");
