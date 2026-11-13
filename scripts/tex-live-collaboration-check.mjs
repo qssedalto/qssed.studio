@@ -80,6 +80,14 @@ for (const zh of [true,false]) {
     "Old prefetch GETs may not replace committed members or cache stale avatars");
   assert(markup.includes(zh ? "成员已添加并保存" : "Collaborator added and saved"),
     "The UI must only report invite success after the server confirms membership");
+  assert(!markup.includes("userDirectoryStorageKey") &&
+    !markup.includes("prefetchUserDirectory()") &&
+    !markup.includes("directoryMatches(query)") &&
+    !markup.includes("q=__directory__"),
+    "Searching collaborators must not mistake a truncated eight-user directory cache for all registered accounts");
+  assert(markup.includes("api('/api/tex/collaboration?action=search&document='") &&
+    markup.includes("userSearchCacheAge"),
+    "Names and email-like handles must reach authenticated per-query search with short-lived caching");
 
   // Execute the real Add handler with a fake authenticated API. An avatar
   // must never appear solely because a person was added to a local draft.
