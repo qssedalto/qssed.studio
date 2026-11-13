@@ -14,6 +14,7 @@ const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8")
 const workApi = fs.readFileSync(new URL("../studio/work-api.js", import.meta.url), "utf8");
 const bridge = fs.readFileSync(new URL("../local-bridge/server.mjs", import.meta.url), "utf8");
 const nativeBridge = fs.readFileSync(new URL("../local-bridge/original-engine/main_windows.go", import.meta.url), "utf8");
+const bridgeControl = fs.readFileSync(new URL("../local-bridge/installer-control/main_windows.go", import.meta.url), "utf8");
 const installer = fs.readFileSync(new URL("../local-bridge/installer/AERTEX-Bridge.iss", import.meta.url), "utf8");
 const nativeWorkflow = fs.readFileSync(new URL("../.github/workflows/local-bridge-native.yml", import.meta.url), "utf8");
 const windowsInstall = fs.readFileSync(new URL("../local-bridge/install-windows.ps1", import.meta.url), "utf8");
@@ -180,6 +181,18 @@ assert(installer.includes('ValueName: "AERTEX Bridge"') && installer.includes('V
   "Installer must register mandatory Windows user login autostart.");
 assert(installer.includes("CreateUninstallRegKey=yes") && installer.includes("[UninstallRun]"),
   "Installer must register a Windows uninstaller that stops the background process.");
+assert(nativeWorkflow.includes('BRIDGE_VERSION: "0.3.2-multipass"') &&
+  nativeWorkflow.includes("-X main.version=$env:BRIDGE_VERSION") &&
+  nativeWorkflow.includes("-X main.expectedVersion=$env:BRIDGE_VERSION") &&
+  nativeWorkflow.includes("$h.version -ne $env:BRIDGE_VERSION"),
+  "Bridge engine, Windows installer controller and health smoke test must share ONE version source");
+assert(bridgeControl.includes('var expectedVersion="0.3.2-multipass"'),
+  "The Windows installer controller fallback version must match the compiled Bridge engine");
+assert(nativeBridge.includes("logBridgeStartupFailure(err)") &&
+  nativeBridge.includes('"bridge.log"'),
+  "A Windows-login Bridge start failure must leave a readable local diagnosis log");
+assert(installer.includes('#define AppVersion "0.5.3"'),
+  "The Windows installer version must change after fixing the previous failed-release controller");
 assert(nativeWorkflow.includes("-H=windowsgui"), "Native Bridge build should not open a console window for ordinary users");
 assert(nativeWorkflow.includes("wrangler@4.136.3 r2 object put"), "Native Bridge workflow must publish the built EXE to R2 with the pinned Wrangler version");
 
