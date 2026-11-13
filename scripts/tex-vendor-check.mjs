@@ -121,6 +121,24 @@ assert(themedMarkup.includes("#tex-editor[data-code-theme]") &&
   !codeRuntime.includes("AERTEXTheme.setMode") &&
   !codeRuntime.includes("AERTEXTheme.setAccent"),
   "Independent code palettes must not change site or PDF appearance");
+assert(themedMarkup.includes("appearance:menulist!important") &&
+  themedMarkup.includes("-webkit-appearance:menulist!important") &&
+  themedMarkup.includes('color-scheme:light!important') &&
+  themedMarkup.includes('color-scheme:dark!important') &&
+  themedMarkup.includes('select option{') &&
+  themedMarkup.includes('background:#ffffff!important;color:#182432!important') &&
+  themedMarkup.includes('background:#242a35!important;color:#f4f6fc!important'),
+  "Palette dropdowns must use native OS controls with explicit readable light/dark options");
+assert(codeRuntime.includes("const brandWordmark =") &&
+  codeRuntime.includes("mark.innerHTML = brandWordmark;") &&
+  codeRuntime.includes("nativeWrap.append(select,brandLabel)") &&
+  codeRuntime.includes("el.textContent = zhPaletteUi ? option[1] : option[2]"),
+  "Selected AERTEX brand must display the official SVG while native option rows remain safe and text-only");
+assert(codeRuntime.includes("controls[mode].closest('.tex-code-theme-card').dataset.brandSelected") &&
+  themedMarkup.includes('.tex-code-theme-native-wordmark>svg'),
+  "AERTEX SVG selected label must update when a user changes palettes");
+console.log("Native OS palette dropdown contrast and rendered AERTEX selected wordmark verified.");
+
 console.log("Work TeX code theme picker, live syntax recoloring and 4.5:1 palette contrast verified.");
 
 console.log("TeX self-hosted asset bundling and same-origin runtime checks passed.");
