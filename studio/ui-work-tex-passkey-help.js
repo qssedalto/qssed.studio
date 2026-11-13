@@ -38,7 +38,7 @@ export function enhanceWorkTexPasskeyHelp(markup, zh) {
     note: t("安全提醒：每个项目的 Passkey 必须匹配本项目。即使误选了其他项目的通行密钥，浏览器或服务器也会拒绝验证；不会因此进入该项目的聊天。", "Security: each project Passkey must match this project. Choosing a key from another project is rejected by the browser or server, and cannot unlock this chat.")
   };
 
-  return String(markup || "") + \`
+  return String(markup || "") + `
   <style id="aertex-project-passkey-help-style">
     .aertex-filechat .passkey-help-link {
       display:block; margin:0 auto; padding:3px 8px;
@@ -115,19 +115,19 @@ export function enhanceWorkTexPasskeyHelp(markup, zh) {
       const link = document.createElement('button');
       link.id = 'aertex-chat-help-link';
       link.type = 'button'; link.className = 'passkey-help-link';
-      link.textContent = \${JSON.stringify(copy.link)};
+      link.textContent = ${JSON.stringify(copy.link)};
       link.hidden = true;
       button.insertAdjacentElement('afterend', link);
       const guide = document.createElement('section');
       guide.className = 'passkey-help-view';
       guide.id = 'aertex-chat-help-view';
       guide.hidden = true;
-      guide.setAttribute('aria-label', \${JSON.stringify(copy.title)});
+      guide.setAttribute('aria-label', ${JSON.stringify(copy.title)});
       guide.innerHTML = '<div class="passkey-help-heading"><strong>' +
-        \${JSON.stringify(copy.title)} + '</strong><button type="button" class="passkey-help-back" id="aertex-chat-help-back">' +
-        \${JSON.stringify(copy.back)} + '</button></div>' +
-        '<div class="passkey-help-scroll">' + \${JSON.stringify(stepMarkup)} +
-        '<p class="passkey-help-note">' + \${JSON.stringify(copy.note)} + '</p></div>';
+        ${JSON.stringify(copy.title)} + '</strong><button type="button" class="passkey-help-back" id="aertex-chat-help-back">' +
+        ${JSON.stringify(copy.back)} + '</button></div>' +
+        '<div class="passkey-help-scroll">' + ${JSON.stringify(stepMarkup)} +
+        '<p class="passkey-help-note">' + ${JSON.stringify(copy.note)} + '</p></div>';
       panel.querySelector('.body').append(guide);
       let registered = false;
       const close = () => {
@@ -154,5 +154,5 @@ export function enhanceWorkTexPasskeyHelp(markup, zh) {
         }
       };
     })();
-  </script>\`;
+  </script>`;
 }
