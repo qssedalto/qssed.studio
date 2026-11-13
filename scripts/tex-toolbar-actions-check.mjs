@@ -159,14 +159,14 @@ for (const zh of [true, false]) {
   assert(!html.includes("M9 29V18.8c0-.8"), "Old save-as pencil-crossing line must not return");
   assert(html.includes("tex-fluent-icon .tex-fluent-accent{fill:var(--primary)!important"), "Copy highlight must follow user theme color");
 }
-// The compile icon is the original GitHub Actions vector, never a redraw or
-// raster. UI only changes its fill from blue to the current monochrome theme.
-const canonical=fs.readFileSync(new URL("../studio/vendor/githubactions.svg",import.meta.url),"utf8");
-const originalPath=canonical.match(/<path d="([^"]+)"\/>/)?.[1];
+// Manual compilation now uses the precise reference circular-play SVG,
+ // with dynamic light/dark neutral colors and the original busy accent state.
 const toolbarSource=fs.readFileSync(new URL("../studio/ui-work-tex-compile-toolbar.js",import.meta.url),"utf8");
-const embeddedPath=toolbarSource.match(/const workflowSvg = '[^']*<path d="([^"]+)"\/><\/svg>'/)?.[1];
-assert(originalPath && originalPath===embeddedPath,
-  "Compile toolbar must preserve the exact official GitHub Actions SVG path without reconstruction");
+assert(toolbarSource.includes('<circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="2.25"/>') &&
+  toolbarSource.includes('d="M10 7.8c0-.59') &&
+  toolbarSource.includes('fill="currentColor"') &&
+  toolbarSource.includes('.tex-compile-fixed:not(.is-compiling) .tex-compile-vector'),
+  "Compile toolbar must use circular-play SVG instead of GitHub Actions artwork");
 for(const zh of [true,false]){
   const ui=enhanceWorkTexCompileToolbar("<body></body>",zh);
   const runtime=ui.match(/<script id="aertex-tex-compile-toolbar-runtime">([\s\S]*?)<\/script>/)?.[1];
