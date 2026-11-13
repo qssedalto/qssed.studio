@@ -41,7 +41,6 @@ export function texWorkbenchContent(zh) {
     selectDetail: "也可以从左侧模板新建文档。",
     chars: "字符",
     lines: "行",
-    privacy: "仅在你主动点击编译时，当前文档内容才会发送到已配置的 TeX 编译服务。"
   } : {
     eyebrow: "Lab · TeX",
     title: "TeX Workbench",
@@ -83,7 +82,6 @@ export function texWorkbenchContent(zh) {
     selectDetail: "Or create one from a template on the left.",
     chars: "chars",
     lines: "lines",
-    privacy: "Your document is sent to the configured TeX compiler only when you explicitly choose Compile."
   };
 
   const templates = {
@@ -140,7 +138,7 @@ export function texWorkbenchContent(zh) {
         </main>
 
         <aside class="tex-runs-panel">
-          <div class="tex-compiler-card"><div id="tex-compiler-state" class="tex-compiler-state"><i></i><strong>${copy.compilerOffline}</strong></div><p id="tex-compiler-detail">${copy.compilerDetailOffline}</p><small>${copy.privacy}</small></div>
+          <div class="tex-compiler-card"><div id="tex-compiler-state" class="tex-compiler-state"><i></i><strong>${copy.compilerOffline}</strong></div><p id="tex-compiler-detail">${copy.compilerDetailOffline}</p></div>
           <div class="tex-runs-head"><strong>${copy.history}</strong><button id="tex-refresh-runs" type="button" aria-label="${copy.history}">↻</button></div>
           <div id="tex-run-list" class="tex-run-list"></div>
           <div id="tex-runs-empty" class="tex-empty tex-runs-empty"><strong>${copy.noHistory}</strong></div>

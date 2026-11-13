@@ -2,7 +2,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
   const copy = zh ? {
     localReady: "本机 TeX 已连接",
     localUnsupported: "本机不支持当前引擎",
-    localDetail: "编译会直接在这台电脑的 AERTEX Bridge 中完成；源码不会上传到 AERTEX TeX 编译服务器。",
+    localDetail: "",
     localUnsupportedDetail: "本机 Bridge 当前只开放 XeLaTeX 与 pdfLaTeX。可切换引擎，或在云端编译服务可用时继续使用其他引擎。",
     cloudReady: "云端编译服务已连接",
     offline: "编译服务尚未连接",
@@ -12,7 +12,6 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     localFailed: "本机编译失败",
     localOpen: "打开本机 PDF",
     localRun: "本机",
-    privacy: "本机编译只把当前源码发送到 127.0.0.1；不会发送账号 Cookie 或 Bearer Token。",
     compile: "编译 PDF",
     previewTitle: "PDF 实时预览",
     previewToggle: "自动预览",
@@ -21,10 +20,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     previewUpdated: "预览已更新",
     previewPaused: "自动预览已暂停",
     previewUnavailable: "当前引擎暂不能本机预览",
-    previewSelectDocument: "选择或新建 TeX 文档后，即可使用本机 Bridge 预览 PDF",
     previewError: "当前源码编译失败，已保留上一版 PDF",
-    previewEmpty: "修改 TeX 后，这里会显示本机生成的 PDF。",
-    previewHint: "停止输入约 1.5 秒后刷新；连续编辑时每 10 秒兜底同步一次。",
     previewOpen: "在新窗口打开",
     previewNever: "尚未生成预览",
     mobileNoPdf: "暂无 PDF。需要编译时可使用下方的远程编译功能。",
@@ -32,7 +28,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
   } : {
     localReady: "Local TeX connected",
     localUnsupported: "Current engine is not enabled locally",
-    localDetail: "Compilation runs directly through AERTEX Bridge on this computer; source is not uploaded to the AERTEX TeX compiler service.",
+    localDetail: "",
     localUnsupportedDetail: "The local Bridge currently enables XeLaTeX and pdfLaTeX only. Switch engines or use the cloud compiler when another engine is required.",
     cloudReady: "Cloud compiler connected",
     offline: "Compiler not connected",
@@ -42,7 +38,6 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     localFailed: "Local compilation failed",
     localOpen: "Open local PDF",
     localRun: "Local",
-    privacy: "Local compilation sends the current source only to 127.0.0.1; account cookies and bearer tokens are not sent.",
     compile: "Compile PDF",
     previewTitle: "Live PDF Preview",
     previewToggle: "Auto preview",
@@ -51,10 +46,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     previewUpdated: "Preview updated",
     previewPaused: "Auto preview paused",
     previewUnavailable: "The current engine cannot be previewed locally",
-    previewSelectDocument: "Open or create a TeX document to preview its PDF with the local Bridge",
     previewError: "The current source failed to compile; the last good PDF is still shown",
-    previewEmpty: "Edit the TeX source and the locally generated PDF will appear here.",
-    previewHint: "Refreshes about 1.5 seconds after you stop typing, with a 10-second dirty fallback while editing continuously.",
     previewOpen: "Open in new window",
     previewNever: "No preview generated yet",
     mobileNoPdf: "No PDF yet. Use the remote compilation option below when needed.",
@@ -69,10 +61,10 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
       </div>
       <div class="tex-live-preview-status"><span id="tex-live-preview-dot"></span><strong id="tex-live-preview-status">${copy.previewNever}</strong></div>
       <div class="tex-live-preview-viewport">
-        <div class="tex-live-preview-placeholder" id="tex-live-preview-placeholder">${copy.previewEmpty}</div>
+        <div class="tex-live-preview-placeholder" id="tex-live-preview-placeholder" aria-hidden="true"></div>
         <iframe id="tex-live-preview-frame" title="${copy.previewTitle}" hidden></iframe>
       </div>
-      <div class="tex-live-preview-foot"><span>${copy.previewHint}</span><a id="tex-live-preview-open" href="#" target="_blank" rel="noopener" hidden>${copy.previewOpen} ↗</a></div>
+      <div class="tex-live-preview-foot"><a id="tex-live-preview-open" href="#" target="_blank" rel="noopener" hidden>${copy.previewOpen} ↗</a></div>
     </section>`;
 
   const enhancedMarkup = String(markup || "").replace(
@@ -108,7 +100,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
         let previewDirty = false;
         let previewPending = false;
         let previewTimer = 0;
-        let previewInterval = 0;
+        let lastEditorInputAt = 0;
         let previewUrl = "";
         let lastPreviewSnapshot = "";
         let destroyed = false;
@@ -204,7 +196,6 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
           function setCompilerSurface(kind) {
             const pillText = pill?.querySelector('span');
             const stateText = state?.querySelector('strong');
-            const privacy = state?.closest('.tex-compiler-card')?.querySelector('small');
             const ready = kind === 'local' || kind === 'cloud';
             pill?.classList.toggle('is-ready', ready);
             pill?.classList.toggle('is-offline', !ready);
@@ -223,8 +214,10 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             }
             if (pillText) pillText.textContent = label;
             if (stateText) stateText.textContent = label;
-            if (detail) detail.textContent = description;
-            if (privacy && localBase) privacy.textContent = localCopy.privacy;
+            if (detail) {
+              detail.textContent = description;
+              detail.hidden = !description;
+            }
           }
 
           function syncPreviewAvailability() {
@@ -242,7 +235,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             // No selected document is not an unsupported LaTeX engine.
             // Show a truthful neutral state even when Bridge is connected.
             if (!selected) {
-              setPreviewStatus('idle', localCopy.previewSelectDocument);
+              setPreviewStatus('idle', localCopy.previewNever);
             } else if (!previewEnabled) {
               setPreviewStatus('idle', localCopy.previewPaused);
             } else if (!supported && !localBusy) {
@@ -478,7 +471,10 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
               localBusy = false;
               if (!previewOnly) compile.textContent = localCopy.compile;
               syncCompiler();
-              if ((previewPending || previewDirty) && previewEnabled && supportsCurrentEngine()) schedulePreview(650);
+              if ((previewPending || previewDirty) && previewEnabled && supportsCurrentEngine()) {
+                // Never start another preview until the last edit has settled.
+                schedulePreview(Math.max(180, 1500 - (Date.now() - lastEditorInputAt)));
+              }
             }
           }
 
@@ -488,16 +484,19 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             previewDirty = true;
             if (!localBusy) setPreviewStatus('idle', localCopy.previewWaiting);
             previewTimer = window.setTimeout(() => {
-              if (!destroyed && previewEnabled && previewDirty) void compileLocal(true);
+              if (destroyed || !previewEnabled || !previewDirty) return;
+              // No polling or compilation during continuous typing.
+              if (localBusy) {
+                previewPending = true;
+                return;
+              }
+              if (currentPreviewSnapshot() !== lastPreviewSnapshot) void compileLocal(true);
+              else previewDirty = false;
             }, delay);
           }
 
           function markPreviewDirty(delay = 1500) {
-            previewDirty = true;
-            if (localBusy) {
-              previewPending = true;
-              return;
-            }
+            lastEditorInputAt = Date.now();
             schedulePreview(delay);
           }
 
@@ -539,15 +538,6 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
           const observer = new MutationObserver(() => syncCompiler());
           observer.observe(editor, { attributes: true, attributeFilter: ['hidden'] });
           observer.observe(compile, { attributes: true, attributeFilter: ['disabled'] });
-
-          previewInterval = window.setInterval(() => {
-            if (destroyed || !previewEnabled || !supportsCurrentEngine() || !hasDocument()) return;
-            if (currentPreviewSnapshot() !== lastPreviewSnapshot) {
-              previewDirty = true;
-              if (!localBusy) void compileLocal(true);
-              else previewPending = true;
-            }
-          }, 10000);
 
           // Connection-check UI can restore local compiler access after the
           // browser's local-network permission prompt. Refresh adapter state
@@ -591,7 +581,6 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             destroyed = true;
             observer.disconnect();
             window.clearTimeout(previewTimer);
-            window.clearInterval(previewInterval);
             for (const url of localUrls) URL.revokeObjectURL(url);
             localUrls.clear();
           }, { once: true });

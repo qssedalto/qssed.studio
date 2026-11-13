@@ -21,7 +21,6 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
     compiling: "正在本机生成 PDF…",
     versionSaved: "已保存编译版本",
     versionSaveFailed: "历史版本保存失败，本次仍会在本机编译。",
-    sourceOnly: "云端只保存 TeX 源码版本；PDF 按需在 127.0.0.1 临时生成。"
   } : {
     history: "Version History",
     empty: "No saved versions yet",
@@ -43,7 +42,6 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
     compiling: "Generating PDF locally…",
     versionSaved: "Compile version saved",
     versionSaveFailed: "Could not save the history version. Local compilation will continue.",
-    sourceOnly: "The cloud stores TeX source versions only; PDFs are generated temporarily on 127.0.0.1 when requested."
   };
 
   output = output.replaceAll("编译历史", copy.history).replaceAll("Compile History", copy.history);
@@ -349,10 +347,6 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
           const refresh = document.getElementById('tex-refresh-runs');
           if (!root || !list || !empty || !refresh) { window.setTimeout(install, 60); return; }
 
-          const policy = document.createElement('div');
-          policy.className = 'tex-version-policy';
-          policy.textContent = labels.sourceOnly;
-          list.before(policy);
           list.classList.add('is-version-history');
           empty.querySelector('strong').textContent = labels.empty;
 
