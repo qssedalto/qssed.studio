@@ -315,7 +315,8 @@ async function updateDocument(request, env, userId) {
   try {
     const previous = await readDocument(env, userId, documentId);
     if (!previous) return json({ error: "TeX document not found." }, 404);
-    if (previous.locked || previous.locked_files?.includes("main.tex"))
+    if (previous.main_deleted === true) return json({error:"This project has no TeX entry. Add a root .tex file before editing the main source."},409);
+    if (previous.locked || previous.locked_files?.includes("main.tex") || previous.locked_files?.includes(previous.main_filename || "main.tex"))
       return json({ error: "Unlock main.tex or the project before editing.", }, 423);
     const normalized = normalizeDocument(parsed.value, userId, documentId, previous);
     if (!normalized.ok) return json({ error: normalized.error }, 400);
@@ -395,6 +396,8 @@ function normalizeDocument(input, userId, documentId, previous) {
       title: cleanText(source.title, 180) || "Untitled TeX document",
       engine,
       source: cleanSource(source.source),
+      main_filename: previous?.main_filename || "main.tex",
+      main_deleted: previous?.main_deleted === true,
       files: Array.isArray(previous?.files) ? previous.files : [],
       project_type: previous?.project_type || "legacy",
       pinned: previous?.pinned === true, locked: previous?.locked === true,
