@@ -39,6 +39,22 @@ for (const zh of [true, false]) {
     "Project list must be compact, not oversized cards");
   assert(WORK_TEX_EXPLORER_STYLE.includes(".tex-tree-folder-children"),
     "Nested directories must have separate collapsible content");
+  // Supplementary text/PDF/image files must occupy the SAME editor viewport.
+  // A second inline card above an unhidden CodeMirror was showing both files at once.
+  assert(WORK_TEX_EXPLORER_STYLE.includes("#tex-editor.is-asset-mode > .tex-codemirror-host"),
+    "Selecting any non-main file must hide the actual CodeMirror host, not only a direct .cm-editor");
+  assert(/#tex-editor\\.is-asset-mode\\s*>\\s*\\.tex-codemirror-host[\\s\\S]*?display:none!important/.test(WORK_TEX_EXPLORER_STYLE),
+    "The main editor must be invisible while a supplementary asset occupies the editor");
+  assert(WORK_TEX_EXPLORER_STYLE.includes("#tex-editor.is-asset-mode > .tex-inline-file-viewer") &&
+    WORK_TEX_EXPLORER_STYLE.includes("grid-row:3;grid-column:1") &&
+    WORK_TEX_EXPLORER_STYLE.includes("width:100%;height:100%"),
+    "The selected file must fill the existing editor row without a floating second card");
+  assert(WORK_TEX_EXPLORER_STYLE.includes("margin:0;border:0;border-radius:0"),
+    "The selected file must not look like a separate popup window");
+  assert(WORK_TEX_EXPLORER_TREE.includes("viewer.hidden=true;editor.classList.remove('is-asset-mode')") &&
+    WORK_TEX_EXPLORER_TREE.includes("editor.classList.add('is-asset-mode');viewer.hidden=false"),
+    "Switching between main.tex and supplementary assets must restore exactly one visible editor");
+
   assert(WORK_TEX_EXPLORER_STYLE.includes("box-shadow:none!important;filter:none!important"),
     "Dark PDF borders must not emit a white shadow");
   assert(!html.includes("__ZH__"), "Locale placeholders must be resolved");
