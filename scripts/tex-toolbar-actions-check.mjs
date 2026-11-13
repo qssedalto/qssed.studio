@@ -257,8 +257,9 @@ for(const zh of [true,false]){
   assert.equal(compile.parentElement?.id,"tex-compile-fixed","Compile action must remain outside scrolling group");
   assert.equal(titleInput.readOnly,true,"Title input may not be edited directly");
   assert.equal(titleInput.hidden,true,"The old title input is not visible");
-  const indicator=nodes.get("tex-build-indicator");
-  const logButton=nodes.get("tex-build-download-log");
+  const titleRow=saveState.parentElement.parentElement;
+  const indicator=titleRow.children[1];
+  const logButton=titleRow.children[2];
   assert.equal(indicator.hidden,true,"Cold-page load must start with no success/failure badge");
   assert.equal(logButton.hidden,true,"Cold-page load must not show Download log");
   listeners.get("aertex:tex-build-result")({detail:{documentId:"project-1",ok:false,log:"TeX error"}});
