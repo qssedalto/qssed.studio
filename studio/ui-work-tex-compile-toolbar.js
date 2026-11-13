@@ -16,8 +16,8 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
   .tex-work-app #tex-title{display:none!important}
   .tex-work-app #tex-delete,.tex-work-app #tex-download{display:none!important}
   .tex-work-app .tex-editor-toolbar>.tex-static-title-row{
-    display:flex!important;align-items:flex-start!important;gap:8px!important;
-    flex:1 1 0%!important;min-width:0!important;max-width:100%!important;
+    display:flex!important;flex-wrap:nowrap!important;align-items:flex-start!important;gap:8px!important;
+    flex:1 1 auto!important;min-width:0!important;max-width:100%!important;
     min-height:43px!important;margin:0!important;padding:0 4px!important;
     overflow:hidden!important
   }
@@ -44,25 +44,45 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
   .tex-work-app .tex-static-title{
     display:block;flex:0 1 auto;max-width:100%;min-width:0;
     color:var(--text);font-size:17px;font-weight:680;letter-spacing:-.02em;
-    line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    line-height:24px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     user-select:text
   }
   .tex-work-app .tex-build-indicator{
     display:flex;flex:0 0 23px;width:23px;height:23px;align-items:center;
-    justify-content:center;align-self:flex-start;margin-top:0
+    justify-content:center;align-self:flex-start!important;margin:0!important;
+    padding:0!important;box-sizing:border-box!important;min-width:23px!important;max-width:23px!important
   }
   .tex-work-app .tex-build-indicator[hidden],
   .tex-work-app .tex-build-log[hidden]{display:none!important}
   .tex-work-app .tex-build-indicator svg{display:block;width:23px;height:23px}
-  .tex-work-app .tex-build-log{
-    flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
-    min-width:0;width:auto;min-height:28px;height:28px;padding:0 9px;
-    border:0;border-radius:7px;background:#1677ff;color:#fff;
-    font-family:inherit;font-size:11px;font-weight:600;line-height:1.15;cursor:pointer;white-space:nowrap;
-    box-shadow:none
+  /* Match the first (24px) project-title line, not the two-line title+save
+     stack. Override the site's generic button min-width, height and margin,
+     which previously pushed this control onto a visually lower line. */
+  body.os-shell:has(.tex-work-app) .tex-work-app .tex-editor-toolbar .tex-build-log{
+    appearance:none!important;box-sizing:border-box!important;
+    flex:0 0 auto!important;align-self:flex-start!important;
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    width:auto!important;min-width:76px!important;max-width:100px!important;
+    height:24px!important;min-height:24px!important;max-height:24px!important;
+    margin:0!important;padding:0 9px!important;
+    border:1px solid color-mix(in srgb,#2967d7 25%,transparent)!important;
+    border-radius:7px!important;background:#3479f6!important;color:#fff!important;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei UI","PingFang SC",sans-serif!important;
+    font-size:12px!important;font-weight:600!important;line-height:1!important;
+    letter-spacing:.01em!important;text-align:center!important;
+    cursor:pointer!important;white-space:nowrap!important;
+    box-shadow:0 1px 2px rgba(0,0,0,.08)!important;
+    vertical-align:top!important
   }
-  .tex-work-app .tex-build-log:hover{background:#0965df}
-  .tex-work-app .tex-build-log:focus-visible{outline:2px solid #1677ff;outline-offset:2px}
+  body.os-shell:has(.tex-work-app) .tex-work-app .tex-editor-toolbar .tex-build-log[hidden]{
+    display:none!important
+  }
+  body.os-shell:has(.tex-work-app) .tex-work-app .tex-editor-toolbar .tex-build-log:hover{
+    background:#296de9!important
+  }
+  body.os-shell:has(.tex-work-app) .tex-work-app .tex-editor-toolbar .tex-build-log:focus-visible{
+    outline:2px solid #3479f6!important;outline-offset:2px!important
+  }
   body.os-shell:has(.tex-work-app) .tex-work-app .tex-source-label>.tex-compile-fixed{
     box-sizing:border-box!important;display:flex!important;align-items:center!important;
     justify-content:center!important;flex:0 0 39px!important;
@@ -121,7 +141,9 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
     }
     .tex-work-app .tex-static-title{font-size:17px}
     .tex-work-app .tex-editor-toolbar>#tex-title{display:none!important}
-    .tex-work-app .tex-build-log{font-size:10px}
+    body.os-shell:has(.tex-work-app) .tex-work-app .tex-editor-toolbar .tex-build-log{
+      font-size:11px!important;min-width:72px!important;padding:0 8px!important
+    }
   }
 </style>`;
   // Exact GitHub Actions SVG geometry, sourced from simple-icons/icons/githubactions.svg.
