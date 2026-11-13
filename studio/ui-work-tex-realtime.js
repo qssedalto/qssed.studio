@@ -730,6 +730,14 @@ export function enhanceWorkTexRealtime(markup, zh) {
             setStatus('offline', labels.offline);
             updateLiveSettingsSurface('offline');
             if (current.intentionalClose) return;
+            if (event.code === 4004) {
+              // Canonical main.tex was replaced by an authenticated file
+              // operation. Never seed the NEW Yjs room with this stale text.
+              window.dispatchEvent(new CustomEvent('aertex:tex-source-rebased', {
+                detail: { documentId: id }
+              }));
+              return; // Resume only AFTER an authorized GET has loaded R2.
+            }
             const delay = event.code === 4001 ? 180 : Math.min(5000, 450 * Math.pow(1.7, reconnectAttempt++));
             reconnectTimer = window.setTimeout(() => {
               if (connection === current) void connectDocument(id);
@@ -809,6 +817,11 @@ export function enhanceWorkTexRealtime(markup, zh) {
             return;
           }
           installInputBindings();
+          window.addEventListener('aertex:tex-source-refreshed', event => {
+            if (String(event?.detail?.documentId || '') !== activeDocumentId(activeElements().root, activeElements().list)) return;
+            closeConnection();
+            scheduleDocumentConnection();
+          });
           window.addEventListener('aertex:tex-file-updated', event => {
             const id = String(event?.detail?.documentId || event?.detail?.document_id || '');
             const epoch = String(event?.detail?.realtimeEpoch || 'v2');
