@@ -191,6 +191,18 @@ for(const zh of [true,false]){
     ui.includes("text-overflow:ellipsis!important") &&
     ui.includes(".tex-static-title-stack #tex-save-state"),
     "Save status must be clipped to the available title width without overflowing");
+  assert(ui.includes("align-items:flex-start!important") &&
+    ui.includes("flex-wrap:nowrap!important") &&
+    ui.includes("line-height:24px!important") &&
+    ui.includes("height:24px!important;min-height:24px!important;max-height:24px!important"),
+    "Project title, result SVG and log control must share a 24px first-line baseline without wrapping");
+  assert(ui.includes("font-family:-apple-system,BlinkMacSystemFont") &&
+    ui.includes("font-size:12px!important") &&
+    ui.includes("margin:0!important;padding:0 9px!important"),
+    "Log button should have compact typography and override generic margin/height rules");
+  assert(ui.includes(".tex-build-log[hidden]") &&
+    ui.includes("display:none!important"),
+    "A new page must never show an old failure log until a real compile result arrives");
   assert(!ui.includes("data:image/png"),"Compile toolbar must not render a raster icon");
 }
 // Run the actual compile-toolbar bootstrap against a minimal DOM. In
@@ -245,6 +257,16 @@ for(const zh of [true,false]){
   assert.equal(compile.parentElement?.id,"tex-compile-fixed","Compile action must remain outside scrolling group");
   assert.equal(titleInput.readOnly,true,"Title input may not be edited directly");
   assert.equal(titleInput.hidden,true,"The old title input is not visible");
+  const indicator=nodes.get("tex-build-indicator");
+  const logButton=nodes.get("tex-build-download-log");
+  assert.equal(indicator.hidden,true,"Cold-page load must start with no success/failure badge");
+  assert.equal(logButton.hidden,true,"Cold-page load must not show Download log");
+  listeners.get("aertex:tex-build-result")({detail:{documentId:"project-1",ok:false,log:"TeX error"}});
+  assert.equal(indicator.hidden,false,"A real compile error shows the failure SVG");
+  assert.equal(logButton.hidden,false,"A real compile error makes the log downloadable");
+  listeners.get("aertex:tex-build-started")({detail:{documentId:"project-1",automatic:false}});
+  assert.equal(indicator.hidden,true,"New compilation clears the prior failure badge");
+  assert.equal(logButton.hidden,true,"New compilation clears the prior failure log button");
   assert.equal(typeof listeners.get("aertex:tex-build-result"),"function","Compilation result listener missing");
 }
 console.log("Work TeX exact SVG, fixed compile toolbar and status/log checks passed.");
