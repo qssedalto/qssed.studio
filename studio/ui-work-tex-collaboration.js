@@ -309,7 +309,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
                   '<select id="tex-collaboration-role" aria-label="' + labels.invite + '"><option value="editor">' + labels.editor + '</option><option value="viewer">' + labels.viewer + '</option></select>' +
                   '<button id="tex-collaboration-add" type="submit" disabled>' + labels.add + '</button>' +
                 '</form>' +
-                '<div id="tex-collaboration-message" class="tex-collaboration-message"></div>' +
+                '<div id="tex-collaboration-message" class="tex-collaboration-message" role="status" aria-live="polite" aria-atomic="true"></div>' +
                 '<div id="tex-collaboration-list" class="tex-collaboration-list"></div>' +
                 '<div class="tex-collaboration-note">' + labels.permissionHint + '</div>' +
               '</div>' +
