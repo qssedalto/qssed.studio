@@ -211,6 +211,9 @@ function optimizeCollaborationSwitching(markup) {
         const maxAge = 5 * 60 * 1000;
         const freshAge = 30 * 1000;
         const inflight = new Map();
+        // A permission write invalidates any older prefetch still in flight.
+        // Otherwise a delayed GET can overwrite newly granted membership.
+        const mutationEpoch = new Map();
         let activeId = String(root.dataset.texCollaborationDocumentId || '');
 
         const readCached = id => {
@@ -249,6 +252,7 @@ function optimizeCollaborationSwitching(markup) {
           }
           if (inflight.has(key)) return inflight.get(key);
 
+          const startedEpoch = mutationEpoch.get(key) || 0;
           const request = fetch('/api/tex/collaboration?document=' + encodeURIComponent(key), {
             credentials: 'same-origin',
             cache: 'no-store',
@@ -256,6 +260,11 @@ function optimizeCollaborationSwitching(markup) {
           }).then(async response => {
             if (!response.ok) return cached?.data || null;
             const data = await response.json().catch(() => null);
+            if ((mutationEpoch.get(key) || 0) !== startedEpoch) {
+              // This response predates an Add/Save. It cannot repopulate old
+              // participant avatars or poison the 5-minute session cache.
+              return readCached(key)?.data || null;
+            }
             if (data?.document_id === key && Array.isArray(data?.participants)) publish(key, data, true);
             return data;
           }).catch(() => cached?.data || null).finally(() => {
@@ -264,6 +273,17 @@ function optimizeCollaborationSwitching(markup) {
           inflight.set(key, request);
           return request;
         };
+
+        const onCommitted = event => {
+          const data = event?.detail;
+          const key = String(data?.document_id || '').trim();
+          if (!key || !Array.isArray(data.participants)) return;
+          mutationEpoch.set(key,(mutationEpoch.get(key) || 0) + 1);
+          // Publish the authoritative POST/PATCH/DELETE snapshot, not an
+          // optimistic draft; also replace the stale sessionStorage entry.
+          publish(key,data,true);
+        };
+        window.addEventListener('qsseda:tex-collaboration-committed',onCommitted);
 
         const hydrateActive = () => {
           const id = String(root.dataset.texCollaborationDocumentId || '').trim();
@@ -305,6 +325,7 @@ function optimizeCollaborationSwitching(markup) {
           activeObserver.disconnect();
           list.removeEventListener('pointerdown', onDocumentIntent, true);
           list.removeEventListener('click', onDocumentIntent, true);
+          window.removeEventListener('qsseda:tex-collaboration-committed',onCommitted);
         }, { once: true });
       })();
     </script>`;
