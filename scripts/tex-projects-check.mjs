@@ -7,8 +7,16 @@ import { handleTexProjects } from "../studio/tex-project-api.js";
 const userId="11111111-1111-4111-8111-111111111111";
 const realFetch=globalThis.fetch;
 let profile={first_name:"名",last_name:"姓"};
+let adminVerified=false, adminRpcUnavailable=false, adminRpcCount=0;
 let writes=[];
-globalThis.fetch=async (url) => {
+globalThis.fetch=async (url,options) => {
+  if(String(url).includes("/rest/v1/rpc/verify_admin_session")){
+    adminRpcCount++;
+    assert.equal(options?.method,"POST","Admin bypass must use POST to verified server RPC");
+    assert.equal(options?.headers?.authorization,"Bearer user-token");
+    if(adminRpcUnavailable)return Response.json({error:"Unavailable"},{status:503});
+    return Response.json(adminVerified,{status:200});
+  }
   assert(String(url).includes("/profiles?select=first_name,last_name&id=eq."+userId),
     "Project author must be scoped to the authenticated user's profile.");
   return Response.json([profile],{status:200});
@@ -41,8 +49,27 @@ try{
 
   profile={first_name:"",last_name:""};
   const incomplete=await create(postJson({type:"blank",title:"Name Required"}));
-  assert.equal(incomplete.response.status,422,"Unknown author must not be made up.");
+  assert.equal(incomplete.response.status,422,"Unverified accounts must still supply their legal names.");
+  assert.equal(adminRpcCount,1,"Server must verify admin when legal names are missing.");
+
+  adminVerified=true;
+  const adminBlank=await create(postJson({type:"blank",title:"管理员的新项目"}));
+  assert.equal(adminBlank.response.status,201,"Verified administrator should be able to create a blank project without legal names.");
+  assert.equal(adminBlank.body.document.owner_id,userId);
+  assert.match(adminBlank.body.document.source,/\\author\{\}/,
+    "Administrator project must not fabricate a legal author name.");
+  assert.equal(adminBlank.body.document.project_type,"blank");
+
+  adminRpcUnavailable=true;
+  const unverified=await create(postJson({type:"blank",title:"Admin RPC Down"}));
+  assert.equal(unverified.response.status,422,"Admin RPC failure must fail closed.");
+  adminRpcUnavailable=false;
+  adminVerified=false;
   profile={first_name:"名",last_name:"姓"};
+  const rpcBefore=adminRpcCount;
+  const normal=await create(postJson({type:"blank",title:"Signed Name"}));
+  assert.equal(normal.response.status,201);
+  assert.equal(adminRpcCount,rpcBefore,"Complete author names should not require an admin RPC.");
 
   // Offline example creation must succeed using the exact bundled frog.jpg.
   // Never silently generate or fetch a substituted image.
@@ -208,7 +235,7 @@ try{
   const nonZip=await create(asZip(Buffer.from("not a zip")));
   assert.equal(nonZip.response.status,400,"Invalid ZIP must be rejected.");
   assert.equal(writes.length,7,"Only successfully validated projects can reach R2.");
-  console.log("TeX project creation, legal-name gate, sample files, ZIP import and traversal checks passed.");
+  console.log("TeX project creation, verified admin author bypass, legal-name gate, sample files, ZIP import and traversal checks passed.");
 }finally{
   globalThis.fetch=realFetch;
 }

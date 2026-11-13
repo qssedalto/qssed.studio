@@ -52,6 +52,21 @@ async function ownerName(token,userId) {
   const last = String(p?.last_name || "").trim();
   return first && last ? (first + " " + last) : "";
 }
+// Missing legal-name fields must not block a verified AERTEX administrator.
+// Verify using the same authenticated admin RPC as the control plane; never
+// trust a user-supplied role or a client-side "isAdmin" flag.
+async function verifiedAdmin(token) {
+  if(!token)return false;
+  try {
+    const response=await fetch(SUPABASE_URL + "/rest/v1/rpc/verify_admin_session", {
+      method:"POST",
+      headers:{apikey:SUPABASE_KEY,authorization:"Bearer " + token,
+        "content-type":"application/json",accept:"application/json"},
+      body:"{}"
+    });
+    return response.ok && (await response.json()) === true;
+  } catch {return false;}
+}
 async function boundedZip(stream) {
   if(!stream) throw new Error("File body missing.");
   const reader=stream.getReader();let len=0;const chunks=[];
@@ -189,7 +204,11 @@ export async function handleTexProjects(request,env,userId,accessToken) {
       return await createDocument(env,userId,title,main,files,"example");
     }
     const author=await ownerName(accessToken,userId);
-    if(!author)return problem("Please complete your legal first and last name in account settings before creating a blank project.",422);
+    if(!author && !(await verifiedAdmin(accessToken))){
+      return problem("Please complete your legal first and last name in account settings before creating a blank project.",422);
+    }
+    // Verified administrators with no registered names get an empty \\author{},
+    // never a made-up legal identity. Non-admin authors still require both names.
     return await createDocument(env,userId,title,blankSource(title,author),[],"blank");
   } catch(error) {
     workerLog("warn","tex.project.create.failed",{user_id:userId,reason:String(error?.message||"unknown").slice(0,120)});

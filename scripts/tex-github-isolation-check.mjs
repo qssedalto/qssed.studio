@@ -84,6 +84,10 @@ const weekAdminSql = fs.readFileSync(new URL("../docs/tex-github-weekly-admin.sq
 assert(projectBackend.includes('ownerName(accessToken,userId)') &&
   projectBackend.includes('profiles?select=first_name,last_name&id=eq.'),
   "Blank project author name must come from the requesting user's profile");
+assert(projectBackend.includes('verifiedAdmin(accessToken)') &&
+  projectBackend.includes('/rest/v1/rpc/verify_admin_session') &&
+  projectBackend.includes('response.ok && (await response.json()) === true'),
+  "Only server-verified admins may create a blank project without legal names");
 assert(projectBackend.includes('Asia/Shanghai') && projectBackend.includes('\\\\maketitle'),
   "Blank project must include the current date and title matter");
 assert(projectBackend.includes('new DecompressionStream("deflate-raw")') &&
