@@ -80,6 +80,73 @@ for (const zh of [true,false]) {
     "Old prefetch GETs may not replace committed members or cache stale avatars");
   assert(markup.includes(zh ? "成员已添加并保存" : "Collaborator added and saved"),
     "The UI must only report invite success after the server confirms membership");
+
+  // Execute the real Add handler with a fake authenticated API. An avatar
+  // must never appear solely because a person was added to a local draft.
+  const handlerAt = collaboration.indexOf("function acceptCommittedSnapshot(");
+  const handlerEnd = collaboration.indexOf("async function saveDraft()", handlerAt);
+  assert(handlerAt > 0 && handlerEnd > handlerAt, "Immediate invite handler must be present");
+  const inviteHandler = collaboration.slice(handlerAt, handlerEnd);
+  async function inviteScenario(failWrite = false) {
+    const owner = { id:"owner-1", username:"owner", role:"owner", is_owner:true };
+    const guest = { id:"guest-2", username:"guest", role:"editor", is_owner:false };
+    const calls = [];
+    const events = [];
+    const notices = [];
+    const ctx = {
+      snapshot: {document_id:"document-3", can_manage:true, participants:[owner]},
+      draftParticipants:[owner], calls, events, notices, submit:null,
+      async api(url, options) {
+        calls.push([url,options?.method||"GET"]);
+        if (options?.method === "POST") {
+          assert.equal(JSON.parse(options.body).username, "guest");
+          if(failWrite)throw Error("server rejected invite");
+          return { document_id:"document-3", can_manage:true,participants:[owner,guest] };
+        }
+        return {document_id:"document-3",can_manage:true,participants:[owner]};
+      },
+      async resolveDraftPerson(){return guest}
+    };
+    const body = [
+      "let snapshot=ctx.snapshot,draftParticipants=ctx.draftParticipants;",
+      "let saving=false,loading=false,requestSequence=0,snapshotDocumentId='',snapshotLoadedAt=0;",
+      "let snapshotPromise=null,snapshotPromiseDocumentId='',selectedSearchPerson=null;",
+      "const labels={error:'Failure',add:'Add',adding:'Adding',memberAdded:'Saved',alreadyMember:'Already',userNotFound:'Missing'};",
+      "const form={addEventListener(type,fn){if(type==='submit')ctx.submit=fn;}};",
+      "const username={value:'guest'}, role={value:'editor'},add={textContent:''};",
+      "const cloneParticipants=items=>Array.isArray(items)?items.map(item=>({...item})):[];",
+      "const activeDocumentId=()=> 'document-3';",
+      "const isExistingMember=person=>draftParticipants.some(item=>item.id===person.id);",
+      "const resolveDraftPerson=ctx.resolveDraftPerson;",
+      "const api=ctx.api;",
+      "const hideSearchResults=()=>{};",
+      "const setBusy=value=>{loading=value};",
+      "const renderParticipants=()=>{};",
+      "const showMessage=(value,bad=false)=>ctx.notices.push({value,bad});",
+      "const friendlyError=error=>error.message;",
+      "const window={dispatchEvent:event=>ctx.events.push(event)};",
+      "class CustomEvent{constructor(type,options){this.type=type;this.detail=options.detail}}",
+      inviteHandler,
+      "return { send:()=>ctx.submit({preventDefault(){}}),state:()=>({snapshot,draftParticipants,saving})};"
+    ].join("\n");
+    const runtime = new Function("ctx",body)(ctx);
+    await runtime.send();
+    return {ctx, ...runtime.state()};
+  }
+  const added = await inviteScenario();
+  assert.equal(added.ctx.calls.filter(([,verb])=>verb==="POST").length,1,
+    "A single Add click must grant membership on the server exactly once");
+  assert(added.snapshot.participants.some(person=>person.id==="guest-2") &&
+    added.draftParticipants.some(person=>person.id==="guest-2"),
+    "Saved avatar must survive drawer closing and reopening");
+  assert(added.ctx.events.some(event=>event.type==="qsseda:tex-collaboration-committed"),
+    "A saved invite must invalidate cached membership snapshots");
+  const rejected = await inviteScenario(true);
+  assert(!rejected.snapshot.participants.some(person=>person.id==="guest-2") &&
+    !rejected.draftParticipants.some(person=>person.id==="guest-2"),
+    "Failed invitations may not show a transient collaborator avatar");
+  assert(rejected.ctx.notices.some(item=>item.bad), "Failed invite must show an error instead of silently disappearing");
+
   for (const scriptId of ["qsseda-work-tex-realtime-runtime", "qsseda-work-tex-codemirror-runtime", "qsseda-tex-live-controls-runtime"]) {
     const match = markup.match(new RegExp('<script id="' + scriptId + '">([\\s\\S]*?)<\\/script>'));
     assert(match, "Missing script " + scriptId);
