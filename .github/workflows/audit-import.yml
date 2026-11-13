@@ -15,21 +15,21 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24.x'
-      - name: Apply second hash-verified source batch
+      - name: Apply third hash-verified source batch
         run: |
           python3 <<'PY'
           import base64, gzip, hashlib, json, pathlib, subprocess
           root=pathlib.Path.cwd()
-          text=''.join((root/f'.audit-transfer/batch02-{i}.b64').read_text() for i in range(4))
+          text=''.join((root/f'.audit-transfer/batch03-{i}.b64').read_text() for i in range(2))
           payload=gzip.decompress(base64.b64decode(text,validate=True))
           digest=lambda x: hashlib.sha256(x).hexdigest()
-          assert digest(payload)=='b957046438db994a4e53548d2362a1bbc0682e83cbb4fd85b4beff18fb3e0078'
+          assert digest(payload)=='e3361275e177a7bbf82fe6e46b19343c2015f10879443abd8442aa457ca3d1d7'
           data=json.loads(payload)
           paths=[]
           for change in data['changes']:
               relative=pathlib.PurePosixPath(change['p'])
               assert not relative.is_absolute() and '..' not in relative.parts
-              assert relative.parts[0] in ('studio','scripts','tex-vendor') or str(relative)=='wrangler.jsonc'
+              assert relative.parts[0] in ('studio','scripts','tex-vendor') or str(relative) in ('wrangler.jsonc','auth-browser-refresh.js')
               target=root/relative
               old=target.read_bytes() if target.exists() else None
               assert (digest(old) if old is not None else None)==change['o'],str(relative)+' base mismatch'
@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix: enforce collaborative save revisions and preserve reconnect drafts'
+          git commit -m 'fix: retain sessions during outages and protect supplementary drafts'
           git push origin HEAD:refs/heads/audit/p0-p1-stability-20261113
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
       - name: Build pinned browser and server modules
