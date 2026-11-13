@@ -11,7 +11,8 @@
     "codemirror": "6.0.2",
     "@codemirror/language": "6.12.4",
     "@codemirror/legacy-modes": "6.5.3",
-    "yjs": "13.6.27"
+    "yjs": "13.6.27",
+    "katex": "0.19.1"
   },
   "devDependencies": {
     "esbuild": "0.25.12"
