@@ -131,7 +131,9 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         pointer-events:none!important;
         transform:translateX(-1px);
       }
-      .tex-cm-remote-caret.is-typing{animation:qssedaRemoteCaretPulse .72s ease-in-out infinite alternate}
+      .tex-cm-remote-caret{animation:qssedaRemoteCaretBlink 1.05s steps(1,end) infinite}
+      .tex-cm-remote-caret.is-typing{animation-duration:.72s}
+      .tex-cm-remote-caret.is-hover-hidden{opacity:0!important;animation-play-state:paused!important}
       .tex-cm-remote-label{
         position:absolute!important;
         left:0!important;
@@ -146,7 +148,8 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         text-overflow:ellipsis!important;
         box-shadow:0 2px 7px rgba(0,0,0,.16)!important;
       }
-      @keyframes qssedaRemoteCaretPulse{from{opacity:.55}to{opacity:1}}
+      @keyframes qssedaRemoteCaretBlink{0%,49%{opacity:1}50%,100%{opacity:.08}}
+      @media(prefers-reduced-motion:reduce){.tex-cm-remote-caret{animation:none!important}}
       @media(max-width:760px), (max-width:950px) and (pointer:coarse){
         .tex-work-app .tex-codemirror-host{min-height:0!important;height:100%!important}
         .tex-work-app .tex-codemirror-host>.cm-editor{min-height:0!important;height:100%!important}
@@ -173,6 +176,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         let remoteLayer = null;
         let remoteParticipants = [];
         let remoteFrame = 0;
+        let hoverPoint = null;
         let resizeObserver = null;
         let sourceSyncQueued = false;
         let syncingToSource = false;
@@ -253,6 +257,12 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           } finally {
             syncingToSource = false;
           }
+          if (update.docChanged || update.selectionSet) {
+            const currentId = activeDocumentId();
+            window.dispatchEvent(new CustomEvent('qsseda:tex-editor-selection', {
+              detail: { document_id: currentId, anchor: selection.anchor, head: selection.head }
+            }));
+          }
           if (update.docChanged || update.selectionSet || update.viewportChanged || update.geometryChanged) scheduleRemoteRender();
           applyReadOnly();
         }
@@ -306,6 +316,12 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           return Math.abs(hash) % 360;
         }
 
+        function remoteAccent(person) {
+          const chosen = String(person?.cursor_color || '').trim();
+          if (/^#[0-9a-f]{6}$/i.test(chosen)) return chosen;
+          return 'hsl(' + colorFor(person) + ' 72% 48%)';
+        }
+
         function inferSelf(participants) {
           // Self identity comes from the server-assigned WebSocket client id,
           // never inferred from matching cursor positions or membership roles.
@@ -319,7 +335,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           return String(person?.display_name || person?.username || labels.remoteCursor).trim().slice(0, 80) || labels.remoteCursor;
         }
 
-        function appendSelectionRect(from, to, hue, hostRect) {
+        function appendSelectionRect(from, to, accent, hostRect) {
           if (!view || !remoteLayer || from >= to) return;
           const doc = view.state.doc;
           let line = doc.lineAt(from);
@@ -341,7 +357,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
               rect.style.top = top + 'px';
               rect.style.width = Math.max(3, right - left) + 'px';
               rect.style.height = height + 'px';
-              rect.style.background = 'hsla(' + hue + ',72%,52%,.16)';
+              rect.style.background = 'color-mix(in srgb, ' + accent + ' 18%, transparent)';
               remoteLayer.append(rect);
             }
             rendered += 1;
@@ -365,8 +381,8 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             const end = clamp(person.selection_end, docLength);
             const from = Math.min(start, end);
             const to = Math.max(start, end);
-            const hue = colorFor(person);
-            if (from !== to) appendSelectionRect(from, to, hue, hostRect);
+            const accent = remoteAccent(person);
+            if (from !== to) appendSelectionRect(from, to, accent, hostRect);
 
             const caretPosition = clamp(person.caret_position ?? end, docLength);
             const coords = view.coordsAtPos(caretPosition, caretPosition === docLength ? -1 : 1);
@@ -380,12 +396,12 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             caret.style.left = left + 'px';
             caret.style.top = top + 'px';
             caret.style.height = height + 'px';
-            caret.style.background = 'hsl(' + hue + ' 72% 48%)';
+            caret.style.background = accent;
 
             const label = document.createElement('span');
             label.className = 'tex-cm-remote-label';
             label.textContent = participantName(person);
-            label.style.background = 'hsl(' + hue + ' 72% 42%)';
+            label.style.background = accent;
             if (top < 24) {
               label.style.bottom = 'auto';
               label.style.top = 'calc(100% + 3px)';
@@ -394,6 +410,20 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             labelOffset += 1;
             caret.append(label);
             remoteLayer.append(caret);
+          }
+          if (hoverPoint) updateHoveredRemoteCaret(hoverPoint);
+        }
+
+        function updateHoveredRemoteCaret(point) {
+          if (!remoteLayer || !point) return;
+          const nearby = element => {
+            if (!element) return false;
+            const rect = element.getBoundingClientRect();
+            return point.clientX >= rect.left - 6 && point.clientX <= rect.right + 6 &&
+              point.clientY >= rect.top - 6 && point.clientY <= rect.bottom + 6;
+          };
+          for (const caret of remoteLayer.querySelectorAll('.tex-cm-remote-caret')) {
+            caret.classList.toggle('is-hover-hidden', nearby(caret) || nearby(caret.querySelector('.tex-cm-remote-label')));
           }
         }
 
@@ -591,6 +621,15 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             if (editingKey) event.preventDefault();
           }, true);
 
+          host.addEventListener('pointermove', event => {
+            if (event.pointerType === 'touch') return;
+            hoverPoint = { clientX: event.clientX, clientY: event.clientY };
+            updateHoveredRemoteCaret(hoverPoint);
+          }, { passive: true });
+          host.addEventListener('pointerleave', () => {
+            hoverPoint = null;
+            remoteLayer?.querySelectorAll('.is-hover-hidden').forEach(el => el.classList.remove('is-hover-hidden'));
+          });
           view.scrollDOM.addEventListener('scroll', scheduleRemoteRender, { passive: true });
           window.addEventListener('resize', scheduleRemoteRender, { passive: true });
           window.addEventListener('qsseda:tex-presence', onPresence);
