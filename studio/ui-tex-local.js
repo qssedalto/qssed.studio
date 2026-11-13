@@ -26,7 +26,9 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     previewEmpty: "修改 TeX 后，这里会显示本机生成的 PDF。",
     previewHint: "停止输入约 1.5 秒后刷新；连续编辑时每 10 秒兜底同步一次。",
     previewOpen: "在新窗口打开",
-    previewNever: "尚未生成预览"
+    previewNever: "尚未生成预览",
+    mobileNoPdf: "暂无 PDF。需要编译时可使用下方的远程编译功能。",
+    mobileSelect: "请选择一个项目文件以查看 PDF。"
   } : {
     localReady: "Local TeX connected",
     localUnsupported: "Current engine is not enabled locally",
@@ -54,7 +56,9 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     previewEmpty: "Edit the TeX source and the locally generated PDF will appear here.",
     previewHint: "Refreshes about 1.5 seconds after you stop typing, with a 10-second dirty fallback while editing continuously.",
     previewOpen: "Open in new window",
-    previewNever: "No preview generated yet"
+    previewNever: "No preview generated yet",
+    mobileNoPdf: "No PDF yet. Use the remote compilation option below when needed.",
+    mobileSelect: "Select a project file to view its PDF."
   };
 
   const previewPanel = `
@@ -96,6 +100,9 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
         let localBase = "";
         let localEngines = [];
         let cloudAvailable = false;
+        let probesReady = false;
+        const mobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '') ||
+          (navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints) > 1);
         let localBusy = false;
         let previewEnabled = true;
         let previewDirty = false;
@@ -222,6 +229,13 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
 
           function syncPreviewAvailability() {
             const selected = hasDocument();
+            if (mobileDevice) {
+              previewToggle.disabled = true;
+              previewCard?.classList.add('is-tex-mobile-preview');
+              if (!previewFrame.hidden) setPreviewStatus('ready', localCopy.previewUpdated);
+              else setPreviewStatus('idle', selected ? localCopy.mobileNoPdf : localCopy.mobileSelect);
+              return;
+            }
             const supported = selected && supportsCurrentEngine();
             previewToggle.disabled = !supported;
             previewCard?.classList.toggle('is-unavailable', !supported);
@@ -248,6 +262,16 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             const shouldDisable = localBusy || !hasDocument() || !available;
             if (compile.disabled !== shouldDisable) compile.disabled = shouldDisable;
             syncPreviewAvailability();
+            if (probesReady) {
+              window.dispatchEvent(new CustomEvent('qsseda:tex-compiler-probed', {
+                detail: {
+                  localDetected: Boolean(localBase),
+                  localSupported,
+                  cloudAvailable,
+                  selectedEngine: String(engine.value || '').toLowerCase()
+                }
+              }));
+            }
           }
 
           async function probeCloud() {
@@ -530,7 +554,8 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             localUrls.clear();
           }, { once: true });
 
-          await Promise.all([probeCloud(), probeLocal()]);
+          await Promise.all([probeCloud(), mobileDevice ? Promise.resolve() : probeLocal()]);
+          probesReady = true;
           syncCompiler();
           if (previewEnabled && supportsCurrentEngine() && hasDocument()) schedulePreview(450);
         };
