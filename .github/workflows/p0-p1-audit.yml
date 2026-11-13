@@ -1,0 +1,62 @@
+name: P0 P1 Stability Audit
+
+on:
+  push:
+    branches: [audit/p0-p1-stability-20261113]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p0-p1-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.x'
+      - name: Preserve exact review snapshot
+        run: |
+          mkdir -p /tmp/p0-p1-audit
+          git archive --format=tar.gz HEAD -o /tmp/p0-p1-audit/source.tar.gz
+          git rev-parse HEAD > /tmp/p0-p1-audit/commit.txt
+      - uses: actions/upload-artifact@v6
+        with:
+          name: p0-p1-source-${{ github.sha }}
+          path: /tmp/p0-p1-audit/
+          retention-days: 1
+      - name: Build pinned browser dependencies
+        run: |
+          npm ci --prefix tex-vendor --no-audit --no-fund
+          node tex-vendor/build.mjs
+      - name: Run existing data and UI regression baseline
+        shell: bash
+        run: |
+          mkdir -p /tmp/p0-p1-results
+          failed=0
+          for name in security-markup security-architecture signup-completion tex-vendor tex-workbench tex-first-paint tex-toolbar-scroll tex-tree-selection tex-file-chat-security tex-file-chat-popup tex-live-collaboration tex-link-sharing tex-toolbar-actions tex-file-manager tex-explorer tex-explorer-vault tex-github-compile-project tex-pdf-auto-theme work-local-bridge appearance admin-control-plane; do
+            file="scripts/${name}-check.mjs"
+            if node "$file" > "/tmp/p0-p1-results/${name}.log" 2>&1; then
+              echo "PASS $file" | tee -a /tmp/p0-p1-results/summary.txt
+            else
+              echo "FAIL $file" | tee -a /tmp/p0-p1-results/summary.txt
+              failed=1
+            fi
+          done
+          cat /tmp/p0-p1-results/summary.txt >> "$GITHUB_STEP_SUMMARY"
+          exit "$failed"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: p0-p1-baseline-${{ github.sha }}
+          path: /tmp/p0-p1-results/
+          if-no-files-found: warn
+          retention-days: 7
