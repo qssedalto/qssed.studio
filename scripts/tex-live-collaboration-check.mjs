@@ -58,6 +58,28 @@ for (const zh of [true,false]) {
   assert.match(markup, /id="qsseda-work-tex-realtime-runtime"/, "WebSocket Yjs sync must remain installed.");
   assert(!markup.includes("这一阶段先完成成员与权限基础"), "Outdated phase copy must be removed.");
   assert(!markup.includes("This phase establishes members and permissions first"), "English phase copy must be removed.");
+  const collaboration = markup.match(/<script id="qsseda-work-tex-collaboration-runtime">([\\s\\S]*?)<\\/script>/)?.[1];
+  assert(collaboration, "The active collaboration dialog runtime must exist");
+  assert.doesNotThrow(() => new Function(collaboration), "Collaboration runtime must be valid JavaScript");
+  const submitAt = collaboration.indexOf("form.addEventListener('submit', async event => {");
+  const saveAt = collaboration.indexOf("async function saveDraft()");
+  assert(submitAt > 0 && saveAt > submitAt, "Invite submit handler must be defined before staged permission saving");
+  const invite = collaboration.slice(submitAt,saveAt);
+  assert(invite.includes("await api('/api/tex/collaboration', {") &&
+    invite.includes("method: 'POST'") &&
+    invite.includes("acceptCommittedSnapshot(data, id, previousDraft, previousServer)") &&
+    !invite.includes("draftParticipants.push("),
+    "Clicking Add must POST the invite immediately, not show a temporary unsaved avatar");
+  assert(collaboration.includes("qsseda:tex-collaboration-committed") &&
+    collaboration.includes("requestSequence += 1;") &&
+    collaboration.includes("renderAvatars();"),
+    "Confirmed participant snapshots must update avatars and invalidate stale pending reads");
+  assert(markup.includes("const mutationEpoch = new Map();") &&
+    markup.includes("window.addEventListener('qsseda:tex-collaboration-committed',onCommitted)") &&
+    markup.includes("mutationEpoch.get(key) || 0) !== startedEpoch"),
+    "Old prefetch GETs may not replace committed members or cache stale avatars");
+  assert(markup.includes(zh ? "成员已添加并保存" : "Collaborator added and saved"),
+    "The UI must only report invite success after the server confirms membership");
   for (const scriptId of ["qsseda-work-tex-realtime-runtime", "qsseda-work-tex-codemirror-runtime", "qsseda-tex-live-controls-runtime"]) {
     const match = markup.match(new RegExp('<script id="' + scriptId + '">([\\s\\S]*?)<\\/script>'));
     assert(match, "Missing script " + scriptId);
