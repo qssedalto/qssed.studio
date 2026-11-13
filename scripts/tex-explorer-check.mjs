@@ -138,6 +138,6 @@ assert(WORK_TEX_EXPLORER_COMMANDS.includes("central.length>500"),
   "Project ZIP download must accept up to 500 files.");
 assert(WORK_TEX_EXPLORER_TREE.includes("tree_refresh=") &&
   WORK_TEX_EXPLORER_TREE.includes("Always verify the latest R2 tree on expansion.") &&
-  WORK_TEX_EXPLORER_TREE.includes("selectedAsset=fresh"),
+  WORK_TEX_EXPLORER_TREE.includes("showAsset(selectedAsset,fresh)"),
   "Exploring or switching projects must revalidate their files instead of displaying indefinite stale snapshots.");
 console.log("Work TeX Explorer, project actions, inline Markdown reading and ZIP structure validated.");
