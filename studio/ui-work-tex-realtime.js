@@ -436,7 +436,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
             const source = document.getElementById('tex-source');
             const bridge = window.__qssedaTexEditorBridge;
             const editorSelection = bridge?.getSelection?.();
-            const maximum = current.ytext?.length || source?.value?.length || 0;
+            const maximum = Math.max(current.ytext?.length || 0, source?.value?.length || 0, bridge?.getValue?.()?.length || 0);
             const rangeStart = Math.max(0, Math.min(maximum, Number(source?.selectionStart) || 0));
             const rangeEnd = Math.max(0, Math.min(maximum, Number(source?.selectionEnd) || 0));
             const anchor = Math.max(0, Math.min(maximum, Number(editorSelection?.anchor ?? (source?.selectionDirection === 'backward' ? rangeEnd : rangeStart)) || 0));
@@ -446,8 +446,11 @@ export function enhanceWorkTexRealtime(markup, zh) {
               try { return bytesToBase64(Y.encodeRelativePosition(Y.createRelativePositionFromTypeIndex(current.ytext, offset))); }
               catch { return ''; }
             };
+            const themeAccent = getComputedStyle(document.documentElement).getPropertyValue('--aertex-accent').trim();
+            const cursorColor = /^#[0-9a-f]{6}$/i.test(themeAccent) ? themeAccent : '';
             current.socket.send(JSON.stringify({
               type: 'presence',
+              cursor_color: cursorColor,
               selection_start: Math.min(anchor, head),
               selection_end: Math.max(anchor, head),
               caret_position: head,
@@ -694,6 +697,13 @@ export function enhanceWorkTexRealtime(markup, zh) {
             if (!current.ready) { current.pendingLocalEdit = true; return; }
             if (current.role !== 'viewer') syncMeta(current.ymeta, 'engine', engine.value, LOCAL_ORIGIN);
           });
+          window.addEventListener('qsseda:tex-editor-selection', event => {
+            if (!connection?.ready || event?.detail?.document_id !== connection.id) return;
+            // CodeMirror is the visible editor. The hidden textarea's 'select'
+            // event is not a reliable signal after a mouse click on a CM line.
+            sendPresence();
+          });
+          window.addEventListener('aertex-themechange', () => sendPresence(true));
           source?.addEventListener('select', () => sendPresence());
           source?.addEventListener('click', () => sendPresence());
           source?.addEventListener('keyup', () => sendPresence());
