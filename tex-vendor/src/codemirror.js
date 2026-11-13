@@ -10,7 +10,7 @@ import { javascript, json, typescript } from "@codemirror/legacy-modes/mode/java
 import { yaml } from "@codemirror/legacy-modes/mode/yaml";
 import { css, sCSS, less } from "@codemirror/legacy-modes/mode/css";
 import { xml, html } from "@codemirror/legacy-modes/mode/xml";
-import { markdown } from "@codemirror/legacy-modes/mode/markdown";
+import { markdown } from "./markdown-stream.js";
 import { shell } from "@codemirror/legacy-modes/mode/shell";
 import { powerShell } from "@codemirror/legacy-modes/mode/powershell";
 import { c, cpp, java, csharp, kotlin } from "@codemirror/legacy-modes/mode/clike";

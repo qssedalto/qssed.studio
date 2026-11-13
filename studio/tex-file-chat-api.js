@@ -73,6 +73,8 @@ export async function handleTexFileChatApi(request,env) {
     "X-Qsseda-Chat-Rp":url.hostname,
     "X-Qsseda-Chat-Origin":url.origin,
     "X-Qsseda-Chat-Role":access.role,
+    "X-Qsseda-Chat-Username":String(auth.profile?.username||"").replace(/[^a-zA-Z0-9_.-]/g,"").slice(0,40),
+    "X-Qsseda-Chat-Display-Name":encodeURIComponent(String(auth.profile?.display_name||"").replace(/[\u0000-\u001f\u007f]/g," ").trim().slice(0,80)),
     "X-Qsseda-Chat-Allowed":[...allowed].join(",")});
   // The server alone derives the project chat identity; file_name is ignored.
   // The new v2 room namespace does not overwrite any legacy per-file ciphertext.
