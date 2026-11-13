@@ -149,7 +149,7 @@ export async function handleTexProjectFiles(request, env, userId) {
         next = existing.map((f,i)=>i===index?added[0]:f);
       } else {
         if (operation !== "add") return fail("Unknown file operation.");
-        const seen = new Set(["main.tex", ...(entryName ? [entryName.toLowerCase()] : []), ...existing.map(f=>f.name.toLowerCase())]);
+        const seen = new Set([...(doc.main_deleted === true ? [] : ["main.tex"]), ...(entryName ? [entryName.toLowerCase()] : []), ...existing.map(f=>f.name.toLowerCase())]);
         for (const f of added) {
           if (seen.has(f.name.toLowerCase())) return fail("File already exists: " + f.name, 409);
           if (isLocked(f.name)) return fail("The destination folder is locked.",423);
@@ -160,6 +160,7 @@ export async function handleTexProjectFiles(request, env, userId) {
         const replacementEntry = doc.main_deleted === true && added.length === 1 &&
           /^[^/\\]+\.tex$/i.test(added[0].name) && !isLocked("main.tex");
         if (replacementEntry) {
+          if (encoder.encode(added[0].content).byteLength > MAX_SINGLE_BYTES) return fail("The TeX entry is too large.", 413);
           doc.source = added[0].content;
           doc.main_filename = added[0].name;
           doc.main_deleted = false;
