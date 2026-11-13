@@ -11,8 +11,10 @@ const binary=[process.env.CHROME_BINARY,"/usr/bin/google-chrome","/usr/bin/chrom
   "/opt/google/chrome/chrome"].filter(Boolean).find(existsSync);
 if(!binary)throw Error("Chrome required for live E2EE browser integration test");
 const owner="11111111-1111-4111-8111-111111111111";
-const memory={registered:false,device:new Map(),envelopes:new Map(),messages:[],
-  sentPlaintext:false,verified:0};
+const projectA="22222222-2222-4222-8222-222222222222";
+const projectB="33333333-3333-4333-8333-333333333333";
+const memory={registered:new Set(),device:new Map(),envelopes:new Map(),messages:[],
+  sentPlaintext:false,sentFileSelector:false,verified:0};
 const setup=[
   "<script>",
   "window.__qaActiveFile='main.tex';",
@@ -56,12 +58,20 @@ const qa=[
   "    await until(()=>document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'),9000);",
   "  }else{",
   "    await until(()=>document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'),9000);",
+  "    const roomTitle=document.getElementById('aertex-chat-filename').textContent;",
   "    window.__qaActiveFile='chapters/new.tex';",
   "    window.dispatchEvent(new Event('aertex:tex-project-asset-selected'));",
-  "    await until(()=>document.getElementById('aertex-chat-filename').textContent==='chapters/new.tex');",
-  "    await until(()=>!passkey.disabled);",
-  "    if(!passkey.textContent.includes('创建'))throw Error('New file did not require a new Passkey');",
-  "    if(conversation.hidden!==true)throw Error('File switch retained decrypted messages');",
+  "    await sleep(220);",
+  "    if(panel.hidden||conversation.hidden)throw Error('Changing files relocked the project conversation');",
+  "    if(document.getElementById('aertex-chat-filename').textContent!==roomTitle)",
+  "      throw Error('File changed the displayed chat identity');",
+  "    if(!document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'))",
+  "      throw Error('File switch lost the project chat history');",
+  "    document.querySelector('.tex-work-app').dataset.texCollaborationDocumentId='33333333-3333-4333-8333-333333333333';",
+  "    await until(()=>conversation.hidden&&passkey.textContent.includes('创建'),9000);",
+  "    if(panel.hidden)throw Error('Project switch closed the floating panel');",
+  "    if(document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'))",
+  "      throw Error('Project switch leaked the previous project messages');",
   "  }",
   "  document.body.dataset.filechatCryptoQa='PASS';",
   " }catch(e){document.body.dataset.filechatCryptoQa='FAIL';",
@@ -97,10 +107,11 @@ const server=createServer(async(req,res)=>{
   let body;
   try{body=JSON.parse(raw)}catch{return json(res,{error:"Bad request"},400)}
   const op=body.op;
-  if(op==="status")return json(res,{registered:body.file_name==="main.tex"&&memory.registered,
+  if(Object.hasOwn(body,"file_name"))memory.sentFileSelector=true;
+  if(op==="status")return json(res,{registered:memory.registered.has(body.document_id),
     user_id:owner,owner_id:owner,role:"owner"});
   if(op==="begin")return json(res,{
-    mode:body.file_name==="main.tex"&&memory.registered?"get":"create",
+    mode:memory.registered.has(body.document_id)?"get":"create",
     challenge_id:"one-time-test",public_key:{
       rp:{id:"127.0.0.1",name:"AERTEX file chat test"},
       user:{id:"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",name:"test",displayName:"test"},
@@ -110,7 +121,7 @@ const server=createServer(async(req,res)=>{
       rpId:"127.0.0.1",userVerification:"required",allowCredentials:[]
     }
   });
-  if(op==="verify"){if(body.file_name==="main.tex")memory.registered=true;
+  if(op==="verify"){memory.registered.add(body.document_id);
     memory.verified++;
     return json(res,{verified:true,owner_id:owner,user_id:owner,role:"owner",token:"Z".repeat(43),expires_in:600});
   }
@@ -235,14 +246,15 @@ async function browserRound(round){
 
 try{
   await browserRound("first");
-  assert(memory.registered,"Initial Passkey creation must complete");
+  assert(memory.registered.has(projectA),"Initial project Passkey creation must complete");
   assert.equal(memory.messages.length,1,"Must send encrypted message");
   assert(!memory.sentPlaintext,"Server must not see plaintext message field");
   assert(!JSON.stringify(memory.messages).includes("Private browser-to-browser"),
     "Server must only store ciphertext");
   await browserRound("second");
-  assert(memory.verified>=2,"Page reload must revalidate file-specific Passkey");
-  console.log("REAL CHROME E2EE integration: Passkey create, encrypted send, IndexedDB key recovery, reload Passkey verification and distinct file lock PASS");
+  assert(memory.verified>=2,"Page reload must revalidate project Passkey");
+  assert(!memory.sentFileSelector,"Project chat API must not send a file selector");
+  console.log("REAL CHROME E2EE integration: project Passkey, ciphertext, reload verification, same-project file continuity and cross-project lock PASS");
 }finally{
   await new Promise(resolve=>server.close(resolve));
   rmSync(profile,{recursive:true,force:true});

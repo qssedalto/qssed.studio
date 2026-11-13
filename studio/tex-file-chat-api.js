@@ -1,4 +1,4 @@
-// Authenticated per-file encrypted chat gateway. This endpoint owns all
+// Authenticated per-project encrypted chat gateway. This endpoint owns all
 // document ACL checks, so the Durable Object never trusts browser claims.
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
@@ -8,10 +8,6 @@ import { resolveDocumentAccess,verifyActiveUser,documentKey,cleanObjectId } from
 import { hashText } from "./tex-file-chat-webauthn.js";
 
 const MAX_REQUEST=20000;
-const MAX_FILE=300;
-const saneFile=name=>typeof name==="string"&&name.length>0&&name.length<=MAX_FILE&&
-  !/[\u0000-\u001f\u007f\\]/.test(name)&&!name.startsWith("/")&&
-  !name.endsWith("/")&&!name.split("/").some(p=>!p||p==="."||p==="..");
 const safeResponse=(data,status)=>json(data,status);
 
 export async function handleTexFileChatApi(request,env) {
@@ -34,9 +30,9 @@ export async function handleTexFileChatApi(request,env) {
     body=JSON.parse(raw);
     if(!body||typeof body!=="object"||Array.isArray(body))throw Error("bad body");
   }catch{return withStudioSessionCookies(safeResponse({error:"Invalid chat request"},400),session.cookies)}
-  const documentId=cleanObjectId(body.document_id),fileName=body.file_name;
-  if(!documentId||!saneFile(fileName))
-    return withStudioSessionCookies(safeResponse({error:"Invalid document/file"},400),session.cookies);
+  const documentId=cleanObjectId(body.document_id);
+  if(!documentId)
+    return withStudioSessionCookies(safeResponse({error:"Invalid project identifier"},400),session.cookies);
   const access=await resolveDocumentAccess(env,auth.user.id,documentId,session.accessToken);
   if(!access)return withStudioSessionCookies(safeResponse({error:"Document access denied"},404),session.cookies);
   // Link-only visitors must become named collaborators before exchanging
@@ -44,15 +40,10 @@ export async function handleTexFileChatApi(request,env) {
   if(access.via_link===true)return withStudioSessionCookies(
     safeResponse({error:"Join as a named collaborator before using encrypted chat"},403),session.cookies);
   const ownerId=access.owner_id;
-  let record;
   try{
     const stored=await env.STORAGE.get(documentKey(ownerId,documentId));
     if(!stored)return withStudioSessionCookies(safeResponse({error:"Project missing"},404),session.cookies);
-    record=await stored.json();
   }catch{return withStudioSessionCookies(safeResponse({error:"Project temporarily unavailable"},503),session.cookies)}
-  if(fileName!=="main.tex" && !record?.files?.some(file=>file.name===fileName)){
-    return withStudioSessionCookies(safeResponse({error:"This file no longer exists in the project"},404),session.cookies);
-  }
   const allowed=new Set([ownerId,auth.user.id]);
   if(access.role==="owner"){
     // Only live named members can receive new encryption key envelopes.
@@ -73,18 +64,18 @@ export async function handleTexFileChatApi(request,env) {
       }
     }catch{return withStudioSessionCookies(safeResponse({error:"Collaboration member verification unavailable"},503),session.cookies)}
   }
-  const fileHash=await hashText(ownerId+":"+documentId+":"+fileName);
+  const projectHash=await hashText("project-chat-v2:"+ownerId+":"+documentId);
   const room=env.TEX_COLLAB_ROOMS.get(env.TEX_COLLAB_ROOMS.idFromName(ownerId+":"+documentId));
   const headers=new Headers({"content-type":"application/json",
     "X-Qsseda-Chat-User":auth.user.id,
     "X-Qsseda-Chat-Owner":ownerId,
-    "X-Qsseda-Chat-File":fileHash,
+    "X-Qsseda-Chat-Project":projectHash,
     "X-Qsseda-Chat-Rp":url.hostname,
     "X-Qsseda-Chat-Origin":url.origin,
     "X-Qsseda-Chat-Role":access.role,
     "X-Qsseda-Chat-Allowed":[...allowed].join(",")});
-  // Strip document name/path from the internal transport after hashing:
-  // messages and envelopes are only keyed by SHA-256 file identity.
+  // The server alone derives the project chat identity; file_name is ignored.
+  // The new v2 room namespace does not overwrite any legacy per-file ciphertext.
   const forwarded={...body};
   delete forwarded.document_id;delete forwarded.file_name;
   try{

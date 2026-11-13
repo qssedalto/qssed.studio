@@ -18,7 +18,9 @@ const setup=[
   "<script>",
   "window.__selectedChatFile='main.tex';",
   "window.__aertexTexExplorerAsset=()=>({name:window.__selectedChatFile});",
-  "window.fetch=async()=>({ok:true,json:async()=>({registered:false})});",
+  "window.__chatStatusCount=0;",
+  "window.fetch=async(_url,opt)=>{if(JSON.parse(opt.body).op==='status')window.__chatStatusCount++;",
+  "  return {ok:true,json:async()=>({registered:false})}};",
   "</script>"
 ].join("\n");
 const verify=[
@@ -45,10 +47,14 @@ const verify=[
   "   document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));",
   "   await sleep(40);",
   "   if(popup.hidden)throw Error('Outside click or Escape dismissed popup');",
+  "   const initialRoom= document.getElementById('aertex-chat-filename').textContent;",
+  "   const startCount=window.__chatStatusCount;",
   "   window.__selectedChatFile='chapters/part1.tex';",
   "   window.dispatchEvent(new Event('aertex:tex-project-asset-selected'));",
   "   await sleep(120);",
-  "   if(popup.hidden||!popup.textContent.includes('chapters/part1.tex'))throw Error('File switch closed popup or failed to update file');",
+  "   if(popup.hidden||document.getElementById('aertex-chat-filename').textContent!==initialRoom)",
+  "     throw Error('File switch must keep the same project room');",
+  "   if(window.__chatStatusCount!==startCount)throw Error('File switch reloaded or relocked the project chat');",
   "   button.click();",
   "   if(!popup.hidden||button.getAttribute('aria-expanded')!=='false')throw Error('Second bubble click must close popup');",
   "   button.click();",
