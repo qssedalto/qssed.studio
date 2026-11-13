@@ -117,6 +117,16 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
     pointer-events:none;color:color-mix(in srgb,var(--text) 84%,var(--surface))
   }
   .tex-work-app .tex-compile-vector svg{display:block;width:100%;height:100%;overflow:visible}
+  /* The play icon stays slate-gray except when the compiler is active. */
+  body.os-shell:has(.tex-work-app) .tex-compile-fixed:not(.is-compiling) .tex-compile-vector{
+    color:#5e646e!important
+  }
+  :root[data-theme="dark"] body.os-shell:has(.tex-work-app) .tex-compile-fixed:not(.is-compiling) .tex-compile-vector,
+  body.os-shell[data-theme="dark"]:has(.tex-work-app) .tex-compile-fixed:not(.is-compiling) .tex-compile-vector{
+    color:#a0a4ad!important
+  }
+  .tex-work-app .tex-compile-vector svg circle{fill:none}
+  .tex-work-app .tex-compile-vector svg path{stroke:none;fill:currentColor}
   .tex-work-app .tex-compile-fixed:has(#tex-compile:disabled) .tex-compile-vector{opacity:.34}
   .tex-work-app .tex-compile-fixed:has(#tex-compile:hover:not(:disabled)) .tex-compile-vector{
     color:var(--text)
@@ -171,10 +181,8 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
     }
   }
 </style>`;
-  // Exact GitHub Actions SVG geometry, sourced from simple-icons/icons/githubactions.svg.
-  // No hand-redrawn paths: only replace the original blue brand fill with
-  // currentColor so the 39px toolbar icon matches monochrome command icons.
-  const workflowSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M10.984 13.836a.5.5 0 0 1-.353-.146l-.745-.743a.5.5 0 1 1 .706-.708l.392.391 1.181-1.18a.5.5 0 0 1 .708.707l-1.535 1.533a.504.504 0 0 1-.354.146zm9.353-.147l1.534-1.532a.5.5 0 0 0-.707-.707l-1.181 1.18-.392-.391a.5.5 0 1 0-.706.708l.746.743a.497.497 0 0 0 .706-.001zM4.527 7.452l2.557-1.585A1 1 0 0 0 7.09 4.17L4.533 2.56A1 1 0 0 0 3 3.406v3.196a1.001 1.001 0 0 0 1.527.85zm2.03-2.436L4 6.602V3.406l2.557 1.61zM24 12.5c0 1.93-1.57 3.5-3.5 3.5a3.503 3.503 0 0 1-3.46-3h-2.08a3.503 3.503 0 0 1-3.46 3 3.502 3.502 0 0 1-3.46-3h-.558c-.972 0-1.85-.399-2.482-1.042V17c0 1.654 1.346 3 3 3h.04c.244-1.693 1.7-3 3.46-3 1.93 0 3.5 1.57 3.5 3.5S13.43 24 11.5 24a3.502 3.502 0 0 1-3.46-3H8c-2.206 0-4-1.794-4-4V9.899A5.008 5.008 0 0 1 0 5c0-2.757 2.243-5 5-5s5 2.243 5 5a5.005 5.005 0 0 1-4.952 4.998A2.482 2.482 0 0 0 7.482 12h.558c.244-1.693 1.7-3 3.46-3a3.502 3.502 0 0 1 3.46 3h2.08a3.503 3.503 0 0 1 3.46-3c1.93 0 3.5 1.57 3.5 3.5zm-15 8c0 1.378 1.122 2.5 2.5 2.5s2.5-1.122 2.5-2.5-1.122-2.5-2.5-2.5S9 19.122 9 20.5zM5 9c2.206 0 4-1.794 4-4S7.206 1 5 1 1 2.794 1 5s1.794 4 4 4zm9 3.5c0-1.378-1.122-2.5-2.5-2.5S9 11.122 9 12.5s1.122 2.5 2.5 2.5 2.5-1.122 2.5-2.5zm9 0c0-1.378-1.122-2.5-2.5-2.5S18 11.122 18 12.5s1.122 2.5 2.5 2.5 2.5-1.122 2.5-2.5zm-13 8a.5.5 0 1 0 1 0 .5.5 0 0 0-1 0zm2 0a.5.5 0 1 0 1 0 .5.5 0 0 0-1 0zm12 0c0 1.93-1.57 3.5-3.5 3.5a3.503 3.503 0 0 1-3.46-3.002c-.007.001-.013.005-.021.005l-.506.017h-.017a.5.5 0 0 1-.016-.999l.506-.017c.018-.002.035.006.052.007A3.503 3.503 0 0 1 20.5 17c1.93 0 3.5 1.57 3.5 3.5zm-1 0c0-1.378-1.122-2.5-2.5-2.5S18 19.122 18 20.5s1.122 2.5 2.5 2.5 2.5-1.122 2.5-2.5z"/></svg>';
+  // Standalone circular-play SVG modeled on the light/dark reference images.
+  const workflowSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="2.25"/><path d="M10 7.8c0-.59.65-.95 1.15-.63l5.48 3.49c.49.31.49 1.03 0 1.34l-5.48 3.49c-.5.32-1.15-.04-1.15-.63V7.8Z" fill="currentColor"/></svg>';
   // The reference warning glyph is a neutral slate disk with a softly
   // rounded white triangle/exclamation. SVG stays crisp in light/dark modes.
   const pendingSvg = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11.3" fill="#5e646e"/><path d="M10.65 7.04a1.55 1.55 0 0 1 2.7 0l4.35 7.63a1.7 1.7 0 0 1-1.48 2.53H7.78a1.7 1.7 0 0 1-1.48-2.53Z" fill="#f8f9fb"/><rect x="11.43" y="9.56" width="1.14" height="2.90" rx=".57" fill="#5e646e"/><circle cx="12" cy="14.16" r=".66" fill="#5e646e"/></svg>';
