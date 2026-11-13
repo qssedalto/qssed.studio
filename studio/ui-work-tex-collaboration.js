@@ -180,7 +180,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
       .tex-collaboration-avatar-overflow{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;margin-left:-8px;box-sizing:border-box;border:2px solid var(--surface);border-radius:50%;background:var(--fill);color:var(--muted);font-size:9px;font-weight:750}
       /* A non-interactive fixed tooltip avoids clipping inside horizontally
          scrollable editor toolbars. It never covers the collaboration button. */
-      .tex-collaboration-presence-tooltip{position:fixed;z-index:2147481900;box-sizing:border-box;width:min(290px,calc(100vw - 16px));max-height:min(480px,75vh);overflow:auto;padding:13px;border:1px solid var(--border);border-radius:15px;background:var(--surface);color:var(--text);box-shadow:0 15px 42px rgba(0,0,0,.20);white-space:normal;text-align:left;font-size:12px;line-height:1.35;pointer-events:none;overscroll-behavior:contain}
+      .tex-collaboration-presence-tooltip{position:fixed;z-index:2147481900;box-sizing:border-box;width:232px;max-width:calc(100vw - 16px);max-height:min(480px,75vh);overflow:auto;padding:13px;border:1px solid var(--border);border-radius:15px;background:var(--surface);color:var(--text);box-shadow:0 15px 42px rgba(0,0,0,.20);white-space:normal;text-align:left;font-size:12px;line-height:1.35;pointer-events:none;overscroll-behavior:contain}
       .tex-collaboration-presence-tooltip[hidden],body.tex-collaboration-open .tex-collaboration-presence-tooltip{display:none!important}
       .tex-collaboration-presence-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:1px 2px 10px;border-bottom:1px solid var(--border)}
       .tex-collaboration-presence-heading strong{font-size:12px;font-weight:750}
@@ -575,8 +575,11 @@ export function enhanceWorkTexCollaboration(markup, zh) {
         function positionPresenceTooltip() {
           if (presenceTooltip.hidden) return;
           const rect = openButton.getBoundingClientRect();
-          const width = Math.min(290,window.innerWidth-16);
-          const left = Math.max(8,Math.min(rect.right-width,window.innerWidth-width-8));
+          // Match the actual collaboration button width even when responsive
+          // layout or user zoom changes it. Align the tooltip with that button.
+          const width = Math.min(rect.width,Math.max(0,window.innerWidth-16));
+          const left = Math.max(8,Math.min(rect.left,window.innerWidth-width-8));
+          presenceTooltip.style.width = width+'px';
           // Prefer below the button; flip above near the bottom edge.
           const below = rect.bottom+8;
           const above = rect.top-8-presenceTooltip.offsetHeight;
