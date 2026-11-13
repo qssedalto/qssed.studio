@@ -1,8 +1,15 @@
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
+import { IPHONE_THEME_PALETTE } from "./iphone-theme-palette.js";
 import { handleTexFileChatRoom } from "./tex-file-chat-room.js";
 const MAX_MESSAGE_BYTES = 1024 * 1024;
 const MAX_PRESENCE_POSITION = 180000;
 const AUTH_LEASE_MS = 90 * 1000;
+const VALID_COLLAB_ACCENTS = new Set(IPHONE_THEME_PALETTE.map(color => color.id));
+
+// Presence shares only a palette identifier; never accept arbitrary CSS from a socket.
+export function safeCollaborationAccent(value) {
+  return typeof value === "string" && VALID_COLLAB_ACCENTS.has(value) ? value : "";
+}
 
 function safeText(value, maximum = 120) {
   return String(value || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maximum);
@@ -77,6 +84,7 @@ export class TexCollaborationRoom {
       caret_position: 0,
       anchor_rel: "",
       head_rel: "",
+      accent_id: "",
       typing: false
     };
 
@@ -142,6 +150,7 @@ export class TexCollaborationRoom {
       participant.caret_position = clampPosition(payload.caret_position);
       participant.anchor_rel = safeRelativePosition(payload.anchor_rel);
       participant.head_rel = safeRelativePosition(payload.head_rel);
+      participant.accent_id = safeCollaborationAccent(payload.accent_id);
       participant.typing = payload.typing === true;
       participant.expires_at = Math.min(Number(participant.expires_at) || 0, Date.now() + AUTH_LEASE_MS);
       socket.serializeAttachment(participant);
@@ -276,6 +285,7 @@ export class TexCollaborationRoom {
         caret_position: clampPosition(participant.caret_position),
         anchor_rel: safeRelativePosition(participant.anchor_rel),
         head_rel: safeRelativePosition(participant.head_rel),
+        accent_id: safeCollaborationAccent(participant.accent_id),
         typing: participant.typing === true
       });
     }
