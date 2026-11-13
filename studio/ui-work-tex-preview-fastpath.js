@@ -18,8 +18,8 @@ export function enhanceWorkTexPreviewFastPath(markup) {
   // refreshes/replacements and was the reason the tab cache sometimes stayed empty.
   output = replaceExact(
     output,
-    `          function installPreviewBlob(blob, snapshot, elapsed) {\n            if (snapshot !== currentPreviewSnapshot()) return false;`,
-    `          function installPreviewBlob(blob, snapshot, elapsed) {\n            if (snapshot !== currentPreviewSnapshot()) return false;\n            try {\n              window.dispatchEvent(new CustomEvent('qsseda:tex-preview-blob', { detail: { blob, snapshot } }));\n            } catch {}`
+    `          function installPreviewBlob(blob, snapshot, elapsed) {\n            if (!hasDocument() || snapshot !== currentPreviewSnapshot()) return false;`,
+    `          function installPreviewBlob(blob, snapshot, elapsed) {\n            if (!hasDocument() || snapshot !== currentPreviewSnapshot()) return false;\n            try {\n              window.dispatchEvent(new CustomEvent('qsseda:tex-preview-blob', { detail: { blob, snapshot } }));\n            } catch {}`
   );
 
   // The base local-preview script can finish probing 127.0.0.1 before the
