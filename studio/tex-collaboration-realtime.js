@@ -1,3 +1,4 @@
+import { isLiveTexHead } from "./tex-document-guards.js";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
@@ -10,6 +11,9 @@ const DOCUMENT_ROOT = "_system/tex-documents/";
 export async function handleTexCollaborationRealtime(request, env) {
   if (request.method !== "GET" || request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
     return json({ error: "WebSocket upgrade required." }, 426);
+  }
+  if (request.headers.get("Origin") !== new URL(request.url).origin) {
+    return json({error:"Cross-origin collaboration connections are not allowed."},403);
   }
   if (!env?.TEX_COLLAB_ROOMS?.idFromName || !env?.TEX_COLLAB_ROOMS?.get) {
     return json({ error: "Realtime collaboration is temporarily unavailable." }, 503);
@@ -35,7 +39,7 @@ export async function handleTexCollaborationRealtime(request, env) {
   let documentHead;
   try { documentHead = await env.STORAGE.head(documentKey(access.owner_id, documentId)); }
   catch { return withStudioSessionCookies(json({ error: "Could not verify TeX source revision." }, 503), session.cookies); }
-  if (!documentHead) return withStudioSessionCookies(json({ error: "TeX document no longer exists." }, 404), session.cookies);
+  if (!isLiveTexHead(documentHead)) return withStudioSessionCookies(json({ error: "TeX document no longer exists." }, 404), session.cookies);
   const realtimeEpoch = texRealtimeEpoch(documentHead.customMetadata?.realtimeEpoch);
   const roomId = env.TEX_COLLAB_ROOMS.idFromName(texRealtimeRoomName(access.owner_id, documentId, realtimeEpoch));
   const room = env.TEX_COLLAB_ROOMS.get(roomId);
@@ -45,10 +49,11 @@ export async function handleTexCollaborationRealtime(request, env) {
   headers.set("X-Qsseda-Collab-Owner", access.owner_id);
   headers.set("X-Qsseda-Collab-Document", documentId);
   headers.set("X-Qsseda-Collab-Epoch", realtimeEpoch);
-  headers.set("X-Qsseda-Collab-Role", access.role);
+  headers.set("X-Qsseda-Collab-Access-Role", access.role);
+  headers.set("X-Qsseda-Collab-Role", documentHead.customMetadata?.mainLocked==="true" || documentHead.customMetadata?.locked==="true" ? "viewer" : access.role);
   headers.set("X-Qsseda-Collab-Link-Grant", access.via_link === true ? "1" : "0");
-  headers.set("X-Qsseda-Collab-Username", cleanText(auth.profile?.username, 80));
-  headers.set("X-Qsseda-Collab-Display-Name", cleanText(auth.profile?.display_name, 120));
+  headers.set("X-Qsseda-Collab-Username", encodeURIComponent(cleanText(auth.profile?.username, 80)));
+  headers.set("X-Qsseda-Collab-Display-Name", encodeURIComponent(cleanText(auth.profile?.display_name, 120)));
   headers.set("X-Qsseda-Collab-Avatar", cleanUrl(auth.profile?.avatar_url));
 
   return room.fetch(new Request("https://tex-collaboration-room.internal/connect", { method: "GET", headers }));
@@ -57,7 +62,7 @@ export async function handleTexCollaborationRealtime(request, env) {
 export async function resolveDocumentAccess(env, userId, documentId, accessToken) {
   try {
     const own = await env.STORAGE.head(documentKey(userId, documentId));
-    if (own) return { owner_id: userId, role: "owner" };
+    if (isLiveTexHead(own)) return { owner_id: userId, role: "owner" };
   } catch {}
 
   const response = await supabaseRequest(
@@ -72,7 +77,7 @@ export async function resolveDocumentAccess(env, userId, documentId, accessToken
     return resolveLinkGrant(env,userId,documentId);
   }
   try {
-    if (!(await env.STORAGE.head(documentKey(ownerId, documentId)))) return null;
+    if (!isLiveTexHead(await env.STORAGE.head(documentKey(ownerId, documentId)))) return null;
   } catch {
     return null;
   }

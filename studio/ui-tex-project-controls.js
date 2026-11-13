@@ -38,17 +38,18 @@ export function enhanceTexProjectControls(markup,zh=true){
   const binding="document.getElementById('tex-create').addEventListener('click',()=>void createDocument());";
   const bus='window.addEventListener("aertex:tex-project-created",async event=>{'+
     'const doc=event.detail?.document;if(!doc?.id)return;'+
-    'if(dirty)await saveCurrent(true);activeId=doc.id;'+
+    'if(!(await saveCurrent(true))){restoreUnsavedRoute();return;}activeId=doc.id;'+
     'root.dataset.texCollaborationDocumentId=doc.id;activeDocument=doc;dirty=false;'+
     'updateLocal(doc);renderEditor();await loadRuns();source.focus();'+
     'if(typeof syncDocumentRoute==="function")syncDocumentRoute(doc.id,false);'+
     '});';
   const fileBridge='window.__aertexFileGetContext=()=>({id:activeId,document:activeDocument,save:async()=>{'+
-    'window.clearTimeout(saveTimer);if(dirty)await saveCurrent(true);'+
+    'window.clearTimeout(saveTimer);if(!(await saveCurrent(true)))throw new Error("The document was not saved. Local edits are still preserved.");'+
     'if(dirty)throw new Error("Please save the document before adding files.");'+
     '}});window.__aertexFileApplyDocument=doc=>{'+
     'if(!doc?.id||doc.id!==activeId)return;'+
-    'const previous=activeDocument;const entryChanged=previous?.main_deleted!==doc.main_deleted||previous?.main_filename!==doc.main_filename;'+
+    'const previous=activeDocument;const entryChanged=previous?.main_deleted!==doc.main_deleted||previous?.main_filename!==doc.main_filename||previous?.realtime_epoch!==doc.realtime_epoch;'+
+    'if(entryChanged&&(dirty||saveInFlight)){showMessage("The project changed while you were editing. Your local text is preserved; download it before reopening.",true);setSaveState(copy.unsaved,true);return;}'+
     'activeDocument=doc;'+
     'if(entryChanged&&!dirty){source.value=doc.main_deleted===true?"":String(doc.source||"");updateStats();setSaveState(copy.saved);'+
     'if(doc.main_deleted!==true)showMessage("");}'+

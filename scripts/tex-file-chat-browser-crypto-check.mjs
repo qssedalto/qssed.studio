@@ -61,7 +61,7 @@ const qa=[
   "    throw Error('Reload inside the verified 3-hour window prompted Passkey again');",
   "  if(document.getElementById('aertex-chat-status').textContent.includes('等待项目所有者'))",
   "    throw Error('Owner key wait was wrongly retained');",
-  "  if(round==='first'){",
+  "  if(round==='first'&&!reloaded){",
   "    document.getElementById('aertex-chat-input').value='Private browser-to-browser encrypted message';",
   "    send.click();",
   "    await until(()=>document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'));",
@@ -308,6 +308,7 @@ try{
   assert(!memory.sentFileSelector,"Project chat must never send an editor filename");
   console.log("CHROME E2EE: 3-hour project Passkey resume, fresh-browser reverify, ciphertext envelopes and sender/recipient isolation PASS");
 }finally{
+  server.closeAllConnections();
   await new Promise(resolve=>server.close(resolve));
   rmSync(profile,{recursive:true,force:true});
   rmSync(profile+"-fresh",{recursive:true,force:true});

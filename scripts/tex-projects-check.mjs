@@ -247,7 +247,7 @@ try{
   assert.equal(refused.response.status,400,"Traversal paths must be rejected.");
   const nonZip=await create(asZip(Buffer.from("not a zip")));
   assert.equal(nonZip.response.status,400,"Invalid ZIP must be rejected.");
-  assert.equal(writes.length,7,"Only successfully validated projects can reach R2.");
+  assert.equal(writes.length,10,"Only successfully validated projects can reach R2.");
   console.log("TeX project creation, verified admin author bypass, legal-name gate, sample files, ZIP import and traversal checks passed.");
 }finally{
   globalThis.fetch=realFetch;

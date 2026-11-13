@@ -1,3 +1,4 @@
+import { sourceInputError, isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT, retireTexDocument, countLiveTexDocuments } from "./tex-document-guards.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
@@ -8,6 +9,8 @@ import { handleTexProjectFiles } from "./tex-project-files-api.js";
 import { reconcileTexMainEntry } from "./tex-main-entry.js";
 import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
 import { handleTexOrganize, removeTexProjectPins } from "./tex-organize-api.js";
+import { invalidateTexCollaboration } from "./tex-collaboration-invalidate.js";
+import { purgeDocumentVersions } from "./tex-version-api.js";
 import { handleTexArchive } from "./tex-archive-api.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
@@ -299,8 +302,7 @@ async function createDocument(request, env, userId) {
   const normalized = normalizeDocument(parsed.value, userId, documentId, null);
   if (!normalized.ok) return json({ error: normalized.error }, 400);
   try {
-    const page = await env.STORAGE.list({ prefix: documentPrefix(userId), limit: MAX_DOCUMENTS + 1 });
-    if (page.objects.length >= MAX_DOCUMENTS) return json({ error: "TeX document limit reached." }, 409);
+    if (await countLiveTexDocuments(env.STORAGE, documentPrefix(userId), MAX_DOCUMENTS) >= MAX_DOCUMENTS) return json({ error: "TeX document limit reached." }, 409);
     await writeDocument(env, normalized.value);
     return json({ document: normalized.value, created: true }, 201);
   } catch (error) {
@@ -322,13 +324,14 @@ async function updateDocument(request, env, userId) {
     // own stale autosave payload. Only a freshly opened revision may write.
     if ((typeof parsed.value?.realtime_epoch !== "string" || texRealtimeEpoch(parsed.value.realtime_epoch) !== texRealtimeEpoch(previous)))
       return json({ error: "This project's main TeX file changed. Reopen it before saving; your older editor has not overwritten the new version.", code: "main_revision_changed" }, 409);
-    if (previous.locked || previous.locked_files?.includes("main.tex") || previous.locked_files?.includes(previous.main_filename || "main.tex"))
+    if (isTexMainLocked(previous))
       return json({ error: "Unlock main.tex or the project before editing.", }, 423);
     const normalized = normalizeDocument(parsed.value, userId, documentId, previous);
     if (!normalized.ok) return json({ error: normalized.error }, 400);
-    await writeDocument(env, normalized.value);
+    await writeDocument(env, normalized.value, previous.storage_revision);
     return json({ document: normalized.value, saved: true });
   } catch (error) {
+    if (error?.code === TEX_WRITE_CONFLICT) return json({ error: error.message, code: error.code }, 409);
     workerLog("error", "tex.document.update.failed", { user_id: userId, document_id: documentId, message: String(error?.message || error) });
     return json({ error: "Could not save TeX document." }, 503);
   }
@@ -340,12 +343,16 @@ async function deleteDocument(request, env, userId) {
   try {
     const existing = await readDocument(env,userId,documentId);
     if (!existing) return json({ error: "TeX document not found." }, 404);
-    if (existing.locked) return json({ error: "Unlock the project before deleting." }, 423);
-    await env.STORAGE.delete(documentKey(userId, documentId));
+    if (isTexMainLocked(existing) || existing.locked_files?.length || existing.locked_folders?.length)
+      return json({ error: "Unlock the project and its files before deleting." }, 423);
+    await retireTexDocument(env.STORAGE, documentKey(userId, documentId), existing);
+    await invalidateTexCollaboration(env,userId,documentId,"source-retired","",texRealtimeEpoch(existing));
     await removeTexProjectPins(env,userId,documentId);
     await purgeDocumentArtifacts(env, userId, documentId);
+    await purgeDocumentVersions(env,userId,documentId);
     return json({ deleted: true, id: documentId });
   } catch (error) {
+    if (error?.code === TEX_WRITE_CONFLICT) return json({error:error.message,code:error.code},409);
     workerLog("error", "tex.document.delete.failed", { user_id: userId, document_id: documentId, message: String(error?.message || error) });
     return json({ error: "Could not delete TeX document." }, 503);
   }
@@ -366,11 +373,11 @@ async function purgeDocumentArtifacts(env, userId, documentId) {
   } while (cursor);
 }
 
-async function writeDocument(env, document) {
-  await env.STORAGE.put(documentKey(document.owner_id, document.id), JSON.stringify(document), {
+async function writeDocument(env, document, previousRevision = null) {
+  await putTexDocument(env.STORAGE, documentKey(document.owner_id, document.id), document, {
     httpMetadata: { contentType: "application/json;charset=UTF-8" },
     customMetadata: documentMetadata(document)
-  });
+  }, previousRevision);
 }
 
 async function readDocument(env, userId, documentId) {
@@ -378,23 +385,25 @@ async function readDocument(env, userId, documentId) {
   if (!object) return null;
   try {
     const parsed = JSON.parse(await object.text());
-    if (!parsed || parsed.owner_id !== userId || parsed.id !== documentId) return null;
+    if (!parsed || parsed.document_deleted || parsed.owner_id !== userId || parsed.id !== documentId) return null;
     // GET/compile/edit must agree on the same canonical entry. Historical
     // multi-file uploads could store main.tex as an extra while leaving the
     // main_deleted tombstone set. Recover only that real stored file, never
     // the old erased source. An explicit subsequent save persists the fix.
     const recovered = reconcileTexMainEntry(parsed);
-    const normalized = normalizeDocument(recovered, userId, documentId, recovered);
+    const normalized = normalizeDocument(recovered, userId, documentId, recovered, true);
     if (!normalized.ok) return null;
     normalized.value.created_at = cleanTimestamp(parsed.created_at);
     normalized.value.updated_at = cleanTimestamp(parsed.updated_at);
-    return normalized.value;
+    return texDocumentRevision(normalized.value, object);
   } catch {
     return null;
   }
 }
 
-function normalizeDocument(input, userId, documentId, previous) {
+function normalizeDocument(input, userId, documentId, previous, storedRead = false) {
+  const inputError = storedRead ? "" : sourceInputError(input);
+  if (inputError) return { ok: false, error: inputError };
   const source = input && typeof input === "object" ? input : {};
   const engine = cleanText(source.engine, 24) || previous?.engine || "xelatex";
   if (!ENGINES.has(engine)) return { ok: false, error: "Unsupported TeX engine." };
@@ -577,7 +586,7 @@ function isSameOriginMutation(request) {
 }
 
 function cleanSource(value) {
-  return String(value ?? "").replace(/\u0000/g, "").slice(0, MAX_SOURCE_CHARS);
+  return String(value ?? "");
 }
 
 function cleanText(value, maximum) {

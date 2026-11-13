@@ -1,3 +1,5 @@
+import { handleTexArchiveTransaction } from "./tex-archive-api.js";
+import { decodeUpdate, mergeUpdates } from "../tex-vendor/server-yjs.mjs";
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
 import { IPHONE_THEME_PALETTE } from "./iphone-theme-palette.js";
 import { handleTexFileChatRoom } from "./tex-file-chat-room.js";
@@ -15,10 +17,33 @@ function safeText(value, maximum = 120) {
   return String(value || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maximum);
 }
 
+export function decodeCollaborationIdentity(value, maximum = 120) {
+  try { return safeText(decodeURIComponent(value || ""), maximum); }
+  catch { return ""; }
+}
+
 function safeBase64(value) {
   const text = String(value || "");
   if (!text || text.length > MAX_MESSAGE_BYTES * 2 || !/^[A-Za-z0-9+/=_-]+$/.test(text)) return "";
   return text;
+}
+
+function decodeYjsUpdate(value) {
+  const text = safeBase64(value);
+  if (!text) return null;
+  try {
+    const raw = atob(text.replace(/-/g, "+").replace(/_/g, "/"));
+    if (raw.length > MAX_MESSAGE_BYTES) return null;
+    const bytes = Uint8Array.from(raw, character => character.charCodeAt(0));
+    decodeUpdate(bytes); // Reject malformed binary before persisting/broadcasting it.
+    return bytes;
+  } catch { return null; }
+}
+function encodeYjsUpdate(bytes) {
+  let raw = "";
+  for (let offset=0; offset<bytes.length; offset+=16384)
+    raw += String.fromCharCode(...bytes.subarray(offset, offset+16384));
+  return btoa(raw);
 }
 
 function updateKey(sequence) {
@@ -37,22 +62,35 @@ export class TexCollaborationRoom {
   }
 
   async fetch(request) {
+    if(new URL(request.url).pathname==="/vault"){
+      const id=request.headers.get("X-Qsseda-Vault-User"), raw=request.headers.get("X-Qsseda-Vault-Email")||"";
+      if(!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id||""))return new Response("Invalid vault identity",{status:403});
+      let email;try{email=decodeURIComponent(raw);}catch{return new Response("Invalid vault identity",{status:403});}
+      return this.state.blockConcurrencyWhile(async()=>{
+        try{return await handleTexArchiveTransaction(request,this.env,{id,email});}
+        catch{return new Response(JSON.stringify({error:"Archive operation interrupted. Reload before retrying; a recoverable copy has been retained."}),{status:503,headers:{"content-type":"application/json"}});}
+      });
+    }
     if (new URL(request.url).pathname === "/file-chat") return handleTexFileChatRoom(this.state,request);
-    if (request.method === "POST" && new URL(request.url).pathname === "/revoke-links") {
+    if (request.method === "POST" && ["/revoke-links", "/revoke-member"].includes(new URL(request.url).pathname)) {
+      const named = new URL(request.url).pathname === "/revoke-member";
       const owner=request.headers.get("X-Qsseda-Collab-Owner");
       const doc=request.headers.get("X-Qsseda-Collab-Document");
       const target=request.headers.get("X-Qsseda-Collab-Target");
       // This endpoint is only addressed through the internal DO stub.
       for(const socket of this.state.getWebSockets()){
         const p=socket.deserializeAttachment()||{};
-        if(p.link_grant && p.owner_id===owner && p.document_id===doc && (!target||p.id===target)){
-          try{socket.close(4003,"Link-sharing permission changed");}catch{}
+        if((named ? !p.link_grant : p.link_grant) && p.owner_id===owner && p.document_id===doc && (!target||p.id===target)){
+          // A close handshake is asynchronous. Expire the attachment FIRST,
+          // so broadcasts/queued messages cannot use the old authority.
+          socket.serializeAttachment({...p, expires_at:0});
+          try{socket.close(4003,"Collaboration permission changed");}catch{}
         }
       }
       this.broadcastPresence();
       return new Response(null,{status:204});
     }
-    if (request.method === "POST" && new URL(request.url).pathname === "/source-rebased") {
+    if (request.method === "POST" && ["/source-rebased","/source-retired"].includes(new URL(request.url).pathname)) {
       // Internal Worker->Durable Object event (no public HTTP route).
       // When a root TeX entry is deleted, renamed or imported, collaborators
       // must not continue editing a Yjs document from the previous revision.
@@ -62,10 +100,16 @@ export class TexCollaborationRoom {
       for (const socket of this.state.getWebSockets()) {
         const participant = socket.deserializeAttachment() || {};
         if (participant.owner_id !== owner || participant.document_id !== doc) continue;
+        socket.serializeAttachment({...participant, expires_at:0});
         try {
           socket.send(JSON.stringify({type:"source-rebased",document_id:doc}));
           socket.close(4004, "TeX entry revision changed");
         } catch {}
+      }
+      if(new URL(request.url).pathname==="/source-retired"){
+        // The authoritative object is already a CAS tombstone. Remove the
+        // obsolete plaintext Yjs history as well as closing its old sockets.
+        await this.state.blockConcurrencyWhile(()=>this.state.storage.deleteAll());
       }
       return new Response(null, {status:204});
     }
@@ -90,9 +134,10 @@ export class TexCollaborationRoom {
       owner_id: ownerId,
       document_id: documentId,
       role,
+      access_role: request.headers.get("X-Qsseda-Collab-Access-Role") || role,
       link_grant: request.headers.get("X-Qsseda-Collab-Link-Grant") === "1",
-      username: safeText(request.headers.get("X-Qsseda-Collab-Username"), 80),
-      display_name: safeText(request.headers.get("X-Qsseda-Collab-Display-Name"), 120),
+      username: decodeCollaborationIdentity(request.headers.get("X-Qsseda-Collab-Username"), 80),
+      display_name: decodeCollaborationIdentity(request.headers.get("X-Qsseda-Collab-Display-Name"), 120),
       avatar_url: safeText(request.headers.get("X-Qsseda-Collab-Avatar"), 500),
       connected_at: Date.now(),
       expires_at: Date.now() + AUTH_LEASE_MS,
@@ -136,20 +181,20 @@ export class TexCollaborationRoom {
   }
 
   async webSocketMessage(socket, message) {
+    if (typeof message !== "string" || new TextEncoder().encode(message).byteLength > MAX_MESSAGE_BYTES) {
+      socket.close(1009, "Message too large");
+      return;
+    }
     const participant = socket.deserializeAttachment() || {};
     if (!this.ensureLease(socket, participant)) return;
     if (participant.link_grant) {
       // Fail closed on every message; closing/rekeying or demoting a sharing
       // link cannot leave an old editor socket with stale write authority.
       const current=await resolveLinkGrant(this.env,participant.id,participant.document_id);
-      if(!current || current.owner_id!==participant.owner_id || current.role!==participant.role){
+      if(!current || current.owner_id!==participant.owner_id || current.role!==(participant.access_role||participant.role)){
         try{socket.close(4003,"Link-sharing permission revoked");}catch{}
         return;
       }
-    }
-    if (typeof message !== "string" || new TextEncoder().encode(message).byteLength > MAX_MESSAGE_BYTES) {
-      socket.close(1009, "Message too large");
-      return;
     }
 
     let payload;
@@ -182,8 +227,12 @@ export class TexCollaborationRoom {
 
     if (type === "initialize") {
       const data = safeBase64(payload.data);
-      if (!data) return;
+      if (!decodeYjsUpdate(data)) {
+        socket.send(JSON.stringify({type:"error",code:"invalid_update",message:"Invalid collaboration update; nothing was saved."}));
+        return;
+      }
       await this.state.blockConcurrencyWhile(async () => {
+        if (!this.ensureLease(socket, socket.deserializeAttachment() || {})) return;
         const existing = await this.state.storage.get("snapshot");
         if (existing?.data) {
           const sequence = Number(await this.state.storage.get("sequence")) || 0;
@@ -211,8 +260,12 @@ export class TexCollaborationRoom {
 
     if (type === "update") {
       const data = safeBase64(payload.data);
-      if (!data) return;
+      if (!decodeYjsUpdate(data)) {
+        socket.send(JSON.stringify({type:"error",code:"invalid_update",message:"Invalid collaboration update; nothing was saved."}));
+        return;
+      }
       await this.state.blockConcurrencyWhile(async () => {
+        if (!this.ensureLease(socket, socket.deserializeAttachment() || {})) return;
         const snapshot = await this.state.storage.get("snapshot");
         if (!snapshot?.data) {
           socket.send(JSON.stringify({ type: "error", code: "not_initialized", message: "The collaboration room is not initialized." }));
@@ -229,22 +282,44 @@ export class TexCollaborationRoom {
     }
 
     if (type === "snapshot") {
-      const data = safeBase64(payload.data);
-      const throughSequence = Math.max(0, Number(payload.through_sequence) || 0);
-      if (!data) return;
+      const requestedThrough = Number(payload.through_sequence);
+      if (!Number.isSafeInteger(requestedThrough) || requestedThrough < 0) return;
       await this.state.blockConcurrencyWhile(async () => {
+        if (!this.ensureLease(socket, socket.deserializeAttachment() || {})) return;
         const currentSequence = Number(await this.state.storage.get("sequence")) || 0;
-        if (throughSequence > currentSequence) return;
+        if (requestedThrough > currentSequence) return;
         const currentSnapshot = await this.state.storage.get("snapshot");
-        const currentThrough = Number(currentSnapshot?.through_sequence) || 0;
-        if (throughSequence < currentThrough) return;
-        await this.state.storage.put("snapshot", { data, through_sequence: throughSequence, saved_at: Date.now() });
+        if (!currentSnapshot?.data) return;
+        const currentThrough = Number(currentSnapshot.through_sequence) || 0;
         const stored = await this.state.storage.list({ prefix: "u:" });
+        const updates = [];
         const deletions = [];
-        for (const key of stored.keys()) {
-          if (sequenceFromKey(key) <= throughSequence) deletions.push(key);
+        for (const [key, value] of stored) {
+          const sequence = sequenceFromKey(key);
+          if (sequence > currentThrough && sequence <= currentSequence) updates.push(value.data);
+          if (sequence <= currentSequence) deletions.push(key);
         }
-        if (deletions.length) await this.state.storage.delete(deletions);
+        if (!updates.length) return;
+        // A client snapshot is only a request to compact. Never replace server
+        // state with it: a stale peer can claim a current sequence while missing
+        // another peer's edit (or deletion). Merge the authoritative journal.
+        try {
+          const parts = [currentSnapshot.data, ...updates].map(value => {
+            const raw = atob(value.replace(/-/g, "+").replace(/_/g, "/"));
+            const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+            decodeUpdate(bytes);
+            return bytes;
+          });
+          const data = encodeYjsUpdate(mergeUpdates(parts));
+          // Keep the journal intact if compaction cannot fit the SQLite value
+          // budget. Refusing compaction is safer than discarding any updates.
+          if (data.length > 6 * 1024 * 1024) return;
+          await this.state.storage.put("snapshot", { data, through_sequence: currentSequence, saved_at: Date.now() });
+          // Chunk deletes for storage APIs with a 128-key per-call limit.
+          for (let i=0; i<deletions.length; i+=128) await this.state.storage.delete(deletions.slice(i,i+128));
+        } catch {
+          socket.send(JSON.stringify({type:"error",code:"compaction_failed",message:"Collaboration history was preserved; compaction could not finish."}));
+        }
       });
     }
   }

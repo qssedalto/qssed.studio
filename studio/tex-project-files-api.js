@@ -1,5 +1,6 @@
 // Add bounded project files to the authenticated user's existing TeX document.
 // The caller's userId is supplied by the existing session/CSRF gate in tex-api-core.js.
+import { sourceInputError, putTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
 import { json } from "./routing.js";
 import { isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
@@ -89,7 +90,7 @@ export async function handleTexProjectFiles(request, env, userId) {
     const storedRecord = JSON.parse(await stored.text());
     const doc = reconcileTexMainEntry(storedRecord);
     let mainEntryRebased = storedRecord.main_deleted === true && doc.main_deleted !== true;
-    if (doc?.id !== documentId || doc?.owner_id !== userId) return fail("Project not found.", 404);
+    if (doc?.document_deleted || doc?.id !== documentId || doc?.owner_id !== userId) return fail("Project not found.", 404);
     if (doc.locked) return fail("Unlock the project before modifying files.", 423);
     const lockedNames = new Set(Array.isArray(doc.locked_files) ? doc.locked_files : []);
     const lockedFolders = Array.isArray(doc.locked_folders) ? doc.locked_folders : [];
@@ -173,6 +174,8 @@ export async function handleTexProjectFiles(request, env, userId) {
           /^[^/\\]+\.tex$/i.test(added[0].name) ? added[0] : null;
         const replacementEntry = !isLocked("main.tex") && (rootMain || loneRootTex);
         if (replacementEntry) {
+          const sourceError = sourceInputError({ source: replacementEntry.content });
+          if (sourceError) return fail(sourceError, 413);
           mainEntryRebased = true;
           if (encoder.encode(replacementEntry.content).byteLength > MAX_SINGLE_BYTES)
             return fail("The TeX entry is too large.", 413);
@@ -199,7 +202,7 @@ export async function handleTexProjectFiles(request, env, userId) {
     // Ordinary companion-file additions do not reset active collaborator rooms.
     doc.realtime_epoch = mainEntryRebased ? rotateTexRealtimeEpoch() : texRealtimeEpoch(doc);
     doc.updated_at = new Date().toISOString();
-    await env.STORAGE.put(key, JSON.stringify(doc), {
+    await putTexDocument(env.STORAGE, key, doc, {
       httpMetadata: { contentType:"application/json;charset=UTF-8" },
       customMetadata: {
         ownerId:userId, hidden:"true", kind:"tex-document",
@@ -213,7 +216,7 @@ export async function handleTexProjectFiles(request, env, userId) {
         updatedAt:doc.updated_at,
         realtimeEpoch:doc.realtime_epoch
       }
-    });
+    }, stored.etag);
     if (mainEntryRebased && env?.TEX_COLLAB_ROOMS?.idFromName && env?.TEX_COLLAB_ROOMS?.get) {
       // Notify all tabs still connected to the old room. A stale editor's
       // autosaves are rejected by the epoch check in tex-api-core rather than
@@ -236,6 +239,7 @@ export async function handleTexProjectFiles(request, env, userId) {
     }
     return json({ document:doc, operation, added:added.map(x=>x.name) }, 200);
   } catch(error) {
+    if (error?.code === TEX_WRITE_CONFLICT) return json({ error: error.message, code: error.code }, 409);
     workerLog("error", "tex.files.add.failed", {
       user_id:userId, document_id:documentId,
       reason:String(error?.message || "unknown").slice(0,180)

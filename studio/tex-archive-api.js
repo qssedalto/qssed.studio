@@ -1,3 +1,7 @@
+import { readJsonBounded } from "./request-json-bounded.js";
+import { isTexMainLocked, texDocumentRevision, putTexDocument, retireTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
+import { invalidateTexCollaboration } from "./tex-collaboration-invalidate.js";
+import { workerLog } from "./server-runtime.js";
 import { json } from "./routing.js";
 import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
@@ -23,12 +27,6 @@ const validIv = s => validB64(s,32) && s.length === 16;
 const validSalt = s => validB64(s,32) && s.length >= 22;
 const sealed = obj => obj && validIv(obj.iv) && validB64(obj.data) &&
   validIv(obj.titleIv) && validB64(obj.titleData,1000);
-const jsonObj = async (request,max=MAX_BODY) => {
-  if (Number(request.headers.get("content-length") || 0)>max) throw new Error("Request too large.");
-  const raw=await request.text();
-  if (enc.encode(raw).byteLength>max) throw new Error("Request too large.");
-  return JSON.parse(raw || "{}");
-};
 async function config(env,userId) {
   const blob=await env.STORAGE.get(configKey(userId));
   return blob ? JSON.parse(await blob.text()) : null;
@@ -57,7 +55,7 @@ async function currentPasswordConfirmed(user,password) {
   if (!user?.email || typeof password !== "string" || password.length<1 || password.length>256) return false;
   const r=await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=password",{
     method:"POST",headers:{"apikey":SUPABASE_KEY,"content-type":"application/json"},
-    body:JSON.stringify({email:user.email,password})
+    body:JSON.stringify({email:user.email,password}),signal:AbortSignal.timeout(8000)
   });
   if(!r.ok)return false;
   const result=await r.json().catch(()=>({}));
@@ -65,16 +63,18 @@ async function currentPasswordConfirmed(user,password) {
 }
 function validRestored(doc,id,userId) {
   if(!doc || doc.id!==id || typeof doc.title!=="string" || !doc.title.trim() || doc.title.length>180 ||
-    typeof doc.source!=="string" || doc.source.length>180000 ||
+    typeof doc.source!=="string" || doc.source.length>180000 || doc.source.includes("\0") ||
     !["xelatex","pdflatex","lualatex"].includes(doc.engine) ||
     !Array.isArray(doc.files) || doc.files.length>499) return false;
-  const names=new Set(["main.tex"]);let total=enc.encode(doc.source).length;
+  const entry=doc.main_filename||"main.tex";
+  if(!/^[^/\\]+\.tex$/i.test(entry)||!isSafeProjectFilename(entry))return false;
+  const names=new Set(doc.main_deleted ? [] : ["main.tex",entry.toLowerCase()]);let total=enc.encode(doc.source).length;
   for(const item of doc.files){
     if(!isSafeProjectFilename(item?.name) || !["utf8","base64"].includes(item.encoding) ||
       typeof item.content!=="string" || names.has(item.name.toLowerCase()))return false;
     names.add(item.name.toLowerCase());
     let len=0;
-    if(item.encoding==="utf8") len=enc.encode(item.content).length;
+    if(item.encoding==="utf8") {if(item.content.includes("\0"))return false;len=enc.encode(item.content).length;}
     else {
       if(!validB64(item.content,12*1024*1024))return false;
       try{len=atob(item.content).length;}catch{return false;}
@@ -92,7 +92,27 @@ const documentMeta = (doc,userId)=>({
   createdAt:doc.created_at,updatedAt:doc.updated_at,
   realtimeEpoch:texRealtimeEpoch(doc)
 });
+// A per-account DO serializes archive configuration, reset, store and restore.
+// In particular, reset must not delete the key configuration while an upload
+// encrypted with that configuration is being committed. No production secrets
+// or browser-supplied identity headers are forwarded to this internal endpoint.
 export async function handleTexArchive(request,env,user) {
+  if(!ID.test(user?.id||""))return fail("Unauthorized.",401);
+  if(!env?.STORAGE || !env?.TEX_COLLAB_ROOMS?.idFromName || !env?.TEX_COLLAB_ROOMS?.get)
+    return fail("Safe archive coordination is temporarily unavailable. No files were changed.",503);
+  const url=new URL(request.url);
+  const headers=new Headers({"X-Qsseda-Vault-User":user.id,"X-Qsseda-Vault-Email":encodeURIComponent(user.email||"")});
+  for(const name of ["content-type","content-length"]){const value=request.headers.get(name);if(value)headers.set(name,value);}
+  const room=env.TEX_COLLAB_ROOMS.get(env.TEX_COLLAB_ROOMS.idFromName("tex-vault:"+user.id));
+  try{
+    return await room.fetch(new Request("https://tex-collaboration-room.internal/vault"+url.search,{
+      method:request.method,headers,...(request.body?{body:request.body,duplex:"half"}:{})
+    }));
+  }catch{return fail("Archive operation interrupted. Your original file or its encrypted copy has been retained. Reload before retrying.",503);}
+}
+
+// Called ONLY from the authenticated internal DO path (or isolated tests).
+export async function handleTexArchiveTransaction(request,env,user) {
   if(!env?.STORAGE)return fail("Archive storage unavailable.",503);
   const userId=user?.id;
   if(!ID.test(userId||""))return fail("Unauthorized.",401);
@@ -113,15 +133,16 @@ export async function handleTexArchive(request,env,user) {
   }
   if(request.method!=="POST")return fail("Method not allowed.",405);
   let body;
-  try{body=await jsonObj(request,mode==="store"?MAX_BODY:mode==="restore"?MAX_BODY:4096);}
-  catch(error){return fail(error?.message==="Request too large."?"Request too large.":"Malformed archive request.",400);}
+  try{body=await readJsonBounded(request,(mode==="store"||mode==="restore")?MAX_BODY:4096);}
+  catch(error){return fail(error?.status===413?"Request too large.":"Malformed archive request.",error?.status===413?413:400);}
   if(mode==="config"){
     if(await config(env,userId))return fail("Archive password already created.",409);
     if(!validSalt(body.salt)||!validIv(body.iv)||!validB64(body.check,300)||
       body.iterations!==900000)return fail("Invalid archive key settings.");
-    await env.STORAGE.put(configKey(userId),JSON.stringify({
+    const created=await env.STORAGE.put(configKey(userId),JSON.stringify({
       salt:body.salt,iv:body.iv,check:body.check,iterations:900000,created_at:new Date().toISOString()
-    }),{httpMetadata:{contentType:"application/json;charset=UTF-8"}});
+    }),{httpMetadata:{contentType:"application/json;charset=UTF-8"},onlyIf:{etagDoesNotMatch:"*"}});
+    if(created===null)return fail("Archive password already created.",409);
     return json({created:true});
   }
   if(mode==="reset"){
@@ -146,52 +167,94 @@ export async function handleTexArchive(request,env,user) {
   }
   const state=await config(env,userId);
   if(!state)return fail("Create an archive password first.",409);
+  if(body.vault_salt!==state.salt)return fail("The archive key changed. Unlock the archive again before continuing. No files were changed.",409);
   const id=String(body?.id||"");
   if(!ID.test(id))return fail("Invalid project ID.");
   if(mode==="store"){
     if(!sealed(body.encrypted))return fail("Invalid encrypted project envelope.",400);
-    if((await listArchive(env,userId)).length>=MAX_ITEMS)return fail("Archive capacity reached.",409);
-    if(await env.STORAGE.head(archiveKey(userId,id)))return fail("This project is already archived.",409);
+    const existingArchive=await env.STORAGE.get(archiveKey(userId,id));
     const stored=await env.STORAGE.get(docKey(userId,id));
-    if(!stored)return fail("Project does not exist.",404);
-    const doc=JSON.parse(await stored.text());
-    if(doc.id!==id||doc.owner_id!==userId)return fail("Only the owner can archive a project.",403);
-    if(doc.locked)return fail("Unlock the project before archiving.",423);
-    if(String(doc.updated_at)!==String(body.updated_at))return fail("The project changed during encryption. Save and try again.",409);
-    const archivedAt=new Date().toISOString();
-    await env.STORAGE.put(archiveKey(userId,id),JSON.stringify({
-      v:1,id,encrypted:body.encrypted,archived_at:archivedAt
-    }),{httpMetadata:{contentType:"application/json;charset=UTF-8"},
-       customMetadata:{ownerId:userId,kind:"tex-encrypted-archive",archivedAt}});
-    // Recheck after uploading ciphertext: a collaborator may have written a
-    // newer source while encryption was running. Never erase that revision.
-    const latest=await env.STORAGE.get(docKey(userId,id));
-    const current=latest?JSON.parse(await latest.text()):null;
-    if(!current || current.updated_at!==doc.updated_at){
-      await env.STORAGE.delete(archiveKey(userId,id));
-      return fail("The project changed during archiving. Reload and retry.",409);
+    const current=stored?JSON.parse(await stored.text()):null;
+    // Recovery after the process died AFTER the irreversible CAS. The complete
+    // ciphertext is already durable; finish the idempotent plaintext cleanup.
+    if(existingArchive && current?.document_deleted && current.reason==="archived"){
+      await invalidateTexCollaboration(env,userId,id,"source-retired","",current.retired_epoch||"v2");
+      await cleanupArchivedPlaintext(env,userId,id);
+      return json({archived:true,id});
     }
-    await env.STORAGE.delete(docKey(userId,id));
-    await removeTexProjectPins(env,userId,id);
-    await clearPrefix(env,RUN_ROOT+userId+"/"+id+"/");
-    await purgeDocumentVersions(env,userId,id);
+    if(existingArchive){
+      const pending=await existingArchive.json();
+      // An interrupted pre-CAS upload never removed the live project. Only
+      // that provisional envelope can be replaced; committed archives cannot.
+      if(!pending.pending_revision || !current || current.document_deleted)
+        return fail("This project is already archived.",409);
+      await env.STORAGE.delete(archiveKey(userId,id));
+    }
+    if((await listArchive(env,userId)).length>=MAX_ITEMS)return fail("Archive capacity reached.",409);
+    if(!current || current.document_deleted)return fail("Project does not exist.",404);
+    if(current.id!==id||current.owner_id!==userId)return fail("Only the owner can archive a project.",403);
+    if(isTexMainLocked(current)||current.locked_files?.length||current.locked_folders?.length)
+      return fail("Unlock the project and its files before archiving.",423);
+    if(typeof body.storage_revision!=="string" || body.storage_revision!==stored.etag)
+      return fail("The project changed during encryption. Save and try again.",409);
+    const archivedAt=new Date().toISOString();
+    const envelope={v:2,id,encrypted:body.encrypted,archived_at:archivedAt,
+      vault_salt:state.salt,pending_revision:stored.etag};
+    const uploaded=await env.STORAGE.put(archiveKey(userId,id),JSON.stringify(envelope),{
+      httpMetadata:{contentType:"application/json;charset=UTF-8"},onlyIf:{etagDoesNotMatch:"*"},
+      customMetadata:{ownerId:userId,kind:"tex-encrypted-archive",archivedAt}});
+    if(uploaded===null)return fail("The archive changed. Reload before retrying.",409);
+    try{
+      await retireTexDocument(env.STORAGE,docKey(userId,id),texDocumentRevision(current,stored),"archived");
+    }catch(error){
+      // Only an explicit failed precondition proves the plaintext survived.
+      // An unknown I/O error may have committed: retain the ciphertext then.
+      if(error?.code===TEX_WRITE_CONFLICT){
+        await env.STORAGE.delete(archiveKey(userId,id));
+        return fail("The project changed during archiving. Nothing was removed. Reload and retry.",409);
+      }
+      throw error;
+    }
+    await invalidateTexCollaboration(env,userId,id,"source-retired","",texRealtimeEpoch(current));
+    await cleanupArchivedPlaintext(env,userId,id);
     return json({archived:true,id});
   }
   if(mode==="restore"){
-    if(!await env.STORAGE.head(archiveKey(userId,id)))return fail("Encrypted archive not found.",404);
-    if(await env.STORAGE.head(docKey(userId,id)))return fail("The project already exists. Refusing to overwrite it.",409);
+    const encrypted=await env.STORAGE.get(archiveKey(userId,id));
+    if(!encrypted)return fail("Encrypted archive not found.",404);
+    const previous=await env.STORAGE.get(docKey(userId,id));
+    const marker=previous?JSON.parse(await previous.text()):null;
+    if(marker && !marker.document_deleted)return fail("The project already exists. Refusing to overwrite it.",409);
+    if(marker && (marker.owner_id!==userId || marker.id!==id))return fail("Invalid restore destination.",409);
     const restored=body.document;
     if(!validRestored(restored,id,userId))return fail("Restored project is invalid or too large.",400);
     const now=new Date().toISOString();
-    const doc={...restored,id,owner_id:userId,realtime_epoch:crypto.randomUUID(),created_at:restored.created_at||now,
-      updated_at:now,locked:false,locked_files:[],locked_folders:[]};
-    await env.STORAGE.put(docKey(userId,id),JSON.stringify(doc),{
-      httpMetadata:{contentType:"application/json;charset=UTF-8"},
-      customMetadata:documentMeta(doc,userId)
-    });
-    await syncTexProjectPins(env,userId,doc);
+    const created=typeof restored.created_at==="string" && Number.isFinite(Date.parse(restored.created_at)) ? new Date(restored.created_at).toISOString() : now;
+    const names=list=>Array.isArray(list)?list.filter(x=>typeof x==="string"&&x.length<=240).slice(0,500):[];
+    const doc={id,owner_id:userId,title:restored.title.trim(),source:restored.source,engine:restored.engine,
+      files:restored.files.map(({name,encoding,content})=>({name,encoding,content})),
+      main_filename:restored.main_filename||"main.tex",main_deleted:restored.main_deleted===true,
+      project_type:typeof restored.project_type==="string"?restored.project_type.slice(0,40):"restored",
+      pinned:restored.pinned===true,pinned_files:names(restored.pinned_files),pinned_folders:names(restored.pinned_folders),
+      realtime_epoch:crypto.randomUUID(),created_at:created,updated_at:now,
+      locked:false,locked_files:[],locked_folders:[]};
+    try{
+      await putTexDocument(env.STORAGE,docKey(userId,id),doc,{
+        httpMetadata:{contentType:"application/json;charset=UTF-8"},customMetadata:documentMeta(doc,userId)
+      },previous?previous.etag:null);
+    }catch(error){if(error?.code===TEX_WRITE_CONFLICT)return fail("The project changed during restore. The encrypted archive was retained.",409);throw error;}
+    // Do not delete the only encrypted copy until the conditional restore has
+    // completed. A failed derived pin index is repairable and not data loss.
+    try{await syncTexProjectPins(env,userId,doc);}catch(error){workerLog("warn","tex.archive.pin_sync_failed",{document_id:id,message:String(error?.message||error).slice(0,160)});}
     await env.STORAGE.delete(archiveKey(userId,id));
     return json({restored:true,document:doc});
   }
   return fail("Unknown archive operation.",404);
+}
+
+async function cleanupArchivedPlaintext(env,userId,id){
+  await removeTexProjectPins(env,userId,id);
+  await clearPrefix(env,RUN_ROOT+userId+"/"+id+"/");
+  await clearPrefix(env,"_system/tex-results/"+userId+"/"+id+"/");
+  await purgeDocumentVersions(env,userId,id);
 }

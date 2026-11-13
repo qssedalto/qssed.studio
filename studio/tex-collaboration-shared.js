@@ -1,3 +1,4 @@
+import { sourceInputError, isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
@@ -81,7 +82,7 @@ async function handleUpdate(request, env, auth, accessToken) {
   if (parsed.error) return parsed.error;
   const previous = await readOwnerDocument(env, access.owner_id, documentId);
   if (!previous) return json({ error: "Shared TeX document not found." }, 404);
-  if (previous.locked) return json({ error: "This project is locked by its owner." }, 423);
+  if (isTexMainLocked(previous)) return json({ error: "This project is locked by its owner." }, 423);
   if (previous.main_deleted === true) return json({error:"This project has no TeX entry. Add a root .tex file first."},409);
   if ((typeof parsed.value?.realtime_epoch !== "string" || texRealtimeEpoch(parsed.value.realtime_epoch) !== texRealtimeEpoch(previous)))
     return json({error:"The main TeX entry changed. Reopen the project before saving.",code:"main_revision_changed"},409);
@@ -89,7 +90,7 @@ async function handleUpdate(request, env, auth, accessToken) {
   const normalized = normalizeSharedDocument(parsed.value, previous);
   if (!normalized.ok) return json({ error: normalized.error }, 400);
   try {
-    await writeDocument(env, normalized.value);
+    await writeDocument(env, normalized.value, previous.storage_revision);
     return json({
       document: {
         ...normalized.value,
@@ -102,6 +103,7 @@ async function handleUpdate(request, env, auth, accessToken) {
       collaboration_role: access.role
     });
   } catch (error) {
+    if (error?.code === TEX_WRITE_CONFLICT) return json({ error: error.message, code: error.code }, 409);
     workerLog("error", "tex.shared_document.update.failed", {
       user_id: auth.user.id,
       owner_id: access.owner_id,
@@ -237,9 +239,9 @@ async function readOwnerDocument(env, ownerId, documentId) {
   if (!object) return null;
   try {
     const stored = JSON.parse(await object.text());
-    if (!stored || stored.owner_id !== ownerId || stored.id !== documentId) return null;
+    if (!stored || stored.document_deleted || stored.owner_id !== ownerId || stored.id !== documentId) return null;
     const parsed = reconcileTexMainEntry(stored);
-    return {
+    return texDocumentRevision({
       id: documentId,
       owner_id: ownerId,
       title: cleanText(parsed.title, 180) || "Untitled TeX document",
@@ -257,13 +259,15 @@ async function readOwnerDocument(env, ownerId, documentId) {
       locked_files:Array.isArray(parsed.locked_files)?parsed.locked_files:[],
       pinned_folders:Array.isArray(parsed.pinned_folders)?parsed.pinned_folders:[],
       locked_folders:Array.isArray(parsed.locked_folders)?parsed.locked_folders:[]
-    };
+    }, object);
   } catch {
     return null;
   }
 }
 
 function normalizeSharedDocument(input, previous) {
+  const inputError = sourceInputError(input);
+  if (inputError) return { ok: false, error: inputError };
   const source = input && typeof input === "object" ? input : {};
   const engine = cleanText(source.engine, 24) || previous.engine || "xelatex";
   if (!ENGINES.has(engine)) return { ok: false, error: "Unsupported TeX engine." };
@@ -282,11 +286,11 @@ function normalizeSharedDocument(input, previous) {
   };
 }
 
-async function writeDocument(env, document) {
-  await env.STORAGE.put(documentKey(document.owner_id, document.id), JSON.stringify(document), {
+async function writeDocument(env, document, previousRevision) {
+  await putTexDocument(env.STORAGE, documentKey(document.owner_id, document.id), document, {
     httpMetadata: { contentType: "application/json;charset=UTF-8" },
     customMetadata: documentMetadata(document)
-  });
+  }, previousRevision);
 }
 
 function documentMetadata(document) {
@@ -343,7 +347,7 @@ function documentKey(ownerId, documentId) {
 }
 
 function cleanSource(value) {
-  return String(value ?? "").replace(/\u0000/g, "").slice(0, MAX_SOURCE_CHARS);
+  return String(value ?? "");
 }
 
 function cleanText(value, maximum) {

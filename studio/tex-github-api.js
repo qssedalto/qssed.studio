@@ -528,7 +528,7 @@ async function compile(request, env, userId) {
   const object = await env.STORAGE.get("_system/tex-documents/" + userId + "/" + docId + ".json");
   if (!object) return fail(404, "Document not found in this account.");
   const doc = JSON.parse(await object.text());
-  if (doc?.owner_id !== userId || doc?.id !== docId || typeof doc.source !== "string") {
+  if (doc?.document_deleted || doc?.owner_id !== userId || doc?.id !== docId || typeof doc.source !== "string") {
     return fail(403, "Document is not owned by this account.");
   }
   if (!doc.source.trim() || doc.source.length > MAX_SOURCE || doc.engine !== "xelatex") {

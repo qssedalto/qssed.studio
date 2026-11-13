@@ -427,7 +427,11 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           saveButton.disabled = true;
           setSaveState(labels.saving);
           try {
-            const data = await api('/api/tex/documents?id=' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(snapshot()) });
+            const context = window.__aertexFileGetContext?.();
+            if(!context || context.id!==id || typeof context.save!=='function')throw new Error(labels.saveFailed);
+            await context.save();
+            if(activeDocumentId()!==id)return;
+            const data = {document:window.__aertexFileGetContext?.()?.document};
             setSaveState(labels.saved);
             try {
               await api('/api/tex/versions?action=snapshot', { method: 'POST', body: JSON.stringify({ document_id: id, ...snapshot(), reason: 'manual' }) });

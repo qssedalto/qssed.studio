@@ -1,3 +1,4 @@
+import { isLiveTexHead } from "./tex-document-guards.js";
 // Owner-scoped capability links and short-lived account-specific approvals.
 // All link settings and grants live in private R2; never derive permissions
 // directly from UI flags or unverified client claims.
@@ -49,7 +50,7 @@ export async function loadValidLink(env,owner,doc,token) {
   if(!validId(owner)||!validId(doc)||!validToken(token))return null;
   const config=await loadConfig(env,owner,doc);
   if(!config?.enabled || !constantTimeToken(config.token,token))return null;
-  if(!(await env.STORAGE.head(documentKey(owner,doc))))return null;
+  if(!isLiveTexHead(await env.STORAGE.head(documentKey(owner,doc))))return null;
   return config;
 }
 export async function resolveLinkGrant(env,userId,docId){
@@ -58,7 +59,7 @@ export async function resolveLinkGrant(env,userId,docId){
   if(!grant||grant.member_id!==userId||grant.document_id!==docId||!validId(grant.owner_id))return null;
   const config=await loadConfig(env,grant.owner_id,docId);
   if(!config?.enabled||grant.revision!==config.revision)return null;
-  if(!(await env.STORAGE.head(documentKey(grant.owner_id,docId))))return null;
+  if(!isLiveTexHead(await env.STORAGE.head(documentKey(grant.owner_id,docId))))return null;
   if(grant.kind==="link" && config.audience==="anyone"){
     return {owner_id:grant.owner_id,role:safeRole(config.role),via_link:true};
   }
@@ -69,14 +70,14 @@ export async function resolveLinkGrant(env,userId,docId){
 }
 export async function readPublicDocument(env,owner,doc) {
   const value=await loadJson(env,documentKey(owner,doc));
-  if(!value||value.owner_id!==owner||value.id!==doc)return null;
+  if(!value||value.document_deleted||value.owner_id!==owner||value.id!==doc)return null;
   const files=(Array.isArray(value.files)?value.files:[]).filter(f=>
     typeof f?.name==="string" && f.name.length<=140 &&
     (f.encoding==="utf8"||f.encoding==="base64") &&
     typeof f.content==="string" && f.content.length<=6*1024*1024);
   return {
     id:doc,owner_id:owner,title:String(value.title||"TeX document").slice(0,180),
-    source:String(value.source||"").slice(0,180000),files
+    source:String(value.source||""),files
   };
 }
 export function shareUrl(origin,config){
