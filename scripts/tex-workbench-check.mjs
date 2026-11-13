@@ -34,6 +34,28 @@ const apiWrapper = fs.readFileSync(new URL("../studio/tex-api.js", import.meta.u
 const versionApi = fs.readFileSync(new URL("../studio/tex-version-api.js", import.meta.url), "utf8");
 const workNavigationUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
 
+const localCompileClient = fs.readFileSync(new URL("../studio/ui-tex-local.js", import.meta.url), "utf8");
+const historyCompileClient = fs.readFileSync(new URL("../studio/ui-work-tex-version-history.js", import.meta.url), "utf8");
+const bridgeCompiler = fs.readFileSync(new URL("../local-bridge/original-engine/main_windows.go", import.meta.url), "utf8");
+assert(localCompileClient.includes("loadProjectAssets") &&
+       localCompileClient.includes("window.__aertexLoadTexCompileFiles"),
+  "Local preview must resolve authenticated project dependencies");
+assert(localCompileClient.includes("files })") &&
+       localCompileClient.includes("tex.project-files"),
+  "Native compile requests must include dependency files and demand a capable Bridge");
+assert(historyCompileClient.includes("await projectFiles(version.document_id)") &&
+       historyCompileClient.includes("source: version.source, title: version.title, files"),
+  "Version-history PDF download must compile project files, not only main.tex");
+assert(historyCompileClient.includes("showCompiledPreview(pdf)"),
+  "Completed history compiles must appear in the main preview pane");
+assert(bridgeCompiler.includes("func safeProjectAssetName") &&
+       bridgeCompiler.includes("func writeProjectAssets") &&
+       bridgeCompiler.includes("writeProjectAssets(workDir, payload.Files)"),
+  "Native Bridge must sandbox nested TeX assets and forbid path traversal");
+assert(bridgeCompiler.includes('"tex.project-files"'),
+  "Bridge must advertise multi-file support before the browser sends project assets");
+
+
 for (const zh of [true, false]) {
   const markup = texWorkbenchContent(zh);
   for (const endpoint of ["/api/tex/status", "/api/tex/documents", "/api/tex/runs", "/api/tex/compile"]) assert(markup.includes(endpoint), `TeX Workbench is missing ${endpoint}`);
