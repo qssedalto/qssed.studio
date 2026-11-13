@@ -56,7 +56,18 @@ export function enhanceTexProjectControls(markup,zh=true){
     'window.__aertexFileSetActive?.(doc);window.__aertexTexExplorerRefresh?.(doc);'+
     'window.dispatchEvent(new CustomEvent("aertex:tex-file-updated",{detail:{documentId:doc.id,realtimeEpoch:doc.realtime_epoch||"v2",userInitiated:true}}));'+
     '};';
-  source=source.replace(binding,binding+fileBridge+bus);
+  const entryRefresh='window.addEventListener("aertex:tex-source-rebased",async event=>{'+
+    'const id=String(event.detail?.documentId||"");if(id!==activeId)return;'+
+    'window.clearTimeout(saveTimer);'+
+    'if(dirty){showMessage("The main TeX file was replaced by another collaborator. Your unsaved text is preserved in this editor; copy it before reopening the project.",true);return;}'+
+    'try{const data=await api("/api/tex/documents?id="+encodeURIComponent(id)+"&revision_check="+Date.now());'+
+    'if(id!==activeId||dirty)return;if(!data?.document)throw new Error("The updated source is unavailable.");'+
+    'activeDocument=data.document;updateLocal(activeDocument);renderEditor();'+
+    'window.__aertexTexExplorerRefresh?.(activeDocument);'+
+    'window.dispatchEvent(new CustomEvent("aertex:tex-source-refreshed",{detail:{documentId:id}}));'+
+    '}catch(error){showMessage(error?.message||"Could not reload the updated main TeX file.",true);}'+
+    '});';
+  source=source.replace(binding,binding+fileBridge+bus+entryRefresh);
   if(!source.includes("</body>"))throw new Error("TeX outer page body missing.");
   const code=SCRIPT.replace('__COPY__',JSON.stringify(copy).replace(/</g,'\\u003c'));
   return enhanceTexFileModal(source.replace("</body>",
