@@ -16,9 +16,30 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
   .tex-work-app #tex-title{display:none!important}
   .tex-work-app #tex-delete,.tex-work-app #tex-download{display:none!important}
   .tex-work-app .tex-editor-toolbar>.tex-static-title-row{
-    display:flex!important;align-items:center!important;gap:8px!important;
+    display:flex!important;align-items:flex-start!important;gap:8px!important;
     flex:1 1 0%!important;min-width:0!important;max-width:100%!important;
-    min-height:38px!important;margin:0!important;padding:0 4px!important
+    min-height:43px!important;margin:0!important;padding:0 4px!important;
+    overflow:hidden!important
+  }
+  /* The original autosave node is moved immediately below the fixed title.
+     Preserve its id so every existing save and collaboration handler works. */
+  .tex-work-app .tex-static-title-stack{
+    display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+    justify-content:flex-start!important;gap:2px!important;
+    flex:0 1 auto!important;min-width:0!important;max-width:100%!important;
+    overflow:hidden!important
+  }
+  .tex-work-app .tex-static-title-stack>.tex-save-state{
+    position:static!important;inset:auto!important;display:block!important;
+    box-sizing:border-box!important;width:auto!important;max-width:100%!important;
+    min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;
+    color:var(--muted)!important;font-size:10.5px!important;font-weight:400!important;
+    line-height:1.25!important;letter-spacing:0!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important
+  }
+  .tex-work-app .tex-static-title-stack>#tex-save-state{
+    display:block!important;max-width:100%!important;overflow:hidden!important;
+    text-overflow:ellipsis!important;white-space:nowrap!important
   }
   .tex-work-app .tex-static-title{
     display:block;flex:0 1 auto;max-width:100%;min-width:0;
@@ -28,7 +49,7 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
   }
   .tex-work-app .tex-build-indicator{
     display:flex;flex:0 0 23px;width:23px;height:23px;align-items:center;
-    justify-content:center
+    justify-content:center;align-self:flex-start;margin-top:0
   }
   .tex-work-app .tex-build-indicator[hidden],
   .tex-work-app .tex-build-log[hidden]{display:none!important}
@@ -73,12 +94,30 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
   .tex-work-app .tex-compile-fixed:has(#tex-compile:hover:not(:disabled)) .tex-compile-vector{
     color:var(--text)
   }
-  .tex-work-app .tex-editor-footer .tex-editor-actions{display:none!important}
-  .tex-work-app .tex-editor-footer{min-height:33px!important}
+  /* Remove the entire obsolete footer strip, including its minimum-height,
+     borders and grid track. Never delete the original controls: commands
+     still reference their DOM ids and the compile button moves to the toolbar. */
+  body.os-shell:has(.tex-work-app) .tex-work-app #tex-editor>.tex-editor-footer{
+    display:none!important;height:0!important;min-height:0!important;
+    max-height:0!important;margin:0!important;padding:0!important;
+    border:0!important;box-shadow:none!important;overflow:hidden!important
+  }
+  body.os-shell:has(.tex-work-app) .tex-work-app #tex-editor{
+    grid-template-rows:auto auto minmax(0,1fr)!important;
+    min-width:0!important;min-height:0!important;overflow:hidden!important
+  }
+  /* On touch devices the separate LaTeX insertion keyboard bar still uses
+     its own fourth row, not the obsolete autosave/footer strip. */
+  body.os-shell:has(.tex-work-app) .tex-work-app #tex-editor:has(>.tex-mobile-inputbar){
+    grid-template-rows:auto auto minmax(0,1fr) auto!important
+  }
+  .tex-work-app .tex-editor-panel,.tex-work-app .tex-static-title-row{
+    min-width:0!important;max-width:100%!important
+  }
   @media(max-width:950px) and (pointer:coarse), (max-width:760px) {
     .tex-work-app .tex-editor-toolbar>.tex-static-title-row{
       grid-column:1/-1!important;width:100%!important;padding:0 5px!important;
-      min-height:36px!important
+      min-height:43px!important;max-width:100%!important
     }
     .tex-work-app .tex-static-title{font-size:17px}
     .tex-work-app .tex-editor-toolbar>#tex-title{display:none!important}
@@ -106,7 +145,8 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
     const title=document.getElementById('tex-title');
     const bar=root?.querySelector('.tex-editor-commandbar');
     const compile=document.getElementById('tex-compile');
-    if(!root||!toolbar||!title||!bar||!compile){
+    const saveState=root?.querySelector('.tex-save-state');
+    if(!root||!toolbar||!title||!bar||!compile||!saveState){
       window.setTimeout(start,80);return;
     }
     if(document.getElementById('tex-compile-fixed'))return;
@@ -123,6 +163,11 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
     heading.className='tex-static-title';
     heading.textContent=title.value||labels.unnamed;
     heading.title=heading.textContent;
+    const titleStack=document.createElement('div');
+    titleStack.className='tex-static-title-stack';
+    // Move the existing live save status, rather than duplicating text.
+    // Keeping #tex-save-state intact retains all autosave/error updates.
+    titleStack.append(heading,saveState);
     const indicator=document.createElement('span');
     indicator.id='tex-build-indicator';
     indicator.className='tex-build-indicator';
@@ -156,7 +201,7 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
         heading.title=value;
       }
     }
-    titleRow.append(heading,indicator,logButton);
+    titleRow.append(titleStack,indicator,logButton);
     toolbar.insertBefore(titleRow,title);
     const fixed=document.createElement('span');
     fixed.id='tex-compile-fixed';
