@@ -40,6 +40,16 @@ assert(script.includes("if (iosNativeObjectUrl) disposeIosNativePdf();"),
   "Native PDF URLs must be released on close and navigation.");
 assert(script.includes("const pdfjs = await loadLibrary();"),
   "Desktop PDF.js renderer must remain available unchanged.");
+assert(script.includes("showIosNativePdf(blob, nativeHttpUrl);") &&
+  script.includes("console.warn('[AERTEX PDF] unable to load document', error);"),
+  "A PDF.js failure must retain a browser-native PDF fallback.");
+assert(script.includes("window.__aertexOpenCompiledPdf = blob =>"),
+  "Compiled history PDFs must be installable in the main reader.");
+assert(script.includes("window.__aertexOpenGithubPdf = (blob, runId) =>"),
+  "Completed GitHub PDFs must remain installable in the main reader.");
+assert(script.includes("placeholder.hidden = true"),
+  "Opening an already compiled PDF must dismiss the waiting-for-preview placeholder.");
+
 
 assert(script.includes("const faithfulTouch = window.matchMedia("),
   "Small touch screens must bypass the destructive split-mask renderer");
