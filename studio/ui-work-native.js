@@ -111,6 +111,10 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
     'const root=document.getElementById("work-local-root");' +
     'if(root)root.classList.add("is-mobile-local");' +
     'const note=document.getElementById("work-mobile-local-note");if(note)note.hidden=false;' +
+    'const title=root?.querySelector(".work-hero-copy h2");' +
+    'if(title)title.textContent=' + JSON.stringify(zh ? "移动端 TeX 工作台" : "TeX Workbench on mobile") + ';' +
+    'const intro=root?.querySelector(".work-hero-copy .work-hero-description");' +
+    'if(intro)intro.textContent=' + JSON.stringify(zh ? "使用手机或 iPad 编辑项目，并在需要时申请远程编译额度；本机连接组件只需在电脑上安装。" : "Edit projects on a phone or iPad and use remote compilation when needed. The local connection component belongs on a computer.") + ';' +
     '})();</script>';
   return output;
 }
