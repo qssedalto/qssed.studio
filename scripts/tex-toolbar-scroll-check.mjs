@@ -54,7 +54,7 @@ function simulate(html) {
   collab.click=()=>collabClicks++;
   const document={
     body:{append(){}},
-    querySelector(s){return s===".tex-work-app[data-tex-root]"?root:null;}
+    querySelector(s){return s===".tex-work-app[data-tex-root]"?root:null;},
     getElementById(s){
       if(s==="tex-collaboration-open")return collab;
       if(s==="tex-command-chat-shortcut")return shortcut;
