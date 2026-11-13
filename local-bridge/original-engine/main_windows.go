@@ -41,7 +41,7 @@ const (
 	maxDiagnosticLen = 24000
 )
 
-var version = "0.3.0-dev"
+var version = "0.3.1-dev"
 var compileSlots = make(chan struct{}, 2)
 
 var allowedOrigins = map[string]bool{
@@ -97,7 +97,8 @@ func safeProjectAssetName(name string) bool {
 			stem == "lpt4" || stem == "lpt5" || stem == "lpt6" || stem == "lpt7" ||
 			stem == "lpt8" || stem == "lpt9" { return false }
 	}
-	return strings.ToLower(name) != "main.tex" && localTeXAssetExtensions[strings.ToLower(filepath.Ext(name))]
+	lower := strings.ToLower(name)
+	return lower != "main.tex" && lower != "main.pdf" && localTeXAssetExtensions[strings.ToLower(filepath.Ext(name))]
 }
 
 func writeProjectAssets(workDir string, assets []projectAsset) error {
