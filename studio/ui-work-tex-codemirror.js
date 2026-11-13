@@ -13,13 +13,13 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
     failed: "高级编辑器加载失败，已继续使用基础编辑器。",
     remoteCursor: "协作者光标",
     remoteSelection: "协作者选区",
-    cursorReady: "远程光标与选区已启用；每位协作者使用稳定的独立颜色。"
+    cursorReady: "远程光标与选区已启用；协作者会展示自己设置的主题色。"
   } : {
     loading: "Loading the advanced editor…",
     failed: "The advanced editor could not load. The basic editor remains available.",
     remoteCursor: "Collaborator cursor",
     remoteSelection: "Collaborator selection",
-    cursorReady: "Remote cursors and selections are enabled with a stable color for each collaborator."
+    cursorReady: "Remote cursors and selections display each collaborator’s selected theme color."
   };
 
   let output = String(markup || "");
@@ -142,7 +142,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         max-width:150px!important;
         padding:3px 6px!important;
         border-radius:6px!important;
-        color:#fff!important;
+        color:var(--tex-remote-label-ink,#fff)!important;
         font:700 8px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
         white-space:nowrap!important;
         overflow:hidden!important;
@@ -787,6 +787,27 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           return Math.abs(hash) % 360;
         }
 
+        function collaboratorColor(person) {
+          // Only known accents from the canonical AERTEX palette are rendered.
+          // The color follows the owner of the cursor, never the current viewer.
+          const id = typeof person?.accent_id === 'string' ? person.accent_id : '';
+          const meta = window.AERTEXTheme?.colors?.[id];
+          if (meta && /^#[0-9a-f]{6}$/i.test(meta.hex) && /^#[0-9a-f]{6}$/i.test(meta.ink)) {
+            return {
+              caret: meta.hex,
+              selection: 'color-mix(in srgb,' + meta.hex + ' 23%,transparent)',
+              label: meta.hex, ink: meta.ink
+            };
+          }
+          // Older clients without a theme identifier keep deterministic colors.
+          const hue = colorFor(person);
+          return {
+            caret: 'hsl(' + hue + ' 72% 48%)',
+            selection: 'hsla(' + hue + ',72%,52%,.16)',
+            label: 'hsl(' + hue + ' 72% 42%)', ink: '#fff'
+          };
+        }
+
         function inferSelf(participants) {
           // Self identity comes from the server-assigned WebSocket client id,
           // never inferred from matching cursor positions or membership roles.
@@ -800,7 +821,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           return String(person?.display_name || person?.username || labels.remoteCursor).trim().slice(0, 80) || labels.remoteCursor;
         }
 
-        function appendSelectionRect(from, to, hue, hostRect) {
+        function appendSelectionRect(from, to, color, hostRect) {
           if (!view || !remoteLayer || from >= to) return;
           const doc = view.state.doc;
           let line = doc.lineAt(from);
@@ -822,7 +843,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
               rect.style.top = top + 'px';
               rect.style.width = Math.max(3, right - left) + 'px';
               rect.style.height = height + 'px';
-              rect.style.background = 'hsla(' + hue + ',72%,52%,.16)';
+              rect.style.background = color;
               remoteLayer.append(rect);
             }
             rendered += 1;
@@ -846,8 +867,8 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             const end = clamp(person.selection_end, docLength);
             const from = Math.min(start, end);
             const to = Math.max(start, end);
-            const hue = colorFor(person);
-            if (from !== to) appendSelectionRect(from, to, hue, hostRect);
+            const palette = collaboratorColor(person);
+            if (from !== to) appendSelectionRect(from, to, palette.selection, hostRect);
 
             const caretPosition = clamp(person.caret_position ?? end, docLength);
             const coords = view.coordsAtPos(caretPosition, caretPosition === docLength ? -1 : 1);
@@ -861,12 +882,15 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             caret.style.left = left + 'px';
             caret.style.top = top + 'px';
             caret.style.height = height + 'px';
-            caret.style.background = 'hsl(' + hue + ' 72% 48%)';
+            caret.style.background = palette.caret;
+            // A subtle edge keeps pale accents visible against light editor themes.
+            caret.style.boxShadow = '0 0 0 1px rgba(17,24,39,.35)';
 
             const label = document.createElement('span');
             label.className = 'tex-cm-remote-label';
             label.textContent = participantName(person);
-            label.style.background = 'hsl(' + hue + ' 72% 42%)';
+            label.style.background = palette.label;
+            label.style.setProperty('--tex-remote-label-ink', palette.ink);
             if (top < 24) {
               label.style.bottom = 'auto';
               label.style.top = 'calc(100% + 3px)';
