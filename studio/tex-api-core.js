@@ -5,6 +5,7 @@ import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { handleTexProjects } from "./tex-project-api.js";
 import { handleTexProjectFiles } from "./tex-project-files-api.js";
+import { reconcileTexMainEntry } from "./tex-main-entry.js";
 import { handleTexOrganize, removeTexProjectPins } from "./tex-organize-api.js";
 import { handleTexArchive } from "./tex-archive-api.js";
 
@@ -373,7 +374,12 @@ async function readDocument(env, userId, documentId) {
   try {
     const parsed = JSON.parse(await object.text());
     if (!parsed || parsed.owner_id !== userId || parsed.id !== documentId) return null;
-    const normalized = normalizeDocument(parsed, userId, documentId, parsed);
+    // GET/compile/edit must agree on the same canonical entry. Historical
+    // multi-file uploads could store main.tex as an extra while leaving the
+    // main_deleted tombstone set. Recover only that real stored file, never
+    // the old erased source. An explicit subsequent save persists the fix.
+    const recovered = reconcileTexMainEntry(parsed);
+    const normalized = normalizeDocument(recovered, userId, documentId, recovered);
     if (!normalized.ok) return null;
     normalized.value.created_at = cleanTimestamp(parsed.created_at);
     normalized.value.updated_at = cleanTimestamp(parsed.updated_at);
