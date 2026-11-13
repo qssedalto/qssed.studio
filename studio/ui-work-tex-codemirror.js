@@ -702,6 +702,20 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
                 return true;
               } catch { return false; }
             },
+            // Surgical replacement used by the source-aware visual editor:
+            // preserve CodeMirror/Yjs input events, the original TeX syntax,
+            // and the existing undo/collaboration pipeline.
+            replaceRange(from, to, text, focus = false) {
+              if (!view || accessRole() === 'viewer' || (currentAsset && accessRole() === 'editor')) return false;
+              if ((!currentAsset && source.readOnly) || (currentAsset && document.querySelector('.tex-inline-file-viewer textarea')?.readOnly)) return false;
+              const a = Math.max(0, Math.min(view.state.doc.length, Number(from) || 0));
+              const b = Math.max(a, Math.min(view.state.doc.length, Number(to) || 0));
+              const insert = String(text ?? '');
+              view.dispatch({ changes: { from: a, to: b, insert },
+                selection: { anchor: a + insert.length } });
+              if (focus) view.focus();
+              return true;
+            },
             replaceSelection(text) {
               if (!view || source.readOnly || accessRole() === 'viewer' || (currentAsset && accessRole() === 'editor')) return false;
               const selection = view.state.selection.main;
