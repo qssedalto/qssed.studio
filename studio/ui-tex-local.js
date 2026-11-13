@@ -91,6 +91,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
         const localUrls = new Set();
         let localBase = "";
         let localEngines = [];
+        let bridgeDetected = false;
         let cloudAvailable = false;
         let probesReady = false;
         const mobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '') ||
@@ -257,7 +258,8 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             syncPreviewAvailability();
             if (probesReady) {
               const result = {
-                localDetected: Boolean(localBase),
+                localDetected: Boolean(bridgeDetected || localBase),
+                localEngineReady: Boolean(localBase),
                 localSupported,
                 cloudAvailable,
                 selectedEngine: String(engine.value || '').toLowerCase()
@@ -280,11 +282,15 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
           async function probeLocal() {
             localBase = '';
             localEngines = [];
+            bridgeDetected = false;
             for (const base of endpoints) {
               try {
                 const health = await readJson(await loopbackFetch(base, '/health'));
                 if (health?.service !== expectedService || Number(health?.protocol) !== expectedProtocol) continue;
                 if (!Array.isArray(health?.capabilities) || !health.capabilities.includes('tex.compile')) continue;
+                // /health proves Bridge is running even when XeLaTeX is not
+                // installed. Do not confuse "no TeX engine" with "no service".
+                bridgeDetected = true;
                 const tex = await readJson(await loopbackFetch(base, '/tex/status'));
                 if (!tex?.available) continue;
                 localBase = base;
@@ -558,6 +564,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             if (base && engines.length) {
               localBase = base;
               localEngines = engines;
+              bridgeDetected = true;
               syncCompiler();
               if (previewEnabled && supportsCurrentEngine() && hasDocument()) schedulePreview(240);
               return;
