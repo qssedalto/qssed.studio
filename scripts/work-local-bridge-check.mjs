@@ -10,7 +10,8 @@ const routing = fs.readFileSync(new URL("../studio/routing.js", import.meta.url)
 const worker = fs.readFileSync(new URL("../worker.js", import.meta.url), "utf8");
 const workApi = fs.readFileSync(new URL("../studio/work-api.js", import.meta.url), "utf8");
 const bridge = fs.readFileSync(new URL("../local-bridge/server.mjs", import.meta.url), "utf8");
-const nativeBridge = fs.readFileSync(new URL("../local-bridge/native/main_windows.go", import.meta.url), "utf8");
+const nativeBridge = fs.readFileSync(new URL("../local-bridge/original-engine/main_windows.go", import.meta.url), "utf8");
+const installer = fs.readFileSync(new URL("../local-bridge/installer/AERTEX-Bridge.iss", import.meta.url), "utf8");
 const nativeWorkflow = fs.readFileSync(new URL("../.github/workflows/local-bridge-native.yml", import.meta.url), "utf8");
 const windowsInstall = fs.readFileSync(new URL("../local-bridge/install-windows.ps1", import.meta.url), "utf8");
 const windowsStart = fs.readFileSync(new URL("../local-bridge/start-windows.ps1", import.meta.url), "utf8");
@@ -166,7 +167,15 @@ assert(worker.includes('pathname.startsWith("/api/work/")'), "Worker is missing 
 assert(workApi.includes("verifyStudioApiSession"), "Bridge download must require a AERTEX session");
 assert(workApi.includes("_system/releases/local-bridge/windows-amd64/QssedA-Local-Bridge.exe"), "Bridge download must read the fixed hidden R2 release key");
 assert(workApi.includes("application/vnd.microsoft.portable-executable"), "Bridge download must use an executable content type");
-assert(nativeWorkflow.includes("GOOS: windows") && nativeWorkflow.includes("GOARCH: amd64"), "Native Bridge workflow must target Windows amd64");
+assert(nativeWorkflow.includes("runs-on: windows-latest"), "Native Bridge installer must build and test on Windows.");
+assert(nativeWorkflow.includes("AERTEX-Bridge-Setup.exe"), "Bridge release must be an actual Setup EXE, not a portable daemon.");
+assert(nativeWorkflow.includes("smoke-windows:") && nativeWorkflow.includes("needs: [build-installer, smoke-windows]"),
+  "Uploading to R2 must be gated on actual Windows installation and uninstall tests.");
+assert(installer.includes("DefaultDirName={localappdata}\\QssedA\\LocalBridge"), "Installer must install to a fixed per-user directory.");
+assert(installer.includes('ValueName: "AERTEX Bridge"') && installer.includes('ValueData: """{app}\\AERTEX-Bridge.exe"" --background"'),
+  "Installer must register mandatory Windows user login autostart.");
+assert(installer.includes("CreateUninstallRegKey=yes") && installer.includes("[UninstallRun]"),
+  "Installer must register a Windows uninstaller that stops the background process.");
 assert(nativeWorkflow.includes("-H=windowsgui"), "Native Bridge build should not open a console window for ordinary users");
 assert(nativeWorkflow.includes("wrangler@4.136.3 r2 object put"), "Native Bridge workflow must publish the built EXE to R2 with the pinned Wrangler version");
 
