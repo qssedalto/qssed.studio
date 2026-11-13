@@ -78,6 +78,49 @@ assert(html.includes("max-height:none!important"),"Explorer must fill its availa
 assert(html.includes("#tex-command-rename-project svg") && html.includes("#tex-command-rename svg"),"Project and file menus must reuse their distinct Fluent rename artwork");
 assert(html.includes("width:158px!important"),"Popup must use a narrow balanced action menu");
 assert(html.includes("tex-project-rename-sigma"),"Project rename icon must retain the Sigma accent");
+
+assert(script.includes("function vBlocks(") && script.includes("function vPatch("),"Visual mode must parse source and patch original TeX offsets");
+assert(!script.includes("embedded.src=src") && !script.includes("The project PDF appears here"),
+  "Visual mode must never be implemented as a compiled PDF overlay");
+assert(script.includes("bridge.replaceRange(from,to,next,false)"),
+  "Visual edits must use the CodeMirror transaction bridge for realtime and undo");
+assert(script.includes("import('/assets/tex/katex.js')"),
+  "Math formulas must be typeset by a self-hosted MathML renderer");
+const parserStart=script.indexOf("  function vClose("),parserEnd=script.indexOf("  function vChip(",parserStart);
+assert(parserStart>=0&&parserEnd>parserStart,"Visual parser must be present");
+const parseVisual=new Function("maxVisualBlocks",
+  script.slice(parserStart,parserEnd)+"\nreturn vBlocks;")(2500);
+const sampleVisual=String.raw`\documentclass{ctexart}
+\title{机器学习}
+\begin{document}
+\maketitle
+\begin{abstract}
+这是摘要。
+\end{abstract}
+\section{基础}\label{intro}
+正文 \textbf{加粗} 与 $x^2$。
+\begin{table}
+\begin{tabular}{lc}
+\toprule
+名称 & 数值 \\
+\midrule
+x & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\input{chapters/foundations}
+\printbibliography
+\end{document}`;
+const blocks=parseVisual(sampleVisual);
+assert.deepEqual(blocks.map(b=>b.type),
+  ["preamble","command","abstract","heading","paragraph","table","command","command","end"],
+  "Visual LaTeX blocks must retain document structure, including nested table floats");
+for(const block of blocks)assert(block.start>=0&&block.end<=sampleVisual.length&&block.end>block.start,
+  "Every visual block must map to a valid original TeX source span");
+const heading=blocks.find(x=>x.type==="heading");
+assert.equal(sampleVisual.slice(heading.innerStart,heading.innerEnd),"基础");
+assert.equal(sampleVisual.slice(blocks.at(-1).start,blocks.at(-1).end),"\\end{document}");
+
 assert(!html.includes("localStorage.setItem('archive"),"Vault secrets must not be written into local storage");
 
 const te=new TextEncoder(),salt=webcrypto.getRandomValues(new Uint8Array(16));
