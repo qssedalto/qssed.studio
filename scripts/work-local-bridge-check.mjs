@@ -184,9 +184,12 @@ assert(nativeWorkflow.includes("wrangler@4.136.3 r2 object put"), "Native Bridge
 
 
 const cachedPreviewMarkup = enhanceWorkTexPreviewSession("", true);
-const cachedPreviewRuntime = cachedPreviewMarkup.match(
-  /<script id="qsseda-work-tex-preview-session">([\\s\\S]*?)<\\/script>/
-)?.[1];
+const previewScriptStart = '<script id="qsseda-work-tex-preview-session">';
+const previewScriptOffset = cachedPreviewMarkup.indexOf(previewScriptStart);
+const cachedPreviewRuntime = previewScriptOffset >= 0
+  ? cachedPreviewMarkup.slice(previewScriptOffset + previewScriptStart.length,
+    cachedPreviewMarkup.indexOf('</script>', previewScriptOffset))
+  : "";
 assert(cachedPreviewRuntime, "The preview refresh protection script must load");
 new vm.Script(cachedPreviewRuntime);
 const oldPdf = new Blob(["%PDF-1.7\\n% previous preview may have missing CJK glyphs"], { type: "application/pdf" });
