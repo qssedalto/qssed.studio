@@ -393,6 +393,11 @@ export function enhanceWorkTexRealtime(markup, zh) {
             }
             const avatar = document.createElement('span');
             avatar.className = 'tex-realtime-person-avatar';
+            const accentMeta = window.AERTEXTheme?.colors?.[person?.accent_id];
+            if (accentMeta) {
+              avatar.style.backgroundColor = accentMeta.hex;
+              avatar.style.color = accentMeta.ink;
+            }
             if (person?.avatar_url) {
               const image = document.createElement('img');
               image.src = person.avatar_url;
@@ -515,8 +520,14 @@ export function enhanceWorkTexRealtime(markup, zh) {
               try { return bytesToBase64(Y.encodeRelativePosition(Y.createRelativePositionFromTypeIndex(current.ytext, offset))); }
               catch { return ''; }
             };
+            // Publish the actual theme chosen by THIS user. Each recipient maps
+            // its palette ID independently; it never uses the recipient's own accent.
+            const chosenAccent = window.AERTEXTheme?.getAccent?.() ||
+              document.documentElement.dataset.accent || '';
+            const accentId = window.AERTEXTheme?.colors?.[chosenAccent] ? chosenAccent : '';
             current.socket.send(JSON.stringify({
               type: 'presence',
+              accent_id: accentId,
               selection_start: Math.min(anchor, head),
               selection_end: Math.max(anchor, head),
               caret_position: head,
@@ -784,6 +795,9 @@ export function enhanceWorkTexRealtime(markup, zh) {
           source?.addEventListener('select', () => sendPresence());
           source?.addEventListener('click', () => sendPresence());
           source?.addEventListener('keyup', () => sendPresence());
+          // Account accent changes take effect instantly, even without typing
+          // or moving the caret; the server rebroadcasts the user's new ID.
+          window.addEventListener('aertex-themechange', () => sendPresence(true));
         }
 
         function init() {
