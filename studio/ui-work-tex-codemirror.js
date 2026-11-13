@@ -223,6 +223,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         const source = document.getElementById('tex-source');
         const editor = document.getElementById('tex-editor');
         if (!root || !source || !editor) return;
+        let view = null;
 
         // The global site theme remains independent. A user can choose a
         // syntax palette for all Work project files; auto follows the site.
@@ -309,7 +310,6 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         }, { once: true });
         applyCodeColors();
 
-        let view = null;
         let host = null;
         let remoteLayer = null;
         let remoteParticipants = [];
