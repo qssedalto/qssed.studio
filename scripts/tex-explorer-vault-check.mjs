@@ -73,6 +73,11 @@ for(const phrase of ["tex-row-menu-trigger","tex-editor-mode","tex-organize-pins
   "window.__aertexTexSetVisualMode","PBKDF2","AES-GCM","900000","account_password"]){
   assert(html.includes(phrase),"Missing "+phrase);
 }
+assert(html.includes("#tex-document-list::-webkit-scrollbar"),"Explorer scrollbar must be visually hidden without disabling scroll");
+assert(html.includes("max-height:none!important"),"Explorer must fill its available vertical space");
+assert(html.includes("#tex-command-rename-project svg") && html.includes("#tex-command-rename svg"),"Project and file menus must reuse their distinct Fluent rename artwork");
+assert(html.includes("width:158px!important"),"Popup must use a narrow balanced action menu");
+assert(html.includes("tex-project-rename-sigma"),"Project rename icon must retain the Sigma accent");
 assert(!html.includes("localStorage.setItem('archive"),"Vault secrets must not be written into local storage");
 
 const te=new TextEncoder(),salt=webcrypto.getRandomValues(new Uint8Array(16));
