@@ -3,6 +3,7 @@
 import { json } from "./routing.js";
 import { isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
+import { reconcileTexMainEntry } from "./tex-main-entry.js";
 import { MAX_PROJECT_EXTRA_FILES, MAX_PROJECT_FILES, MAX_PROJECT_BYTES, MAX_SINGLE_FILE_BYTES, MAX_JSON_UPLOAD_BYTES, MAX_TEXT_CHARACTERS, isSafeProjectFilename, isBinaryProjectFile } from "./tex-project-file-types.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
@@ -82,7 +83,9 @@ export async function handleTexProjectFiles(request, env, userId) {
   try {
     const stored = await env.STORAGE.get(key);
     if (!stored) return fail("Project not found or unavailable for editing.", 404);
-    const doc = JSON.parse(await stored.text());
+    // Repair in-memory before every file action; the write at the end of this
+    // authenticated mutation persists the canonical entry consistently.
+    const doc = reconcileTexMainEntry(JSON.parse(await stored.text()));
     if (doc?.id !== documentId || doc?.owner_id !== userId) return fail("Project not found.", 404);
     if (doc.locked) return fail("Unlock the project before modifying files.", 423);
     const lockedNames = new Set(Array.isArray(doc.locked_files) ? doc.locked_files : []);
@@ -155,16 +158,25 @@ export async function handleTexProjectFiles(request, env, userId) {
           if (isLocked(f.name)) return fail("The destination folder is locked.",423);
           seen.add(f.name.toLowerCase());
         }
-        // After deleting the root entry, the next standalone .tex file
-        // recreates the canonical compile entry without fabricating a file.
-        const replacementEntry = doc.main_deleted === true && added.length === 1 &&
-          /^[^/\\]+\.tex$/i.test(added[0].name) && !isLocked("main.tex");
+        // A root main.tex in a MULTI-FILE upload must also recreate the
+        // canonical compile entry. Previously the batch-size restriction left
+        // main.tex visible in the tree but main_deleted=true, causing failed
+        // saves and the alternating "Create a TeX entry" header.
+        const rootMain = doc.main_deleted === true
+          ? added.find(file => /^main\.tex$/i.test(file.name)) : null;
+        const loneRootTex = doc.main_deleted === true && added.length === 1 &&
+          /^[^/\\]+\.tex$/i.test(added[0].name) ? added[0] : null;
+        const replacementEntry = !isLocked("main.tex") && (rootMain || loneRootTex);
         if (replacementEntry) {
-          if (encoder.encode(added[0].content).byteLength > MAX_SINGLE_BYTES) return fail("The TeX entry is too large.", 413);
-          doc.source = added[0].content;
-          doc.main_filename = added[0].name;
+          if (encoder.encode(replacementEntry.content).byteLength > MAX_SINGLE_BYTES)
+            return fail("The TeX entry is too large.", 413);
+          const otherFiles = added.filter(file => file !== replacementEntry);
+          if (existing.length + otherFiles.length > MAX_FILES)
+            return fail("A project can contain at most 500 files including the TeX entry.", 409);
+          doc.source = replacementEntry.content;
+          doc.main_filename = replacementEntry.name;
           doc.main_deleted = false;
-          next = existing;
+          next = [...existing, ...otherFiles];
         } else {
           if (existing.length + added.length > MAX_FILES)
             return fail("A project can contain at most 500 files including the TeX entry.", 409);
