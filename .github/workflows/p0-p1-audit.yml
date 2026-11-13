@@ -1,6 +1,8 @@
 name: P0 P1 Stability Audit
 
 on:
+  push:
+    branches: ['audit/**']
   pull_request:
     branches: [main]
     paths: ['studio/**', 'scripts/**', 'tex-vendor/**', '*worker.js', 'auth-*.js', 'admin/**', 'wrangler*.jsonc', 'supabase/migrations/**', '.github/workflows/p0-p1-audit.yml', '.github/workflows/deploy-production.yml']
@@ -25,6 +27,11 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24.x'
+      - name: Preserve exact tested source identity
+        run: |
+          mkdir -p /tmp/p0-p1-results
+          git rev-parse HEAD > /tmp/p0-p1-results/commit.txt
+          git archive --format=tar.gz HEAD -o /tmp/p0-p1-results/source.tar.gz
       - name: Build locked browser and server dependencies
         run: |
           npm ci --prefix tex-vendor --no-audit --no-fund
