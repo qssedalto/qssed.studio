@@ -906,5 +906,34 @@ export function dashboardStyles() {
       .dashboard-focus-primary,.dashboard-focus-card,.dashboard-focus-arrow{transition:none!important;transform:none!important}
     }
 
+
+    /* AERTEX_NAV_TYPOGRAPHY_2026_11 */
+    body.os-shell .os-main h1,body.os-shell .os-main h2,body.os-shell .os-main h3,
+    body.os-shell .os-main strong,body.os-shell .os-sidebar strong,body.os-shell .os-sidebar .os-nav-title{
+      font-family:"PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Noto Sans CJK SC","Segoe UI",system-ui,sans-serif!important;
+    }
+    body.os-shell .os-main h1,body.os-shell .os-main h2,body.os-shell .os-main h3{font-weight:650!important;letter-spacing:-.035em!important;line-height:1.14!important}
+    body.os-shell .os-hero h1{font-size:clamp(32px,3.7vw,49px);font-weight:650!important}
+    body.os-shell .dashboard-welcome h2{font-size:clamp(38px,4.7vw,60px);font-weight:650!important;letter-spacing:-.045em!important;line-height:1.12!important}
+    body.os-shell .dashboard-focus-primary h3{font-size:clamp(32px,3.7vw,50px);font-weight:650!important;letter-spacing:-.04em!important;line-height:1.13!important}
+    body.os-shell .dashboard-focus-card h3{font-size:22px;font-weight:650!important}
+    body.os-shell .os-nav{display:flex;flex-direction:column;gap:15px!important}
+    body.os-shell .os-nav-cluster{display:grid;gap:3px;min-width:0}
+    body.os-shell .os-nav-cluster-heading{padding:5px 11px 3px;color:var(--quiet);font-size:10px;letter-spacing:.075em;font-weight:650;line-height:1.4}
+    body.os-shell .os-nav-cluster .os-nav-group{margin:0!important;border:0!important;border-radius:12px!important;background:transparent!important;box-shadow:none!important;padding:0!important;overflow:visible!important}
+    body.os-shell .os-nav-cluster .os-nav-title{display:flex!important;align-items:center!important;gap:10px!important;min-height:42px!important;padding:6px 30px 6px 9px!important;border-radius:11px!important;font-size:12.5px!important;font-weight:560!important;color:var(--muted);white-space:nowrap}
+    body.os-shell .os-nav-cluster .os-nav-title span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+    body.os-shell .os-nav-cluster .os-nav-title .dashboard-icon{width:28px!important;height:28px!important;border-radius:9px!important;box-shadow:none!important}
+    body.os-shell .os-nav-cluster .os-nav-title .dashboard-icon svg{width:15px!important;height:15px!important}
+    body.os-shell .os-nav-cluster .os-nav-title::after{right:7px!important;font-size:17px!important}
+    body.os-shell .os-nav-cluster .os-nav-entry.is-active>.os-nav-title,body.os-shell .os-nav-cluster .os-nav-title[aria-current="page"]{background:color-mix(in srgb,var(--primary) 10%,var(--card))!important;color:var(--primary)!important;font-weight:670!important}
+    body.os-shell .os-nav-cluster .os-nav-items,body.os-shell .os-nav-cluster .os-nav-group.is-active .os-nav-items{display:grid;gap:2px;margin:3px 0 4px 35px!important;padding:0 0 0 9px!important;border-left:1px solid var(--hairline)}
+    body.os-shell .os-nav-cluster .os-nav-items a{display:flex!important;align-items:center!important;min-height:32px!important;padding:5px 24px 5px 9px!important;border-radius:8px!important;font-size:11.5px!important;line-height:1.3}
+    body.os-shell .os-nav-cluster .os-nav-items a .dashboard-icon{display:none!important}
+    body.os-shell .os-nav-cluster .os-nav-items a::after{right:6px!important;font-size:13px!important}
+    body.os-shell .os-nav-cluster .os-nav-items a[aria-current="page"]{color:var(--primary)!important;background:color-mix(in srgb,var(--primary) 8%,transparent)!important;font-weight:650!important}
+    body.os-shell .os-nav-cluster[data-nav-cluster="products"] .os-nav-products{display:grid;gap:2px}
+    body.os-shell .os-nav-cluster .os-nav-product-link+.os-nav-product-link:before{display:none!important}
+    @media(max-width:1050px){body.os-shell .dashboard-welcome h2{font-size:clamp(34px,9vw,48px)!important}body.os-shell .dashboard-focus-primary h3{font-size:clamp(32px,9vw,44px)!important}}
   `;
 }
