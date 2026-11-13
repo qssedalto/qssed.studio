@@ -124,6 +124,26 @@ jobs:
             Setup
             $h=Health
             Write-Host 'In-place upgrade verified'
+            # Regression: real users had a same-directory predecessor named
+            # QssedA-Local-Bridge.exe that continued owning TCP 32145.
+            # Simulate that precise legacy image before running the installer.
+            & $ctl stop $engine
+            if($LASTEXITCODE -ne 0){throw 'Stop engine before legacy test failed'}
+            $legacy=Join-Path $appDir 'QssedA-Local-Bridge.exe'
+            Copy-Item -LiteralPath $engine -Destination $legacy -Force
+            Start-Process -FilePath $legacy -ArgumentList '--background' | Out-Null
+            Start-Sleep -Seconds 2
+            $h=Health
+            $listener=Get-NetTCPConnection -LocalAddress '127.0.0.1' -LocalPort 32145 -State Listen -ErrorAction Stop | Select-Object -First 1
+            $running=Get-CimInstance Win32_Process -Filter "ProcessId=$($listener.OwningProcess)" -ErrorAction Stop
+            if($running.ExecutablePath -ine $legacy){throw "Legacy binary did not acquire the listening port: $($running.ExecutablePath)"}
+            Setup
+            $h=Health
+            if(Test-Path $legacy){throw 'Legacy Bridge binary was not retired after upgrade'}
+            $listener=Get-NetTCPConnection -LocalAddress '127.0.0.1' -LocalPort 32145 -State Listen -ErrorAction Stop | Select-Object -First 1
+            $running=Get-CimInstance Win32_Process -Filter "ProcessId=$($listener.OwningProcess)" -ErrorAction Stop
+            if($running.ExecutablePath -ine $engine){throw 'The newly installed engine does not own port 32145'}
+            Write-Host 'Legacy QssedA-Local-Bridge.exe upgrade verified'
             & $ctl stop $engine
             if($LASTEXITCODE -ne 0){throw 'Stop installed engine failed'}
             Start-Process -FilePath $engine -ArgumentList '--background' | Out-Null
