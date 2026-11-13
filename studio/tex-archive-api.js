@@ -2,6 +2,7 @@ import { json } from "./routing.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { isSafeProjectFilename } from "./tex-project-file-types.js";
 import { purgeDocumentVersions } from "./tex-version-api.js";
+import { removeTexProjectPins, syncTexProjectPins } from "./tex-organize-api.js";
 
 const ROOT = "_system/tex-archive/";
 const DOC_ROOT = "_system/tex-documents/";
@@ -167,6 +168,7 @@ export async function handleTexArchive(request,env,user) {
     }),{httpMetadata:{contentType:"application/json;charset=UTF-8"},
        customMetadata:{ownerId:userId,kind:"tex-encrypted-archive",archivedAt}});
     await env.STORAGE.delete(docKey(userId,id));
+    await removeTexProjectPins(env,userId,id);
     await clearPrefix(env,RUN_ROOT+userId+"/"+id+"/");
     await purgeDocumentVersions(env,userId,id);
     return json({archived:true,id});
@@ -183,6 +185,7 @@ export async function handleTexArchive(request,env,user) {
       httpMetadata:{contentType:"application/json;charset=UTF-8"},
       customMetadata:documentMeta(doc,userId)
     });
+    await syncTexProjectPins(env,userId,doc);
     await env.STORAGE.delete(archiveKey(userId,id));
     return json({restored:true,document:doc});
   }
