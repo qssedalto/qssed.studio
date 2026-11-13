@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import vm from "node:vm";
 import { enhanceWorkTexPreviewSession } from "../studio/ui-work-tex-preview-session.js";
+import { enhanceWorkTexPreviewFastPath } from "../studio/ui-work-tex-preview-fastpath.js";
+import { enhanceWorkTexPreviewDirectCache } from "../studio/ui-work-tex-preview-direct-cache.js";
 import { enhanceWorkTexDeviceReadiness } from "../studio/ui-work-tex-device-readiness.js";
 import { enhanceWorkTexDesktopTypography } from "../studio/ui-work-tex-desktop-type.js";
 import { workHubContent, workLocalBridgeContent } from "../studio/ui-work.js";
@@ -229,6 +231,18 @@ assert(cachedPreviewRuntime.includes("clearPreviewCache();") &&
   !cachedPreviewRuntime.includes("if (mobilePreviewClient) void restoreImmediately();"),
   "No browser may resurrect an old PDF automatically before fresh compilation");
 new vm.Script(cachedPreviewRuntime);
+const documentBoundPreview = enhanceWorkTexPreviewFastPath(zhTexLocal);
+assert(documentBoundPreview.includes("function selectedPreviewDocumentId()") &&
+  documentBoundPreview.includes("previewDocumentId !== currentId") &&
+  documentBoundPreview.includes("previewFrame.src = 'about:blank'"),
+  "Returning to the welcome screen or switching projects must unload the previous PDF");
+assert(documentBoundPreview.includes("if (!hasDocument() || snapshot !== currentPreviewSnapshot()) return false;") &&
+  documentBoundPreview.includes("qsseda:tex-preview-blob"),
+  "A stale completed compilation must not install its PDF into another project");
+assert(cachedPreviewMarkup.includes(".tex-work-app:has(#tex-editor[hidden]) #tex-live-preview-frame") &&
+  !enhanceWorkTexPreviewDirectCache("").includes("sessionStorage.setItem"),
+  "Welcome must hide stale PDFs before hydration and obsolete session cache writers must stay retired");
+
 const perfMarkup = enhanceWorkTexDesktopTypography("<section class='tex-work-app'></section>");
 const perfMarker = '<script id="qsseda-work-tex-runtime-performance">';
 const perfStart = perfMarkup.indexOf(perfMarker);
