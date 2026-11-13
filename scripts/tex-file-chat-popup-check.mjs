@@ -9,7 +9,10 @@ for (const zh of [true,false]) {
   const css=html.match(/<style id="aertex-file-chat-style">([\s\S]*?)<\/style>/)?.[1];
   assert(code && css,"Popup markup, CSS and runtime must exist");
   new vm.Script(code);
-  const helpCode=html.match(/<script id="aertex-project-passkey-help-script">([\\s\\S]*?)<\\/script>/)?.[1];
+  const helpOpen='<script id="aertex-project-passkey-help-script">';
+  const helpStart=html.indexOf(helpOpen);
+  const helpCode=helpStart>=0
+    ? html.slice(helpStart+helpOpen.length,html.indexOf('</script>',helpStart)) : '';
   assert(helpCode,"Registered Passkey tutorial runtime must be present");
   new vm.Script(helpCode);
   assert(helpCode.includes('setRegistered(value)') && helpCode.includes('link.hidden = !registered'),
@@ -24,7 +27,7 @@ for (const zh of [true,false]) {
     assert(html.includes('data:image/webp;base64,'+encoded),
       "Windows tutorial must embed redacted screenshot "+step);
   }
-  assert((html.match(/data:image\\/webp;base64,/g)||[]).length===3,
+  assert(html.split("data:image/webp;base64,").length-1===3,
     "The tutorial must include the three user-provided Windows screenshots");
   assert(!html.includes('class="close"'),"No close X allowed: toolbar icon is sole toggle");
   assert(!code.includes('chat.qsseda.com'),"Editor must not navigate to external chat website");
