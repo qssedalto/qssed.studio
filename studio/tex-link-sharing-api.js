@@ -1,6 +1,8 @@
+import { isLiveTexHead } from "./tex-document-guards.js";
+import { invalidateTexCollaboration } from "./tex-collaboration-invalidate.js";
 import { SUPABASE_KEY,SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession,withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession,withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 import {
  validId,validToken,newSecret,safeRole,safeAudience,loadJson,putJson,loadConfig,loadValidLink,
@@ -49,20 +51,12 @@ export async function authorizedUser(token){
   } catch {return null;}
 }
 async function owned(env,user,doc){
-  return validId(doc) && Boolean(await env.STORAGE.head(documentKey(user,doc)));
+  return validId(doc) && isLiveTexHead(await env.STORAGE.head(documentKey(user,doc)));
 }
 async function disableSessions(env,owner,doc,target=""){
-  if(!env?.TEX_COLLAB_ROOMS?.idFromName)return;
-  try {
-    const room=env.TEX_COLLAB_ROOMS.get(env.TEX_COLLAB_ROOMS.idFromName(owner+":"+doc));
-    await room.fetch(new Request("https://tex-collaboration-room.internal/revoke-links",{
-      method:"POST",
-      headers:{"X-Qsseda-Collab-Owner":owner,"X-Qsseda-Collab-Document":doc,...(target?{"X-Qsseda-Collab-Target":target}:{})}
-    }));
-  }catch(err){
-    workerLog("warn","tex.links.socket_revoke_failed",{document_id:doc,reason:String(err?.message||err).slice(0,120)});
-  }
+  return invalidateTexCollaboration(env,owner,doc,"revoke-links",target);
 }
+
 function ownerView(config,origin,doc){
   const x=config||{enabled:false,audience:"selected",role:"editor",request_access:true};
   return {
@@ -182,7 +176,7 @@ export async function handleTexLinkSharingApi(request,env){
   if(!env?.STORAGE)return fail("Document storage unavailable.",503);
   if(isWrite(request.method) && !sameOrigin(request))return fail("Cross-origin writes are forbidden.",403);
   const session=await verifyStudioApiSession(request);
-  if(!session.ok)return withStudioSessionCookies(fail("Sign in to your AERTEX account.",401),session.cookies);
+  if(!session.ok)return studioSessionFailure(session);
   const user=await authorizedUser(session.accessToken);
   if(!user)return withStudioSessionCookies(fail("A verified active account is required.",403),session.cookies);
   const url=new URL(request.url),action=url.searchParams.get("action")||"";

@@ -224,7 +224,7 @@ export default {
           // the browser session or sends the user through the auth-domain handoff.
           const accountMarker = String(getRequestCookie(request, "__Secure-qsseda-account-id") || "").trim();
           if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(accountMarker)) {
-            return withStudioSessionCookies(studioSessionBootstrapPage(locale, request), gate.cookies);
+            return withStudioSessionCookies(studioSessionBootstrapPage(locale, request, gate.temporary), gate.cookies);
           }
           const canonicalHost = new URL(request.url).hostname.toLowerCase() === "qsseda.com";
           return withStudioSessionCookies(
@@ -232,7 +232,7 @@ export default {
             gate.cookies
           );
         }
-        return withStudioSessionCookies(studioSessionBootstrapPage(locale, request), gate.cookies);
+        return withStudioSessionCookies(studioSessionBootstrapPage(locale, request, gate.temporary), gate.cookies);
       }
 
       const cachedOsUserLabel = getRequestCookie(request, "qssed-os-user-name");

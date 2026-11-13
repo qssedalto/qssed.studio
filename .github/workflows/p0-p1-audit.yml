@@ -1,0 +1,73 @@
+name: P0 P1 Stability Audit
+
+on:
+  push:
+    branches: ['audit/**']
+  pull_request:
+    branches: [main]
+    paths: ['studio/**', 'scripts/**', 'tex-vendor/**', '*worker.js', 'auth-*.js', 'admin/**', 'wrangler*.jsonc', 'supabase/migrations/**', '.github/workflows/p0-p1-audit.yml', '.github/workflows/deploy-production.yml']
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p0-p1-audit-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.x'
+      - name: Preserve exact tested source identity
+        run: |
+          mkdir -p /tmp/p0-p1-results
+          git rev-parse HEAD > /tmp/p0-p1-results/commit.txt
+          git archive --format=tar.gz HEAD -o /tmp/p0-p1-results/source.tar.gz
+      - name: Build locked browser and server dependencies
+        run: |
+          npm ci --prefix tex-vendor --no-audit --no-fund
+          node tex-vendor/build.mjs
+      - name: Install Chinese fonts for visual QA
+        run: sudo apt-get update -qq && sudo apt-get install -y fonts-noto-cjk
+      - name: Execute regression suite and browser flows
+        shell: bash
+        run: |
+          mkdir -p /tmp/p0-p1-results
+          failed=0
+          for file in scripts/*-check.mjs scripts/tex-compile-toolbar-browser.mjs scripts/tex-file-chat-popup-browser.mjs scripts/tex-workbench-browser.mjs; do
+            name=$(basename "$file" .mjs)
+            if timeout -k 10 120 node "$file" > "/tmp/p0-p1-results/${name}.log" 2>&1; then
+              echo "PASS $file" | tee -a /tmp/p0-p1-results/summary.txt
+            else
+              echo "FAIL $file" | tee -a /tmp/p0-p1-results/summary.txt
+              tail -30 "/tmp/p0-p1-results/${name}.log"
+              failed=1
+            fi
+          done
+          cat /tmp/p0-p1-results/summary.txt >> "$GITHUB_STEP_SUMMARY"
+          exit "$failed"
+      - name: Bundle Work and Studio without production credentials
+        if: always()
+        run: |
+          npx --yes wrangler@4.136.3 deploy -c wrangler.work.jsonc --dry-run --outdir /tmp/p0-p1-work-bundle
+          npx --yes wrangler@4.136.3 deploy -c wrangler.jsonc --dry-run --outdir /tmp/p0-p1-studio-bundle
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: p0-p1-evidence-${{ github.sha }}
+          path: |
+            /tmp/p0-p1-results/
+            /tmp/aertex-filechat-visual/*.png
+            /tmp/aertex-compile-toolbar-visual/*.png
+            /tmp/aertex-workbench-visual/
+          if-no-files-found: warn
+          retention-days: 7

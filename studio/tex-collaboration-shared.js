@@ -1,6 +1,9 @@
+import { commitTexSourceSave } from "./tex-collaboration-save.js";
+import { readJsonBounded } from "./request-json-bounded.js";
+import { sourceInputError, isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
@@ -10,12 +13,12 @@ import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const ENGINES = new Set(["xelatex", "lualatex", "pdflatex"]);
 const MAX_SOURCE_CHARS = 180000;
-const MAX_PAYLOAD_BYTES = 512 * 1024;
+const MAX_PAYLOAD_BYTES = 3 * 1024 * 1024;
 const MAX_SHARED_DOCUMENTS = 120;
 
 export async function handleTexSharedCollaboration(request, env) {
   const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
 
   const auth = await verifyActiveUser(session.accessToken);
   if (auth.error) return withStudioSessionCookies(auth.error, session.cookies);
@@ -81,7 +84,7 @@ async function handleUpdate(request, env, auth, accessToken) {
   if (parsed.error) return parsed.error;
   const previous = await readOwnerDocument(env, access.owner_id, documentId);
   if (!previous) return json({ error: "Shared TeX document not found." }, 404);
-  if (previous.locked) return json({ error: "This project is locked by its owner." }, 423);
+  if (isTexMainLocked(previous)) return json({ error: "This project is locked by its owner." }, 423);
   if (previous.main_deleted === true) return json({error:"This project has no TeX entry. Add a root .tex file first."},409);
   if ((typeof parsed.value?.realtime_epoch !== "string" || texRealtimeEpoch(parsed.value.realtime_epoch) !== texRealtimeEpoch(previous)))
     return json({error:"The main TeX entry changed. Reopen the project before saving.",code:"main_revision_changed"},409);
@@ -89,7 +92,7 @@ async function handleUpdate(request, env, auth, accessToken) {
   const normalized = normalizeSharedDocument(parsed.value, previous);
   if (!normalized.ok) return json({ error: normalized.error }, 400);
   try {
-    await writeDocument(env, normalized.value);
+    await commitTexSourceSave(env, previous, parsed.value, normalized.value);
     return json({
       document: {
         ...normalized.value,
@@ -102,6 +105,7 @@ async function handleUpdate(request, env, auth, accessToken) {
       collaboration_role: access.role
     });
   } catch (error) {
+    if ([400, 409, 413, 423, 428].includes(error?.status)) return json({ error: error.message, code: error.code }, error.status);
     workerLog("error", "tex.shared_document.update.failed", {
       user_id: auth.user.id,
       owner_id: access.owner_id,
@@ -237,9 +241,9 @@ async function readOwnerDocument(env, ownerId, documentId) {
   if (!object) return null;
   try {
     const stored = JSON.parse(await object.text());
-    if (!stored || stored.owner_id !== ownerId || stored.id !== documentId) return null;
+    if (!stored || stored.document_deleted || stored.owner_id !== ownerId || stored.id !== documentId) return null;
     const parsed = reconcileTexMainEntry(stored);
-    return {
+    return texDocumentRevision({
       id: documentId,
       owner_id: ownerId,
       title: cleanText(parsed.title, 180) || "Untitled TeX document",
@@ -257,13 +261,15 @@ async function readOwnerDocument(env, ownerId, documentId) {
       locked_files:Array.isArray(parsed.locked_files)?parsed.locked_files:[],
       pinned_folders:Array.isArray(parsed.pinned_folders)?parsed.pinned_folders:[],
       locked_folders:Array.isArray(parsed.locked_folders)?parsed.locked_folders:[]
-    };
+    }, object);
   } catch {
     return null;
   }
 }
 
 function normalizeSharedDocument(input, previous) {
+  const inputError = sourceInputError(input);
+  if (inputError) return { ok: false, error: inputError };
   const source = input && typeof input === "object" ? input : {};
   const engine = cleanText(source.engine, 24) || previous.engine || "xelatex";
   if (!ENGINES.has(engine)) return { ok: false, error: "Unsupported TeX engine." };
@@ -282,11 +288,11 @@ function normalizeSharedDocument(input, previous) {
   };
 }
 
-async function writeDocument(env, document) {
-  await env.STORAGE.put(documentKey(document.owner_id, document.id), JSON.stringify(document), {
+async function writeDocument(env, document, previousRevision) {
+  await putTexDocument(env.STORAGE, documentKey(document.owner_id, document.id), document, {
     httpMetadata: { contentType: "application/json;charset=UTF-8" },
     customMetadata: documentMetadata(document)
-  });
+  }, previousRevision);
 }
 
 function documentMetadata(document) {
@@ -317,15 +323,8 @@ function documentFromMetadata(meta, ownerId, documentId) {
 }
 
 async function parsePayload(request) {
-  const declared = Number(request.headers.get("Content-Length") || 0);
-  if (declared > MAX_PAYLOAD_BYTES) return { error: json({ error: "TeX payload is too large." }, 413) };
-  try {
-    const raw = await request.text();
-    if (new TextEncoder().encode(raw).byteLength > MAX_PAYLOAD_BYTES) return { error: json({ error: "TeX payload is too large." }, 413) };
-    return { value: JSON.parse(raw || "{}") };
-  } catch {
-    return { error: json({ error: "Invalid TeX payload." }, 400) };
-  }
+  try { return { value: await readJsonBounded(request, MAX_PAYLOAD_BYTES) }; }
+  catch (error) { return { error: json({ error: error?.status === 413 ? "TeX payload is too large." : "Invalid TeX payload." }, error?.status === 413 ? 413 : 400) }; }
 }
 
 function isSameOriginMutation(request) {
@@ -343,7 +342,7 @@ function documentKey(ownerId, documentId) {
 }
 
 function cleanSource(value) {
-  return String(value ?? "").replace(/\u0000/g, "").slice(0, MAX_SOURCE_CHARS);
+  return String(value ?? "");
 }
 
 function cleanText(value, maximum) {

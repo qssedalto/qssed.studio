@@ -36,7 +36,7 @@ const qa=[
   "(async()=>{",
   " const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));",
   " async function until(fn,ms=12000){const t=Date.now();while(Date.now()-t<ms){",
-  "  if(fn())return;await sleep(70)}throw Error('Timed out waiting for Passkey/E2EE state')}",
+  "  if(fn())return;await sleep(70)}throw Error('Timed out waiting for Passkey/E2EE state: '+(window.__qaChatStage||'initial'))}",
   " try{",
   "  const round=new URL(location.href).searchParams.get('round');",
   "  await until(()=>document.getElementById('tex-command-chat-shortcut'));",
@@ -52,7 +52,7 @@ const qa=[
   "      throw Error('First project visit must create a dedicated Passkey');",
   "    if((round!=='first'||reloaded)&&!passkey.textContent.includes('验证'))",
   "      throw Error('Existing project needs the project Passkey when no lease exists');",
-  "    passkey.click();",
+  "    window.__qaChatStage='unlock';passkey.click();",
   "    await until(()=>!conversation.hidden&&!send.disabled);",
   "  }else if(round==='first'&&!reloaded)throw Error('First-ever access bypassed Passkey');",
   "  if(round==='first'&&!reloaded&&!window.__passkeyCreateCount)",
@@ -61,10 +61,12 @@ const qa=[
   "    throw Error('Reload inside the verified 3-hour window prompted Passkey again');",
   "  if(document.getElementById('aertex-chat-status').textContent.includes('等待项目所有者'))",
   "    throw Error('Owner key wait was wrongly retained');",
-  "  if(round==='first'){",
+  "  if(round==='first'&&!reloaded){",
   "    document.getElementById('aertex-chat-input').value='Private browser-to-browser encrypted message';",
-  "    send.click();",
+  "    window.__qaChatStage='send ciphertext';send.click();",
+  "    await sleep(25);document.getElementById('aertex-chat-input').value='Draft typed during an earlier send';",
   "    await until(()=>document.getElementById('aertex-chat-feed').textContent.includes('Private browser-to-browser'));",
+  "    if(document.getElementById('aertex-chat-input').value!=='Draft typed during an earlier send')throw Error('Send completion erased a newer draft');",
   "    sessionStorage.setItem('qa:refreshed','1');",
   "    location.reload();return;",
   "  }else if(round==='second'||reloaded){",
@@ -175,6 +177,7 @@ const server=createServer(async(req,res)=>{
     return json(res,{saved:true});
   }
   if(op==="envelope-get"){
+    await new Promise(resolve=>setTimeout(resolve,200)); // Force slow legacy unlock work.
     const e=memory.envelopes.get(project+":"+b.device_id);
     if(!e)return json(res,{ready:false});
     const from=memory.device.get(project+":"+e.from_device);
@@ -190,6 +193,7 @@ const server=createServer(async(req,res)=>{
     return json(res,{messages:records});
   }
   if(op==="send"){
+    await new Promise(resolve=>setTimeout(resolve,150)); // Force typing-during-send race.
     if(b.text||b.message||!b.ct||!b.iv)memory.sentPlaintext=true;
     if(b.v!==3)return json(res,{error:"v3 only"},422);
     const sender=memory.device.get(project+":"+b.from_device);
@@ -308,6 +312,7 @@ try{
   assert(!memory.sentFileSelector,"Project chat must never send an editor filename");
   console.log("CHROME E2EE: 3-hour project Passkey resume, fresh-browser reverify, ciphertext envelopes and sender/recipient isolation PASS");
 }finally{
+  server.closeAllConnections();
   await new Promise(resolve=>server.close(resolve));
   rmSync(profile,{recursive:true,force:true});
   rmSync(profile+"-fresh",{recursive:true,force:true});

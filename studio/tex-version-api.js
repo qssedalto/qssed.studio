@@ -1,6 +1,7 @@
+import { isTexMainLocked, sourceInputError, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { texRealtimeEpoch, texRealtimeRoomName } from "./tex-realtime-epoch.js";
@@ -35,6 +36,7 @@ export async function handleTexVersionApi(request, env) {
         ? await handleVersionPost(request, env, identity.userId)
         : json({ error: "Method not allowed" }, 405);
   } catch (error) {
+    if (error?.code === TEX_WRITE_CONFLICT) return withStudioSessionCookies(json({error:error.message,code:error.code},409),identity.cookies);
     workerLog("error", "tex.versions.failed", {
       user_id: identity.userId,
       message: String(error?.message || error)
@@ -51,7 +53,7 @@ export async function identifyTexVersionUser(request) {
       ok: false,
       userId: "",
       cookies: session.cookies,
-      response: withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies)
+      response: studioSessionFailure(session)
     };
   }
 
@@ -67,7 +69,7 @@ export async function identifyTexVersionUser(request) {
   const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` };
 
   try {
-    const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers });
+    const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers, signal: AbortSignal.timeout(8000) });
     if (userResponse.status === 401 || userResponse.status === 403) {
       return { ok: false, userId: "", cookies: session.cookies, response: withStudioSessionCookies(json({ error: "Session is invalid or expired." }, 401), session.cookies) };
     }
@@ -79,7 +81,7 @@ export async function identifyTexVersionUser(request) {
       return { ok: false, userId: "", cookies: session.cookies, response: withStudioSessionCookies(json({ error: "Session is invalid or expired." }, 401), session.cookies) };
     }
 
-    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(user.id)}`, { headers });
+    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(user.id)}`, { headers, signal: AbortSignal.timeout(8000) });
     if (!profileResponse.ok) {
       return { ok: false, userId: "", cookies: session.cookies, response: withStudioSessionCookies(json({ error: "Account service is temporarily unavailable." }, 503), session.cookies) };
     }
@@ -132,6 +134,10 @@ async function handleVersionPost(request, env, userId) {
   await purgeLegacyPdfResults(env, userId, documentId);
 
   if (action === "snapshot") {
+    if (Object.hasOwn(parsed.value || {}, "source")) {
+      const error = sourceInputError(parsed.value);
+      if (error) return json({error},400);
+    }
     const candidate = normalizeSnapshotInput(parsed.value, current, userId, documentId);
     if (!candidate.ok) return json({ error: candidate.error }, 400);
     const result = await snapshotDocumentVersion(env, userId, candidate.document, {
@@ -142,10 +148,13 @@ async function handleVersionPost(request, env, userId) {
   }
 
   if (action === "restore") {
+    if (isTexMainLocked(current)) return json({error:"Unlock the main file or project before restoring a version."},423);
     const versionId = cleanObjectId(parsed.value?.version_id);
     if (!versionId) return json({ error: "Invalid TeX version identifier." }, 400);
     const version = await readVersion(env, userId, documentId, versionId);
     if (!version) return json({ error: "TeX version not found." }, 404);
+    const sourceError = sourceInputError(version);
+    if (sourceError) return json({error:sourceError},413);
 
     await snapshotDocumentVersion(env, userId, current, { reason: "before_restore", force: true });
     const restored = {
@@ -163,7 +172,7 @@ async function handleVersionPost(request, env, userId) {
       created_at: cleanTimestamp(current.created_at),
       updated_at: new Date().toISOString()
     };
-    await writeCurrentDocument(env, restored);
+    await writeCurrentDocument(env, restored, current.storage_revision);
     if (env?.TEX_COLLAB_ROOMS?.idFromName && env?.TEX_COLLAB_ROOMS?.get) {
       try {
         const stub = env.TEX_COLLAB_ROOMS.get(env.TEX_COLLAB_ROOMS.idFromName(
@@ -384,8 +393,8 @@ async function readCurrentDocument(env, userId, documentId) {
   if (!object) return null;
   try {
     const value = JSON.parse(await object.text());
-    if (value?.owner_id !== userId || value?.id !== documentId) return null;
-    return {
+    if (value?.owner_id !== userId || value?.id !== documentId || value.document_deleted) return null;
+    return texDocumentRevision({
       ...value,
       id: documentId,
       owner_id: userId,
@@ -395,14 +404,14 @@ async function readCurrentDocument(env, userId, documentId) {
       realtime_epoch: texRealtimeEpoch(value),
       created_at: cleanTimestamp(value.created_at),
       updated_at: cleanTimestamp(value.updated_at)
-    };
+    }, object);
   } catch {
     return null;
   }
 }
 
-async function writeCurrentDocument(env, document) {
-  await env.STORAGE.put(documentKey(document.owner_id, document.id), JSON.stringify(document), {
+async function writeCurrentDocument(env, document, previousRevision) {
+  await putTexDocument(env.STORAGE, documentKey(document.owner_id, document.id), document, {
     httpMetadata: { contentType: "application/json;charset=UTF-8" },
     customMetadata: {
       ownerId: document.owner_id,
@@ -413,9 +422,11 @@ async function writeCurrentDocument(env, document) {
       preview: document.source.replace(/\s+/g, " ").trim().slice(0, 220),
       createdAt: document.created_at,
       updatedAt: document.updated_at,
-      realtimeEpoch: texRealtimeEpoch(document)
+      realtimeEpoch: texRealtimeEpoch(document),
+      projectType: document.project_type || "legacy", fileCount: String((document.main_deleted ? 0 : 1) + (document.files?.length || 0)),
+      pinned: document.pinned ? "true" : "false", locked: document.locked ? "true" : "false"
     }
-  });
+  }, previousRevision);
 }
 
 function normalizeSnapshotInput(input, current, userId, documentId) {
@@ -539,7 +550,7 @@ function isSameOriginMutation(request) {
 }
 
 function cleanSource(value) {
-  return String(value ?? "").replace(/\u0000/g, "").slice(0, MAX_SOURCE_CHARS);
+  return String(value ?? "");
 }
 
 function cleanText(value, maximum) {

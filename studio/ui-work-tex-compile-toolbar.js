@@ -180,6 +180,62 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
       font-size:11px!important;min-width:72px!important;padding:0 8px!important
     }
   }
+
+  /* The editor pane can be narrow on a wide desktop. Size this header against
+     its own pane, not the viewport; preserve every original control and id. */
+  body.os-shell .tex-work-app #tex-editor{container-type:inline-size;container-name:aertex-editor}
+  body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar{
+    display:grid!important;grid-template-columns:minmax(105px,1fr) minmax(105px,1fr) minmax(210px,1.6fr) minmax(112px,1fr)!important;
+    grid-auto-flow:row!important;align-items:end!important;gap:6px!important;
+    min-width:0!important;width:100%!important;box-sizing:border-box!important;
+    padding:8px!important;overflow:visible!important
+  }
+  body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>.tex-static-title-row{
+    grid-column:1/-1!important;grid-row:1!important;width:100%!important;
+    box-sizing:border-box!important;padding:0 110px 0 0!important;min-height:43px!important
+  }
+  body.os-shell .tex-work-app #tex-editor .tex-static-title-stack{flex:1 1 auto!important}
+  body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>label{
+    min-width:0!important;width:100%!important;max-width:100%!important;
+    margin:0!important;grid-row:2!important;box-sizing:border-box!important
+  }
+  body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>.tex-editor-choice-label{grid-column:1!important}
+  body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>label:has(#tex-engine){grid-column:2!important}
+  body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>.tex-markdown-view-modes{grid-column:2!important;grid-row:3!important}
+  body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>label>select{
+    box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;
+    height:38px!important;min-height:38px!important;margin:0!important
+  }
+  body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>#tex-collaboration-open{
+    grid-column:3!important;grid-row:2!important;box-sizing:border-box!important;
+    width:100%!important;min-width:0!important;max-width:100%!important;
+    height:38px!important;min-height:38px!important;gap:5px!important;padding:0 7px!important;
+    overflow:hidden!important;justify-content:flex-start!important
+  }
+  body.os-shell .tex-work-app #tex-editor #tex-collaboration-open .tex-collaboration-avatars{
+    min-width:0!important;overflow:hidden!important;flex:1 1 65px!important;max-width:90px!important
+  }
+  body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>.tex-code-theme-picker{
+    grid-column:4!important;grid-row:2!important;width:100%!important;min-width:0!important
+  }
+  body.os-shell .tex-work-app #tex-editor #tex-code-theme-toggle{
+    box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;
+    height:38px!important;min-height:38px!important;padding:0 7px!important;justify-content:center!important
+  }
+  body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>.tex-panel-home-link{
+    grid-column:4!important;grid-row:1!important;align-self:start!important;justify-self:end!important;
+    box-sizing:border-box!important;width:auto!important;min-width:0!important;max-width:104px!important;
+    min-height:28px!important;height:28px!important;margin:0!important;padding:0 6px!important
+  }
+  @container aertex-editor (max-width:620px){
+    body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>#tex-collaboration-open{grid-column:1!important;grid-row:3!important;font-size:10px!important;gap:3px!important;padding:0 5px!important}
+    body.os-shell .tex-work-app #tex-editor #tex-collaboration-open svg.tex-collaboration-people{width:20px!important;height:20px!important;flex:0 0 20px!important}
+    body.os-shell .tex-work-app #tex-editor #tex-collaboration-open .tex-collaboration-avatars{max-width:29px!important;flex:0 1 29px!important;margin-left:auto!important}
+    body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>.tex-code-theme-picker{grid-column:2!important;grid-row:3!important}
+    body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>.tex-panel-home-link{grid-column:2!important}
+    body.os-shell .tex-work-app #tex-editor>.tex-editor-toolbar>.tex-markdown-view-modes{grid-column:1/-1!important;grid-row:4!important}
+  }
 </style>`;
   // Standalone circular-play SVG modeled on the light/dark reference images.
   const workflowSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="2.25"/><path d="M10 7.8c0-.59.65-.95 1.15-.63l5.48 3.49c.49.31.49 1.03 0 1.34l-5.48 3.49c-.5.32-1.15-.04-1.15-.63V7.8Z" fill="currentColor"/></svg>';

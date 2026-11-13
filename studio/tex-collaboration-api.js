@@ -1,6 +1,8 @@
+import { isLiveTexHead } from "./tex-document-guards.js";
+import { invalidateTexCollaboration } from "./tex-collaboration-invalidate.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
@@ -12,7 +14,7 @@ const MAX_BODY_BYTES = 16 * 1024;
 // 协作成员 API 先验证 Studio 会话与活跃账号，写请求额外进行同源校验；随后再按用户与文档权限分派操作。
 export async function handleTexCollaborationApi(request, env) {
   const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
 
   const auth = await verifyActiveUser(session.accessToken);
   if (auth.error) return withStudioSessionCookies(auth.error, session.cookies);
@@ -125,6 +127,7 @@ async function addCollaborator(request, env, user, accessToken) {
     })
   });
   if (!write.ok) return collaborationBackendError(write);
+  await invalidateTexCollaboration(env,user.id,documentId,"revoke-member",profile.id);
   return collaborationSnapshot(accessToken, user.id, documentId, {
     canManage: true,
     currentUserId: user.id,
@@ -154,6 +157,7 @@ async function updateCollaborator(request, env, user, accessToken) {
   });
   if (!write.ok) return collaborationBackendError(write);
   if (!Array.isArray(write.data) || !write.data.length) return json({ error: "Collaborator not found." }, 404);
+  await invalidateTexCollaboration(env,user.id,documentId,"revoke-member",memberId);
   return collaborationSnapshot(accessToken, user.id, documentId, {
     canManage: true,
     currentUserId: user.id,
@@ -164,7 +168,7 @@ async function updateCollaborator(request, env, user, accessToken) {
 async function removeCollaborator(request, env, user, accessToken) {
   const url = new URL(request.url);
   if (url.searchParams.get("action") === "leave") {
-    return leaveCollaboration(url, user, accessToken);
+    return leaveCollaboration(url, env, user, accessToken);
   }
 
   const documentId = cleanObjectId(url.searchParams.get("document"));
@@ -182,6 +186,7 @@ async function removeCollaborator(request, env, user, accessToken) {
     headers: { Prefer: "return=representation" }
   });
   if (!write.ok) return collaborationBackendError(write);
+  await invalidateTexCollaboration(env,user.id,documentId,"revoke-member",memberId);
   return collaborationSnapshot(accessToken, user.id, documentId, {
     canManage: true,
     currentUserId: user.id,
@@ -189,7 +194,7 @@ async function removeCollaborator(request, env, user, accessToken) {
   });
 }
 
-async function leaveCollaboration(url, user, accessToken) {
+async function leaveCollaboration(url, env, user, accessToken) {
   const documentId = cleanObjectId(url.searchParams.get("document"));
   if (!documentId) return json({ error: "Invalid TeX document identifier." }, 400);
 
@@ -209,6 +214,7 @@ async function leaveCollaboration(url, user, accessToken) {
   if (!write.ok) return collaborationBackendError(write);
   if (!Array.isArray(write.data) || !write.data.length) return json({ error: "Collaboration membership not found." }, 404);
 
+  await invalidateTexCollaboration(env,membership.data.owner_id,documentId,"revoke-member",user.id);
   return json({
     document_id: documentId,
     owner_id: membership.data.owner_id,
@@ -343,7 +349,7 @@ function collaborationBackendError(response) {
 
 async function ownsDocument(env, ownerId, documentId) {
   const object = await env.STORAGE.head(`${DOCUMENT_ROOT}${ownerId}/${documentId}.json`);
-  return Boolean(object);
+  return isLiveTexHead(object);
 }
 
 async function parsePayload(request) {

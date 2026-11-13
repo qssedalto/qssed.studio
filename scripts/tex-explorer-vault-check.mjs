@@ -1,5 +1,6 @@
+import { attachVaultBinding } from "./helpers/vault-binding.mjs";
 import assert from "node:assert/strict";
-import { webcrypto } from "node:crypto";
+import { createHash, webcrypto } from "node:crypto";
 import { enhanceWorkTexOrganizeUi } from "../studio/ui-work-tex-organize-ui.js";
 import { enhanceWorkTexCompileToolbar } from "../studio/ui-work-tex-compile-toolbar.js";
 import { handleTexArchive } from "../studio/tex-archive-api.js";
@@ -15,11 +16,16 @@ const root="_system/tex-documents/"+userId+"/"+id+".json";
 class MemoryR2 {
   constructor(){this.records=new Map();}
   async put(key,body,options={}){
-    this.records.set(key,{body:typeof body==="string"?body:String(body),customMetadata:options.customMetadata||{}});
+    const current=this.records.get(key);
+    if(options.onlyIf?.etagMatches && current?.etag!==options.onlyIf.etagMatches)return null;
+    if(options.onlyIf?.etagDoesNotMatch==="*" && current)return null;
+    const etag=createHash("sha256").update(String(body)).digest("hex");
+    this.records.set(key,{body:typeof body==="string"?body:String(body),etag,customMetadata:options.customMetadata||{}});
+    return {etag};
   }
   async get(key){
     const entry=this.records.get(key);
-    return entry?{text:async()=>entry.body,json:async()=>JSON.parse(entry.body),customMetadata:entry.customMetadata}:null;
+    return entry?{etag:entry.etag,text:async()=>entry.body,json:async()=>JSON.parse(entry.body),customMetadata:entry.customMetadata}:null;
   }
   async head(key){return this.records.get(key)||null;}
   async delete(key){
@@ -32,6 +38,7 @@ class MemoryR2 {
   }
 }
 const env={STORAGE:new MemoryR2()};
+attachVaultBinding(env);
 const doc={id,owner_id:userId,title:"Machine Learning",engine:"xelatex",
   source:"\\documentclass{ctexart}\n\\input{chapters/intro}\n",
   files:[{name:"chapters/intro.tex",encoding:"utf8",content:"\\section{Intro}\n"}],
@@ -206,9 +213,10 @@ const archiveDoc=JSON.parse((await env.STORAGE.get(root)).body||await (await env
 const payload=await seal(JSON.stringify(archiveDoc),"AERTEX-TeX-archive:"+id);
 const title=await seal(archiveDoc.title,"AERTEX-TeX-archive-title:"+id);
 r=await send(handleTexArchive,"/api/tex/archive?mode=store","POST",
-  {id,updated_at:archiveDoc.updated_at,encrypted:{...payload,titleIv:title.iv,titleData:title.data}});
+  {id,updated_at:archiveDoc.updated_at,storage_revision:(await env.STORAGE.head(root)).etag,vault_salt:binaryBase64(salt),encrypted:{...payload,titleIv:title.iv,titleData:title.data}});
 assert.equal(r.status,200,JSON.stringify(r.data));
-assert.equal(await env.STORAGE.head(root),null,"Plaintext document must be removed on archive");
+assert.equal((await env.STORAGE.get(root)).customMetadata.kind,"tex-tombstone","Plaintext must be replaced by a payload-free CAS marker");
+assert.equal(JSON.parse(await (await env.STORAGE.get(root)).text()).source,undefined);
 r=await send(handleTexArchive,"/api/tex/archive?mode=list","GET");
 assert.equal(r.data.items.length,1);
 const stored=await env.STORAGE.get("_system/tex-archive/"+userId+"/"+id+".json");
@@ -217,7 +225,7 @@ assert(!String(await stored.text()).includes("\\section{Intro}"),"Storage must c
 r=await send(handleTexArchive,"/api/tex/archive?mode=list","GET",null,{id:otherId});
 assert.equal(r.data.items.length,0,"Vaults must be owner-scoped");
 r=await send(handleTexArchive,"/api/tex/archive?mode=restore","POST",
-  {id,document:archiveDoc});
+  {id,document:archiveDoc,vault_salt:binaryBase64(salt)});
 assert.equal(r.status,200,JSON.stringify(r.data));
 assert(await env.STORAGE.head(root),"Restoring must re-create the original project");
 assert.equal((await send(handleTexArchive,"/api/tex/archive?mode=list","GET")).data.items.length,0);

@@ -1,3 +1,7 @@
+import { commitTexSourceSave } from "./tex-collaboration-save.js";
+import { readJsonBounded } from "./request-json-bounded.js";
+import { isTexMainLocked, sourceInputError, countLiveTexDocuments } from "./tex-document-guards.js";
+import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
 import { verifyNativeAppSession, nativeJson } from "./native-mobile-auth.js";
 import { snapshotDocumentVersion } from "./tex-version-api.js";
 
@@ -14,7 +18,10 @@ function key(userId, docId) { return ROOT + userId + "/" + docId + ".json"; }
 function metadata(doc) {
   return { ownerId: doc.owner_id, hidden: "true", kind: "tex-document",
     title: doc.title, engine: doc.engine, preview: doc.source.replace(/\s+/g, " ").slice(0,220),
-    createdAt: doc.created_at, updatedAt: doc.updated_at };
+    createdAt: doc.created_at, updatedAt: doc.updated_at,
+    projectType: doc.project_type || "legacy", fileCount: String((doc.main_deleted ? 0 : 1) + (doc.files?.length || 0)),
+    pinned: doc.pinned ? "true" : "false", locked: doc.locked ? "true" : "false",
+    realtimeEpoch: texRealtimeEpoch(doc),mainLocked:isTexMainLocked(doc)?"true":"false" };
 }
 function summary(doc) {
   return { id: doc.id, title: doc.title, engine: doc.engine,
@@ -36,7 +43,7 @@ export async function handleNativeWorkDocuments(request, env) {
       const obj = await env.STORAGE.get(key(userId, id));
       if (!obj) return nativeJson({ error: "Document not found." }, 404);
       const doc = JSON.parse(await obj.text());
-      if (doc.owner_id !== userId || doc.id !== id) return nativeJson({ error: "Document not found." }, 404);
+      if (doc.document_deleted || doc.owner_id !== userId || doc.id !== id) return nativeJson({ error: "Document not found." }, 404);
       if (new URL(request.url).searchParams.get("view") === "versions") {
         // Existing website version snapshots live in the same owner-prefixed R2
         // store. Return bounded, metadata-only history, no source or PDF data.
@@ -120,11 +127,10 @@ export async function handleNativeWorkDocuments(request, env) {
       return nativeJson({ documents: docs, count: docs.length, scope: "own" });
     }
     if (!["POST", "PUT"].includes(request.method)) return nativeJson({ error: "Method not allowed." }, 405);
-    const raw = await request.text();
-    if (new TextEncoder().encode(raw).length > MAX_BODY) return nativeJson({ error: "Document too large." }, 413);
     let input;
-    try { input = JSON.parse(raw); } catch { return nativeJson({ error: "Invalid JSON." }, 400); }
-    if (!input || typeof input !== "object" || Array.isArray(input) ||
+    try { input = await readJsonBounded(request, MAX_BODY); }
+    catch (error) { return nativeJson({ error: error?.status === 413 ? "Document too large." : "Invalid JSON." }, error?.status === 413 ? 413 : 400); }
+    if (sourceInputError(input) || !input || typeof input !== "object" || Array.isArray(input) ||
       typeof input.source !== "string" || input.source.length > MAX_SOURCE ||
       typeof input.title !== "string" || input.title.length > 180 ||
       !ENGINES.has(input.engine)) {
@@ -138,33 +144,47 @@ export async function handleNativeWorkDocuments(request, env) {
       const obj = await env.STORAGE.get(key(userId, id));
       if (!obj) return nativeJson({ error: "Document not found." }, 404);
       previous = JSON.parse(await obj.text());
-      if (previous.owner_id !== userId || previous.id !== id) return nativeJson({ error: "Document not found." }, 404);
+      if (previous.owner_id !== userId || previous.id !== id || previous.document_deleted) return nativeJson({ error: "Document not found." }, 404);
+      if (isTexMainLocked(previous)) return nativeJson({error:"Unlock the main file or project before editing."},423);
+      if (previous.main_deleted) return nativeJson({error:"Add a TeX entry before editing this project."},409);
       const match = request.headers.get("If-Match");
       if (!match || match !== obj.etag) return nativeJson({ error: "Document changed elsewhere; reload first." }, 409);
+      previous.storage_revision = obj.etag;
       onlyIf = { etagMatches: obj.etag };
     } else {
-      const page = await env.STORAGE.list({ prefix: ROOT + userId + "/", limit: 121 });
-      if (page.objects.length >= 120) return nativeJson({ error: "Work document limit reached." }, 409);
+      if (await countLiveTexDocuments(env.STORAGE, ROOT + userId + "/", 120) >= 120) return nativeJson({ error: "Work document limit reached." }, 409);
       onlyIf = { etagDoesNotMatch: "*" };
     }
     const now = new Date().toISOString();
     const docId = id || crypto.randomUUID();
     const document = {
+      ...previous,
       id: docId, owner_id: userId,
+      realtime_epoch: texRealtimeEpoch(previous),
       title: input.title.trim() || "Untitled TeX document",
       engine: input.engine, source: input.source,
       created_at: previous?.created_at || now, updated_at: now
     };
-    const saved = await env.STORAGE.put(key(userId, docId), JSON.stringify(document), {
-      onlyIf, httpMetadata: { contentType: "application/json;charset=UTF-8" },
-      customMetadata: metadata(document)
-    });
-    if (!saved) return nativeJson({ error: "Document changed elsewhere; reload first." }, 409);
+    let saved;
+    if (previous) {
+      // A matching R2 ETag is not enough: live browser edits can exist in the
+      // room journal before the next autosave projects them into R2.
+      await commitTexSourceSave(env, previous, { storage_revision: previous.storage_revision }, document);
+      saved = { etag: document.storage_revision };
+    } else {
+      saved = await env.STORAGE.put(key(userId, docId), JSON.stringify(document), {
+        onlyIf, httpMetadata: { contentType: "application/json;charset=UTF-8" },
+        customMetadata: metadata(document)
+      });
+      if (!saved) return nativeJson({ error: "Document changed elsewhere; reload first." }, 409);
+    }
     try { await snapshotDocumentVersion(env, userId, document, {
       reason: previous ? "autosave" : "created", force: true
     }); } catch { /* The document is saved even if version recording is unavailable. */ }
     return nativeJson({ document, etag: saved.etag }, previous ? 200 : 201);
-  } catch {
+  } catch (error) {
+    if ([400, 409, 413, 423, 428].includes(error?.status))
+      return nativeJson({ error: error.message, code: error.code }, error.status);
     return nativeJson({ error: "Work document request failed." }, 503);
   }
 }

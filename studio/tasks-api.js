@@ -1,5 +1,5 @@
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId, verifyStorageUser } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 
@@ -27,7 +27,7 @@ export async function handleTasks(request, env, nativeSession = null) {
   // The native gateway authenticates Supabase Bearer + active account first;
   // the website keeps its existing HttpOnly cookie session verification.
   const session = nativeSession || await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
 
   const authRequest = new Request(request.url, {
     method: "GET",

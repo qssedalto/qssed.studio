@@ -59,6 +59,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
     enabled: "CRDT 实时同步已启用",
     enabledDetail: "当前 TeX 源码会通过 Yjs CRDT 与加密的同源 WebSocket 房间实时合并；成员权限仍由 AERTEX 账号与文档成员列表控制。",
     cursorPending: "远程位置已同步，彩色光标绘制将在编辑器升级为 CodeMirror 后启用。",
+    localConflict: "\u540c\u6b65\u671f\u95f4\u6536\u5230\u4e86\u65b0\u7248\u672c\uff0c\u5df2\u4fdd\u7559\u4f60\u7684\u672c\u5730\u8f93\u5165\u3002\u8bf7\u5148\u4e0b\u8f7d\u672c\u5730\u6e90\u7801\uff0c\u518d\u5237\u65b0\u9879\u76ee\u3002",
     noConnection: "实时通道暂时不可用，自动保存仍然继续工作。"
   } : {
     live: "Live collaboration",
@@ -71,6 +72,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
     enabled: "CRDT live sync enabled",
     enabledDetail: "TeX source now merges in real time through Yjs CRDT and a same-origin authenticated WebSocket room. Access remains controlled by AERTEX document membership.",
     cursorPending: "Remote positions are synchronized; visual cursor rendering will enable after the editor moves to CodeMirror.",
+    localConflict: "Local edits were preserved because another version arrived during connection. Download your local source before reloading the project.",
     noConnection: "The realtime channel is unavailable. Autosave continues to work."
   };
 
@@ -366,7 +368,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           if (current) current.presence = items;
           publishPresence(items);
           const role = current?.role || 'owner';
-          setStatus(role === 'viewer' ? 'readonly' : 'live', role === 'viewer' ? labels.readOnly : labels.connected, count);
+          setStatus(current?.conflict ? 'offline' : role === 'viewer' ? 'readonly' : 'live', current?.conflict ? labels.localConflict : role === 'viewer' ? labels.readOnly : labels.connected, count);
 
           const page = document.querySelector('.tex-collaboration-page[data-page="live"] .tex-collaboration-section');
           if (!page) return;
@@ -443,7 +445,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
         }
 
         function renderYState(current, delta = null) {
-          if (!current?.ready || !current?.ytext || !current?.ymeta) return;
+          if (!current?.ready || current.conflict || !current?.ytext || !current?.ymeta) return;
           const { source, title, engine } = activeElements();
           current.applyingRemote = true;
           try {
@@ -492,13 +494,53 @@ export function enhanceWorkTexRealtime(markup, zh) {
           }
         }
 
-        function applyPendingLocal(current) {
-          if (!current?.pendingLocalEdit || current.role === 'viewer') return;
-          current.pendingLocalEdit = false;
+        function captureLocalDraft() {
           const { source, title, engine } = activeElements();
-          if (source) syncText(current.ytext, source.value, LOCAL_ORIGIN);
-          if (title) syncMeta(current.ymeta, 'title', title.value, LOCAL_ORIGIN);
-          if (engine) syncMeta(current.ymeta, 'engine', engine.value, LOCAL_ORIGIN);
+          return { source: source?.value || '', title: title?.value || '', engine: engine?.value || 'xelatex' };
+        }
+        function sameDraft(a, b) {
+          return a?.source === b?.source && a?.title === b?.title && a?.engine === b?.engine;
+        }
+        function applyPendingLocal(current) {
+          const draft = current.pendingDraft;
+          if (!draft) return true;
+          const remote = { source: current.ytext.toString(), title: String(current.ymeta.get('title') ?? current.initialBase.title),
+            engine: String(current.ymeta.get('engine') ?? current.initialBase.engine) };
+          if ((current.role === 'viewer' && !sameDraft(remote, draft)) ||
+              (!sameDraft(remote, current.initialBase) && !sameDraft(remote, draft))) {
+            current.conflict = true;
+            setStatus('offline', labels.localConflict);
+            window.dispatchEvent(new CustomEvent('aertex:tex-local-conflict', {
+              detail: { documentId: current.id, message: labels.localConflict }
+            }));
+            return false; // Never replace the DOM draft or overwrite a remote revision.
+          }
+          current.pendingDraft = null;
+          if (current.role === 'viewer') return true;
+          syncText(current.ytext, draft.source, LOCAL_ORIGIN);
+          syncMeta(current.ymeta, 'title', draft.title, LOCAL_ORIGIN);
+          syncMeta(current.ymeta, 'engine', draft.engine, LOCAL_ORIGIN);
+          return true;
+        }
+        function finishSynchronization(current) {
+          current.ready = true;
+          current.applyingRemote = true;
+          let safe = false;
+          try { safe = applyPendingLocal(current); }
+          finally { current.applyingRemote = false; }
+          current.initialized = true;
+          if (!safe) return false;
+          if (current.needsResend && current.role !== 'viewer' && current.socket?.readyState === WebSocket.OPEN) {
+            // Same CRDT client IDs survive reconnect. Replaying the complete
+            // state is idempotent, including edits sent just before a drop.
+            current.socket.send(JSON.stringify({type:'update', data:current.exportState()}));
+          }
+          current.needsResend = false;
+          current.pendingLocalEdit = false;
+          renderYState(current);
+          sendPresence(true);
+          updateLiveSettingsSurface('live');
+          return true;
         }
 
         function sendPresence(immediate = false) {
@@ -597,19 +639,28 @@ export function enhanceWorkTexRealtime(markup, zh) {
             return;
           }
 
-          if (connection?.socket) {
-            try { connection.intentionalClose = true; connection.socket.close(1000, 'Document changed'); } catch {}
+          if (activeDocumentId(activeElements().root, activeElements().list) !== id) return;
+          const base = window.__aertexFileGetContext?.()?.document || {};
+          const epoch = String(base.realtime_epoch || 'v2');
+          const previous = connection;
+          const reuse = previous?.id === id && previous.roomEpoch === epoch && previous.initialized && !previous.conflict;
+          if (previous?.socket) {
+            try { previous.intentionalClose = true; previous.socket.close(1000, 'Reconnecting'); } catch {}
           }
-          try { connection?.ydoc?.destroy(); } catch {}
+          if (!reuse) { try { previous?.ydoc?.destroy(); } catch {} }
 
-          const ydoc = new module.Doc();
+          const ydoc = reuse ? previous.ydoc : new module.Doc();
           const ytext = ydoc.getText('source');
           const ymeta = ydoc.getMap('meta');
-          const current = {
+          const initialBase = { source: String(base.source ?? elements.source.value ?? ''),
+            title: String(base.title ?? elements.title.value ?? ''), engine: String(base.engine ?? elements.engine.value ?? 'xelatex') };
+          const current = reuse ? Object.assign(previous, { generation, ready:false, socket:null, needsResend:true, intentionalClose:false }) : {
             id,
             generation,
             // Keep CRDT session tied to the exact R2 main.tex generation.
-            roomEpoch: String(window.__aertexFileGetContext?.()?.document?.realtime_epoch || 'v2'),
+            roomEpoch: epoch,
+            initialBase, pendingDraft: sameDraft(initialBase,captureLocalDraft()) ? null : captureLocalDraft(),
+            initialized: false, needsResend: false, conflict: false,
             ydoc,
             ytext,
             ymeta,
@@ -624,10 +675,18 @@ export function enhanceWorkTexRealtime(markup, zh) {
             lastInputAt: 0,
             intentionalClose: false
           };
+          current.exportState = () => bytesToBase64(module.encodeStateAsUpdate(current.ydoc));
+          window.__aertexTexExportState = (documentId, epoch) => {
+            const active = connection;
+            if (!active || active.id !== documentId || active.roomEpoch !== epoch || !active.initialized || active.conflict) return '';
+            return active.exportState();
+          };
+          window.__aertexTexCanSave = documentId => !connection || connection.id !== documentId || !connection.conflict;
           connection = current;
           connectingDocumentId = '';
           applyAccessRole(current.role);
 
+          if (!reuse) {
           ydoc.on('update', (update, origin) => {
             if (origin !== LOCAL_ORIGIN || !current.ready || current.role === 'viewer') return;
             if (!current.socket || current.socket.readyState !== WebSocket.OPEN) return;
@@ -642,22 +701,32 @@ export function enhanceWorkTexRealtime(markup, zh) {
             if (current.ready && !current.applyingRemote) renderYState(current);
           });
 
+          }
+
           const websocketUrl = new URL('/api/tex/collaboration/realtime', location.href);
           websocketUrl.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
           websocketUrl.searchParams.set('document', id);
+          websocketUrl.searchParams.set('epoch', epoch);
           const socket = new WebSocket(websocketUrl.toString());
           current.socket = socket;
 
           socket.addEventListener('open', () => {
-            if (connection !== current) return;
+            if (connection !== current || current.socket !== socket) return;
             reconnectAttempt = 0;
             setStatus('connecting', labels.connecting);
           });
 
           socket.addEventListener('message', event => {
-            if (connection !== current || typeof event.data !== 'string') return;
+            if (connection !== current || current.socket !== socket || typeof event.data !== 'string') return;
             let payload;
             try { payload = JSON.parse(event.data); } catch { return; }
+            if (payload.type === 'source-rebased' || (payload.type === 'sync' && payload.source_epoch && payload.source_epoch !== current.roomEpoch)) {
+              current.intentionalClose = true;
+              current.ready = false;
+              try { socket.close(4004, 'Source revision changed'); } catch {}
+              window.dispatchEvent(new CustomEvent('aertex:tex-source-rebased',{detail:{documentId:id}}));
+              return;
+            }
             if (payload.type === 'sync') {
               current.clientId = String(payload.client_id || '');
               current.role = ['owner', 'editor', 'viewer'].includes(payload.role) ? payload.role : current.role;
@@ -670,11 +739,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
                     if (update?.data) module.applyUpdate(ydoc, base64ToBytes(update.data), REMOTE_ORIGIN);
                     current.serverSequence = Math.max(current.serverSequence, Number(update?.seq) || 0);
                   }
-                  current.ready = true;
-                  renderYState(current);
-                  applyPendingLocal(current);
-                  sendPresence(true);
-                  updateLiveSettingsSurface('live');
+                  finishSynchronization(current);
                 } catch {
                   setStatus('offline', labels.offline);
                 }
@@ -694,11 +759,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
               try {
                 module.applyUpdate(ydoc, base64ToBytes(payload.data), REMOTE_ORIGIN);
                 current.serverSequence = Math.max(current.serverSequence, Number(payload.sequence) || 0);
-                current.ready = true;
-                renderYState(current);
-                applyPendingLocal(current);
-                sendPresence(true);
-                updateLiveSettingsSurface('live');
+                finishSynchronization(current);
               } catch {}
               return;
             }
@@ -724,7 +785,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           });
 
           socket.addEventListener('close', event => {
-            if (connection !== current) return;
+            if (connection !== current || current.socket !== socket) return;
             current.ready = false;
             publishPresence([]);
             setStatus('offline', labels.offline);
@@ -745,7 +806,7 @@ export function enhanceWorkTexRealtime(markup, zh) {
           });
 
           socket.addEventListener('error', () => {
-            if (connection === current) setStatus('offline', labels.offline);
+            if (connection === current && current.socket === socket) setStatus('offline', labels.offline);
           });
         }
 
@@ -781,8 +842,11 @@ export function enhanceWorkTexRealtime(markup, zh) {
             const current = connection;
             if (!current || current.applyingRemote) return;
             current.lastInputAt = Date.now();
+            if (current.conflict) { current.pendingDraft = captureLocalDraft(); return; }
             if (!current.ready) {
               current.pendingLocalEdit = true;
+              if (current.initialized && current.role !== 'viewer') syncText(current.ytext, source.value, LOCAL_ORIGIN);
+              else current.pendingDraft = captureLocalDraft();
               sendPresence();
               return;
             }
@@ -793,13 +857,15 @@ export function enhanceWorkTexRealtime(markup, zh) {
           title?.addEventListener('input', () => {
             const current = connection;
             if (!current || current.applyingRemote) return;
-            if (!current.ready) { current.pendingLocalEdit = true; return; }
+            if (current.conflict) { current.pendingDraft = captureLocalDraft(); return; }
+            if (!current.ready) { current.pendingLocalEdit = true; if(current.initialized && current.role!=='viewer')syncMeta(current.ymeta,'title',title.value,LOCAL_ORIGIN);else current.pendingDraft=captureLocalDraft(); return; }
             if (current.role !== 'viewer') syncMeta(current.ymeta, 'title', title.value, LOCAL_ORIGIN);
           });
           engine?.addEventListener('change', () => {
             const current = connection;
             if (!current || current.applyingRemote) return;
-            if (!current.ready) { current.pendingLocalEdit = true; return; }
+            if (current.conflict) { current.pendingDraft = captureLocalDraft(); return; }
+            if (!current.ready) { current.pendingLocalEdit = true; if(current.initialized && current.role!=='viewer')syncMeta(current.ymeta,'engine',engine.value,LOCAL_ORIGIN);else current.pendingDraft=captureLocalDraft(); return; }
             if (current.role !== 'viewer') syncMeta(current.ymeta, 'engine', engine.value, LOCAL_ORIGIN);
           });
           source?.addEventListener('select', () => sendPresence());

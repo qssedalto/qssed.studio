@@ -1,13 +1,15 @@
+import { readJsonBounded } from "./request-json-bounded.js";
+import { isLiveTexHead } from "./tex-document-guards.js";
 // Authenticated per-project encrypted chat gateway. This endpoint owns all
 // document ACL checks, so the Durable Object never trusts browser claims.
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { hasStorageBinding } from "./storage-api.js";
 import { resolveDocumentAccess,verifyActiveUser,documentKey,cleanObjectId } from "./tex-collaboration-realtime.js";
 import { hashText } from "./tex-file-chat-webauthn.js";
 
-const MAX_REQUEST=20000;
+const MAX_REQUEST=160000;
 const safeResponse=(data,status)=>json(data,status);
 
 export async function handleTexFileChatApi(request,env) {
@@ -20,16 +22,14 @@ export async function handleTexFileChatApi(request,env) {
   if(!env?.TEX_COLLAB_ROOMS?.idFromName||!hasStorageBinding(env))
     return safeResponse({error:"Encrypted collaboration unavailable"},503);
   const session=await verifyStudioApiSession(request);
-  if(!session.ok)return withStudioSessionCookies(safeResponse({error:"Authentication required"},401),session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
   const auth=await verifyActiveUser(session.accessToken);
   if(auth.error)return withStudioSessionCookies(auth.error,session.cookies);
   let body;
   try{
-    const raw=await request.text();
-    if(new TextEncoder().encode(raw).length>MAX_REQUEST)throw Error("too large");
-    body=JSON.parse(raw);
+    body=await readJsonBounded(request,MAX_REQUEST);
     if(!body||typeof body!=="object"||Array.isArray(body))throw Error("bad body");
-  }catch{return withStudioSessionCookies(safeResponse({error:"Invalid chat request"},400),session.cookies)}
+  }catch(error){return withStudioSessionCookies(safeResponse({error:"Invalid chat request"},error?.status||400),session.cookies)}
   const documentId=cleanObjectId(body.document_id);
   if(!documentId)
     return withStudioSessionCookies(safeResponse({error:"Invalid project identifier"},400),session.cookies);
@@ -42,10 +42,15 @@ export async function handleTexFileChatApi(request,env) {
   const ownerId=access.owner_id;
   try{
     const stored=await env.STORAGE.get(documentKey(ownerId,documentId));
-    if(!stored)return withStudioSessionCookies(safeResponse({error:"Project missing"},404),session.cookies);
+    if(!isLiveTexHead(stored))return withStudioSessionCookies(safeResponse({error:"Project missing"},404),session.cookies);
+    const project=await stored.json();
+    if(project?.document_deleted||project?.id!==documentId||project?.owner_id!==ownerId)
+      return withStudioSessionCookies(safeResponse({error:"Project missing"},404),session.cookies);
   }catch{return withStudioSessionCookies(safeResponse({error:"Project temporarily unavailable"},503),session.cookies)}
-  const allowed=new Set([ownerId,auth.user.id]);
-  if(access.role==="owner"){
+  const allowed=new Set();
+  {
+    // Every sender needs the complete live recipient set, not just the owner.
+    // Otherwise messages from collaborators cannot be decrypted by other members.
     // Only live named members can receive new encryption key envelopes.
     // Fail closed rather than share to stale/removed collaborators.
     try{
@@ -53,7 +58,7 @@ export async function handleTexFileChatApi(request,env) {
         method:"POST",
         headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+session.accessToken,
           "content-type":"application/json",accept:"application/json"},
-        body:JSON.stringify({p_owner_id:ownerId,p_document_id:documentId})
+        body:JSON.stringify({p_owner_id:ownerId,p_document_id:documentId}),signal:AbortSignal.timeout(8000)
       });
       if(!r.ok)return withStudioSessionCookies(safeResponse({error:"Collaboration member verification unavailable"},503),session.cookies);
       const members=await r.json();
@@ -62,6 +67,8 @@ export async function handleTexFileChatApi(request,env) {
       for(const item of members){
         if(cleanObjectId(item.participant_id))allowed.add(item.participant_id);
       }
+      if(!allowed.has(ownerId)||!allowed.has(auth.user.id))
+        return withStudioSessionCookies(safeResponse({error:"Document access denied"},404),session.cookies);
     }catch{return withStudioSessionCookies(safeResponse({error:"Collaboration member verification unavailable"},503),session.cookies)}
   }
   const projectHash=await hashText("project-chat-v2:"+ownerId+":"+documentId);

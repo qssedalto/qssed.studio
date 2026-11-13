@@ -157,7 +157,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
   // can see an owner-only 404 before collaborator documents are registered.
   output = output.replace(
     "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());void initialize();",
-    "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());window.addEventListener('popstate',()=>{const id=routeDocumentId();if(id&&id!==activeId){void openDocument(id,false);return;}if(!id&&(activeId||!editor.hidden)){if(typeof documentOpenTicket!=='undefined')documentOpenTicket++;window.clearTimeout(saveTimer);if(dirty)void saveCurrent(true);activeId='';root.dataset.texCollaborationDocumentId='';activeDocument=null;dirty=false;runs=[];renderEditor();renderDocuments();renderRuns();showMessage('');}});window.setTimeout(()=>void initialize(),0);"
+    "document.getElementById('tex-refresh-runs').addEventListener('click',()=>void loadRuns());window.addEventListener('popstate',async()=>{const id=routeDocumentId();if(id&&id!==activeId){void openDocument(id,false);return;}if(!id&&(activeId||!editor.hidden)){if(!(await saveCurrent(true))){restoreUnsavedRoute();return;}if(typeof documentOpenTicket!=='undefined')documentOpenTicket++;window.clearTimeout(saveTimer);activeId='';root.dataset.texCollaborationDocumentId='';activeDocument=null;dirty=false;runs=[];renderEditor();renderDocuments();renderRuns();showMessage('');}});window.setTimeout(()=>void initialize(),0);"
   );
 
   output += `

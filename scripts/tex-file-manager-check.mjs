@@ -1,3 +1,5 @@
+import { texFileContentDigest } from "../studio/tex-file-revision.js";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { handleTexProjectFiles } from "../studio/tex-project-files-api.js";
 import { reconcileTexMainEntry } from "../studio/tex-main-entry.js";
@@ -17,13 +19,17 @@ const original={
   project_type:"blank",created_at:new Date().toISOString(),updated_at:new Date().toISOString()
 };
 const objects=new Map([[key,structuredClone(original)]]);
+const etagFor = value => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const storage={
-  async get(k){const doc=objects.get(k);return doc ? {text:()=>Promise.resolve(JSON.stringify(doc))} : null;},
+  async get(k){const doc=objects.get(k);return doc ? {etag:etagFor(doc),text:()=>Promise.resolve(JSON.stringify(doc))} : null;},
   async put(k,content,options){
+    const current=objects.get(k);
+    if(options.onlyIf?.etagMatches && (!current||etagFor(current)!==options.onlyIf.etagMatches))return null;
     assert.equal(options.customMetadata.kind,"tex-document");
     const doc=JSON.parse(content);
     assert.equal(Number(options.customMetadata.fileCount),doc.files.length+(doc.main_deleted?0:1));
     objects.set(k,doc);
+    return {etag:etagFor(doc)};
   }
 };
 const invoke=async (input,user=owner) => {
@@ -46,7 +52,7 @@ assert.equal(multi.status,200);
 assert.equal(objects.get(key).files.length,4);
 
 const edited=await invoke({document_id:id,operation:"replace",
-  files:[file("chapter1.tex","\\\\section{Updated}") ]});
+  files:[{...file("chapter1.tex","\\\\section{Updated}"),expected_sha256:await texFileContentDigest(file("chapter1.tex","\\section{One}"))}]});
 assert.equal(edited.status,200,"Existing supplementary files must be editable.");
 assert.equal(objects.get(key).files.find(f=>f.name==="chapter1.tex").content,"\\\\section{Updated}");
 assert.equal(objects.get(key).source,original.source,"Editing an extra file must not replace main.tex.");

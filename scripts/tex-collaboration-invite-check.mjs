@@ -1,3 +1,6 @@
+import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
+import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
+import { polishTexWorkbenchApp } from "../studio/ui-tex-app.js";
 import fs from "node:fs";
 import { enhanceWorkTexCollaboration } from "../studio/ui-work-tex-collaboration-instant.js";
 
@@ -9,7 +12,7 @@ const base = fs.readFileSync(new URL("../studio/ui-work-tex-collaboration.js", i
 const stable = fs.readFileSync(new URL("../studio/ui-work-tex-shared-stable.js", import.meta.url), "utf8");
 
 for (const zh of [true, false]) {
-  const html = enhanceWorkTexCollaboration("<div class=\"tex-work-app\" data-tex-root><div class=\"tex-editor-toolbar\"></div></div>", zh);
+  const html = enhanceWorkTexCollaboration(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh),zh),zh), zh);
   assert(html.includes('name="collaboration-member-lookup" type="search"'), "Invite must use a non-login search field");
   assert(html.includes('data-1p-ignore="true"') && html.includes('data-lpignore="true"'), "Invite should discourage password-manager autofill");
   assert(html.includes('id="tex-collaboration-invite" class="tex-collaboration-invite" autocomplete="off"'), "Invite form should disable autocomplete");
@@ -43,9 +46,9 @@ for (const zh of [true, false]) {
   assert(html.includes("cutButton.disabled = noDocument || readOnly || start === end"), "Cut must require selected editable source text");
   assert(html.includes("bridge?.getSelection?.()"), "Cut must read CodeMirror selections as well as textarea selections");
   assert(html.includes("if (!await writeClipboard(selectionText))"), "Failed clipboard writes must never delete text");
-  assert(html.includes("title.focus();") && html.includes("title.select();"), "Rename action must focus and select the document title");
+  assert(html.includes("aertex:tex-rename-file"), "Rename must target the selected file, not silently rename the whole project");
   assert(html.includes("work-tex-"), "Other Work UI remains composed");
-  const scripts = [...html.matchAll(/<script(?:\\s+[^>]*)?>([\\s\\S]*?)<\\/script>/g)];
+  const scripts = [...html.matchAll(/<script(?:\s+[^>]*)?>([\s\S]*?)<\/script>/g)];
   for (const [, code] of scripts) new Function(code);
 }
 
