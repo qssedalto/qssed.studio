@@ -74,6 +74,7 @@ var localTeXAssetExtensions = map[string]bool{
 	".bbx": true, ".cbx": true, ".def": true, ".dtx": true, ".ins": true,
 	".ltx": true, ".tikz": true, ".pgf": true, ".png": true, ".jpg": true,
 	".jpeg": true, ".pdf": true, ".eps": true, ".ttf": true, ".otf": true,
+	".txt": true, ".csv": true, ".tsv": true, ".cfg": true,
 }
 
 // Reject traversal, Windows device names and alternate data streams before writing
