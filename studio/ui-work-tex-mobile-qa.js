@@ -217,20 +217,10 @@ function mobileTexQaRuntime() {
   const mobilePaneMedia = window.matchMedia('(max-width:950px) and (pointer:coarse), (max-width:760px)');
   const root = document.querySelector('.tex-work-app');
   const toolbar = root?.querySelector('.tex-editor-toolbar');
-  const footer = root?.querySelector('.tex-editor-footer');
-  const save = root?.querySelector('.tex-save-state');
-  if (!root || !toolbar || !footer || !save) return;
-  const restore = save.nextSibling;
-  const moveSave = () => {
-    if (media.matches) {
-      if (save.parentElement !== toolbar) toolbar.append(save);
-    } else if (save.parentElement !== footer) {
-      if (restore && restore.parentNode === footer) footer.insertBefore(save, restore);
-      else footer.prepend(save);
-    }
-  };
-  media.addEventListener?.('change', moveSave);
-  moveSave();
+  if (!root || !toolbar) return;
+  // Autosave is permanently hosted directly under the static project title
+  // on every screen size. Do not relocate it on media-query changes: the old
+  // toolbar/footer swap would re-create the deleted footer on resize.
 
   // Keep the TeX editor selection in view when tapping an individual nested file.
   const list = root.querySelector('#tex-document-list');
