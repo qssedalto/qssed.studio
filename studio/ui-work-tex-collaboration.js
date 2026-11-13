@@ -166,7 +166,7 @@ export function enhanceWorkTexCollaboration(markup, zh) {
       .tex-collaboration-avatar-dot{display:grid;place-items:center;flex:0 0 27px;box-sizing:border-box;width:27px;height:27px;margin-left:-8px;border:2px solid var(--surface);border-radius:50%;background:color-mix(in srgb,var(--primary) 12%,var(--surface));color:var(--muted);font-size:9px;font-weight:800;overflow:hidden}
       .tex-collaboration-avatar-dot:first-child{margin-left:0}.tex-collaboration-avatar-dot img{width:100%;height:100%;object-fit:cover}
       .tex-collaboration-avatar-overflow{display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;margin-left:-8px;box-sizing:border-box;border:2px solid var(--surface);border-radius:50%;background:var(--fill);color:var(--muted);font-size:9px;font-weight:750}
-      @media(max-width:760px){.tex-work-app .tex-collaboration-button{flex-basis:218px!important;width:218px!important;min-width:218px!important;max-width:218px!important;padding:0 8px!important}.tex-collaboration-avatars{min-width:85px}}
+      @media(max-width:760px){.tex-work-app .tex-editor-toolbar>#tex-collaboration-open{grid-column:1/-1!important;justify-self:stretch!important;flex:1 1 auto!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;padding:0 10px!important}.tex-collaboration-avatars{min-width:90px}}
 
       body.tex-collaboration-open{overflow:hidden!important}
       .tex-collaboration-backdrop{position:fixed;inset:0;z-index:2147482000;background:rgba(0,0,0,.20);opacity:0;pointer-events:none;transition:opacity .2s ease}
