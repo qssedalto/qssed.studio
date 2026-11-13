@@ -3,6 +3,7 @@ import { handleTexProjectFiles } from "../studio/tex-project-files-api.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexProjectControls } from "../studio/ui-tex-project-controls.js";
 import { TEX_FILE_MODAL_RUNTIME } from "../studio/ui-tex-file-modal-runtime.js";
+import { enhanceTexFileModal } from "../studio/ui-tex-file-modal.js";
 
 const owner="11111111-1111-4111-8111-111111111111";
 const other="22222222-2222-4222-8222-222222222222";
@@ -166,4 +167,27 @@ assert(markup.includes("tex-project-files") || markup.includes("tex-file-dialog"
 assert(markup.includes("supports") || markup.includes("500 个文件"),"File picker must describe the expanded file limits.");
 assert(markup.includes('id="tex-file-text-editor"'),"New text files need an editable surface.");
 assert(markup.includes("operation:'replace'"),"Text editing must save through authorized file replacement.");
+// Regression: dragging a directory with dozens of files must never squeeze
+// README.md into a vertical one-character column or push Clear into the middle.
+const fileDialog=enhanceTexFileModal("<html><body></body></html>",true);
+const fileStyle=fileDialog.split('<style id="tex-file-modal-style">')[1]?.split("</style>")[0];
+const fileRuntime=fileDialog.split('<script id="tex-file-modal-runtime">')[1]?.split("</script>")[0];
+assert(fileStyle&&fileRuntime,"The upload modal must include its CSS and runtime");
+assert(fileStyle.includes("grid-template-columns:minmax(0,1fr) 68px 30px!important"),
+  "Selected files must have independent name, size, and remove columns");
+assert(fileStyle.includes("white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important"),
+  "Selected filename must stay horizontal and ellipsize instead of wrapping per character");
+assert(fileStyle.includes("#tex-file-dialog .tex-file-selection-head")&&
+  fileStyle.includes("grid-template-columns:minmax(0,1fr) auto!important"),
+  "The selected count and Clear button must occupy the full queue width");
+assert(fileStyle.includes("max-height:min(248px,32dvh)")&&
+  fileStyle.includes("overflow-y:auto!important"),
+  "30+ files must scroll within a bounded list rather than stretch the dialog");
+assert(fileStyle.includes("#tex-file-panel-upload:has(.tex-file-selection:not([hidden]))"),
+  "After dropping files, shrink the dropzone to expose more of the file queue");
+assert(fileRuntime.includes("name.className = 'tex-file-selected-name'")&&
+  fileRuntime.includes("name.title = entry.path")&&
+  fileRuntime.includes("remove.className = 'tex-file-selected-remove'"),
+  "Every queued file needs full-path hover text and a consistent remove control");
+new Function(fileRuntime);
 console.log("TeX file creation, ACL isolation, duplicate protection, import UI and disabled plus validated.");
