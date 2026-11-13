@@ -33,6 +33,7 @@ import { polishWorkTexPdfControls } from "./ui-work-tex-pdf-controls.js";
 import { enhanceWorkTexCollapsiblePanels } from "./ui-work-tex-panels.js";
 import { enhanceWorkTexMobileQa } from "./ui-work-tex-mobile-qa.js";
 import { enhanceWorkTexMobileFollowup } from "./ui-work-tex-mobile-followup.js";
+import { enhanceWorkTexDeviceReadiness } from "./ui-work-tex-device-readiness.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
 import { getRequestCookie, handleRegistrationSignup } from "./account-api.js";
 import { handleIdentifierPasswordLogin, identifierLoginPage } from "./login-identifier-api.js";
@@ -265,7 +266,7 @@ export default {
       if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin, fullLocale, mainOrigin), workOrigin));
       if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, fullLocale, mainOrigin), zh));
       if (pathname === "/work/tex/setup") markup = replaceOsContent(markup, texGithubSetupContent(zh, fullLocale));
-      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceTexGithubWorkbench(enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); markup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup))); markup = prepareWorkTexDocumentShell(markup, { userId: gate.user?.id, documentId: new URL(request.url).searchParams.get("document"), zh }); markup = enhanceWorkTexMobileFollowup(enhanceWorkTexMobileQa(enhanceTexProjectControls(markup, zh))); }
+      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceTexGithubWorkbench(enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); markup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup))); markup = prepareWorkTexDocumentShell(markup, { userId: gate.user?.id, documentId: new URL(request.url).searchParams.get("document"), zh }); markup = enhanceWorkTexDeviceReadiness(enhanceWorkTexMobileFollowup(enhanceWorkTexMobileQa(enhanceTexProjectControls(markup, zh))), zh); }
       // A revoked or nonexistent shared-document deep link returns to the Work
       // start screen with a localized, non-identifying explanation.
       if (pathname === "/work/tex" && new URL(request.url).searchParams.get("notice") === "document-unavailable") {
