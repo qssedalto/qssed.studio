@@ -122,6 +122,10 @@ for (const script of scripts) new Function(script);
 assert(routing.includes("allowLoopback"), "HTML security headers do not provide a scoped loopback mode");
 assert(routing.includes("http://127.0.0.1:32145"), "Loopback CSP source is missing");
 assert(routing.includes("http://localhost:32145"), "localhost CSP source is missing");
+assert(routing.includes("http://localhost:32145 https://cdn.jsdelivr.net") &&
+  routing.includes(": `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN}`;"),
+  "Work TeX must allow pinned PDF.js CMap/font asset fetches without relaxing other pages.");
+
 assert(routing.includes('allowLoopback ? "frame-src blob:" : "frame-src \'none\'"'), "Loopback pages must allow only blob PDF frames while ordinary pages keep frames disabled");
 assert(routing.includes("upgrade-insecure-requests") && routing.includes("!allowLoopback"), "Loopback pages must opt out of CSP HTTP auto-upgrade without weakening other pages");
 

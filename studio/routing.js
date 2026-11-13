@@ -27,8 +27,12 @@ function securityHeaders(contentType) {
 function htmlSecurityHeaders(options = {}) {
   const headers = securityHeaders("text/html;charset=UTF-8");
   const allowLoopback = options?.allowLoopback === true;
+  // The Work TeX PDF.js viewer loads its pinned CMap and standard-font
+  // resources from the same CDN as its module. Without connect-src approval,
+  // Chrome blocks those fetches and the PDF silently loses Chinese glyphs.
+  // Keep unrelated app pages on the original restrictive policy.
   const connectSources = allowLoopback
-    ? `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN} http://127.0.0.1:32145 http://localhost:32145`
+    ? `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN} http://127.0.0.1:32145 http://localhost:32145 https://cdn.jsdelivr.net`
     : `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN}`;
   const localNetworkPolicy = allowLoopback
     ? "local-network-access=(self), local-network=(self), loopback-network=(self)"
