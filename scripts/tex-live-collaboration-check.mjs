@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { enhanceWorkTexCollaboration } from "../studio/ui-work-tex-collaboration-instant.js";
+import { mapTexPositionThroughYDelta, mapTexPositionThroughTextChange } from "../studio/ui-work-tex-realtime.js";
 import { TexCollaborationRoom } from "../studio/tex-collaboration-room.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
@@ -53,6 +54,66 @@ assert.match(room, /safeRelativePosition\(payload\.anchor_rel\)/, "Server must v
 assert.match(room, /safeRelativePosition\(payload\.head_rel\)/, "Server must validate remote caret position.");
 assert.match(room, /participant\.caret_position/, "Directional caret position must be preserved.");
 assert.match(realtime, /person\?\.client_id === current\.clientId/, "Self must be identified by connection, not by cursor coordinates.");
+// Regression: when A inserts one character before B's caret, B's caret
+// must advance with the original text, not appear to move backward by one.
+for (const [delta,position,bias,expected] of [
+  [[{retain:3},{insert:"x"},{retain:2}],5,1,6],
+  [[{retain:3},{insert:"x"}],2,1,2],
+  [[{retain:3},{insert:"x"}],3,1,4],
+  [[{retain:3},{insert:"x"}],3,-1,3],
+  [[{retain:2},{insert:"🐱"}],5,1,7],
+  [[{retain:2},{delete:1}],5,1,4],
+  [[{retain:2},{delete:3}],4,1,2],
+  [[{retain:2},{delete:2},{insert:"XYZ"}],6,1,7]
+]) assert.equal(mapTexPositionThroughYDelta(delta,position,bias),expected,
+  "Yjs remote edit must preserve a peer's logical caret position");
+assert.equal(mapTexPositionThroughTextChange("abde","abcde",4),5);
+assert.equal(mapTexPositionThroughTextChange("abcde","abde",5),4);
+assert.match(realtime,/renderYState\(current, event\.delta\)/,
+  "Yjs observer must send the actual per-transaction delta");
+assert.match(codeMirror,/transaction\.changes = \{ from, to: oldEnd, insert: next\.slice\(from, nextEnd\) \}/,
+  "Do not replace all CodeMirror content for a one-character edit");
+const runtimeMarkup=enhanceWorkTexCollaboration(
+  polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(true),true),true),true);
+const syncRuntime=runtimeMarkup.match(/<script id="qsseda-work-tex-realtime-runtime">([\s\S]*?)<\/script>/)?.[1];
+assert(syncRuntime,"Realtime script missing");
+const begin=syncRuntime.indexOf("function renderYState(current, delta = null)");
+const end=syncRuntime.indexOf("function applyPendingLocal(",begin);
+assert(begin>0&&end>begin,"Actual browser Yjs->editor renderer missing");
+const renderer=syncRuntime.slice(begin,end);
+function simulateRemote(previous,next,anchor,head,delta){
+  let notifications=0;
+  const source={value:previous,selectionStart:Math.min(anchor,head),
+    selectionEnd:Math.max(anchor,head),selectionDirection:anchor>head?'backward':'forward',
+    setSelectionRange(start,end,direction){
+      this.selectionStart=start;this.selectionEnd=end;this.selectionDirection=direction;
+    },dispatchEvent(){notifications++;}};
+  const selected={anchor,head};
+  const ctx={source,
+    activeElements:()=>({source,title:null,engine:null}),
+    window:{__qssedaTexEditorBridge:{getActiveAsset:()=>null,getSelection:()=>selected}},
+    dispatchSyntheticInput:element=>element.dispatchEvent(),
+    mapTexPositionThroughYDelta,mapTexPositionThroughTextChange};
+  const run=new Function("ctx",
+    "const {activeElements,window,dispatchSyntheticInput,mapTexPositionThroughYDelta,mapTexPositionThroughTextChange}=ctx;"+
+    renderer+"return renderYState;")(ctx);
+  const state={ready:true,applyingRemote:false,ytext:{toString:()=>next},ymeta:{get:()=>''}};
+  run(state,delta);
+  assert.equal(state.applyingRemote,false);
+  assert.equal(notifications,1);
+  return source;
+}
+let peer=simulateRemote("abcdef","abXcdef",5,5,[{retain:2},{insert:"X"},{retain:4}]);
+assert.equal(peer.value,"abXcdef");
+assert.equal(peer.selectionStart,6,"A typing must not move B's caret backward");
+peer=simulateRemote("abXcdef","abcdef",6,6,[{retain:2},{delete:1},{retain:4}]);
+assert.equal(peer.selectionStart,5);
+peer=simulateRemote("abcdef","abcXdef",5,2,[{retain:3},{insert:"X"},{retain:3}]);
+assert.equal(peer.selectionStart,2);
+assert.equal(peer.selectionEnd,6);
+assert.equal(peer.selectionDirection,"backward");
+console.log("Realtime CRDT caret offsets and browser selection mapping passed.");
+
 assert.match(realtime, /createRelativePositionFromTypeIndex/, "Local selection must use Yjs relative positions.");
 assert.match(realtime, /createAbsolutePositionFromRelativePosition/, "Remote selection must be decoded against current Yjs text.");
 assert.match(realtime, /qsseda:tex-realtime-status/, "Connection state must reach collaboration controls.");
