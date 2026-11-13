@@ -5,6 +5,7 @@ import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
 import { reconcileTexMainEntry } from "./tex-main-entry.js";
+import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const ENGINES = new Set(["xelatex", "lualatex", "pdflatex"]);
@@ -82,6 +83,8 @@ async function handleUpdate(request, env, auth, accessToken) {
   if (!previous) return json({ error: "Shared TeX document not found." }, 404);
   if (previous.locked) return json({ error: "This project is locked by its owner." }, 423);
   if (previous.main_deleted === true) return json({error:"This project has no TeX entry. Add a root .tex file first."},409);
+  if (texRealtimeEpoch(parsed.value?.realtime_epoch) !== texRealtimeEpoch(previous))
+    return json({error:"The main TeX entry changed. Reopen the project before saving.",code:"main_revision_changed"},409);
 
   const normalized = normalizeSharedDocument(parsed.value, previous);
   if (!normalized.ok) return json({ error: normalized.error }, 400);
@@ -243,6 +246,7 @@ async function readOwnerDocument(env, ownerId, documentId) {
       engine: ENGINES.has(parsed.engine) ? parsed.engine : "xelatex",
       source: cleanSource(parsed.source),
       main_filename: parsed.main_filename || "main.tex",
+      realtime_epoch: texRealtimeEpoch(parsed),
       main_deleted: parsed.main_deleted === true,
       created_at: cleanTimestamp(parsed.created_at),
       updated_at: cleanTimestamp(parsed.updated_at),
@@ -295,7 +299,8 @@ function documentMetadata(document) {
     preview: document.source.replace(/\s+/g, " ").trim().slice(0, 220),
     pinned:document.pinned?"true":"false",locked:document.locked?"true":"false",
     createdAt: document.created_at,
-    updatedAt: document.updated_at
+    updatedAt: document.updated_at,
+    realtimeEpoch: texRealtimeEpoch(document)
   };
 }
 
