@@ -81,13 +81,22 @@ const credential={id:credId,rawId:credId,type:"public-key",
 const verified=await send("verify",{challenge_id:first.body.challenge_id,credential});
 assert.equal(verified.status,200,JSON.stringify(verified.body));
 assert.equal(verified.body.verified,true);
+assert.equal(verified.body.expires_in,10800,"Successful WebAuthn verification must grant exactly 3 hours");
 const token=verified.body.token;
+const resume=await send("resume",{token});
+assert.equal(resume.status,200,"Same project/user may resume within the verified time window");
+assert(resume.body.expires_in<=10800&&resume.body.expires_in>=10798,
+  "Resume returns the remaining time, never a new 3-hour grant");
 assert.equal(token.length,43);
 assert.equal((await send("status")).body.registered,true);
 assert.equal((await send("verify",{challenge_id:first.body.challenge_id,credential})).status,403,
   "Challenge must be one-time and never reusable");
 assert.equal((await send("messages",{token},auth(fileB))).status,401,
   "A project Passkey grant must not authorize another project");
+assert.equal((await send("resume",{token},auth(fileB))).status,401,
+  "A grant must not resume a different project's chat");
+assert.equal((await send("resume",{token:"invalid"})).status,401,
+  "Unverified client claims may not bypass server WebAuthn");
 
 const next=await send("begin");assert.equal(next.body.mode,"get");
 assert.deepEqual(next.body.public_key.allowCredentials,[{type:"public-key",id:credId}]);
@@ -260,7 +269,12 @@ assert(!runtime.includes("state.device.newDevice"),"A missing ECDH identity must
 assert(!runtime.includes("markDeviceEnrolled()"),"WebAuthn enrollment must not be inferred from IndexedDB");
 assert(!runtime.includes("action:'enroll-device'"),"Successful WebAuthn GET must not silently enroll another Passkey");
 assert(!runtime.includes("localStorage.setItem('filechat-key"),"Never persist room keys in localStorage");
-assert(!runtime.includes("sessionStorage"),"Passkey verification must not survive page reload");
+assert(runtime.includes("sessionStorage.getItem")&&runtime.includes("sessionStorage.setItem"),
+  "Valid project Passkey grants should survive a same-tab page refresh");
+assert(runtime.includes("await api('resume'")&&runtime.includes("readLease(info.document,String(result.user_id||'')"),
+  "Every resumed grant must be bound to project and user then rechecked on server");
+assert(!runtime.includes("localStorage.setItem(leaseKey"),
+  "Never store authentication grants in persistent localStorage");
 assert(runtime.includes("function toggleChat()"),"Popup should use a single toolbar toggle");
 assert(!runtime.includes("panel.querySelector(\'.close\')"),"No close button can bypass the toolbar icon");
 const toolbar=enhanceWorkTexToolbarScroll("",true);
@@ -279,4 +293,18 @@ assert(!gateway.includes('file.name===fileName'),"Project chat must not require 
 assert(runtime.includes("'AERTEX-projectchat-v2:'"),"Room KDF must depend on project alone");
 assert(!runtime.includes("state.file"),"File switches must not reset project E2EE state");
 assert(gateway.includes("if(access.via_link===true)"));
-console.log("Project WebAuthn create/get, forgery/replay rejection, encrypted fanout without owner key and UI contract PASS");
+// Time-based expiry is enforced on the server as well as in the browser.
+const grantKey=[...cache.keys()].find(k=>k.includes(":grant:")&&k.endsWith(":"+await hashText(latestToken)));
+assert(grantKey,"A project/user/digest-bound lease must exist");
+const grantRecord=cache.get(grantKey);
+const originalExpiry=grantRecord.expires;
+const resumedAgain=await send("resume",{token:latestToken});
+assert.equal(resumedAgain.status,200);
+assert.equal(cache.get(grantKey).expires,originalExpiry,
+  "Resuming must not extend the absolute 3-hour deadline");
+cache.set(grantKey,{...grantRecord,expires:Date.now()-1});
+assert.equal((await send("resume",{token:latestToken})).status,401,
+  "Server must reject the grant as soon as it expires");
+assert.equal((await send("messages",{token:latestToken})).status,401,
+  "An expired grant must not access encrypted messages");
+console.log("Project Passkey 3-hour absolute lease, scoped resume, expiry, E2EE and forgery rejection PASS");
