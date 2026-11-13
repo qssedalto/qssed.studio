@@ -10,8 +10,8 @@ assert(entry.includes("enhanceWorkTexToolbarScroll(enhanceWorkTexDeviceReadiness
   "Responsive toolbar must run after device/mobile CSS for /work/tex");
 assert(page.includes('id="aertex-tex-scrollable-toolbar"'));
 assert(page.includes('id="aertex-tex-scrollable-toolbar-runtime"'));
-assert(page.includes('打开此文件的端到端加密协作聊天'));
-assert(enPage.includes('Open encrypted chat for this file'));
+assert(page.includes('打开或收起当前文件的加密聊天浮窗'));
+assert(enPage.includes('Toggle encrypted chat popup for this file'));
 assert(page.includes('tex-command-chat-svg'));
 assert(page.includes('stroke:currentColor!important'),"Outline bubble must use theme currentColor");
 assert(page.includes('stroke-width:1.7!important'),"Bubble outline must match neighboring Fluent icons");
@@ -70,9 +70,12 @@ function simulate(html) {
   const win={addEventListener(){},matchMedia(){return {matches:false}},setTimeout(){throw Error("Unexpected deferred retry")},open(...args){opened.push(args);return {}},location:{assign(url){opened.push([url])}}};
   vm.runInNewContext(match[1],{document,window:win,ResizeObserver,MutationObserver,Event:class{constructor(type){this.type=type}}},{timeout:1000});
   assert.equal(shortcut.id,"tex-command-chat-shortcut");
-  assert.equal(shortcut.attrs["aria-label"],html.includes("打开此文件的端到端加密协作聊天")?"打开此文件的端到端加密协作聊天":"Open encrypted chat for this file");
+  assert.equal(shortcut.attrs["aria-label"],html.includes("打开或收起当前文件的加密聊天浮窗")?"打开或收起当前文件的加密聊天浮窗":"Toggle encrypted chat popup for this file");
   assert.equal(shortcut.type,"button");
-  assert.equal(shortcut.dataset.texAction,"open-encrypted-chat");
+  assert.equal(shortcut.dataset.texAction,"toggle-file-chat");
+  assert.equal(shortcut.attrs["aria-expanded"],"false");
+  assert.equal(shortcut.attrs["aria-controls"],"aertex-filechat");
+  assert.equal(shortcut.attrs["aria-haspopup"],"dialog");
   assert(shortcut.innerHTML.includes('<svg'));
   assert.equal(bar.children[0],shortcut);
   assert.equal(bar.attrs.role,"group");
@@ -85,7 +88,9 @@ function simulate(html) {
   shortcut.events.click({stopPropagation(){stopped=true;}});
   assert(stopped);
   assert.equal(collabClicks,0,"Bubble must never open collaboration settings");
-  assert.deepEqual(opened,["aertex:tex-chat-open"],"Bubble must open the current file's encrypted chat drawer");
+  assert.deepEqual(opened,["aertex:tex-chat-toggle"],"Bubble must open the current file's encrypted chat drawer");
+  shortcut.events.click({stopPropagation(){}});
+  assert.deepEqual(opened,["aertex:tex-chat-toggle","aertex:tex-chat-toggle"],"Same icon must dispatch the close toggle on second click");
   bar.events.keydown({target:bar,key:"ArrowRight",preventDefault(){}});
   assert.equal(bar.scrollLeft,125,"Keyboard users can horizontally pan icon group");
   bar.events.keydown({target:bar,key:"ArrowLeft",preventDefault(){}});
