@@ -251,7 +251,7 @@ assert(authEntry.includes('path.startsWith("/")') && authEntry.includes('path.st
 
 assert(workUi.includes('AERTEX 主站') && workUi.includes('AERTEX Home'), "Work Hub/navigation must expose a localized AERTEX Home exit.");
 assert(workUi.includes('work-home-button'), "Work Hub and Local Bridge must provide an explicit main-site action.");
-assert(workUi.includes('dashboardIcon("home")'), "Work sidebar navigation must include the AERTEX Home destination.");
+assert(workUi.includes('dashboardIcon("work")') && workUi.includes('workTexUrl'), "Work sidebar navigation must retain Work overview and TeX destinations.");
 assert(!workUi.includes('<b aria-hidden="true">›</b>'), "Work top-level sidebar navigation must rely on the shared CSS chevron and must not render a second inline arrow.");
 assert(entry.includes("workHubContent(zh, workOrigin, fullLocale, mainOrigin)"), "Work Hub must receive the active domain-family main origin.");
 assert(entry.includes("workLocalBridgeContent(zh, fullLocale, mainOrigin)"), "Work Local Bridge must receive the active domain-family main origin.");
