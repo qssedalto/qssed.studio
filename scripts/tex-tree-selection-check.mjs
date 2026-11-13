@@ -16,9 +16,9 @@ assert(body.includes("row.setAttribute('aria-current','true')"));
 assert(body.includes("folderRow.classList.add('is-active-path')"));
 assert(body.includes("projectRow?.classList?.add('is-file-active')"));
 assert(body.includes("parent.hidden=false"),"Selected nested files must expand collapsed ancestors");
-assert(code.includes("syncSelectedTree();\n    window.dispatchEvent(new Event('aertex:tex-project-asset-selected'));"),
+assert(code.includes("syncSelectedTree(reveal);\n    window.dispatchEvent(new Event('aertex:tex-project-asset-selected'));"),
   "Selecting main.tex must update highlighted hierarchy");
-assert(code.includes("window.dispatchEvent(new Event('aertex:tex-project-asset-selected'));\n    syncSelectedTree();"),
+assert(code.includes("window.dispatchEvent(new Event('aertex:tex-project-asset-selected'));\n    syncSelectedTree(true);"),
   "Switching to supplementary files must update the highlighted hierarchy");
 assert(code.includes("    syncSelectedTree();\n  }\n  async function expand("),
   "Rebuilt folder contents must restore selection");
@@ -41,7 +41,8 @@ const make=(type,properties={})=>({classList:new Classes(),dataset:{},attrs:{},
 const project=make("project",{dataset:{texDocumentId:"project-1"}});
 const box=make("tree",{hidden:true,previousElementSibling:project});
 box.classList.add("tex-tree-children");
-const a=make("A"),b=make("B");
+const a=make("A",{dataset:{projectId:"project-1",projectFolder:"chapters"}}),
+  b=make("B",{dataset:{projectId:"project-1",projectFolder:"chapters/2026"}});
 a.classList.add("tex-tree-folder");b.classList.add("tex-tree-folder");
 const aSub=make("aSub",{hidden:true,previousElementSibling:a});
 const bSub=make("bSub",{hidden:true,previousElementSibling:b});
@@ -60,10 +61,11 @@ const list={
 };
 const root={dataset:{texCollaborationDocumentId:"project-1"}};
 const selected={name:"chapters/2026/math.tex"};
-const openProjects=new Set();
-const script=body+"\nsyncSelectedTree();";
+const openProjects=new Set(),openFolders=new Set();
+const script=body+"\nsyncSelectedTree(true);";
+const passive=body+"\nsyncSelectedTree();";
 vm.runInNewContext(script,{activeId:()=>root.dataset.texCollaborationDocumentId,selected,
-  list,openProjects},{timeout:1000});
+  list,openProjects,openFolders},{timeout:1000});
 assert(file.classList.contains("is-active"));
 assert(!main.classList.contains("is-active"));
 assert.equal(file.attrs["aria-current"],"true");
@@ -71,10 +73,18 @@ assert(a.classList.contains("is-active-path") && b.classList.contains("is-active
 assert(project.classList.contains("is-file-active"));
 assert.equal(aSub.hidden,false);assert.equal(bSub.hidden,false);assert.equal(box.hidden,false);
 assert(openProjects.has("project-1"));
+assert(openFolders.has("project-1/chapters") && openFolders.has("project-1/chapters/2026"));
+box.hidden=true;aSub.hidden=true;bSub.hidden=true;
+vm.runInNewContext(passive,{activeId:()=>root.dataset.texCollaborationDocumentId,selected,
+  list,openProjects,openFolders},{timeout:1000});
+assert(box.hidden&&aSub.hidden&&bSub.hidden,"Passive refresh must not reopen collapsed project folders");
 selected.name="main.tex";
-vm.runInNewContext(script,{activeId:()=>root.dataset.texCollaborationDocumentId,selected,
-  list,openProjects},{timeout:1000});
+vm.runInNewContext(passive,{activeId:()=>root.dataset.texCollaborationDocumentId,selected,
+  list,openProjects,openFolders},{timeout:1000});
 assert(main.classList.contains("is-active"));
 assert(!file.classList.contains("is-active"));
 assert(!a.classList.contains("is-active-path") && !b.classList.contains("is-active-path"));
-console.log("Hierarchical selected file, ancestor folders, active project and main.tex selection passed.");
+assert(code.includes("sub.hidden=!openFolders.has(key)"));
+assert(code.includes("if(openProjects.has(id)||id===initialId)arrowNode.click();"));
+assert(!code.includes("openProjects.size===0&&id===activeId()"));
+console.log("Independent expansion and passive selection refresh passed.");
