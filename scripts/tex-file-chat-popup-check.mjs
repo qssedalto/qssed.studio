@@ -78,8 +78,17 @@ for (const zh of [true,false]) {
   activeFile="chapters/unit.tex";
   const selected=windowListeners.get("aertex:tex-project-asset-selected");
   assert.equal(typeof selected,"function");
+  const originalTitle=get("aertex-chat-filename").textContent;
+  const originalDisabled=get("aertex-chat-passkey").disabled;
   selected();
-  assert.equal(panel.hidden,false,"Changing editor files may lock conversation, but not close the popup");
+  assert.equal(panel.hidden,false,"Changing editor files must not close project chat");
+  assert.equal(get("aertex-chat-filename").textContent,originalTitle,
+    "Changing a file must not change the project chat identity");
+  assert.equal(get("aertex-chat-passkey").disabled,originalDisabled,
+    "Changing a file must not reset the project Passkey state");
+  root.dataset.texCollaborationDocumentId="33333333-3333-4333-8333-333333333333";
+  selected();
+  assert.equal(get("aertex-chat-passkey").disabled,true,"Changing projects must relock the chat");
   assert.equal(attrs["aria-expanded"],"true");
 
   toggle();
@@ -91,4 +100,4 @@ for (const zh of [true,false]) {
   toggle();
   assert.equal(panel.hidden,true,"Fourth icon activation closes popup");
 }
-console.log("File-chat popup: icon-only open/close, no X/Escape/backdrop dismissal, no external sites, mobile floating frame and stable file-switch state PASS");
+console.log("Project-chat popup: icon-only open/close, files share project session, project switch relocks and no external sites PASS");
