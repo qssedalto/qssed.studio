@@ -23,6 +23,13 @@ assert.match(realtime, /createRelativePositionFromTypeIndex/, "Local selection m
 assert.match(realtime, /createAbsolutePositionFromRelativePosition/, "Remote selection must be decoded against current Yjs text.");
 assert.match(realtime, /qsseda:tex-realtime-status/, "Connection state must reach collaboration controls.");
 assert.match(realtime, /qsseda:tex-presence/, "Presence changes must reach CodeMirror and UI controls.");
+assert.match(room, /participant\.cursor_color/, "The realtime room must propagate validated collaborator theme colors.");
+assert.match(room, /\^#\[0-9a-f\]\{6\}\$/, "Incoming cursor colors must be restricted to six-digit hex values.");
+assert.match(realtime, /qsseda:tex-editor-selection/, "CodeMirror selection changes must trigger realtime presence updates.");
+assert.match(realtime, /--aertex-accent/, "Presence must use the signed-in user's site-wide theme accent.");
+assert.match(codeMirror, /qsseda:tex-editor-selection/, "Every CodeMirror selection change must publish its real position.");
+assert.match(codeMirror, /qssedaRemoteCaretBlink/, "Remote carets must have an accessible blinking state.");
+assert.match(codeMirror, /is-hover-hidden/, "Remote caret labels must disappear on mouse hover.");
 assert.match(codeMirror, /scrollToRemote\(position\)/, "CodeMirror must support following without changing selection.");
 assert.match(codeMirror, /EditorView\.scrollIntoView\(at/, "Following must use viewport effects.");
 assert.doesNotMatch(codeMirror, /matches = items\.filter\(person => String\(person\?\.role/, "Position matching must never guess identity.");
