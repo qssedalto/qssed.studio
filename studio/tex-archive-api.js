@@ -1,4 +1,5 @@
 import { json } from "./routing.js";
+import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { isSafeProjectFilename } from "./tex-project-file-types.js";
 import { purgeDocumentVersions } from "./tex-version-api.js";
@@ -88,7 +89,8 @@ const documentMeta = (doc,userId)=>({
   title:doc.title,engine:doc.engine,preview:String(doc.source).replace(/\s+/g," ").trim().slice(0,220),
   projectType:doc.project_type||"restored",fileCount:String(1+doc.files.length),
   pinned:doc.pinned?"true":"false",locked:doc.locked?"true":"false",
-  createdAt:doc.created_at,updatedAt:doc.updated_at
+  createdAt:doc.created_at,updatedAt:doc.updated_at,
+  realtimeEpoch:texRealtimeEpoch(doc)
 });
 export async function handleTexArchive(request,env,user) {
   if(!env?.STORAGE)return fail("Archive storage unavailable.",503);
@@ -181,7 +183,7 @@ export async function handleTexArchive(request,env,user) {
     const restored=body.document;
     if(!validRestored(restored,id,userId))return fail("Restored project is invalid or too large.",400);
     const now=new Date().toISOString();
-    const doc={...restored,id,owner_id:userId,created_at:restored.created_at||now,
+    const doc={...restored,id,owner_id:userId,realtime_epoch:crypto.randomUUID(),created_at:restored.created_at||now,
       updated_at:now,locked:false,locked_files:[],locked_folders:[]};
     await env.STORAGE.put(docKey(userId,id),JSON.stringify(doc),{
       httpMetadata:{contentType:"application/json;charset=UTF-8"},
