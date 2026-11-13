@@ -7,25 +7,18 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"errors"
+	"strconv"
 	"strings"
 	"time"
 )
 
-// A foreground launch of a newly downloaded Bridge is also the update path.
-// Stop only a verified QssedA listener on the fixed loopback port before
-// installSelf replaces the installed EXE. This prevents an old Bridge process
-// from continuing to own 32145 after an upgrade.
-func init() {
-	args := os.Args[1:]
-	if hasArg(args, "--background") || hasArg(args, "--uninstall") {
-		return
-	}
-	_ = stopVerifiedBridgeForUpgrade()
-}
-
+// Upgrades are explicit and occur only after installer preflight checks.
+// There are deliberately no init() side effects or process kills on launch.
 type upgradeHealth struct {
 	Service  string `json:"service"`
 	Protocol int    `json:"protocol"`
+	Runtime string `json:"runtime"`
 }
 
 func stopVerifiedBridgeForUpgrade() error {
@@ -34,8 +27,20 @@ func stopVerifiedBridgeForUpgrade() error {
 	}
 
 	pid := listenerPIDForUpgrade()
-	if pid == "" || pid == fmt.Sprint(os.Getpid()) {
-		return nil
+	if pid == "" {
+		return errors.New("could not identify the previous Bridge listener; refusing to kill an unknown process")
+	}
+	if pid == fmt.Sprint(os.Getpid()) {
+		return errors.New("refusing to stop the currently running installer")
+	}
+	pidNumber, parseErr := strconv.Atoi(pid)
+	if parseErr != nil { return fmt.Errorf("invalid listener PID: %w",parseErr) }
+	actualPath, pathErr := processImagePath(pidNumber)
+	if pathErr != nil { return fmt.Errorf("cannot verify previous Bridge process path: %w",pathErr) }
+	installedPath, installErr := installedBridgePath()
+	if installErr != nil { return installErr }
+	if !samePath(actualPath,installedPath) {
+		return fmt.Errorf("listener PID %s belongs to %q, not installed AERTEX Bridge; no process was terminated",pid,actualPath)
 	}
 
 	cmd := exec.Command("taskkill.exe", "/PID", pid, "/F")
@@ -71,7 +76,7 @@ func verifiedBridgeForUpgrade() bool {
 	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
 		return false
 	}
-	return payload.Service == bridgeService && payload.Protocol == protocol
+	return payload.Service == bridgeService && payload.Protocol == protocol && payload.Runtime == "native-windows"
 }
 
 func listenerPIDForUpgrade() string {
