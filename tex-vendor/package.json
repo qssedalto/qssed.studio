@@ -19,7 +19,8 @@
     "@tiptap/extension-table": "3.32.0",
     "@tiptap/extension-task-list": "3.32.0",
     "@tiptap/extension-task-item": "3.32.0",
-    "@tiptap/extension-image": "3.32.0"
+    "@tiptap/extension-image": "3.32.0",
+    "@lezer/highlight": "1.2.5"
   },
   "devDependencies": {
     "esbuild": "0.25.12"
