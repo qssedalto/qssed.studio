@@ -29,7 +29,7 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
   const bridge='https://qsseda.com/api/work/bridge/windows';
   const iso='https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=w9mHFn';
   const css=`<style id="tex-device-readiness-style">
-  .tex-work-app.is-tex-mobile .tex-compiler-card,
+  .tex-work-app.is-tex-mobile .tex-compiler-card,\n  .tex-work-app.is-tex-mobile #tex-compiler-pill,
   .tex-work-app.is-tex-mobile .tex-live-preview-toggle,
   .tex-work-app.is-tex-mobile .tex-live-preview-foot>span{display:none!important}
   .tex-work-app.is-tex-mobile .tex-live-preview-foot:has(#tex-live-preview-open[hidden]){display:none!important}
