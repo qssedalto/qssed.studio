@@ -67,6 +67,12 @@ assert(workProject.includes('id="tex-project-dialog"') &&
   workProject.includes('id="tex-project-file"'), "Project creation and ZIP modal missing");
 assert(workProject.includes('window.__aertexTexProjectOpenDialog=openDialog'),
   "Welcome card must directly open its selected project dialog");
+assert(workProject.includes("navigator.language") &&
+  workProject.includes("home.href='https://work.qsseda.com/'+deviceLocale()+'/tex'") &&
+  workProject.includes("'zh-hant'") && workProject.includes("'ja-jp'") &&
+  workProject.includes("'ar-sa'"),
+  "TeX home button must follow device language across supported localized routes.");
+
 assert(!workProject.includes('const template=templates[document.getElementById('),
   "Legacy instant-create template path should be disabled");
 for (const [index,match] of [...workProject.matchAll(/<script(?:\s+[^>]*)?>([\s\S]*?)<\/script>/g)].entries()){

@@ -143,6 +143,17 @@ assert.equal(unknown.status,400);
 new Function(TEX_FILE_MODAL_RUNTIME.replace("__COPY__", JSON.stringify({zh:true})));
 const markup=enhanceTexProjectControls('<body>'+texWorkbenchContent(true)+'</body>',true);
 assert(markup.includes('id="tex-create" type="button" disabled'),"Plus should be disabled before a project is active.");
+assert(markup.includes('id="tex-project-home"') &&
+  markup.indexOf('id="tex-project-home"') < markup.indexOf('id="tex-project-new-trigger"') &&
+  markup.indexOf('id="tex-project-new-trigger"') < markup.indexOf('id="tex-create"'),
+  "Home, New Project, and plus must appear in that order within one create row.");
+assert(markup.includes('grid-template-columns:38px minmax(0,1fr) 38px!important') &&
+  markup.includes('grid-template-columns:48px minmax(0,1fr) 48px!important'),
+  "Home control must have equal square tracks to the plus on desktop and mobile.");
+assert(markup.includes('aria-label="返回 TeX 首页"') &&
+  markup.includes('https://work.qsseda.com/en-us/tex'),
+  "Icon must have an accessible label and a safe same-tab work home destination.");
+
 assert(markup.includes("window.__aertexFileSetActive?.(activeDocument)"),"Active project must control plus.");
 assert(markup.includes("window.__aertexTexFileOpenDialog?.()"),"Plus must open file dialog, not new-project menu.");
 for(const id of ["tex-file-dialog","tex-file-panel-upload","tex-file-panel-new",
