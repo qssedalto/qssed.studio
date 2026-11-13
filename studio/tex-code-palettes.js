@@ -1,5 +1,5 @@
-// Curated accessible, independent CODE EDITOR syntax palettes.
-// Never change the site's global appearance, PDF preview, or TeX source.
+// Accessible syntax palettes for AERTEX Work. Selection is independent of site appearance.
+// A light and dark palette may be configured separately; all token colors >=4.5:1.
 export const WORK_TEX_CODE_PALETTES = Object.freeze({
   "auto-dark": {
     "dark": true,
@@ -162,6 +162,96 @@ export const WORK_TEX_CODE_PALETTES = Object.freeze({
     "symbol": "#a40e26",
     "variable": "#24292f",
     "link": "#0969da"
+  },
+  "one-light": {
+    "dark": false,
+    "bg": "#fafafa",
+    "fg": "#303846",
+    "gutter": "#f0f2f5",
+    "gutterText": "#5f6878",
+    "line": "#e8eef5",
+    "selection": "#d5e4fc",
+    "caret": "#246b99",
+    "comment": "#627184",
+    "command": "#225d9b",
+    "keyword": "#8850a1",
+    "string": "#40743d",
+    "number": "#9b511a",
+    "symbol": "#8b5692",
+    "variable": "#283443",
+    "link": "#1a6994"
+  },
+  "nord-light": {
+    "dark": false,
+    "bg": "#eceff4",
+    "fg": "#2e3440",
+    "gutter": "#e3e9f0",
+    "gutterText": "#526171",
+    "line": "#dae3ee",
+    "selection": "#c7dae8",
+    "caret": "#276477",
+    "comment": "#566777",
+    "command": "#28627b",
+    "keyword": "#85507f",
+    "string": "#346a54",
+    "number": "#985c3e",
+    "symbol": "#775285",
+    "variable": "#303a49",
+    "link": "#25607f"
+  },
+  "catppuccin-latte": {
+    "dark": false,
+    "bg": "#eff1f5",
+    "fg": "#303446",
+    "gutter": "#e6e9ef",
+    "gutterText": "#5b6475",
+    "line": "#dce0e8",
+    "selection": "#c3d6fa",
+    "caret": "#4564aa",
+    "comment": "#646c7f",
+    "command": "#235d99",
+    "keyword": "#873fa8",
+    "string": "#287747",
+    "number": "#a34428",
+    "symbol": "#895b23",
+    "variable": "#303446",
+    "link": "#23638c"
+  },
+  "solarized-light": {
+    "dark": false,
+    "bg": "#fdf6e3",
+    "fg": "#364449",
+    "gutter": "#f3edd9",
+    "gutterText": "#5c6a63",
+    "line": "#eae3cf",
+    "selection": "#cbdfe1",
+    "caret": "#235f64",
+    "comment": "#64736c",
+    "command": "#1d658b",
+    "keyword": "#7e5800",
+    "string": "#20715d",
+    "number": "#a6416a",
+    "symbol": "#9d5429",
+    "variable": "#34464c",
+    "link": "#296c89"
+  },
+  "rose-pine-dawn": {
+    "dark": false,
+    "bg": "#faf4ed",
+    "fg": "#3f3749",
+    "gutter": "#f1e9e4",
+    "gutterText": "#6e6572",
+    "line": "#eadfda",
+    "selection": "#dfd4e5",
+    "caret": "#8e4e7a",
+    "comment": "#756a77",
+    "command": "#965274",
+    "keyword": "#7554a0",
+    "string": "#386b64",
+    "number": "#9b543b",
+    "symbol": "#8b5c2c",
+    "variable": "#3f3749",
+    "link": "#346f8b"
   }
 });
 export const WORK_TEX_CODE_CHOICES = Object.freeze([
@@ -209,5 +299,35 @@ export const WORK_TEX_CODE_CHOICES = Object.freeze([
     "github-light",
     "GitHub Light",
     "GitHub Light"
+  ],
+  [
+    "auto-light",
+    "AERTEX 浅色",
+    "AERTEX Light"
+  ],
+  [
+    "one-light",
+    "One Light",
+    "One Light"
+  ],
+  [
+    "nord-light",
+    "Nord Light",
+    "Nord Light"
+  ],
+  [
+    "catppuccin-latte",
+    "Catppuccin Latte",
+    "Catppuccin Latte"
+  ],
+  [
+    "solarized-light",
+    "Solarized Light",
+    "Solarized Light"
+  ],
+  [
+    "rose-pine-dawn",
+    "Rosé Pine Dawn",
+    "Rosé Pine Dawn"
   ]
 ]);
