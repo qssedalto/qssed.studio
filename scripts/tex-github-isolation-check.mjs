@@ -139,6 +139,10 @@ assert.equal((schema.match(/create or replace function public\.tex_gh_reserve_cr
 const progressHtml = enhanceTexGithubWorkbench('<aside class="tex-runs-panel"><div class="tex-compiler-card"></div></aside>',true);
 assert(progressHtml.includes('id="tex-gh-progress"'),"GitHub progress must be visible in the optional panel.");
 assert(progressHtml.includes('id="tex-gh-preview-state"'),"GitHub PDF must have a non-white verified loading state.");
+assert(progressHtml.includes("container-type:inline-size") &&
+  progressHtml.includes("height:clamp(760px,calc(141.4cqw + 64px),1680px)") &&
+  !progressHtml.includes("height:330px"),
+  "The GitHub PDF iframe must be approximately one A4 page tall, responsive to its preview width.");
 assert(progressHtml.includes('id="tex-gh-view-work"'),"Compact touch devices need an in-Work PDF reader.");
 assert(progressHtml.includes("String.fromCharCode(...magic) !== '%PDF-'"),"PDF must be validated before preview.");
 assert(progressHtml.includes("window.setInterval(poll, 5000)"),"Compile status must poll promptly.");
