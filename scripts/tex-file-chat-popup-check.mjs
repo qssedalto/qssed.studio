@@ -19,6 +19,15 @@ for (const zh of [true,false]) {
     "Verification help link must appear only when this project is registered");
   assert(helpCode.includes('reset()') && code.includes('window.__aertexPasskeyHelp?.reset()'),
     "Changing projects must hide the verification tutorial and its link");
+  assert(html.includes('#aertex-filechat #aertex-chat-help-view[hidden]') &&
+    html.includes('display:none!important'),
+    "Tutorial must stay display:none whenever hidden, even if its visible rule is !important");
+  assert(helpCode.includes('panel.append(guide)') &&
+    !helpCode.includes("panel.querySelector('.body').append(guide)"),
+    "Tutorial must overlay the entire chat panel, not render halfway down the chat body");
+  assert(helpCode.includes("panel.classList.remove('passkey-guide-open')") &&
+    !helpCode.includes('unlock.hidden = false'),
+    "Returning from tutorial must restore underlying verification state without forcing it visible");
   for(const [step,encoded] of Object.entries(PASSKEY_GUIDE_SCREENSHOTS)){
     const image=Buffer.from(encoded,"base64");
     assert(image.length>1800&&image.subarray(0,4).toString("ascii")==="RIFF"&&
