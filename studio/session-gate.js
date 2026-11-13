@@ -3,6 +3,7 @@ import { html, json } from "./routing.js";
 import { baseHead, supabaseScript } from "./ui-page.js";
 import { workerLog } from "./server-runtime.js";
 import { authOriginForRequest, isServiceHost, rootDomainForHost } from "./domain-family.js";
+import { refreshBrowserAuthSession } from "../auth-browser-refresh.js";
 
 // AERTEX 的浏览器会话分成两层：
 // 1. __Host-* access/refresh Cookie 只属于当前 host，防止一个子域伪造另一个子域的会话；
@@ -75,6 +76,8 @@ export async function verifyStudioPageSession(request) {
     return true;
   };
 
+  let temporarilyUnavailable = false;
+  let refreshRecoveryCookies = [];
   if (accessToken) {
     const verified = await verifyAccessToken(accessToken);
     if (verified.ok && identityMatches(verified.user.id)) {
@@ -83,23 +86,34 @@ export async function verifyStudioPageSession(request) {
         : [];
       return { ok: true, user: verified.user, accessToken, cookies: migrationCookies };
     }
+    if (verified.temporary) temporarilyUnavailable = true;
   }
 
   if (refreshToken) {
-    const refreshed = await refreshSession(refreshToken);
-    if (refreshed?.access_token && refreshed?.refresh_token) {
+    const result = await refreshBrowserAuthSession(refreshToken);
+    if (result.kind === "unavailable") temporarilyUnavailable = true;
+    if (result.kind === "ok") {
+      const refreshed = result.payload;
+      refreshRecoveryCookies = studioSessionCookies(refreshed.access_token, refreshed.refresh_token, refreshed.expires_in, request);
       const verified = await verifyAccessToken(refreshed.access_token);
       if (verified.ok && identityMatches(verified.user.id)) {
         return {
           ok: true,
           user: verified.user,
           accessToken: refreshed.access_token,
-          cookies: studioSessionCookies(refreshed.access_token, refreshed.refresh_token, refreshed.expires_in, request)
+          cookies: refreshRecoveryCookies
         };
       }
+      if (verified.temporary) temporarilyUnavailable = true;
     }
   }
 
+  // Temporary network, 429 or upstream 5xx must not silently erase a valid
+  // session cookie. A retry can recover; only definitive invalidity clears it.
+  if (temporarilyUnavailable) {
+    workerLog("warn", "session_gate.temporarily_unavailable", { host: hostname });
+    return { ok: false, temporary: true, accessToken: "", cookies: refreshRecoveryCookies };
+  }
   return {
     ok: false,
     accessToken: "",
@@ -233,15 +247,15 @@ async function verifyAccessToken(accessToken) {
     });
   } catch (error) {
     workerLog("warn", "session_gate.user_lookup_failed", { error_type: error?.name || "Error" });
-    return { ok: false };
+    return { ok: false, temporary: true };
   }
-  if (!userResponse.ok) return { ok: false };
+  if (!userResponse.ok) return { ok: false, temporary: userResponse.status === 429 || userResponse.status >= 500 };
 
   let user;
   try {
     user = await userResponse.json();
   } catch {
-    return { ok: false };
+    return { ok: false, temporary: true };
   }
   if (!isUuid(user?.id)) return { ok: false };
 
@@ -252,42 +266,21 @@ async function verifyAccessToken(accessToken) {
     });
   } catch (error) {
     workerLog("warn", "session_gate.profile_lookup_failed", { user_id: user.id, error_type: error?.name || "Error" });
-    return { ok: false };
+    return { ok: false, temporary: true };
   }
-  if (!profileResponse.ok) return { ok: false };
+  if (!profileResponse.ok) return { ok: false, temporary: profileResponse.status === 429 || profileResponse.status >= 500 };
 
   let profiles;
   try {
     profiles = await profileResponse.json();
   } catch {
-    return { ok: false };
+    return { ok: false, temporary: true };
   }
   if (!Array.isArray(profiles) || profiles.length !== 1 || profiles[0]?.status !== "active") return { ok: false };
 
   return { ok: true, user };
 }
 
-/// access token 过期时用 refresh token 换新会话；成功后上层会同时轮换浏览器 Cookie。
-// 刷新令牌只发送到 Supabase 的 refresh_token 端点；异常路径避免记录敏感令牌，调用方负责把成功结果写回安全 Cookie。
-async function refreshSession(refreshToken) {
-  let response;
-  try {
-    response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-      method: "POST",
-      headers: { apikey: SUPABASE_KEY, "content-type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken })
-    });
-  } catch (error) {
-    workerLog("warn", "session_gate.refresh_failed", { error_type: error?.name || "Error" });
-    return null;
-  }
-  if (!response.ok) return null;
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
-}
 
 function cookie(name, value, maxAge) {
   return `${name}=${encodeURIComponent(value || "")}; Path=/; Max-Age=${Math.max(0, Number(maxAge) || 0)}; HttpOnly; Secure; SameSite=Lax`;

@@ -2,6 +2,7 @@ import { SUPABASE_URL, SUPABASE_KEY } from "./studio/config.js";
 import { QSS_DOMAIN_ROOTS, authOrigins, rootDomainForHost, serviceOrigin } from "./studio/domain-family.js";
 import { FAVICON_LINKS } from "./studio/favicon.js";
 import { injectBrandLogoRuntime } from "./studio/brand-logo.js";
+import { refreshBrowserAuthSession, temporarilyUnavailableResponse } from "./auth-browser-refresh.js";
 
 const ACCESS_COOKIE = "__Host-qsseda-access";
 const REFRESH_COOKIE = "__Host-qsseda-refresh";
@@ -45,7 +46,8 @@ async function startSync(request) {
 
   const session = await currentSession(request);
   const next = safeNextPath(url.searchParams.get("next"));
-  if (!session) {
+  if (session.kind === "unavailable") return withCookies(temporarilyUnavailableResponse(), session.cookies || []);
+  if (session.kind !== "ok") {
     const login = new URL("/login", url.origin);
     if (next) login.searchParams.set("next", next);
     return redirect(login.toString());
@@ -55,7 +57,7 @@ async function startSync(request) {
   // one sign-in visibly bounce through multiple Auth hosts and is not required
   // for the active application handoff. Legacy /sso/import stays available for
   // explicit migrations, but ordinary sign-in finishes locally.
-  return finishUrl(url.origin, next);
+  return withCookies(finishUrl(url.origin, next), session.cookies || []);
 }
 
 async function importSync(request) {
@@ -100,14 +102,44 @@ async function importSync(request) {
 
 async function currentSession(request) {
   const cookies = parseCookies(request.headers.get("Cookie") || "");
-  const accessToken = cookies[ACCESS_COOKIE] || "";
-  const refreshToken = cookies[REFRESH_COOKIE] || "";
-  if (!accessToken || !refreshToken) return null;
-  const user = await fetchUser(accessToken);
-  if (!user) return null;
-  const profile = await fetchProfile(accessToken, user.id);
-  if (profile?.status !== "active") return null;
-  return { accessToken, refreshToken, user };
+  let accessToken = cookies[ACCESS_COOKIE] || "";
+  let refreshToken = cookies[REFRESH_COOKIE] || "";
+  if (!refreshToken) return { kind: "invalid" };
+  let user = accessToken ? await fetchUser(accessToken) : null;
+  let rotated = null;
+
+  // The one-hour access cookie can expire while the 30-day refresh cookie
+  // remains valid. Never send a user to /login without attempting recovery.
+  if (!user) {
+    const result = await refreshBrowserAuthSession(refreshToken);
+    if (result.kind !== "ok") return { kind: result.kind };
+    rotated = result.payload;
+    accessToken = rotated.access_token;
+    refreshToken = rotated.refresh_token;
+    user = rotated.user;
+  }
+  const profile = await fetchProfileStatus(accessToken, user.id);
+  if (profile.kind !== "ok") return { kind: profile.kind,
+    cookies: rotated ? sessionCookies(accessToken, refreshToken) : [] };
+  return {
+    kind: "ok", accessToken, refreshToken, user,
+    cookies: rotated ? sessionCookies(accessToken, refreshToken) : []
+  };
+}
+
+async function fetchProfileStatus(accessToken, userId) {
+  try {
+    const url = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
+    url.searchParams.set("select", "status");
+    url.searchParams.set("id", `eq.${userId}`);
+    url.searchParams.set("limit", "1");
+    const response = await fetch(url.toString(), {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` }
+    });
+    if (!response.ok) return { kind: [400,401,403,404].includes(response.status) ? "invalid" : "unavailable" };
+    const rows = await response.json();
+    return { kind: Array.isArray(rows) && rows.length === 1 && rows[0]?.status === "active" ? "ok" : "invalid" };
+  } catch { return { kind: "unavailable" }; }
 }
 
 function syncForm(targetOrigin, accessToken, refreshToken, remaining, returnTo) {

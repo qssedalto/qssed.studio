@@ -20,6 +20,7 @@ import { injectBrandLogoRuntime, LOGO_PATHS, logoResponse } from "./studio/brand
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles, injectAccountMenuRuntime } from "./studio/account-menu.js";
 import { intelligenceThemeAttr, intelligenceThemeBootScript, intelligenceThemeFromRequest } from "./studio/intelligence-theme.js";
 import { IPHONE_THEME_DEFAULT, IPHONE_THEME_PALETTE } from "./studio/iphone-theme-palette.js";
+import { refreshBrowserAuthSession, temporarilyUnavailableResponse } from "./auth-browser-refresh.js";
 
 const SUPABASE_URL = "https://xunbsoxijasekzadckob.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1ScwEvseisteYNgc5xM1pQ_NNekUmF1";
@@ -448,6 +449,8 @@ async function handleSession(request) {
     const authUser = await fetchUser(accessToken);
     if (authUser) {
       const profile = await fetchProfile(accessToken, authUser.id);
+      // A temporary profile lookup outage is not an unauthenticated session.
+      if (!profile) return json({ error: "Authentication temporarily unavailable", code: "auth_temporarily_unavailable" }, 503);
       return json(sessionPayload(publicUser(authUser, profile)));
     }
   }
@@ -456,12 +459,19 @@ async function handleSession(request) {
     return json({ authenticated: false, authorized: false }, 200, accessToken ? clearSessionCookies() : []);
   }
 
-  const refreshed = await refreshSession(refreshToken);
-  if (!refreshed) {
+  const result = await refreshBrowserAuthSession(refreshToken);
+  if (result.kind === "unavailable") {
+    // Never erase a potentially valid 30-day session during a network error.
+    return json({ error: "Authentication temporarily unavailable", code: "auth_temporarily_unavailable" }, 503);
+  }
+  if (result.kind === "invalid") {
     return json({ authenticated: false, authorized: false }, 200, clearSessionCookies());
   }
-
+  const refreshed = result.payload;
   const profile = await fetchProfile(refreshed.access_token, refreshed.user.id);
+  if (!profile) {
+    return json({ error: "Authentication temporarily unavailable", code: "auth_temporarily_unavailable" }, 503, sessionCookies(refreshed));
+  }
   const user = publicUser(refreshed.user, profile);
   return json(sessionPayload(user), 200, sessionCookies(refreshed));
 }
@@ -517,8 +527,10 @@ async function handleContinue(request, env) {
   let rotated = null;
 
   if (!authUser && refreshToken) {
-    rotated = await refreshSession(refreshToken);
-    if (rotated) {
+    const result = await refreshBrowserAuthSession(refreshToken);
+    if (result.kind === "unavailable") return temporarilyUnavailableResponse();
+    if (result.kind === "ok") {
+      rotated = result.payload;
       accessToken = rotated.access_token;
       refreshToken = rotated.refresh_token;
       authUser = rotated.user;
@@ -530,6 +542,8 @@ async function handleContinue(request, env) {
   }
 
   const profile = await fetchProfile(accessToken, authUser.id);
+  if (!profile) return withBrowserAuthCookies(temporarilyUnavailableResponse(),
+    rotated ? sessionCookies(rotated) : []);
   const user = publicUser(authUser, profile);
   if (user.status !== ACTIVE_STATUS) {
     return redirectResponse("/account");
@@ -733,6 +747,13 @@ function friendlyAuthError(payload, locale = "en-us") {
   if (message.includes("email not confirmed")) return errors[1];
   if (message.includes("too many")) return errors[2];
   return errors[3];
+}
+
+function withBrowserAuthCookies(response, cookies) {
+  if (!cookies.length) return response;
+  const headers = new Headers(response.headers);
+  for (const value of cookies) headers.append("set-cookie", value);
+  return new Response(response.body, { status: response.status, headers });
 }
 
 function sessionCookies(payload) {
