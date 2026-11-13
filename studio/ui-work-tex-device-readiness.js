@@ -34,7 +34,7 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
   .tex-work-app.is-tex-mobile .tex-live-preview-foot>span{display:none!important}
   .tex-work-app.is-tex-mobile .tex-live-preview-foot:has(#tex-live-preview-open[hidden]){display:none!important}
   .tex-work-app.is-tex-mobile .tex-live-preview-head{justify-content:flex-start!important}
-  .tex-work-app .tex-first-run-windows[hidden],.tex-work-app .tex-windows-steps[hidden]{display:none!important}
+  .tex-work-app.is-tex-windows-setup .tex-compiler-card{display:none!important}\n  .tex-work-app .tex-first-run-windows[hidden],.tex-work-app .tex-windows-steps[hidden]{display:none!important}
   .tex-work-app .tex-first-run-windows{display:grid;gap:10px;margin:9px;padding:13px;
    border:1px solid var(--border);border-radius:13px;background:var(--surface);color:var(--text)}
   .tex-work-app .tex-first-run-windows h3{margin:0;font-size:13px;font-weight:700;line-height:1.4}
@@ -108,6 +108,7 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
     function sync(data){
       if(!data||typeof data!=='object')return;
       panel.hidden=Boolean(data.localSupported);
+      root.classList.toggle('is-tex-windows-setup',!data.localSupported && !data.cloudAvailable);
       if(panel.hidden)return;
       const hasBridge=Boolean(data.localDetected);
       description.textContent=hasBridge?copy.unsupported:
