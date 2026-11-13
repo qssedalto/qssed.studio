@@ -99,4 +99,67 @@ assert(code.indexOf("selectTexGithubCompileFiles(doc)")<code.indexOf("await rese
 assert(!code.includes("extras.length>24"),"Legacy 24-file compiler limit must be removed.");
 assert(!code.includes('throw httpError(400,"unsafe_project_path")'),"Compiler should safely skip non-TeX extras.");
 
+
+// One managed repository holds multiple independent TeX projects on branches.
+// Compiling another project must never overwrite the previously built source.
+assert(code.includes("name, private: false, auto_init: true"),
+  "New compilation repositories must be public by default");
+assert(code.includes("acknowledgement?.ack_public !== true"),
+  "Public repository creation must require explicit user consent");
+assert(!code.includes("|| !actual.private"),
+  "Legacy private managed repositories must remain valid until migration");
+assert(code.includes("ref: projectBranch"),
+  "Workflow dispatch must use the selected document's isolated branch");
+const visibilityStart=code.indexOf("function verifyManagedRepo(");
+const branchEnd=code.indexOf("function b64(",visibilityStart);
+assert(visibilityStart>0&&branchEnd>visibilityStart,"Managed repository and project branch helpers missing");
+const branchCalls=[],existingBranches=new Map(),shaMain="f".repeat(40);
+function mockedGithub(_env,path,method="GET",body){
+  branchCalls.push({path,method,body});
+  const prefix="/repos/operator/aertex-tex-"+("a".repeat(32));
+  assert(path.startsWith(prefix),"Unexpected managed repository path: "+path);
+  const rest=path.slice(prefix.length);
+  if(rest==="/git/ref/heads/main"&&method==="GET")return Promise.resolve({object:{sha:shaMain}});
+  if(rest.startsWith("/git/ref/heads/")&&method==="GET"){
+    const branch=rest.slice("/git/ref/heads/".length);
+    if(existingBranches.has(branch))return Promise.resolve({object:{sha:existingBranches.get(branch)}});
+    const notFound=new Error("not found");notFound.status=404;return Promise.reject(notFound);
+  }
+  if(rest==="/git/refs"&&method==="POST"){
+    existingBranches.set(body.ref.slice("refs/heads/".length),body.sha);
+    return Promise.resolve({ref:body.ref,object:{sha:body.sha}});
+  }
+  throw Error("Unexpected GitHub request: "+method+" "+path);
+}
+const helpers=new Function("github","httpError","isStorageObjectId",
+  code.slice(visibilityStart,branchEnd)+
+  "\nreturn {verifyManagedRepo,projectBranchName,ensureProjectBranch};")(
+    mockedGithub,mockHttpError,
+    id=>/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id)
+  );
+const docA="11111111-1111-4111-8111-111111111111",docB="22222222-2222-4222-8222-222222222222";
+const branchA=await helpers.ensureProjectBranch({},"/repos/operator/aertex-tex-"+("a".repeat(32)),"main",docA);
+const branchB=await helpers.ensureProjectBranch({},"/repos/operator/aertex-tex-"+("a".repeat(32)),"main",docB);
+assert.notEqual(branchA,branchB);
+assert.match(branchA,/^tex-project-[a-f0-9]{32}$/);
+assert.equal(existingBranches.size,2);
+assert.equal(branchCalls.filter(x=>x.method==="POST").length,2);
+assert.equal(await helpers.ensureProjectBranch({},"/repos/operator/aertex-tex-"+("a".repeat(32)),"main",docA),branchA);
+assert.equal(branchCalls.filter(x=>x.method==="POST").length,2,"Existing project branch must be reused");
+for(const visibility of [true,false]){
+  assert.doesNotThrow(()=>helpers.verifyManagedRepo(
+    {AERTEX_TEX_GITHUB_OWNER:"operator"},
+    {id:100,name:"aertex-tex-"+("a".repeat(32)),owner:{login:"operator"},private:visibility},
+    100,"aertex-tex-"+("a".repeat(32))));
+}
+assert.throws(()=>helpers.verifyManagedRepo({AERTEX_TEX_GITHUB_OWNER:"operator"},
+  {id:101,name:"aertex-tex-"+("a".repeat(32)),owner:{login:"operator"},private:false},
+  100,"aertex-tex-"+("a".repeat(32))),/repository_identity_mismatch/);
+const migration=fs.readFileSync(new URL("./tex-github-publish-managed-repos.mjs",import.meta.url),"utf8");
+assert(migration.includes('const NAME=/^aertex-tex-[a-f0-9]{32}$/') &&
+  migration.includes('const execute=args.has("--execute")') &&
+  migration.includes('const acknowledged=args.has("--ack-public-history")') &&
+  migration.includes('await request(path,"PATCH",{private:false})'),
+  "One-time migration must be restricted to managed repos, default to dry run, and require explicit history acknowledgement");
+
 console.log("500-file Work project compile selection, pinned workflow isolation, and atomic snapshot verified.");
