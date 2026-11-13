@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { enhanceWorkTexCollaboration } from "../studio/ui-work-tex-collaboration-instant.js";
 import { mapTexPositionThroughYDelta, mapTexPositionThroughTextChange } from "../studio/ui-work-tex-realtime.js";
 import { TexCollaborationRoom, safeCollaborationAccent } from "../studio/tex-collaboration-room.js";
+import { texRealtimeEpoch, texRealtimeRoomName } from "../studio/tex-realtime-epoch.js";
 import { IPHONE_THEME_PALETTE } from "../studio/iphone-theme-palette.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexWorkbenchLocal } from "../studio/ui-tex-local.js";
@@ -48,6 +49,40 @@ assert(perfSource.includes("userSearchCache.delete(key)") &&
   perfSource.includes("if (results.length &&"),
   "Negative or eight-row prefix caches must never conceal newly discoverable accounts");
 
+
+// The R2 project source and current Yjs room MUST be the same revision.
+const ownerId="11111111-1111-4111-8111-111111111111";
+const documentId="22222222-2222-4222-8222-222222222222";
+const newEpoch="33333333-3333-4333-8333-333333333333";
+assert.equal(texRealtimeEpoch(null),"v2");
+assert.equal(texRealtimeEpoch({realtime_epoch:newEpoch}),newEpoch);
+assert.notEqual(texRealtimeRoomName(ownerId,documentId,"v2"),ownerId+":"+documentId,
+  "Legacy Yjs rooms must be isolated on first reconnect");
+assert.notEqual(texRealtimeRoomName(ownerId,documentId,"v2"),
+  texRealtimeRoomName(ownerId,documentId,newEpoch),
+  "Replacing main.tex must not replay an old Yjs snapshot");
+const realtimeRoute=load("tex-collaboration-realtime.js");
+const fileApi=load("tex-project-files-api.js");
+const coreApi=load("tex-api-core.js");
+const sharedApi=load("tex-collaboration-shared.js");
+const projectUi=load("ui-tex-project-controls.js");
+const historyApi=load("tex-version-api.js");
+assert(realtimeRoute.includes('texRealtimeRoomName(access.owner_id, documentId, realtimeEpoch)') &&
+  realtimeRoute.includes('documentHead.customMetadata?.realtimeEpoch'),
+  "Authorized websocket handshake must resolve the current source room from R2 metadata");
+assert(fileApi.includes('doc.realtime_epoch = mainEntryRebased ? rotateTexRealtimeEpoch()') &&
+  fileApi.includes('source-rebased') && room.includes('/source-rebased'),
+  "Root import/deletion must rotate the CRDT and disconnect stale collaboration sockets");
+assert(coreApi.includes('code: "main_revision_changed"') &&
+  sharedApi.includes('code:"main_revision_changed"'),
+  "Old collaboration tabs must never autosave over a replaced main.tex");
+assert(historyApi.includes("realtime_epoch: crypto.randomUUID()") &&
+  historyApi.includes("...current"),
+  "Restoring a historical version must rebase CRDT without discarding supporting files");
+assert(projectUi.includes("aertex:tex-source-rebased") &&
+  realtime.includes("aertex:tex-source-refreshed") &&
+  realtime.includes("if (event.code === 4004)"),
+  "A stale peer must reload authenticated source before joining the new room");
 
 assert.match(room, /client_id:\s*crypto\.randomUUID\(\)/, "Each socket needs an independent identity.");
 assert.match(room, /client_id:\s*participant\.client_id/, "Broadcasts and sync must expose socket identity.");
