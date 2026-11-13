@@ -252,6 +252,9 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
               button.textContent = labels.compiling;
               const full = await getVersion(version.document_id, version.id);
               const pdf = await compileVersionPdf(full);
+              // An explicitly compiled historical version is a real PDF result:
+              // display it in the right reader as well as offering the download.
+              window.__aertexOpenCompiledPdf?.(pdf);
               downloadBlob(pdf, safeName(full.title) + '.pdf');
             }));
             actions.append(actionButton(labels.downloadTex, '', async () => {
