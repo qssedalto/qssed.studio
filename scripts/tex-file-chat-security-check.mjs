@@ -142,12 +142,14 @@ const runtime=markup.match(/<script id="aertex-file-chat-runtime">([\s\S]*?)<\/s
 assert(runtime,"Chat runtime must be loaded on TeX Work");
 assert.doesNotThrow(()=>new vm.Script(runtime),"Client chat runtime must parse");
 for(const marker of ["navigator.credentials.create","navigator.credentials.get","indexedDB.open",
-  "deriveBits","AES-GCM","envelope-put","envelope-get","aertex:tex-chat-open","file_name",
+  "deriveBits","AES-GCM","envelope-put","envelope-get","aertex:tex-chat-toggle","file_name",
   "aertex:tex-project-asset-selected","pagehide"])assert(runtime.includes(marker),"Missing "+marker);
 assert(!runtime.includes("localStorage"),"Never persist room secret in localStorage");
 assert(!runtime.includes("sessionStorage"),"Passkey verification must not survive page reload");
+assert(runtime.includes("function toggleChat()"),"Popup should use a single toolbar toggle");
+assert(!runtime.includes("panel.querySelector(\'.close\')"),"No close button can bypass the toolbar icon");
 const toolbar=enhanceWorkTexToolbarScroll("",true);
-assert(toolbar.includes("aertex:tex-chat-open"));
+assert(toolbar.includes("aertex:tex-chat-toggle"));
 assert(!toolbar.includes("https://chat.qsseda.com/"));
 assert(!toolbar.includes("tex-collaboration-open')?.click()"));
 const worker=readFileSync(new URL("../worker.js",import.meta.url),"utf8");
