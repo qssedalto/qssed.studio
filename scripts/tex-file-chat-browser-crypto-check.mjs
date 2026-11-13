@@ -43,7 +43,7 @@ const qa=[
   "   if(panel.querySelector('#aertex-chat-passkey'))throw Error('Passkey UI must be removed');",
   "   if(panel.querySelector('#aertex-chat-help-view'))throw Error('Legacy Passkey help must be removed');",
   "   if(round==='fresh'){",
-  "     await until(()=>status.textContent.includes('等待项目密钥同步'));",
+  "     await until(()=>status.textContent.includes('等待加密密钥同步'));",
   "     if(panel.hidden||!send.disabled)throw Error('New encryption identity must wait for owner key');",
   "     document.body.dataset.filechatCryptoQa='PASS';return;",
   "   }",
