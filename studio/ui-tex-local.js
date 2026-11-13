@@ -367,12 +367,51 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             return true;
           }
 
+          const compileAssetExtensions = /\.(?:tex|sty|cls|bib|bst|bbx|cbx|def|dtx|ins|ltx|tikz|pgf|png|jpe?g|pdf|eps|ttf|otf)$/i;
+          const projectAssetCache = new Map();
+          function normalizedProjectAssets(record) {
+            if (!record || !Array.isArray(record.files)) throw new Error('Project files are unavailable.');
+            return record.files
+              .filter(asset => asset && typeof asset.name === 'string' && compileAssetExtensions.test(asset.name))
+              .map(asset => ({ name: asset.name, encoding: asset.encoding, content: asset.content }));
+          }
+          async function loadProjectAssets(id = String(root.dataset.texCollaborationDocumentId || '')) {
+            if (!id) return [];
+            const existing = window.__aertexFileGetContext?.()?.document;
+            if (existing?.id === id && Array.isArray(existing.files)) return normalizedProjectAssets(existing);
+            const cached = projectAssetCache.get(id);
+            if (cached && Date.now() - cached.at < 6000) return cached.files;
+            const response = await fetch('/api/tex/documents?id=' + encodeURIComponent(id), {
+              credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' }
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || payload?.document?.id !== id)
+              throw new Error(payload?.error || 'Unable to load TeX project dependencies.');
+            const files = normalizedProjectAssets(payload.document);
+            projectAssetCache.set(id, { files, at: Date.now() });
+            return files;
+          }
+          window.__aertexLoadTexCompileFiles = loadProjectAssets;
+          window.addEventListener('aertex:tex-file-updated', () => {
+            projectAssetCache.clear();
+            if (previewEnabled) markPreviewDirty(250);
+          });
+          window.addEventListener('aertex:tex-project-asset-selected', () => projectAssetCache.clear());
+
           async function requestLocalPdf(engineName, sourceText) {
             const started = performance.now();
+            const documentId = String(root.dataset.texCollaborationDocumentId || '');
+            const files = await loadProjectAssets(documentId);
+            if (files.length) {
+              const health = await readJson(await loopbackFetch(localBase, '/health'));
+              if (!Array.isArray(health?.capabilities) || !health.capabilities.includes('tex.project-files')) {
+                throw new Error("当前 AERTEX Bridge 版本不支持多文件 TeX 工程。请从 https://qsseda.com/api/work/bridge/windows 安装新版 Bridge 后重试。");
+              }
+            }
             const response = await loopbackFetch(localBase, '/tex/compile', {
               method: 'POST',
               accept: 'application/pdf, application/json',
-              body: JSON.stringify({ engine: engineName, source: sourceText, title: title?.value || '' })
+              body: JSON.stringify({ engine: engineName, source: sourceText, title: title?.value || '', files })
             });
             if (!response.ok) {
               const payload = await response.json().catch(() => ({}));
@@ -422,7 +461,10 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
               const diagnostic = String(error?.payload?.log || '').trim().split(/\\r?\\n/).filter(Boolean).slice(-2).join(' · ');
               const display = String(error?.message || localCopy.localFailed) + (diagnostic ? ' · ' + diagnostic.slice(0, 420) : '');
               if (previewOnly) {
-                if (snapshot === currentPreviewSnapshot()) setPreviewStatus('error', previewUrl ? localCopy.previewError : display);
+                if (snapshot === currentPreviewSnapshot()) {
+                  setPreviewStatus('error', display);
+                  if (message && !previewUrl) showMessage(display, true);
+                }
                 else {
                   previewDirty = true;
                   previewPending = true;
