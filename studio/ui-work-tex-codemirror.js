@@ -158,27 +158,63 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         .tex-work-app .tex-codemirror-host .cm-gutters{display:none!important}
         .tex-cm-remote-label{font-size:9px!important;padding:4px 6px!important}
       }
-      /* Palette applies ONLY to the source editor, never to the PDF,
-         Markdown WYSIWYG, collaboration cursors or global appearance. */
+
+      /* Code palettes are independent of the site and preview surfaces. */
       .tex-work-app .tex-editor-toolbar .tex-code-theme-picker{
-        flex:0 1 160px;min-width:120px;max-width:180px;
-        display:grid;gap:3px;align-self:end;margin:0
+        display:flex;flex:0 0 auto;align-items:center;align-self:end;position:relative;
+        min-width:0;margin:0;z-index:4
       }
-      .tex-work-app .tex-editor-toolbar .tex-code-theme-picker>span{
-        color:var(--muted);font-size:8px;line-height:1.3
+      .tex-work-app .tex-editor-toolbar #tex-code-theme-toggle{
+        display:flex!important;align-items:center!important;gap:5px!important;
+        min-height:34px!important;height:34px!important;max-width:165px!important;
+        padding:0 9px!important;margin:0!important;border:1px solid var(--border)!important;
+        border-radius:8px!important;background:var(--fill)!important;color:var(--text)!important;
+        box-shadow:none!important;cursor:pointer;font:600 11px/1.3 system-ui,sans-serif!important;
+        white-space:nowrap!important
       }
-      .tex-work-app .tex-editor-toolbar #tex-code-theme-select{
-        width:100%!important;height:36px!important;min-height:36px!important;
-        box-sizing:border-box!important;margin:0!important;
-        padding:0 25px 0 10px!important;border:1px solid var(--border)!important;
-        border-radius:9px!important;background:var(--fill)!important;color:var(--text)!important;
-        box-shadow:none!important;font:600 11px/1.3 system-ui,sans-serif!important;
-        cursor:pointer
-      }
-      .tex-work-app .tex-editor-toolbar #tex-code-theme-select:focus-visible{
+      .tex-work-app #tex-code-theme-toggle:focus-visible{
         outline:2px solid var(--primary)!important;outline-offset:2px
       }
+      .tex-code-theme-swatch{width:9px;height:9px;display:inline-block;flex:0 0 9px;
+        border-radius:3px;border:2px solid currentColor;box-sizing:content-box}
+      .tex-code-theme-swatch+.tex-code-theme-swatch{margin-left:-8px;margin-right:4px}
+      .tex-code-theme-caret{margin-left:2px;font-size:13px;color:var(--muted)}
       .tex-work-app #tex-editor.md-visual-mode .tex-code-theme-picker{display:none!important}
+      .tex-code-theme-popover{
+        box-sizing:border-box;position:fixed;z-index:2147480000;
+        width:min(560px,calc(100vw - 20px));max-height:calc(100dvh - 20px);
+        overflow:auto;padding:16px;border:1px solid var(--border);
+        border-radius:14px;background:var(--surface);color:var(--text);
+        box-shadow:0 14px 48px rgba(0,0,0,.28);
+        font:12px/1.5 system-ui,-apple-system,Segoe UI,sans-serif
+      }
+      .tex-code-theme-popover[hidden]{display:none!important}
+      .tex-code-theme-popover>header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .tex-code-theme-popover>header strong{font-size:15px;font-weight:700}
+      .tex-code-theme-popover>p{margin:6px 0 12px;color:var(--muted);font-size:11px}
+      .tex-code-theme-close{width:29px;height:29px;min-width:29px;border:0;border-radius:7px;
+        background:var(--fill);color:var(--text);font-size:19px;cursor:pointer}
+      .tex-code-theme-card-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+      .tex-code-theme-card{display:flex;min-width:0;flex-direction:column;gap:9px}
+      .tex-code-theme-card>label{font:650 12px/1.4 system-ui,sans-serif;display:grid;gap:7px}
+      .tex-code-theme-card select{height:36px;min-height:36px;width:100%;box-sizing:border-box;
+        border:1px solid var(--border);border-radius:8px;padding:0 9px;
+        background:var(--fill);color:var(--text);font-size:12px;cursor:pointer}
+      .tex-code-theme-card select:focus-visible,.tex-code-theme-close:focus-visible{
+        outline:2px solid var(--primary);outline-offset:2px}
+      .tex-code-theme-preview{box-sizing:border-box;border-radius:9px;
+        min-width:0;min-height:130px;padding:10px 7px;overflow:auto;
+        border:1px solid color-mix(in srgb,var(--text) 12%,transparent)}
+      .tex-code-theme-preview pre{margin:0;font:11px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace}
+      .tex-code-theme-preview pre>div{white-space:pre}
+      .tex-code-preview-number{display:inline-block;min-width:19px;margin-right:9px;text-align:right;user-select:none}
+      .tex-code-theme-card>small{font-size:10px;color:var(--muted)}
+      @media(max-width:570px){
+        .tex-code-theme-card-row{grid-template-columns:minmax(0,1fr)}
+        .tex-code-theme-preview{min-height:108px}
+        .tex-code-theme-preview pre{font-size:11px}
+        .tex-code-theme-popover{padding:12px}
+      }
       .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host,
       .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host>.cm-editor,
       .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host .cm-scroller{
@@ -206,9 +242,9 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
       @media(max-width:760px){
         .tex-work-app .tex-editor-toolbar{flex-wrap:wrap}
         .tex-work-app .tex-editor-toolbar .tex-code-theme-picker{
-          flex:0 1 132px;min-width:108px;max-width:146px
+          flex:0 0 auto;max-width:138px
         }
-        .tex-work-app .tex-editor-toolbar #tex-code-theme-select{
+        .tex-work-app .tex-editor-toolbar #tex-code-theme-toggle{
           height:32px!important;min-height:32px!important;font-size:10px!important
         }
       }
@@ -225,89 +261,259 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         if (!root || !source || !editor) return;
         let view = null;
 
-        // The global site theme remains independent. A user can choose a
-        // syntax palette for all Work project files; auto follows the site.
+
+        // Work code colors have two independently persisted choices.
+        // The SITE controls which choice is active; code colors never
+        // mutate the site theme, PDF canvas, or Markdown WYSIWYG.
         const codeColorSchemes = ${JSON.stringify(WORK_TEX_CODE_PALETTES)};
         const codeThemeChoices = ${JSON.stringify(WORK_TEX_CODE_CHOICES)};
         const codeThemeStorageKey = 'aertex.work.code-color-scheme.v1';
-        const validCodeThemeIds = new Set(codeThemeChoices.map(item => item[0]));
-        const readCodeTheme = () => {
-          try {
-            const stored = localStorage.getItem(codeThemeStorageKey);
-            if (validCodeThemeIds.has(stored)) return stored;
-          } catch {}
-          return 'auto';
+        const colorKeys = {
+          light: 'aertex.work.code-color-scheme.light.v2',
+          dark: 'aertex.work.code-color-scheme.dark.v2'
         };
-        let selectedCodeTheme = readCodeTheme();
+        const codeThemeById = new Map(codeThemeChoices.map(item => [item[0],item]));
+        const modeForSite = () => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+        const safeId = (id, mode) => codeColorSchemes[id] &&
+          codeColorSchemes[id].dark === (mode === 'dark') ? id : '';
+        const defaultId = mode => mode === 'dark' ? 'auto-dark' : 'auto-light';
+        const readChoice = mode => {
+          try {
+            const current = safeId(localStorage.getItem(colorKeys[mode]), mode);
+            if (current) return current;
+            // One-way compatibility with the earlier single-selector setting.
+            const legacy = safeId(localStorage.getItem(codeThemeStorageKey), mode);
+            if (legacy) return legacy;
+          } catch {}
+          return defaultId(mode);
+        };
+        const selectedCodeThemes = {
+          light: readChoice('light'),
+          dark: readChoice('dark')
+        };
         let codeThemeCompartment = null;
         let makeCodeThemeExtension = null;
-        const resolvedCodeThemeId = () => selectedCodeTheme === 'auto'
-          ? (document.documentElement.dataset.theme === 'dark' ? 'auto-dark' : 'auto-light')
-          : selectedCodeTheme;
-        const resolvedCodePalette = () => codeColorSchemes[resolvedCodeThemeId()] || codeColorSchemes['auto-light'];
+        const resolvedCodeThemeId = () => selectedCodeThemes[modeForSite()];
+        const resolvedCodePalette = () => codeColorSchemes[resolvedCodeThemeId()];
+        const zhPaletteUi = document.documentElement.lang.toLowerCase().startsWith('zh');
         const toolbar = editor.querySelector('.tex-editor-toolbar');
-        const picker = document.createElement('label');
+        const picker = document.createElement('div');
         picker.className = 'tex-code-theme-picker';
         picker.id = 'tex-code-theme-picker';
-        const pickerLabel = document.createElement('span');
-        pickerLabel.textContent = document.documentElement.lang.toLowerCase().startsWith('zh')
-          ? '代码配色' : 'Code colors';
-        const paletteSelect = document.createElement('select');
-        paletteSelect.id = 'tex-code-theme-select';
-        paletteSelect.setAttribute('aria-label', pickerLabel.textContent);
-        const isZh = document.documentElement.lang.toLowerCase().startsWith('zh');
-        for (const item of codeThemeChoices) {
-          const option = document.createElement('option');
-          option.value = item[0];
-          option.textContent = isZh ? item[1] : item[2];
-          paletteSelect.append(option);
-        }
-        paletteSelect.value = selectedCodeTheme;
-        picker.append(pickerLabel, paletteSelect);
+        const pickerButton = document.createElement('button');
+        pickerButton.type = 'button';
+        pickerButton.id = 'tex-code-theme-toggle';
+        pickerButton.setAttribute('aria-expanded','false');
+        pickerButton.setAttribute('aria-haspopup','dialog');
+        pickerButton.setAttribute('aria-controls','tex-code-theme-popover');
+        pickerButton.setAttribute('aria-label',zhPaletteUi ? '选择代码配色' : 'Choose code colors');
+        const lightSwatch = document.createElement('i');
+        lightSwatch.className = 'tex-code-theme-swatch';
+        lightSwatch.setAttribute('aria-hidden','true');
+        const darkSwatch = document.createElement('i');
+        darkSwatch.className = 'tex-code-theme-swatch';
+        darkSwatch.setAttribute('aria-hidden','true');
+        const pickerText = document.createElement('span');
+        pickerText.textContent = zhPaletteUi ? '代码配色' : 'Code colors';
+        const caret = document.createElement('span');
+        caret.className = 'tex-code-theme-caret';
+        caret.textContent = '⌄';
+        caret.setAttribute('aria-hidden','true');
+        pickerButton.append(lightSwatch,darkSwatch,pickerText,caret);
+        picker.append(pickerButton);
         toolbar?.append(picker);
+        const popover = document.createElement('section');
+        popover.id = 'tex-code-theme-popover';
+        popover.className = 'tex-code-theme-popover';
+        popover.hidden = true;
+        popover.setAttribute('role','dialog');
+        popover.setAttribute('aria-label',
+          zhPaletteUi ? '为浅色和深色模式分别选择代码配色' :
+          'Choose separate code colors for light and dark modes');
+        const header = document.createElement('header');
+        const headline = document.createElement('strong');
+        headline.textContent = zhPaletteUi ? '编辑器配色' : 'Editor colors';
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'tex-code-theme-close';
+        closeButton.textContent = '×';
+        closeButton.setAttribute('aria-label',zhPaletteUi ? '关闭' : 'Close');
+        header.append(headline,closeButton);
+        const explanations = document.createElement('p');
+        explanations.textContent = zhPaletteUi ?
+          '浅色与深色分别记忆，随网站外观自动切换。不影响 PDF 或全站主题。' :
+          'Each appearance has its own saved palette. Switching follows the website without affecting PDFs.';
+        const cardRow = document.createElement('div');
+        cardRow.className = 'tex-code-theme-card-row';
+        const controls = {};
+        const previews = {};
+        for (const mode of ['light','dark']) {
+          const card = document.createElement('section');
+          card.className = 'tex-code-theme-card';
+          card.dataset.mode = mode;
+          const caption = document.createElement('label');
+          caption.textContent = mode === 'light'
+            ? (zhPaletteUi ? '☀ 浅色模式' : '☀ Light mode')
+            : (zhPaletteUi ? '☾ 深色模式' : '☾ Dark mode');
+          const select = document.createElement('select');
+          select.id = 'tex-code-theme-' + mode;
+          for (const option of codeThemeChoices) {
+            if (!safeId(option[0],mode)) continue;
+            const el = document.createElement('option');
+            el.value = option[0];
+            el.textContent = zhPaletteUi ? option[1] : option[2];
+            select.append(el);
+          }
+          select.value = selectedCodeThemes[mode];
+          controls[mode] = select;
+          caption.append(select);
+          const preview = document.createElement('div');
+          preview.className = 'tex-code-theme-preview';
+          preview.setAttribute('aria-label',mode === 'light' ?
+            (zhPaletteUi?'浅色代码预览':'Light source preview') :
+            (zhPaletteUi?'深色代码预览':'Dark source preview'));
+          previews[mode] = preview;
+          const hint = document.createElement('small');
+          hint.textContent = mode === 'light'
+            ? (zhPaletteUi?'网站浅色时自动采用':'Applied when site is light')
+            : (zhPaletteUi?'网站深色时自动采用':'Applied when site is dark');
+          card.append(caption,preview,hint);
+          cardRow.append(card);
+        }
+        popover.append(header,explanations,cardRow);
+        document.body.append(popover);
+        function showPreview(mode) {
+          const p = codeColorSchemes[selectedCodeThemes[mode]];
+          const target = previews[mode];
+          target.replaceChildren();
+          target.style.background = p.bg;
+          target.style.color = p.fg;
+          const sample = [
+            [[ 'command', String.fromCharCode(92)+'documentclass' ],['symbol','{article}']],
+            [[ 'command', String.fromCharCode(92)+'usepackage' ],['symbol','{graphicx}']],
+            [[ 'comment','% Example source' ]],
+            [[ 'command', String.fromCharCode(92)+'section' ],['symbol','{Introduction}']],
+            [[ 'string','Hello, TeX!']]
+          ];
+          const pre = document.createElement('pre');
+          for (let line = 0; line < sample.length; line++) {
+            const row = document.createElement('div');
+            const number = document.createElement('span');
+            number.textContent = String(line + 1);
+            number.className = 'tex-code-preview-number';
+            number.style.color = p.gutterText;
+            row.append(number);
+            for (const [type,fragment] of sample[line]) {
+              const chunk = document.createElement('span');
+              chunk.textContent = fragment;
+              chunk.style.color = p[type] || p.fg;
+              row.append(chunk);
+            }
+            pre.append(row);
+          }
+          target.append(pre);
+        }
+        function refreshPicker() {
+          lightSwatch.style.background = codeColorSchemes[selectedCodeThemes.light].bg;
+          darkSwatch.style.background = codeColorSchemes[selectedCodeThemes.dark].bg;
+          lightSwatch.style.borderColor = codeColorSchemes[selectedCodeThemes.light].command;
+          darkSwatch.style.borderColor = codeColorSchemes[selectedCodeThemes.dark].command;
+          for (const mode of ['light','dark']) {
+            controls[mode].value = selectedCodeThemes[mode];
+            showPreview(mode);
+          }
+          pickerButton.title = (zhPaletteUi ? '浅色：' : 'Light: ') +
+            (codeThemeById.get(selectedCodeThemes.light)?.[zhPaletteUi?1:2] || '') +
+            ' · ' + (zhPaletteUi ? '深色：' : 'Dark: ') +
+            (codeThemeById.get(selectedCodeThemes.dark)?.[zhPaletteUi?1:2] || '');
+        }
         function applyCodeColors() {
           const palette = resolvedCodePalette();
           editor.dataset.codeTheme = resolvedCodeThemeId();
-          editor.style.setProperty('--aertex-code-bg', palette.bg);
-          editor.style.setProperty('--aertex-code-fg', palette.fg);
-          editor.style.setProperty('--aertex-code-gutter', palette.gutter);
-          editor.style.setProperty('--aertex-code-gutter-text', palette.gutterText);
-          editor.style.setProperty('--aertex-code-line', palette.line);
-          editor.style.setProperty('--aertex-code-selection', palette.selection);
-          editor.style.setProperty('--aertex-code-caret', palette.caret);
+          editor.style.setProperty('--aertex-code-bg',palette.bg);
+          editor.style.setProperty('--aertex-code-fg',palette.fg);
+          editor.style.setProperty('--aertex-code-gutter',palette.gutter);
+          editor.style.setProperty('--aertex-code-gutter-text',palette.gutterText);
+          editor.style.setProperty('--aertex-code-line',palette.line);
+          editor.style.setProperty('--aertex-code-selection',palette.selection);
+          editor.style.setProperty('--aertex-code-caret',palette.caret);
           if (view && codeThemeCompartment && makeCodeThemeExtension) {
-            // Compartment.reconfigure retains document, selection, undo and
-            // collaboration state across live palette switching.
             view.dispatch({
               effects: codeThemeCompartment.reconfigure(makeCodeThemeExtension())
             });
           }
         }
-        paletteSelect.addEventListener('change', () => {
-          selectedCodeTheme = validCodeThemeIds.has(paletteSelect.value) ? paletteSelect.value : 'auto';
-          try { localStorage.setItem(codeThemeStorageKey, selectedCodeTheme); } catch {}
-          applyCodeColors();
+        function positionPopover() {
+          if (popover.hidden) return;
+          const rect = pickerButton.getBoundingClientRect();
+          const w = popover.offsetWidth, h = popover.offsetHeight;
+          const left = Math.max(10,Math.min(window.innerWidth-w-10,rect.right-w));
+          const below = rect.bottom+8;
+          const top = below+h+10 <= window.innerHeight ?
+            below : Math.max(10,rect.top-h-8);
+          popover.style.left = left+'px';
+          popover.style.top = top+'px';
+        }
+        function closePopover(returnFocus=false) {
+          if (popover.hidden) return;
+          popover.hidden = true;
+          pickerButton.setAttribute('aria-expanded','false');
+          if (returnFocus) pickerButton.focus();
+        }
+        pickerButton.addEventListener('click',() => {
+          if (!popover.hidden) { closePopover();return; }
+          popover.hidden=false;
+          pickerButton.setAttribute('aria-expanded','true');
+          positionPopover();
         });
-        const onGlobalThemeChange = () => {
-          if (selectedCodeTheme === 'auto') applyCodeColors();
-        };
-        window.addEventListener('aertex-themechange', onGlobalThemeChange);
-        const globalThemeObserver = new MutationObserver(onGlobalThemeChange);
-        globalThemeObserver.observe(document.documentElement, {
-          attributes: true, attributeFilter: ['data-theme']
+        closeButton.addEventListener('click',()=>closePopover(true));
+        for (const mode of ['light','dark']) controls[mode].addEventListener('change',() => {
+          const value = safeId(controls[mode].value,mode) || defaultId(mode);
+          selectedCodeThemes[mode] = value;
+          try { localStorage.setItem(colorKeys[mode],value); } catch {}
+          refreshPicker();
+          if (modeForSite() === mode) applyCodeColors();
         });
-        window.addEventListener('storage', event => {
-          if (event.key !== codeThemeStorageKey) return;
-          const next = validCodeThemeIds.has(event.newValue) ? event.newValue : 'auto';
-          if (selectedCodeTheme === next) return;
-          selectedCodeTheme = next;
-          paletteSelect.value = next;
-          applyCodeColors();
+        document.addEventListener('pointerdown',event=>{
+          if (!popover.hidden && !popover.contains(event.target) && !picker.contains(event.target))
+            closePopover();
+        },true);
+        document.addEventListener('keydown',event=>{
+          if (event.key === 'Escape' && !popover.hidden) {
+            event.preventDefault();
+            closePopover(true);
+          }
         });
-        window.addEventListener('pagehide', () => {
-          globalThemeObserver.disconnect();
-          window.removeEventListener('aertex-themechange', onGlobalThemeChange);
-        }, { once: true });
+        window.addEventListener('resize',positionPopover,{passive:true});
+        window.addEventListener('scroll',positionPopover,{passive:true,capture:true});
+        const onGlobalThemeChange = () => applyCodeColors();
+        window.addEventListener('aertex-themechange',onGlobalThemeChange);
+        const themeObserver = new MutationObserver(onGlobalThemeChange);
+        themeObserver.observe(document.documentElement,{
+          attributes:true,attributeFilter:['data-theme']
+        });
+        const pickerObserver = new MutationObserver(()=>{
+          if (editor.hidden || editor.classList.contains('md-visual-mode'))closePopover();
+        });
+        pickerObserver.observe(editor,{attributes:true,attributeFilter:['hidden','class']});
+        window.addEventListener('storage',event=>{
+          if (event.key !== colorKeys.light && event.key !== colorKeys.dark) return;
+          const mode = event.key === colorKeys.light ? 'light' : 'dark';
+          const next = safeId(event.newValue,mode) || defaultId(mode);
+          if (selectedCodeThemes[mode] === next) return;
+          selectedCodeThemes[mode] = next;
+          refreshPicker();
+          if (modeForSite() === mode) applyCodeColors();
+        });
+        window.addEventListener('pagehide',()=>{
+          themeObserver.disconnect();
+          pickerObserver.disconnect();
+          window.removeEventListener('aertex-themechange',onGlobalThemeChange);
+          window.removeEventListener('resize',positionPopover);
+          window.removeEventListener('scroll',positionPopover,true);
+          popover.remove();
+        },{once:true});
+        refreshPicker();
         applyCodeColors();
 
         let host = null;
