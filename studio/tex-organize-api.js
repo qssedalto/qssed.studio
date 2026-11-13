@@ -2,6 +2,31 @@ import { json } from "./routing.js";
 import { isSafeProjectFilename } from "./tex-project-file-types.js";
 
 const ROOT = "_system/tex-documents/";
+const PIN_ROOT = "_system/tex-pins/";
+const pinKey = userId => PIN_ROOT + userId + ".json";
+export async function getTexPinnedItems(env,userId) {
+  const blob=await env.STORAGE.get(pinKey(userId));
+  if(!blob)return [];
+  const data=await blob.json().catch(()=>({}));
+  return Array.isArray(data?.items)?data.items.slice(0,1000):[];
+}
+export async function syncTexProjectPins(env,userId,doc) {
+  const items=(await getTexPinnedItems(env,userId)).filter(item=>item.id!==doc.id);
+  if(doc.pinned)items.push({id:doc.id,name:doc.title,type:"project"});
+  for(const name of doc.pinned_files||[])items.push({id:doc.id,name,type:"file"});
+  for(const name of doc.pinned_folders||[])items.push({id:doc.id,name,type:"folder"});
+  await env.STORAGE.put(pinKey(userId),JSON.stringify({items}),{
+    httpMetadata:{contentType:"application/json;charset=UTF-8"}
+  });
+}
+export async function removeTexProjectPins(env,userId,documentId) {
+  const existing=await getTexPinnedItems(env,userId);
+  if(!existing.some(item=>item.id===documentId))return;
+  await env.STORAGE.put(pinKey(userId),JSON.stringify({items:existing.filter(item=>item.id!==documentId)}),{
+    httpMetadata:{contentType:"application/json;charset=UTF-8"}
+  });
+}
+
 const safeId = value => /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(String(value || ""));
 const clean = value => String(value || "").trim();
 const safeFolder = name => name && !name.endsWith("/") && isSafeProjectFilename(name + "/placeholder.tex");
@@ -15,8 +40,9 @@ const metadata = (doc, userId) => ({
 const uniqueNames = list => [...new Set((list || []).filter(x => typeof x === "string" && x.length <= 240))].slice(0,500);
 
 export async function handleTexOrganize(request, env, userId) {
-  if (request.method !== "POST") return json({error:"Method not allowed."},405);
   if (!env?.STORAGE) return json({error:"TeX storage unavailable."},503);
+  if (request.method === "GET") return json({items:await getTexPinnedItems(env,userId)});
+  if (request.method !== "POST") return json({error:"Method not allowed."},405);
   let body;
   try {
     const raw = await request.text();
@@ -103,5 +129,6 @@ export async function handleTexOrganize(request, env, userId) {
     httpMetadata:{contentType:"application/json;charset=UTF-8"},
     customMetadata:metadata(doc,userId)
   });
+  await syncTexProjectPins(env,userId,doc);
   return json({document:doc,action});
 }
