@@ -4,6 +4,7 @@ import {
   appearanceClientRuntime,
   appearanceThemeFromRequest
 } from "../studio/appearance.js";
+import { appearanceSettingsContent } from "../studio/ui-settings.js";
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -126,5 +127,62 @@ const systemRequest = {
   }
 };
 assert(appearanceThemeFromRequest(systemRequest) === "", "System mode must not be frozen to the legacy resolved theme on the server.");
+
+
+// Verify the script after HTML interpolation: syntax errors here disable every
+// appearance-mode and accent button even when the shared Theme API works.
+const settingsScripts={};
+for (const [locale, zh] of [["zh-cn",true],["en-us",false],["zh-tw",false],["ja-jp",false],["ar-sa",false]]) {
+  const html=appearanceSettingsContent(zh,locale);
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+  assert(script,"Appearance settings script should render for "+locale);
+  assert(!script.includes("$"+"{JSON.stringify("),
+    "Broken escaped template interpolation leaked into rendered script for "+locale);
+  new vm.Script(script,{filename:"appearance-settings-"+locale+".js"});
+  settingsScripts[locale]=script;
+}
+
+// Simulate real click registration and persistence for modes and swatches.
+const clickable=(dataset)=>({
+  dataset, listeners:{}, attributes:{},
+  classList:{
+    values:new Set(),
+    toggle(name,on){if(on)this.values.add(name);else this.values.delete(name);}
+  },
+  addEventListener(type,handler){this.listeners[type]=handler;},
+  setAttribute(key,value){this.attributes[key]=value;},
+  click(){this.listeners.click?.();}
+});
+const modes=["system","light","dark"].map(mode=>clickable({mode}));
+const palette=browser.window.AERTEXTheme.palette;
+const accentChoices=[palette[0],palette.find(item=>item!==palette[0])];
+assert(accentChoices[0]&&accentChoices[1],"At least two accent colors are required");
+const accents=accentChoices.map(accent=>clickable({accent}));
+const currentAccent={textContent:""}, feedback={textContent:""};
+browser.document.documentElement.classList={add(){},remove(){}};
+browser.document.querySelectorAll=selector=>
+  selector==="[data-mode]"?modes:selector==="[data-accent]"?accents:[];
+browser.document.getElementById=id=>
+  id==="theme-current-accent"?currentAccent:id==="theme-feedback"?feedback:null;
+browser.window.addEventListener=()=>{};
+browser.window.setTimeout=()=>1;
+browser.window.clearTimeout=()=>{};
+new vm.Script(settingsScripts["zh-cn"],{filename:"appearance-settings-events.js"}).runInContext(browser.context);
+assert(modes.every(button=>typeof button.listeners.click==="function"),
+  "Every appearance mode must bind a click listener");
+assert(accents.every(button=>typeof button.listeners.click==="function"),
+  "Every accent swatch must bind a click listener");
+modes[2].click();
+assert(browser.window.AERTEXTheme.getMode()==="dark","Dark-mode click must persist");
+assert(modes[2].attributes["aria-pressed"]==="true","Dark-mode selection must be visible");
+modes[1].click();
+assert(browser.window.AERTEXTheme.getMode()==="light","Light-mode click must persist");
+accents[1].click();
+assert(browser.window.AERTEXTheme.getAccent()===accentChoices[1],
+  "Accent click must persist through the shared theme API");
+assert(accents[1].attributes["aria-pressed"]==="true",
+  "Selected accent must update accessibility and visual state");
+assert(feedback.textContent.length>0,"Theme click must show saved feedback");
+assert(currentAccent.textContent.length>0,"Current accent label must refresh");
 
 console.log("Shared AERTEX appearance runtime checks passed.");

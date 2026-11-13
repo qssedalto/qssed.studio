@@ -296,8 +296,8 @@ export function appearanceSettingsContent(zh, locale = "") {
         const feedback=document.getElementById("theme-feedback");
         const colorMeta=${JSON.stringify(Object.fromEntries(IPHONE_THEME_PALETTE.map(color => [color.id, { name: color.names[activeLocale] || color.names["en-us"] }])))};
         let feedbackTimer=0;
-        const announce=()=>{if(!feedback)return;feedback.textContent=\${JSON.stringify(copy.saved)};window.clearTimeout(feedbackTimer);feedbackTimer=window.setTimeout(()=>{feedback.textContent=""},1600)};
-        const refresh=()=>{const mode=api.getMode();const accent=api.getAccent();modes.forEach(button=>{const selected=button.dataset.mode===mode;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});accents.forEach(button=>{const selected=button.dataset.accent===accent;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});if(current){const meta=colorMeta[accent]||colorMeta[\${JSON.stringify(IPHONE_THEME_DEFAULT)}];current.textContent=meta.name}};
+        const announce=()=>{if(!feedback)return;feedback.textContent=${JSON.stringify(copy.saved)};window.clearTimeout(feedbackTimer);feedbackTimer=window.setTimeout(()=>{feedback.textContent=""},1600)};
+        const refresh=()=>{const mode=api.getMode();const accent=api.getAccent();modes.forEach(button=>{const selected=button.dataset.mode===mode;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});accents.forEach(button=>{const selected=button.dataset.accent===accent;button.classList.toggle("is-selected",selected);button.setAttribute("aria-pressed",selected?"true":"false")});if(current){const meta=colorMeta[accent]||colorMeta[${JSON.stringify(IPHONE_THEME_DEFAULT)}];current.textContent=meta.name}};
         const syncAccentToAccount=async accent=>{
           try{
             if(typeof supabaseClient==="undefined")return;
