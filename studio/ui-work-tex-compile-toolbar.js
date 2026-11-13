@@ -37,7 +37,7 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
     line-height:1.25!important;letter-spacing:0!important;
     white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important
   }
-  .tex-work-app .tex-static-title-stack>#tex-save-state{
+  .tex-work-app .tex-static-title-stack #tex-save-state{
     display:block!important;max-width:100%!important;overflow:hidden!important;
     text-overflow:ellipsis!important;white-space:nowrap!important
   }
