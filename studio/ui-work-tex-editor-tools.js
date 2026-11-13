@@ -315,7 +315,8 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           if (node) node.textContent = text;
         };
 
-        const snapshot = () => ({ title: title.value, engine: engine.value, source: source.value });
+        const snapshot = () => ({ title: title.value, engine: engine.value, source: source.value,
+          realtime_epoch: window.__aertexFileGetContext?.()?.document?.realtime_epoch || 'v2' });
         const safeName = value => String(value || 'qsseda-tex').replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'qsseda-tex';
         const workDocumentRoute = id => {
           // Preserve the actual route locale (including en-us) on Save As.
