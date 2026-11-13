@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { handleTexProjectFiles } from "../studio/tex-project-files-api.js";
+import { reconcileTexMainEntry } from "../studio/tex-main-entry.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
 import { enhanceTexProjectControls } from "../studio/ui-tex-project-controls.js";
 import { TEX_FILE_MODAL_RUNTIME } from "../studio/ui-tex-file-modal-runtime.js";
@@ -135,6 +136,58 @@ assert.equal(full.body.document.files.length,499,"499 extra assets and main.tex 
 const over=await invoke({document_id:fullId,files:[file("501st.txt","extra")]});
 assert.equal(over.status,409,"The 501st project file must be rejected.");
 assert.match(over.body.error,/500 files/);
+// Regression: deleting a canonical main.tex, then uploading a complete
+// project ZIP/file batch with main.tex used to create an orphan supplementary
+// main.tex while leaving main_deleted=true. The tree showed main.tex but the
+// header demanded "Create a TeX entry" and the source PUT returned 409.
+const batchId="55555555-5555-4555-8555-555555555555";
+const batchKey="_system/tex-documents/"+owner+"/"+batchId+".json";
+const batchSource="\\\\documentclass{ctexart}\\n\\\\begin{document}Valid\\\\end{document}";
+objects.set(batchKey,{...structuredClone(original),id:batchId,source:"",
+  main_filename:"main.tex",main_deleted:true,files:[]});
+const batchRecreated=await invoke({document_id:batchId,files:[
+  file("README.md","# Multi-file import"),file("main.tex",batchSource),
+  file("chapters/intro.tex","\\\\section{Introduction}")
+]});
+assert.equal(batchRecreated.status,200,JSON.stringify(batchRecreated.body).slice(0,500));
+assert.equal(batchRecreated.body.document.main_deleted,false,
+  "Root main.tex in a batch must revive the real compile entry.");
+assert.equal(batchRecreated.body.document.main_filename,"main.tex");
+assert.equal(batchRecreated.body.document.source,batchSource,
+  "The uploaded file bytes must become the canonical source, not a stale cache.");
+assert.deepEqual(batchRecreated.body.document.files.map(f=>f.name),
+  ["README.md","chapters/intro.tex"],"Supporting assets must remain in original order without another main.tex");
+assert.equal(new Set(batchRecreated.body.document.files.map(f=>f.name.toLowerCase())).size,2);
+const batchRemoval=await invoke({document_id:batchId,operation:"delete",name:"main.tex"});
+assert.equal(batchRemoval.status,200,"The repaired canonical entry must be deletable again.");
+assert.equal(objects.get(batchKey).main_deleted,true);
+assert.equal(objects.get(batchKey).source,"");
+assert.equal(reconcileTexMainEntry(objects.get(batchKey)).main_deleted,true,
+  "A deliberate deletion without a real stored main.tex must remain deleted.");
+
+const ghostId="66666666-6666-4666-8666-666666666666";
+const ghostKey="_system/tex-documents/"+owner+"/"+ghostId+".json";
+const ghostRecord={...structuredClone(original),id:ghostId,main_deleted:true,
+  main_filename:"main.tex",source:"",
+  files:[file("main.tex",batchSource),file("chapters/part.tex","\\\\section{Part}") ]};
+objects.set(ghostKey,ghostRecord);
+const recovered=reconcileTexMainEntry(ghostRecord);
+assert.equal(recovered.main_deleted,false,"Legacy orphan must become an available entry on read.");
+assert.equal(recovered.source,batchSource,"Recovery must copy the actual file content.");
+assert.deepEqual(recovered.files.map(f=>f.name),["chapters/part.tex"]);
+assert.equal(ghostRecord.main_deleted,true,"Normalization must not mutate raw R2 records.");
+assert.equal(ghostRecord.files.length,2,"Recovery must preserve the original stored bytes until a write.");
+const persisted=await invoke({document_id:ghostId,files:[file("notes.txt","saved")]});
+assert.equal(persisted.status,200);
+assert.equal(objects.get(ghostKey).main_deleted,false);
+assert.equal(objects.get(ghostKey).source,batchSource);
+assert.deepEqual(objects.get(ghostKey).files.map(f=>f.name),["chapters/part.tex","notes.txt"]);
+assert.equal(reconcileTexMainEntry({main_deleted:true,source:"",
+  files:[file("chapters/part.tex","kept")]}).main_deleted,true,
+  "A deleted entry cannot be resurrected from an unrelated chapter.");
+assert.equal(reconcileTexMainEntry({main_deleted:true,source:"old deleted text",files:[]}).main_deleted,true,
+  "A deleted source must never reappear from an old cache.");
+
 const outsider=await invoke({document_id:id,files:[file("steal.tex","") ]},other);
 assert.equal(outsider.status,404,"Files must only be writable within the authenticated owner's namespace.");
 const unknown=await invoke({document_id:"not-an-id",files:[file("a.tex","")]});
