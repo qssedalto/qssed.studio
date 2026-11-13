@@ -201,14 +201,20 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
       /* Keep actual native menulist controls. Explicit option foreground and
          background prevent Windows Chromium from mixing a light OS popup
          with the site's light-on-dark text inheritance. */
-      .tex-code-theme-native-wrap{position:relative;display:block;width:100%;min-width:0}
+      .tex-code-theme-native-wrap{
+        position:relative;display:grid;width:100%;min-width:0;
+        grid-template-columns:minmax(0,1fr);grid-template-rows:36px;box-sizing:border-box
+      }
       .tex-code-theme-popover .tex-code-theme-card select{
         appearance:menulist!important;-webkit-appearance:menulist!important;
         height:36px!important;min-height:36px!important;width:100%!important;
         box-sizing:border-box!important;border:1px solid var(--border)!important;
         border-radius:8px!important;padding:0 7px!important;
         font:600 12px/1.4 system-ui,-apple-system,Segoe UI,sans-serif!important;
-        cursor:pointer!important;box-shadow:none!important
+        cursor:pointer!important;box-shadow:none!important;
+        display:block!important;grid-column:1;grid-row:1;
+        min-width:0!important;max-width:100%!important;margin:0!important;
+        align-self:stretch!important;position:relative!important
       }
       .tex-code-theme-popover .tex-code-theme-card[data-mode="light"] select{
         color-scheme:light!important;background:#f8fafc!important;color:#182432!important;
@@ -223,13 +229,20 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         background:#242a35!important;color:#f4f6fc!important;
       }
       .tex-code-theme-native-brand{
-        position:absolute;inset:1px 30px 1px 8px;z-index:1;
+        /* Share the native selector's 36px grid track; prevent overflow above it. */
+        position:relative;inset:auto;grid-column:1;grid-row:1;z-index:1;
+        align-self:stretch;justify-self:stretch;min-width:0;
+        box-sizing:border-box;margin:1px 30px 1px 8px;
         display:none;align-items:center;gap:6px;overflow:hidden;
         pointer-events:none;white-space:nowrap;
         font:600 12px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;
       }
       .tex-code-theme-card[data-brand-selected="true"] .tex-code-theme-native-brand{
         display:flex
+      }
+      /* Leave the native option and focus ring fully visible during interaction. */
+      .tex-code-theme-native-wrap:focus-within .tex-code-theme-native-brand{
+        visibility:hidden
       }
       .tex-code-theme-card[data-mode="light"] .tex-code-theme-native-brand{
         background:#f8fafc;color:#182432
