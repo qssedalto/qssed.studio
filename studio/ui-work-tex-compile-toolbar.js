@@ -50,11 +50,18 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
   .tex-work-app .tex-build-indicator{
     display:flex;flex:0 0 23px;width:23px;height:23px;align-items:center;
     justify-content:center;align-self:flex-start!important;margin:0!important;
-    padding:0!important;box-sizing:border-box!important;min-width:23px!important;max-width:23px!important
+    padding:0!important;box-sizing:border-box!important;
+    height:24px!important;min-height:24px!important;max-height:24px!important;
+    min-width:23px!important;max-width:23px!important
   }
   .tex-work-app .tex-build-indicator[hidden],
   .tex-work-app .tex-build-log[hidden]{display:none!important}
-  .tex-work-app .tex-build-indicator svg{display:block;width:23px;height:23px}
+  .tex-work-app .tex-build-indicator svg{
+    display:block!important;flex:0 0 23px!important;width:23px!important;
+    min-width:23px!important;max-width:23px!important;
+    height:23px!important;min-height:23px!important;max-height:23px!important;
+    margin:0!important;padding:0!important;vertical-align:top!important
+  }
   /* Match the first (24px) project-title line, not the two-line title+save
      stack. Override the site's generic button min-width, height and margin,
      which previously pushed this control onto a visually lower line. */
