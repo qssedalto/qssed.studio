@@ -75,7 +75,8 @@ export class TexCollaborationRoom {
       caret_position: 0,
       anchor_rel: "",
       head_rel: "",
-      typing: false
+      typing: false,
+      cursor_color: ""
     };
 
     this.state.acceptWebSocket(server);
@@ -141,6 +142,9 @@ export class TexCollaborationRoom {
       participant.anchor_rel = safeRelativePosition(payload.anchor_rel);
       participant.head_rel = safeRelativePosition(payload.head_rel);
       participant.typing = payload.typing === true;
+      // Only six-digit palette colors are accepted; arbitrary CSS is never sent to other clients.
+      participant.cursor_color = /^#[0-9a-f]{6}$/i.test(String(payload.cursor_color || "")) ?
+        String(payload.cursor_color).toLowerCase() : "";
       participant.expires_at = Math.min(Number(participant.expires_at) || 0, Date.now() + AUTH_LEASE_MS);
       socket.serializeAttachment(participant);
       this.broadcastPresence();
@@ -274,7 +278,9 @@ export class TexCollaborationRoom {
         caret_position: clampPosition(participant.caret_position),
         anchor_rel: safeRelativePosition(participant.anchor_rel),
         head_rel: safeRelativePosition(participant.head_rel),
-        typing: participant.typing === true
+        typing: participant.typing === true,
+        cursor_color: /^#[0-9a-f]{6}$/i.test(String(participant.cursor_color || "")) ?
+          participant.cursor_color : ""
       });
     }
     const encoded = JSON.stringify({ type: "presence-list", participants });
