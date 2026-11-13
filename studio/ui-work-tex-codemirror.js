@@ -1,3 +1,5 @@
+import { WORK_TEX_CODE_PALETTES, WORK_TEX_CODE_CHOICES } from "./tex-code-palettes.js";
+
 function replaceExact(source, needle, replacement) {
   const index = source.indexOf(needle);
   if (index < 0) return source;
@@ -156,6 +158,60 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         .tex-work-app .tex-codemirror-host .cm-gutters{display:none!important}
         .tex-cm-remote-label{font-size:9px!important;padding:4px 6px!important}
       }
+      /* Palette applies ONLY to the source editor, never to the PDF,
+         Markdown WYSIWYG, collaboration cursors or global appearance. */
+      .tex-work-app .tex-editor-toolbar .tex-code-theme-picker{
+        flex:0 1 160px;min-width:120px;max-width:180px;
+        display:grid;gap:3px;align-self:end;margin:0
+      }
+      .tex-work-app .tex-editor-toolbar .tex-code-theme-picker>span{
+        color:var(--muted);font-size:8px;line-height:1.3
+      }
+      .tex-work-app .tex-editor-toolbar #tex-code-theme-select{
+        width:100%!important;height:36px!important;min-height:36px!important;
+        box-sizing:border-box!important;margin:0!important;
+        padding:0 25px 0 10px!important;border:1px solid var(--border)!important;
+        border-radius:9px!important;background:var(--fill)!important;color:var(--text)!important;
+        box-shadow:none!important;font:600 11px/1.3 system-ui,sans-serif!important;
+        cursor:pointer
+      }
+      .tex-work-app .tex-editor-toolbar #tex-code-theme-select:focus-visible{
+        outline:2px solid var(--primary)!important;outline-offset:2px
+      }
+      .tex-work-app #tex-editor.md-visual-mode .tex-code-theme-picker{display:none!important}
+      .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host,
+      .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host>.cm-editor,
+      .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host .cm-scroller{
+        background:var(--aertex-code-bg)!important;color:var(--aertex-code-fg)!important
+      }
+      .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host .cm-gutters{
+        background:var(--aertex-code-gutter)!important;
+        border-right:1px solid var(--aertex-code-line)!important;
+        color:var(--aertex-code-gutter-text)!important
+      }
+      .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host .cm-activeLine,
+      .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host .cm-activeLineGutter{
+        background:var(--aertex-code-line)!important
+      }
+      .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host .cm-selectionBackground,
+      .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host .cm-content ::selection{
+        background:var(--aertex-code-selection)!important
+      }
+      .tex-work-app #tex-editor[data-code-theme] .tex-codemirror-host .cm-cursor{
+        border-left-color:var(--aertex-code-caret)!important
+      }
+      .tex-work-app #tex-editor[data-code-theme] #tex-source:not(.tex-source-bridge){
+        background:var(--aertex-code-bg)!important;color:var(--aertex-code-fg)!important
+      }
+      @media(max-width:760px){
+        .tex-work-app .tex-editor-toolbar{flex-wrap:wrap}
+        .tex-work-app .tex-editor-toolbar .tex-code-theme-picker{
+          flex:0 1 132px;min-width:108px;max-width:146px
+        }
+        .tex-work-app .tex-editor-toolbar #tex-code-theme-select{
+          height:32px!important;min-height:32px!important;font-size:10px!important
+        }
+      }
     </style>
     <script id="qsseda-work-tex-codemirror-runtime">
       (() => {
@@ -167,6 +223,91 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         const source = document.getElementById('tex-source');
         const editor = document.getElementById('tex-editor');
         if (!root || !source || !editor) return;
+
+        // The global site theme remains independent. A user can choose a
+        // syntax palette for all Work project files; auto follows the site.
+        const codeColorSchemes = ${JSON.stringify(WORK_TEX_CODE_PALETTES)};
+        const codeThemeChoices = ${JSON.stringify(WORK_TEX_CODE_CHOICES)};
+        const codeThemeStorageKey = 'aertex.work.code-color-scheme.v1';
+        const validCodeThemeIds = new Set(codeThemeChoices.map(item => item[0]));
+        const readCodeTheme = () => {
+          try {
+            const stored = localStorage.getItem(codeThemeStorageKey);
+            if (validCodeThemeIds.has(stored)) return stored;
+          } catch {}
+          return 'auto';
+        };
+        let selectedCodeTheme = readCodeTheme();
+        let codeThemeCompartment = null;
+        let makeCodeThemeExtension = null;
+        const resolvedCodeThemeId = () => selectedCodeTheme === 'auto'
+          ? (document.documentElement.dataset.theme === 'dark' ? 'auto-dark' : 'auto-light')
+          : selectedCodeTheme;
+        const resolvedCodePalette = () => codeColorSchemes[resolvedCodeThemeId()] || codeColorSchemes['auto-light'];
+        const toolbar = editor.querySelector('.tex-editor-toolbar');
+        const picker = document.createElement('label');
+        picker.className = 'tex-code-theme-picker';
+        picker.id = 'tex-code-theme-picker';
+        const pickerLabel = document.createElement('span');
+        pickerLabel.textContent = document.documentElement.lang.toLowerCase().startsWith('zh')
+          ? '代码配色' : 'Code colors';
+        const paletteSelect = document.createElement('select');
+        paletteSelect.id = 'tex-code-theme-select';
+        paletteSelect.setAttribute('aria-label', pickerLabel.textContent);
+        const isZh = document.documentElement.lang.toLowerCase().startsWith('zh');
+        for (const item of codeThemeChoices) {
+          const option = document.createElement('option');
+          option.value = item[0];
+          option.textContent = isZh ? item[1] : item[2];
+          paletteSelect.append(option);
+        }
+        paletteSelect.value = selectedCodeTheme;
+        picker.append(pickerLabel, paletteSelect);
+        toolbar?.append(picker);
+        function applyCodeColors() {
+          const palette = resolvedCodePalette();
+          editor.dataset.codeTheme = resolvedCodeThemeId();
+          editor.style.setProperty('--aertex-code-bg', palette.bg);
+          editor.style.setProperty('--aertex-code-fg', palette.fg);
+          editor.style.setProperty('--aertex-code-gutter', palette.gutter);
+          editor.style.setProperty('--aertex-code-gutter-text', palette.gutterText);
+          editor.style.setProperty('--aertex-code-line', palette.line);
+          editor.style.setProperty('--aertex-code-selection', palette.selection);
+          editor.style.setProperty('--aertex-code-caret', palette.caret);
+          if (view && codeThemeCompartment && makeCodeThemeExtension) {
+            // Compartment.reconfigure retains document, selection, undo and
+            // collaboration state across live palette switching.
+            view.dispatch({
+              effects: codeThemeCompartment.reconfigure(makeCodeThemeExtension())
+            });
+          }
+        }
+        paletteSelect.addEventListener('change', () => {
+          selectedCodeTheme = validCodeThemeIds.has(paletteSelect.value) ? paletteSelect.value : 'auto';
+          try { localStorage.setItem(codeThemeStorageKey, selectedCodeTheme); } catch {}
+          applyCodeColors();
+        });
+        const onGlobalThemeChange = () => {
+          if (selectedCodeTheme === 'auto') applyCodeColors();
+        };
+        window.addEventListener('aertex-themechange', onGlobalThemeChange);
+        const globalThemeObserver = new MutationObserver(onGlobalThemeChange);
+        globalThemeObserver.observe(document.documentElement, {
+          attributes: true, attributeFilter: ['data-theme']
+        });
+        window.addEventListener('storage', event => {
+          if (event.key !== codeThemeStorageKey) return;
+          const next = validCodeThemeIds.has(event.newValue) ? event.newValue : 'auto';
+          if (selectedCodeTheme === next) return;
+          selectedCodeTheme = next;
+          paletteSelect.value = next;
+          applyCodeColors();
+        });
+        window.addEventListener('pagehide', () => {
+          globalThemeObserver.disconnect();
+          window.removeEventListener('aertex-themechange', onGlobalThemeChange);
+        }, { once: true });
+        applyCodeColors();
 
         let view = null;
         let host = null;
@@ -588,9 +729,36 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             '&.cm-focused': { outline: 'none' }
           });
 
+
+          // Use Lezer highlight tags, not hardcoded CodeMirror class names:
+          // the SAME palette works with TeX and every supplementary file.
+          const { Compartment, HighlightStyle, syntaxHighlighting, tags } = cm || {};
+          if (Compartment && HighlightStyle && syntaxHighlighting && tags) {
+            codeThemeCompartment = new Compartment();
+            makeCodeThemeExtension = () => {
+              const p = resolvedCodePalette();
+              const highlight = HighlightStyle.define([
+                { tag: [tags.keyword, tags.controlKeyword, tags.operatorKeyword, tags.modifier], color: p.keyword },
+                { tag: [tags.macroName, tags.tagName, tags.function(tags.variableName)], color: p.command },
+                { tag: [tags.atom, tags.bool, tags.labelName, tags.typeName], color: p.symbol },
+                { tag: [tags.variableName, tags.propertyName, tags.attributeName, tags.namespace], color: p.variable },
+                { tag: [tags.string, tags.regexp, tags.escape], color: p.string },
+                { tag: tags.number, color: p.number },
+                { tag: [tags.link, tags.url], color: p.link, textDecoration: 'underline' },
+                { tag: [tags.comment, tags.lineComment, tags.blockComment], color: p.comment, fontStyle: 'italic' },
+                { tag: [tags.heading, tags.strong], color: p.command, fontWeight: 'bold' },
+                { tag: tags.invalid, color: p.dark ? '#ff8ca1' : '#bf293c', textDecoration: 'underline' }
+              ]);
+              return [EditorView.theme({}, { dark: Boolean(p.dark) }), syntaxHighlighting(highlight)];
+            };
+          }
+          const paletteExtension = () => codeThemeCompartment
+            ? [codeThemeCompartment.of(makeCodeThemeExtension())] : [];
+
           const baseExtensions = [
             basicSetup,
             theme,
+            ...paletteExtension(),
             EditorView.lineWrapping,
             EditorView.updateListener.of(publishViewToBridge)
           ];
@@ -600,7 +768,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             if (StreamLanguage && stex) {
               try {
                 extensions = [basicSetup, StreamLanguage.define(stex),
-                  theme, EditorView.lineWrapping, EditorView.updateListener.of(publishViewToBridge)];
+                  theme, ...paletteExtension(), EditorView.lineWrapping, EditorView.updateListener.of(publishViewToBridge)];
                 view = new EditorView({ parent: host, doc: nativeValue(), extensions });
               } catch (syntaxError) {
                 // Some CDN bundles load a second @codemirror/state version.
