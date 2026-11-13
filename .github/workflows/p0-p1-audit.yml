@@ -23,40 +23,52 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24.x'
-      - name: Preserve exact review snapshot
-        run: |
-          mkdir -p /tmp/p0-p1-audit
-          git archive --format=tar.gz HEAD -o /tmp/p0-p1-audit/source.tar.gz
-          git rev-parse HEAD > /tmp/p0-p1-audit/commit.txt
-      - uses: actions/upload-artifact@v6
-        with:
-          name: p0-p1-source-${{ github.sha }}
-          path: /tmp/p0-p1-audit/
-          retention-days: 1
       - name: Build pinned browser dependencies
         run: |
-          npm ci --prefix tex-vendor --no-audit --no-fund
+          if test -f tex-vendor/package-lock.json; then
+            npm ci --prefix tex-vendor --no-audit --no-fund
+          else
+            npm install --prefix tex-vendor --no-audit --no-fund
+          fi
           node tex-vendor/build.mjs
-      - name: Run existing data and UI regression baseline
+      - name: Preserve exact source and build for isolated local review
+        run: |
+          mkdir -p /tmp/p0-p1-build
+          tar -czf /tmp/p0-p1-build/review.tar.gz --exclude='./.git' --exclude='./.wrangler' .
+          git rev-parse HEAD > /tmp/p0-p1-build/commit.txt
+          npm audit --prefix tex-vendor --json > /tmp/p0-p1-build/dependency-audit.json || true
+      - uses: actions/upload-artifact@v6
+        with:
+          name: p0-p1-build-${{ github.sha }}
+          path: /tmp/p0-p1-build/
+          retention-days: 1
+      - name: Execute every existing regression and real-browser smoke test
         shell: bash
         run: |
           mkdir -p /tmp/p0-p1-results
           failed=0
-          for name in security-markup security-architecture signup-completion tex-vendor tex-workbench tex-first-paint tex-toolbar-scroll tex-tree-selection tex-file-chat-security tex-file-chat-popup tex-live-collaboration tex-link-sharing tex-toolbar-actions tex-file-manager tex-explorer tex-explorer-vault tex-github-compile-project tex-pdf-auto-theme work-local-bridge appearance admin-control-plane; do
-            file="scripts/${name}-check.mjs"
-            if node "$file" > "/tmp/p0-p1-results/${name}.log" 2>&1; then
+          for file in scripts/*-check.mjs scripts/tex-compile-toolbar-browser.mjs scripts/tex-file-chat-popup-browser.mjs; do
+            name=$(basename "$file" .mjs)
+            if timeout 120 node "$file" > "/tmp/p0-p1-results/${name}.log" 2>&1; then
               echo "PASS $file" | tee -a /tmp/p0-p1-results/summary.txt
             else
               echo "FAIL $file" | tee -a /tmp/p0-p1-results/summary.txt
+              tail -25 "/tmp/p0-p1-results/${name}.log"
               failed=1
             fi
           done
           cat /tmp/p0-p1-results/summary.txt >> "$GITHUB_STEP_SUMMARY"
           exit "$failed"
+      - name: Bundle Work Worker without deployment
+        if: always()
+        run: npx --yes wrangler@4.136.3 deploy -c wrangler.work.jsonc --dry-run --outdir /tmp/p0-p1-bundle
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: p0-p1-baseline-${{ github.sha }}
-          path: /tmp/p0-p1-results/
+          name: p0-p1-results-${{ github.sha }}
+          path: |
+            /tmp/p0-p1-results/
+            /tmp/aertex-filechat-visual/*.png
+            /tmp/aertex-compile-toolbar-visual/*.png
           if-no-files-found: warn
           retention-days: 7
