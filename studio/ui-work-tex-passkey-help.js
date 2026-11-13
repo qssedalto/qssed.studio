@@ -52,14 +52,24 @@ export function enhanceWorkTexPasskeyHelp(markup, zh) {
     .aertex-filechat .passkey-help-back:focus-visible {
       outline:2px solid var(--primary,#839bf4); outline-offset:3px
     }
-    /* A dedicated two-column header prevents broad Work button width rules
-       from squeezing the title into a one-character vertical column. */
+    /* A true full-panel view, not a third flex child underneath the chat.
+       Keep the hidden selector AT LEAST as specific as the visible rule. */
     .aertex-filechat #aertex-chat-help-view.passkey-help-view {
-      display:flex!important; flex:1 1 auto!important; flex-direction:column!important;
-      width:100%!important; max-width:100%!important;
+      position:absolute!important; inset:0!important; z-index:10!important;
+      display:flex!important; flex:0 0 auto!important; flex-direction:column!important;
+      width:100%!important; height:100%!important;
+      max-width:100%!important; max-height:100%!important;
       min-width:0!important; min-height:0!important;
       overflow:hidden!important; box-sizing:border-box!important;
       background:var(--surface,#fff);
+    }
+    #aertex-filechat #aertex-chat-help-view[hidden] {
+      display:none!important;
+    }
+    /* Make the tutorial the only visible, interactive view while open.
+       No project header, stale error/banner, or unlock form may bleed through. */
+    #aertex-filechat.passkey-guide-open > :not(#aertex-chat-help-view) {
+      visibility:hidden!important; pointer-events:none!important;
     }
     .aertex-filechat #aertex-chat-help-view .passkey-help-heading {
       display:grid!important; grid-template-columns:minmax(0,1fr) max-content!important;
@@ -128,7 +138,6 @@ export function enhanceWorkTexPasskeyHelp(markup, zh) {
       background:color-mix(in srgb,var(--primary,#839bf4) 6%,var(--surface,#fff));
       color:var(--text,#24252b)
     }
-    .aertex-filechat .body:has(>.passkey-help-view:not([hidden]))>.banner { display:none!important }
   </style>
   <script id="aertex-project-passkey-help-script">
     (() => {
@@ -153,14 +162,18 @@ export function enhanceWorkTexPasskeyHelp(markup, zh) {
         ${JSON.stringify(copy.back)} + '</button></div>' +
         '<div class="passkey-help-scroll">' + ${JSON.stringify(stepMarkup)} +
         '<p class="passkey-help-note">' + ${JSON.stringify(copy.note)} + '</p></div>';
-      panel.querySelector('.body').append(guide);
+      // Add as an overlay sibling of header/body, never inside the chat body:
+      // absolute inset:0 covers the ENTIRE floating window.
+      panel.append(guide);
       let registered = false;
       const close = () => {
-        guide.hidden = true; unlock.hidden = false;
+        guide.hidden = true;
+        panel.classList.remove('passkey-guide-open');
       };
       link.addEventListener('click', () => {
         if (!registered || !conversation.hidden) return;
-        unlock.hidden = true; guide.hidden = false;
+        guide.hidden = false;
+        panel.classList.add('passkey-guide-open');
         guide.querySelector('.passkey-help-scroll').scrollTop = 0;
       });
       guide.querySelector('#aertex-chat-help-back').addEventListener('click', () => {
