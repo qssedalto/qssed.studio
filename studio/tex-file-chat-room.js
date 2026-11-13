@@ -23,8 +23,10 @@ function authority(request){
 }
 async function tokenOK(storage,a,token){
   if(!HASH.test(String(token||"")))return false;
-  const hashed=await hashText(token),record=await storage.get(key(a.file,"grant",a.user+":"+hashed));
-  return !!record&&record.expires>Date.now()&&record.user===a.user;
+  const hashed=await hashText(token),record=await storage.get(key(a.file,"grant",a.user));
+  // Only the most recently Passkey-verified in-memory grant is accepted;
+  // do not accumulate historic bearer hashes in Durable Object storage.
+  return !!record&&record.digest===hashed&&record.expires>Date.now()&&record.user===a.user;
 }
 async function begin(storage,a){
   const existing=await storage.get(key(a.file,"credential",a.user));
@@ -66,8 +68,9 @@ async function verify(state,a,body){
     }
   }catch{return bad("File Passkey verification failed",403)}
   const token=randomKey();
-  await storage.put(key(a.file,"grant",a.user+":"+(await hashText(token))),
-    {user:a.user,expires:Date.now()+LEASE_MS});
+  await storage.put(key(a.file,"grant",a.user),{
+    user:a.user,digest:await hashText(token),expires:Date.now()+LEASE_MS
+  });
   return res({verified:true,token,expires_in:Math.floor(LEASE_MS/1000),
     owner_id:a.owner,user_id:a.user,role:a.role});
 }
