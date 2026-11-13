@@ -1,6 +1,7 @@
+import { randomKey, hashText, verifyRegistration, verifyAssertion } from "./tex-file-chat-webauthn.js";
 // Durable Object receives authority context ONLY from verified Work Worker.
 // Store ciphertext and wrapped AES keys, never message text or raw room keys.
-const BASE="projectchat:v2:";
+const BASE="projectchat:v2:",CHALLENGE_MS=120000,LEASE_MS=600000,GRANT_LIMIT=12,MAX_PASSKEYS=5;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const HASH=/^[A-Za-z0-9_-]{43}$/;
 const res=(body,status=200)=>Response.json(body,{status,headers:{"cache-control":"no-store","x-content-type-options":"nosniff"}});
@@ -26,6 +27,99 @@ function authority(request){
     !/^work\.qsseda\.(com|studio)$/.test(rp)||origin!=="https://"+rp)return null;
   return {user:u,owner:own,project,rp,origin,role,members,displayName,username};
 }
+async function tokenOK(storage,a,token){
+  if(!HASH.test(String(token||"")))return false;
+  const digest=await hashText(token);
+  const k=key(a.project,"grant",a.user+":"+digest),record=await storage.get(k);
+  if(!record)return false;
+  if(record.user!==a.user||record.digest!==digest||record.expires<=Date.now()){
+    await storage.delete(k);return false;
+  }
+  return true;
+}
+async function credentialsFor(storage,a){
+  const result=[];
+  const legacyKey=key(a.project,"credential",a.user),legacy=await storage.get(legacyKey);
+  if(legacy)result.push({key:legacyKey,record:legacy});
+  const extras=await storage.list({prefix:key(a.project,"credential-extra",a.user)+":"});
+  for(const [k,record] of extras)result.push({key:k,record});
+  return result;
+}
+async function begin(storage,a,body={}){
+  const existing=await credentialsFor(storage,a);
+  const enroll=body.action==="enroll-device";
+  if(enroll){
+    if(!existing.length||!await tokenOK(storage,a,body.token))
+      return bad("Verify an existing project Passkey before adding a new device",401);
+    if(existing.length>=MAX_PASSKEYS)return bad("Five Passkeys limit reached for this project",429);
+  }
+  const mode=enroll?"create-add":existing.length?"get":"create";
+  const challenge=randomKey(),id=crypto.randomUUID();
+  await storage.put(key(a.project,"challenge",a.user),
+    {mode,challenge,id,created:Date.now(),origin:a.origin,rp:a.rp});
+  const publicKey=mode!=="get"?{
+    rp:{id:a.rp,name:"AERTEX Work 项目协作聊天"},
+    user:{id:(await hashText("projectchat:"+a.project+":"+a.user)).slice(0,43),
+      name:a.user.slice(0,8)+"-"+a.project.slice(0,9),displayName:"AERTEX · 项目协作聊天"},
+    challenge,pubKeyCredParams:[{type:"public-key",alg:-7}],
+    timeout:90000,attestation:"none",
+    authenticatorSelection:{residentKey:"required",requireResidentKey:true,userVerification:"required"},
+    excludeCredentials:mode==="create-add"?
+      existing.map(x=>({id:x.record.id,type:"public-key"})):[]
+  }:{
+    challenge,rpId:a.rp,timeout:90000,userVerification:"required",
+    allowCredentials:existing.map(x=>({id:x.record.id,type:"public-key"}))
+  };
+  return res({mode,challenge_id:id,public_key:publicKey});
+}
+async function verify(state,a,body){
+  const storage=state.storage,challengeKey=key(a.project,"challenge",a.user);
+  let pending;
+  await state.blockConcurrencyWhile(async()=>{
+    pending=await storage.get(challengeKey);
+    if(pending)await storage.delete(challengeKey);
+  });
+  if(!pending||pending.id!==body.challenge_id||Date.now()-pending.created>CHALLENGE_MS||
+      pending.origin!==a.origin||pending.rp!==a.rp)return bad("WebAuthn challenge expired or reused",403);
+  const credentialKey=key(a.project,"credential",a.user);
+  try{
+    const registered=await credentialsFor(storage,a);
+    if(pending.mode==="create"||pending.mode==="create-add"){
+      if(pending.mode==="create"&&registered.length)return bad("This project already has a Passkey",409);
+      if(pending.mode==="create-add"){
+        if(!await tokenOK(storage,a,body.token))
+          return bad("Existing project Passkey authorization is required",401);
+        if(!registered.length||registered.length>=MAX_PASSKEYS)
+          return bad("No existing Passkey or Passkey device limit reached",409);
+      }
+      const record=await verifyRegistration(body.credential,pending.challenge,a.origin,a.rp);
+      if(registered.some(x=>x.record.id===record.id))
+        return bad("Passkey already registered for this project",409);
+      const k=pending.mode==="create"?credentialKey:
+        key(a.project,"credential-extra",a.user+":"+await hashText(record.id));
+      await storage.put(k,{...record,rp:a.rp,created:Date.now()});
+    }else if(pending.mode==="get"){
+      const selected=registered.find(x=>x.record.id===body.credential?.rawId);
+      if(!selected||selected.record.rp!==a.rp)return bad("Project Passkey not found",403);
+      const checked=await verifyAssertion(body.credential,pending.challenge,a.origin,a.rp,selected.record);
+      await storage.put(selected.key,{...selected.record,...checked});
+    }else return bad("Unsupported Passkey operation",400);
+  }catch{return bad("Project Passkey verification failed",403)}
+  const token=randomKey(),digest=await hashText(token),now=Date.now();
+  const prefix=key(a.project,"grant",a.user)+":";
+  const grants=await storage.list({prefix});
+  const live=[];
+  for(const [k,v] of grants){
+    if(v.expires<=now)await storage.delete(k);
+    else live.push([k,v]);
+  }
+  live.sort((x,y)=>x[1].created-y[1].created);
+  for(let i=0;i<=live.length-GRANT_LIMIT;i++)await storage.delete(live[i][0]);
+  await storage.put(prefix+digest,{user:a.user,digest,created:now,expires:now+LEASE_MS});
+  return res({verified:true,token,expires_in:Math.floor(LEASE_MS/1000),
+    new_credential:pending.mode!=="get",
+    owner_id:a.owner,user_id:a.user,role:a.role});
+}
 async function device(storage,a,body){
   const id=String(body.device_id||"");
   if(!UUID.test(id)||!goodPub(body))return bad("Invalid encryption device");
@@ -43,7 +137,8 @@ async function device(storage,a,body){
   return res({registered:true});
 }
 async function devices(storage,a){
-  if(a.role!=="owner")return bad("Only owner distributes room keys",403);
+  // Verified members may obtain one another's project-scoped ECDH public keys.
+  // This is NOT permission to access any private key or plaintext.
   const list=await storage.list({prefix:key(a.project,"device")+":"});
   const allowed=[...list.values()].filter(v=>a.members.includes(v.user));
   const devices=await Promise.all(allowed.map(async v=>({
@@ -91,12 +186,35 @@ async function envelopeGet(storage,a,body){
   return res({ready:true,envelope:e,owner_public:{x:owner.x,y:owner.y}});
 }
 async function send(storage,a,body){
-  if(!goodCipher(body,8000)||!UUID.test(body.message_id))return bad("Only sealed AES-GCM messages accepted",422);
+  if(!goodCipher(body,8000)||!UUID.test(body.message_id)||body.text!==undefined||body.message!==undefined)
+    return bad("Only sealed AES-GCM messages accepted",422);
   const timestamp=Date.now();
-  await storage.put(key(a.project,"msg",String(timestamp).padStart(13,"0")+":"+body.message_id),
-    {id:body.message_id,at:timestamp,user_id:a.user,
+  const record={id:body.message_id,at:timestamp,user_id:a.user,
     sender_name:a.displayName||a.username||a.user.slice(0,8),
-    iv:body.iv,ct:body.ct});
+    iv:body.iv,ct:body.ct};
+  if(body.v===3){
+    const from=String(body.from_device||"");
+    if(!UUID.test(from)||!await storage.get(key(a.project,"device",a.user+":"+from)))
+      return bad("Authenticated sender encryption device required",403);
+    const list=await storage.list({prefix:key(a.project,"device")+":"});
+    const accepted=[...list.values()].filter(d=>a.members.includes(d.user));
+    const recipients=body.envelopes;
+    if(!Array.isArray(recipients)||recipients.length<1||recipients.length>500||
+       recipients.length!==accepted.length)return bad("Refresh recipient keys before sending",409);
+    const mustCover=new Set(accepted.map(d=>d.user+":"+d.id));
+    for(const envelope of recipients){
+      const toUser=String(envelope?.to_user||""),toDevice=String(envelope?.to_device||"");
+      const id=toUser+":"+toDevice;
+      if(!mustCover.has(id)||!goodCipher(envelope,600))return bad("Invalid recipient key envelope",422);
+      mustCover.delete(id);
+    }
+    if(mustCover.size)return bad("Missing encrypted recipient",409);
+    record.v=3;record.from_device=from;
+    record.envelopes=recipients.map(e=>({
+      to_user:e.to_user,to_device:e.to_device,iv:e.iv,ct:e.ct
+    }));
+  }else if(body.v!==undefined&&body.v!==2)return bad("Unsupported encryption version",422);
+  await storage.put(key(a.project,"msg",String(timestamp).padStart(13,"0")+":"+body.message_id),record);
   return res({sent:true});
 }
 async function latest(storage,a){
@@ -105,9 +223,21 @@ async function latest(storage,a){
   return res({last:last?{id:last.id,at:last.at,user_id:last.user_id,
     sender_name:last.sender_name||last.user_id?.slice(0,8)}:null});
 }
-async function messages(storage,a){
+async function messages(storage,a,body){
   const rows=await storage.list({prefix:key(a.project,"msg")+":",reverse:true,limit:80});
-  return res({messages:[...rows.values()].reverse()});
+  const id=String(body.device_id||"");
+  const known=UUID.test(id)&&!!await storage.get(key(a.project,"device",a.user+":"+id));
+  if(!known)return bad("A verified project encryption device is required",403);
+  const records=[...rows.values()].reverse().map(msg=>{
+    if(msg.v!==3)return msg;
+    // Never expose another member's wrapped message key to the requesting
+    // device; legacy room history is still stored but not silently rekeyed.
+    const mine=(msg.envelopes||[]).find(e=>e.to_user===a.user&&e.to_device===id);
+    return {id:msg.id,at:msg.at,user_id:msg.user_id,sender_name:msg.sender_name,
+      v:3,from_device:msg.from_device,iv:msg.iv,ct:msg.ct,
+      envelope:mine?{iv:mine.iv,ct:mine.ct}:null};
+  });
+  return res({messages:records});
 }
 export async function handleTexFileChatRoom(state,request){
   if(request.method!=="POST")return bad("Method not allowed",405);
@@ -116,24 +246,26 @@ export async function handleTexFileChatRoom(state,request){
   let body;
   try{
     const raw=await request.text();
-    if(new TextEncoder().encode(raw).byteLength>20000)throw Error("too large");
+    if(new TextEncoder().encode(raw).byteLength>160000)throw Error("too large");
     body=JSON.parse(raw);
     if(!body||typeof body!=="object"||Array.isArray(body))throw Error("bad request");
   }catch{return bad("Invalid or oversized request",400)}
   const storage=state.storage;
-  // The Worker already verified the signed-in active account, same-origin
-  // request, project ACL and current named-collaborator membership before
-  // forwarding. Never accept browser-supplied authority headers directly.
-  if(body.op==="status")return res({user_id:a.user,owner_id:a.owner,role:a.role,
-    username:a.username,display_name:a.displayName});
-  if(body.op==="begin"||body.op==="verify")
-    return bad("Project chat does not require a Passkey",410);
+  if(body.op==="status"){const registered=await credentialsFor(storage,a);
+    return res({registered:registered.length>0,passkey_count:registered.length,
+      user_id:a.user,owner_id:a.owner,role:a.role,rp_id:a.rp});
+  }
+  // The notification contains metadata only; encrypted content remains
+  // inaccessible until the user's project-specific Passkey is verified.
   if(body.op==="latest")return latest(storage,a);
+  if(body.op==="begin")return begin(storage,a,body);
+  if(body.op==="verify")return verify(state,a,body);
+  if(!await tokenOK(storage,a,body.token))return bad("Passkey verification required for this project",401);
   if(body.op==="device")return device(storage,a,body);
   if(body.op==="devices")return devices(storage,a);
   if(body.op==="envelope-put")return envelopePut(state,a,body);
   if(body.op==="envelope-get")return envelopeGet(storage,a,body);
   if(body.op==="send")return send(storage,a,body);
-  if(body.op==="messages")return messages(storage,a);
+  if(body.op==="messages")return messages(storage,a,body);
   return bad("Unknown project chat operation",404);
 }
