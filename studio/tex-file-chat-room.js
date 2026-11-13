@@ -90,8 +90,12 @@ async function device(storage,a,body){
 async function devices(storage,a){
   if(a.role!=="owner")return bad("Only owner distributes room keys",403);
   const list=await storage.list({prefix:key(a.file,"device")+":"});
-  return res({devices:[...list.values()].filter(v=>a.members.includes(v.user))
-    .map(v=>({user_id:v.user,device_id:v.id,x:v.x,y:v.y}))});
+  const allowed=[...list.values()].filter(v=>a.members.includes(v.user));
+  const devices=await Promise.all(allowed.map(async v=>({
+    user_id:v.user,device_id:v.id,x:v.x,y:v.y,
+    ready:!!await storage.get(key(a.file,"envelope",v.user+":"+v.id))
+  })));
+  return res({devices,initialized:devices.some(d=>d.ready)});
 }
 async function envelopePut(storage,a,body){
   if(a.role!=="owner")return bad("Owner authorization required",403);
