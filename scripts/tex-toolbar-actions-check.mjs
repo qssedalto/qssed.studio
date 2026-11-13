@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import { enhanceWorkTexEditorTools } from "../studio/ui-work-tex-editor-tools.js";
+import { enhanceWorkTexCompileToolbar } from "../studio/ui-work-tex-compile-toolbar.js";
+import fs from "node:fs";
+import vm from "node:vm";
 
 // Exercise the generated browser runtime, not just source-code substrings.
 // Copy only selected text; Save As downloads a local .tex file and must never POST.
@@ -156,4 +159,28 @@ for (const zh of [true, false]) {
   assert(!html.includes("M9 29V18.8c0-.8"), "Old save-as pencil-crossing line must not return");
   assert(html.includes("tex-fluent-icon .tex-fluent-accent{fill:var(--primary)!important"), "Copy highlight must follow user theme color");
 }
+// The compile icon is the original GitHub Actions vector, never a redraw or
+// raster. UI only changes its fill from blue to the current monochrome theme.
+const canonical=fs.readFileSync(new URL("../studio/vendor/githubactions.svg",import.meta.url),"utf8");
+const originalPath=canonical.match(/<path d="([^"]+)"\/>/)?.[1];
+const toolbarSource=fs.readFileSync(new URL("../studio/ui-work-tex-compile-toolbar.js",import.meta.url),"utf8");
+const embeddedPath=toolbarSource.match(/const workflowSvg = '[^']*<path d="([^"]+)"\/><\/svg>'/)?.[1];
+assert(originalPath && originalPath===embeddedPath,
+  "Compile toolbar must preserve the exact official GitHub Actions SVG path without reconstruction");
+for(const zh of [true,false]){
+  const ui=enhanceWorkTexCompileToolbar("<body></body>",zh);
+  const runtime=ui.match(/<script id="aertex-tex-compile-toolbar-runtime">([\s\S]*?)<\/script>/)?.[1];
+  assert(runtime,"Missing compile toolbar runtime");
+  new vm.Script(runtime);
+  assert(ui.includes("bar.after(fixed)") &&
+    ui.includes("fixed.append(compile)") &&
+    ui.includes("flex:0 0 39px!important"),
+    "Compile action must be a fixed 39px toolbar control outside scrollable commands");
+  assert(ui.includes("title.readOnly=true") && ui.includes("title.hidden=true") &&
+    ui.includes("tex-title-static"),"Document title must be static, not editable by clicking its heading");
+  assert(ui.includes("tex-build-indicator") && ui.includes("tex-build-download-log") &&
+    ui.includes("URL.createObjectURL(payload)"),"Compilation must display a vector result and download its error log locally");
+  assert(!ui.includes("data:image/png"),"Compile toolbar must not render a raster icon");
+}
+console.log("Work TeX exact SVG, fixed compile toolbar and status/log checks passed.");
 console.log("Work TeX selected Copy and local Save As checks passed.");
