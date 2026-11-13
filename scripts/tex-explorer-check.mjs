@@ -63,8 +63,9 @@ for (const zh of [true, false]) {
   assert(WORK_TEX_EXPLORER_TREE.includes("aertex:tex-code-asset-updated") &&
     WORK_TEX_EXPLORER_TREE.includes("const documentId=activeId(),name=selected.name,content=activeTextValue()"),
     "Supplementary file edits must persist through their own file API");
-  assert(WORK_TEX_EXPLORER_TREE.includes("viewer.hidden=true;editor.classList.remove('is-asset-mode')") &&
-    WORK_TEX_EXPLORER_TREE.includes("editor.classList.add('is-asset-mode');viewer.hidden=false"),
+  assert(WORK_TEX_EXPLORER_TREE.includes("viewer.hidden=true;editor.classList.remove('is-asset-mode','is-codemirror-asset')") &&
+    WORK_TEX_EXPLORER_TREE.includes("editor.classList.add('is-asset-mode');viewer.hidden=false") &&
+    WORK_TEX_EXPLORER_TREE.includes("editor.classList.toggle('is-codemirror-asset',enhanced)"),
     "Switching between main.tex and supplementary assets must restore exactly one visible editor");
 
   assert(WORK_TEX_EXPLORER_STYLE.includes("box-shadow:none!important;filter:none!important"),
