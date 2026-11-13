@@ -38,8 +38,8 @@ assert(html.includes('/api/tex/github/pdf'), "PDF preview must use authenticated
 assert(!html.includes("__COPY_JSON__"), "injected copy placeholder must be resolved");
 assert(html.includes("远程编译（不建议）"), "Work must label the optional remote compile button");
 assert(html.includes("编译额度管理"), "Administrator must see a quota management link");
-assert(html.includes("ack_public:true") && html.includes("window.confirm(copy.publicConsent)"),
-  "Public repository creation must require informed confirmation and a server-checked acknowledgement");
+assert(html.includes("ack_public:true") && !html.includes("window.confirm(copy.publicConsent)") && !html.includes("publicConsent"),
+  "Repository creation must not show a duplicate confirmation popup; retain the server acknowledgement");
 assert(html.includes("新仓库公开") && html.includes("旧私有仓库在迁移前保持私有"),
   "Public repository notice must distinguish future public repos from unmigrated private repos");
 assert(html.indexOf('id="tex-live-preview-card"') < html.indexOf('id="tex-gh-widget"'), "Remote button belongs below PDF preview");
