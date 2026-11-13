@@ -1,4 +1,5 @@
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
+import { handleTexFileChatRoom } from "./tex-file-chat-room.js";
 const MAX_MESSAGE_BYTES = 1024 * 1024;
 const MAX_PRESENCE_POSITION = 180000;
 const AUTH_LEASE_MS = 90 * 1000;
@@ -29,6 +30,7 @@ export class TexCollaborationRoom {
   }
 
   async fetch(request) {
+    if (new URL(request.url).pathname === "/file-chat") return handleTexFileChatRoom(this.state,request);
     if (request.method === "POST" && new URL(request.url).pathname === "/revoke-links") {
       const owner=request.headers.get("X-Qsseda-Collab-Owner");
       const doc=request.headers.get("X-Qsseda-Collab-Document");
