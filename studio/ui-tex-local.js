@@ -263,14 +263,14 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             if (compile.disabled !== shouldDisable) compile.disabled = shouldDisable;
             syncPreviewAvailability();
             if (probesReady) {
-              window.dispatchEvent(new CustomEvent('qsseda:tex-compiler-probed', {
-                detail: {
-                  localDetected: Boolean(localBase),
-                  localSupported,
-                  cloudAvailable,
-                  selectedEngine: String(engine.value || '').toLowerCase()
-                }
-              }));
+              const result = {
+                localDetected: Boolean(localBase),
+                localSupported,
+                cloudAvailable,
+                selectedEngine: String(engine.value || '').toLowerCase()
+              };
+              window.__aertexTexCompilerProbe = result;
+              window.dispatchEvent(new CustomEvent('qsseda:tex-compiler-probed', { detail: result }));
             }
           }
 
