@@ -34,7 +34,7 @@ jobs:
           for change in data['changes']:
               relative=pathlib.PurePosixPath(change['p'])
               assert not relative.is_absolute() and '..' not in relative.parts
-              assert relative.parts[0] in ('studio','scripts','tex-vendor','docs') or str(relative) in ('wrangler.jsonc','auth-browser-refresh.js')
+              assert relative.parts[0] in ('studio','scripts','tex-vendor','docs') or str(relative) in ('wrangler.jsonc','auth-browser-refresh.js','.github/workflows/deploy-production.yml','.github/workflows/p0-p1-audit.yml','.github/workflows/studio-check.yml')
               target=root/relative
               assert not target.is_symlink() and target.resolve().is_relative_to(root)
               old=target.read_bytes() if target.exists() else None
@@ -57,7 +57,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix: complete atomic source saves and responsive runtime guards'
+          git commit -m 'ci: require verified P0 P1 regressions before production deployment'
           git push origin HEAD:refs/heads/audit/p0-p1-stability-20261113
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
       - name: Build pinned browser and server modules
@@ -70,6 +70,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p /tmp/p0-p1-results
+          git archive --format=tar.gz HEAD -o /tmp/p0-p1-results/source.tar.gz
+          git rev-parse HEAD > /tmp/p0-p1-results/commit.txt
           failed=0
           for file in scripts/*-check.mjs scripts/tex-compile-toolbar-browser.mjs scripts/tex-file-chat-popup-browser.mjs scripts/tex-workbench-browser.mjs; do
             name=$(basename "$file" .mjs)
