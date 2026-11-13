@@ -28,6 +28,16 @@ for (const [name, symbols] of [
 }
 const editor = await readFile(resolve(root, "studio/ui-work-tex-codemirror.js"), "utf8");
 const realtime = await readFile(resolve(root, "studio/ui-work-tex-realtime.js"), "utf8");
+const sourceModes = await readFile(resolve(root, "tex-vendor/src/codemirror.js"), "utf8");
+assert(sourceModes.includes("export function parserForFilename(filename)") &&
+  sourceModes.includes('"@codemirror/legacy-modes/mode/python"') &&
+  sourceModes.includes('"@codemirror/legacy-modes/mode/javascript"') &&
+  sourceModes.includes('"@codemirror/legacy-modes/mode/yaml"'),
+  "Python, JS/TS, YAML and other source modes must remain bundled in the same CodeMirror instance");
+assert(editor.includes("streamLanguageClass.define(parser)") &&
+  editor.includes("languageParserForFilename(currentAsset.name)"),
+  "Project files must receive matching CodeMirror syntax highlighting");
+
 const visual = await readFile(resolve(root, "studio/ui-work-tex-organize-ui.js"), "utf8");
 assert(editor.includes("import('/assets/tex/codemirror.js')") ||
   editor.includes("timedModule('/assets/tex/codemirror.js'"),
