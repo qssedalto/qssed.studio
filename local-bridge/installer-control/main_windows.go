@@ -72,10 +72,8 @@ func logEvent(event string,err error) {
  if e!=nil{return}
  defer f.Close()
  text:=event
- if err!=nil{text+=": "+strings.ReplaceAll(err.Error(),"
-"," ")}
- _,_=fmt.Fprintf(f,"%s pid=%d %s
-",time.Now().Format(time.RFC3339),os.Getpid(),text)
+ if err!=nil{text+=": "+strings.ReplaceAll(err.Error(),string(rune(10))," ")}
+ _,_=fmt.Fprintf(f,"%s pid=%d %s%c",time.Now().Format(time.RFC3339),os.Getpid(),text,10)
 }
 func readHealth() (health,error) {
  client:=http.Client{Timeout:800*time.Millisecond}
