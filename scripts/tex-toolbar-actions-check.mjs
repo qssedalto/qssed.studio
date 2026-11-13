@@ -180,7 +180,72 @@ for(const zh of [true,false]){
     ui.includes("tex-title-static"),"Document title must be static, not editable by clicking its heading");
   assert(ui.includes("tex-build-indicator") && ui.includes("tex-build-download-log") &&
     ui.includes("URL.createObjectURL(payload)"),"Compilation must display a vector result and download its error log locally");
+  assert(ui.includes("titleStack.append(heading,saveState)") &&
+    ui.includes("titleRow.append(titleStack,indicator,logButton)"),
+    "The original live autosave element must be directly below the static project title");
+  assert(ui.includes("#tex-editor>.tex-editor-footer") &&
+    ui.includes("display:none!important;height:0!important;min-height:0!important") &&
+    ui.includes("grid-template-rows:auto auto minmax(0,1fr)!important"),
+    "The obsolete footer must have no visible height or reserved layout row");
+  assert(ui.includes("max-width:100%!important") &&
+    ui.includes("text-overflow:ellipsis!important") &&
+    ui.includes(".tex-static-title-stack #tex-save-state"),
+    "Save status must be clipped to the available title width without overflowing");
   assert(!ui.includes("data:image/png"),"Compile toolbar must not render a raster icon");
+}
+// Run the actual compile-toolbar bootstrap against a minimal DOM. In
+// particular, check that it MOVES the existing status node instead of making
+// a second, stale copy while the footer remains visually collapsed.
+for(const zh of [true,false]){
+  const browserScript=enhanceWorkTexCompileToolbar("",zh)
+    .match(/<script id="aertex-tex-compile-toolbar-runtime">([\s\S]*?)<\/script>/)?.[1];
+  const nodes=new Map();
+  const listeners=new Map();
+  const el=(id="")=>{
+    const n={id,children:[],parentElement:null,dataset:{},textContent:"",hidden:false,
+      setAttribute(){},removeAttribute(){},addEventListener(type,fn){listeners.set("node:"+id+":"+type,fn)},
+      append(...values){for(const value of values){if(value.parentElement){value.parentElement.children=value.parentElement.children.filter(v=>v!==value)}value.parentElement=this;this.children.push(value)}},
+      insertBefore(value,ref){const i=this.children.indexOf(ref);if(value.parentElement)value.parentElement.children=value.parentElement.children.filter(v=>v!==value);value.parentElement=this;this.children.splice(i<0?this.children.length:i,0,value)},
+      after(value){value.parentElement=this.parentElement;this.insertedAfter=value},
+      replaceChildren(...values){this.children=[];this.append(...values)},
+      querySelector(){return null}
+    };
+    if(id)nodes.set(id,n);
+    return n;
+  };
+  const root=el("root"),toolbar=el("toolbar"),bar=el("bar"),title=el("tex-title");
+  const footer=el("footer"),saveState=el("save"),compile=el("tex-compile");
+  const titleInput=title;titleInput.value="机器学习";
+  footer.append(saveState);
+  toolbar.append(titleInput);
+  bar.parentElement=el("source-label");
+  root.dataset.texCollaborationDocumentId="project-1";
+  root.querySelector=key=>({
+    ".tex-editor-toolbar":toolbar,".tex-editor-commandbar":bar,
+    ".tex-save-state":saveState,"#tex-document-list":null,
+    "#tex-source":null,".tex-document-item.is-active":null
+  })[key]||null;
+  const browserDocument={
+    querySelector:key=>key===".tex-work-app[data-tex-root]"?root:null,
+    getElementById:key=>nodes.get(key)||null,
+    createElement:()=>el(),
+    body:{append(){}}
+  };
+  const browserWindow={
+    addEventListener:(type,fn)=>listeners.set(type,fn),
+    setTimeout:()=>{throw new Error("Toolbar bootstrap waited for existing elements")}
+  };
+  vm.runInNewContext(browserScript,{window:browserWindow,document:browserDocument,
+    MutationObserver:class{observe(){}disconnect(){}},Blob,URL});
+  const stack=saveState.parentElement;
+  assert.equal(stack?.className,"tex-static-title-stack","Autosave must be moved into the project title stack");
+  assert.equal(stack.children[1],saveState,"Autosave remains the SAME live status node, under heading");
+  assert.equal(stack.children[0].textContent,"机器学习");
+  assert.equal(footer.children.length,0,"Footer must not retain its autosave content");
+  assert.equal(compile.parentElement?.id,"tex-compile-fixed","Compile action must remain outside scrolling group");
+  assert.equal(titleInput.readOnly,true,"Title input may not be edited directly");
+  assert.equal(titleInput.hidden,true,"The old title input is not visible");
+  assert.equal(typeof listeners.get("aertex:tex-build-result"),"function","Compilation result listener missing");
 }
 console.log("Work TeX exact SVG, fixed compile toolbar and status/log checks passed.");
 console.log("Work TeX selected Copy and local Save As checks passed.");
