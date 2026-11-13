@@ -11,16 +11,24 @@ for (const zh of [true, false]) {
   assert(html.includes('data-tex-action') && html.includes("copy-all"), "Copy All must be installed");
   assert(html.includes("rename-project") && html.includes("delete-project") && html.includes("save-project-zip"),
     "File and project commands must remain distinct");
-  assert(html.includes('class="tex-fluent-icon tex-project-rename-icon"'),
-    "Project Rename must use the approved standalone Σ / I-beam SVG");
-  assert(html.includes('class="tex-project-rename-sigma"') &&
-    html.includes('class="tex-project-rename-ibeam"') &&
-    html.includes('class="tex-project-rename-frame"'),
-    "The project Rename icon must retain its three vector components");
+  assert(html.includes("rename.querySelector('svg')?.cloneNode(true)"),
+    "Project Rename must clone the exact File Rename SVG outer frame and I-beam");
+  assert(html.includes("const letter=svg.querySelector('.tex-fluent-accent-line')"),
+    "Project Rename may change only the A letter path");
+  assert(html.includes("letter.setAttribute('d','M8.85 9.6H5.2L8.05 12 5.2 14.4H8.85')"),
+    "Sigma must fit exactly inside the original A glyph bounds");
+  assert(html.includes("letter.classList.add('tex-project-rename-sigma')") &&
+    html.includes("svg.classList.add('tex-project-rename-icon')"),
+    "Sigma retains its accented marker without altering neutral geometry");
+  assert(!html.includes('class="tex-project-rename-frame"') &&
+    !html.includes('class="tex-project-rename-ibeam"'),
+    "Do not draw a second, wider frame around the Sigma");
   assert(!html.includes('<text class="tex-action-symbol" x="7.25"'),
-    "Do not regress to the misaligned font glyph");
-  assert(WORK_TEX_EXPLORER_STYLE.includes('tex-project-rename-sigma{fill:none!important;stroke:var(--primary)!important'),
-    "Sigma must use the user-selected accent color");
+    "Sigma must remain an SVG vector path, not a font glyph");
+  assert(!WORK_TEX_EXPLORER_STYLE.includes("svg.tex-project-rename-icon{"),
+    "Sigma must inherit the exact same 28px dimensions as the A icon");
+  assert(!WORK_TEX_EXPLORER_STYLE.includes("tex-project-rename-sigma{"),
+    "Sigma must inherit the same Fluent accent stroke, not a heavier special stroke");
   assert(html.includes("const renameProject=make('rename-project',t.renameProject,sigmaSvg)"),
     "Project Rename must still invoke the existing action and preserve permissions");
 
