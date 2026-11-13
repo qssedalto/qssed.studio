@@ -92,19 +92,35 @@ const themedMarkup = enhanceWorkTexCodeMirror(
 const codeRuntime = themedMarkup.match(/<script id="qsseda-work-tex-codemirror-runtime">([\s\S]*?)<\/script>/)?.[1];
 assert(codeRuntime, "Color selection must be bundled into the existing CodeMirror runtime");
 new Function(codeRuntime);
-assert(codeRuntime.includes("paletteSelect.id = 'tex-code-theme-select'") &&
-  codeRuntime.includes("localStorage.setItem(codeThemeStorageKey, selectedCodeTheme)") &&
-  codeRuntime.includes("attributeFilter: ['data-theme']"),
-  "Palette picker must persist and follow dark/light system theme changes");
+const lightIds = colorPalettes.filter(([,p]) => !p.dark).map(([id]) => id);
+const darkIds = colorPalettes.filter(([,p]) => p.dark).map(([id]) => id);
+assert(lightIds.length >= 6 && darkIds.length >= 6,
+  "Both light and dark mode require several accessible independent presets");
+assert(codeRuntime.includes("pickerButton.id = 'tex-code-theme-toggle'") &&
+  codeRuntime.includes("popover.id = 'tex-code-theme-popover'") &&
+  codeRuntime.includes("select.id = 'tex-code-theme-' + mode") &&
+  codeRuntime.includes("function showPreview(mode)"),
+  "Color settings must show two independent light/dark choices with actual code previews");
+assert(codeRuntime.includes("const colorKeys = {") &&
+  codeRuntime.includes("light: 'aertex.work.code-color-scheme.light.v2'") &&
+  codeRuntime.includes("dark: 'aertex.work.code-color-scheme.dark.v2'") &&
+  codeRuntime.includes("localStorage.setItem(colorKeys[mode],value)") &&
+  codeRuntime.includes("const legacy = safeId(localStorage.getItem(codeThemeStorageKey), mode)"),
+  "Site light and dark code palettes must persist separately with safe v1 migration");
+assert(codeRuntime.includes("attributeFilter:['data-theme']") &&
+  codeRuntime.includes("const resolvedCodeThemeId = () => selectedCodeThemes[modeForSite()]") &&
+  codeRuntime.includes("window.addEventListener('storage',event=>"),
+  "Code colors must switch with global appearance and sync across tabs");
 assert(codeRuntime.includes("codeThemeCompartment.reconfigure(makeCodeThemeExtension())") &&
   codeRuntime.includes("...paletteExtension()") &&
   codeRuntime.includes("syntaxHighlighting(highlight)") &&
   codeRuntime.includes("StreamLanguage.define(stex)"),
-  "Changing colors must update real Lezer tokens without reconstructing the editor or its undo state");
+  "Switching colors must retain CodeMirror source, undo history and all other editor state");
 assert(themedMarkup.includes("#tex-editor[data-code-theme]") &&
+  themedMarkup.includes(".tex-code-theme-preview") &&
   !codeRuntime.includes("AERTEXTheme.setMode") &&
   !codeRuntime.includes("AERTEXTheme.setAccent"),
-  "Syntax themes must never change the global site colors or PDF rendering");
+  "Independent code palettes must not change site or PDF appearance");
 console.log("Work TeX code theme picker, live syntax recoloring and 4.5:1 palette contrast verified.");
 
 console.log("TeX self-hosted asset bundling and same-origin runtime checks passed.");
