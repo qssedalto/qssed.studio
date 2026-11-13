@@ -58,7 +58,7 @@ for (const zh of [true,false]) {
   assert.match(markup, /id="qsseda-work-tex-realtime-runtime"/, "WebSocket Yjs sync must remain installed.");
   assert(!markup.includes("这一阶段先完成成员与权限基础"), "Outdated phase copy must be removed.");
   assert(!markup.includes("This phase establishes members and permissions first"), "English phase copy must be removed.");
-  const collaboration = markup.match(/<script id="qsseda-work-tex-collaboration-runtime">([\\s\\S]*?)<\\/script>/)?.[1];
+  const collaboration = markup.split('<script id="qsseda-work-tex-collaboration-runtime">')[1]?.split('</script>')[0];
   assert(collaboration, "The active collaboration dialog runtime must exist");
   assert.doesNotThrow(() => new Function(collaboration), "Collaboration runtime must be valid JavaScript");
   const submitAt = collaboration.indexOf("form.addEventListener('submit', async event => {");
