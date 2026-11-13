@@ -210,7 +210,10 @@ function markdownVisualRuntime() {
     if (unsupported(initial)) { report(translation.unsupported); return; }
     const ticket = ++loadingTicket;
     visualButton.textContent = translation.loading;
-    loadingPromise ||= import('/assets/tex/markdown-visual.js');
+    // A runtime URL prevents the Worker bundler from trying to resolve this
+    // browser-only self-hosted ESM asset as a Worker source import.
+    const visualModuleUrl = () => '/assets/tex/markdown-visual.js';
+    loadingPromise ||= import(visualModuleUrl());
     updateButtons();
     let factory;
     try { factory = await loadingPromise; }
