@@ -496,7 +496,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
 
         const canEditSource = () => !editor.hidden && Boolean(activeDocumentId()) &&
           !source.readOnly && root.dataset.texCollaborationAccessRole !== 'viewer' &&
-          !(window.__aertexTexExplorerAsset?.()?.main === false && root.dataset.texCollaborationAccessRole === 'editor');
+          !(window.__aertexTexExplorerAsset?.()?.main !== true && root.dataset.texCollaborationAccessRole === 'editor');
 
         async function writeClipboard(text) {
           if (navigator.clipboard?.writeText) {
@@ -630,7 +630,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
         const syncDisabled = () => {
           const noDocument = editor.hidden || !activeDocumentId();
           const readOnly = source.readOnly || root.dataset.texCollaborationAccessRole === 'viewer' ||
-            (window.__aertexTexExplorerAsset?.()?.main === false && root.dataset.texCollaborationAccessRole === 'editor');
+            (window.__aertexTexExplorerAsset?.()?.main !== true && root.dataset.texCollaborationAccessRole === 'editor');
           [saveButton, undoButton, redoButton, renameButton].forEach(button => {
             button.disabled = noDocument || readOnly;
           });
