@@ -39,20 +39,27 @@ function markdownVisualRuntime() {
     note:'Visual edits sync to Markdown; use the existing Save control to persist.'
   };
 
-  const tabs = document.createElement('div');
+  // Markdown uses the SAME native selector design/location as TeX,
+  // not a wide segmented switch competing with the source command toolbar.
+  const tabs = document.createElement('label');
   tabs.id = 'tex-markdown-view-modes';
-  tabs.className = 'tex-markdown-view-modes';
+  tabs.className = 'tex-markdown-view-modes tex-editor-choice-label';
   tabs.hidden = true;
-  const sourceButton = document.createElement('button');
-  sourceButton.type = 'button';
-  sourceButton.textContent = translation.source;
-  sourceButton.setAttribute('aria-pressed', 'true');
-  const visualButton = document.createElement('button');
-  visualButton.type = 'button';
-  visualButton.textContent = translation.visual;
-  visualButton.setAttribute('aria-pressed', 'false');
-  tabs.append(sourceButton, visualButton);
-  sourceLabel.insertBefore(tabs, sourceLabel.querySelector('.tex-editor-commandbar') || sourceLabel.lastElementChild);
+  const caption = document.createElement('span');
+  caption.textContent = zh ? '编辑器选择' : 'Editor';
+  const viewSelect = document.createElement('select');
+  viewSelect.id = 'tex-markdown-editor-mode';
+  viewSelect.setAttribute('aria-label',caption.textContent);
+  for (const [value,label] of [['source',translation.source],['visual',translation.visual]]) {
+    const option=document.createElement('option');
+    option.value=value;
+    option.textContent=label;
+    viewSelect.append(option);
+  }
+  tabs.append(caption,viewSelect);
+  const engineLabel = document.getElementById('tex-engine')?.closest('label');
+  if(engineLabel?.parentElement) engineLabel.parentElement.insertBefore(tabs,engineLabel);
+  else root.querySelector('.tex-editor-toolbar')?.append(tabs);
 
   const panel = document.createElement('section');
   panel.id = 'tex-markdown-visual-panel';
@@ -140,9 +147,8 @@ function markdownVisualRuntime() {
   const updateButtons = () => {
     const showing = isMarkdown(selection()) && !editor.hidden && editor.classList.contains('is-asset-mode');
     tabs.hidden = !showing;
-    sourceButton.setAttribute('aria-pressed', String(mode === 'source'));
-    visualButton.setAttribute('aria-pressed', String(mode === 'visual'));
-    visualButton.disabled = !showing || Boolean(loadingPromise);
+    viewSelect.value = mode;
+    viewSelect.disabled = !showing || Boolean(loadingPromise);
     for (const button of toolbar.querySelectorAll('button')) button.disabled = !canEdit();
   };
   const fallbackToSource = message => {
@@ -209,7 +215,7 @@ function markdownVisualRuntime() {
     // round-trip. Preserve the file and require the lossless CodeMirror mode.
     if (unsupported(initial)) { report(translation.unsupported); return; }
     const ticket = ++loadingTicket;
-    visualButton.textContent = translation.loading;
+    tabs.title = translation.loading;
     // A runtime URL prevents the Worker bundler from trying to resolve this
     // browser-only self-hosted ESM asset as a Worker source import.
     const visualModuleUrl = () => '/assets/tex/markdown-visual.js';
@@ -221,12 +227,12 @@ function markdownVisualRuntime() {
       console.warn('[AERTEX Markdown] optional visual module unavailable', error);
       loadingPromise = null;
       if (ticket === loadingTicket) report(translation.failed);
-      visualButton.textContent = translation.visual;
+      tabs.title = '';
       updateButtons();
       return;
     }
     loadingPromise = null;
-    visualButton.textContent = translation.visual;
+    tabs.title = '';
     if (ticket !== loadingTicket || !isMarkdown(selection()) || id !== keyFor(selection())) {
       updateButtons(); return;
     }
@@ -249,8 +255,10 @@ function markdownVisualRuntime() {
       fallbackToSource(translation.failed);
     }
   };
-  sourceButton.addEventListener('click', () => fallbackToSource());
-  visualButton.addEventListener('click', () => void reveal());
+  viewSelect.addEventListener('change', () => {
+    if(viewSelect.value==='visual')void reveal();
+    else fallbackToSource();
+  });
   const syncSelection = () => {
     const selected = selection();
     if (mode === 'visual' && (!isMarkdown(selected) || keyFor(selected) !== selectedKey ||
@@ -277,11 +285,25 @@ function markdownVisualRuntime() {
 }
 
 const markdownVisualStyle = `
-.tex-work-app .tex-markdown-view-modes{display:flex;align-items:center;flex:0 0 auto;gap:2px;padding:2px;border:1px solid var(--border);border-radius:8px;background:var(--fill)}
+/* Identical size, typography and layout to native #tex-editor-mode. */
+.tex-work-app .tex-editor-toolbar>.tex-markdown-view-modes{
+  display:grid!important;align-content:end!important;gap:3px!important;
+  flex:0 0 auto!important;min-width:118px!important;margin:0!important;
+}
+.tex-work-app .tex-editor-toolbar>.tex-markdown-view-modes>span{
+  font-size:8px!important;font-weight:600!important;color:var(--muted)!important
+}
 .tex-work-app .tex-markdown-view-modes[hidden]{display:none!important}
-.tex-work-app .tex-markdown-view-modes button{min-width:0!important;width:auto!important;height:27px!important;min-height:27px!important;padding:0 9px!important;border:0!important;border-radius:6px!important;background:transparent!important;color:var(--muted)!important;font:600 11px/1 system-ui,sans-serif!important;cursor:pointer}
-.tex-work-app .tex-markdown-view-modes button[aria-pressed="true"]{color:var(--text)!important;background:var(--surface)!important;box-shadow:0 1px 4px rgba(0,0,0,.07)!important}
-.tex-work-app .tex-markdown-view-modes button:disabled{opacity:.6!important;cursor:default}
+.tex-work-app #tex-markdown-editor-mode{
+  box-sizing:border-box;height:38px!important;min-height:38px!important;
+  width:142px!important;max-width:160px!important;
+  padding:0 24px 0 9px!important;margin:0!important;
+  border-radius:10px!important;border:0!important;
+  background:var(--surface)!important;color:var(--text)!important;
+  box-shadow:inset 0 0 0 1px var(--border)!important;
+  font-size:11px!important;font-weight:500!important;cursor:pointer
+}
+.tex-work-app #tex-markdown-editor-mode:disabled{opacity:.6!important;cursor:default}
 .tex-work-app #tex-markdown-visual-panel[hidden]{display:none!important}
 .tex-work-app #tex-editor.md-visual-mode.is-codemirror-asset>.tex-codemirror-host{display:none!important}
 .tex-work-app #tex-editor.md-visual-mode>.tex-markdown-visual-panel{display:flex!important;grid-row:3;grid-column:1;min-width:0;min-height:470px;height:100%;box-sizing:border-box;flex-direction:column;overflow:hidden;background:var(--surface);color:var(--text)}
@@ -309,7 +331,7 @@ const markdownVisualStyle = `
 .tex-work-app .tex-markdown-visual-surface .ProseMirror .selectedCell{background:color-mix(in srgb,var(--primary) 12%,transparent)}
 .tex-work-app .tex-markdown-visual-surface .ProseMirror:focus-visible{outline:none!important}
 .tex-work-app .tex-markdown-visual-hint{flex:0 0 auto;padding:5px 14px;border-top:1px solid var(--hairline);color:var(--muted);font-size:10px}
-@media(max-width:760px){.tex-work-app .tex-markdown-view-modes button{font-size:10px!important;padding:0 6px!important}.tex-work-app .tex-markdown-visual-surface{padding:15px}.tex-work-app .tex-markdown-visual-surface .ProseMirror{font-size:16px}}
+@media(max-width:760px){.tex-work-app .tex-editor-toolbar>.tex-markdown-view-modes{min-width:0!important;width:100%!important}.tex-work-app #tex-markdown-editor-mode{width:100%!important;max-width:100%!important}.tex-work-app .tex-markdown-visual-surface{padding:15px}.tex-work-app .tex-markdown-visual-surface .ProseMirror{font-size:16px}}
 `;
 
 export function enhanceWorkTexMarkdownVisual(markup) {
