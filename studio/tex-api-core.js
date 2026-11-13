@@ -5,6 +5,8 @@ import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { handleTexProjects } from "./tex-project-api.js";
 import { handleTexProjectFiles } from "./tex-project-files-api.js";
+import { handleTexOrganize } from "./tex-organize-api.js";
+import { handleTexArchive } from "./tex-archive-api.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const RUN_ROOT = "_system/tex-runs/";
@@ -33,6 +35,8 @@ export async function handleTexApi(request, env, action) {
   else if (action === "documents") response = await handleDocuments(request, env, auth.user.id);
   else if (action === "projects") response = await handleTexProjects(request, env, auth.user.id, session.accessToken);
   else if (action === "files") response = await handleTexProjectFiles(request, env, auth.user.id);
+  else if (action === "organize") response = await handleTexOrganize(request, env, auth.user.id);
+  else if (action === "archive") response = await handleTexArchive(request, env, auth.user);
   else if (action === "runs") response = await handleRuns(request, env, auth.user.id);
   else if (action === "compile") response = await handleCompile(request, env, auth.user.id);
   else if (action === "result") response = await handleResult(request, env, auth.user.id);
@@ -311,6 +315,7 @@ async function updateDocument(request, env, userId) {
   try {
     const previous = await readDocument(env, userId, documentId);
     if (!previous) return json({ error: "TeX document not found." }, 404);
+    if (previous.locked) return json({ error: "Unlock the project before editing." }, 423);
     const normalized = normalizeDocument(parsed.value, userId, documentId, previous);
     if (!normalized.ok) return json({ error: normalized.error }, 400);
     await writeDocument(env, normalized.value);
@@ -325,8 +330,9 @@ async function deleteDocument(request, env, userId) {
   const documentId = cleanObjectId(new URL(request.url).searchParams.get("id"));
   if (!documentId) return json({ error: "Invalid TeX document identifier." }, 400);
   try {
-    const existing = await env.STORAGE.head(documentKey(userId, documentId));
+    const existing = await readDocument(env,userId,documentId);
     if (!existing) return json({ error: "TeX document not found." }, 404);
+    if (existing.locked) return json({ error: "Unlock the project before deleting." }, 423);
     await env.STORAGE.delete(documentKey(userId, documentId));
     await purgeDocumentArtifacts(env, userId, documentId);
     return json({ deleted: true, id: documentId });
@@ -389,6 +395,11 @@ function normalizeDocument(input, userId, documentId, previous) {
       source: cleanSource(source.source),
       files: Array.isArray(previous?.files) ? previous.files : [],
       project_type: previous?.project_type || "legacy",
+      pinned: previous?.pinned === true, locked: previous?.locked === true,
+      pinned_files: Array.isArray(previous?.pinned_files) ? previous.pinned_files : [],
+      locked_files: Array.isArray(previous?.locked_files) ? previous.locked_files : [],
+      pinned_folders: Array.isArray(previous?.pinned_folders) ? previous.pinned_folders : [],
+      locked_folders: Array.isArray(previous?.locked_folders) ? previous.locked_folders : [],
       created_at: previous?.created_at || now,
       updated_at: now
     }
@@ -440,6 +451,8 @@ function documentMetadata(document) {
     preview: document.source.replace(/\s+/g, " ").trim().slice(0, 220),
     projectType: document.project_type || "legacy",
     fileCount: String(1+(document.files?.length||0)),
+    pinned: document.pinned ? "true" : "false",
+    locked: document.locked ? "true" : "false",
     createdAt: document.created_at,
     updatedAt: document.updated_at
   };
@@ -455,6 +468,8 @@ function documentFromMetadata(meta, userId, documentId) {
     preview: cleanText(meta.preview, 220),
     file_count: Math.max(1,Math.min(25,Number(meta.fileCount)||1)),
     project_type: cleanText(meta.projectType,24)||"legacy",
+    pinned: meta.pinned === "true",
+    locked: meta.locked === "true",
     created_at: cleanTimestamp(meta.createdAt),
     updated_at: cleanTimestamp(meta.updatedAt)
   };
