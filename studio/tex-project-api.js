@@ -170,14 +170,14 @@ async function createDocument(env,userId,title,source,files,type,skipped=[]) {
   const page=await env.STORAGE.list({prefix,limit:MAX_DOCS+1});
   if(page.objects.length>=MAX_DOCS)return problem("Project limit reached.",409);
   const now=new Date().toISOString(),id=crypto.randomUUID();
-  const record={id,owner_id:userId,title,engine:"xelatex",source,
+  const record={id,owner_id:userId,title,engine:"xelatex",source,realtime_epoch:"v2",
     files:files||[],project_type:type,created_at:now,updated_at:now};
   await env.STORAGE.put(prefix+id+".json",JSON.stringify(record),{
     httpMetadata:{contentType:"application/json;charset=UTF-8"},
     customMetadata:{ownerId:userId,hidden:"true",kind:"tex-document",
       title,engine:"xelatex",preview:source.replace(/\s+/g," ").trim().slice(0,220),
       projectType:type,fileCount:String(1+(files?.length||0)),
-      createdAt:now,updatedAt:now}
+      createdAt:now,updatedAt:now,realtimeEpoch:"v2"}
   });
   return json({document:record,created:true,skipped},201);
 }
