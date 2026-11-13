@@ -49,10 +49,11 @@ func logBridgeEvent(kind string,err error) {
   if problem!=nil{return}
   defer file.Close()
   reason:=""
-  if err!=nil {reason=" | "+strings.ReplaceAll(strings.ReplaceAll(err.Error(),""," "),"
-"," ")}
-  _,_=fmt.Fprintf(file,"%s | %s | pid=%d | version=%s%s
-",time.Now().Format(time.RFC3339),kind,os.Getpid(),version,reason)
+  if err!=nil {
+    reason=" | "+strings.ReplaceAll(strings.ReplaceAll(err.Error(),string(rune(13))," "),string(rune(10))," ")
+  }
+  _,_=fmt.Fprintf(file,"%s | %s | pid=%d | version=%s%s%c",
+    time.Now().Format(time.RFC3339),kind,os.Getpid(),version,reason,10)
 }
 
 func probeNativeHealth() (nativeHealth,error) {
@@ -126,7 +127,7 @@ func waitUntilReady() (nativeHealth,error) {
     time.Sleep(170*time.Millisecond)
   }
   if last==nil {last=errors.New("unknown startup failure")}
-  return nativeHealth{},fmt.Errorf("Bridge did not become ready within %s: %w; see %%LOCALAPPDATA%%\QssedA\LocalBridge\bridge.log",readinessTimeout,last)
+  return nativeHealth{},fmt.Errorf("Bridge did not become ready within %s: %w; see the bridge.log file under %%LOCALAPPDATA%%",readinessTimeout,last)
 }
 
 func installAndVerify() (nativeHealth,error) {
@@ -144,27 +145,23 @@ func bridgeStatusText() string {
   installed,err:=installedBridgePath()
   if err!=nil{return "无法确定安装目录: "+err.Error()}
   logPath:=filepath.Join(filepath.Dir(installed),"bridge.log")
-  message:="程序: "+installed+"
-日志: "+logPath
-  if _,err:=os.Stat(installed);err!=nil {message+="
-
-已安装文件: 未找到"}else{message+="
-
-已安装文件: 存在"}
+  lines:=[]string{"程序: "+installed,"日志: "+logPath}
+  if _,err:=os.Stat(installed);err!=nil {
+    lines=append(lines,"已安装文件: 未找到")
+  }else{
+    lines=append(lines,"已安装文件: 存在")
+  }
   health,err:=probeNativeHealth()
-  if err==nil {message+="
-运行状态: 正在运行
-版本: "+health.Version+"
-PID: "+strconv.Itoa(health.PID)}
-  if err!=nil {message+="
-运行状态: 未确认在运行
-详情: "+err.Error()}
-  if portIsOccupied()&&err!=nil {message+="
-注意: 32145 端口已被占用"}
-  return message+"
-
-请在任务管理器的「详细信息」页查找 AERTEX-Bridge.exe。
-Windows 启动应用显示已启用，并不代表程序目前正在运行。"
+  if err==nil {
+    lines=append(lines,"运行状态: 正在运行","版本: "+health.Version,
+      "PID: "+strconv.Itoa(health.PID))
+  }else{
+    lines=append(lines,"运行状态: 未确认在运行","详情: "+err.Error())
+    if portIsOccupied(){lines=append(lines,"注意: 32145 端口已被占用")}
+  }
+  lines=append(lines,"请在任务管理器的「详细信息」页查找 AERTEX-Bridge.exe。",
+    "Windows 启动应用显示已启用，并不代表程序目前正在运行。")
+  return strings.Join(lines,string(rune(10)))
 }
 
 // Windows MoveFileEx replaces the previous released executable atomically.
