@@ -75,6 +75,20 @@ for(const phrase of ["tex-row-menu-trigger","tex-editor-mode","tex-organize-pins
   assert(html.includes(phrase),"Missing "+phrase);
 }
 assert(html.includes("#tex-document-list::-webkit-scrollbar"),"Explorer scrollbar must be visually hidden without disabling scroll");
+
+assert(script.includes("if(!stored.archived||stored.id!==id)") &&
+  script.includes("records.delete(id)") &&
+  script.includes("list.querySelector('.tex-document-item[data-tex-document-id=") &&
+  script.includes("sessionStorage.setItem(archiveExpandFlag,'1')") &&
+  script.includes("location.replace('/'+locale+'/tex')"),
+  "Confirmed encrypted archives must disappear from active projects, reopen archive rail and navigate to the localized overview");
+assert(!script.includes("['rename','delete','archive','lock'].includes(action)"),
+  "Archiving must not trigger two independent main.tex saves while capturing a version");
+assert(script.includes("bridge.getAssetValue?.()!==selected.content"),
+  "The archive must refuse dirty supplementary file contents instead of storing a stale snapshot");
+assert(script.includes("archiveToggle.querySelector('span').textContent"),
+  "Third-column archive section must surface the archived project count");
+
 assert(html.includes("max-height:none!important"),"Explorer must fill its available vertical space");
 assert(html.includes("#tex-command-rename-project svg") && html.includes("#tex-command-rename svg"),"Project and file menus must reuse their distinct Fluent rename artwork");
 assert(html.includes("width:158px!important"),"Popup must use a narrow balanced action menu");
