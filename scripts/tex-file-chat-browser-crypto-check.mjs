@@ -172,11 +172,12 @@ const profile=mkdtempSync(path.join(tmpdir(),"aertex-filechat-e2ee-chrome-"));
 
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function browserRound(round){
-  const portFile=path.join(profile,"DevToolsActivePort");
+  const browserProfile=round==="fresh"?profile+"-fresh":profile;
+  const portFile=path.join(browserProfile,"DevToolsActivePort");
   rmSync(portFile,{force:true});
   const child=spawn(binary,[
     "--headless=new","--no-sandbox","--disable-dev-shm-usage","--disable-gpu",
-    "--no-first-run","--user-data-dir="+(round==="fresh"?profile+"-fresh":profile),"--window-size=900,780",
+    "--no-first-run","--user-data-dir="+browserProfile,"--window-size=900,780",
     "--remote-debugging-port=0",origin+"/?round="+round
   ],{stdio:["ignore","ignore","pipe"]});
   let stderr="",websocket=null,messageId=0;
