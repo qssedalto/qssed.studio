@@ -218,6 +218,9 @@ for(const marker of ["navigator.credentials.create","navigator.credentials.get",
   "deriveBits","AES-GCM","envelope-put","envelope-get","aertex:tex-chat-toggle","document_id",
   "aertex:tex-project-asset-selected","pagehide"])assert(runtime.includes(marker),"Missing "+marker);
 assert(runtime.includes("localStorage.setItem(HINT_PREF"),"Non-sensitive UI preference should be persisted");
+assert(!runtime.includes("state.device.newDevice"),"A missing ECDH identity must not be called a new physical device");
+assert(!runtime.includes("markDeviceEnrolled()"),"WebAuthn enrollment must not be inferred from IndexedDB");
+assert(!runtime.includes("action:'enroll-device'"),"Successful WebAuthn GET must not silently enroll another Passkey");
 assert(!runtime.includes("localStorage.setItem('filechat-key"),"Never persist room keys in localStorage");
 assert(!runtime.includes("sessionStorage"),"Passkey verification must not survive page reload");
 assert(runtime.includes("function toggleChat()"),"Popup should use a single toolbar toggle");
