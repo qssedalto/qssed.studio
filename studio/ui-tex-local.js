@@ -367,12 +367,12 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             return true;
           }
 
-          const compileAssetExtensions = /\.(?:tex|sty|cls|bib|bst|bbx|cbx|def|dtx|ins|ltx|tikz|pgf|png|jpe?g|pdf|eps|ttf|otf)$/i;
+          const compileAssetExtensions = /\.(?:tex|sty|cls|bib|bst|bbx|cbx|def|dtx|ins|ltx|tikz|pgf|txt|csv|tsv|cfg|png|jpe?g|pdf|eps|ttf|otf)$/i;
           const projectAssetCache = new Map();
           function normalizedProjectAssets(record) {
             if (!record || !Array.isArray(record.files)) throw new Error('Project files are unavailable.');
             return record.files
-              .filter(asset => asset && typeof asset.name === 'string' && compileAssetExtensions.test(asset.name))
+              .filter(asset => asset && typeof asset.name === 'string' && compileAssetExtensions.test(asset.name) && !['main.tex', 'main.pdf'].includes(asset.name.toLowerCase()))
               .map(asset => ({ name: asset.name, encoding: asset.encoding, content: asset.content }));
           }
           async function loadProjectAssets(id = String(root.dataset.texCollaborationDocumentId || '')) {
