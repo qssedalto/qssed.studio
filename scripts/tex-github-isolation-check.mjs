@@ -38,6 +38,10 @@ assert(html.includes('/api/tex/github/pdf'), "PDF preview must use authenticated
 assert(!html.includes("__COPY_JSON__"), "injected copy placeholder must be resolved");
 assert(html.includes("远程编译（不建议）"), "Work must label the optional remote compile button");
 assert(html.includes("编译额度管理"), "Administrator must see a quota management link");
+assert(html.includes("ack_public:true") && html.includes("window.confirm(copy.publicConsent)"),
+  "Public repository creation must require informed confirmation and a server-checked acknowledgement");
+assert(html.includes("新仓库公开") && html.includes("旧私有仓库在迁移前保持私有"),
+  "Public repository notice must distinguish future public repos from unmigrated private repos");
 assert(html.indexOf('id="tex-live-preview-card"') < html.indexOf('id="tex-gh-widget"'), "Remote button belongs below PDF preview");
 assert(html.indexOf('id="tex-gh-widget"') < html.indexOf('class="tex-compiler-card"'), "Remote button belongs above local Bridge card");
 assert(html.includes('id="tex-gh-card" aria-label="GitHub Actions" hidden'), "Remote controls should be collapsed by default");
@@ -46,6 +50,8 @@ assert(en.includes("Create my only repository") && en.includes("Remote compilati
 
 // The first-click onboarding must preserve the exact same-origin document route.
 const setup = texGithubSetupContent(true, "zh-cn");
+assert(setup.includes("生成的 PDF 和 Git 历史将公开存储"),
+  "Quota application must disclose that new GitHub compilation repositories are public");
 assert(setup.includes('id="tex-setup-form"') && setup.includes("每周最多使用 100 次"),
   "Onboarding must explain weekly build limits and render the application form");
 assert(setup.includes('window.location') === false && setup.includes('location.assign(back)'),
