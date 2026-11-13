@@ -608,6 +608,8 @@ export function enhanceWorkTexRealtime(markup, zh) {
           const current = {
             id,
             generation,
+            // Keep CRDT session tied to the exact R2 main.tex generation.
+            roomEpoch: String(window.__aertexFileGetContext?.()?.document?.realtime_epoch || 'v2'),
             ydoc,
             ytext,
             ymeta,
@@ -807,6 +809,17 @@ export function enhanceWorkTexRealtime(markup, zh) {
             return;
           }
           installInputBindings();
+          window.addEventListener('aertex:tex-file-updated', event => {
+            const id = String(event?.detail?.documentId || event?.detail?.document_id || '');
+            const epoch = String(event?.detail?.realtimeEpoch || 'v2');
+            if (!id || connection?.id !== id || connection.roomEpoch === epoch) return;
+            // The entry was deleted/replaced/imported. The old room contains
+            // a different source revision: never merge it into this project.
+            window.clearTimeout(scheduledConnectTimer);
+            scheduledConnectId = '';
+            closeConnection();
+            scheduleDocumentConnection();
+          });
           const observer = new MutationObserver(changes => {
             // A nested file highlight/chevron is not a document switch.
             if (changes.some(change => change.target === root || change.target === list ||
