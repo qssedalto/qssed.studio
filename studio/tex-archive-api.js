@@ -1,6 +1,7 @@
+import { retireTexSource } from './tex-collaboration-retire.js';
 import { purgeTexCollaborationHistory } from "./tex-collaboration-history.js";
 import { readJsonBounded } from "./request-json-bounded.js";
-import { isTexMainLocked, texDocumentRevision, putTexDocument, retireTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
+import { isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
 import { workerLog } from "./server-runtime.js";
 import { json } from "./routing.js";
 import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
@@ -215,7 +216,7 @@ export async function handleTexArchiveTransaction(request,env,user) {
       customMetadata:{ownerId:userId,kind:"tex-encrypted-archive",archivedAt,cleanupComplete:"false"}});
     if(uploaded===null)return fail("The archive changed. Reload before retrying.",409);
     try{
-      await retireTexDocument(env.STORAGE,docKey(userId,id),texDocumentRevision(current,stored),"archived");
+      await retireTexSource(env,texDocumentRevision(current,stored),"archived");
     }catch(error){
       // Only an explicit failed precondition proves the plaintext survived.
       // An unknown I/O error may have committed: retain the ciphertext then.

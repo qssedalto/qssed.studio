@@ -3,7 +3,7 @@ import { MemoryR2 } from './helpers/memory-r2.mjs';
 import { commitTexSourceSave, handleRoomSaveValidation } from '../studio/tex-collaboration-save.js';
 import { activeTexRoomSource, createTexSourceSnapshot } from '../studio/tex-collaboration-connect.js';
 import { handleNativeWorkDocuments } from '../studio/native-work-documents.js';
-import { Doc, applyUpdate, encodeStateAsUpdate } from '../tex-vendor/server-yjs.mjs';
+import { Doc, applyUpdate, encodeStateAsUpdate, encodeStateVector } from '../tex-vendor/server-yjs.mjs';
 const owner='11111111-1111-4111-8111-111111111111',id='22222222-2222-4222-8222-222222222222';
 const key=`_system/tex-documents/${owner}/${id}.json`;
 const base={id,owner_id:owner,source:'A',title:'Atomic',engine:'xelatex',realtime_epoch:'v2',
@@ -87,5 +87,20 @@ function fixture(){
    method:'PUT',headers:{Authorization:`Bearer ${owner}`,'If-Match':f.revision},body:JSON.stringify({...base,source:'Native overwrite'})}),f.env);
   assert.equal(response.status,409);assert.equal(f.storage.document(key).source,'A');assert.equal(f.records.get('snapshot').data,b64(live));live.destroy();
  }finally{globalThis.fetch=realFetch;}
+}
+// Pending CRDT structs are not visible text. They must survive a plain save,
+// and only a complete update containing their dependencies can resolve them.
+{
+ const f=fixture(),live=f.client();live.getText('source').insert(1,' first');
+ const afterFirst=encodeStateVector(live);live.getText('source').insert(7,' second');
+ const partial=Buffer.from(encodeStateAsUpdate(live,afterFirst)).toString('base64');
+ f.records.set('u:0000000000000001',{data:partial});
+ await assert.rejects(f.save('A'),error=>error.status===409);
+ await assert.rejects(f.save('Offline replacement'),error=>error.status===409);
+ await assert.rejects(f.save('A',{collaboration_update:partial}),error=>error.status===409);
+ assert.equal(f.storage.document(key).source,'A');assert.equal(f.records.get('u:0000000000000001').data,partial);
+ const {document}=await f.save(live.getText('source').toString(),{collaboration_update:b64(live)});
+ assert.equal(document.realtime_epoch,'v2');assert.equal(f.storage.document(key).source,live.getText('source').toString());
+ assert(!f.records.has('u:0000000000000001'));live.destroy();
 }
 console.log('PASS: atomic validation/publication, both live-edit orderings, native live-state conflicts, merged CRDT, attachment CAS and fail-closed outages');

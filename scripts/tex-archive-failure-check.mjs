@@ -1,3 +1,4 @@
+import { createTexSourceSnapshot } from '../studio/tex-collaboration-connect.js';
 import assert from 'node:assert/strict';
 import { MemoryR2 } from './helpers/memory-r2.mjs';
 import { attachVaultBinding } from './helpers/vault-binding.mjs';
@@ -47,7 +48,7 @@ await check('ciphertext upload failure leaves the original untouched',async()=>{
 });
 await check('unavailable history cleanup is never reported as completed',async()=>{
  const {env}=fixture(),get=env.TEX_COLLAB_ROOMS.get;let outage=true;
- env.TEX_COLLAB_ROOMS.get=name=>outage&&!name.startsWith('tex-vault:')?{fetch:async()=>new Response('offline',{status:503})}:get(name);
+ env.TEX_COLLAB_ROOMS.get=name=>{const target=get(name);return {...target,fetch:request=>outage&&new URL(request.url).pathname==='/source-retired'?new Response('offline',{status:503}):target.fetch(request)};};
  const result=await call(env,'store',input(env));assert.equal(result.status,503);
  assert(env.STORAGE.records.has(archiveKey));assert(env.STORAGE.document(docKey).document_deleted);
  const list=await call(env,'list',null,'GET');assert.equal(list.data.items[0].cleanup_pending,true);
@@ -57,7 +58,7 @@ await check('unavailable history cleanup is never reported as completed',async()
 await check('registered prior source generations and known legacy rooms are purged',async()=>{
  const {env}=fixture();await registerTexRoomEpoch(env,owner,id,oldEpoch);
  const names=[owner+':'+id,texRealtimeRoomName(owner,id,'v2'),texRealtimeRoomName(owner,id,oldEpoch)];
- for(const name of names)env.TEX_COLLAB_ROOMS.get(name).storage.set('snapshot',{data:'PLAINTEXT HISTORY'});
+ for(const name of names)env.TEX_COLLAB_ROOMS.get(name).storage.set('snapshot',createTexSourceSnapshot(original));
  env.STORAGE.seed(`_system/tex-versions/${owner}/${id}/version.json`,{source:'OLD SOURCE'});
  const result=await call(env,'store',input(env));assert.equal(result.status,200,JSON.stringify(result));
  for(const name of names){const stored=env.TEX_COLLAB_ROOMS.get(name).storage;assert.equal(stored.has('snapshot'),false);assert.equal(stored.get('retired'),true);}

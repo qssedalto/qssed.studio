@@ -1,3 +1,4 @@
+import { handleRoomRetirement } from './tex-collaboration-retire.js';
 import { isTexMainLocked } from './tex-document-guards.js';
 import { texRealtimeEpoch } from './tex-realtime-epoch.js';
 import { prepareTexConnection, activeTexRoomSource, createTexSourceSnapshot } from "./tex-collaboration-connect.js";
@@ -68,6 +69,8 @@ export class TexCollaborationRoom {
   }
 
   async fetch(request) {
+    if (request.method === "POST" && new URL(request.url).pathname === "/commit-retire")
+      return handleRoomRetirement(request, this.state, this.env);
     if (request.method === "POST" && ["/validate-save", "/commit-save"].includes(new URL(request.url).pathname))
       return handleRoomSaveValidation(request, this.state, this.env, payload => this.broadcast(payload));
     if(new URL(request.url).pathname==="/vault"){

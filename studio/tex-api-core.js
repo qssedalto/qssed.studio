@@ -1,6 +1,7 @@
+import { retireTexSource } from './tex-collaboration-retire.js';
 import { commitTexSourceSave } from "./tex-collaboration-save.js";
 import { readJsonBounded } from "./request-json-bounded.js";
-import { sourceInputError, isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT, retireTexDocument, countLiveTexDocuments } from "./tex-document-guards.js";
+import { sourceInputError, isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT, countLiveTexDocuments } from "./tex-document-guards.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
 import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
@@ -347,7 +348,7 @@ async function deleteDocument(request, env, userId) {
     if (!existing) return json({ error: "TeX document not found." }, 404);
     if (isTexMainLocked(existing) || existing.locked_files?.length || existing.locked_folders?.length)
       return json({ error: "Unlock the project and its files before deleting." }, 423);
-    await retireTexDocument(env.STORAGE, documentKey(userId, documentId), existing);
+    await retireTexSource(env, existing);
     await invalidateTexCollaboration(env,userId,documentId,"source-retired","",texRealtimeEpoch(existing));
     await removeTexProjectPins(env,userId,documentId);
     await purgeDocumentArtifacts(env, userId, documentId);

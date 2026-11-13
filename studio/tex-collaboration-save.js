@@ -159,6 +159,9 @@ export async function handleRoomSaveValidation(request, state, env, broadcast) {
       const before = encodeStateVector(doc);
       const existing = snapshot?.data || journal.size ? yFields(doc, previous) : fields(previous);
       if (!input.update) {
+        // Do not rebase or publish a partial projection of acknowledged but
+        // unresolved updates. A subsequent complete CRDT update may repair it.
+        if (doc.store.pendingStructs || doc.store.pendingDs) return conflict();
         if (equal(existing, input.candidate)) {
           await state.storage.put('save_contract', 2);
           return publish(false);
@@ -170,7 +173,7 @@ export async function handleRoomSaveValidation(request, state, env, broadcast) {
         return conflict();
       }
       applyUpdate(doc, decode(input.update));
-      if (!equal(yFields(doc, previous), input.candidate)) return conflict();
+      if (doc.store.pendingStructs || doc.store.pendingDs || !equal(yFields(doc, previous), input.candidate)) return conflict();
       const full = encodeStateAsUpdate(doc);
       const delta = encodeStateAsUpdate(doc, before);
       if (full.length > MAX_STATE || delta.length > MAX_UPDATE) return conflict();
