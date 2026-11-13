@@ -3,6 +3,7 @@ import { html, json } from "./routing.js";
 import { baseHead, supabaseScript } from "./ui-page.js";
 import { workerLog } from "./server-runtime.js";
 import { authOriginForRequest, isServiceHost, rootDomainForHost } from "./domain-family.js";
+import { readJsonBounded } from "./request-json-bounded.js";
 import { refreshBrowserAuthSession } from "../auth-browser-refresh.js";
 
 // AERTEX 的浏览器会话分成两层：
@@ -128,15 +129,16 @@ export async function verifyStudioApiSession(request) {
 /// 把浏览器 Supabase session 同步进 HttpOnly 服务端 Cookie。
 /// 该接口要求 same-origin POST；独立产品若有更严格的账号切换规则，应在写 Cookie 前做 identity marker 校验。
 export async function handleStudioSessionBootstrap(request) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   const url = new URL(request.url);
   const origin = request.headers.get("Origin") || "";
   if (origin !== url.origin) return json({ error: "Invalid origin" }, 403);
 
   let body;
   try {
-    body = await request.json();
-  } catch {
-    return json({ error: "Invalid request body" }, 400);
+    body = await readJsonBounded(request, 32768);
+  } catch (error) {
+    return json({ error: "Invalid or oversized request body" }, error?.status || 400);
   }
 
   const accessToken = cleanToken(body?.access_token, 12000);
@@ -144,12 +146,12 @@ export async function handleStudioSessionBootstrap(request) {
   if (!accessToken || !refreshToken) return json({ error: "Missing session" }, 400);
 
   const verified = await verifyAccessToken(accessToken);
-  if (!verified.ok) return withStudioSessionCookies(json({ error: "Session is invalid or expired" }, 401), clearStudioSessionCookies());
+  if (!verified.ok) return studioSessionFailure({ temporary: verified.temporary, cookies: verified.temporary ? [] : clearStudioSessionCookies() });
 
   // A Work-local Supabase session can itself be stale after an account switch on
   // another qsseda.com host. Do not let it recreate the old Work HttpOnly
   // session unless the domain-wide account marker says it is the same user.
-  if (isServiceHost(url.hostname.toLowerCase(), "work")) {
+  if (["work", "gpt", "cash", "aw"].some(service => isServiceHost(url.hostname.toLowerCase(), service))) {
     const cookies = parseCookies(request.headers.get("Cookie") || "");
     const accountId = String(cookies[ACCOUNT_COOKIE] || "").trim();
     if (!isUuid(accountId) || accountId !== verified.user.id) {
@@ -176,10 +178,21 @@ export function handleStudioSessionLogout(request) {
   return withStudioSessionCookies(json({ ok: true }), globalLogoutCookies(request));
 }
 
-export function studioSessionBootstrapPage(locale, request) {
+// Keep temporary upstream failures distinct from invalid credentials. Clients
+// must not redirect to login or discard a draft on a retryable outage.
+export function studioSessionFailure(session) {
+  const temporary = session?.temporary === true;
+  const response = json({ error: temporary ? "Authentication is temporarily unavailable. Retry without signing out." : "Authentication required.",
+    code: temporary ? "authentication_unavailable" : "authentication_required" }, temporary ? 503 : 401);
+  if (temporary) response.headers.set("retry-after", "5");
+  return withStudioSessionCookies(response, session?.cookies || []);
+}
+
+export function studioSessionBootstrapPage(locale, request, temporarilyUnavailable = false) {
   const zh = String(locale || "").toLowerCase().startsWith("zh");
   const authOrigin = authOriginForRequest(request);
   const title = zh ? "正在验证登录状态…" : "Verifying your session…";
+  const unavailable = zh ? "\u767b\u5f55\u670d\u52a1\u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u672a\u6e05\u9664\u4f60\u7684\u767b\u5f55\u72b6\u6001\u3002\u8bf7\u7a0d\u540e\u5237\u65b0\u91cd\u8bd5\u3002" : "Sign-in verification is temporarily unavailable. Your session has been kept. Refresh to retry.";
   const failed = zh ? "正在重新同步 AERTEX 登录状态…" : "Resynchronizing your AERTEX sign-in state…";
 
   const page = `<!DOCTYPE html>
@@ -198,6 +211,8 @@ export function studioSessionBootstrapPage(locale, request) {
   <script>
     (async () => {
       const status = document.getElementById("studio-session-status");
+      const unavailable = () => { if (status) status.textContent = ${scriptLiteral(unavailable)}; };
+      if (${temporarilyUnavailable ? "true" : "false"}) { unavailable(); return; }
       const goLogin = async () => {
         if (status) status.textContent = ${scriptLiteral(failed)};
         // A missing host-local browser session is not proof of logout: the
@@ -222,20 +237,23 @@ export function studioSessionBootstrapPage(locale, request) {
           body: JSON.stringify({ access_token: session.access_token, refresh_token: session.refresh_token }),
           cache: "no-store"
         });
+        if (response.status === 429 || response.status >= 500) { unavailable(); return; }
         if (!response.ok) {
           await goLogin();
           return;
         }
         location.reload();
       } catch {
-        await goLogin();
+        unavailable();
       }
     })();
   </script>
 </body>
 </html>`;
 
-  return html(page, 401);
+  const response = html(page, temporarilyUnavailable ? 503 : 401);
+  if (temporarilyUnavailable) response.headers.set("retry-after", "5");
+  return response;
 }
 
 /// 通过 Supabase /auth/v1/user 校验 access token，而不是只在边缘端解码 JWT 后盲目信任 payload。
@@ -243,7 +261,8 @@ async function verifyAccessToken(accessToken) {
   let userResponse;
   try {
     userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` }
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(8000)
     });
   } catch (error) {
     workerLog("warn", "session_gate.user_lookup_failed", { error_type: error?.name || "Error" });
@@ -262,7 +281,8 @@ async function verifyAccessToken(accessToken) {
   let profileResponse;
   try {
     profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(user.id)}&limit=1`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` }
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(8000)
     });
   } catch (error) {
     workerLog("warn", "session_gate.profile_lookup_failed", { user_id: user.id, error_type: error?.name || "Error" });

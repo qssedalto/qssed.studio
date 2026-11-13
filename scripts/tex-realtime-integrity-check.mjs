@@ -81,3 +81,16 @@ const env={STORAGE:{head:async()=>({customMetadata:{realtimeEpoch:epoch}})},TEX_
 assert.equal(await invalidateTexCollaboration(env,owner,document,'revoke-links',member),true);
 assert.equal(name,texRealtimeRoomName(owner,document,epoch));assert.equal(path,'/revoke-links');
 console.log('PASS: stale/incomplete snapshot, deletion preservation, malformed update, viewer isolation, 75-edit convergence, immediate revocation and epoch routing');
+// The legacy room multiplexes encrypted chat. Source cleanup is not permission
+// to delete unrelated encrypted messages or Passkey registrations.
+await storage.put('projectchat:v2:project:credential:user',{id:'passkey'});
+await storage.put('projectchat:v2:project:msg:1',{ct:'opaque ciphertext'});
+await storage.put('save_contract',2);
+r=await room.fetch(new Request('https://internal/source-retired',{method:'POST',headers:{
+  'X-Qsseda-Collab-Owner':owner,'X-Qsseda-Collab-Document':document}}));
+assert.equal(r.status,204);assert.equal(await storage.get('snapshot'),undefined);
+assert.equal((await storage.list({prefix:'u:'})).size,0);assert.equal(await storage.get('save_contract'),undefined);
+assert.equal(await storage.get('retired'),true);
+assert.deepEqual(await storage.get('projectchat:v2:project:credential:user'),{id:'passkey'});
+assert.deepEqual(await storage.get('projectchat:v2:project:msg:1'),{ct:'opaque ciphertext'});
+console.log('PASS: source retirement purges plaintext but preserves unrelated E2EE chat and Passkeys');

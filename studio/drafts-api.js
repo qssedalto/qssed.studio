@@ -1,5 +1,5 @@
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId, verifyStorageUser } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 
@@ -24,7 +24,7 @@ function projectKey(userId, projectId) {
 
 export async function handleDrafts(request, env) {
   const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
 
   const authRequest = new Request(request.url, {
     method: "GET",

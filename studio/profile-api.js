@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 
 const PROFILE_COVERS = new Set(["aurora", "sky", "sunset", "grape", "graphite", "mint"]);
@@ -23,7 +23,7 @@ export async function handleProfileApi(request, action) {
   if (!methods[action].has(request.method)) return json({ error: "Method not allowed" }, 405);
 
   const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
   if (request.method !== "GET" && !sameOrigin(request)) {
     return withStudioSessionCookies(json({ error: "Invalid origin." }, 403), session.cookies);
   }

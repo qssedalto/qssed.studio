@@ -2,7 +2,7 @@ import { isLiveTexHead } from "./tex-document-guards.js";
 import { invalidateTexCollaboration } from "./tex-collaboration-invalidate.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
@@ -14,7 +14,7 @@ const MAX_BODY_BYTES = 16 * 1024;
 // 协作成员 API 先验证 Studio 会话与活跃账号，写请求额外进行同源校验；随后再按用户与文档权限分派操作。
 export async function handleTexCollaborationApi(request, env) {
   const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
 
   const auth = await verifyActiveUser(session.accessToken);
   if (auth.error) return withStudioSessionCookies(auth.error, session.cookies);

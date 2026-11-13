@@ -1,3 +1,4 @@
+import { readJsonBounded } from "./request-json-bounded.js";
 import { randomKey, hashText, verifyRegistration, verifyAssertion } from "./tex-file-chat-webauthn.js";
 // Durable Object receives authority context ONLY from verified Work Worker.
 // Store ciphertext and wrapped AES keys, never message text or raw room keys.
@@ -246,11 +247,9 @@ export async function handleTexFileChatRoom(state,request){
   if(!a)return bad("Invalid verified project chat context",403);
   let body;
   try{
-    const raw=await request.text();
-    if(new TextEncoder().encode(raw).byteLength>160000)throw Error("too large");
-    body=JSON.parse(raw);
+    body=await readJsonBounded(request,160000);
     if(!body||typeof body!=="object"||Array.isArray(body))throw Error("bad request");
-  }catch{return bad("Invalid or oversized request",400)}
+  }catch(error){return bad("Invalid or oversized request",error?.status||400)}
   const storage=state.storage;
   if(body.op==="status"){const registered=await credentialsFor(storage,a);
     return res({registered:registered.length>0,passkey_count:registered.length,

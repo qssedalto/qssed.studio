@@ -1,7 +1,7 @@
 import { isTexMainLocked, sourceInputError, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { texRealtimeEpoch, texRealtimeRoomName } from "./tex-realtime-epoch.js";
@@ -53,7 +53,7 @@ export async function identifyTexVersionUser(request) {
       ok: false,
       userId: "",
       cookies: session.cookies,
-      response: withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies)
+      response: studioSessionFailure(session)
     };
   }
 
@@ -69,7 +69,7 @@ export async function identifyTexVersionUser(request) {
   const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` };
 
   try {
-    const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers });
+    const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers, signal: AbortSignal.timeout(8000) });
     if (userResponse.status === 401 || userResponse.status === 403) {
       return { ok: false, userId: "", cookies: session.cookies, response: withStudioSessionCookies(json({ error: "Session is invalid or expired." }, 401), session.cookies) };
     }
@@ -81,7 +81,7 @@ export async function identifyTexVersionUser(request) {
       return { ok: false, userId: "", cookies: session.cookies, response: withStudioSessionCookies(json({ error: "Session is invalid or expired." }, 401), session.cookies) };
     }
 
-    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(user.id)}`, { headers });
+    const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=status&id=eq.${encodeURIComponent(user.id)}`, { headers, signal: AbortSignal.timeout(8000) });
     if (!profileResponse.ok) {
       return { ok: false, userId: "", cookies: session.cookies, response: withStudioSessionCookies(json({ error: "Account service is temporarily unavailable." }, 503), session.cookies) };
     }

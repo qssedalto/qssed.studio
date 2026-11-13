@@ -1,3 +1,5 @@
+import { texFileContentDigest } from "./tex-file-revision.js";
+import { readJsonBounded } from "./request-json-bounded.js";
 // Add bounded project files to the authenticated user's existing TeX document.
 // The caller's userId is supplied by the existing session/CSRF gate in tex-api-core.js.
 import { sourceInputError, putTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
@@ -70,10 +72,8 @@ export async function handleTexProjectFiles(request, env, userId) {
   if (reported > MAX_JSON_BYTES) return fail("File upload request is too large.", 413);
   let input;
   try {
-    const raw = await request.text();
-    if (encoder.encode(raw).length > MAX_JSON_BYTES) return fail("File upload request is too large.", 413);
-    input = JSON.parse(raw);
-  } catch { return fail("Invalid file upload request."); }
+    input = await readJsonBounded(request, MAX_JSON_BYTES);
+  } catch (error) { return fail("Invalid or oversized file upload request.", error?.status || 400); }
   const documentId = input?.document_id;
   if (!isStorageObjectId(documentId)) return fail("Select a project first.");
   const operation = input?.operation || "add";
@@ -155,6 +155,11 @@ export async function handleTexProjectFiles(request, env, userId) {
         const index = existing.findIndex(f=>f.name === added[0].name);
         if (index < 0) return fail("The file to edit was not found.", 404);
         if (isLocked(added[0].name)) return fail("Unlock this file before editing.", 423);
+        const expected = input.files[0]?.expected_sha256;
+        if (typeof expected !== "string" || !/^[a-f0-9]{64}$/.test(expected))
+          return json({error:"Reopen the file before saving. A content revision is required.", code:"file_revision_required"},428);
+        if (expected !== await texFileContentDigest(existing[index]))
+          return json({error:"This file changed in another editor. Your local text was not written over the newer file. Download your draft before reopening.",code:"file_write_conflict"},409);
         next = existing.map((f,i)=>i===index?added[0]:f);
       } else {
         if (operation !== "add") return fail("Unknown file operation.");

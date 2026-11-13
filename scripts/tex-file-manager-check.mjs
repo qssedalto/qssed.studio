@@ -1,3 +1,4 @@
+import { texFileContentDigest } from "../studio/tex-file-revision.js";
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import { handleTexProjectFiles } from "../studio/tex-project-files-api.js";
@@ -51,7 +52,7 @@ assert.equal(multi.status,200);
 assert.equal(objects.get(key).files.length,4);
 
 const edited=await invoke({document_id:id,operation:"replace",
-  files:[file("chapter1.tex","\\\\section{Updated}") ]});
+  files:[{...file("chapter1.tex","\\\\section{Updated}"),expected_sha256:await texFileContentDigest(file("chapter1.tex","\\section{One}"))}]});
 assert.equal(edited.status,200,"Existing supplementary files must be editable.");
 assert.equal(objects.get(key).files.find(f=>f.name==="chapter1.tex").content,"\\\\section{Updated}");
 assert.equal(objects.get(key).source,original.source,"Editing an extra file must not replace main.tex.");

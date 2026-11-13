@@ -3,7 +3,7 @@ import { readJsonBounded } from "./request-json-bounded.js";
 import { sourceInputError, isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
@@ -18,7 +18,7 @@ const MAX_SHARED_DOCUMENTS = 120;
 
 export async function handleTexSharedCollaboration(request, env) {
   const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
 
   const auth = await verifyActiveUser(session.accessToken);
   if (auth.error) return withStudioSessionCookies(auth.error, session.cookies);

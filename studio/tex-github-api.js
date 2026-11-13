@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { verifyTexUser } from "./tex-api-core.js";
 import { getSupabaseSecret, workerLog } from "./server-runtime.js";
 import { selectTexPdfRange } from "./tex-github-pdf-range.js";
@@ -19,7 +19,7 @@ const MINUTE = 60 * 1000;
 
 export async function handleTexGithubApi(request, env, action) {
   const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(fail(401, "Authentication required."), session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
   const verified = await verifyTexUser(session.accessToken);
   if (verified.error) return withStudioSessionCookies(verified.error, session.cookies);
   if (!["GET", "POST", "DELETE"].includes(request.method)) {

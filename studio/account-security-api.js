@@ -1,7 +1,7 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { parseServerUserAgent } from "./account-api.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 
 export async function handleAccountSecurity(request, action) {
@@ -10,7 +10,7 @@ export async function handleAccountSecurity(request, action) {
   if (request.method !== expectedMethod) return json({ error: "Method not allowed" }, 405);
 
   const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
   if (action === "device" && !sameOrigin(request)) return withStudioSessionCookies(json({ error: "Invalid origin." }, 403), session.cookies);
 
   if (action === "summary") return accountSummary(session);

@@ -3,7 +3,7 @@ import { readJsonBounded } from "./request-json-bounded.js";
 import { sourceInputError, isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT, retireTexDocument, countLiveTexDocuments } from "./tex-document-guards.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession, withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession, withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { hasStorageBinding, isStorageObjectId } from "./storage-api.js";
 import { workerLog } from "./server-runtime.js";
 import { handleTexProjects } from "./tex-project-api.js";
@@ -28,7 +28,7 @@ const MAX_RESULT_BYTES = 16 * 1024 * 1024;
 // 统一 TeX API 的会话与资源权限检查，再按文档、编译和运行结果分派；不能只因客户端知道文档 ID 就允许访问。
 export async function handleTexApi(request, env, action) {
   const session = await verifyStudioApiSession(request);
-  if (!session.ok) return withStudioSessionCookies(json({ error: "Authentication required." }, 401), session.cookies);
+  if (!session.ok) return studioSessionFailure(session);
 
   const auth = await verifyTexUser(session.accessToken);
   if (auth.error) return withStudioSessionCookies(auth.error, session.cookies);

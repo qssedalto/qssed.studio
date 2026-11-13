@@ -122,7 +122,18 @@ export class TexCollaborationRoom {
         // The authoritative object is already a CAS tombstone. Remove the
         // obsolete plaintext Yjs history as well as closing its old sockets.
         await this.state.blockConcurrencyWhile(async()=>{
-          await this.state.storage.deleteAll();
+          // This legacy DO also hosts end-to-end encrypted project chat.
+          // Retiring source must not destroy its unrelated ciphertext, wrapped
+          // keys or Passkeys. Delete only the plaintext source namespace.
+          await this.state.storage.delete(['snapshot', 'sequence', 'save_contract', 'registered']);
+          let start;
+          do {
+            const updates = await this.state.storage.list({ prefix: 'u:', limit: 128, ...(start ? { startAfter: start } : {}) });
+            const keys = [...updates.keys()];
+            if (!keys.length) break;
+            start = keys[keys.length - 1];
+            await this.state.storage.delete(keys);
+          } while (true);
           await this.state.storage.put('retired', true);
         });
       }

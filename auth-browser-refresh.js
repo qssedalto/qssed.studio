@@ -22,7 +22,8 @@ export async function refreshBrowserAuthSession(refreshToken, upstreamFetch = fe
       response = await upstreamFetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, "content-type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken })
+        body: JSON.stringify({ refresh_token: refreshToken }),
+        signal: AbortSignal.timeout(8000)
       });
     } catch {
       return { kind: "unavailable" };

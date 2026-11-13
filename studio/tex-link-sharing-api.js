@@ -2,7 +2,7 @@ import { isLiveTexHead } from "./tex-document-guards.js";
 import { invalidateTexCollaboration } from "./tex-collaboration-invalidate.js";
 import { SUPABASE_KEY,SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
-import { verifyStudioApiSession,withStudioSessionCookies } from "./session-gate.js";
+import { verifyStudioApiSession,withStudioSessionCookies, studioSessionFailure } from "./session-gate.js";
 import { workerLog } from "./server-runtime.js";
 import {
  validId,validToken,newSecret,safeRole,safeAudience,loadJson,putJson,loadConfig,loadValidLink,
@@ -176,7 +176,7 @@ export async function handleTexLinkSharingApi(request,env){
   if(!env?.STORAGE)return fail("Document storage unavailable.",503);
   if(isWrite(request.method) && !sameOrigin(request))return fail("Cross-origin writes are forbidden.",403);
   const session=await verifyStudioApiSession(request);
-  if(!session.ok)return withStudioSessionCookies(fail("Sign in to your AERTEX account.",401),session.cookies);
+  if(!session.ok)return studioSessionFailure(session);
   const user=await authorizedUser(session.accessToken);
   if(!user)return withStudioSessionCookies(fail("A verified active account is required.",403),session.cookies);
   const url=new URL(request.url),action=url.searchParams.get("action")||"";
