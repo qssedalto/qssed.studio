@@ -1,4 +1,5 @@
 import { WORK_TEX_CODE_PALETTES, WORK_TEX_CODE_CHOICES } from "./tex-code-palettes.js";
+import { AERTEX_WORDMARK_SVG } from "./brand-logo.js";
 
 function replaceExact(source, needle, replacement) {
   const index = source.indexOf(needle);
@@ -197,11 +198,56 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
       .tex-code-theme-card-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
       .tex-code-theme-card{display:flex;min-width:0;flex-direction:column;gap:9px}
       .tex-code-theme-card>label{font:650 12px/1.4 system-ui,sans-serif;display:grid;gap:7px}
-      .tex-code-theme-card select{height:36px;min-height:36px;width:100%;box-sizing:border-box;
-        border:1px solid var(--border);border-radius:8px;padding:0 9px;
-        background:var(--fill);color:var(--text);font-size:12px;cursor:pointer}
-      .tex-code-theme-card select:focus-visible,.tex-code-theme-close:focus-visible{
-        outline:2px solid var(--primary);outline-offset:2px}
+      /* Keep actual native menulist controls. Explicit option foreground and
+         background prevent Windows Chromium from mixing a light OS popup
+         with the site's light-on-dark text inheritance. */
+      .tex-code-theme-native-wrap{position:relative;display:block;width:100%;min-width:0}
+      .tex-code-theme-popover .tex-code-theme-card select{
+        appearance:menulist!important;-webkit-appearance:menulist!important;
+        height:36px!important;min-height:36px!important;width:100%!important;
+        box-sizing:border-box!important;border:1px solid var(--border)!important;
+        border-radius:8px!important;padding:0 7px!important;
+        font:600 12px/1.4 system-ui,-apple-system,Segoe UI,sans-serif!important;
+        cursor:pointer!important;box-shadow:none!important
+      }
+      .tex-code-theme-popover .tex-code-theme-card[data-mode="light"] select{
+        color-scheme:light!important;background:#f8fafc!important;color:#182432!important;
+      }
+      .tex-code-theme-popover .tex-code-theme-card[data-mode="light"] select option{
+        background:#ffffff!important;color:#182432!important;
+      }
+      .tex-code-theme-popover .tex-code-theme-card[data-mode="dark"] select{
+        color-scheme:dark!important;background:#242a35!important;color:#f4f6fc!important;
+      }
+      .tex-code-theme-popover .tex-code-theme-card[data-mode="dark"] select option{
+        background:#242a35!important;color:#f4f6fc!important;
+      }
+      .tex-code-theme-native-brand{
+        position:absolute;inset:1px 30px 1px 8px;z-index:1;
+        display:none;align-items:center;gap:6px;overflow:hidden;
+        pointer-events:none;white-space:nowrap;
+        font:600 12px/1.4 system-ui,-apple-system,Segoe UI,sans-serif;
+      }
+      .tex-code-theme-card[data-brand-selected="true"] .tex-code-theme-native-brand{
+        display:flex
+      }
+      .tex-code-theme-card[data-mode="light"] .tex-code-theme-native-brand{
+        background:#f8fafc;color:#182432
+      }
+      .tex-code-theme-card[data-mode="dark"] .tex-code-theme-native-brand{
+        background:#242a35;color:#f4f6fc
+      }
+      .tex-code-theme-native-wordmark{
+        display:inline-flex;align-items:center;flex:0 0 65px;width:65px;height:14px
+      }
+      .tex-code-theme-native-wordmark>svg{
+        display:block;width:100%;height:100%;color:inherit
+      }
+      .tex-code-theme-native-wordmark>svg path{fill:currentColor}
+      .tex-code-theme-popover .tex-code-theme-card select:focus-visible,
+      .tex-code-theme-close:focus-visible{
+        outline:2px solid var(--primary)!important;outline-offset:2px
+      }
       .tex-code-theme-preview{box-sizing:border-box;border-radius:9px;
         min-width:0;min-height:130px;padding:10px 7px;overflow:auto;
         border:1px solid color-mix(in srgb,var(--text) 12%,transparent)}
@@ -267,6 +313,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         // mutate the site theme, PDF canvas, or Markdown WYSIWYG.
         const codeColorSchemes = ${JSON.stringify(WORK_TEX_CODE_PALETTES)};
         const codeThemeChoices = ${JSON.stringify(WORK_TEX_CODE_CHOICES)};
+        const brandWordmark = ${JSON.stringify(AERTEX_WORDMARK_SVG)};
         const codeThemeStorageKey = 'aertex.work.code-color-scheme.v1';
         const colorKeys = {
           light: 'aertex.work.code-color-scheme.light.v2',
@@ -357,6 +404,12 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             : (zhPaletteUi ? '☾ 深色模式' : '☾ Dark mode');
           const select = document.createElement('select');
           select.id = 'tex-code-theme-' + mode;
+          select.setAttribute('aria-label',mode === 'light'
+            ? (zhPaletteUi ? '浅色模式代码配色' : 'Light mode code palette')
+            : (zhPaletteUi ? '深色模式代码配色' : 'Dark mode code palette'));
+          // Real native select/option popup: keyboard, screen reader, and
+          // high-contrast rendering belong to the operating system.
+          select.setAttribute('autocomplete','off');
           for (const option of codeThemeChoices) {
             if (!safeId(option[0],mode)) continue;
             const el = document.createElement('option');
@@ -366,7 +419,24 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           }
           select.value = selectedCodeThemes[mode];
           controls[mode] = select;
-          caption.append(select);
+          const nativeWrap = document.createElement('span');
+          nativeWrap.className = 'tex-code-theme-native-wrap';
+          const brandLabel = document.createElement('span');
+          brandLabel.className = 'tex-code-theme-native-brand';
+          brandLabel.setAttribute('aria-hidden','true');
+          // Native <option> elements cannot contain HTML/SVG. Render the
+          // canonical brand vector only OVER the selected closed control.
+          // The open operating-system menu keeps accessible plain text.
+          const mark = document.createElement('span');
+          mark.className = 'tex-code-theme-native-wordmark';
+          mark.innerHTML = brandWordmark;
+          const brandSuffix = document.createElement('span');
+          brandSuffix.textContent = mode === 'light'
+            ? (zhPaletteUi ? '浅色' : 'Light')
+            : (zhPaletteUi ? '深色' : 'Dark');
+          brandLabel.append(mark,brandSuffix);
+          nativeWrap.append(select,brandLabel);
+          caption.append(nativeWrap);
           const preview = document.createElement('div');
           preview.className = 'tex-code-theme-preview';
           preview.setAttribute('aria-label',mode === 'light' ?
@@ -420,6 +490,8 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           darkSwatch.style.borderColor = codeColorSchemes[selectedCodeThemes.dark].command;
           for (const mode of ['light','dark']) {
             controls[mode].value = selectedCodeThemes[mode];
+            controls[mode].closest('.tex-code-theme-card').dataset.brandSelected =
+              String(selectedCodeThemes[mode].startsWith('auto-'));
             showPreview(mode);
           }
           pickerButton.title = (zhPaletteUi ? '浅色：' : 'Light: ') +
