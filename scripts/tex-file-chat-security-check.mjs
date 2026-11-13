@@ -153,6 +153,22 @@ assert.equal(wrongProjectAttempt.status,403,
 assert(!wrongProjectAttempt.body.token,
   "Rejecting a foreign project credential must never issue a chat token");
 
+// Even a valid credential ID paired with a foreign private key cannot
+// impersonate the registered project's original ES256 key.
+const forgedPrivateKeyChallenge=await send("begin");
+const forgedPrivateClient=b64(enc.encode(JSON.stringify({
+  type:"webauthn.get",challenge:forgedPrivateKeyChallenge.body.public_key.challenge,
+  origin:"https://work.qsseda.com",crossOrigin:false
+})));
+const forgedPrivateSignature=b64(new Uint8Array(await crypto.subtle.sign(
+  {name:"ECDSA",hash:"SHA-256"},wrongProjectKey.privateKey,
+  concat(authenticatorData,await crypto.subtle.digest("SHA-256",unb64(forgedPrivateClient))))));
+assert.equal((await send("verify",{challenge_id:forgedPrivateKeyChallenge.body.challenge_id,
+  credential:{id:credId,rawId:credId,type:"public-key",
+    response:{clientDataJSON:forgedPrivateClient,
+      authenticatorData:b64(authenticatorData),signature:forgedPrivateSignature}}
+})).status,403,"A wrong private key must fail even when claiming the correct credential ID");
+
 const invalidSignature={...assertion,response:{...assertion.response,signature:b64(new Uint8Array(64))}};
 const third=await send("begin");
 assert.equal((await send("verify",{challenge_id:third.body.challenge_id,credential:invalidSignature})).status,403,
