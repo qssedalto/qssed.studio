@@ -167,6 +167,14 @@ export async function handleTexArchive(request,env,user) {
       v:1,id,encrypted:body.encrypted,archived_at:archivedAt
     }),{httpMetadata:{contentType:"application/json;charset=UTF-8"},
        customMetadata:{ownerId:userId,kind:"tex-encrypted-archive",archivedAt}});
+    // Recheck after uploading ciphertext: a collaborator may have written a
+    // newer source while encryption was running. Never erase that revision.
+    const latest=await env.STORAGE.get(docKey(userId,id));
+    const current=latest?JSON.parse(await latest.text()):null;
+    if(!current || current.updated_at!==doc.updated_at){
+      await env.STORAGE.delete(archiveKey(userId,id));
+      return fail("The project changed during archiving. Reload and retry.",409);
+    }
     await env.STORAGE.delete(docKey(userId,id));
     await removeTexProjectPins(env,userId,id);
     await clearPrefix(env,RUN_ROOT+userId+"/"+id+"/");
