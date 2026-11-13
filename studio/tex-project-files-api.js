@@ -84,6 +84,11 @@ export async function handleTexProjectFiles(request, env, userId) {
     if (!stored) return fail("Project not found or unavailable for editing.", 404);
     const doc = JSON.parse(await stored.text());
     if (doc?.id !== documentId || doc?.owner_id !== userId) return fail("Project not found.", 404);
+    if (doc.locked) return fail("Unlock the project before modifying files.", 423);
+    const lockedNames = new Set(Array.isArray(doc.locked_files) ? doc.locked_files : []);
+    const lockedFolders = Array.isArray(doc.locked_folders) ? doc.locked_folders : [];
+    const isLocked = name => lockedNames.has(name) ||
+      lockedFolders.some(folder => name === folder || name.startsWith(folder + "/"));
     const existing = Array.isArray(doc.files) ? doc.files : [];
     if (existing.length > MAX_FILES) return fail("Project file limit reached.", 409);
     if (!existing.every(f=>validName(f.name) && ["utf8","base64"].includes(f.encoding))) {
@@ -99,9 +104,11 @@ export async function handleTexProjectFiles(request, env, userId) {
       }
       const index = existing.findIndex(file => file.name === oldName);
       if (index < 0) return fail("File not found.", 404);
+      if (isLocked(oldName)) return fail("Unlock this file before changing it.", 423);
       if (operation === "delete") next = existing.filter((_, i) => i !== index);
       else {
         const newName = input.new_name;
+        if (isLocked(newName)) return fail("The destination is locked.",423);
         if (!validName(newName) || newName.toLowerCase() === "main.tex" ||
             existing.some((file, i) => i !== index && file.name.toLowerCase() === newName.toLowerCase())) {
           return fail("Invalid or duplicate destination filename.", 409);
@@ -118,12 +125,14 @@ export async function handleTexProjectFiles(request, env, userId) {
         if (added.length !== 1) return fail("Replace exactly one file.");
         const index = existing.findIndex(f=>f.name === added[0].name);
         if (index < 0) return fail("The file to edit was not found.", 404);
+        if (isLocked(added[0].name)) return fail("Unlock this file before editing.", 423);
         next = existing.map((f,i)=>i===index?added[0]:f);
       } else {
         if (operation !== "add") return fail("Unknown file operation.");
         const seen = new Set(["main.tex", ...existing.map(f=>f.name.toLowerCase())]);
         for (const f of added) {
           if (seen.has(f.name.toLowerCase())) return fail("File already exists: " + f.name, 409);
+          if (isLocked(f.name)) return fail("The destination folder is locked.",423);
           seen.add(f.name.toLowerCase());
         }
         if (existing.length + added.length > MAX_FILES) return fail("A project can contain at most 500 files including main.tex.", 409);
@@ -144,6 +153,7 @@ export async function handleTexProjectFiles(request, env, userId) {
         preview:String(doc.source || "").replace(/\s+/g," ").trim().slice(0,220),
         projectType:doc.project_type || "legacy",
         fileCount:String(1+doc.files.length),
+        pinned:doc.pinned?"true":"false",locked:doc.locked?"true":"false",
         createdAt:doc.created_at || doc.updated_at,
         updatedAt:doc.updated_at
       }
