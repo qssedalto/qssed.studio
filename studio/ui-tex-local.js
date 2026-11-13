@@ -152,7 +152,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
 
           async function loopbackFetch(base, path, options = {}) {
             const controller = new AbortController();
-            const timer = window.setTimeout(() => controller.abort(), options.method === 'POST' ? 23000 : 1800);
+            const timer = window.setTimeout(() => controller.abort(), options.method === 'POST' ? 110000 : 1800);
             try {
               const headers = { Accept: options.accept || 'application/json', ...(options.body ? { 'Content-Type': 'application/json;charset=UTF-8' } : {}), ...(options.headers || {}) };
               const request = new Request(base + path, {
