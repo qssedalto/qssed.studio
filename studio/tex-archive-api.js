@@ -1,6 +1,6 @@
+import { purgeTexCollaborationHistory } from "./tex-collaboration-history.js";
 import { readJsonBounded } from "./request-json-bounded.js";
 import { isTexMainLocked, texDocumentRevision, putTexDocument, retireTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
-import { invalidateTexCollaboration } from "./tex-collaboration-invalidate.js";
 import { workerLog } from "./server-runtime.js";
 import { json } from "./routing.js";
 import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
@@ -37,7 +37,7 @@ async function listArchive(env,userId) {
     const page=await env.STORAGE.list({prefix:archivePrefix(userId),cursor,limit:250,include:["customMetadata"]});
     for (const entry of page.objects) {
       const id=entry.key.slice(archivePrefix(userId).length).replace(/\.json$/,"");
-      if(ID.test(id))items.push({id,created_at:entry.customMetadata?.archivedAt||entry.uploaded?.toISOString?.()||""});
+      if(ID.test(id))items.push({id,created_at:entry.customMetadata?.archivedAt||entry.uploaded?.toISOString?.()||"",cleanup_pending:entry.customMetadata?.cleanupComplete!=="true"});
     }
     cursor=page.truncated ? page.cursor : undefined;
   } while(cursor && items.length<MAX_ITEMS+1);
@@ -57,6 +57,7 @@ async function currentPasswordConfirmed(user,password) {
     method:"POST",headers:{"apikey":SUPABASE_KEY,"content-type":"application/json"},
     body:JSON.stringify({email:user.email,password}),signal:AbortSignal.timeout(8000)
   });
+  if(r.status>=500 || r.status===429)throw new Error("Account authentication is temporarily unavailable.");
   if(!r.ok)return false;
   const result=await r.json().catch(()=>({}));
   return result?.user?.id === user.id && typeof result.access_token === "string";
@@ -170,6 +171,16 @@ export async function handleTexArchiveTransaction(request,env,user) {
   if(body.vault_salt!==state.salt)return fail("The archive key changed. Unlock the archive again before continuing. No files were changed.",409);
   const id=String(body?.id||"");
   if(!ID.test(id))return fail("Invalid project ID.");
+  if(mode==="cleanup"){
+    const blob=await env.STORAGE.get(docKey(userId,id));
+    const marker=blob?await blob.json():null;
+    // Legacy archives removed the original object rather than retaining a
+    // tombstone. An absent original is safe, but a live/restored project is not.
+    if(marker && (!marker.document_deleted || marker.reason!=="archived" || marker.owner_id!==userId || marker.id!==id))
+      return fail("This project is not awaiting archive cleanup.",409);
+    await finishArchiveCleanup(env,userId,id,marker?.retired_epoch||"v2");
+    return json({archived:true,cleanup_complete:true,id});
+  }
   if(mode==="store"){
     if(!sealed(body.encrypted))return fail("Invalid encrypted project envelope.",400);
     const existingArchive=await env.STORAGE.get(archiveKey(userId,id));
@@ -178,8 +189,7 @@ export async function handleTexArchiveTransaction(request,env,user) {
     // Recovery after the process died AFTER the irreversible CAS. The complete
     // ciphertext is already durable; finish the idempotent plaintext cleanup.
     if(existingArchive && current?.document_deleted && current.reason==="archived"){
-      await invalidateTexCollaboration(env,userId,id,"source-retired","",current.retired_epoch||"v2");
-      await cleanupArchivedPlaintext(env,userId,id);
+      await finishArchiveCleanup(env,userId,id,current.retired_epoch||"v2");
       return json({archived:true,id});
     }
     if(existingArchive){
@@ -202,7 +212,7 @@ export async function handleTexArchiveTransaction(request,env,user) {
       vault_salt:state.salt,pending_revision:stored.etag};
     const uploaded=await env.STORAGE.put(archiveKey(userId,id),JSON.stringify(envelope),{
       httpMetadata:{contentType:"application/json;charset=UTF-8"},onlyIf:{etagDoesNotMatch:"*"},
-      customMetadata:{ownerId:userId,kind:"tex-encrypted-archive",archivedAt}});
+      customMetadata:{ownerId:userId,kind:"tex-encrypted-archive",archivedAt,cleanupComplete:"false"}});
     if(uploaded===null)return fail("The archive changed. Reload before retrying.",409);
     try{
       await retireTexDocument(env.STORAGE,docKey(userId,id),texDocumentRevision(current,stored),"archived");
@@ -215,8 +225,7 @@ export async function handleTexArchiveTransaction(request,env,user) {
       }
       throw error;
     }
-    await invalidateTexCollaboration(env,userId,id,"source-retired","",texRealtimeEpoch(current));
-    await cleanupArchivedPlaintext(env,userId,id);
+    await finishArchiveCleanup(env,userId,id,texRealtimeEpoch(current));
     return json({archived:true,id});
   }
   if(mode==="restore"){
@@ -257,4 +266,20 @@ async function cleanupArchivedPlaintext(env,userId,id){
   await clearPrefix(env,RUN_ROOT+userId+"/"+id+"/");
   await clearPrefix(env,"_system/tex-results/"+userId+"/"+id+"/");
   await purgeDocumentVersions(env,userId,id);
+}
+
+// A successful archive response means known plaintext copies were removed, not
+// merely that ciphertext was uploaded. A failed cleanup is retryable from the
+// archive rail and must never delete the only encrypted recovery copy.
+async function finishArchiveCleanup(env,userId,id,epoch){
+  const object=await env.STORAGE.get(archiveKey(userId,id));
+  if(!object)throw new Error("Encrypted recovery copy is unavailable. Cleanup was not performed.");
+  const envelope=await object.json();
+  await purgeTexCollaborationHistory(env,userId,id,epoch);
+  await cleanupArchivedPlaintext(env,userId,id);
+  const updated=await env.STORAGE.put(archiveKey(userId,id),JSON.stringify({...envelope,cleanup_complete:true,pending_revision:null}),{
+    onlyIf:{etagMatches:object.etag},httpMetadata:{contentType:"application/json;charset=UTF-8"},
+    customMetadata:{...object.customMetadata,cleanupComplete:"true"}
+  });
+  if(updated===null)throw new Error("Archive cleanup confirmation changed. Reload and retry.");
 }

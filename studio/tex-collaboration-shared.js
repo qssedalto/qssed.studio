@@ -1,3 +1,5 @@
+import { validateTexSourceSave, finalizeTexSourceSave } from "./tex-collaboration-save.js";
+import { readJsonBounded } from "./request-json-bounded.js";
 import { sourceInputError, isTexMainLocked, texDocumentRevision, putTexDocument, TEX_WRITE_CONFLICT } from "./tex-document-guards.js";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { json } from "./routing.js";
@@ -11,7 +13,7 @@ import { texRealtimeEpoch } from "./tex-realtime-epoch.js";
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const ENGINES = new Set(["xelatex", "lualatex", "pdflatex"]);
 const MAX_SOURCE_CHARS = 180000;
-const MAX_PAYLOAD_BYTES = 512 * 1024;
+const MAX_PAYLOAD_BYTES = 3 * 1024 * 1024;
 const MAX_SHARED_DOCUMENTS = 120;
 
 export async function handleTexSharedCollaboration(request, env) {
@@ -90,7 +92,9 @@ async function handleUpdate(request, env, auth, accessToken) {
   const normalized = normalizeSharedDocument(parsed.value, previous);
   if (!normalized.ok) return json({ error: normalized.error }, 400);
   try {
+    const savePlan = await validateTexSourceSave(env, previous, parsed.value, normalized.value);
     await writeDocument(env, normalized.value, previous.storage_revision);
+    await finalizeTexSourceSave(env, previous, savePlan);
     return json({
       document: {
         ...normalized.value,
@@ -103,7 +107,7 @@ async function handleUpdate(request, env, auth, accessToken) {
       collaboration_role: access.role
     });
   } catch (error) {
-    if (error?.code === TEX_WRITE_CONFLICT) return json({ error: error.message, code: error.code }, 409);
+    if ([400, 409, 413, 423, 428].includes(error?.status)) return json({ error: error.message, code: error.code }, error.status);
     workerLog("error", "tex.shared_document.update.failed", {
       user_id: auth.user.id,
       owner_id: access.owner_id,
@@ -321,15 +325,8 @@ function documentFromMetadata(meta, ownerId, documentId) {
 }
 
 async function parsePayload(request) {
-  const declared = Number(request.headers.get("Content-Length") || 0);
-  if (declared > MAX_PAYLOAD_BYTES) return { error: json({ error: "TeX payload is too large." }, 413) };
-  try {
-    const raw = await request.text();
-    if (new TextEncoder().encode(raw).byteLength > MAX_PAYLOAD_BYTES) return { error: json({ error: "TeX payload is too large." }, 413) };
-    return { value: JSON.parse(raw || "{}") };
-  } catch {
-    return { error: json({ error: "Invalid TeX payload." }, 400) };
-  }
+  try { return { value: await readJsonBounded(request, MAX_PAYLOAD_BYTES) }; }
+  catch (error) { return { error: json({ error: error?.status === 413 ? "TeX payload is too large." : "Invalid TeX payload." }, error?.status === 413 ? 413 : 400) }; }
 }
 
 function isSameOriginMutation(request) {

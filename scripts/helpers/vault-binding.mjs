@@ -10,7 +10,13 @@ export function attachVaultBinding(env) {
         const storage = new Map();
         const state = {
           getWebSockets: () => [],
-          storage: { deleteAll: async () => storage.clear() },
+          storage: {
+            get:async key=>structuredClone(storage.get(key)),
+            put:async (key,value)=>{for(const [k,v] of typeof key==='object'?Object.entries(key):[[key,value]])storage.set(k,structuredClone(v));},
+            list:async ({prefix='',limit=Infinity}={})=>new Map([...storage].filter(([k])=>k.startsWith(prefix)).sort().slice(0,limit)),
+            delete:async keys=>{for(const key of Array.isArray(keys)?keys:[keys])storage.delete(key);},
+            deleteAll: async () => storage.clear()
+          },
           blockConcurrencyWhile(fn) {
             const next = queue.then(fn);
             queue = next.catch(() => {});

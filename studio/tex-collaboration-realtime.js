@@ -29,6 +29,7 @@ export async function handleTexCollaborationRealtime(request, env) {
   const documentId = cleanObjectId(url.searchParams.get("document"));
   if (!documentId) return withStudioSessionCookies(json({ error: "Invalid TeX document identifier." }, 400), session.cookies);
 
+  const authorizationCheckedAt = Date.now();
   const access = await resolveDocumentAccess(env, auth.user.id, documentId, session.accessToken);
   if (!access) return withStudioSessionCookies(json({ error: "TeX document not found or collaboration access was removed." }, 404), session.cookies);
 
@@ -45,6 +46,7 @@ export async function handleTexCollaborationRealtime(request, env) {
   const room = env.TEX_COLLAB_ROOMS.get(roomId);
   const headers = new Headers();
   headers.set("Upgrade", "websocket");
+  headers.set("X-Qsseda-Collab-Checked-At", String(authorizationCheckedAt));
   headers.set("X-Qsseda-Collab-User", auth.user.id);
   headers.set("X-Qsseda-Collab-Owner", access.owner_id);
   headers.set("X-Qsseda-Collab-Document", documentId);

@@ -1,3 +1,4 @@
+import { MemoryR2 } from "./helpers/memory-r2.mjs";
 import assert from 'node:assert/strict';
 import * as Y from '../tex-vendor/node_modules/yjs/dist/yjs.mjs';
 import { TexCollaborationRoom } from '../studio/tex-collaboration-room.js';
@@ -12,6 +13,7 @@ class Store {
   async get(k){return structuredClone(this.map.get(k));}
   async put(k,v){for(const [key,val] of typeof k==='object'?Object.entries(k):[[k,v]])this.map.set(key,structuredClone(val));}
   async list({prefix=''}){return new Map([...this.map].filter(([key])=>key.startsWith(prefix)).sort(([a],[b])=>a.localeCompare(b)));}
+  async deleteAll(){this.map.clear();}
   async delete(keys){for(const key of Array.isArray(keys)?keys:[keys])this.map.delete(key);}
 }
 const socket=(id=member,role='editor',link_grant=false)=>({
@@ -20,12 +22,15 @@ const socket=(id=member,role='editor',link_grant=false)=>({
   send(text){this.sent.push(JSON.parse(text));},close(...args){this.closed.push(args);}
 });
 const storage=new Store(),peer=socket(),other=socket(owner,'owner'),state={storage,getWebSockets:()=>[peer,other],blockConcurrencyWhile:fn=>fn()};
-const room=new TexCollaborationRoom(state,{});
+const r2=new MemoryR2();r2.seed(`_system/tex-documents/${owner}/${document}.json`,{id:document,owner_id:owner,source:'abc',title:'Test',engine:'xelatex',realtime_epoch:'v2'}, {realtimeEpoch:'v2',mainLocked:'false'});
+const room=new TexCollaborationRoom(state,{STORAGE:r2});
 const send=(p,s=peer)=>room.webSocketMessage(s,JSON.stringify(p));
 const seed=new Y.Doc();seed.getText('source').insert(0,'abc');
-const initial=b64(Y.encodeStateAsUpdate(seed));
-await send({type:'initialize',data:initial});
-assert.equal((await storage.get('snapshot')).data,initial);
+const submitted=b64(Y.encodeStateAsUpdate(seed));
+await send({type:'initialize',data:submitted});
+const initial=(await storage.get('snapshot')).data;
+const authoritative=new Y.Doc();Y.applyUpdate(authoritative,bytes(initial));
+assert.equal(authoritative.getText('source').toString(),'abc');
 const a=new Y.Doc(),b=new Y.Doc();Y.applyUpdate(a,bytes(initial));Y.applyUpdate(b,bytes(initial));
 let update;
 a.on('update',u=>update=b64(u));a.getText('source').insert(1,'X');

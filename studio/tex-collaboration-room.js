@@ -1,9 +1,15 @@
+import { isTexMainLocked } from './tex-document-guards.js';
+import { texRealtimeEpoch } from './tex-realtime-epoch.js';
+import { prepareTexConnection, activeTexRoomSource, createTexSourceSnapshot } from "./tex-collaboration-connect.js";
+import { registerTexRoomEpoch } from "./tex-collaboration-history.js";
+import { handleRoomSaveValidation } from "./tex-collaboration-save.js";
 import { handleTexArchiveTransaction } from "./tex-archive-api.js";
 import { decodeUpdate, mergeUpdates } from "../tex-vendor/server-yjs.mjs";
 import { resolveLinkGrant } from "./tex-link-capabilities.js";
 import { IPHONE_THEME_PALETTE } from "./iphone-theme-palette.js";
 import { handleTexFileChatRoom } from "./tex-file-chat-room.js";
-const MAX_MESSAGE_BYTES = 1024 * 1024;
+const MAX_MESSAGE_BYTES = 2 * 1024 * 1024;
+const MAX_UPDATE_BYTES = 1024 * 1024;
 const MAX_PRESENCE_POSITION = 180000;
 const AUTH_LEASE_MS = 90 * 1000;
 const VALID_COLLAB_ACCENTS = new Set(IPHONE_THEME_PALETTE.map(color => color.id));
@@ -33,7 +39,7 @@ function decodeYjsUpdate(value) {
   if (!text) return null;
   try {
     const raw = atob(text.replace(/-/g, "+").replace(/_/g, "/"));
-    if (raw.length > MAX_MESSAGE_BYTES) return null;
+    if (raw.length > MAX_UPDATE_BYTES) return null;
     const bytes = Uint8Array.from(raw, character => character.charCodeAt(0));
     decodeUpdate(bytes); // Reject malformed binary before persisting/broadcasting it.
     return bytes;
@@ -62,6 +68,8 @@ export class TexCollaborationRoom {
   }
 
   async fetch(request) {
+    if (request.method === "POST" && new URL(request.url).pathname === "/validate-save")
+      return handleRoomSaveValidation(request, this.state, this.env, payload => this.broadcast(payload));
     if(new URL(request.url).pathname==="/vault"){
       const id=request.headers.get("X-Qsseda-Vault-User"), raw=request.headers.get("X-Qsseda-Vault-Email")||"";
       if(!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id||""))return new Response("Invalid vault identity",{status:403});
@@ -77,6 +85,9 @@ export class TexCollaborationRoom {
       const owner=request.headers.get("X-Qsseda-Collab-Owner");
       const doc=request.headers.get("X-Qsseda-Collab-Document");
       const target=request.headers.get("X-Qsseda-Collab-Target");
+      // Persist revocation before closing: a previously authorized handshake
+      // can otherwise arrive after the old sockets have already been closed.
+      await this.state.storage.put(named ? 'revoked:member:' + target : 'revoked:links', Date.now());
       // This endpoint is only addressed through the internal DO stub.
       for(const socket of this.state.getWebSockets()){
         const p=socket.deserializeAttachment()||{};
@@ -97,6 +108,7 @@ export class TexCollaborationRoom {
       const owner = request.headers.get("X-Qsseda-Collab-Owner");
       const doc = request.headers.get("X-Qsseda-Collab-Document");
       if (!owner || !doc) return new Response("Missing source identity.", {status:403});
+      await this.state.storage.put('retired', true);
       for (const socket of this.state.getWebSockets()) {
         const participant = socket.deserializeAttachment() || {};
         if (participant.owner_id !== owner || participant.document_id !== doc) continue;
@@ -109,7 +121,10 @@ export class TexCollaborationRoom {
       if(new URL(request.url).pathname==="/source-retired"){
         // The authoritative object is already a CAS tombstone. Remove the
         // obsolete plaintext Yjs history as well as closing its old sockets.
-        await this.state.blockConcurrencyWhile(()=>this.state.storage.deleteAll());
+        await this.state.blockConcurrencyWhile(async()=>{
+          await this.state.storage.deleteAll();
+          await this.state.storage.put('retired', true);
+        });
       }
       return new Response(null, {status:204});
     }
@@ -125,6 +140,13 @@ export class TexCollaborationRoom {
       return new Response("Invalid collaboration session.", { status: 403 });
     }
 
+    return this.state.blockConcurrencyWhile(async () => {
+    let prepared;
+    try { prepared = await prepareTexConnection(this.state, this.env, request,
+      {owner:ownerId, document:documentId, user:userId, role}); }
+    catch { return new Response('Could not validate the collaboration source.', {status:503}); }
+    if (prepared.response) return prepared.response;
+    const effectiveRole = prepared.role;
     const pair = new WebSocketPair();
     const client = pair[0];
     const server = pair[1];
@@ -133,7 +155,7 @@ export class TexCollaborationRoom {
       client_id: crypto.randomUUID(),
       owner_id: ownerId,
       document_id: documentId,
-      role,
+      role: effectiveRole, epoch: prepared.epoch, authorization_checked_at: prepared.checkedAt,
       access_role: request.headers.get("X-Qsseda-Collab-Access-Role") || role,
       link_grant: request.headers.get("X-Qsseda-Collab-Link-Grant") === "1",
       username: decodeCollaborationIdentity(request.headers.get("X-Qsseda-Collab-Username"), 80),
@@ -171,13 +193,14 @@ export class TexCollaborationRoom {
       snapshot_sequence: throughSequence,
       sequence,
       updates,
-      role,
+      role: effectiveRole, source_epoch: prepared.epoch,
       client_id: participant.client_id,
       lease_ms: AUTH_LEASE_MS
     }));
     this.broadcastPresence();
 
     return new Response(null, { status: 101, webSocket: client });
+    });
   }
 
   async webSocketMessage(socket, message) {
@@ -232,7 +255,18 @@ export class TexCollaborationRoom {
         return;
       }
       await this.state.blockConcurrencyWhile(async () => {
-        if (!this.ensureLease(socket, socket.deserializeAttachment() || {})) return;
+        const activeParticipant = socket.deserializeAttachment() || {};
+        if (!this.ensureLease(socket, activeParticipant)) return;
+        try {
+          if (!(await activeTexRoomSource(this.env, activeParticipant))) {
+            socket.serializeAttachment({...activeParticipant, expires_at:0});
+            socket.close(4004, 'TeX source or lock changed'); return;
+          }
+          if (!(await this.state.storage.get('registered'))) {
+            await registerTexRoomEpoch(this.env, activeParticipant.owner_id, activeParticipant.document_id, activeParticipant.epoch);
+            await this.state.storage.put('registered', true);
+          }
+        } catch { socket.send(JSON.stringify({type:'error',code:'source_unavailable',message:'Source validation failed; your edit was not acknowledged.'})); return; }
         const existing = await this.state.storage.get("snapshot");
         if (existing?.data) {
           const sequence = Number(await this.state.storage.get("sequence")) || 0;
@@ -249,11 +283,14 @@ export class TexCollaborationRoom {
           }));
           return;
         }
-        await this.state.storage.put({
-          snapshot: { data, through_sequence: 0, saved_at: Date.now() },
-          sequence: 0
-        });
-        this.broadcast({ type: "initialized", data, sequence: 0 });
+        const original=await this.env.STORAGE.get(`_system/tex-documents/${activeParticipant.owner_id}/${activeParticipant.document_id}.json`);
+        const document=original?await original.json():null;
+        if(!document || document.document_deleted || document.main_deleted || isTexMainLocked(document) ||
+          document.owner_id!==activeParticipant.owner_id || document.id!==activeParticipant.document_id ||
+          texRealtimeEpoch(document)!==texRealtimeEpoch(activeParticipant.epoch))return;
+        const seeded=createTexSourceSnapshot(document);
+        await this.state.storage.put({snapshot:seeded,sequence:0});
+        this.broadcast({ type: "initialized", data:seeded.data, sequence:0 });
       });
       return;
     }
@@ -265,7 +302,18 @@ export class TexCollaborationRoom {
         return;
       }
       await this.state.blockConcurrencyWhile(async () => {
-        if (!this.ensureLease(socket, socket.deserializeAttachment() || {})) return;
+        const activeParticipant = socket.deserializeAttachment() || {};
+        if (!this.ensureLease(socket, activeParticipant)) return;
+        try {
+          if (!(await activeTexRoomSource(this.env, activeParticipant))) {
+            socket.serializeAttachment({...activeParticipant, expires_at:0});
+            socket.close(4004, 'TeX source or lock changed'); return;
+          }
+          if (!(await this.state.storage.get('registered'))) {
+            await registerTexRoomEpoch(this.env, activeParticipant.owner_id, activeParticipant.document_id, activeParticipant.epoch);
+            await this.state.storage.put('registered', true);
+          }
+        } catch { socket.send(JSON.stringify({type:'error',code:'source_unavailable',message:'Source validation failed; your edit was not acknowledged.'})); return; }
         const snapshot = await this.state.storage.get("snapshot");
         if (!snapshot?.data) {
           socket.send(JSON.stringify({ type: "error", code: "not_initialized", message: "The collaboration room is not initialized." }));
@@ -285,7 +333,18 @@ export class TexCollaborationRoom {
       const requestedThrough = Number(payload.through_sequence);
       if (!Number.isSafeInteger(requestedThrough) || requestedThrough < 0) return;
       await this.state.blockConcurrencyWhile(async () => {
-        if (!this.ensureLease(socket, socket.deserializeAttachment() || {})) return;
+        const activeParticipant = socket.deserializeAttachment() || {};
+        if (!this.ensureLease(socket, activeParticipant)) return;
+        try {
+          if (!(await activeTexRoomSource(this.env, activeParticipant))) {
+            socket.serializeAttachment({...activeParticipant, expires_at:0});
+            socket.close(4004, 'TeX source or lock changed'); return;
+          }
+          if (!(await this.state.storage.get('registered'))) {
+            await registerTexRoomEpoch(this.env, activeParticipant.owner_id, activeParticipant.document_id, activeParticipant.epoch);
+            await this.state.storage.put('registered', true);
+          }
+        } catch { socket.send(JSON.stringify({type:'error',code:'source_unavailable',message:'Source validation failed; your edit was not acknowledged.'})); return; }
         const currentSequence = Number(await this.state.storage.get("sequence")) || 0;
         if (requestedThrough > currentSequence) return;
         const currentSnapshot = await this.state.storage.get("snapshot");

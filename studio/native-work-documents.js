@@ -1,3 +1,4 @@
+import { readJsonBounded } from "./request-json-bounded.js";
 import { isTexMainLocked, sourceInputError, countLiveTexDocuments } from "./tex-document-guards.js";
 import { texRealtimeEpoch, texRealtimeRoomName } from "./tex-realtime-epoch.js";
 import { verifyNativeAppSession, nativeJson } from "./native-mobile-auth.js";
@@ -125,10 +126,9 @@ export async function handleNativeWorkDocuments(request, env) {
       return nativeJson({ documents: docs, count: docs.length, scope: "own" });
     }
     if (!["POST", "PUT"].includes(request.method)) return nativeJson({ error: "Method not allowed." }, 405);
-    const raw = await request.text();
-    if (new TextEncoder().encode(raw).length > MAX_BODY) return nativeJson({ error: "Document too large." }, 413);
     let input;
-    try { input = JSON.parse(raw); } catch { return nativeJson({ error: "Invalid JSON." }, 400); }
+    try { input = await readJsonBounded(request, MAX_BODY); }
+    catch (error) { return nativeJson({ error: error?.status === 413 ? "Document too large." : "Invalid JSON." }, error?.status === 413 ? 413 : 400); }
     if (sourceInputError(input) || !input || typeof input !== "object" || Array.isArray(input) ||
       typeof input.source !== "string" || input.source.length > MAX_SOURCE ||
       typeof input.title !== "string" || input.title.length > 180 ||
@@ -160,7 +160,7 @@ export async function handleNativeWorkDocuments(request, env) {
       id: docId, owner_id: userId,
       // Native writes replace plain text, not a Yjs update. Isolate the old
       // room so it cannot replay its snapshot over the native edit.
-      realtime_epoch: previous && previous.source !== input.source ? crypto.randomUUID() : texRealtimeEpoch(previous),
+      realtime_epoch: previous && (previous.source !== input.source || previous.title !== input.title.trim() || previous.engine !== input.engine) ? crypto.randomUUID() : texRealtimeEpoch(previous),
       title: input.title.trim() || "Untitled TeX document",
       engine: input.engine, source: input.source,
       created_at: previous?.created_at || now, updated_at: now

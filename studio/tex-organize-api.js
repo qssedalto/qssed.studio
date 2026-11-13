@@ -71,7 +71,7 @@ export async function handleTexOrganize(request, env, userId) {
   const doc = JSON.parse(await stored.text());
   if (doc?.document_deleted) return json({error:"Project no longer exists."},404);
   if (doc?.owner_id !== userId || doc?.id !== id) return json({error:"Project owner mismatch."},403);
-  const previousEpoch=texRealtimeEpoch(doc),previousSource=doc.source,previousMainLocked=isTexMainLocked(doc);
+  const previousEpoch=texRealtimeEpoch(doc),previousSource=doc.source,previousTitle=doc.title,previousEngine=doc.engine,previousMainLocked=isTexMainLocked(doc);
   const action = clean(body.action);
   const name = clean(body.name);
   const files = Array.isArray(doc.files) ? doc.files : [];
@@ -148,7 +148,7 @@ export async function handleTexOrganize(request, env, userId) {
       doc.locked_folders = lockedFolders.filter(x => !x.startsWith(prefix) && x !== name);
     }
   } else return json({error:"Unknown organization action."},400);
-  const sourceRebased=doc.source!==previousSource || isTexMainLocked(doc)!==previousMainLocked;
+  const sourceRebased=doc.title!==previousTitle || doc.engine!==previousEngine || doc.source!==previousSource || isTexMainLocked(doc)!==previousMainLocked;
   if(sourceRebased)doc.realtime_epoch=crypto.randomUUID();
   doc.updated_at = new Date().toISOString();
   try {

@@ -14,15 +14,16 @@ export async function verifyNativeAppSession(request) {
   const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` };
   let user;
   try {
-    const identity = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers });
-    if (!identity.ok) {
+    const identity = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers, signal: AbortSignal.timeout(8000) });
+    if (identity.status === 401 || identity.status === 403) {
       return { ok: false, response: nativeJson({ error: "Session invalid.", code: "invalid_token" }, 401) };
     }
+    if (!identity.ok) return { ok: false, response: nativeJson({ error: "Identity service unavailable.", code: "identity_unavailable" }, 503) };
     user = await identity.json();
   } catch {
     return { ok: false, response: nativeJson({ error: "Identity service unavailable.", code: "identity_unavailable" }, 503) };
   }
-  if (!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(user?.id || ""))) {
+  if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(String(user?.id || ""))) {
     return { ok: false, response: nativeJson({ error: "Invalid account.", code: "invalid_user" }, 401) };
   }
   let profile;
@@ -31,7 +32,7 @@ export async function verifyNativeAppSession(request) {
     profileURL.searchParams.set("select", "id,status");
     profileURL.searchParams.set("id", `eq.${user.id}`);
     profileURL.searchParams.set("limit", "1");
-    const record = await fetch(profileURL, { headers });
+    const record = await fetch(profileURL, { headers, signal: AbortSignal.timeout(8000) });
     if (!record.ok) {
       return { ok: false, response: nativeJson({ error: "Profile unavailable.", code: "profile_unavailable" }, 503) };
     }
