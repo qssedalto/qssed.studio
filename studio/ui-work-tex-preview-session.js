@@ -223,7 +223,17 @@ export function enhanceWorkTexPreviewSession(markup, zh) {
         // Clear any unverified pre-refresh blob instead of showing a misleading
         // partial page. installPreviewBlob() in the TeX compiler is the only
         // automatic path that reveals the PDF after the complete Bridge response.
-        clearPreviewCache();
+        // Mobile viewers cannot run a local Bridge compilation and may only
+        // have their most recent successfully rendered PDF available offline.
+        // Keep that existing fallback there. Desktop browsers must wait for a
+        // fresh, complete PDF response rather than flashing an old CJK-deficient
+        // native-plugin render during the new compilation.
+        const mobilePreviewClient = /Android|iPhone|iPad|iPod|Mobile/i.test(
+          typeof navigator !== 'undefined' ? navigator.userAgent || '' : ''
+        ) || (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel'
+          && Number(navigator.maxTouchPoints) > 1);
+        if (mobilePreviewClient) void restoreImmediately();
+        else clearPreviewCache();
 
         const frameObserver = new MutationObserver(() => {
           const src = frame.getAttribute('src') || '';
