@@ -34,6 +34,7 @@ on:
       - "scripts/tex-toolbar-scroll-check.mjs"
       - "scripts/tex-tree-selection-check.mjs"
       - "scripts/tex-file-chat-security-check.mjs"
+      - "scripts/tex-file-chat-popup-check.mjs"
       - "scripts/tex-explorer-check.mjs"
       - "scripts/tex-file-manager-check.mjs"
       - "scripts/tex-github-compile-project-check.mjs"
@@ -103,6 +104,7 @@ on:
       - "scripts/tex-toolbar-scroll-check.mjs"
       - "scripts/tex-tree-selection-check.mjs"
       - "scripts/tex-file-chat-security-check.mjs"
+      - "scripts/tex-file-chat-popup-check.mjs"
       - "scripts/tex-explorer-check.mjs"
       - "scripts/tex-file-manager-check.mjs"
       - "scripts/tex-github-compile-project-check.mjs"
@@ -196,6 +198,7 @@ jobs:
           node --check scripts/tex-toolbar-scroll-check.mjs
           node --check scripts/tex-tree-selection-check.mjs
           node --check scripts/tex-file-chat-security-check.mjs
+          node --check scripts/tex-file-chat-popup-check.mjs
           node --check scripts/tex-explorer-check.mjs
           node --check scripts/tex-file-manager-check.mjs
           node --check scripts/tex-github-compile-project-check.mjs
@@ -274,6 +277,7 @@ jobs:
           node scripts/tex-toolbar-scroll-check.mjs
           node scripts/tex-tree-selection-check.mjs
           node scripts/tex-file-chat-security-check.mjs
+          node scripts/tex-file-chat-popup-check.mjs
           node scripts/tex-live-collaboration-check.mjs
           node scripts/tex-link-sharing-check.mjs
           node scripts/tex-toolbar-actions-check.mjs
