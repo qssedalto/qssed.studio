@@ -65,7 +65,7 @@ const qa=[
   "  }",
   "  document.body.dataset.filechatCryptoQa='PASS';",
   " }catch(e){document.body.dataset.filechatCryptoQa='FAIL';",
-  "  document.body.dataset.filechatCryptoReason=e.message||String(e)}",
+  "  document.body.dataset.filechatCryptoReason=(e.message||String(e))+' | status: '+(document.getElementById('aertex-chat-status')?.textContent||'')+' | button: '+(document.getElementById('aertex-chat-passkey')?.textContent||'')+' | composer: '+document.getElementById('aertex-chat-conversation')?.hidden}",
   "})();",
   "</script>"
 ].join("\n");
