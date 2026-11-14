@@ -57,8 +57,16 @@ jobs:
           pathlib.Path('/tmp/sso-patch-files.txt').write_text('\n'.join(touched))
           print('Verified',len(touched),'files; source hashes preserved.')
           PY
-          while IFS= read -r file; do git add -- "$file"; done < /tmp/sso-patch-files.txt
-          git rm -r -- .sso-transfer/ .github/workflows/sso-audit-export.yml .github/workflows/sso-import.yml
+          while IFS= read -r file; do
+            if [ "$file" = ".github/workflows/deploy-production.yml" ]; then
+              git restore -- "$file"
+            else
+              git add -- "$file"
+            fi
+          done < /tmp/sso-patch-files.txt
+          # The runner token cannot modify workflow definitions; these
+          # three workflow files are edited only with the GitHub connector.
+          git rm -r -- .sso-transfer/
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'fix(auth): centralize refresh and silently renew product access without passwords'
