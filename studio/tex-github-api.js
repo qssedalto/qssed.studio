@@ -529,10 +529,9 @@ async function deleteRepository(request,env,userId,legacy=false) {
     return fail(404,"This project does not have a managed repository.");
   if(body?.confirm!=="DELETE "+binding.repo_name)
     return fail(400,"Exact repository name confirmation is required.");
-  const row=await readRow(env,userId);
-  // Only block deletion for an active build belonging to THIS project.
-  if(row?.active_nonce && binding.active_nonce===row.active_nonce)
-    return fail(409,"Wait for this project's running compilation to finish before deleting.");
+  // An explicit delete cancels in-flight GitHub jobs for THIS repo. Refusing
+  // the delete until an account-wide quota nonce clears trapped users in a
+  // permanent loop when the polling tab had already closed.
   await verifyOwner(env);
   await writeTexGithubProjectRepository(env,userId,documentId,{
     repo_state:"deleting",last_error:null
@@ -550,6 +549,15 @@ async function deleteRepository(request,env,userId,legacy=false) {
       await writeTexGithubProjectRepository(env,userId,documentId,{
         repo_state:"deleting",delete_confirmed:true,last_error:null
       });
+    }
+    const latestRow=await readRow(env,userId);
+    if(latestRow?.active_nonce && latestRow.active_nonce===binding.active_nonce){
+      try{await releaseCredit(env,userId,latestRow.active_nonce,false);}
+      catch(error){
+        workerLog("warn","tex.github.deleted_repo_credit_release_failed",{
+          user_id:userId,document_id:documentId,code:String(error?.code||"unknown").slice(0,50)
+        });
+      }
     }
     await removeTexGithubProjectRepository(env,userId,documentId);
     return json({deleted:true,document_id:documentId,repository_name:binding.repo_name,
@@ -570,21 +578,41 @@ async function deleteLegacyGithubRepository(env,userId,body) {
   const row=await readRow(env,userId);
   if(!row?.repo_id||!row.repo_name||!["ready","deleting","error"].includes(row.repo_state))
     return fail(404,"No legacy account-level repository remains.");
-  if(row.active_nonce)return fail(409,"Wait for the account's running build before deleting.");
+  // An account-wide nonce may refer to an entirely DIFFERENT project's
+  // repository, so it cannot be used to forbid deleting this legacy repo.
   if(body?.confirm!=="DELETE "+row.repo_name)
     return fail(400,"Exact legacy repository confirmation is required.");
   await verifyOwner(env);
   await updateRow(env,userId,{repo_state:"deleting"});
   const repoPath=githubRepoPath(env,row.repo_name);
   try{
-    // Legacy SQL rows have no atomic deletion receipt yet. Never interpret
-    // 404 (possibly revoked PAT access) as proof of remote deletion.
+    // Verify the GitHub repository's ID before touching it. An account-wide
+    // active run may belong to a new per-project repo; probe the run against
+    // the OLD repo instead of blindly clearing the user's quota reservation.
     const actual=await github(env,repoPath);
     verifyManagedRepo(env,actual,row.repo_id,row.repo_name);
+    let legacyRunBelongsHere=false;
+    if(row.active_nonce && Number.isSafeInteger(Number(row.active_run_id)) &&
+      Number(row.active_run_id)>0){
+      try{
+        const run=await github(env,repoPath+"/actions/runs/"+encodeURIComponent(row.active_run_id));
+        legacyRunBelongsHere=Number(run?.id)===Number(row.active_run_id);
+      }catch(error){
+        if(error.status!==404)throw error;
+      }
+    }
     await github(env,repoPath,"DELETE");
+    // Once GitHub confirmed deletion, release only a reservation verified to
+    // belong to this OLD repository. Another project's build must survive.
+    if(legacyRunBelongsHere && row.active_nonce){
+      await releaseCredit(env,userId,row.active_nonce,false).catch(error=>
+        workerLog("warn","tex.github.legacy_deleted_credit_release_failed",{
+          user_id:userId,code:String(error?.code||"unknown").slice(0,50)
+        })
+      );
+    }
     await updateRow(env,userId,{
-      repo_name:null,repo_id:null,repo_state:"none",source_branch:"main",
-      active_nonce:null,active_run_id:null,active_commit_sha:null,active_since:null
+      repo_name:null,repo_id:null,repo_state:"none",source_branch:"main"
     });
     return json({deleted:true,legacy:true,repository_name:row.repo_name,repository_state:"none"});
   }catch(error){
