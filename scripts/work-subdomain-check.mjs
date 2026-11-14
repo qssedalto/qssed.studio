@@ -270,7 +270,7 @@ assert(workTexUi.includes('.tex-mobile-tab[aria-selected="true"]'), "Work mobile
 assert(!workTexUi.includes('.tex-start-card::after') && !workTexUi.includes('.tex-start-card[data-tex-start-template'), "Remove decorative pseudo-elements that caused duplicate card icons.");
 assert(!workTexUi.includes('radial-gradient(760px 330px at 50% -6%'), "Remove excessive legacy welcome glow and stacked rules.");
 assert(texApp.includes('class="qtex-welcome"') && texApp.includes('class="qtex-welcome-hero"'), "New welcome must render a compact editorial hero.");
-assert(texApp.includes('class="qtex-template-grid"') && texApp.includes('class="qtex-template-top"'), "Welcome cards must have one explicit template icon and a separate heading.");
+assert(texApp.includes('class="qtex-template-grid"') && texApp.includes('class="qtex-template-icon"') && texApp.includes('class="qtex-template-info"'), "Welcome cards must have one explicit line icon and an adjacent heading.");
 assert(texApp.includes('data-tex-start-template="blank"') && texApp.includes('data-tex-start-template="math"'), "Template actions must retain existing create handlers.");
 assert(entry.includes('polishWorkTexWelcome(polishWorkTexViewportEdges(markup))'), "Isolated Welcome styles must mount after Work pane styles.");
 assert(texApp.includes('startDetail: "选择一种结构，直接进入写作与排版。"'), "Chinese TeX start copy must stay concise and task-focused.");
