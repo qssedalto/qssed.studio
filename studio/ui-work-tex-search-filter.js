@@ -44,6 +44,10 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-project-home:hover {
       background:var(--fill)!important;filter:none!important;
     }
+    :root[data-theme="dark"] body.os-shell:has(.tex-work-app) .tex-work-app .tex-documents-panel #tex-project-home {
+      background:var(--card)!important;color:var(--text)!important;
+      border:1px solid var(--border)!important;box-shadow:none!important;
+    }
     /* Search input and filter share a single unobtrusive surface. */
     body.os-shell:has(.tex-work-app) .tex-work-app .tex-search {
       position:relative!important;display:flex!important;align-items:center!important;
