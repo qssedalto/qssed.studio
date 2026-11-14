@@ -215,10 +215,10 @@ for (const required of [
   'internalUrl.pathname = `/${routeLocale}/work/tex`',
   'const canonicalAliases = new Set(["", "tex", "local", "work", "work/local", "work/tex"])',
   'action="${workOrigin}/auth/handoff"',
-  'canonicalWorkPath',
-  '__Host-qsseda-studio-refresh'
+  'canonicalWorkPath'
 ]) assert(work.includes(required), `Work subdomain module is missing: ${required}`);
 
+assert(!work.includes('name="refresh_token"'), "Work must not forward rotating Supabase refresh tokens");
 assert(!work.includes('internalPath = `/${locale}/work/local`'), "Work must not expose the Local Bridge as a standalone product page");
 assert(!work.includes('internalPath = `/${locale}/work`'), "Work must not expose a standalone Work Hub page");
 

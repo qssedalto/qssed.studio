@@ -87,10 +87,7 @@ function normalizePublicPrivacyCopy(markup) {
 }
 
 function hardenSessionClientMarkup(markup) {
-  return String(markup || "").replace(
-    'const { error } = await supabaseClient.auth.signOut({ scope: "local" });',
-    `await fetch("/api/auth/logout", {method: "POST",credentials: "same-origin",headers: { "Content-Type": "application/json", Accept: "application/json" },body: "{}",cache: "no-store"}).catch(() => {});\n        const { error } = await supabaseClient.auth.signOut({ scope: "local" });`
-  );
+  return String(markup || "");
 }
 
 function localizedPage(markup, locale, status = 200, options = {}) {

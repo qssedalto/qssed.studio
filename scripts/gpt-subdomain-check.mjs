@@ -59,13 +59,13 @@ for (const required of [
   'authOriginForRequest(request)',
   'gptOriginForRequest(request)',
   'name="access_token"',
-  'name="refresh_token"',
   'verifyStudioPageSession(request)'
 ]) {
   assert(handoff.includes(required), `GPT handoff is missing secure transfer invariant: ${required}`);
 }
 
 assert(!handoff.includes("access_token="), "GPT handoff must not place access tokens in a URL");
+assert(!handoff.includes('name="refresh_token"'), "Product handoff must not forward a long-lived refresh credential");
 assert(!handoff.includes("refresh_token="), "GPT handoff must not place refresh tokens in a URL");
 assert(handoff.includes('/c/huawei-exempt/'), "Main GPT handoff must preserve Huawei-exempt conversation aliases.");
 assert(session.includes('isServiceHost(hostname, "gpt")'), "Session gate must recognize GPT on every domain family");

@@ -7,7 +7,6 @@ import { notFoundPage } from "./auth-pages.js";
 import { injectBrandLogoRuntime } from "./brand-logo.js";
 import { localeDirection, localeFromPath as sharedLocaleFromPath, normalizeSupportedLocale, preferredLocaleFromRequest } from "./locale.js";
 
-const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const WORK_DOCUMENT_ID_RE = /^[0-9a-f-]{36}$/i;
 
 export function isWorkSubdomainRequest(request) {
@@ -157,9 +156,6 @@ export async function handleMainWorkHandoff(request) {
   const locale = localeFromPath(requestedNext) || preferredLocale(request, requestUrl.pathname);
   const next = canonicalWorkPath(requestedNext, locale);
   const gate = await verifyStudioPageSession(request);
-  let refreshToken = requestCookie(request, REFRESH_COOKIE);
-  const rotatedRefresh = cookieValueFromSetCookies(gate.cookies || [], REFRESH_COOKIE);
-  if (rotatedRefresh) refreshToken = rotatedRefresh;
 
   if (!gate.ok || !gate.accessToken) {
     const returnPath = `/${locale}/work/handoff?next=${encodeURIComponent(next)}`;
@@ -169,11 +165,8 @@ export async function handleMainWorkHandoff(request) {
   }
 
   const workOrigin = workOriginForRequest(request);
-  const refreshField = refreshToken
-    ? `<input type="hidden" name="refresh_token" value="${escapeHtml(refreshToken)}">`
-    : "";
   const handoffText = {"zh-cn":"正在进入 AERTEX Work…","zh-tw":"正在進入 AERTEX Work…","ja-jp":"AERTEX Work に移動しています…","ko-kr":"AERTEX Work로 이동 중…","fr-fr":"Ouverture d’AERTEX Work…","es-es":"Entrando en AERTEX Work…","el-gr":"Μετάβαση στο AERTEX Work…","ar-sa":"جارٍ الدخول إلى AERTEX Work…"}[locale] || "Entering AERTEX Work…";
-  const page = `<!doctype html><html lang="${locale}" dir="${localeDirection(locale)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AERTEX Work</title>${FAVICON_LINKS}</head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><p>${handoffText}</p></main><form id="handoff" method="post" action="${workOrigin}/auth/handoff"><input type="hidden" name="access_token" value="${escapeHtml(gate.accessToken)}">${refreshField}<input type="hidden" name="next" value="${escapeHtml(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  const page = `<!doctype html><html lang="${locale}" dir="${localeDirection(locale)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AERTEX Work</title>${FAVICON_LINKS}</head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"><p>${handoffText}</p></main><form id="handoff" method="post" action="${workOrigin}/auth/handoff"><input type="hidden" name="access_token" value="${escapeHtml(gate.accessToken)}"><input type="hidden" name="next" value="${escapeHtml(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
   const headers = new Headers({
     "content-type": "text/html;charset=UTF-8",
     "cache-control": "no-store",
@@ -280,28 +273,6 @@ export function workDocumentNotFound(request) {
     requestedPath,
     returnHref
   }), 404);
-}
-
-function requestCookie(request, name) {
-  const header = request.headers.get("Cookie") || "";
-  for (const part of header.split(";")) {
-    const index = part.indexOf("=");
-    if (index <= 0 || part.slice(0, index).trim() !== name) continue;
-    try { return decodeURIComponent(part.slice(index + 1).trim()); }
-    catch { return part.slice(index + 1).trim(); }
-  }
-  return "";
-}
-
-function cookieValueFromSetCookies(cookies, name) {
-  for (const line of cookies) {
-    const first = String(line || "").split(";", 1)[0];
-    const index = first.indexOf("=");
-    if (index <= 0 || first.slice(0, index).trim() !== name) continue;
-    try { return decodeURIComponent(first.slice(index + 1).trim()); }
-    catch { return first.slice(index + 1).trim(); }
-  }
-  return "";
 }
 
 function escapeHtml(value) {

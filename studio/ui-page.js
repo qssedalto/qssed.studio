@@ -3,6 +3,7 @@ import { FAVICON_LINKS } from "./favicon.js";
 import { accountMenuClientScript, accountMenuMarkup, accountMenuStyles } from "./account-menu.js";
 import { LOCALE_META } from "./locale.js";
 import { appearanceBootScript } from "./appearance.js";
+import { ssoBrowserRuntime } from "./sso-browser-runtime.js";
 
 // 共享页面 <head> 基座：favicon、viewport、外观首屏脚本、Supabase 浏览器 SDK 与基础 UI token。
 // Watch 的 auth handoff 会调用它，但 Watch 仪表盘自己的 HTML/CSS 不依赖这套卡片布局。
@@ -582,6 +583,15 @@ export function supabaseScript() {
       };
       try { localStorage.removeItem("sb-xunbsoxijasekzadckob-auth-token"); } catch {}
       try { sessionStorage.removeItem("sb-xunbsoxijasekzadckob-auth-token"); } catch {}
+      // Migrate old per-host Supabase storage without ever redeeming a copied
+      // Auth refresh token. The Auth hostname alone is allowed to rotate it.
+      try {
+        const previous = JSON.parse(aertexAuthStorage.getItem(AERTEX_SUPABASE_STORAGE_KEY) || "null");
+        if (previous?.access_token && previous?.refresh_token && previous.refresh_token !== "aertex-sso-browser-no-refresh-v1") {
+          previous.refresh_token = "aertex-sso-browser-no-refresh-v1";
+          aertexAuthStorage.setItem(AERTEX_SUPABASE_STORAGE_KEY, JSON.stringify(previous));
+        }
+      } catch {}
       const supabaseClient = supabase.createClient(
         "${SUPABASE_URL}",
         "${SUPABASE_KEY}",
@@ -590,11 +600,13 @@ export function supabaseScript() {
             storage: aertexAuthStorage,
             storageKey: AERTEX_SUPABASE_STORAGE_KEY,
             persistSession: true,
-            autoRefreshToken: true,
+            // The Auth hostname is the sole refresh-token authority.
+            autoRefreshToken: false,
             detectSessionInUrl: false
           }
         }
       );
+      ${ssoBrowserRuntime()}
     </script>
   `;
 }

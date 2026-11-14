@@ -8,7 +8,7 @@ const ACCESS_COOKIE = "__Host-qsseda-access";
 const REFRESH_COOKIE = "__Host-qsseda-refresh";
 const ACCESS_MAX_AGE = 60 * 60;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
-const SSO_PATHS = new Set(["/sso/start", "/sso/import", "/sso/complete"]);
+const SSO_PATHS = new Set(["/sso/start", "/sso/import", "/sso/complete", "/sso/silent"]);
 
 export function isAuthSsoPath(pathname) {
   return SSO_PATHS.has(normalizePath(pathname));
@@ -26,6 +26,11 @@ export async function handleAuthSsoRequest(request) {
   if (pathname === "/sso/import") {
     if (request.method !== "POST") return text("Method not allowed", 405);
     return importSync(request);
+  }
+
+  if (pathname === "/sso/silent") {
+    if (request.method !== "GET") return text("Method not allowed", 405);
+    return silentSync(request);
   }
 
   if (pathname === "/sso/complete") {
@@ -58,6 +63,52 @@ async function startSync(request) {
   // for the active application handoff. Legacy /sso/import stays available for
   // explicit migrations, but ordinary sign-in finishes locally.
   return withCookies(finishUrl(url.origin, next), session.cookies || []);
+}
+
+// An iframe is only used for *same-site* silent renewal from an allow-listed
+// AERTEX product. It never exposes a refresh token, and never grants access to
+// arbitrary origins. Cross-root (.com vs .studio) recovery uses top-level SSO.
+export function trustedSilentParent(request, value) {
+  try {
+    const authHost = new URL(request.url).hostname;
+    const root = rootDomainForHost(authHost);
+    if (!root || authHost !== `auth.${root}`) return "";
+    const parent = new URL(value);
+    if (parent.protocol !== "https:" || parent.username || parent.password || parent.search || parent.hash || parent.pathname !== "/") return "";
+    const allowed = new Set(["", "work", "gpt", "cash", "aw"].map(service => serviceOrigin(root, service)));
+    return allowed.has(parent.origin) && parent.origin === value ? parent.origin : "";
+  } catch { return ""; }
+}
+
+async function silentSync(request) {
+  const url = new URL(request.url);
+  const parentOrigin = trustedSilentParent(request, url.searchParams.get("parent_origin") || "");
+  const nonce = url.searchParams.get("nonce") || "";
+  if (!parentOrigin || !/^[a-f0-9]{32,64}$/i.test(nonce)) return text("Invalid SSO caller", 403);
+  const session = await currentSession(request);
+  const message = {
+    kind: "aertex.sso.renew.v1",
+    nonce,
+    ok: session.kind === "ok",
+    temporary: session.kind === "unavailable"
+  };
+  if (session.kind === "ok") message.access_token = session.accessToken;
+  // A strong nonce restricts the inline script; the parent origin is a fixed
+  // allow-list selection and the response is never cached or indexed.
+  const bytes = crypto.getRandomValues(new Uint8Array(18));
+  const scriptNonce = Array.from(bytes, x => x.toString(16).padStart(2, "0")).join("");
+  const payload = JSON.stringify(message).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+  const destination = JSON.stringify(parentOrigin);
+  const body = `<!doctype html><html><head><meta charset="utf-8"><title>AERTEX SSO</title></head><body><script nonce="${scriptNonce}">window.parent.postMessage(${payload},${destination});</script></body></html>`;
+  const headers = new Headers({
+    "content-type": "text/html;charset=UTF-8",
+    "cache-control": "no-store",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff",
+    "x-robots-tag": "noindex, nofollow",
+    "content-security-policy": `default-src 'none'; script-src 'nonce-${scriptNonce}'; frame-ancestors ${parentOrigin}; base-uri 'none'; form-action 'none'`
+  });
+  return withCookies(new Response(body, { status: 200, headers }), session.cookies || []);
 }
 
 async function importSync(request) {
@@ -110,7 +161,9 @@ async function currentSession(request) {
 
   // The one-hour access cookie can expire while the 30-day refresh cookie
   // remains valid. Never send a user to /login without attempting recovery.
-  if (!user) {
+  // Renew before an access token expires, so long-lived editor tabs can
+  // obtain a *fresh* access credential without reloading or losing drafts.
+  if (!user || tokenNearExpiry(accessToken)) {
     const result = await refreshBrowserAuthSession(refreshToken);
     if (result.kind !== "ok") return { kind: result.kind };
     rotated = result.payload;
@@ -125,6 +178,18 @@ async function currentSession(request) {
     kind: "ok", accessToken, refreshToken, user,
     cookies: rotated ? sessionCookies(accessToken, refreshToken) : []
   };
+}
+
+function tokenNearExpiry(accessToken) {
+  try {
+    const part = String(accessToken || "").split(".")[1];
+    if (!part) return false;
+    const payload = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    const exp = Number(payload?.exp);
+    // Decoded time is not an authorization claim: fetchUser must validate the
+    // token with Supabase. It only decides whether to rotate on the Auth host.
+    return Number.isFinite(exp) && exp * 1000 <= Date.now() + 12 * 60 * 1000;
+  } catch { return false; }
 }
 
 async function fetchProfileStatus(accessToken, userId) {

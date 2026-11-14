@@ -14,8 +14,9 @@
 
 import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
 import { injectSweiFontResponse, sweiFontAssetResponse } from "./studio/swei-font.js";
-import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
+import { handleStudioSessionBootstrap, handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
+import { ssoBrowserRuntime } from "./studio/sso-browser-runtime.js";
 import { cashSessionRedirect } from "./studio/cash-subdomain.js";
 import { cashOriginForRequest } from "./studio/domain-family.js";
 import { localeFromPath, preferredLocaleFromRequest } from "./studio/locale.js";
@@ -64,6 +65,16 @@ export default {
     if (pathname === "/auth/handoff") {
       if (request.method !== "POST") return text("Method not allowed", 405);
       return handleAuthHandoff(request, env, preferredLocaleFromRequest(request));
+    }
+
+    if (pathname === "/sso-client.js") {
+      if ((request.method !== "GET" && request.method !== "HEAD")) return text("Method not allowed", 405);
+      return text(request.method === "HEAD" ? "" : ssoBrowserRuntime(), 200, "text/javascript;charset=UTF-8");
+    }
+
+    if (pathname === "/api/auth/bootstrap") {
+      if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
+      return handleStudioSessionBootstrap(request);
     }
 
     if (pathname === "/api/auth/logout") {
@@ -377,7 +388,7 @@ async function serveAsset(request, env, assetPath, extraHeaders = {}) {
   headers.set("x-frame-options", "DENY");
   headers.set("permissions-policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
   if (assetPath === "/index.html") {
-    headers.set("content-security-policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+    headers.set("content-security-policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src https://auth.qsseda.com https://auth.qsseda.studio; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
   }
   for (const [name, value] of Object.entries(extraHeaders)) headers.set(name, value);
   const response = new Response(request.method === "HEAD" ? null : asset.body, {
