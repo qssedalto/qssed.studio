@@ -479,24 +479,143 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       const calendar='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.8" y="5.5" width="16.4" height="15.2" rx="2.2"/><path d="M7.5 3.5v4M16.5 3.5v4M3.8 10.1h16.4M8.1 14h1M12 14h1M16 14h1"/></svg>';
       const dateFields={};
       const dateLabel=value=>value ? value.replace(/-/g,'/') : (zh?'选择日期':'Choose date');
+      const calendarPop=document.createElement('section');
+      calendarPop.className='tex-date-calendar';
+      calendarPop.id='tex-filter-calendar';
+      calendarPop.hidden=true;
+      calendarPop.setAttribute('role','dialog');
+      calendarPop.setAttribute('aria-label',zh?'选择日期':'Choose date');
+      calendarPop.innerHTML=
+        '<div class="tex-date-calendar-nav">'+
+          '<button type="button" data-month-step="-1" aria-label="'+(zh?'上个月':'Previous month')+'">‹</button>'+
+          '<select data-calendar-month aria-label="'+(zh?'月份':'Month')+'"></select>'+
+          '<select data-calendar-year aria-label="'+(zh?'年份':'Year')+'"></select>'+
+          '<button type="button" data-month-step="1" aria-label="'+(zh?'下个月':'Next month')+'">›</button>'+
+        '</div><div class="tex-calendar-weekdays" aria-hidden="true"></div>'+
+        '<div class="tex-calendar-grid" role="group"></div>'+
+        '<div class="tex-calendar-actions">'+
+          '<button type="button" data-calendar-clear></button>'+
+          '<button type="button" data-calendar-today></button>'+
+        '</div>';
+      pop.append(calendarPop);
+      const monthField=calendarPop.querySelector('[data-calendar-month]');
+      const yearField=calendarPop.querySelector('[data-calendar-year]');
+      const dayGrid=calendarPop.querySelector('.tex-calendar-grid');
+      const todayButton=calendarPop.querySelector('[data-calendar-today]');
+      const clearButton=calendarPop.querySelector('[data-calendar-clear]');
+      todayButton.textContent=zh?'今天':'Today';
+      clearButton.textContent=zh?'清除日期':'Clear';
+      const months=zh
+        ?['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']
+        :['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      for(let m=0;m<12;m++){
+        const option=document.createElement('option');option.value=String(m);
+        option.textContent=months[m];monthField.append(option);
+      }
+      for(let y=1900;y<=2120;y++){
+        const option=document.createElement('option');option.value=String(y);
+        option.textContent=zh?y+' 年':String(y);yearField.append(option);
+      }
+      const weekdayNames=zh?['一','二','三','四','五','六','日']:['M','T','W','T','F','S','S'];
+      for(const label of weekdayNames){
+        const day=document.createElement('span');day.textContent=label;
+        calendarPop.querySelector('.tex-calendar-weekdays').append(day);
+      }
+      let calendarKey='',calendarYear=0,calendarMonth=0;
+      const isoDate=(year,month,day)=>String(year).padStart(4,'0')+'-'+
+        String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      const closeCalendar=()=>{
+        calendarPop.hidden=true;
+        calendarKey='';
+        for(const field of Object.values(dateFields))
+          field.trigger.setAttribute('aria-expanded','false');
+      };
+      const positionCalendar=()=>{
+        if(calendarPop.hidden||!calendarKey)return;
+        const field=dateFields[calendarKey];if(!field)return;
+        const bounds=field.trigger.getBoundingClientRect();
+        const width=calendarPop.offsetWidth,height=calendarPop.offsetHeight;
+        const left=Math.max(8,Math.min(innerWidth-width-8,bounds.right-width));
+        const below=bounds.bottom+6,above=bounds.top-height-6;
+        const top=innerHeight-below>=height||below-8>=bounds.top-8
+          ?below:above;
+        calendarPop.style.left=left+'px';
+        calendarPop.style.top=Math.max(8,Math.min(innerHeight-height-8,top))+'px';
+      };
+      const applyDate=value=>{
+        const key=calendarKey;
+        if(!key||!dateFields[key])return;
+        state[key]=value;
+        dateFields[key].display.textContent=dateLabel(value);
+        closeCalendar();refresh();
+      };
+      const renderCalendar=()=>{
+        if(calendarPop.hidden)return;
+        monthField.value=String(calendarMonth);
+        yearField.value=String(calendarYear);
+        const first=(new Date(calendarYear,calendarMonth,1).getDay()+6)%7;
+        const days=new Date(calendarYear,calendarMonth+1,0).getDate();
+        const localNow=new Date(),current=isoDate(localNow.getFullYear(),localNow.getMonth(),localNow.getDate());
+        const selected=state[calendarKey]||'';
+        dayGrid.replaceChildren();
+        for(let i=0;i<42;i++){
+          const dayNumber=i-first+1;
+          const day=document.createElement('button');day.type='button';
+          const valid=dayNumber>=1&&dayNumber<=days;
+          day.disabled=!valid;
+          if(valid){
+            const iso=isoDate(calendarYear,calendarMonth,dayNumber);
+            day.textContent=String(dayNumber);
+            day.setAttribute('aria-label',iso);
+            day.setAttribute('aria-selected',String(iso===selected));
+            day.classList.toggle('is-today',iso===current);
+            day.addEventListener('click',()=>applyDate(iso));
+          }else day.setAttribute('aria-hidden','true');
+          dayGrid.append(day);
+        }
+        positionCalendar();
+      };
+      function toggleCalendar(key){
+        if(!calendarPop.hidden&&calendarKey===key){closeCalendar();return}
+        if(!dateFields[key])return;
+        closeCalendar();calendarKey=key;
+        const v=state[key]||'';
+        const d=/^\d{4}-\d{2}-\d{2}$/.test(v)?new Date(v+'T12:00:00'):new Date();
+        calendarYear=d.getFullYear();calendarMonth=d.getMonth();
+        if(calendarYear<1900||calendarYear>2120){calendarYear=new Date().getFullYear();calendarMonth=new Date().getMonth()}
+        calendarPop.setAttribute('aria-label',dateFields[key].label);
+        calendarPop.hidden=false;
+        dateFields[key].trigger.setAttribute('aria-expanded','true');
+        renderCalendar();
+      }
       function addDate(label,key){
         const row=document.createElement('label'),caption=document.createElement('span'),control=document.createElement('span');
         caption.textContent=label;control.className='tex-filter-date-control';
-        const picker=document.createElement('input');picker.type='date';picker.dataset.key=key;
-        picker.setAttribute('aria-label',label);
         const trigger=document.createElement('button');trigger.type='button';
         trigger.className='tex-filter-date-label';trigger.setAttribute('aria-label',label);
+        trigger.setAttribute('aria-haspopup','dialog');trigger.setAttribute('aria-controls','tex-filter-calendar');
+        trigger.setAttribute('aria-expanded','false');
         const display=document.createElement('span');display.className='tex-date-text';display.textContent=dateLabel('');
-        trigger.append(display);
-        trigger.insertAdjacentHTML('beforeend',calendar);
-        trigger.addEventListener('click',()=>{
-          try{picker.showPicker?.();}catch{picker.focus();picker.click();}
-        });
-        picker.addEventListener('change',()=>{state[key]=picker.value;display.textContent=dateLabel(picker.value);refresh()});
-        control.append(trigger,picker);row.append(caption,control);dates.append(row);
-        dateFields[key]={picker,display};return picker;
+        trigger.append(display);trigger.insertAdjacentHTML('beforeend',calendar);
+        trigger.addEventListener('click',()=>toggleCalendar(key));
+        control.append(trigger);row.append(caption,control);dates.append(row);
+        dateFields[key]={trigger,display,label};return trigger;
       }
       addDate(copy.created,'created');addDate(copy.modified,'modified');
+      monthField.addEventListener('change',()=>{calendarMonth=Number(monthField.value);renderCalendar()});
+      yearField.addEventListener('change',()=>{calendarYear=Number(yearField.value);renderCalendar()});
+      calendarPop.addEventListener('click',e=>{
+        const step=e.target.closest('[data-month-step]');
+        if(!step)return;
+        const d=new Date(calendarYear,calendarMonth+Number(step.dataset.monthStep),1);
+        calendarYear=Math.max(1900,Math.min(2120,d.getFullYear()));
+        calendarMonth=d.getMonth();renderCalendar();
+      });
+      todayButton.addEventListener('click',()=>{
+        const today=new Date();
+        applyDate(isoDate(today.getFullYear(),today.getMonth(),today.getDate()));
+      });
+      clearButton.addEventListener('click',()=>applyDate(''));
       const sizeRow=document.createElement('label'),sizeTitle=document.createElement('span');
       sizeTitle.textContent=copy.size;
       const sizeControl=document.createElement('span');sizeControl.className='tex-filter-size-control';
@@ -522,7 +641,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         const top=Math.max(8,Math.min(innerHeight-height-8,beneath));
         pop.style.left=left+'px';pop.style.top=top+'px';
       };
-      const close=()=>{pop.hidden=true;button.setAttribute('aria-expanded','false')};
+      const close=()=>{closeCalendar();pop.hidden=true;button.setAttribute('aria-expanded','false')};
       button.addEventListener('click',()=>{pop.hidden=!pop.hidden;button.setAttribute('aria-expanded',String(!pop.hidden));if(!pop.hidden)position()});
       pop.addEventListener('click',e=>{
         if(e.target.closest('[data-action="done"]')){close();button.focus()}
@@ -534,7 +653,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
           for(const el of pop.querySelectorAll('[data-key]'))
             el.value=el.dataset.key==='order'?'recent':el.dataset.key==='sizeUnit'?'KB':'';
           for(const field of Object.values(dateFields))field.display.textContent=dateLabel('');
-          refresh();
+          closeCalendar();refresh();
         }
       });
       pop.addEventListener('change',e=>{
@@ -548,10 +667,22 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         state.maxSize=sizeInput.value;refresh();
       });
       document.addEventListener('pointerdown',e=>{
+        if(!calendarPop.hidden&&!calendarPop.contains(e.target)&&
+          !e.target.closest('.tex-filter-date-label'))closeCalendar();
         if(!pop.hidden&&!pop.contains(e.target)&&!button.contains(e.target))close();
       },true);
-      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!pop.hidden){close();button.focus()}});
-      window.addEventListener('resize',()=>{if(!pop.hidden)position()});
+      document.addEventListener('keydown',e=>{
+        if(e.key==='Escape'&&!calendarPop.hidden){
+          const field=dateFields[calendarKey];closeCalendar();field?.trigger.focus();
+          e.stopPropagation();return;
+        }
+        if(e.key==='Escape'&&!pop.hidden){close();button.focus()}
+      });
+      window.addEventListener('resize',()=>{
+        if(!pop.hidden)position();
+        if(!calendarPop.hidden)positionCalendar();
+      });
+      window.addEventListener('scroll',()=>{if(!calendarPop.hidden)positionCalendar()},{passive:true,capture:true});
       window.addEventListener('pagehide',()=>pop.remove(),{once:true});
       let projects=[],listedAt=0,index=new Map(),inflight=new Map(),generation=0,timer=0;
       const textbytes=s=>new TextEncoder().encode(String(s||'')).length;
