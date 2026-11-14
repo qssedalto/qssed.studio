@@ -10,7 +10,14 @@ const browser=['/usr/bin/chromium','/usr/bin/google-chrome','/usr/bin/chromium-b
 if(!browser){console.log('Chromium not installed; static search-filter test still runs.');process.exit(0)}
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'aertex-search-qa-'));
 try{
-  const html=String.raw`<!doctype html><html data-theme="light"><head><meta charset="utf-8"></head><body class="os-shell">
+  const html=String.raw`<!doctype html><html data-theme="light"><head><meta charset="utf-8"><style>
+:root{--card:#242426;--fill:#313135;--border:#484850;--text:#f7f7fa;--muted:#aaaaaf;--primary:#0a84ff}
+body{margin:0;background:#18181b;color:var(--text);font:13px "Segoe UI",sans-serif}
+.tex-documents-panel{width:445px;height:95vh;display:flex;flex-direction:column;padding:14px;box-sizing:border-box}
+.tex-panel-head{height:36px}.tex-create-row{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;gap:8px;margin-bottom:8px}
+.tex-search{height:46px;border:1px solid var(--border);border-radius:13px}
+#tex-search-results{min-height:0}
+</style></head><body class="os-shell">
 <section class="tex-work-app" data-tex-root data-tex-collaboration-document-id="11111111-1111-4111-8111-111111111111">
 <aside class="tex-documents-panel">
 <div class="tex-panel-head"><strong>LaTex</strong></div>
@@ -40,21 +47,35 @@ window.addEventListener('load',()=>{
   const btn=document.getElementById('tex-search-filter');
   const checks=[];
   checks.push(!!btn);
+  checks.push(btn.parentElement?.classList.contains('tex-explorer-search-row')===true);
+  checks.push(!btn.closest('.tex-search'));
   input.value='main';input.dispatchEvent(new Event('input',{bubbles:true}));
   setTimeout(()=>{
    const matches=[...document.querySelectorAll('#tex-search-results .tex-found-entry')];
    checks.push(matches.some(x=>x.dataset.type==='file'&&x.querySelector('.tex-found-name').textContent==='main.tex'));
    checks.push(matches.some(x=>x.title.includes('admin/APMCM/main.tex')&&x.title.includes('创建')));
    checks.push(document.querySelector('#tex-document-list').hidden===true);
+   checks.push(!matches.some(x=>x.querySelector('.tex-found-path,.tex-found-detail')));
+   checks.push(matches.every(x=>Math.abs(x.getBoundingClientRect().height-35)<1.5));
    btn.click();
    const popup=document.getElementById('tex-search-filter-panel');
    checks.push(!popup.hidden&&btn.getAttribute('aria-expanded')==='true');
    const inputFile=popup.querySelector('input[data-type="file"]');
    checks.push(!!inputFile);
+   checks.push(popup.scrollHeight<=popup.clientHeight+5 && getComputedStyle(popup).overflowY==='visible');
+   const head=popup.querySelector('.tex-filter-head');
+   checks.push(head.getBoundingClientRect().height<45 && head.querySelector('h2').getBoundingClientRect().height<27);
+   const tick=popup.querySelector('[data-action="done"]');
+   checks.push(tick.offsetWidth<=40 && tick.offsetHeight<=40 && !!tick.querySelector('svg'));
+   const dates=[...popup.querySelectorAll('.tex-filter-date-label .tex-date-text')];
+   checks.push(dates.length===2 && dates.every(x=>x.textContent==='选择日期'));
+   const unit=popup.querySelector('[data-key="sizeUnit"]');
+   checks.push(unit?.value==='KB' && [...unit.options].map(x=>x.value).join(',')==='KB,MB');
    checks.push(getComputedStyle(document.querySelector('.tex-tree-file.is-active')).boxShadow==='none');
    const row=document.querySelector('.tex-tree-file');
    row.dispatchEvent(new PointerEvent('pointerover',{bubbles:true}));
    checks.push(row.title.includes('admin/APMCM/main.tex'));
+   checks.push(btn.getBoundingClientRect().left>=input.getBoundingClientRect().right);
    input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));
    checks.push(document.querySelector('#tex-document-list').hidden===false);
    document.body.dataset.qa=checks.every(Boolean)?'PASS':'FAIL-'+JSON.stringify(checks);
