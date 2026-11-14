@@ -132,6 +132,14 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
     #tex-search-filter-panel label input[type="checkbox"]{
       flex:0 0 18px;width:18px;height:18px;accent-color:var(--primary);margin:0;cursor:pointer;
     }
+    #tex-search-filter-panel label input[type="radio"] {
+      appearance:radio!important;-webkit-appearance:radio!important;
+      flex:0 0 18px!important;width:18px!important;height:18px!important;
+      max-width:18px!important;min-width:18px!important;min-height:18px!important;
+      padding:0!important;margin:0!important;position:static!important;
+      border:0!important;border-radius:50%!important;background:transparent!important;
+      box-shadow:none!important;accent-color:var(--primary)!important;
+    }
     #tex-search-filter-panel input[type="date"],
     #tex-search-filter-panel input[type="number"],
     #tex-search-filter-panel select{
@@ -467,7 +475,21 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
           if(item)break;
           await new Promise(resolve=>setTimeout(resolve,60));
         }
-        if(item)item.click();
+        if(item){
+          if(entry.type==='folder'){
+            // The matched nested node exists even while ancestor groups are
+            // collapsed. Reveal its full ancestry through the explorer's own
+            // chevron handlers so expansion state is kept in sync.
+            const ancestors=[];let parent=item.parentElement;
+            while(parent&&parent!==list){
+              if(parent.classList?.contains('tex-tree-folder-children')&&parent.hidden)
+                ancestors.unshift(parent.previousElementSibling);
+              parent=parent.parentElement;
+            }
+            for(const ancestor of ancestors)ancestor?.querySelector('.tex-project-chevron')?.click();
+          }
+          item.click();
+        }
       }
       const getRowEntry=row=>{
         const projectRow=row.matches('.tex-document-item')?row:
