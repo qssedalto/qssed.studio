@@ -22,6 +22,9 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     deleteCancel: "取消",
     deleteAction: "删除",
     deleteClose: "关闭",
+    githubChecking: "正在检查此项目关联的 GitHub 仓库…",
+    githubLinked: "此项目仍关联 GitHub 仓库。确认删除项目后，将先提示删除远程仓库。",
+    githubUnchecked: "无法确认 GitHub 仓库状态。出于安全考虑，暂时不能删除项目。",
     saved: "已保存",
     saving: "正在保存…",
     saveFailed: "保存失败",
@@ -53,6 +56,9 @@ export function enhanceWorkTexEditorTools(markup, zh) {
     deleteCancel: "Cancel",
     deleteAction: "Delete",
     deleteClose: "Close",
+    githubChecking: "Checking this project's linked GitHub repository…",
+    githubLinked: "A GitHub repository is still linked. You will be asked to remove it before deleting this project.",
+    githubUnchecked: "Could not verify the GitHub repository. Project deletion is blocked for safety.",
     saved: "Saved",
     saving: "Saving…",
     saveFailed: "Save failed",
@@ -166,6 +172,7 @@ export function enhanceWorkTexEditorTools(markup, zh) {
       .tex-delete-dialog-close svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
       .tex-delete-dialog-body{padding:24px;min-height:132px}
       .tex-delete-dialog-body p{margin:0 0 20px;color:var(--muted,#616775);font-size:17px;line-height:1.5}
+      .tex-delete-dialog-body .tex-delete-github-check{margin:16px 0 0;line-height:1.55;font-size:13px;color:var(--muted,#616775)}
       .tex-delete-dialog-body ul{margin:0;padding-left:29px;color:var(--muted,#616775);font-size:17px;line-height:1.6;overflow-wrap:anywhere}
       .tex-delete-dialog-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--border,#ddd)}
       .tex-delete-dialog-actions button{appearance:none;min-width:80px;min-height:40px;padding:0 18px;border-radius:999px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
@@ -397,27 +404,58 @@ export function enhanceWorkTexEditorTools(markup, zh) {
           '<div class="tex-delete-dialog-actions"><button type="button" class="tex-delete-dialog-cancel">' + labels.deleteCancel + '</button><button type="button" class="tex-delete-dialog-confirm">' + labels.deleteAction + '</button></div>';
         document.body.append(deleteDialog);
         const deleteFileName = deleteDialog.querySelector('.tex-delete-file-name');
-        let resolveDelete = null;
+        const githubCheck = document.createElement('p');
+        githubCheck.className = 'tex-delete-github-check';
+        githubCheck.setAttribute('role','status');
+        githubCheck.setAttribute('aria-live','polite');
+        deleteDialog.querySelector('.tex-delete-dialog-body')?.append(githubCheck);
+        let resolveDelete = null,guardedDocumentId='';
         const closeDelete = accepted => { if (deleteDialog.open) deleteDialog.close(accepted ? 'delete' : 'cancel'); };
         deleteDialog.querySelector('.tex-delete-dialog-close').addEventListener('click', () => closeDelete(false));
         deleteDialog.querySelector('.tex-delete-dialog-cancel').addEventListener('click', () => closeDelete(false));
         deleteDialog.querySelector('.tex-delete-dialog-confirm').addEventListener('click', () => closeDelete(true));
         deleteDialog.addEventListener('click', event => { if (event.target === deleteDialog) closeDelete(false); });
-        deleteDialog.addEventListener('close', () => {
+        deleteDialog.addEventListener('close', async () => {
           const resolve = resolveDelete;
+          const documentId = guardedDocumentId;
           resolveDelete = null;
-          if (resolve) resolve(deleteDialog.returnValue === 'delete');
+          guardedDocumentId='';
+          if (!resolve) return;
+          if (deleteDialog.returnValue !== 'delete') { resolve(false); return; }
+          // This second check is mandatory even if preflight ran at showModal.
+          // Closing the warning, or choosing its OK button, must not delete.
+          const gate=window.__aertexTexBeforeProjectDeletion;
+          if(typeof gate!=='function'){ resolve(false); return; }
+          try {
+            const permitted=await gate(documentId);
+            resolve(Boolean(permitted && activeDocumentId()===documentId));
+          } catch { resolve(false); }
         });
         window.__qssedaTexConfirmDelete = filename => {
-          if (!activeDocumentId() || root.dataset.texCollaborationAccessRole === 'viewer' ||
+          const documentId=activeDocumentId();
+          if (!documentId || root.dataset.texCollaborationAccessRole === 'viewer' ||
               root.dataset.texCollaborationAccessRole === 'editor' || deleteDialog.open) return Promise.resolve(false);
           const name = String(filename || title.value || 'main.tex').trim();
-          deleteFileName.textContent = name.toLowerCase().endsWith('.tex') ? name : name + '.tex';
+          deleteFileName.textContent = name;
+          guardedDocumentId=documentId;
           deleteDialog.returnValue = 'cancel';
+          githubCheck.textContent=labels.githubChecking;
           return new Promise(resolve => {
             resolveDelete = resolve;
-            try { deleteDialog.showModal(); }
-            catch { resolveDelete = null; resolve(false); }
+            try {
+              deleteDialog.showModal();
+              // Begin checking AS SOON AS the confirmation dialog appears.
+              const check=window.__aertexTexCheckProjectGithubRepository;
+              if(typeof check!=='function'){githubCheck.textContent=labels.githubUnchecked;return;}
+              void Promise.resolve().then(()=>check(documentId)).then(status=>{
+                if(!deleteDialog.open||guardedDocumentId!==documentId)return;
+                githubCheck.textContent=status?.repository_name||status?.repository_state!=='none'?
+                  labels.githubLinked:'';
+              }).catch(()=>{
+                if(deleteDialog.open&&guardedDocumentId===documentId)
+                  githubCheck.textContent=labels.githubUnchecked;
+              });
+            } catch { resolveDelete = null; guardedDocumentId=''; resolve(false); }
           });
         };
 
