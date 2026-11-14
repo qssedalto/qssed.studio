@@ -162,8 +162,8 @@ for (const zh of [true, false]) {
 // Manual compilation now uses the precise reference circular-play SVG,
  // with dynamic light/dark neutral colors and the original busy accent state.
 const toolbarSource=fs.readFileSync(new URL("../studio/ui-work-tex-compile-toolbar.js",import.meta.url),"utf8");
-assert(toolbarSource.includes('<circle cx="12" cy="12" r="9.55" stroke="currentColor" stroke-width="2.05"/>') &&
-  toolbarSource.includes('d="M10.15 7.85a.87') &&
+assert(toolbarSource.includes('<circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="2" fill="none"/>') &&
+  toolbarSource.includes('d="M9.05 8.35c0-.76') &&
   toolbarSource.includes('fill="currentColor"') &&
   toolbarSource.includes('.tex-compile-fixed:not(.is-compiling) .tex-compile-vector'),
   "Compile toolbar must use circular-play SVG instead of GitHub Actions artwork");
