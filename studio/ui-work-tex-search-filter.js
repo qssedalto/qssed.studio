@@ -99,6 +99,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
     .tex-work-app #tex-search-results .tex-found-detail{
       font-size:10px;color:var(--muted);white-space:normal;overflow-wrap:anywhere;
     }
+    .tex-work-app .tex-tree-name-tooltip {white-space:pre-line!important}
     .tex-work-app #tex-search-results .tex-search-progress,
     .tex-work-app #tex-search-results .tex-search-none{
       padding:13px 12px;font-size:12px;color:var(--muted);line-height:1.55;
@@ -490,6 +491,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         if(!row)return;
         const entry=getRowEntry(row);if(!entry)return;
         row.title=info(entry);
+        row.dataset.aertexMeta=info(entry);
         const p=projects.find(p=>p.id===entry.projectId);
         if(p&&!index.has(p.id)){
           void getIndex(p).then(()=>{if(row.isConnected){const updated=getRowEntry(row);if(updated)row.title=info(updated)}}).catch(()=>{});
