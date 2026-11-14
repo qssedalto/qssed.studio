@@ -30,7 +30,7 @@ export function selectWorkTexGreeting({ zh = true, username = "", localHour = 12
     `${name}，我能帮你做些什么？`,
     "今天想聊点什么？",
     chineseTimeGreeting,
-    `今晚想做些什么，${name}？`
+    `接下来想做些什么，${name}？`
   ] : [
     "Where should we begin?",
     "Ready when you are.",
