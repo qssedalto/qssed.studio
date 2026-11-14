@@ -456,13 +456,14 @@ const RUNTIME = String.raw`
       return;
     }
     if(state.target==='chat'){
+      // Open during the user's click activation, before awaiting clipboard IO.
+      window.open('https://chat.qsseda.com/','_blank','noopener,noreferrer');
       if(draft){
         try{
           await navigator.clipboard.writeText(draft);
           notify(t('文本已复制，请在聊天窗口粘贴。不会自动发送。','Text copied. Paste it in Chat; nothing is auto-sent.'));
         }catch{notify(t('请复制输入内容后到聊天页面粘贴。','Copy your text into the Chat window.'))}
       }
-      window.open('https://chat.qsseda.com/','_blank','noopener,noreferrer');
       return;
     }
     if(!needsProject())return;
