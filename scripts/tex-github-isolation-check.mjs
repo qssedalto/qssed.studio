@@ -5,7 +5,7 @@ import { gunzipSync } from "node:zlib";
 import { managedTexRepoName, MANAGED_TEX_WORKFLOW, MANAGED_TEX_WORKFLOW_PATH } from "../studio/tex-github-workflow.js";
 import { enhanceTexGithubWorkbench } from "../studio/ui-tex-github.js";
 import {
-  texGithubProjectRepositoryName,texGithubProjectRepositoryKey,
+  texGithubProjectRepositoryName,texGithubProjectRepositoryKey,isTexGithubManagedRepositoryName,
   readTexGithubProjectRepository,writeTexGithubProjectRepository,
   removeTexGithubProjectRepository
 } from "../studio/tex-github-project-repositories.js";
@@ -172,6 +172,43 @@ const projectB="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 assert.notEqual(texGithubProjectRepositoryName(projectA),texGithubProjectRepositoryName(projectB));
 assert.notEqual(texGithubProjectRepositoryKey(userA,projectA),texGithubProjectRepositoryKey(userA,projectB));
 assert.notEqual(texGithubProjectRepositoryKey(userA,projectA),texGithubProjectRepositoryKey(userB,projectA));
+// Regression: readable per-project repository names were provisioned but
+// then rejected by the old 32-hex-only GitHub path guard with HTTP 503.
+const regularName=texGithubProjectRepositoryName(projectA,{
+  title:"APMCM",username:"student-02",created_at:"2026-11-14T13:30:00.000Z"
+});
+const adminName=texGithubProjectRepositoryName(projectB,{
+  title:"机器学习",username:"ignored",created_at:"2026-11-14T13:30:00.000Z",is_admin:true
+});
+for(const valid of [texGithubProjectRepositoryName(projectA),regularName,adminName]){
+  assert.equal(isTexGithubManagedRepositoryName(valid),true,"Valid managed repo name: "+valid);
+}
+assert.match(regularName,/-20261114133000-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa$/);
+assert.match(adminName,/-admin-14-11-2026-bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb$/);
+for(const invalid of [
+  "", "unrelated-repository", "../aertex-tex-"+projectA, "aertex-tex-foo/"+projectA,
+  "aertex-tex-foo-"+projectA, "aertex-tex-foo-20261114133000-not-a-uuid",
+  "aertex-tex-"+("x".repeat(150))+"-20261114133000-"+projectA,
+  "https://github.com/attacker/repository"
+]){
+  assert.equal(isTexGithubManagedRepositoryName(invalid),false,
+    "Unsafe or unrelated repository name: "+invalid);
+}
+assert(api.includes("isTexGithubManagedRepositoryName(repoName)"),
+  "GitHub operations must use the shared managed repository name validator");
+const pathStart=api.indexOf("function githubRepoPath(env, repoName) {");
+const pathEnd=api.indexOf("// Bind every operation",pathStart);
+assert(pathStart>0&&pathEnd>pathStart,"Repository path guard must be present");
+const pathBuilder=new Function("configured","httpError","isTexGithubManagedRepositoryName",
+  api.slice(pathStart,pathEnd)+"\nreturn githubRepoPath;")(
+    ()=>true,(status,code)=>Object.assign(new Error(code),{status,code}),isTexGithubManagedRepositoryName
+  );
+const operator={AERTEX_TEX_GITHUB_OWNER:"qssedalto"};
+assert.equal(pathBuilder(operator,regularName),"/repos/qssedalto/"+regularName);
+assert.equal(pathBuilder(operator,adminName),"/repos/qssedalto/"+adminName);
+assert.equal(pathBuilder(operator,texGithubProjectRepositoryName(projectA)),
+  "/repos/qssedalto/"+texGithubProjectRepositoryName(projectA));
+assert.throws(()=>pathBuilder(operator,"../malicious"),/invalid_managed_repository_name/);
 const records=new Map();
 const fakeR2={
   get:async key=>{
