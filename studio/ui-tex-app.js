@@ -40,46 +40,43 @@ export function polishTexWorkbenchApp(markup, zh) {
     : '<div id="tex-editor-placeholder" class="tex-editor-placeholder"><div>TeX</div><strong>Select a document to start editing</strong><span>Or create one from a template on the left.</span></div>';
 
   const startSurface = `<div id="tex-editor-placeholder" class="tex-editor-placeholder">
-    <section class="qtex-welcome" aria-label="${copy.startTitle}">
-      <div class="qtex-welcome-bar">
-        <span class="qtex-welcome-brand"><i aria-hidden="true"></i>AERTEX <span>/</span> WORK</span>
-        <span class="qtex-welcome-number">EDITOR / 01</span>
-      </div>
+    <section class="qtex-welcome" aria-label="${zh ? "TeX 工作台首页" : "TeX workspace home"}">
       <div class="qtex-welcome-hero">
         <div class="qtex-welcome-copy">
-          <span class="qtex-welcome-kicker">${copy.startKicker}</span>
-          <h2><span>${copy.startLead}</span><em>${copy.startAccent}</em></h2>
-          <p>${copy.startDetail}</p>
-        </div>
-        <div class="qtex-welcome-art" aria-hidden="true">
-          <div class="qtex-paper">
-            <div class="qtex-paper-header"><span><i></i>main.tex</span><span>XeLaTeX</span></div>
-            <div class="qtex-code"><span>01</span><code>&#92;documentclass{article}</code></div>
-            <div class="qtex-code"><span>02</span><code>&#92;begin{document}</code></div>
-            <div class="qtex-code"><span>03</span><code>Hello, TeX!</code></div>
-            <div class="qtex-code"><span>04</span><code>&#92;end{document}</code></div>
-            <div class="qtex-paper-bottom"><span>TeX</span><span>→</span><span>PDF</span></div>
-          </div>
+          <div class="qtex-welcome-brand"><span class="qtex-brand-dot" aria-hidden="true"></span><span>AERTEX</span><span class="qtex-brand-divider" aria-hidden="true">/</span><span>Work</span></div>
+          <h2><span>${zh ? "欢迎回来" : "Welcome back"}</span></h2>
+          <p>${zh ? "继续你的创作，或从一个新项目开始。" : "Pick up where you left off, or start something new."}</p>
         </div>
       </div>
       <div class="qtex-templates">
-        <div class="qtex-templates-header"><strong>${copy.chooseTemplate}</strong><span>03 / PROJECT TYPES</span></div>
+        <div class="qtex-templates-header"><strong>${zh ? "开始创作" : "Get started"}</strong></div>
         <div class="qtex-template-grid">
           <button type="button" class="qtex-template qtex-template-blank" data-tex-start-template="blank">
-            <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">+</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
-            <span class="qtex-template-info"><strong>${copy.blank}</strong><span>${copy.blankDetail}</span></span>
+            <span class="qtex-template-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4.5v15M4.5 12h15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <span class="qtex-template-info"><strong>${zh ? "新建项目" : "New project"}</strong><span>${zh ? "创建一个空白 TeX 项目" : "Start with a blank TeX project"}</span></span>
+            <svg class="qtex-template-arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 5 7 7-7 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <button type="button" class="qtex-template qtex-template-article" data-tex-start-template="article">
-            <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">${zh ? "文" : "A"}</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
-            <span class="qtex-template-info"><strong>${copy.article}</strong><span>${copy.articleDetail}</span></span>
+            <span class="qtex-template-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3.75h7.5l3.75 3.75v12.75H7a2 2 0 0 1-2-2V5.75a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round"/><path d="M14.5 3.75V7.5h3.75M8.5 11h6.5M8.5 14.5H15" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="qtex-template-info"><strong>${zh ? "示例项目" : "Example project"}</strong><span>${zh ? "从完整的模板开始" : "Explore a ready-made example"}</span></span>
+            <svg class="qtex-template-arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 5 7 7-7 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <button type="button" class="qtex-template qtex-template-math" data-tex-start-template="math">
-            <span class="qtex-template-top"><span class="qtex-template-icon" aria-hidden="true">∑</span><span class="qtex-template-arrow" aria-hidden="true">↗</span></span>
-            <span class="qtex-template-info"><strong>${copy.math}</strong><span>${copy.mathDetail}</span></span>
+            <span class="qtex-template-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L8 8m4-4 4 4M5 16.5v2A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-2" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="qtex-template-info"><strong>${zh ? "导入项目" : "Import project"}</strong><span>${zh ? "上传已有 ZIP 项目" : "Upload an existing ZIP project"}</span></span>
+            <svg class="qtex-template-arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 5 7 7-7 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
       </div>
-      <div class="qtex-welcome-footer"><span>${copy.local}</span><span>${copy.autosave}</span><span>${copy.preview}</span></div>
+      <section class="qtex-recent" aria-label="${zh ? "最近使用的项目" : "Recent projects"}">
+        <div class="qtex-recent-heading">
+          <strong>${zh ? "最近使用" : "Recent projects"}</strong>
+          <span>${zh ? "按最近修改排序" : "Sorted by last edit"}</span>
+        </div>
+        <div id="qtex-recent-list" class="qtex-recent-list" aria-live="polite">
+          <div class="qtex-recent-empty">${zh ? "还没有最近使用的项目。" : "No recent projects yet."}</div>
+        </div>
+      </section>
     </section>
   </div>`;
 
