@@ -376,8 +376,10 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         title.textContent=entry.type==='project'?entry.projectTitle:entry.name.split('/').at(-1);
         const path=document.createElement('span');path.className='tex-found-path';path.textContent=pathOf(entry);
         const meta=document.createElement('span');meta.className='tex-found-detail';
-        meta.textContent=copy.dateModified+': '+dateOf(entry.updated_at)+' · '+copy.byteSize+': '+formatSize(entry.size_bytes)+
-          ' · '+(savedStatus(entry)==='unsaved'?copy.unsaved:copy.saved);
+        meta.textContent=copy.dateCreated+': '+dateOf(entry.created_at)+' · '+
+          copy.dateModified+': '+dateOf(entry.updated_at)+' · '+
+          copy.byteSize+': '+formatSize(entry.size_bytes)+' · '+
+          copy.state+': '+(savedStatus(entry)==='unsaved'?copy.unsaved:copy.saved);
         content.append(title,path,meta);row.append(svg.firstElementChild,content);
         row.addEventListener('click',()=>void openResult(entry));return row;
       }
