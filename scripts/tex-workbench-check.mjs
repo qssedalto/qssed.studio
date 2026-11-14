@@ -175,17 +175,17 @@ for (const zh of [true, false]) {
 
   assert(workPageMarkup.includes('id="qsseda-work-tex-welcome-clean"'), "Welcome page must use a single isolated stylesheet.");
   assert(workMarkup.includes('class="qtex-welcome"') && workMarkup.includes('class="qtex-welcome-hero"'), "Welcome page must render the editorial layout.");
-  assert(workMarkup.includes('class="qtex-paper"') && workMarkup.includes('main.tex'), "Welcome illustration must show a document with TeX source.");
+  assert(workMarkup.includes('id="qtex-recent-list"') && workMarkup.includes('class="qtex-recent"'), "Welcome must show a recent-project workspace section.");
   assert(workPageMarkup.includes("container:qtex / inline-size"), "Welcome must adapt to the actual editor column, not just viewport width.");
   assert(workPageMarkup.includes("grid-template-columns:repeat(3,minmax(0,1fr))"), "Templates must use equal columns in a sufficiently wide editor.");
-  assert(workPageMarkup.includes("--qtex-accent:#c9b2ff") && workPageMarkup.includes("--qtex-accent:#a9c6ff"), "Templates must use restrained QssedA DEV colors.");
-  assert(workPageMarkup.includes("@container qtex (max-width:615px)"), "Narrow editor columns must switch to compact single-column tiles.");
+  assert(workPageMarkup.includes("qtex-template-icon") && !workPageMarkup.includes("--qtex-accent:#c9b2ff"), "Templates must use understated line icons and the active theme color.");
+  assert(workPageMarkup.includes("@container qtex (max-width:700px)"), "Narrow editor columns must switch to compact single-column tiles.");
   assert((workMarkup.match(/<button[^>]*data-tex-start-template="/g) || []).length === 3, "Welcome must expose exactly three template buttons.");
   assert(!workMarkup.includes('class="tex-start-card"') && !workMarkup.includes('.tex-start-card::before'), "Previous duplicate-icon template treatment must be removed.");
   assert(!workPageMarkup.includes(".tex-start-kicker") && !workPageMarkup.includes("radial-gradient(closest-side at"), "Buggy vertical kicker and heavy background glow must be eliminated.");
   assert(workMarkup.includes('id="tex-editor-placeholder"'), "Existing editor open/close behavior must retain its placeholder ID.");
-  if (zh) assert(workMarkup.includes("选择模板") && workMarkup.includes("从灵感到排版"), "Chinese editorial copy must render.");
-  else assert(workMarkup.includes("Choose a template") && workMarkup.includes("FROM IDEA TO TYPESET"), "English editorial copy must render.");
+  if (zh) assert(workMarkup.includes("欢迎回来") && workMarkup.includes("最近使用"), "Chinese workspace dashboard must render.");
+  else assert(workMarkup.includes("Welcome back") && workMarkup.includes("Recent projects"), "English workspace dashboard must render.");
 
   assert(workPageMarkup.includes(".tex-documents-panel > .tex-panel-head"), "Document header must share the full-width sidebar background.");
   assert(workMarkup.includes("openingDocument(id)") && workMarkup.includes("fastDocument(id)"), "Document selection must show immediate feedback and reuse prefetches.");
