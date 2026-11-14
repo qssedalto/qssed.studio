@@ -107,6 +107,12 @@ export function enhanceWorkTexUiPolish(markup, zh) {
       background:#202126!important;outline:0!important;border:0!important;
       box-shadow:0 1px 7px rgba(0,0,0,.32)!important;
     }
+    /* The native PDF iframe remains behind the PDF.js reader and used to
+       paint a bright rectangular layer while the overlay initializes.
+       Only change the iframe's chrome, never the PDF pixels. */
+    :root[data-theme="dark"] body.os-shell:has(.tex-work-app) .tex-work-app #tex-live-preview-frame {
+      background:#1b1c20!important;color-scheme:dark!important;
+    }
     :root[data-theme="dark"] body.os-shell:has(.tex-work-app) .tex-work-app .aertex-pdf-page>canvas {
       display:block!important;background:transparent!important;filter:none!important;
     }
