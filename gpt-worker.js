@@ -14,8 +14,9 @@
 
 import { huaweiHarmonyGate } from "./studio/huawei-harmony-gate.js";
 import { injectSweiFontMarkup, sweiFontAssetResponse } from "./studio/swei-font.js";
-import { handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
+import { handleStudioSessionBootstrap, handleStudioSessionLogout, verifyStudioPageSession, withStudioSessionCookies } from "./studio/session-gate.js";
 import { handleAuthHandoff } from "./studio/auth-handoff.js";
+import { ssoBrowserRuntime } from "./studio/sso-browser-runtime.js";
 import { gptSessionRedirect } from "./studio/gpt-subdomain.js";
 import { renderGptApp, renderSharedConversation, renderIntelligenceNotFound } from "./studio/gpt-ui.js";
 import { handleAiApi, handleAiAdminApi } from "./studio/ai-gateway.js";
@@ -69,6 +70,16 @@ export default {
       if (request.method !== "POST") return text("Method not allowed", 405);
       const locale = preferredLocale(request);
       return handleAuthHandoff(request, env, locale);
+    }
+
+    if (pathname === "/sso-client.js") {
+      if ((request.method !== "GET" && request.method !== "HEAD")) return text("Method not allowed", 405);
+      return text(request.method === "HEAD" ? "" : ssoBrowserRuntime(), 200, "text/javascript;charset=UTF-8");
+    }
+
+    if (pathname === "/api/auth/bootstrap") {
+      if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
+      return handleStudioSessionBootstrap(request);
     }
 
     if (pathname === "/api/auth/logout") {
@@ -157,7 +168,9 @@ export default {
         const missing = withStudioSessionCookies(html(renderIntelligenceNotFound(locale, { kind: "conversation", theme: intelligenceTheme }), 404), gate.cookies || []);
         return request.method === "HEAD" ? new Response(null,{status:missing.status,headers:missing.headers}) : missing;
       }
-      const response = withStudioSessionCookies(html(renderShell(locale, { ...bootstrap, theme: intelligenceTheme, mainOrigin: mainOriginForRequest(request) })), gate.cookies || []);
+      const rendered = renderShell(locale, { ...bootstrap, theme: intelligenceTheme, mainOrigin: mainOriginForRequest(request) });
+      const withSso = rendered.replace("</body>", '<script defer src="/sso-client.js"></script></body>');
+      const response = withStudioSessionCookies(html(withSso), gate.cookies || []);
       return request.method === "HEAD"
         ? new Response(null, { status: response.status, headers: response.headers })
         : response;
@@ -280,7 +293,7 @@ function securityHeaders(contentType) {
     "x-frame-options": "DENY",
     "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
     "strict-transport-security": "max-age=31536000; includeSubDomains",
-    "content-security-policy": "default-src 'none'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net data:; img-src 'self' data: https:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    "content-security-policy": "default-src 'none'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net data:; img-src 'self' data: https:; connect-src 'self'; frame-src https://auth.qsseda.com https://auth.qsseda.studio; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
   });
 }
 

@@ -48,7 +48,9 @@ function htmlSecurityHeaders(options = {}) {
     "font-src 'self' data:",
     "object-src 'none'",
     "base-uri 'none'",
-    allowLoopback ? "frame-src blob:" : "frame-src 'none'",
+    allowLoopback
+      ? "frame-src blob: https://auth.qsseda.com https://auth.qsseda.studio"
+      : "frame-src https://auth.qsseda.com https://auth.qsseda.studio",
     "frame-ancestors 'none'",
     "form-action 'self'",
     "manifest-src 'self'",

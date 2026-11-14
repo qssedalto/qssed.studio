@@ -14,6 +14,7 @@ import { refreshBrowserAuthSession } from "../auth-browser-refresh.js";
 const ACCESS_COOKIE = "__Host-qsseda-studio-access";
 const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 const ACCOUNT_COOKIE = "__Secure-qsseda-account-id";
+const SSO_COOKIE = "__Host-qsseda-studio-sso";
 const ACCOUNT_SIGNED_OUT = "signed-out";
 const ACCESS_MAX_AGE = 60 * 60;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
@@ -25,14 +26,21 @@ export function studioSessionCookies(accessToken, refreshToken, expiresIn = ACCE
   const cookieDomain = sessionRoot(requestOrHost);
   const cookies = [];
   if (accessToken) cookies.push(cookie(ACCESS_COOKIE, accessToken, accessAge));
-  if (refreshToken) cookies.push(cookie(REFRESH_COOKIE, refreshToken, REFRESH_MAX_AGE));
+  if (refreshToken) {
+    cookies.push(cookie(REFRESH_COOKIE, refreshToken, REFRESH_MAX_AGE));
+    cookies.push(cookie(SSO_COOKIE, "", 0));
+  } else {
+    // Only Auth keeps a rotating refresh token. Remove any copied legacy token.
+    cookies.push(cookie(REFRESH_COOKIE, "", 0));
+    cookies.push(cookie(SSO_COOKIE, "1", REFRESH_MAX_AGE));
+  }
   const userId = jwtSubject(accessToken);
   if (userId) cookies.push(accountCookie(userId, REFRESH_MAX_AGE, cookieDomain));
   return cookies;
 }
 
 export function clearStudioSessionCookies() {
-  return [cookie(ACCESS_COOKIE, "", 0), cookie(REFRESH_COOKIE, "", 0)];
+  return [cookie(ACCESS_COOKIE, "", 0), cookie(REFRESH_COOKIE, "", 0), cookie(SSO_COOKIE, "", 0)];
 }
 
 function globalLogoutCookies(requestOrHost) {
@@ -63,7 +71,8 @@ export async function verifyStudioPageSession(request) {
   const isolatedAppHost = workHost || gptHost || cashHost || watchHost;
   const cookies = parseCookies(request.headers.get("Cookie") || "");
   const accessToken = cookies[ACCESS_COOKIE] || "";
-  const refreshToken = cookies[REFRESH_COOKIE] || "";
+  const ssoManaged = cookies[SSO_COOKIE] === "1";
+  const refreshToken = ssoManaged ? "" : (cookies[REFRESH_COOKIE] || "");
   const accountMarker = String(cookies[ACCOUNT_COOKIE] || "").trim();
   const accountId = isUuid(accountMarker) ? accountMarker : "";
   const markerBlocksSession = Boolean(accountMarker && !accountId);
@@ -90,6 +99,9 @@ export async function verifyStudioPageSession(request) {
     if (verified.temporary) temporarilyUnavailable = true;
   }
 
+  // Legacy sessions created by direct Studio sign-in can recover locally.
+  // Auth handoffs never receive a reusable refresh token, so these branches
+  // cannot accidentally consume Auth's rotating credential.
   if (refreshToken) {
     const result = await refreshBrowserAuthSession(refreshToken);
     if (result.kind === "unavailable") temporarilyUnavailable = true;
@@ -142,11 +154,16 @@ export async function handleStudioSessionBootstrap(request) {
   }
 
   const accessToken = cleanToken(body?.access_token, 12000);
-  const refreshToken = cleanToken(body?.refresh_token, 12000);
-  if (!accessToken || !refreshToken) return json({ error: "Missing session" }, 400);
+  // Ignore incoming refresh_token even from old JS clients. Bootstrap
+  // establishes an Auth-brokered *access-only* browser session.
+  if (!accessToken) return json({ error: "Missing session" }, 400);
 
   const verified = await verifyAccessToken(accessToken);
   if (!verified.ok) return studioSessionFailure({ temporary: verified.temporary, cookies: verified.temporary ? [] : clearStudioSessionCookies() });
+  const bootstrapCookies = parseCookies(request.headers.get("Cookie") || "");
+  if (bootstrapCookies[ACCOUNT_COOKIE] === ACCOUNT_SIGNED_OUT) {
+    return studioSessionFailure({ cookies: clearStudioSessionCookies() });
+  }
 
   // A Work-local Supabase session can itself be stale after an account switch on
   // another qsseda.com host. Do not let it recreate the old Work HttpOnly
@@ -167,7 +184,7 @@ export async function handleStudioSessionBootstrap(request) {
   }
 
   const response = json({ ok: true, user_id: verified.user.id });
-  return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken, undefined, request));
+  return withStudioSessionCookies(response, studioSessionCookies(accessToken, null, undefined, request));
 }
 
 /// 登出不仅清当前 host 的 __Host Cookie，还把域级 account marker 写成 signed-out，通知其他产品拒绝旧会话。

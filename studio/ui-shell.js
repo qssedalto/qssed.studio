@@ -172,18 +172,16 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
       signOutButton.disabled = true;
       if (signOutLabel) signOutLabel.textContent = ${JSON.stringify(ui.signingOut)};
 
+      // Supabase JS only holds an access token here; its refresh token is a
+      // nonfunctional sentinel. Never send that token to /auth/v1/logout.
+      // Revoke the actual refresh session on the central Auth host instead.
       try {
-        const { error } = await supabaseClient.auth.signOut({ scope: "local" });
-        if (error) throw error;
-      } catch (error) {
-        console.error("Sign out failed", error);
-        if (signOutLabel) signOutLabel.textContent = ${JSON.stringify(ui.signOutFailed)};
-        window.setTimeout(() => {
-          signOutButton.disabled = false;
-          if (signOutLabel) signOutLabel.textContent = idleLabel;
-        }, 1600);
-        return;
-      }
+        await fetch("/api/auth/logout", {
+          method: "POST", credentials: "same-origin", cache: "no-store",
+          headers: { "Content-Type": "application/json" }, body: "{}"
+        });
+      } catch (error) { console.warn("Local session cleanup unavailable", error); }
+      try { aertexAuthStorage.removeItem(AERTEX_SUPABASE_STORAGE_KEY); } catch {}
 
       try {
         document.cookie = "qssed-os-user-name=; Path=/; Max-Age=0; SameSite=Lax; Secure";
@@ -198,7 +196,9 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
         ].forEach(key => sessionStorage.removeItem(key));
       } catch {}
 
-      window.location.replace(loginUrl);
+      const rootDomain = location.hostname === "qsseda.studio" || location.hostname.endsWith(".qsseda.studio") ? "qsseda.studio" : "qsseda.com";
+      const centralLogout = new URL("/logout", "https://auth." + rootDomain);
+      window.location.replace(centralLogout.toString());
     }
 
     signOutButton?.addEventListener("click", signOutCurrentSession);
@@ -286,11 +286,10 @@ export function osPage(t, links, pathname, ipInfo, cachedOsUserLabel = "", produ
           const status = Number(lastError?.status || 0);
           if ((status === 401 || status === 403) && attempt === 0) {
             try {
-              const refreshResult = await supabaseClient.auth.refreshSession();
-              if (refreshResult?.data?.session?.user) {
-                session = refreshResult.data.session;
-              } else if (refreshResult?.error) {
-                lastError = refreshResult.error;
+              const recovered = await window.__aertexSsoRenew?.("manual");
+              if (recovered) {
+                const refreshResult = await supabaseClient.auth.getSession();
+                if (refreshResult?.data?.session?.user) session = refreshResult.data.session;
               }
             } catch (error) {
               lastError = error;

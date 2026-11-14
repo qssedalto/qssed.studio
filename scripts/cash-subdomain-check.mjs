@@ -43,11 +43,11 @@ for (const required of [
   'authOriginForRequest(request)',
   'cashOriginForRequest(request)',
   'name="access_token"',
-  'name="refresh_token"',
   'verifyStudioPageSession(request)'
 ]) assert(handoff.includes(required), `Cash handoff is missing secure transfer invariant: ${required}`);
 
 assert(!handoff.includes("access_token="), "Cash handoff must not place access tokens in a URL");
+assert(!handoff.includes('name="refresh_token"'), "Product handoff must not forward a long-lived refresh credential");
 assert(!handoff.includes("refresh_token="), "Cash handoff must not place refresh tokens in a URL");
 assert(session.includes('isServiceHost(hostname, "cash")'), "Session gate must recognize Cash as an isolated product host");
 assert(authHandoff.includes('isServiceHost(hostname, "cash")'), "Auth handoff must recognize Cash");

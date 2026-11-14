@@ -9,7 +9,6 @@ import { localeDirection, localeFromPath as sharedLocaleFromPath, normalizeSuppo
 // 安全流程是：
 // 主站确认 Studio Session -> 生成一次自动 POST 表单 -> aw.* /auth/handoff 接收会话 ->
 // Watch 子域写入自己的安全 Cookie。这样不会把 access token 放进查询字符串、浏览器历史或 Referer。
-const REFRESH_COOKIE = "__Host-qsseda-studio-refresh";
 
 // 同时接受无语言前缀 /aw/handoff 和 /<locale>/aw/handoff，供登录返回路径统一识别。
 export function isMainWatchHandoffPath(pathname) {
@@ -45,10 +44,6 @@ export async function handleMainWatchHandoff(request) {
   const next = canonicalWatchPath(requestedNext, locale);
   const gate = await verifyStudioPageSession(request);
 
-  // session-gate 可能在本次验证时轮换 refresh token；若有新值，必须优先使用 Set-Cookie 中的新 token。
-  let refreshToken = requestCookie(request, REFRESH_COOKIE);
-  const rotatedRefresh = cookieValueFromSetCookies(gate.cookies || [], REFRESH_COOKIE);
-  if (rotatedRefresh) refreshToken = rotatedRefresh;
 
   if (!gate.ok || !gate.accessToken) {
     const returnPath = "/" + locale + "/aw/handoff?next=" + encodeURIComponent(next);
@@ -58,9 +53,6 @@ export async function handleMainWatchHandoff(request) {
   }
 
   const watchOrigin = awOriginForRequest(request);
-  const refreshField = refreshToken
-    ? '<input type="hidden" name="refresh_token" value="' + escapeHtml(refreshToken) + '">'
-    : "";
   const handoffText = {
     "zh-cn":"正在进入 AERTEX Watch…",
     "zh-tw":"正在進入 AERTEX Watch…",
@@ -73,7 +65,7 @@ export async function handleMainWatchHandoff(request) {
   }[locale] || "Entering AERTEX Watch…";
 
   // 自动提交表单只存在于这个 no-store 的一次性过渡页。CSP 的 form-action 也被锁死到 Watch origin。
-  const page = '<!doctype html><html lang="' + locale + '" dir="' + localeDirection(locale) + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AERTEX Watch</title>' + FAVICON_LINKS + '</head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif"><p>' + handoffText + '</p></main><form id="handoff" method="post" action="' + watchOrigin + '/auth/handoff"><input type="hidden" name="access_token" value="' + escapeHtml(gate.accessToken) + '">' + refreshField + '<input type="hidden" name="next" value="' + escapeHtml(next) + '"></form><script>document.getElementById("handoff").submit()</script></body></html>';
+  const page = '<!doctype html><html lang="' + locale + '" dir="' + localeDirection(locale) + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AERTEX Watch</title>' + FAVICON_LINKS + '</head><body><main style="min-height:100vh;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif"><p>' + handoffText + '</p></main><form id="handoff" method="post" action="' + watchOrigin + '/auth/handoff"><input type="hidden" name="access_token" value="' + escapeHtml(gate.accessToken) + '"><input type="hidden" name="next" value="' + escapeHtml(next) + '"></form><script>document.getElementById("handoff").submit()</script></body></html>';
 
   const headers = new Headers({
     "content-type": "text/html;charset=UTF-8",
@@ -100,28 +92,6 @@ function canonicalWatchPath(path, locale) {
   const parts = candidate.split("/").filter(Boolean);
   const candidateLocale = normalizeSupportedLocale(parts[0]);
   return candidateLocale ? "/" + candidateLocale : "/" + normalizedLocale;
-}
-
-function requestCookie(request, name) {
-  const header = request.headers.get("Cookie") || "";
-  for (const part of header.split(";")) {
-    const index = part.indexOf("=");
-    if (index <= 0 || part.slice(0, index).trim() !== name) continue;
-    try { return decodeURIComponent(part.slice(index + 1).trim()); }
-    catch { return part.slice(index + 1).trim(); }
-  }
-  return "";
-}
-
-function cookieValueFromSetCookies(cookies, name) {
-  for (const line of cookies) {
-    const first = String(line || "").split(";", 1)[0];
-    const index = first.indexOf("=");
-    if (index <= 0 || first.slice(0, index).trim() !== name) continue;
-    try { return decodeURIComponent(first.slice(index + 1).trim()); }
-    catch { return first.slice(index + 1).trim(); }
-  }
-  return "";
 }
 
 function escapeHtml(value) {

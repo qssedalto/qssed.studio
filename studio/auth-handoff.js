@@ -40,10 +40,9 @@ export async function handleAuthHandoff(request, env, locale) {
   let form;
   try { form = await request.formData(); } catch { return json({ error: "Invalid handoff request" }, 400); }
   const accessToken = typeof form.get("access_token") === "string" ? form.get("access_token") : "";
-  const refreshToken = typeof form.get("refresh_token") === "string" ? form.get("refresh_token") : "";
   const next = normalizeHandoffNext(form.get("next"), locale, workTarget, gptTarget, cashTarget, watchTarget);
   const retryNext = authRetryPath(next, locale, workTarget, gptTarget, cashTarget, watchTarget);
-  if (!accessToken || !refreshToken) return json({ error: "Missing session" }, 400);
+  if (!accessToken) return json({ error: "Missing session" }, 400);
 
   let userResponse;
   try {
@@ -64,8 +63,8 @@ export async function handleAuthHandoff(request, env, locale) {
   const profiles = await profileResponse.json();
   if (!Array.isArray(profiles) || profiles[0]?.status !== "active") return json({ error: "Account is not active" }, 403);
 
-  const response = authHandoffHtml(accessToken, refreshToken, next, workTarget, gptTarget, cashTarget, watchTarget, authOrigin, retryNext);
-  return withStudioSessionCookies(response, studioSessionCookies(accessToken, refreshToken, undefined, request));
+  const response = authHandoffHtml(accessToken, next, workTarget, gptTarget, cashTarget, watchTarget, authOrigin, retryNext);
+  return withStudioSessionCookies(response, studioSessionCookies(accessToken, null, undefined, request));
 }
 
 // 规范登录成功后的站内落点。不同产品允许的深链范围不同；Watch 当前只允许语言根页。
@@ -124,7 +123,7 @@ export function scriptLiteral(value) {
 }
 
 // 最终页面只负责把已验证会话写入产品域并显示短暂过渡状态；Watch 会使用独立产品名和本地化文案。
-export function authHandoffHtml(accessToken, refreshToken, next, workTarget = false, gptTarget = false, cashTarget = false, watchTarget = false, authOrigin = "https://auth.qsseda.com", retryNext = next) {
+export function authHandoffHtml(accessToken, next, workTarget = false, gptTarget = false, cashTarget = false, watchTarget = false, authOrigin = "https://auth.qsseda.com", retryNext = next) {
   const product = workTarget ? "AERTEX Work" : gptTarget ? "AERTEX Intelligence" : cashTarget ? "AERTEX Cash" : watchTarget ? "AERTEX Watch" : "AERTEX";
   const locale = localeFromPath(next) || "en-us";
   const copy = {
@@ -133,6 +132,6 @@ export function authHandoffHtml(accessToken, refreshToken, next, workTarget = fa
     "fr-fr":"Finalisation de la connexion…", "es-es":"Finalizando el inicio de sesión…",
     "el-gr":"Ολοκλήρωση σύνδεσης…", "ar-sa":"جارٍ إكمال تسجيل الدخول…"
   }[locale] || "Finishing sign-in…";
-  const page = `<!DOCTYPE html><html lang="${locale}" dir="${localeDirection(locale)}"><head>${baseHead(product)}</head><body><main style="min-height:100vh;display:grid;place-items:center;padding:24px"><section style="text-align:center"><h1 style="font-size:24px;margin:0 0 8px">${product}</h1><p id="handoff-status" style="color:var(--muted,#8e8e93)">${copy}</p></section></main>${supabaseScript()}<script>(async()=>{let result=null;try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}})}catch{}if(result?.error){try{aertexAuthStorage.removeItem(AERTEX_SUPABASE_STORAGE_KEY)}catch{}try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:${scriptLiteral(refreshToken)}})}catch{}}if(result?.error){console.warn("Browser auth persistence failed; continuing with validated server session",result.error)}location.replace(${scriptLiteral(next)})})().catch(()=>{location.replace(${scriptLiteral(next)})})</script></body></html>`;
+  const page = `<!DOCTYPE html><html lang="${locale}" dir="${localeDirection(locale)}"><head>${baseHead(product)}</head><body><main style="min-height:100vh;display:grid;place-items:center;padding:24px"><section style="text-align:center"><h1 style="font-size:24px;margin:0 0 8px">${product}</h1><p id="handoff-status" style="color:var(--muted,#8e8e93)">${copy}</p></section></main>${supabaseScript()}<script>(async()=>{let result=null;try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:"aertex-sso-browser-no-refresh-v1"})}catch{}if(result?.error){try{aertexAuthStorage.removeItem(AERTEX_SUPABASE_STORAGE_KEY)}catch{}try{result=await supabaseClient.auth.setSession({access_token:${scriptLiteral(accessToken)},refresh_token:"aertex-sso-browser-no-refresh-v1"})}catch{}}if(result?.error){console.warn("Browser auth persistence failed; continuing with validated server session",result.error)}location.replace(${scriptLiteral(next)})})().catch(()=>{location.replace(${scriptLiteral(next)})})</script></body></html>`;
   return new Response(injectBrandLogoRuntime(page), { status: 200, headers: { "content-type": "text/html;charset=UTF-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-content-type-options": "nosniff" } });
 }

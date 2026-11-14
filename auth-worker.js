@@ -559,7 +559,7 @@ async function handleContinue(request, env) {
   if (rotated) for (const value of sessionCookies(rotated)) headers.append("set-cookie", value);
 
   const handoffLocale = localeFromPath(handoff.next) || preferredAuthLocale(request);
-  return new Response(injectBrandLogoRuntime(handoffPage(handoff.origin, accessToken, refreshToken, handoff.next, intelligenceThemeFromRequest(request), handoffLocale)), { status: 200, headers });
+  return new Response(injectBrandLogoRuntime(handoffPage(handoff.origin, accessToken, handoff.next, intelligenceThemeFromRequest(request), handoffLocale)), { status: 200, headers });
 }
 
 function validatedNextPath(value) {
@@ -612,7 +612,7 @@ function htmlEscape(value) {
   return String(value || "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "\'": "&#39;" }[character]));
 }
 
-function handoffPage(targetOrigin, accessToken, refreshToken, next, theme = "", locale = "en-us") {
+function handoffPage(targetOrigin, accessToken, next, theme = "", locale = "en-us") {
   const themeAttr = intelligenceThemeAttr(theme);
   const themeBoot = intelligenceThemeBootScript();
   const handoffCopy = {
@@ -625,7 +625,7 @@ function handoffPage(targetOrigin, accessToken, refreshToken, next, theme = "", 
     "el-gr":["Μετάβαση στο AERTEX","Ασφαλής συγχρονισμός της κατάστασης σύνδεσης…"],
     "ar-sa":["جارٍ الدخول إلى AERTEX","جارٍ مزامنة حالة تسجيل الدخول بأمان…"]
   }[locale] || ["Entering AERTEX","Securely syncing your sign-in state…"];
-  return `<!doctype html><html lang="${locale}" dir="${localeDirection(locale)}"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><title>AERTEX ID</title>${FAVICON_LINKS}${themeBoot}<style>:root{color-scheme:dark;--bg:#0b0b0d;--text:#f5f5f7;--muted:#a1a1a6;--ring:#3a3a3c;--accent:#0a84ff}@media(prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}}:root[data-theme="light"]{color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}html,body{height:100%;margin:0;background:var(--bg);color:var(--text)}body{display:grid;place-items:center;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid var(--ring);border-top-color:var(--accent);border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:var(--muted)}</style></head><body><div class="box"><div class="spin"></div><strong>${handoffCopy[0]}</strong><p>${handoffCopy[1]}</p></div><form id="handoff" method="post" action="${htmlEscape(targetOrigin)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="refresh_token" value="${htmlEscape(refreshToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
+  return `<!doctype html><html lang="${locale}" dir="${localeDirection(locale)}"${themeAttr}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><title>AERTEX ID</title>${FAVICON_LINKS}${themeBoot}<style>:root{color-scheme:dark;--bg:#0b0b0d;--text:#f5f5f7;--muted:#a1a1a6;--ring:#3a3a3c;--accent:#0a84ff}@media(prefers-color-scheme:light){:root:not([data-theme]){color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}}:root[data-theme="light"]{color-scheme:light;--bg:#f5f5f7;--text:#1d1d1f;--muted:#6e6e73;--ring:#d1d1d6;--accent:#007aff}html,body{height:100%;margin:0;background:var(--bg);color:var(--text)}body{display:grid;place-items:center;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.box{text-align:center}.spin{width:22px;height:22px;margin:0 auto 14px;border:2px solid var(--ring);border-top-color:var(--accent);border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{color:var(--muted)}</style></head><body><div class="box"><div class="spin"></div><strong>${handoffCopy[0]}</strong><p>${handoffCopy[1]}</p></div><form id="handoff" method="post" action="${htmlEscape(targetOrigin)}/auth/handoff"><input type="hidden" name="access_token" value="${htmlEscape(accessToken)}"><input type="hidden" name="next" value="${htmlEscape(next)}"></form><script>document.getElementById("handoff").submit()</script></body></html>`;
 }
 
 async function fetchUser(accessToken) {
