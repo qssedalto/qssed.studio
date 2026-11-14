@@ -7,6 +7,7 @@ import { enhanceWorkTexDesktopTypography } from "../studio/ui-work-tex-desktop-t
 import { injectWorkTexHomeLinks } from "../studio/ui-work-tex.js";
 import { polishWorkTexViewportEdges } from "../studio/ui-work-tex-viewport-edges.js";
 import { polishWorkTexWelcome, selectWorkTexGreeting } from "../studio/ui-work-tex-welcome.js";
+import { enhanceWorkTexComposer } from "../studio/ui-work-tex-composer.js";
 import { polishWorkTexPdfControls } from "../studio/ui-work-tex-pdf-controls.js";
 import { LAB_TOOLS } from "../studio/lab-tools.js";
 import { prepareWorkTexDocumentShell } from "../studio/ui-work-tex-persistent-cache.js";
@@ -174,6 +175,26 @@ for (const zh of [true, false]) {
   new Function(runtimeMatch[1]);
 
   assert(workPageMarkup.includes('id="qsseda-work-tex-welcome-clean"'), "Welcome page must use a single isolated stylesheet.");
+  const composerMarkup = enhanceWorkTexComposer(workPageMarkup, zh);
+  assert(composerMarkup.includes('id="qtex-composer"') && composerMarkup.includes('id="qtex-composer-input"'), "Welcome must mount actual composer controls.");
+  for (const action of ["file", "library", "image", "web"]) {
+    assert(composerMarkup.includes('data-action="'+action+'"'), "Composer must expose "+action+" action.");
+  }
+  assert(composerMarkup.includes('id="qtex-composer-target"') && composerMarkup.includes('id="qtex-composer-target-menu"'), "Project/chat selector must be present.");
+  assert(composerMarkup.includes('aria-label="'+(zh?"添加文件等内容":"Add files and more")+'"'), "Plus SVG button needs a localized label.");
+  assert(!composerMarkup.includes('data-action="at"'), "Legacy @-context control must not be added.");
+  assert(composerMarkup.includes('background:var(--primary,#4875df)'), "Send button must use the active theme color.");
+  assert(composerMarkup.includes('qtex-composer-menu[hidden]'), "Menus should stay hidden by default.");
+  const composerRuntime = composerMarkup.match(/<script id="qtex-composer-runtime">([\s\S]*?)<\/script>/)?.[1];
+  assert(composerRuntime, "Composer runtime must be embedded.");
+  new Function(composerRuntime);
+  assert(composerRuntime.includes("__aertexTexFileOpenDialog") && composerRuntime.includes("tex-file-tab-import"),
+    "Attachments and library must reuse the actual TeX file modal.");
+  assert(composerRuntime.includes("chat.qsseda.com") && composerRuntime.includes("tex-command-chat-shortcut"),
+    "Chat/project choices must reuse existing authenticated flows.");
+  assert(composerRuntime.includes("SpeechRecognition") && composerRuntime.includes("navigator.clipboard.writeText"),
+    "Voice and draft handoff must use explicit browser APIs.");
+
   assert(workMarkup.includes('id="qtex-welcome-greeting"'), "Welcome must expose a stable accessible greeting heading.");
   const greetingSource = workPageMarkup.match(/<script id="qsseda-work-tex-greeting-runtime">([\s\S]*?)<\/script>/)?.[1];
   assert(greetingSource, "Personalized greeting script must be embedded in the TeX welcome.");
@@ -259,7 +280,7 @@ for (const [hour, expected] of [
   assert(actual.text===expected, "Hour "+hour+" must produce "+expected);
 }
 assert(selectWorkTexGreeting({zh:true,username:"普通用户",localHour:19,random:()=>.999}).text ===
-  "Good evening, 普通用户!", "Mixed-language greeting must use the logged-in username.");
+  "接下来想做些什么，普通用户？", "Chinese greeting must remain fully localized.");
 assert(selectWorkTexGreeting({zh:false,username:"qssedalto",localHour:19,random:()=>.999}).text ===
   "Good evening, qssedalto!", "English greeting must use the logged-in username.");
 assert(selectWorkTexGreeting({zh:true,username:"天国",localHour:19,previousIndex:0,random:()=>0}).index !== 0,
@@ -276,6 +297,7 @@ assert(config.includes('"/work/tex"'), "Work TeX route is missing from protected
 assert(config.includes('["/workspace/experiments/tex", "/work/tex"]'), "Legacy TeX route must redirect to Work TeX");
 assert(entry.includes('pathname === "/work/tex"'), "Studio entry does not mount the Work TeX app");
 assert(entry.includes("polishWorkTexWelcome(polishWorkTexViewportEdges(markup), { username: workGreetingName })") && entry.includes('shellProductLinks.adminHref ? "天国"'), "Entry must mount authenticated greeting with verified admin override.");
+assert(entry.includes("enhanceWorkTexComposer(markup, zh)"), "Entry must mount the new welcome composer.");
 const workUi = workNavigationUi;
 const sourceFocus = workUi.match(/body\.os-shell:has\(\.tex-work-app\) #tex-source:focus-visible\s*\{([^}]*)\}/)?.[1] || "";
 assert(sourceFocus.includes("outline:none!important"), "Focused TeX source must not inherit the global outer focus outline.");

@@ -28,6 +28,7 @@ import { enhanceWorkLocalBridgeNative } from "./ui-work-native.js";
 import { injectWorkTexHomeLinks, polishWorkHubTexRoute, polishWorkTexNavigation, polishWorkTexVisualTheme } from "./ui-work-tex.js";
 import { polishWorkTexViewportEdges } from "./ui-work-tex-viewport-edges.js";
 import { polishWorkTexWelcome } from "./ui-work-tex-welcome.js";
+import { enhanceWorkTexComposer } from "./ui-work-tex-composer.js";
 import { guardWorkTexFirstPaint } from "./ui-work-tex-paint-guard.js";
 import { prepareWorkTexDocumentShell } from "./ui-work-tex-persistent-cache.js";
 import { polishWorkTexPdfControls } from "./ui-work-tex-pdf-controls.js";
@@ -284,7 +285,7 @@ export default {
          const verifiedOwnerSlug = shellProductLinks.adminHref ? "admin" :
            (gate.user?.user_metadata?.username || gate.user?.user_metadata?.preferred_username ||
             gate.user?.user_metadata?.user_name || "account");
-         markup = enhanceWorkTexSearchFilter(markup, zh, verifiedOwnerSlug); }
+         markup = enhanceWorkTexSearchFilter(markup, zh, verifiedOwnerSlug); markup = enhanceWorkTexComposer(markup, zh); }
       // A revoked or nonexistent shared-document deep link returns to the Work
       // start screen with a localized, non-identifying explanation.
       if (pathname === "/work/tex" && new URL(request.url).searchParams.get("notice") === "document-unavailable") {

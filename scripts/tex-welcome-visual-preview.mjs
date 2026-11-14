@@ -8,6 +8,7 @@ import { enhanceWorkTexCollapsiblePanels } from "../studio/ui-work-tex-panels.js
 import { polishWorkTexVisualTheme, injectWorkTexHomeLinks } from "../studio/ui-work-tex.js";
 import { polishWorkTexViewportEdges } from "../studio/ui-work-tex-viewport-edges.js";
 import { polishWorkTexWelcome } from "../studio/ui-work-tex-welcome.js";
+import { enhanceWorkTexComposer } from "../studio/ui-work-tex-composer.js";
 
 const dir = path.resolve(process.env.AERTEX_PREVIEW_DIR || path.join(os.tmpdir(),"aertex-tex-welcome-qa"));
 fs.mkdirSync(dir,{recursive:true});
@@ -27,7 +28,12 @@ for (const zh of [true,false]) {
     work,
     "</main><script>",
     "window.addEventListener('load',()=>{const w=document.querySelector('.qtex-welcome'),card=document.querySelectorAll('.qtex-template'),head=document.querySelector('.qtex-welcome-copy h2'),recent=document.getElementById('qtex-recent-list');",
-    "const pass=!!w&&card.length===3&&!!head&&!!recent&&",
+    "const composer=document.getElementById('qtex-composer'),plus=document.getElementById('qtex-composer-plus'),target=document.getElementById('qtex-composer-target'),menu=document.getElementById('qtex-composer-menu');",
+    "plus?.click();const menuOpen=menu&&!menu.hidden&&menu.querySelectorAll('button[data-action]').length===4&&plus.getAttribute('aria-expanded')==='true';",
+    "plus?.click();target?.click();const targetOpen=document.getElementById('qtex-composer-target-menu')?.querySelectorAll('button.qtex-target-entry').length>=1;",
+    "target?.click();",
+    "const pass=!!w&&card.length===3&&!!head&&!!recent&&!!composer&&!!plus&&menuOpen&&targetOpen&&",
+    "composer.getBoundingClientRect().height>55&&composer.getBoundingClientRect().width<=w.getBoundingClientRect().width+2&&",
     "head.hasAttribute('data-greeting-index')&&head.textContent.trim()!==(document.documentElement.lang.startsWith('zh')?'欢迎回来':'Welcome back')&&",
     "Math.abs(card[0].getBoundingClientRect().width-card[1].getBoundingClientRect().width)<2&&",
     "head.getBoundingClientRect().right<=w.getBoundingClientRect().right+2&&",
@@ -41,6 +47,7 @@ for (const zh of [true,false]) {
   html=injectWorkTexHomeLinks(html,zh?"zh-cn":"en-us","https://qsseda.com");
   html=polishWorkTexViewportEdges(html);
   html=polishWorkTexWelcome(html,{username:zh?"天国":"qssedalto"});
+  html=enhanceWorkTexComposer(html,zh);
   const file=path.join(dir,zh?"welcome-zh.html":"welcome-en.html");
   fs.writeFileSync(file,html,"utf8");
   if(!html.includes("qsseda-work-tex-welcome-clean"))throw Error("Isolated stylesheet missing");
