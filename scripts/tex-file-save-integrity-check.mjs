@@ -23,7 +23,9 @@ const digest=vm.runInNewContext('('+TEX_FILE_DIGEST_RUNTIME+')',{TextEncoder,cry
 for(const content of ['','hello','\u4e2d\u6587\n\u{1f600}','a\0b'])assert.equal(await digest({...original,content}),await texFileContentDigest({...original,content}));
 new vm.Script(WORK_TEX_EXPLORER_TREE);new vm.Script(TEX_FILE_MODAL_RUNTIME);
 assert(WORK_TEX_EXPLORER_TREE.includes('expected_sha256:await texFileContentDigest(original)'));
-assert(WORK_TEX_EXPLORER_TREE.includes("if(edited||assetSaveInFlight)"));
+assert(WORK_TEX_EXPLORER_TREE.includes("if(hasPendingAssetChange()||assetSaveInFlight)") &&
+  WORK_TEX_EXPLORER_TREE.includes("activeTextValue()!==String(selected.content??'')"),
+  "Unsaved navigation guard must compare actual source to the saved file, not a stale edited flag");
 assert(TEX_FILE_MODAL_RUNTIME.includes('if(editText.value===submitted)editDialog.close()'));
 assert(TEX_FILE_MODAL_RUNTIME.includes("editDialog.addEventListener('cancel', event => { event.preventDefault(); closeText();"));
 console.log('PASS: stale supplementary save denied; unrelated main edits allowed; shared UTF-8 digest; dialog edit-during-save and leave guards');
