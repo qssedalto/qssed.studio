@@ -224,32 +224,131 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       padding:0 6px!important;margin:0!important;
       font:400 11.5px/1.2 "Segoe UI","Microsoft YaHei UI",sans-serif!important;
     }
-    #tex-search-filter-panel .tex-filter-group .tex-filter-date-control{
+    /* A real, visible calendar button. No 1x1 hidden native picker:
+       Chrome anchored that popup to the tiny element and clipped its UI. */
+    #tex-search-filter-panel .tex-filter-group .tex-filter-date-control {
       position:relative!important;padding:0!important;overflow:visible!important;
+      color-scheme:dark;
     }
     #tex-search-filter-panel .tex-filter-date-control>.tex-filter-date-label{
-      flex:1 1 auto!important;display:block!important;height:25px!important;
-      min-width:0!important;text-align:left!important;
-      border:0!important;box-shadow:none!important;
+      box-sizing:border-box!important;display:flex!important;align-items:center!important;
+      justify-content:space-between!important;gap:5px!important;
+      flex:1 1 auto!important;width:100%!important;height:25px!important;
+      min-width:0!important;padding:0 7px!important;margin:0!important;
+      text-align:left!important;border:0!important;border-radius:7px!important;
       background:transparent!important;color:var(--text)!important;
-      padding:0 7px!important;margin:0!important;
-      font:inherit!important;white-space:nowrap!important;
+      font:inherit!important;white-space:nowrap!important;box-shadow:none!important;
       cursor:pointer!important;position:relative!important;
     }
     #tex-search-filter-panel .tex-filter-date-label svg{
-      position:absolute!important;right:5px!important;top:4px!important;
-      width:16px!important;height:16px!important;stroke:currentColor!important;
-      fill:none!important;stroke-width:1.7!important;
+      flex:0 0 16px!important;position:static!important;
+      width:16px!important;height:16px!important;
+      stroke:currentColor!important;fill:none!important;stroke-width:1.8!important;
+      opacity:.93!important;pointer-events:none!important;
     }
     #tex-search-filter-panel .tex-filter-date-label .tex-date-text{
-      display:block!important;margin-right:18px!important;line-height:25px!important;
+      flex:1 1 auto!important;display:block!important;min-width:0!important;
+      margin:0!important;line-height:23px!important;
       white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+      color:inherit!important;
     }
-    #tex-search-filter-panel .tex-filter-date-control input[type="date"]{
-      position:absolute!important;right:1px!important;top:1px!important;
-      width:1px!important;height:1px!important;min-width:1px!important;
-      opacity:0!important;pointer-events:none!important;
-      padding:0!important;margin:0!important;box-shadow:none!important;
+    #tex-search-filter-panel .tex-filter-date-label[aria-expanded="true"]{
+      outline:2px solid var(--primary)!important;outline-offset:0!important;
+    }
+    /* Styled like the adjacent sort dropdown: dark native selects with readable
+       light foreground, matching option colors, and a stable floating calendar. */
+    #tex-search-filter-panel .tex-date-calendar[hidden]{display:none!important}
+    #tex-search-filter-panel .tex-date-calendar{
+      position:fixed!important;z-index:2147480600!important;
+      box-sizing:border-box!important;width:280px!important;max-width:calc(100vw - 16px)!important;
+      padding:11px 10px 9px!important;margin:0!important;
+      overflow:visible!important;border:1px solid var(--border)!important;
+      border-radius:12px!important;background:var(--card,#242426)!important;
+      color:var(--text,#fff)!important;color-scheme:dark;
+      box-shadow:0 15px 34px rgba(0,0,0,.32)!important;
+      font:400 12px/1.35 "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+    }
+    #tex-search-filter-panel .tex-date-calendar-nav{
+      display:grid!important;grid-template-columns:29px minmax(0,1fr) 77px 29px!important;
+      align-items:center!important;gap:5px!important;margin:0 0 7px!important;
+      height:30px!important;
+    }
+    #tex-search-filter-panel .tex-date-calendar-nav button{
+      box-sizing:border-box!important;display:grid!important;place-items:center!important;
+      min-width:0!important;width:29px!important;height:29px!important;min-height:29px!important;
+      padding:0!important;margin:0!important;border:1px solid transparent!important;
+      border-radius:7px!important;background:transparent!important;
+      color:var(--text)!important;font-size:21px!important;line-height:1!important;
+    }
+    #tex-search-filter-panel .tex-date-calendar-nav button:hover,
+    #tex-search-filter-panel .tex-calendar-grid button:not(:disabled):hover,
+    #tex-search-filter-panel .tex-calendar-actions button:hover{
+      background:var(--fill)!important;
+    }
+    #tex-search-filter-panel .tex-date-calendar-nav select{
+      box-sizing:border-box!important;display:block!important;min-width:0!important;
+      max-width:none!important;width:100%!important;height:29px!important;min-height:29px!important;
+      padding:0 5px!important;margin:0!important;border:1px solid var(--border)!important;
+      border-radius:7px!important;background:var(--fill)!important;
+      color:var(--text)!important;box-shadow:none!important;
+      font:400 12px "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+      appearance:auto!important;-webkit-appearance:auto!important;
+      color-scheme:dark!important;
+    }
+    #tex-search-filter-panel .tex-calendar-weekdays,
+    #tex-search-filter-panel .tex-calendar-grid{
+      display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;
+      gap:1px!important;align-items:center!important;
+    }
+    #tex-search-filter-panel .tex-calendar-weekdays span{
+      display:grid!important;place-items:center!important;height:21px!important;
+      color:var(--muted)!important;font-size:10px!important;
+    }
+    #tex-search-filter-panel .tex-calendar-grid button{
+      box-sizing:border-box!important;display:grid!important;place-items:center!important;
+      border:0!important;border-radius:6px!important;
+      width:100%!important;height:29px!important;min-height:29px!important;
+      max-height:29px!important;padding:0!important;margin:0!important;
+      background:transparent!important;color:var(--text)!important;
+      font:400 12px "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+      cursor:pointer!important;
+    }
+    #tex-search-filter-panel .tex-calendar-grid button:disabled{
+      visibility:hidden!important;pointer-events:none!important;
+    }
+    #tex-search-filter-panel .tex-calendar-grid button[aria-selected="true"]{
+      background:var(--primary)!important;color:#fff!important;
+    }
+    #tex-search-filter-panel .tex-calendar-grid button.is-today:not([aria-selected="true"]){
+      box-shadow:inset 0 0 0 1px var(--primary)!important;
+    }
+    #tex-search-filter-panel .tex-calendar-actions{
+      box-sizing:border-box!important;display:flex!important;
+      justify-content:space-between!important;align-items:center!important;
+      gap:7px!important;margin-top:7px!important;padding-top:7px!important;
+      border-top:1px solid var(--border)!important;
+    }
+    #tex-search-filter-panel .tex-calendar-actions button{
+      height:25px!important;min-height:25px!important;
+      padding:0 8px!important;margin:0!important;
+      border:0!important;border-radius:7px!important;
+      background:transparent!important;color:var(--text)!important;
+      font:400 11px "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+    }
+    /* Fix the washed-out or seemingly disabled KB/MB entries in dark mode. */
+    #tex-search-filter-panel .tex-filter-size-control>select,
+    #tex-search-filter-panel select.tex-filter-select{
+      color-scheme:dark!important;
+    }
+    #tex-search-filter-panel select option{
+      color:var(--text,#fff)!important;background:var(--card,#242426)!important;
+      font-style:normal!important;font-weight:400!important;
+    }
+    :root[data-theme="light"] #tex-search-filter-panel .tex-date-calendar,
+    :root[data-theme="light"] #tex-search-filter-panel .tex-date-calendar-nav select,
+    :root[data-theme="light"] #tex-search-filter-panel .tex-filter-size-control>select,
+    :root[data-theme="light"] #tex-search-filter-panel select.tex-filter-select{
+      color-scheme:light!important;
     }
     #tex-search-filter-panel .tex-filter-size-control{
       gap:3px!important;padding:0 3px 0 7px!important;
