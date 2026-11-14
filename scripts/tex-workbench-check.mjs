@@ -6,7 +6,7 @@ import { enhanceWorkTexCollapsiblePanels } from "../studio/ui-work-tex-panels.js
 import { enhanceWorkTexDesktopTypography } from "../studio/ui-work-tex-desktop-type.js";
 import { injectWorkTexHomeLinks } from "../studio/ui-work-tex.js";
 import { polishWorkTexViewportEdges } from "../studio/ui-work-tex-viewport-edges.js";
-import { polishWorkTexWelcome } from "../studio/ui-work-tex-welcome.js";
+import { polishWorkTexWelcome, selectWorkTexGreeting } from "../studio/ui-work-tex-welcome.js";
 import { polishWorkTexPdfControls } from "../studio/ui-work-tex-pdf-controls.js";
 import { LAB_TOOLS } from "../studio/lab-tools.js";
 import { prepareWorkTexDocumentShell } from "../studio/ui-work-tex-persistent-cache.js";
@@ -174,6 +174,15 @@ for (const zh of [true, false]) {
   new Function(runtimeMatch[1]);
 
   assert(workPageMarkup.includes('id="qsseda-work-tex-welcome-clean"'), "Welcome page must use a single isolated stylesheet.");
+  assert(workMarkup.includes('id="qtex-welcome-greeting"'), "Welcome must expose a stable accessible greeting heading.");
+  const greetingSource = workPageMarkup.match(/<script id="qsseda-work-tex-greeting-runtime">([\s\S]*?)<\/script>/)?.[1];
+  assert(greetingSource, "Personalized greeting script must be embedded in the TeX welcome.");
+  new Function(greetingSource);
+  assert(greetingSource.includes("new Date().getHours()") && greetingSource.includes("sessionStorage"),
+    "Greeting must use device-local time and avoid repeats across refreshes.");
+  assert(workPageMarkup.includes("qtex-welcome-hero") && workPageMarkup.includes("place-items:center"),
+    "Greeting should use the centered ChatGPT-inspired layout.");
+
   assert(workMarkup.includes('class="qtex-welcome"') && workMarkup.includes('class="qtex-welcome-hero"'), "Welcome page must render the editorial layout.");
   assert(workMarkup.includes('id="qtex-recent-list"') && workMarkup.includes('class="qtex-recent"'), "Welcome must show a recent-project workspace section.");
   assert(workPageMarkup.includes("container:qtex / inline-size"), "Welcome must adapt to the actual editor column, not just viewport width.");
@@ -237,13 +246,36 @@ assert(workMarkup.includes("touch-action:pan-y!important"), "Mobile collaboratio
   for (const code of appScripts) new Function(code);
 }
 
+// Deterministic local-time and username coverage independent of CI host time zone.
+for (const [hour, expected] of [
+  [5,"早上好，天国！"],[10,"早上好，天国！"],
+  [11,"中午好，天国！"],[13,"中午好，天国！"],
+  [14,"下午好，天国！"],[17,"下午好，天国！"],
+  [18,"晚上好，天国！"],[23,"晚上好，天国！"],
+  [0,"夜深了，天国。"]
+]) {
+  const actual=selectWorkTexGreeting({zh:true,username:"天国",localHour:hour,random:()=>.8});
+  assert.equal(actual.index,6);
+  assert.equal(actual.text,expected);
+}
+assert.equal(selectWorkTexGreeting({zh:true,username:"普通用户",localHour:19,random:()=>.999}).text,
+  "Good evening, 普通用户!");
+assert.equal(selectWorkTexGreeting({zh:false,username:"qssedalto",localHour:19,random:()=>.999}).text,
+  "Good evening, qssedalto!");
+assert.notEqual(selectWorkTexGreeting({zh:true,username:"天国",localHour:19,previousIndex:0,random:()=>0}).index,0,
+  "Repeated refreshes must not reuse the immediately previous greeting.");
+const malicious=polishWorkTexWelcome('<html><head></head><body><section class="qtex-welcome"></section></body></html>',
+  {username:'</script><script>alert("x")</script>'});
+assert(!malicious.includes('</script><script>alert('),"Account username must not break out of inline script.");
+assert(malicious.includes("qsseda-work-tex-greeting-runtime"),"Escaped personalized greeting runtime must mount.");
+
 const texTool = LAB_TOOLS.find(tool => tool.id === "tex-workbench");
 assert(texTool?.status === "ready", "TeX Workbench must remain live in the tool registry");
 assert(texTool?.href === "/work/tex", "TeX Workbench registry must point at the Work route");
 assert(config.includes('"/work/tex"'), "Work TeX route is missing from protected OS routes");
 assert(config.includes('["/workspace/experiments/tex", "/work/tex"]'), "Legacy TeX route must redirect to Work TeX");
 assert(entry.includes('pathname === "/work/tex"'), "Studio entry does not mount the Work TeX app");
-assert(entry.includes("polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup)))"), "Entry must mount the PDF zoom/header runtime after Work styling.");
+assert(entry.includes("polishWorkTexWelcome(polishWorkTexViewportEdges(markup), { username: workGreetingName })") && entry.includes('shellProductLinks.adminHref ? "天国"'), "Entry must mount authenticated greeting with verified admin override.");
 const workUi = workNavigationUi;
 const sourceFocus = workUi.match(/body\.os-shell:has\(\.tex-work-app\) #tex-source:focus-visible\s*\{([^}]*)\}/)?.[1] || "";
 assert(sourceFocus.includes("outline:none!important"), "Focused TeX source must not inherit the global outer focus outline.");
