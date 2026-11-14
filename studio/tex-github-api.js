@@ -607,13 +607,15 @@ async function releaseCredit(env, userId, nonce, refund) {
 
 async function compile(request, env, userId) {
   const row = await readRow(env, userId);
-  if (!row || row.approval_status !== "approved" || row.repo_state !== "ready" || !row.repo_id) {
-    return fail(403, "A managed repository and an approved quota are required.");
+  if (!row || row.approval_status !== "approved") {
+    return fail(403, "An approved compilation quota is required.");
   }
   if (!hasStorageBinding(env)) return fail(503, "Document storage unavailable.");
-  const body = await inputBody(request);
-  const docId = String(body?.document_id || "");
-  if (!isStorageObjectId(docId)) return fail(400, "Select one of your saved TeX documents.");
+  const body=await inputBody(request);
+  const docId=await ownedGithubProject(request,env,userId,body);
+  const binding=await readTexGithubProjectRepository(env,userId,docId);
+  if(binding?.repo_state!=="ready"||!binding.repo_id)
+    return fail(403,"Create the GitHub repository for this project before compiling.");
   const object = await env.STORAGE.get("_system/tex-documents/" + userId + "/" + docId + ".json");
   if (!object) return fail(404, "Document not found in this account.");
   const doc = JSON.parse(await object.text());
@@ -634,13 +636,13 @@ async function compile(request, env, userId) {
   if (remaining === null) return fail(429, "No available credit or another build is active.");
   let dispatchAttempted = false;
   try {
-    const repoPath = githubRepoPath(env, row.repo_name);
+    const repoPath = githubRepoPath(env, binding.repo_name);
     const actual = await github(env, repoPath);
-    verifyManagedRepo(env, actual, row.repo_id, row.repo_name);
+    verifyManagedRepo(env, actual, binding.repo_id, binding.repo_name);
 
     // Keep the user's saved projects isolated. This compilation only touches
     // the selected project's branch, never another project's source files.
-    const projectBranch=await ensureProjectBranch(env,repoPath,row.source_branch||"main",docId);
+    const projectBranch=await ensureProjectBranch(env,repoPath,binding.source_branch||"main",docId);
     const committed=await commitCompileSnapshot(env,repoPath,projectBranch,selected);
     // Persist the unique Git commit before dispatch. A timed-out HTTP call may
     // have queued an Actions run; never refund a potentially successful dispatch.
@@ -664,6 +666,10 @@ async function compile(request, env, userId) {
       active_run_id: runId, last_run_at: new Date().toISOString()
     }, "&active_nonce=eq." + encodeURIComponent(nonce));
     if (!recorded) throw httpError(503, "run_id_persistence_failed");
+    await writeTexGithubProjectRepository(env,userId,docId,{
+      active_run_id:runId,active_commit_sha:sourceSha,
+      active_since:new Date().toISOString()
+    });
     return json({ queued: true, remaining, run_id: runId, document_id: docId,
       project_branch: projectBranch, synced_files: selected.included, skipped_files: selected.skipped }, 202);
   } catch (error) {
@@ -677,10 +683,13 @@ async function compile(request, env, userId) {
   }
 }
 
-async function listRuns(env, userId) {
-  const row = await readRow(env, userId);
-  if (!row?.repo_id || row.repo_state !== "ready") return json({ runs: [], active: false });
-  const repoPath = githubRepoPath(env, row.repo_name);
+async function listRuns(request,env,userId) {
+  const documentId=await ownedGithubProject(request,env,userId);
+  const row=await readRow(env,userId);
+  const binding=await readTexGithubProjectRepository(env,userId,documentId);
+  if(!binding?.repo_id||binding.repo_state!=="ready")
+    return json({document_id:documentId,runs:[],jobs:[],active:false});
+  const repoPath=githubRepoPath(env,binding.repo_name);
   const response = await github(env,
     repoPath + "/actions/workflows/aertex-compile.yml/runs?event=workflow_dispatch&per_page=20");
   const runs = Array.isArray(response?.workflow_runs) ? response.workflow_runs : [];
@@ -714,21 +723,21 @@ async function listRuns(env, userId) {
   // another dispatch's credit. Match the authoritative ID; a stored commit
   // SHA is a recovery fallback when GitHub accepted a request but its 200
   // response (or the subsequent database write) was lost.
-  const activeRun = row.active_nonce ? runs.find(run => {
-    if (row.active_run_id) return Number(run.id) === Number(row.active_run_id);
-    return Boolean(row.active_commit_sha) &&
-      String(run.head_sha) === String(row.active_commit_sha) &&
-      Date.parse(run.created_at) >= Date.parse(row.active_since || "") - 15000;
-  }) : null;
+  const activeRun = row?.active_nonce && binding.active_run_id &&
+    Number(row.active_run_id) === Number(binding.active_run_id) ? runs.find(run => {
+      if(row.active_run_id) return Number(run.id)===Number(row.active_run_id);
+      return Boolean(row.active_commit_sha)&&String(run.head_sha)===String(row.active_commit_sha);
+    }) : null;
 
   if (activeRun?.status === "completed" && row.active_nonce) {
     await releaseCredit(env, userId, row.active_nonce, false).catch(() => {});
   }
   return json({
+    document_id:documentId,
     runs: normalized,
     jobs,
-    active: Boolean(row.active_nonce) && activeRun?.status !== "completed",
-    active_run_id: row.active_run_id || activeRun?.id || null
+    active: Boolean(row?.active_nonce && activeRun && activeRun.status !== "completed"),
+    active_run_id: activeRun?.id || null
   });
 }
 
@@ -740,9 +749,11 @@ function base64Bytes(data) {
 }
 
 async function servePdf(request, env, userId, download) {
-  const row = await readRow(env, userId);
-  if (!row?.repo_id || row.repo_state !== "ready") return fail(404, "There is no compiled PDF.");
-  const repoPath = githubRepoPath(env, row.repo_name);
+  const documentId=await ownedGithubProject(request,env,userId);
+  const binding=await readTexGithubProjectRepository(env,userId,documentId);
+  if(!binding?.repo_id||binding.repo_state!=="ready")
+    return fail(404,"This project does not have a compiled PDF.");
+  const repoPath=githubRepoPath(env,binding.repo_name);
   const result = await github(env, repoPath + "/contents/main.pdf?ref=pdf-output");
   if (!result || result.type !== "file" || result.size > PDF_LIMIT) {
     return fail(404, "The PDF is not available yet.");
