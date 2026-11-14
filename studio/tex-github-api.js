@@ -537,18 +537,17 @@ async function deleteRepository(request,env,userId,legacy=false) {
   });
   const repoPath=githubRepoPath(env,binding.repo_name);
   try{
-    let actual=null;
-    try{actual=await github(env,repoPath);}
-    catch(error){
-      if(error.status!==404)throw error;
-      // If a previous DELETE succeeded but its final R2 write failed, the
-      // owner-authenticated GitHub 404 lets a retry finish without leaving
-      // the UI permanently stuck on "Deleting".
-      if(binding.repo_state!=="deleting")throw error;
-    }
-    if(actual){
+    if(!binding.delete_confirmed){
+      // A 404 might mean the operator's fine-grained token lost access to a
+      // private repository, not that GitHub actually deleted it. Fail closed.
+      const actual=await github(env,repoPath);
       verifyManagedRepo(env,actual,binding.repo_id,binding.repo_name);
       await github(env,repoPath,"DELETE");
+      // Persist a true GitHub-204 receipt BEFORE clearing the R2 binding.
+      // A retry may finalize that receipt even if R2 deletion was interrupted.
+      await writeTexGithubProjectRepository(env,userId,documentId,{
+        repo_state:"deleting",delete_confirmed:true,last_error:null
+      });
     }
     await removeTexGithubProjectRepository(env,userId,documentId);
     return json({deleted:true,document_id:documentId,repository_name:binding.repo_name,
@@ -576,13 +575,11 @@ async function deleteLegacyGithubRepository(env,userId,body) {
   await updateRow(env,userId,{repo_state:"deleting"});
   const repoPath=githubRepoPath(env,row.repo_name);
   try{
-    let actual=null;
-    try{actual=await github(env,repoPath);}
-    catch(error){if(error.status!==404||row.repo_state!=="deleting")throw error;}
-    if(actual){
-      verifyManagedRepo(env,actual,row.repo_id,row.repo_name);
-      await github(env,repoPath,"DELETE");
-    }
+    // Legacy SQL rows have no atomic deletion receipt yet. Never interpret
+    // 404 (possibly revoked PAT access) as proof of remote deletion.
+    const actual=await github(env,repoPath);
+    verifyManagedRepo(env,actual,row.repo_id,row.repo_name);
+    await github(env,repoPath,"DELETE");
     await updateRow(env,userId,{
       repo_name:null,repo_id:null,repo_state:"none",source_branch:"main",
       active_nonce:null,active_run_id:null,active_commit_sha:null,active_since:null
