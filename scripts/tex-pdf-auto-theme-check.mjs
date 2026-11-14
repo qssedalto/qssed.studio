@@ -295,7 +295,7 @@ new Function("window", "document", "location", "fetch", "URL", "Blob", "Uint8Arr
   mockFetch, URL, Blob, Uint8Array
 );
 for (let n = 0; n < 50; n++) await Promise.resolve();
-assert(fetched.some(url => url.includes("/pdf?run=")), "Regression fixture must load an older GitHub PDF");
+assert(!fetched.some(url => url.includes("/pdf?")), "With no selected project the GitHub pane must not load another project\'s PDF");
 assert.equal(unwantedPdfOpens, 0, "Welcome must never show a previous GitHub Actions PDF");
 assert.equal(mockNode("tex-gh-frame").hidden, true, "The old GitHub PDF iframe must remain hidden");
 
