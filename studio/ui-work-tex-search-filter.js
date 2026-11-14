@@ -267,9 +267,12 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         const pending=window.__aertexTexExplorerHasUnsaved?.()===true;
         const mainDirty=window.__aertexTexMainDirty?.()===true ||
           /未保存|unsaved|正在保存|saving/i.test(document.getElementById('tex-save-state')?.textContent||'');
+        const selectedName=active?.name||'main.tex';
+        const matchingFile=entry.type==='file'&&entry.name===selectedName;
+        const matchingFolder=entry.type==='folder'&&selectedName.startsWith(entry.name+'/');
         return (entry.type==='project' && (pending||mainDirty))||
-          (entry.type==='file'&&entry.name===(active?.name||'main.tex')&&
-            (active?.main?mainDirty:pending)) ? 'unsaved':'saved';
+          (matchingFile && (active?.main?mainDirty:pending))||
+          (matchingFolder && pending) ? 'unsaved':'saved';
       };
       const dateOf=value=>{
         const t=Date.parse(value||'');
