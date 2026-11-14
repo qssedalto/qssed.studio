@@ -255,14 +255,14 @@ for (const [hour, expected] of [
   [0,"夜深了，天国。"]
 ]) {
   const actual=selectWorkTexGreeting({zh:true,username:"天国",localHour:hour,random:()=>.8});
-  assert.equal(actual.index,6);
-  assert.equal(actual.text,expected);
+  assert(actual.index===6, "Time greeting option must be chosen at index six");
+  assert(actual.text===expected, "Hour "+hour+" must produce "+expected);
 }
-assert.equal(selectWorkTexGreeting({zh:true,username:"普通用户",localHour:19,random:()=>.999}).text,
-  "Good evening, 普通用户!");
-assert.equal(selectWorkTexGreeting({zh:false,username:"qssedalto",localHour:19,random:()=>.999}).text,
-  "Good evening, qssedalto!");
-assert.notEqual(selectWorkTexGreeting({zh:true,username:"天国",localHour:19,previousIndex:0,random:()=>0}).index,0,
+assert(selectWorkTexGreeting({zh:true,username:"普通用户",localHour:19,random:()=>.999}).text ===
+  "Good evening, 普通用户!", "Mixed-language greeting must use the logged-in username.");
+assert(selectWorkTexGreeting({zh:false,username:"qssedalto",localHour:19,random:()=>.999}).text ===
+  "Good evening, qssedalto!", "English greeting must use the logged-in username.");
+assert(selectWorkTexGreeting({zh:true,username:"天国",localHour:19,previousIndex:0,random:()=>0}).index !== 0,
   "Repeated refreshes must not reuse the immediately previous greeting.");
 const malicious=polishWorkTexWelcome('<html><head></head><body><section class="qtex-welcome"></section></body></html>',
   {username:'</script><script>alert("x")</script>'});
