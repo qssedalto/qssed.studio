@@ -11,7 +11,7 @@ import {
 } from "./tex-github-workflow.js";
 import { selectTexGithubCompileFiles } from "./tex-github-source-selection.js";
 import {
-  texGithubProjectRepositoryName,readTexGithubProjectRepository,
+  texGithubProjectRepositoryName,isTexGithubManagedRepositoryName,readTexGithubProjectRepository,
   writeTexGithubProjectRepository,removeTexGithubProjectRepository
 } from "./tex-github-project-repositories.js";
 
@@ -325,7 +325,11 @@ async function github(env, path, method = "GET", body = undefined) {
 }
 
 function githubRepoPath(env, repoName) {
-  if (!configured(env) || !/^aertex-tex-[0-9a-f]{32}$/.test(repoName || "")) throw httpError(503, "configuration");
+  // Modern per-project repositories end in the project UUID and include
+  // a readable project/user/timestamp prefix. Legacy 32-hex repos remain valid.
+  // Callers also verify the persisted repository ID and GitHub account.
+  if (!configured(env)) throw httpError(503, "credentials_missing");
+  if (!isTexGithubManagedRepositoryName(repoName)) throw httpError(503, "invalid_managed_repository_name");
   return "/repos/" + env.AERTEX_TEX_GITHUB_OWNER + "/" + repoName;
 }
 
