@@ -39,8 +39,17 @@ export function enhanceWorkTexUiPolish(markup, zh) {
       stroke:currentColor!important;stroke-width:1.75!important;
       stroke-linecap:round!important;stroke-linejoin:round!important;
     }
+    /* The active state highlights only the vector strokes; never paint the
+       whole 39px square as though the pointer were hovering over it. */
     .tex-work-app #tex-word-wrap-toggle[aria-pressed="true"] {
-      color:var(--primary)!important;background:color-mix(in srgb,var(--primary) 10%,transparent)!important;
+      color:var(--primary)!important;background:transparent!important;
+    }
+    .tex-work-app #tex-word-wrap-toggle:hover {
+      background:transparent!important;
+    }
+    .tex-work-app #tex-editor.md-visual-mode #tex-word-wrap-toggle{
+      color:var(--muted)!important;background:transparent!important;
+      opacity:.45!important;pointer-events:none!important;
     }
     .tex-work-app #tex-word-wrap-toggle:focus-visible {outline:2px solid var(--primary)!important;outline-offset:-3px!important}
 
@@ -222,7 +231,10 @@ export function enhanceWorkTexUiPolish(markup, zh) {
         button.className='tex-editor-command tex-command-wrap';
         button.innerHTML='<svg viewBox="0 0 28 28" aria-hidden="true" focusable="false"><path d="M3.3 6.1H24.2M3.3 11.5H20.5a4.2 4.2 0 0 1 0 8.4h-5.3"/><path d="m18.5 16.9-3.9 3 3.9 3"/><path d="M3.3 17.2h8.1M3.3 22.5h8.1"/></svg>';
         const sync=()=>{
-          const on=readWrap();button.setAttribute('aria-pressed',String(on));
+          const visual=root.querySelector('#tex-editor')?.classList.contains('md-visual-mode');
+          const on=readWrap()&&!visual;
+          button.setAttribute('aria-pressed',String(on));
+          button.disabled=Boolean(visual);
           button.title=on?tr.noWrap:tr.wrap;
           button.setAttribute('aria-label',button.title);
         };
@@ -233,6 +245,10 @@ export function enhanceWorkTexUiPolish(markup, zh) {
           sync();
         });
         sync();commands.appendChild(button);
+        const modeObserver=new MutationObserver(sync);
+        const currentEditor=root.querySelector('#tex-editor');
+        if(currentEditor)modeObserver.observe(currentEditor,{attributes:true,attributeFilter:['class']});
+        window.addEventListener('pagehide',()=>modeObserver.disconnect(),{once:true});
         document.dispatchEvent(new CustomEvent('aertex:tex-word-wrap',{detail:{enabled:readWrap()}}));
       }
       function initialize(){
