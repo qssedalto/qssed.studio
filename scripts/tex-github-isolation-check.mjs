@@ -301,9 +301,13 @@ assert(projectDeleteScript.includes("warningConfirm.addEventListener('click',()=
   projectDeleteScript.includes('if(resolve)resolve(false);') &&
   projectDeleteScript.includes("return; // The user may separately request project deletion again."),
   "Warning acknowledgement or successful GitHub deletion must never automatically delete the project");
-assert(projectDeleteScript.includes("const status=await call('status','GET',undefined,id)") &&
+assert(projectDeleteScript.includes("const status=await call('project-link','GET',undefined,id)") &&
   projectDeleteScript.includes("if(!status.repository_name&&(!status.repository_state||status.repository_state==='none'))"),
-  "A fresh server status check must gate every attempted project deletion");
+  "A fresh owner-scoped repository linkage check must gate every attempted project deletion");
+assert(api.includes('if (action === "project-link" && request.method === "GET")') &&
+  api.includes('!await githubProjectOwned(env,userId,documentId)') &&
+  api.includes('repository_delete_confirmed:Boolean(binding?.delete_confirmed)'),
+  "Project deletion preflight must authenticate ownership and work without quota credentials");
 const projectOrganizeUi=fs.readFileSync(new URL("../studio/ui-work-tex-organize-ui.js",import.meta.url),"utf8");
 const projectEditorUi=fs.readFileSync(new URL("../studio/ui-work-tex-editor-tools.js",import.meta.url),"utf8");
 assert(projectOrganizeUi.includes("__aertexTexBeforeProjectDeletion") &&
