@@ -139,7 +139,7 @@ assert(api.includes('doc?.owner_id !== userId'), "shared documents cannot be com
 assert(api.includes('await reserveCredit(env, userId, nonce)'), "quota reservation must be atomic");
 assert(api.includes("return_run_details: true"), "GitHub dispatch must return the exact run ID");
 assert(api.includes("active_run_id: runId"), "exact run ID must be persisted");
-assert(/Number\\(run\\.id\\)\\s*===\\s*Number\\(row\\.active_run_id\\)/.test(api), "quota release must match the exact run");
+assert(/Number\(run\.id\)\s*===\s*Number\(row\.active_run_id\)/.test(api), "quota release must match the exact run");
 assert(api.includes('githubRepoPath(env, row.repo_name)'), "server-derived repository binding required");
 assert(!api.includes("body.repo_name"), "client must never select a different repository");
 assert(!api.includes("body.owner"), "client must never choose GitHub owner");
