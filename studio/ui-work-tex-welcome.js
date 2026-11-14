@@ -239,8 +239,8 @@ body.os-shell:has(.tex-work-app) .qtex-recent{margin-top:clamp(28px,5vh,54px)}
   const key = "aertex.work.tex.previous-greeting.v1";
   let previous = -1;
   try {
-    const stored = Number(window.sessionStorage.getItem(key));
-    if (Number.isInteger(stored)) previous = stored;
+    const stored = window.sessionStorage.getItem(key);
+    if (stored !== null && Number.isInteger(Number(stored))) previous = Number(stored);
   } catch {}
   const choose = (${selectWorkTexGreeting.toString()});
   // Date#getHours uses the device's configured local time zone, including
