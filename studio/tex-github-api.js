@@ -82,8 +82,7 @@ export async function handleTexGithubApi(request, env, action) {
         // every project. Legacy deletion has its own explicit action.
         legacy_repository_name:row?.repo_id&&row?.repo_state==="ready"?row.repo_name:null,
         legacy_repository_state:row?.repo_state||"none",
-        active: Boolean(row?.active_nonce && project?.active_run_id &&
-          Number(row.active_run_id) === Number(project.active_run_id)),
+        active: Boolean(row?.active_nonce && project?.active_nonce===row.active_nonce),
         engine: "xelatex"
       });
     } else if (action === "apply" && request.method === "POST") {
@@ -530,8 +529,7 @@ async function deleteRepository(request,env,userId,legacy=false) {
     return fail(400,"Exact repository name confirmation is required.");
   const row=await readRow(env,userId);
   // Only block deletion for an active build belonging to THIS project.
-  if(row?.active_nonce && Number(binding.active_run_id||0)>0 &&
-      Number(row.active_run_id)===Number(binding.active_run_id))
+  if(row?.active_nonce && binding.active_nonce===row.active_nonce)
     return fail(409,"Wait for this project's running compilation to finish before deleting.");
   await verifyOwner(env);
   await writeTexGithubProjectRepository(env,userId,documentId,{
@@ -652,6 +650,13 @@ async function compile(request, env, userId) {
     // have queued an Actions run; never refund a potentially successful dispatch.
     const sourceSha = String(committed.sha || "");
     if (!/^[0-9a-f]{40}$/.test(sourceSha)) throw httpError(503, "source_sha_unavailable");
+    // Record the selected project's active reservation BEFORE dispatch. If
+    // GitHub accepts a run but the response is lost, this scoped commit SHA
+    // allows status polling to release quota safely without mixing projects.
+    await writeTexGithubProjectRepository(env,userId,docId,{
+      active_nonce:nonce,active_run_id:null,
+      active_commit_sha:sourceSha,active_since:new Date().toISOString()
+    });
     const bound = await updateRow(env, userId, {
       active_commit_sha: sourceSha
     }, "&active_nonce=eq." + encodeURIComponent(nonce));
@@ -671,8 +676,7 @@ async function compile(request, env, userId) {
     }, "&active_nonce=eq." + encodeURIComponent(nonce));
     if (!recorded) throw httpError(503, "run_id_persistence_failed");
     await writeTexGithubProjectRepository(env,userId,docId,{
-      active_run_id:runId,active_commit_sha:sourceSha,
-      active_since:new Date().toISOString()
+      active_nonce:nonce,active_run_id:runId,active_commit_sha:sourceSha
     });
     return json({ queued: true, remaining, run_id: runId, document_id: docId,
       project_branch: projectBranch, synced_files: selected.included, skipped_files: selected.skipped }, 202);
@@ -727,11 +731,13 @@ async function listRuns(request,env,userId) {
   // another dispatch's credit. Match the authoritative ID; a stored commit
   // SHA is a recovery fallback when GitHub accepted a request but its 200
   // response (or the subsequent database write) was lost.
-  const activeRun = row?.active_nonce && binding.active_run_id &&
-    Number(row.active_run_id) === Number(binding.active_run_id) ? runs.find(run => {
-      if(row.active_run_id) return Number(run.id)===Number(row.active_run_id);
-      return Boolean(row.active_commit_sha)&&String(run.head_sha)===String(row.active_commit_sha);
-    }) : null;
+  const matchingReservation=Boolean(row?.active_nonce&&binding.active_nonce===row.active_nonce);
+  const activeRun = matchingReservation ? runs.find(run => {
+    if(row.active_run_id)return Number(run.id)===Number(row.active_run_id);
+    return Boolean(binding.active_commit_sha)&&
+      String(run.head_sha)===String(binding.active_commit_sha)&&
+      Date.parse(run.created_at)>=Date.parse(binding.active_since||"")-15000;
+  }) : null;
 
   if (activeRun?.status === "completed" && row.active_nonce) {
     await releaseCredit(env, userId, row.active_nonce, false).catch(() => {});
@@ -740,7 +746,7 @@ async function listRuns(request,env,userId) {
     document_id:documentId,
     runs: normalized,
     jobs,
-    active: Boolean(row?.active_nonce && activeRun && activeRun.status !== "completed"),
+    active: Boolean(matchingReservation && (!activeRun || activeRun.status !== "completed")),
     active_run_id: activeRun?.id || null
   });
 }
