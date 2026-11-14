@@ -494,7 +494,12 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         row.dataset.aertexMeta=info(entry);
         const p=projects.find(p=>p.id===entry.projectId);
         if(p&&!index.has(p.id)){
-          void getIndex(p).then(()=>{if(row.isConnected){const updated=getRowEntry(row);if(updated)row.title=info(updated)}}).catch(()=>{});
+          void getIndex(p).then(()=>{
+            if(row.isConnected){
+              const updated=getRowEntry(row);
+              if(updated){row.title=info(updated);row.dataset.aertexMeta=info(updated);}
+            }
+          }).catch(()=>{});
         }
       });
       document.addEventListener('aertex:tex-project-asset-selected',()=>{if(searchActive())refresh()});
