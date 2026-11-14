@@ -37,6 +37,8 @@ on:
       - "scripts/tex-file-chat-security-check.mjs"
       - "scripts/tex-file-chat-popup-check.mjs"
       - "scripts/tex-explorer-check.mjs"
+      - "scripts/work-tex-search-filter-check.mjs"
+      - "scripts/michelangelus-font-check.mjs"
       - "scripts/tex-file-manager-check.mjs"
       - "scripts/tex-github-compile-project-check.mjs"
       - "scripts/tex-toolbar-actions-check.mjs"
@@ -108,6 +110,8 @@ on:
       - "scripts/tex-file-chat-security-check.mjs"
       - "scripts/tex-file-chat-popup-check.mjs"
       - "scripts/tex-explorer-check.mjs"
+      - "scripts/work-tex-search-filter-check.mjs"
+      - "scripts/michelangelus-font-check.mjs"
       - "scripts/tex-file-manager-check.mjs"
       - "scripts/tex-github-compile-project-check.mjs"
       - "scripts/tex-toolbar-actions-check.mjs"
@@ -203,6 +207,8 @@ jobs:
           node --check scripts/tex-file-chat-security-check.mjs
           node --check scripts/tex-file-chat-popup-check.mjs
           node --check scripts/tex-explorer-check.mjs
+          node --check scripts/work-tex-search-filter-check.mjs
+          node --check scripts/michelangelus-font-check.mjs
           node --check scripts/tex-file-manager-check.mjs
           node --check scripts/tex-github-compile-project-check.mjs
           node --check scripts/tex-toolbar-actions-check.mjs
@@ -287,6 +293,8 @@ jobs:
           node scripts/tex-toolbar-actions-check.mjs
           node scripts/tex-file-manager-check.mjs
           node scripts/tex-explorer-check.mjs
+          node scripts/work-tex-search-filter-check.mjs
+          node scripts/michelangelus-font-check.mjs
           node scripts/tex-explorer-vault-check.mjs
           node scripts/tex-github-compile-project-check.mjs
 
