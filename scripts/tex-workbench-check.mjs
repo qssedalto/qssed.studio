@@ -298,7 +298,8 @@ assert(script.includes("__aertexMobileMarkdown"), "Mobile-only improved Markdown
 assert(!script.includes("toolbar.append(save)") && !script.includes("footer.prepend(save)"),
   "Touch resize must never move the live save status away from the project title");
 new Function(script);
-assert(WORK_TEX_EXPLORER_TREE.includes("!initialExpansionHandled&&buttons.length&&!touchCompact()") && WORK_TEX_EXPLORER_TREE.includes("id===initialId"), "Mobile must never auto-expand projects; desktop may expand only one initial project.");
+assert(!WORK_TEX_EXPLORER_TREE.includes("initialExpansionHandled") && WORK_TEX_EXPLORER_TREE.includes("if(openProjects.has(id))arrowNode.click();"), "All screen sizes start with closed folders except on explicit same-route reload.");
+assert(WORK_TEX_EXPLORER_TREE.includes("sessionStorage") && WORK_TEX_EXPLORER_TREE.includes("wasReload"), "Reload must preserve opened projects and child folders.");
 assert(WORK_TEX_EXPLORER_TREE.includes("sub.hidden=!openFolders.has(key)"), "Nested folders must remain closed unless a user explicitly expanded their folder.");
 assert(WORK_TEX_EXPLORER_TREE.includes("pendingDocuments"), "First project expansion must reuse pending requests.");
 assert(WORK_TEX_EXPLORER_TREE.includes("window.__aertexMobileMarkdown"), "Mobile Markdown preview must use the safe parser.");
