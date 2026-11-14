@@ -10,6 +10,10 @@ import {
   INITIAL_TEX_SOURCE, INITIAL_TEX_README
 } from "./tex-github-workflow.js";
 import { selectTexGithubCompileFiles } from "./tex-github-source-selection.js";
+import {
+  texGithubProjectRepositoryName,readTexGithubProjectRepository,
+  writeTexGithubProjectRepository,removeTexGithubProjectRepository
+} from "./tex-github-project-repositories.js";
 
 const TABLE = "tex_github_allowances";
 const API_VERSION = "2026-03-10";
@@ -49,7 +53,15 @@ export async function handleTexGithubApi(request, env, action) {
       if(refreshed !== null) row = await readRow(env, userId);
       const weeklyUsed = row?.weekly_used || 0;
       const available = admin ? -1 : Math.min(Math.max(0,(row?.quota_total||0)-(row?.quota_used||0)),100-weeklyUsed);
+      const documentId=githubProjectId(request);
+      let project=null;
+      if(documentId){
+        if(!await githubProjectOwned(env,userId,documentId))
+          return withStudioSessionCookies(fail(404,"Project not found or inaccessible."),session.cookies);
+        project=await readTexGithubProjectRepository(env,userId,documentId);
+      }
       response = json({
+        document_id:documentId||null,
         configured: configured(env),
         is_admin: admin,
         approval_status: admin ? "approved" : row?.approval_status || "none",
@@ -62,10 +74,17 @@ export async function handleTexGithubApi(request, env, action) {
         weekly_used: admin ? null : weeklyUsed,
         weekly_credits: admin ? null : row?.weekly_credits || 0,
         week_renews_at: nextChinaMonday(),
-        repository_created: Boolean(row?.repo_id && row?.repo_state === "ready"),
-        repository_state: row?.repo_state || "none",
-        repository_name: row?.repo_state === "ready" ? row.repo_name : null,
-        active: Boolean(row?.active_nonce),
+        repository_created: Boolean(project?.repo_id && project?.repo_state === "ready"),
+        repository_state: project?.repo_state || "none",
+        repository_name: project?.repo_state === "ready" || project?.repo_state === "deleting" ?
+          project.repo_name : null,
+        repository_error: project?.last_error || null,
+        // Existing account-wide repositories are NOT silently attached to
+        // every project. Legacy deletion has its own explicit action.
+        legacy_repository_name:row?.repo_id&&row?.repo_state==="ready"?row.repo_name:null,
+        legacy_repository_state:row?.repo_state||"none",
+        active: Boolean(row?.active_nonce && project?.active_run_id &&
+          Number(row.active_run_id) === Number(project.active_run_id)),
         engine: "xelatex"
       });
     } else if (action === "apply" && request.method === "POST") {
@@ -74,10 +93,12 @@ export async function handleTexGithubApi(request, env, action) {
       response = await createRepository(request, env, userId, admin);
     } else if (action === "repository" && request.method === "DELETE") {
       response = await deleteRepository(request, env, userId);
+    } else if (action === "legacy-repository" && request.method === "DELETE") {
+      response = await deleteRepository(request, env, userId, true);
     } else if (action === "compile" && request.method === "POST") {
       response = await compile(request, env, userId);
     } else if (action === "runs" && request.method === "GET") {
-      response = await listRuns(env, userId);
+      response = await listRuns(request, env, userId);
     } else if ((action === "pdf" || action === "download") && (request.method === "GET" || request.method === "HEAD")) {
       response = await servePdf(request, env, userId, action === "download");
     } else if (action === "admin/requests" && request.method === "GET") {
@@ -95,6 +116,27 @@ export async function handleTexGithubApi(request, env, action) {
     });
     return withStudioSessionCookies(fail(status, publicError(status)), session.cookies);
   }
+}
+
+// Client can select a document ID, never a GitHub owner or repo name.
+// R2 ownership is independently verified on every status/action request.
+function githubProjectId(request,body){
+  const fromBody=body?.document_id;
+  const fromQuery=new URL(request.url).searchParams.get("document_id");
+  const id=String(fromBody??fromQuery??"");
+  return isStorageObjectId(id)?id:"";
+}
+async function githubProjectOwned(env,userId,documentId){
+  if(!hasStorageBinding(env)||!isStorageObjectId(documentId))return false;
+  try {return Boolean(await env.STORAGE.head(
+    "_system/tex-documents/"+userId+"/"+documentId+".json"));}
+  catch{return false;}
+}
+async function ownedGithubProject(request,env,userId,body) {
+  const id=githubProjectId(request,body);
+  if(!id)throw httpError(400,"project_required");
+  if(!await githubProjectOwned(env,userId,id))throw httpError(404,"project_not_owned");
+  return id;
 }
 
 function strictOrigin(request) {
