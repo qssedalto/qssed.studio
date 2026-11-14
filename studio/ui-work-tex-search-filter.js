@@ -537,7 +537,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         const width=calendarPop.offsetWidth,height=calendarPop.offsetHeight;
         const left=Math.max(8,Math.min(innerWidth-width-8,bounds.right-width));
         const below=bounds.bottom+6,above=bounds.top-height-6;
-        const top=innerHeight-below>=height||below-8>=bounds.top-8
+        const top=innerHeight-below>=height||innerHeight-below>=bounds.top-8
           ?below:above;
         calendarPop.style.left=left+'px';
         calendarPop.style.top=Math.max(8,Math.min(innerHeight-height-8,top))+'px';
