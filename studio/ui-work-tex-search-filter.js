@@ -1,7 +1,7 @@
 // Authenticated Work TeX explorer search, metadata and accessible filter popover.
 // Search only requests projects owned by the current authenticated account.
 export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account") {
-  const css = String.raw\`
+  const css = String.raw`
     /* Local font lookup only; never distribute a user-supplied font binary. */
     @font-face{font-family:"AERTEX Michelangelus";src:local("Michelangelus Italic"),local("Michelangelus-Italic");font-weight:400;font-style:italic;unicode-range:U+0000-024F}
     @font-face{font-family:"AERTEX Michelangelus";src:local("Michelangelus Bold Italic"),local("Michelangelus-BoldItalic");font-weight:700;font-style:italic;unicode-range:U+0000-024F}
@@ -141,8 +141,8 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
     #tex-search-filter-panel .tex-filter-apply{background:var(--primary);color:#fff}
     #tex-search-filter-panel button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
     #tex-search-filter-panel .tex-filter-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-  \`;
-  const script = String.raw\`
+  `;
+  const script = String.raw`
     (() => {
       const root=document.querySelector('.tex-work-app[data-tex-root]');
       const input=document.getElementById('tex-search'),box=input?.closest('.tex-search');
@@ -493,7 +493,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       // lazily when search or a project tooltip actually needs them.
       void loadProjects().then(()=>{if(searchActive())refresh()}).catch(()=>{});
     })();
-  \`.replace('__ZH__', zh ? 'true':'false').replace('__OWNER__', JSON.stringify(String(ownerSlug||"account").slice(0,48)));
+  `.replace('__ZH__', zh ? 'true':'false').replace('__OWNER__', JSON.stringify(String(ownerSlug||"account").slice(0,48)));
   return String(markup||'').replace('</head>','<style id="aertex-tex-search-filter-css">'+css+'</style></head>')
     .replace('</body>','<script id="aertex-tex-search-filter-runtime">'+script+'</script></body>');
 }
