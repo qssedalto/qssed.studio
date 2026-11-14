@@ -21,6 +21,7 @@ const sessionGate = fs.readFileSync(new URL("../studio/session-gate.js", import.
 const authEntry = fs.readFileSync(new URL("../auth-entry.js", import.meta.url), "utf8");
 const workTexUi = fs.readFileSync(new URL("../studio/ui-work-tex.js", import.meta.url), "utf8");
 const texApp = fs.readFileSync(new URL("../studio/ui-tex-app.js", import.meta.url), "utf8");
+const texWelcome = fs.readFileSync(new URL("../studio/ui-work-tex-welcome.js", import.meta.url), "utf8");
 const workTexPanels = fs.readFileSync(new URL("../studio/ui-work-tex-panels.js", import.meta.url), "utf8");
 const workTexCollaboration = fs.readFileSync(new URL("../studio/ui-work-tex-collaboration.js", import.meta.url), "utf8");
 const workUi = fs.readFileSync(new URL("../studio/ui-work.js", import.meta.url), "utf8");
@@ -270,8 +271,10 @@ assert(workTexUi.includes('.tex-mobile-tab[aria-selected="true"]'), "Work mobile
 assert(!workTexUi.includes('.tex-start-card::after') && !workTexUi.includes('.tex-start-card[data-tex-start-template'), "Remove decorative pseudo-elements that caused duplicate card icons.");
 assert(!workTexUi.includes('radial-gradient(760px 330px at 50% -6%'), "Remove excessive legacy welcome glow and stacked rules.");
 assert(texApp.includes('class="qtex-welcome"') && texApp.includes('class="qtex-welcome-hero"'), "New welcome must render a compact editorial hero.");
-assert(texApp.includes('class="qtex-template-grid"') && texApp.includes('class="qtex-template-top"'), "Welcome cards must have one explicit template icon and a separate heading.");
+assert(texApp.includes('class="qtex-template-grid"') && texApp.includes('class="qtex-template-icon"') && texApp.includes('class="qtex-template-info"'), "Welcome cards must have one explicit line icon and an adjacent heading.");
 assert(texApp.includes('data-tex-start-template="blank"') && texApp.includes('data-tex-start-template="math"'), "Template actions must retain existing create handlers.");
+assert(texApp.includes('id="qtex-recent-list"') && texApp.includes('class="qtex-recent"'), "Welcome dashboard must include a recent-project list.");
+assert(texWelcome.includes('qsseda-work-tex-recent-runtime') && texWelcome.includes('current.click()'), "Recent projects must reuse the existing authenticated editor navigation.");
 assert(entry.includes('polishWorkTexWelcome(polishWorkTexViewportEdges(markup))'), "Isolated Welcome styles must mount after Work pane styles.");
 assert(texApp.includes('startDetail: "选择一种结构，直接进入写作与排版。"'), "Chinese TeX start copy must stay concise and task-focused.");
 assert(texApp.includes('blankDetail: "基础 article 结构，自动填入项目名与真实姓名"') && texApp.includes('articleDetail: "包含 main.tex、sample.bib 和 frog.jpg"') && texApp.includes('mathDetail: "上传 ZIP 文件，保留项目内的多个文件"'), "All three project cards must describe their actual files and behavior.");
