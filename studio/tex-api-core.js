@@ -422,6 +422,12 @@ function normalizeDocument(input, userId, documentId, previous, storedRead = fal
       realtime_epoch: texRealtimeEpoch(previous),
       main_filename: previous?.main_filename || "main.tex",
       main_deleted: previous?.main_deleted === true,
+      // Source-file timestamps differ from project configuration changes.
+      // Legacy records with no per-file timestamps remain unknown (null).
+      main_file_created_at: previous ? (previous.main_file_created_at || null) : now,
+      main_file_updated_at: previous
+        ? (source.source !== previous.source ? now : (previous.main_file_updated_at || null))
+        : now,
       files: Array.isArray(previous?.files) ? previous.files : [],
       project_type: previous?.project_type || "legacy",
       pinned: previous?.pinned === true, locked: previous?.locked === true,
