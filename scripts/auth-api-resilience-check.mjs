@@ -21,7 +21,7 @@ try {
   globalThis.fetch=async url=>String(url).includes('/auth/v1/user')?response({id:user}):response([{status:'active'}]);
   for(const host of ['work','gpt','cash','aw']){
     assert.equal((await handleStudioSessionBootstrap(request(host))).status,200);
-    assert.equal((await handleStudioSessionBootstrap(request(host,undefined,'signed-out'))).status,409);
+    assert.equal((await handleStudioSessionBootstrap(request(host,undefined,'signed-out'))).status,401);
     assert.equal((await handleStudioSessionBootstrap(request(host,undefined,'22222222-2222-4222-8222-222222222222'))).status,409);checks++;
   }
   assert.equal((await handleStudioSessionBootstrap(request('work',{access_token:'x'.repeat(33000),refresh_token:'x'}))).status,413);checks++;
