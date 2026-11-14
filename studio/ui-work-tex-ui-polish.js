@@ -79,7 +79,12 @@ export function enhanceWorkTexUiPolish(markup, zh) {
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file,
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-folder {
       min-height:30px!important;height:30px!important;margin:0!important;
-      padding-block:2px!important;line-height:1.2!important;
+      padding-block:2px!important;line-height:1.2!important;gap:5px!important;
+    }
+    /* Empty disclosure slot aligns document and folder glyphs at each depth. */
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file::before {
+      content:"";display:block;flex:0 0 17px;width:17px;height:1px;
+      pointer-events:none;
     }
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-children {
       margin:0 0 1px 14px!important;padding:0 0 0 4px!important;
