@@ -598,25 +598,50 @@ async function deleteRepository(request,env,userId,legacy=false) {
     return deleteLegacyGithubRepository(env,userId,body);
   }
   const documentId=await ownedGithubProject(request,env,userId,body);
-  const binding=await readTexGithubProjectRepository(env,userId,documentId);
-  if(!binding?.repo_id||!["ready","deleting","error"].includes(binding.repo_state))
+  let binding=await readTexGithubProjectRepository(env,userId,documentId);
+  if(!binding||!["ready","deleting","error","creating"].includes(binding.repo_state))
     return fail(404,"This project does not have a managed repository.");
   if(body?.confirm!=="DELETE "+binding.repo_name)
     return fail(400,"Exact repository name confirmation is required.");
+  const repoPath=githubRepoPath(env,binding.repo_name);
+  // An interrupted create can leave a name-bound record WITHOUT repo_id.
+  // Reconcile it before deletion, rather than trapping the owner forever in
+  // "Creation failed" with a Delete button that always responds 404.
+  // Newly provisioned repos MUST be public. Only an authenticated operator's
+  // confirmed 404 is sufficient to clear a never-created binding.
+  if(!binding.repo_id&&!binding.delete_confirmed){
+    await verifyOwner(env);
+    let existing=null;
+    try{existing=await github(env,repoPath);}
+    catch(error){if(error.status!==404)throw error;}
+    if(!existing){
+      await removeTexGithubProjectRepository(env,userId,documentId);
+      return json({deleted:true,document_id:documentId,repository_name:binding.repo_name,
+        repository_state:"none",repository_not_created:true,
+        message:"No public GitHub repository exists; the incomplete project binding was cleared."});
+    }
+    if(existing?.name!==binding.repo_name ||
+       String(existing?.owner?.login||"").toLowerCase()!==
+         String(env.AERTEX_TEX_GITHUB_OWNER||"").toLowerCase() ||
+       existing?.private!==false||!Number.isSafeInteger(Number(existing?.id))||
+       Number(existing.id)<=0)throw httpError(409,"repository_recovery_identity_mismatch");
+    binding=await writeTexGithubProjectRepository(env,userId,documentId,{
+      repo_id:existing.id,repo_state:"error",delete_confirmed:false
+    });
+  }
   // An explicit delete cancels in-flight GitHub jobs for THIS repo. Refusing
   // the delete until an account-wide quota nonce clears trapped users in a
   // permanent loop when the polling tab had already closed.
   // Validate the exact persisted GitHub repository ID and owner below.
-  // Do not gate DELETE on GET /user: GitHub App installation tokens can
-  // have Administration:write access but cannot use the user profile API.
+  // Do not gate an already-bound DELETE on GET /user: GitHub App installation
+  // tokens may have Administration:write access but no user-profile API access.
   await writeTexGithubProjectRepository(env,userId,documentId,{
     repo_state:"deleting",last_error:null
   });
-  const repoPath=githubRepoPath(env,binding.repo_name);
   try{
     if(!binding.delete_confirmed){
-      // A 404 might mean the operator's fine-grained token lost access to a
-      // private repository, not that GitHub actually deleted it. Fail closed.
+      // GitHub 404 is not proof a once-created repository was deleted:
+      // the operator's token might have lost private-repository access.
       const actual=await github(env,repoPath);
       verifyManagedRepo(env,actual,binding.repo_id,binding.repo_name);
       await github(env,repoPath,"DELETE");
