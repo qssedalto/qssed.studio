@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="447" height="447" viewBox="0 0 447 447" fill="none" role="img" aria-label="Document">
+  <!-- Geometric tracing of the supplied folded-corner document, including the three rules.
+       The website applies the corresponding gray via currentColor for light and dark themes. -->
+  <path d="M71 27H268L375 134V420H71Z M268 27V134H375 M134 205H312 M134 259H277 M134 313H312"
+        stroke="#9FA5AF" stroke-width="20" stroke-linecap="butt" stroke-linejoin="miter"/>
+</svg>

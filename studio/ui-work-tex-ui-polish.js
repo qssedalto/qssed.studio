@@ -70,6 +70,53 @@ export function enhanceWorkTexUiPolish(markup, zh) {
       color:#9fa5af!important;
     }
 
+    /* Compact Windows Explorer tree: one vertical rhythm, 18px per nested level.
+       Do not change font sizes, row menu interactions, or drag / file ACL. */
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list > .tex-document-item {
+      min-height:34px!important;height:34px!important;padding-block:3px!important;
+      margin:0!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file,
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-folder {
+      min-height:30px!important;height:30px!important;margin:0!important;
+      padding-block:2px!important;line-height:1.2!important;gap:5px!important;
+    }
+    /* Empty disclosure slot aligns document and folder glyphs at each depth. */
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file::before {
+      content:"";display:block;flex:0 0 17px;width:17px;height:1px;
+      pointer-events:none;
+    }
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-children {
+      margin:0 0 1px 14px!important;padding:0 0 0 4px!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-folder-children {
+      margin:0 0 0 13px!important;padding:0 0 0 5px!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-children > div,
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-folder-children > div {
+      margin:0!important;padding:0!important;min-height:0!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-folder > .tex-project-chevron {
+      flex:0 0 17px!important;width:17px!important;height:26px!important;
+    }
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-document-icon,
+    body.os-shell:has(.tex-work-app) .tex-work-app .tex-source-label .tex-tree-document-icon {
+      display:block!important;flex:0 0 18px!important;width:18px!important;
+      height:20px!important;min-width:18px!important;max-width:18px!important;
+      color:#606770!important;fill:none!important;stroke:currentColor!important;
+    }
+    :root[data-theme="dark"] body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-document-icon,
+    :root[data-theme="dark"] body.os-shell:has(.tex-work-app) .tex-work-app .tex-source-label .tex-tree-document-icon {
+      color:#9fa5af!important;
+    }
+    /* Native Windows background-working pointer. No visible in-page loader. */
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list.is-tree-loading,
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list.is-tree-loading * {
+      cursor:progress!important;
+    }
+    .tex-work-app .tex-project-chevron:focus:not(:focus-visible){outline:none!important;box-shadow:none!important}
+    .tex-work-app .tex-project-chevron:focus-visible{outline:2px solid var(--primary)!important;outline-offset:0!important;border-radius:4px!important}
+
     .tex-work-app .tex-link-panel .tex-link-intro {padding:13px 14px 10px!important;}
     /* Native radio controls should never inherit the site's wide text-input box. */
     .tex-work-app .tex-link-panel .tex-link-choice {
