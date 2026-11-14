@@ -270,6 +270,47 @@ assert(html.includes('copy.deleteMismatch') && html.includes('copy.deleteCancell
        html.includes('copy.cleanupPending') && html.includes('existingForCleanup'),
   "Deleting, canceling and retrying repositories must have visible feedback even without quota approval");
 
+
+// A repository created by a failed provisioning attempt must be deleted (or
+// safely reconciled as never created) before its AERTEX project can be removed.
+const documentCore=fs.readFileSync(new URL("../studio/tex-api-core.js",import.meta.url),"utf8");
+assert(documentCore.includes('readTexGithubProjectRepository(env,userId,documentId)') &&
+  documentCore.includes('code:"github_repository_must_be_deleted"') &&
+  documentCore.indexOf('const githubRepo=await readTexGithubProjectRepository(env,userId,documentId)') <
+  documentCore.indexOf('await retireTexSource(env, existing)'),
+  "Server must deny source deletion while a GitHub repo is still bound");
+assert(api.includes('if(!binding.repo_id&&!binding.delete_confirmed)') &&
+  api.includes('await verifyOwner(env);') &&
+  api.includes('await removeTexGithubProjectRepository(env,userId,documentId);') &&
+  api.includes('repository_not_created:true') &&
+  api.includes('existing?.private!==false'),
+  "Deleting an unfinished repo must securely reconcile missing IDs and refuse private ownership changes");
+const projectDeleteUi=enhanceTexGithubWorkbench(
+  '<aside class="tex-runs-panel"><div class="tex-compiler-card"></div></aside>',true);
+const projectDeleteScript=projectDeleteUi.split('<script id="tex-gh-runtime">')[1]?.split('</script>')[0];
+assert(projectDeleteScript);
+new vm.Script(projectDeleteScript,{filename:"tex-project-delete-warning.js"});
+assert(projectDeleteScript.includes('window.__aertexTexCheckProjectGithubRepository=projectGithubStatus') &&
+  projectDeleteScript.includes('window.__aertexTexBeforeProjectDeletion=async projectId=>') &&
+  projectDeleteScript.includes('window.__aertexTexDeleteProjectGithubRepository=requestProjectGithubDeletion'),
+  "Project deletion must check and block on the actual project's GitHub binding");
+assert(projectDeleteScript.includes("void requestProjectGithubDeletion(activeWorkDocumentId())") &&
+  projectDeleteScript.includes("return await mutation('repository','DELETE',{document_id:id,confirm:typed},copy.removed,id)"),
+  "Delete from the warning must share the exact panel's typed-name confirmation");
+assert(projectDeleteScript.includes("warningConfirm.addEventListener('click',()=>linkedWarning.close('acknowledge'))") &&
+  projectDeleteScript.includes('if(resolve)resolve(false);') &&
+  projectDeleteScript.includes("return; // The user may separately request project deletion again."),
+  "Warning acknowledgement or successful GitHub deletion must never automatically delete the project");
+assert(projectDeleteScript.includes("const status=await call('status','GET',undefined,id)") &&
+  projectDeleteScript.includes("if(!status.repository_name&&(!status.repository_state||status.repository_state==='none'))"),
+  "A fresh server status check must gate every attempted project deletion");
+const projectOrganizeUi=fs.readFileSync(new URL("../studio/ui-work-tex-organize-ui.js",import.meta.url),"utf8");
+const projectEditorUi=fs.readFileSync(new URL("../studio/ui-work-tex-editor-tools.js",import.meta.url),"utf8");
+assert(projectOrganizeUi.includes("__aertexTexBeforeProjectDeletion") &&
+  projectOrganizeUi.includes("__aertexTexCheckProjectGithubRepository") &&
+  projectEditorUi.includes("__aertexTexBeforeProjectDeletion") &&
+  projectEditorUi.includes("__aertexTexCheckProjectGithubRepository"),
+  "Both sidebar and editor project-delete confirmations must enforce the same GitHub preflight");
 assert(schema.includes("user_id uuid primary key"), "one quota allocation per user must remain independent of project repositories");
 assert(schema.includes("enable row level security"), "user allocations must enable RLS");
 assert(/revoke all on public\.tex_github_allowances from PUBLIC, anon, authenticated/.test(schema), "no direct user table access");
