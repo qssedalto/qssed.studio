@@ -275,7 +275,9 @@ assert(texApp.includes('class="qtex-template-grid"') && texApp.includes('class="
 assert(texApp.includes('data-tex-start-template="blank"') && texApp.includes('data-tex-start-template="math"'), "Template actions must retain existing create handlers.");
 assert(texApp.includes('id="qtex-recent-list"') && texApp.includes('class="qtex-recent"'), "Welcome dashboard must include a recent-project list.");
 assert(texWelcome.includes('qsseda-work-tex-recent-runtime') && texWelcome.includes('current.click()'), "Recent projects must reuse the existing authenticated editor navigation.");
-assert(entry.includes('polishWorkTexWelcome(polishWorkTexViewportEdges(markup))'), "Isolated Welcome styles must mount after Work pane styles.");
+assert(entry.includes('polishWorkTexWelcome(polishWorkTexViewportEdges(markup), { username: workGreetingName })'), "Welcome must receive authenticated server-side username.");
+assert(entry.includes('shellProductLinks.adminHref ? "天国"'), "Admin greeting must use the verified role override, not username matching.");
+assert(texWelcome.includes("qsseda-work-tex-greeting-runtime") && texApp.includes('id="qtex-welcome-greeting"'), "Localized rotating greeting runtime must mount.");
 assert(texApp.includes('startDetail: "选择一种结构，直接进入写作与排版。"'), "Chinese TeX start copy must stay concise and task-focused.");
 assert(texApp.includes('blankDetail: "基础 article 结构，自动填入项目名与真实姓名"') && texApp.includes('articleDetail: "包含 main.tex、sample.bib 和 frog.jpg"') && texApp.includes('mathDetail: "上传 ZIP 文件，保留项目内的多个文件"'), "All three project cards must describe their actual files and behavior.");
 assert(workTexPanels.includes("order:1!important") && workTexPanels.includes(".tex-shell.is-left-collapsed .tex-documents-panel>.tex-panel-head .tex-panel-home-link{\n          display:none!important;"), "Collapsed Work document rail must show only its restore control; Home belongs to expanded panels.");
