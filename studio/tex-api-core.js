@@ -15,6 +15,7 @@ import { handleTexOrganize, removeTexProjectPins } from "./tex-organize-api.js";
 import { invalidateTexCollaboration } from "./tex-collaboration-invalidate.js";
 import { purgeDocumentVersions } from "./tex-version-api.js";
 import { handleTexArchive } from "./tex-archive-api.js";
+import { readTexGithubProjectRepository } from "./tex-github-project-repositories.js";
 
 const DOCUMENT_ROOT = "_system/tex-documents/";
 const RUN_ROOT = "_system/tex-runs/";
@@ -348,6 +349,13 @@ async function deleteDocument(request, env, userId) {
     if (!existing) return json({ error: "TeX document not found." }, 404);
     if (isTexMainLocked(existing) || existing.locked_files?.length || existing.locked_folders?.length)
       return json({ error: "Unlock the project and its files before deleting." }, 423);
+    // Do not orphan a public compilation repo. The UI preflight is advisory:
+    // this server-side ownership-scoped check is mandatory on every DELETE,
+    // including direct API requests and project deletion from other clients.
+    const githubRepo=await readTexGithubProjectRepository(env,userId,documentId);
+    if(githubRepo)
+      return json({error:"Please delete this project's GitHub repository before deleting the project.",
+        code:"github_repository_must_be_deleted",repository_name:githubRepo.repo_name},409);
     await retireTexSource(env, existing);
     await invalidateTexCollaboration(env,userId,documentId,"source-retired","",texRealtimeEpoch(existing));
     await removeTexProjectPins(env,userId,documentId);
