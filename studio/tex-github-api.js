@@ -76,8 +76,7 @@ export async function handleTexGithubApi(request, env, action) {
         week_renews_at: nextChinaMonday(),
         repository_created: Boolean(project?.repo_id && project?.repo_state === "ready"),
         repository_state: project?.repo_state || "none",
-        repository_name: project?.repo_state === "ready" || project?.repo_state === "deleting" ?
-          project.repo_name : null,
+        repository_name: project?.repo_id ? project.repo_name : null,
         repository_error: project?.last_error || null,
         // Existing account-wide repositories are NOT silently attached to
         // every project. Legacy deletion has its own explicit action.
@@ -114,7 +113,10 @@ export async function handleTexGithubApi(request, env, action) {
     workerLog("warn", "tex.github.request.failed", {
       action, status, user_id: userId, code: String(error?.code || "backend").slice(0, 40)
     });
-    return withStudioSessionCookies(fail(status, publicError(status)), session.cookies);
+    const detail=error?.code==="github_repo_delete_permission_denied" ?
+      "GitHub denied repository deletion. The operator token requires repository Administration write/delete permission, and the organization must allow deletion. The repository remains linked; retry after fixing permissions." :
+      publicError(status);
+    return withStudioSessionCookies(fail(status,detail), session.cookies);
   }
 }
 
@@ -299,6 +301,8 @@ async function github(env, path, method = "GET", body = undefined) {
   });
   if (response.status >= 300 && response.status < 400) throw httpError(502, "unexpected_redirect");
   if (!response.ok) {
+    if(method==="DELETE"&&(response.status===403||response.status===401))
+      throw httpError(403,"github_repo_delete_permission_denied");
     const status = response.status === 404 ? 404 : response.status === 422 ? 409 : response.status === 403 ? 429 : 503;
     throw httpError(status, "github_" + response.status);
   }
