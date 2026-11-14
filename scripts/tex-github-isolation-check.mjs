@@ -4,6 +4,11 @@ import { createHash } from "node:crypto";
 import { gunzipSync } from "node:zlib";
 import { managedTexRepoName, MANAGED_TEX_WORKFLOW, MANAGED_TEX_WORKFLOW_PATH } from "../studio/tex-github-workflow.js";
 import { enhanceTexGithubWorkbench } from "../studio/ui-tex-github.js";
+import {
+  texGithubProjectRepositoryName,texGithubProjectRepositoryKey,
+  readTexGithubProjectRepository,writeTexGithubProjectRepository,
+  removeTexGithubProjectRepository
+} from "../studio/tex-github-project-repositories.js";
 import vm from "node:vm";
 import { selectTexPdfRange } from "../studio/tex-github-pdf-range.js";
 import { texWorkbenchContent } from "../studio/ui-tex-workbench.js";
@@ -33,7 +38,7 @@ assert(!MANAGED_TEX_WORKFLOW.includes("secrets."), "compile never receives secre
 
 const html = enhanceTexGithubWorkbench('<aside class="tex-runs-panel"><section id="tex-live-preview-card"></section><div class="tex-compiler-card"></div></aside>', true);
 assert(html.includes('id="tex-gh-card"'), "GitHub panel must appear");
-assert(html.includes("创建我的唯一仓库"), "Chinese locale must render");
+assert(html.includes("为当前项目创建仓库"), "Chinese locale must render the current project repository");
 assert(html.includes('/api/tex/github/pdf'), "PDF preview must use authenticated proxy");
 assert(!html.includes("__COPY_JSON__"), "injected copy placeholder must be resolved");
 assert(html.includes("远程编译（不建议）"), "Work must label the optional remote compile button");
@@ -46,7 +51,7 @@ assert(html.indexOf('id="tex-live-preview-card"') < html.indexOf('id="tex-gh-wid
 assert(html.indexOf('id="tex-gh-widget"') < html.indexOf('class="tex-compiler-card"'), "Remote button belongs above local Bridge card");
 assert(html.includes('id="tex-gh-card" aria-label="GitHub Actions" hidden'), "Remote controls should be collapsed by default");
 const en = enhanceTexGithubWorkbench('<aside class="tex-runs-panel"><div class="tex-compiler-card"></div></aside>', false);
-assert(en.includes("Create my only repository") && en.includes("Remote compilation (not recommended)"), "English locale must render");
+assert(en.includes("Create repository for this project") && en.includes("Remote compilation (not recommended)"), "English locale must render");
 
 // The first-click onboarding must preserve the exact same-origin document route.
 const setup = texGithubSetupContent(true, "zh-cn");
@@ -140,10 +145,54 @@ assert(api.includes('await reserveCredit(env, userId, nonce)'), "quota reservati
 assert(api.includes("return_run_details: true"), "GitHub dispatch must return the exact run ID");
 assert(api.includes("active_run_id: runId"), "exact run ID must be persisted");
 assert(api.includes("Number(run.id) === Number(row.active_run_id)"), "quota release must match the exact run");
-assert(api.includes('githubRepoPath(env, row.repo_name)'), "server-derived repository binding required");
+assert(api.includes('githubRepoPath(env, binding.repo_name)'), "server-derived project repository binding required");
 assert(!api.includes("body.repo_name"), "client must never select a different repository");
 assert(!api.includes("body.owner"), "client must never choose GitHub owner");
-assert(schema.includes("user_id uuid primary key"), "one repository per user is enforced by database key");
+assert(api.includes("ownedGithubProject(request,env,userId") &&
+  api.includes("readTexGithubProjectRepository(env,userId,documentId)") &&
+  api.includes("writeTexGithubProjectRepository(env,userId,documentId"),
+  "Repository operations must use authenticated owner plus selected project.");
+assert(api.includes('action === "legacy-repository"') &&
+  api.includes('return deleteLegacyGithubRepository(env,userId,body)'),
+  "Legacy account-level repository must be removable only through a separate explicit action.");
+assert(api.includes('const documentId=await ownedGithubProject(request,env,userId)') &&
+  api.includes('const binding=await readTexGithubProjectRepository(env,userId,documentId)'),
+  "Both run listing and PDF response must be scoped to a validated project.");
+assert(api.includes("github_repo_delete_permission_denied") &&
+  api.includes("repository_state:\"none\"") &&
+  api.includes("removeTexGithubProjectRepository(env,userId,documentId)"),
+  "Delete must confirm GitHub success, return cleared state and diagnose missing permissions.");
+assert(html.includes('id="tex-gh-toast"') && html.includes("showToast(deleting?description") &&
+  html.includes("requestGeneration++") &&
+  html.includes("document_id:projectId") &&
+  html.includes("legacy-repository"),
+  "Third pane must reset between projects, emit deletion feedback and distinguish legacy repos.");
+const projectA="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const projectB="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+assert.notEqual(texGithubProjectRepositoryName(projectA),texGithubProjectRepositoryName(projectB));
+assert.notEqual(texGithubProjectRepositoryKey(userA,projectA),texGithubProjectRepositoryKey(userA,projectB));
+assert.notEqual(texGithubProjectRepositoryKey(userA,projectA),texGithubProjectRepositoryKey(userB,projectA));
+const records=new Map();
+const fakeR2={
+  get:async key=>{
+    const raw=records.get(key);
+    return raw===undefined?null:{json:async()=>JSON.parse(raw)};
+  },
+  put:async (key,value)=>records.set(key,value),
+  delete:async key=>records.delete(key)
+};
+const fakeEnv={STORAGE:fakeR2};
+await writeTexGithubProjectRepository(fakeEnv,userA,projectA,{repo_state:"ready",repo_id:1234});
+await writeTexGithubProjectRepository(fakeEnv,userA,projectB,{repo_state:"ready",repo_id:5678});
+assert.equal((await readTexGithubProjectRepository(fakeEnv,userA,projectA)).repo_id,1234);
+assert.equal((await readTexGithubProjectRepository(fakeEnv,userA,projectB)).repo_id,5678);
+assert.equal(await readTexGithubProjectRepository(fakeEnv,userB,projectA),null);
+await removeTexGithubProjectRepository(fakeEnv,userA,projectA);
+assert.equal(await readTexGithubProjectRepository(fakeEnv,userA,projectA),null);
+assert.equal((await readTexGithubProjectRepository(fakeEnv,userA,projectB)).repo_id,5678,
+  "Deleting one project's binding must not delete another project's repository.");
+
+assert(schema.includes("user_id uuid primary key"), "one quota allocation per user must remain independent of project repositories");
 assert(schema.includes("enable row level security"), "user allocations must enable RLS");
 assert(/revoke all on public\.tex_github_allowances from PUBLIC, anon, authenticated/.test(schema), "no direct user table access");
 assert(schema.includes("grant select, insert, update, delete on public.tex_github_allowances to service_role"),"server-only database access");
