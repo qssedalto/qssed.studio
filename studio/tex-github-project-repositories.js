@@ -5,6 +5,14 @@ import { isStorageObjectId } from "./storage-api.js";
 import { managedTexRepoName } from "./tex-github-workflow.js";
 
 const PREFIX="_system/tex-github-project-repositories/";
+const LEGACY_MANAGED_REPO=/^aertex-tex-[0-9a-f]{32}$/i;
+const PROJECT_MANAGED_REPO=/^aertex-tex-[a-z0-9][a-z0-9._-]*-(?:[0-9]{14}|[0-9]{2}-[0-9]{2}-[0-9]{4})-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Both original account-level names and newer one-project-per-repository names
+// are safe GitHub path components. Never allow a URL, slash or arbitrary name.
+export function isTexGithubManagedRepositoryName(name){
+  return typeof name==="string"&&name.length<=100&&
+    (LEGACY_MANAGED_REPO.test(name)||PROJECT_MANAGED_REPO.test(name));
+}
 function githubSlug(value,fallback){
   const pieces=[];
   for(const char of String(value||'').normalize('NFKD')){
