@@ -355,7 +355,6 @@ export function enhanceWorkTexCollaboration(markup, zh) {
             '<section class="tex-collaboration-page" data-page="live" hidden>' +
               '<div class="tex-collaboration-section">' +
                 '<div class="tex-collaboration-section-head"><div><strong>' + labels.liveTitle + '</strong></div></div>' +
-                '<div class="tex-collaboration-state"><span class="tex-collaboration-state-dot"></span><div><strong>' + labels.livePreparing + '</strong><span>' + labels.liveDetail + '</span></div></div>' +
                 '<div class="tex-collaboration-disabled-row"><div><strong>' + labels.remoteCursor + '</strong><span>' + labels.remoteCursorDetail + '</span></div><span class="tex-collaboration-disabled-badge">CRDT</span></div>' +
                 '<div class="tex-collaboration-disabled-row"><div><strong>' + labels.follow + '</strong><span>' + labels.followDetail + '</span></div><span class="tex-collaboration-disabled-badge">Yjs</span></div>' +
               '</div>' +

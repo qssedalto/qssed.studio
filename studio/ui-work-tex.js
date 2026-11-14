@@ -119,7 +119,7 @@ export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "http
     checking: "正在检测…",
     checkingTitle: "正在检测编译连接",
     checkingDetail: "正在检测本机 AERTEX Bridge 与云端 TeX 编译服务。",
-    localReady: "本机 TeX 已连接",
+    localReady: "编译服务正常",
     localDetail: "已检测到本机 AERTEX Bridge",
     cloudReady: "云端编译服务已连接",
     cloudDetail: "本机 Bridge 未连接；当前可使用已配置的云端 TeX 编译服务。",

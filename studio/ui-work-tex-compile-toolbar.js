@@ -238,7 +238,7 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
   }
 </style>`;
   // Standalone circular-play SVG modeled on the light/dark reference images.
-  const workflowSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="2.25"/><path d="M10 7.8c0-.59.65-.95 1.15-.63l5.48 3.49c.49.31.49 1.03 0 1.34l-5.48 3.49c-.5.32-1.15-.04-1.15-.63V7.8Z" fill="currentColor"/></svg>';
+  const workflowSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.55" stroke="currentColor" stroke-width="2.05"/><path d="M10.15 7.85a.87.87 0 0 1 1.31-.75l5.58 3.56a1.58 1.58 0 0 1 0 2.68l-5.58 3.56a.87.87 0 0 1-1.31-.74V7.85Z" fill="currentColor"/></svg>';
   // The reference warning glyph is a neutral slate disk with a softly
   // rounded white triangle/exclamation. SVG stays crisp in light/dark modes.
   const pendingSvg = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11.3" fill="#5e646e"/><path d="M10.65 7.04a1.55 1.55 0 0 1 2.7 0l4.35 7.63a1.7 1.7 0 0 1-1.48 2.53H7.78a1.7 1.7 0 0 1-1.48-2.53Z" fill="#f8f9fb"/><rect x="11.43" y="9.56" width="1.14" height="2.90" rx=".57" fill="#5e646e"/><circle cx="12" cy="14.16" r=".66" fill="#5e646e"/></svg>';
@@ -345,7 +345,7 @@ export function enhanceWorkTexCompileToolbar(markup, zh) {
         heading.title=value;
       }
     }
-    titleRow.append(titleStack,indicator,logButton);
+    titleRow.append(indicator,titleStack,logButton);
     toolbar.insertBefore(titleRow,title);
     const fixed=document.createElement('span');
     fixed.id='tex-compile-fixed';
