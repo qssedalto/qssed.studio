@@ -104,6 +104,8 @@ export async function handleTexGithubApi(request, env, action) {
       response = await deleteRepository(request, env, userId);
     } else if (action === "legacy-repository" && request.method === "DELETE") {
       response = await deleteRepository(request, env, userId, true);
+    } else if (action === "sync" && request.method === "POST") {
+      response = await syncProjectToGithub(request, env, userId);
     } else if (action === "compile" && request.method === "POST") {
       response = await compile(request, env, userId);
     } else if (action === "runs" && request.method === "GET") {
@@ -696,6 +698,34 @@ async function deleteLegacyGithubRepository(env,userId,body) {
     );
   }
   return json({deleted:true,legacy:true,repository_name:row.repo_name,repository_state:"none"});
+}
+
+// Saving to GitHub is NOT a compilation request. It never dispatches
+// Actions, reserves quota or changes a PDF. Only an explicitly selected,
+// authenticated project and its safe TeX dependencies are synchronized.
+async function syncProjectToGithub(request,env,userId){
+  if(!hasStorageBinding(env))return fail(503,"Document storage unavailable.");
+  const body=await inputBody(request);
+  const id=await ownedGithubProject(request,env,userId,body);
+  const binding=await readTexGithubProjectRepository(env,userId,id);
+  if(!binding?.repo_id || binding.repo_state!=="ready")
+    return fail(404,"Create this project's GitHub repository first.");
+  const object=await env.STORAGE.get("_system/tex-documents/"+userId+"/"+id+".json");
+  if(!object)return fail(404,"Project not found.");
+  const document=await object.json();
+  if(document?.owner_id!==userId||document.id!==id||document.main_deleted===true)
+    return fail(403,"Main TeX file unavailable for this project.");
+  let selection;
+  try{selection=selectTexGithubCompileFiles(document);}
+  catch(error){return fail(400,String(error?.message||"Invalid source files.").slice(0,200));}
+  const repoPath=githubRepoPath(env,binding.repo_name);
+  const remote=await github(env,repoPath);
+  verifyManagedRepo(env,remote,binding.repo_id,binding.repo_name);
+  const branch=await ensureProjectBranch(env,repoPath,binding.source_branch||"main",id);
+  const commit=await commitCompileSnapshot(env,repoPath,branch,selection);
+  return json({saved:true,compiled:false,document_id:id,branch,
+    commit_sha:commit.sha||null,synced_files:selection.included,
+    skipped_files:selection.skipped},200);
 }
 
 async function reserveCredit(env, userId, nonce) {
