@@ -559,7 +559,15 @@ async function deleteRepository(request,env,userId,legacy=false) {
         });
       }
     }
-    await removeTexGithubProjectRepository(env,userId,documentId);
+    try{await removeTexGithubProjectRepository(env,userId,documentId);}
+    catch(error){
+      workerLog("warn","tex.github.deleted_project_record_cleanup_failed",{
+        user_id:userId,document_id:documentId,code:String(error?.code||"unknown").slice(0,50)
+      });
+      return json({deleted:true,cleanup_pending:true,document_id:documentId,
+        repository_name:binding.repo_name,repository_state:"deleting",
+        message:"GitHub confirmed deletion; project record cleanup pending. Retry deletion to finish."},202);
+    }
     return json({deleted:true,document_id:documentId,repository_name:binding.repo_name,
       repository_state:"none",message:"GitHub repository deleted successfully."});
   }catch(error){
@@ -574,51 +582,94 @@ async function deleteRepository(request,env,userId,legacy=false) {
   }
 }
 
+// Legacy deletion needs its own server-only receipt. The previous flow
+// could succeed on GitHub but fail when patching SQL; subsequent retries saw
+// GitHub 404 and left the same row permanently visible. A verified 204 is
+// recorded before database finalization, so retry is safe and idempotent.
+function legacyDeleteReceiptKey(userId){
+  if(!isStorageObjectId(userId))throw httpError(400,"invalid_user");
+  return "_system/tex-github-delete-receipts/"+userId+".json";
+}
+async function readLegacyDeleteReceipt(env,userId){
+  if(!hasStorageBinding(env))return null;
+  const object=await env.STORAGE.get(legacyDeleteReceiptKey(userId));
+  if(!object)return null;
+  return object.json().catch(()=>null);
+}
+async function writeLegacyDeleteReceipt(env,userId,row){
+  if(!hasStorageBinding(env))throw httpError(503,"deletion_receipt_storage_unavailable");
+  const receipt={user_id:userId,repo_name:row.repo_name,repo_id:row.repo_id,
+    confirmed:true,confirmed_at:new Date().toISOString()};
+  await env.STORAGE.put(legacyDeleteReceiptKey(userId),JSON.stringify(receipt),{
+    httpMetadata:{contentType:"application/json;charset=UTF-8"}
+  });
+}
+
 async function deleteLegacyGithubRepository(env,userId,body) {
   const row=await readRow(env,userId);
   if(!row?.repo_id||!row.repo_name||!["ready","deleting","error"].includes(row.repo_state))
     return fail(404,"No legacy account-level repository remains.");
-  // An account-wide nonce may refer to an entirely DIFFERENT project's
-  // repository, so it cannot be used to forbid deleting this legacy repo.
   if(body?.confirm!=="DELETE "+row.repo_name)
     return fail(400,"Exact legacy repository confirmation is required.");
-  await verifyOwner(env);
-  await updateRow(env,userId,{repo_state:"deleting"});
-  const repoPath=githubRepoPath(env,row.repo_name);
-  try{
-    // Verify the GitHub repository's ID before touching it. An account-wide
-    // active run may belong to a new per-project repo; probe the run against
-    // the OLD repo instead of blindly clearing the user's quota reservation.
-    const actual=await github(env,repoPath);
-    verifyManagedRepo(env,actual,row.repo_id,row.repo_name);
-    let legacyRunBelongsHere=false;
-    if(row.active_nonce && Number.isSafeInteger(Number(row.active_run_id)) &&
-      Number(row.active_run_id)>0){
-      try{
-        const run=await github(env,repoPath+"/actions/runs/"+encodeURIComponent(row.active_run_id));
-        legacyRunBelongsHere=Number(run?.id)===Number(row.active_run_id);
-      }catch(error){
-        if(error.status!==404)throw error;
+  const receipt=await readLegacyDeleteReceipt(env,userId);
+  const alreadyDeleted=receipt?.confirmed===true&&receipt?.user_id===userId&&
+    String(receipt.repo_id)===String(row.repo_id)&&receipt.repo_name===row.repo_name;
+  if(!alreadyDeleted){
+    await verifyOwner(env);
+    await updateRow(env,userId,{repo_state:"deleting"});
+    const repoPath=githubRepoPath(env,row.repo_name);
+    try{
+      // Never infer success from a GitHub 404: the token may simply lack
+      // visibility. Only an actual successful GitHub DELETE is a receipt.
+      const actual=await github(env,repoPath);
+      verifyManagedRepo(env,actual,row.repo_id,row.repo_name);
+      let legacyRunBelongsHere=false;
+      if(row.active_nonce&&Number.isSafeInteger(Number(row.active_run_id))&&Number(row.active_run_id)>0){
+        try{
+          const run=await github(env,repoPath+"/actions/runs/"+encodeURIComponent(row.active_run_id));
+          legacyRunBelongsHere=Number(run?.id)===Number(row.active_run_id);
+        }catch(error){if(error.status!==404)throw error;}
       }
+      await github(env,repoPath,"DELETE");
+      await writeLegacyDeleteReceipt(env,userId,row);
+      if(legacyRunBelongsHere&&row.active_nonce){
+        await releaseCredit(env,userId,row.active_nonce,false).catch(error=>
+          workerLog("warn","tex.github.legacy_deleted_credit_release_failed",{
+            user_id:userId,code:String(error?.code||"unknown").slice(0,50)
+          })
+        );
+      }
+    }catch(error){
+      workerLog("warn","tex.github.legacy_delete.failed",{
+        user_id:userId,code:String(error?.code||"unknown").slice(0,50)
+      });
+      throw error;
     }
-    await github(env,repoPath,"DELETE");
-    // Once GitHub confirmed deletion, release only a reservation verified to
-    // belong to this OLD repository. Another project's build must survive.
-    if(legacyRunBelongsHere && row.active_nonce){
-      await releaseCredit(env,userId,row.active_nonce,false).catch(error=>
-        workerLog("warn","tex.github.legacy_deleted_credit_release_failed",{
-          user_id:userId,code:String(error?.code||"unknown").slice(0,50)
-        })
-      );
-    }
-    await updateRow(env,userId,{
+  }
+  try{
+    // The SQL quota ledger may now contain a reservation belonging to ANOTHER
+    // project. Do not clear any active_nonce or active_run_id fields here.
+    const cleared=await updateRow(env,userId,{
       repo_name:null,repo_id:null,repo_state:"none",source_branch:"main"
     });
-    return json({deleted:true,legacy:true,repository_name:row.repo_name,repository_state:"none"});
+    if(!cleared)throw httpError(503,"legacy_record_cleanup_failed");
   }catch(error){
-    workerLog("warn","tex.github.legacy_delete.failed",{user_id:userId,code:String(error?.code||"unknown").slice(0,50)});
-    throw error;
+    workerLog("warn","tex.github.legacy_record_cleanup_failed",{
+      user_id:userId,code:String(error?.code||"unknown").slice(0,50)
+    });
+    return json({deleted:true,legacy:true,cleanup_pending:true,
+      repository_name:row.repo_name,repository_state:"deleting",
+      message:"GitHub confirmed deletion; local account record cleanup is pending. Retry to finish."},202);
   }
+  // The SQL row is already finalized. Deleting the receipt is only a tidy-up.
+  if(hasStorageBinding(env)){
+    await env.STORAGE.delete(legacyDeleteReceiptKey(userId)).catch(error=>
+      workerLog("warn","tex.github.legacy_receipt_cleanup_failed",{
+        user_id:userId,code:String(error?.code||"unknown").slice(0,50)
+      })
+    );
+  }
+  return json({deleted:true,legacy:true,repository_name:row.repo_name,repository_state:"none"});
 }
 
 async function reserveCredit(env, userId, nonce) {
