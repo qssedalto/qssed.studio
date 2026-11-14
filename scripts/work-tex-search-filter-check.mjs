@@ -8,19 +8,30 @@ const zh=enhanceWorkTexSearchFilter(html,true,'admin');
 const en=enhanceWorkTexSearchFilter(html,false,'alice');
 assert(zh.includes('id="aertex-tex-search-filter-css"'));
 assert(zh.includes('id="aertex-tex-search-filter-runtime"'));
-assert(zh.includes('src:local("Michelangelus Italic")')&&zh.includes('src:local("Michelangelus Bold Italic")'));
+assert(zh.includes('/_aertex/fonts/michelangelus-italic-v1.woff2')&&zh.includes('/_aertex/fonts/michelangelus-bolditalic-v1.woff2'), 'Both fonts must be hosted on Work rather than only using local installed faces');
 assert(zh.includes('font-weight:400!important')&&zh.includes('font-weight:700!important'));
 assert(zh.includes('.tex-tree-file.is-active')&&zh.includes('box-shadow:none!important'));
 assert(zh.includes('#tex-project-home')&&zh.includes('background:var(--card)!important'));
 assert(zh.includes('stroke-width:43!important'));
 assert(zh.includes('#tex-search-filter-panel')&&zh.includes('.tex-found-entry'));
-assert(zh.includes('stroke-width:2.2!important')&&zh.includes('stroke:currentColor!important'));
+assert(zh.includes('tex-explorer-search-row')&&zh.includes('grid-template-columns:minmax(0,1fr) 38px'),
+  'Filter button must sit alongside a shortened search field, not inside it');
+assert(zh.includes('max-height:none!important')&&zh.includes('overflow:visible!important'),
+  'Standard filter sheet must fit within one screen without an internal scrollbar');
+assert(zh.includes('tex-filter-date-control')&&zh.includes('tex-filter-size-control'),
+  'Use readable date buttons and an inline KB/MB selector');
+assert(zh.includes('stroke-width:2.1!important')&&zh.includes('stroke:currentColor!important'));
 const script=zh.match(/<script id="aertex-tex-search-filter-runtime">([\s\S]*?)<\/script>/)?.[1];
 assert(script);
 new vm.Script(script);
 assert(script.includes('owner="admin"'));
 assert(script.includes('/api/tex/documents?id=')&&script.includes("api('/api/tex/documents')"));
 assert(script.includes('state.types[e.type]')&&script.includes('state.status')&&script.includes('state.maxSize'));
+assert(script.includes('searchRow.append(box,button)')&&script.includes("sizeUnit:'KB'"));
+assert(script.includes("picker.showPicker?.()")&&script.includes("state.sizeUnit==='MB'?1048576:1024"),
+  'Date picker, KB default and MB conversion must remain functional');
+assert(!script.includes('content.append(title,path,meta)'),
+  'Search result paths, timestamps and sizes must not permanently consume sidebar height');
 assert(script.includes('Date.parse')&&script.includes("created_at")&&script.includes("updated_at"));
 assert(script.includes("e.stopImmediatePropagation()"),'Legacy title-only search must not empty the browser tree');
 assert(script.includes('row.title=info(entry)')&&script.includes('copy.path'), 'Path and metadata on result hover');

@@ -14,6 +14,7 @@
 
 import studio from "./studio/entry.js";
 import { injectSweiFontResponse, sweiFontAssetResponse } from "./studio/swei-font.js";
+import { michelangelusFontAssetResponse } from "./studio/michelangelus-font.js";
 import { handleProledWallpaperRoute } from "./studio/public-wallpapers.js";
 import { handleKnowledgeSearch } from "./studio/knowledge-api.js";
 import { handleGlobalSearch } from "./studio/global-search-api.js";
@@ -106,6 +107,8 @@ async function routeStudioRequest(request, env, ctx) {
   if (LOGO_PATHS.has(pathname)) return logoResponse(request);
   const sweiAsset = sweiFontAssetResponse(pathname, request.method);
   if (sweiAsset) return sweiAsset;
+  const michelangelus = michelangelusFontAssetResponse(pathname, request.method);
+  if (michelangelus) return michelangelus;
 
   if (!workHost && isMainWorkHandoffPath(pathname)) return handleMainWorkHandoff(request);
   if (!workHost && isMainGptHandoffPath(pathname)) return handleMainGptHandoff(request);

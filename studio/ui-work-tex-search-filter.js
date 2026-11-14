@@ -2,158 +2,309 @@
 // Search only requests projects owned by the current authenticated account.
 export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account") {
   const css = String.raw`
-    /* Local font lookup only; never distribute a user-supplied font binary. */
-    @font-face{font-family:"AERTEX Michelangelus";src:local("Michelangelus Italic"),local("Michelangelus-Italic");font-weight:400;font-style:normal;unicode-range:U+0000-024F}
-    @font-face{font-family:"AERTEX Michelangelus";src:local("Michelangelus Bold Italic"),local("Michelangelus-BoldItalic");font-weight:700;font-style:normal;unicode-range:U+0000-024F}
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file,
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file span,
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-search,
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-search::placeholder,
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-search-results,
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-search-results * {
+    /* English-only optical typefaces; the Chinese fallback stays upright. */
+    @font-face{
+      font-family:"AERTEX Michelangelus";
+      src:url("/_aertex/fonts/michelangelus-italic-v1.woff2") format("woff2"),local("Michelangelus Italic");
+      font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0020-007E;
+    }
+    @font-face{
+      font-family:"AERTEX Michelangelus";
+      src:url("/_aertex/fonts/michelangelus-bolditalic-v1.woff2") format("woff2"),local("Michelangelus Bold Italic");
+      font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0020-007E;
+    }
+    body.os-shell:has(.tex-work-app) #tex-document-list .tex-tree-file,
+    body.os-shell:has(.tex-work-app) #tex-document-list .tex-tree-file>span,
+    body.os-shell:has(.tex-work-app) #tex-search,
+    body.os-shell:has(.tex-work-app) #tex-search::placeholder,
+    body.os-shell:has(.tex-work-app) #tex-search-results .tex-found-name {
       font-family:"AERTEX Michelangelus","Segoe UI","Microsoft YaHei UI",sans-serif!important;
       font-style:normal!important;font-weight:400!important;
     }
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-folder>span:not(.tex-row-menu-trigger),
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list>.tex-document-item>strong,
-    body.os-shell:has(.tex-work-app) .tex-work-app .tex-panel-head>strong {
+    body.os-shell:has(.tex-work-app) #tex-document-list .tex-tree-folder>span:not(.tex-row-menu-trigger),
+    body.os-shell:has(.tex-work-app) #tex-document-list>.tex-document-item>strong,
+    body.os-shell:has(.tex-work-app) .tex-panel-head>strong {
       font-family:"AERTEX Michelangelus","Segoe UI","Microsoft YaHei UI",sans-serif!important;
       font-weight:700!important;font-style:normal!important;
     }
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file,
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file.is-active,
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file>span {
+    body.os-shell:has(.tex-work-app) #tex-document-list .tex-tree-file,
+    body.os-shell:has(.tex-work-app) #tex-document-list .tex-tree-file.is-active,
+    body.os-shell:has(.tex-work-app) #tex-document-list .tex-tree-file>span {
       font-weight:400!important;
     }
-    /* Keep the selected row's pale blue fill but remove ONLY its blue left rail. */
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file.is-active {
+    body.os-shell:has(.tex-work-app) #tex-document-list .tex-tree-file.is-active {
       box-shadow:none!important;border-left:0!important;
     }
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file.is-active::after {
+    body.os-shell:has(.tex-work-app) #tex-document-list .tex-tree-file.is-active::after {
       border-left:0!important;box-shadow:none!important;
     }
-    /* Main file outline strokes should be optically as strong as book/grid glyphs. */
-    body.os-shell:has(.tex-work-app) .tex-work-app .tex-tree-document-icon {
+    body.os-shell:has(.tex-work-app) .tex-tree-document-icon{
       stroke-width:43!important;fill:none!important;
     }
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-project-home {
-      background:var(--card)!important;color:var(--text)!important;
-      border:1px solid var(--border)!important;
-      box-shadow:none!important;
-    }
-    body.os-shell:has(.tex-work-app) .tex-work-app #tex-project-home:hover {
-      background:var(--fill)!important;filter:none!important;
-    }
-    :root[data-theme="dark"] body.os-shell:has(.tex-work-app) .tex-work-app .tex-documents-panel #tex-project-home {
+    body.os-shell:has(.tex-work-app) .tex-work-app #tex-project-home,
+    :root[data-theme="dark"] body.os-shell:has(.tex-work-app) .tex-work-app .tex-documents-panel #tex-project-home{
       background:var(--card)!important;color:var(--text)!important;
       border:1px solid var(--border)!important;box-shadow:none!important;
     }
-    /* Search input and filter share a single unobtrusive surface. */
-    body.os-shell:has(.tex-work-app) .tex-work-app .tex-search {
-      position:relative!important;display:flex!important;align-items:center!important;
-      padding-right:5px!important;gap:8px!important;min-width:0!important;
+    body.os-shell:has(.tex-work-app) #tex-project-home:hover{
+      background:var(--fill)!important;filter:none!important;
     }
-    body.os-shell:has(.tex-work-app) .tex-work-app .tex-search #tex-search {
-      min-width:0!important;flex:1 1 auto!important;width:0!important;
+
+    /* Two separate controls. Filter aligns with the '+' in the create row. */
+    body.os-shell:has(.tex-work-app) .tex-documents-panel .tex-explorer-search-row{
+      box-sizing:border-box!important;display:grid!important;
+      grid-template-columns:minmax(0,1fr) 38px!important;column-gap:7px!important;
+      align-items:center!important;margin:0 9px 8px!important;min-width:0!important;
     }
-    .tex-work-app #tex-search-filter {
-      flex:0 0 30px;display:grid;place-items:center;width:30px;height:30px;
-      padding:0;border:0;border-radius:8px;background:transparent;color:var(--text);
-      cursor:pointer;position:relative;
+    body.os-shell:has(.tex-work-app) .tex-explorer-search-row>.tex-search{
+      min-width:0!important;width:100%!important;max-width:none!important;
+      margin:0!important;box-sizing:border-box!important;display:flex!important;
+      align-items:center!important;padding:0 10px!important;gap:8px!important;
     }
-    .tex-work-app #tex-search-filter:hover,.tex-work-app #tex-search-filter[aria-expanded="true"] {
-      background:color-mix(in srgb,var(--text) 8%,transparent);
+    body.os-shell:has(.tex-work-app) .tex-explorer-search-row #tex-search{
+      width:100%!important;min-width:0!important;flex:1 1 auto!important;
     }
-    .tex-work-app #tex-search-filter svg {width:23px!important;height:23px!important;
-      stroke:currentColor!important;fill:none!important;stroke-width:2.2!important;
-      stroke-linecap:round!important}
-    .tex-work-app #tex-search-filter[data-has-filter="true"]::after {
+    body.os-shell:has(.tex-work-app) .tex-explorer-search-row #tex-search-filter{
+      display:grid!important;place-items:center!important;
+      width:38px!important;height:38px!important;min-width:38px!important;
+      min-height:38px!important;max-width:38px!important;
+      padding:0!important;margin:0!important;border:0!important;
+      border-radius:10px!important;background:transparent!important;
+      color:var(--text)!important;box-shadow:none!important;
+      cursor:pointer!important;position:relative!important;
+    }
+    body.os-shell:has(.tex-work-app) #tex-search-filter:hover,
+    body.os-shell:has(.tex-work-app) #tex-search-filter[aria-expanded="true"]{
+      background:color-mix(in srgb,var(--text) 9%,transparent)!important;
+    }
+    body.os-shell:has(.tex-work-app) #tex-search-filter svg{
+      width:21px!important;height:21px!important;display:block!important;
+      stroke:currentColor!important;fill:none!important;
+      stroke-width:2.1!important;stroke-linecap:round!important;
+      stroke-linejoin:round!important;
+    }
+    body.os-shell:has(.tex-work-app) #tex-search-filter[data-has-filter="true"]::after{
       content:"";position:absolute;width:5px;height:5px;border-radius:50%;
-      background:var(--primary);right:2px;top:2px;
+      right:5px;top:5px;background:var(--primary);pointer-events:none;
     }
-    .tex-work-app #tex-document-list[hidden],.tex-work-app #tex-documents-empty[hidden],
-    .tex-work-app #tex-search-results[hidden],#tex-search-filter-panel[hidden] {display:none!important}
-    .tex-work-app #tex-search-results {
+    @media(max-width:760px),(max-width:950px) and (pointer:coarse){
+      body.os-shell:has(.tex-work-app) .tex-documents-panel .tex-explorer-search-row{
+        grid-template-columns:minmax(0,1fr) 48px!important;
+        column-gap:8px!important;margin:0 14px 10px!important;
+      }
+      body.os-shell:has(.tex-work-app) .tex-explorer-search-row #tex-search-filter{
+        width:48px!important;height:48px!important;min-width:48px!important;
+        min-height:48px!important;max-width:48px!important;
+      }
+      body.os-shell:has(.tex-work-app) #tex-search-filter svg{width:24px!important;height:24px!important}
+    }
+    .tex-work-app #tex-document-list[hidden],
+    .tex-work-app #tex-documents-empty[hidden],
+    .tex-work-app #tex-search-results[hidden],#tex-search-filter-panel[hidden] {
+      display:none!important;
+    }
+    .tex-work-app #tex-search-results{
       display:block;min-height:0;flex:1 1 0;overflow-y:auto;overflow-x:hidden;
-      padding:2px 9px 12px;scrollbar-width:thin;
+      box-sizing:border-box;padding:2px 7px 11px;scrollbar-width:thin;
     }
-    .tex-work-app #tex-search-results .tex-found-group {
-      margin:9px 4px 5px;font-size:11px;font-weight:600!important;font-style:normal!important;
-      color:var(--muted);
+    /* Results use the exact 34px explorer rhythm. Details only appear on hover. */
+    body.os-shell:has(.tex-work-app) #tex-search-results .tex-found-entry{
+      box-sizing:border-box!important;display:flex!important;align-items:center!important;
+      gap:7px!important;width:100%!important;height:35px!important;min-height:35px!important;
+      padding:4px 8px!important;margin:0!important;border:0!important;
+      border-radius:8px!important;background:transparent;color:var(--text);
+      text-align:left!important;cursor:pointer;
     }
-    .tex-work-app #tex-search-results .tex-found-entry {
-      display:flex;gap:9px;width:100%;padding:9px 8px;border:0;border-radius:8px;
-      background:transparent;color:var(--text);text-align:left;cursor:pointer;align-items:flex-start;
+    body.os-shell:has(.tex-work-app) #tex-search-results .tex-found-entry:hover,
+    body.os-shell:has(.tex-work-app) #tex-search-results .tex-found-entry:focus-visible{
+      background:var(--fill)!important;outline-offset:-2px;
     }
-    .tex-work-app #tex-search-results .tex-found-entry:hover,
-    .tex-work-app #tex-search-results .tex-found-entry:focus-visible {
-      background:var(--fill);outline:0;
+    .tex-work-app #tex-search-results .tex-found-entry svg{
+      flex:0 0 19px!important;width:19px!important;height:19px!important;
+      stroke:#858b95!important;stroke-width:2!important;fill:none!important;
+      stroke-linecap:round!important;stroke-linejoin:round!important;
     }
-    .tex-work-app #tex-search-results .tex-found-entry svg {
-      flex:0 0 19px;width:19px;height:20px;stroke:#7e858e;stroke-width:1.9;
-      fill:none;stroke-linejoin:round;
+    .tex-work-app #tex-search-results .tex-found-content{
+      min-width:0!important;flex:1 1 auto!important;display:block!important;
     }
-    .tex-work-app #tex-search-results .tex-found-content{min-width:0;display:grid;gap:3px;flex:1}
-    .tex-work-app #tex-search-results .tex-found-name{font-size:13px;overflow-wrap:anywhere}
+    .tex-work-app #tex-search-results .tex-found-name{
+      display:block!important;font-size:13px!important;line-height:21px!important;
+      white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+      overflow-wrap:normal!important;
+    }
     .tex-work-app #tex-search-results .tex-found-path,
-    .tex-work-app #tex-search-results .tex-found-detail{
-      font-size:10px;color:var(--muted);white-space:normal;overflow-wrap:anywhere;
-    }
-    .tex-work-app .tex-tree-name-tooltip {white-space:pre-line!important}
+    .tex-work-app #tex-search-results .tex-found-detail{display:none!important}
     .tex-work-app #tex-search-results .tex-search-progress,
     .tex-work-app #tex-search-results .tex-search-none{
-      padding:13px 12px;font-size:12px;color:var(--muted);line-height:1.55;
+      padding:11px 10px;font-size:12px;color:var(--muted);line-height:1.45;
     }
-    /* Flat, non-glass Apple-style grouped filter popover. */
-    #tex-search-filter-panel {
-      position:fixed;z-index:11000;box-sizing:border-box;
-      width:min(365px,calc(100vw - 20px));max-height:min(74dvh,650px);
-      overflow-y:auto;overscroll-behavior:contain;
-      padding:16px;background:var(--card,#fff);color:var(--text,#18191b);
-      border:1px solid var(--border,#d5d5db);border-radius:19px;
-      box-shadow:0 12px 45px rgba(0,0,0,.16);
-      font-family:"Segoe UI","Microsoft YaHei UI",sans-serif;
+    /* No second generated tooltip: the browser's native title alone remains. */
+
+    /* One compact grouped system-style filter sheet; no inner scrollbar. */
+    html body #tex-search-filter-panel{
+      position:fixed!important;z-index:2147480000!important;
+      width:360px!important;min-width:0!important;
+      max-width:calc(100vw - 16px)!important;max-height:none!important;
+      box-sizing:border-box!important;overflow:visible!important;
+      padding:11px 12px 12px!important;margin:0!important;
+      border:1px solid var(--border,#45454b)!important;
+      border-radius:19px!important;
+      background:var(--card,#242426)!important;color:var(--text,#f6f6f7)!important;
+      box-shadow:0 14px 35px rgba(0,0,0,.22)!important;
+      font-family:"Segoe UI","Microsoft YaHei UI",sans-serif!important;
+      font-size:12px!important;line-height:1.28!important;
     }
-    #tex-search-filter-panel .tex-filter-head {
-      display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;
-      gap:12px;
+    #tex-search-filter-panel .tex-filter-head{
+      display:grid!important;grid-template-columns:38px 1fr 38px!important;
+      height:38px!important;align-items:center!important;margin:0 0 6px!important;
+      padding:0!important;gap:0!important;min-height:0!important;
     }
-    #tex-search-filter-panel h2{margin:0;font-size:17px;font-weight:700}
-    #tex-search-filter-panel h3{margin:15px 0 7px;font-size:11px;color:var(--muted);font-weight:600}
+    #tex-search-filter-panel .tex-filter-head h2{
+      grid-column:2!important;margin:0!important;min-width:0!important;
+      white-space:nowrap!important;text-align:center!important;
+      font:700 16px/1.2 "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+    }
+    #tex-search-filter-panel .tex-filter-head>[data-action="done"]{
+      grid-column:3!important;justify-self:end!important;
+      width:37px!important;height:37px!important;min-height:37px!important;
+      min-width:37px!important;padding:0!important;margin:0!important;
+      display:grid!important;place-items:center!important;
+      border:0!important;border-radius:50%!important;
+      background:var(--primary,#087dff)!important;color:#fff!important;
+      font-size:23px!important;line-height:1!important;
+      font-weight:500!important;box-shadow:none!important;
+    }
+    #tex-search-filter-panel h3{
+      display:block!important;margin:9px 4px 5px!important;padding:0!important;
+      font:600 11px/1.3 "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+      color:var(--muted)!important;
+    }
     #tex-search-filter-panel .tex-filter-group{
-      background:var(--fill);border:1px solid var(--border);border-radius:13px;
-      overflow:hidden;padding:0 10px;
+      box-sizing:border-box!important;display:block!important;
+      background:var(--fill)!important;border:1px solid var(--border)!important;
+      border-radius:12px!important;overflow:hidden!important;padding:0 10px!important;
     }
-    #tex-search-filter-panel label{
-      display:flex;align-items:center;justify-content:space-between;gap:9px;
-      padding:10px 3px;min-height:40px;font-size:13px;cursor:pointer;
+    #tex-search-filter-panel .tex-filter-group>label{
+      box-sizing:border-box!important;display:flex!important;
+      justify-content:space-between!important;align-items:center!important;
+      width:100%!important;height:33px!important;min-height:33px!important;
+      max-height:33px!important;margin:0!important;padding:0 2px!important;
+      font:400 12.5px/1.2 "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+      color:var(--text)!important;cursor:pointer;gap:6px!important;
     }
-    #tex-search-filter-panel label + label{border-top:1px solid var(--border)}
-    #tex-search-filter-panel label input[type="checkbox"]{
-      flex:0 0 18px;width:18px;height:18px;accent-color:var(--primary);margin:0;cursor:pointer;
+    #tex-search-filter-panel .tex-filter-group>label+label{
+      border-top:1px solid var(--border)!important;
     }
-    #tex-search-filter-panel label input[type="radio"] {
-      appearance:radio!important;-webkit-appearance:radio!important;
-      flex:0 0 18px!important;width:18px!important;height:18px!important;
-      max-width:18px!important;min-width:18px!important;min-height:18px!important;
-      padding:0!important;margin:0!important;position:static!important;
-      border:0!important;border-radius:50%!important;background:transparent!important;
-      box-shadow:none!important;accent-color:var(--primary)!important;
+    #tex-search-filter-panel .tex-filter-group>label>span:first-child{
+      white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+      flex:1 1 auto!important;min-width:0!important;
     }
-    #tex-search-filter-panel input[type="date"],
-    #tex-search-filter-panel input[type="number"],
-    #tex-search-filter-panel select{
-      min-width:0;width:148px;max-width:55%;box-sizing:border-box;
-      padding:7px 8px;border:1px solid var(--border);border-radius:7px;
-      background:var(--card);color:var(--text);font:inherit;
+    #tex-search-filter-panel input[type="checkbox"],
+    #tex-search-filter-panel input[type="radio"]{
+      appearance:auto!important;-webkit-appearance:auto!important;
+      box-sizing:border-box!important;position:static!important;
+      display:block!important;flex:0 0 17px!important;
+      width:17px!important;height:17px!important;
+      min-width:17px!important;min-height:17px!important;
+      max-width:17px!important;max-height:17px!important;
+      padding:0!important;margin:0!important;
+      border-radius:initial!important;box-shadow:none!important;
+      background:transparent!important;accent-color:var(--primary)!important;
+      cursor:pointer!important;
     }
-    #tex-search-filter-panel button {
-      border:0;border-radius:9px;background:var(--fill);color:var(--text);
-      min-height:31px;padding:6px 11px;cursor:pointer;font:inherit;font-size:12px;
+    #tex-search-filter-panel .tex-filter-group .tex-filter-date-control,
+    #tex-search-filter-panel .tex-filter-group .tex-filter-size-control,
+    #tex-search-filter-panel .tex-filter-group .tex-filter-select{
+      box-sizing:border-box!important;display:flex!important;
+      align-items:center!important;justify-content:space-between!important;
+      flex:0 0 150px!important;max-width:150px!important;
+      width:150px!important;height:27px!important;min-height:27px!important;
+      border-radius:8px!important;border:1px solid var(--border)!important;
+      background:var(--card)!important;color:var(--text)!important;
+      padding:0 6px!important;margin:0!important;
+      font:400 11.5px/1.2 "Segoe UI","Microsoft YaHei UI",sans-serif!important;
     }
-    #tex-search-filter-panel .tex-filter-apply{background:var(--primary);color:#fff}
-    #tex-search-filter-panel button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-    #tex-search-filter-panel .tex-filter-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+    #tex-search-filter-panel .tex-filter-group .tex-filter-date-control{
+      position:relative!important;padding:0!important;overflow:visible!important;
+    }
+    #tex-search-filter-panel .tex-filter-date-control>.tex-filter-date-label{
+      flex:1 1 auto!important;display:block!important;height:25px!important;
+      min-width:0!important;text-align:left!important;
+      border:0!important;box-shadow:none!important;
+      background:transparent!important;color:var(--text)!important;
+      padding:0 7px!important;margin:0!important;
+      font:inherit!important;white-space:nowrap!important;
+      cursor:pointer!important;position:relative!important;
+    }
+    #tex-search-filter-panel .tex-filter-date-label svg{
+      position:absolute!important;right:5px!important;top:4px!important;
+      width:16px!important;height:16px!important;stroke:currentColor!important;
+      fill:none!important;stroke-width:1.7!important;
+    }
+    #tex-search-filter-panel .tex-filter-date-label .tex-date-text{
+      display:block!important;margin-right:18px!important;line-height:25px!important;
+      white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+    }
+    #tex-search-filter-panel .tex-filter-date-control input[type="date"]{
+      position:absolute!important;right:1px!important;top:1px!important;
+      width:1px!important;height:1px!important;min-width:1px!important;
+      opacity:0!important;pointer-events:none!important;
+      padding:0!important;margin:0!important;box-shadow:none!important;
+    }
+    #tex-search-filter-panel .tex-filter-size-control{
+      gap:3px!important;padding:0 3px 0 7px!important;
+    }
+    #tex-search-filter-panel .tex-filter-size-control>input{
+      flex:1 1 auto!important;min-width:0!important;
+      width:0!important;height:24px!important;min-height:24px!important;
+      padding:0!important;margin:0!important;
+      border:0!important;border-radius:0!important;box-shadow:none!important;
+      outline-offset:0!important;background:transparent!important;
+      color:var(--text)!important;font:inherit!important;
+    }
+    #tex-search-filter-panel .tex-filter-size-control>select{
+      box-sizing:border-box!important;flex:0 0 53px!important;
+      width:53px!important;min-width:53px!important;max-width:53px!important;
+      height:24px!important;min-height:24px!important;
+      padding:0 2px!important;margin:0!important;
+      background:transparent!important;color:var(--text)!important;
+      font:inherit!important;border:0!important;border-radius:0!important;
+      box-shadow:none!important;cursor:pointer!important;
+    }
+    #tex-search-filter-panel .tex-filter-group select.tex-filter-select{
+      appearance:auto!important;-webkit-appearance:auto!important;
+      padding:0 5px!important;cursor:pointer!important;
+    }
+    #tex-search-filter-panel button:focus-visible,
+    #tex-search-filter-panel select:focus-visible,
+    #tex-search-filter-panel input:focus-visible{
+      outline:2px solid var(--primary)!important;outline-offset:2px!important;
+    }
+    #tex-search-filter-panel .tex-filter-actions{
+      display:flex!important;align-items:center!important;justify-content:flex-start!important;
+      height:24px!important;min-height:24px!important;
+      margin:7px 2px 0!important;padding:0!important;
+    }
+    #tex-search-filter-panel .tex-filter-actions>[data-action="reset"]{
+      box-sizing:border-box!important;min-height:24px!important;height:24px!important;
+      border:0!important;border-radius:7px!important;
+      color:var(--muted)!important;background:transparent!important;
+      padding:0 7px!important;box-shadow:none!important;
+      font:400 11px "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+    }
+    #tex-search-filter-panel .tex-filter-actions>[data-action="reset"]:hover{
+      color:var(--text)!important;background:var(--fill)!important;
+    }
+    @media(max-height:620px){
+      #tex-search-filter-panel h3{margin-top:6px!important;margin-bottom:3px!important}
+      #tex-search-filter-panel .tex-filter-group>label{height:29px!important;min-height:29px!important;max-height:29px!important}
+      html body #tex-search-filter-panel{padding:8px 11px!important}
+    }
+    @media(max-height:470px){
+      html body #tex-search-filter-panel{
+        max-height:calc(100dvh - 12px)!important;overflow-y:auto!important;
+      }
+    }
   `;
   const script = String.raw`
     (() => {
@@ -166,7 +317,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       const copy=zh?{
         title:'过滤条件',type:'包括类型',project:'项目',folder:'文件夹',file:'文件',
         status:'保存状态',saved:'已保存',unsaved:'未保存',created:'创建时间不早于',
-        modified:'最后修改不早于',size:'大小不超过 (MB)',
+        modified:'最后修改不早于',size:'大小不超过',
         order:'排序',newest:'最近修改',name:'名称',
         reset:'重置',done:'完成',searching:'正在检索项目文件',
         noResults:'没有找到符合条件的项目或文件',unknown:'未记录',
@@ -174,7 +325,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       }:{
         title:'Filters',type:'Include types',project:'Projects',folder:'Folders',file:'Files',
         status:'Save status',saved:'Saved',unsaved:'Unsaved',created:'Created since',
-        modified:'Modified since',size:'Maximum size (MB)',
+        modified:'Modified since',size:'Maximum size',
         order:'Sort',newest:'Recently modified',name:'Name',
         reset:'Reset',done:'Done',searching:'Searching project files',
         noResults:'No matching projects or files',unknown:'Not recorded',
@@ -185,7 +336,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         if(!response.ok)throw Error('Search index unavailable');
         return response.json();
       };
-      const state={types:{project:true,folder:true,file:true},status:'all',created:'',modified:'',maxSize:'',order:'recent'};
+      const state={types:{project:true,folder:true,file:true},status:'all',created:'',modified:'',maxSize:'',sizeUnit:'KB',order:'recent'};
       const results=document.createElement('section');
       results.id='tex-search-results';results.hidden=true;results.setAttribute('aria-live','polite');
       list.before(results);
@@ -194,23 +345,26 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       button.setAttribute('title',copy.title);button.setAttribute('aria-expanded','false');
       button.setAttribute('aria-haspopup','dialog');
       button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6.5H21 M6 12H18 M9 17.5H15"/></svg>';
-      box.append(button);
+      const searchRow=document.createElement('div');
+      searchRow.className='tex-explorer-search-row';
+      box.before(searchRow);
+      searchRow.append(box,button);
       const pop=document.createElement('section');
       pop.id='tex-search-filter-panel';pop.hidden=true;
       pop.setAttribute('role','dialog');pop.setAttribute('aria-modal','false');
       pop.setAttribute('aria-label',copy.title);
-      pop.innerHTML='<div class="tex-filter-head"><h2></h2><button type="button" data-action="done">✓</button></div>'+
+      pop.innerHTML='<div class="tex-filter-head"><h2></h2><button type="button" data-action="done" aria-label="'+copy.done+'">'+
+        '<svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>'+
         '<h3 data-caption="type"></h3><div class="tex-filter-group" id="tex-filter-types"></div>'+
         '<h3 data-caption="status"></h3><div class="tex-filter-group" id="tex-filter-status"></div>'+
         '<h3 data-caption="dates"></h3><div class="tex-filter-group" id="tex-filter-dates"></div>'+
-        '<div class="tex-filter-actions"><button type="button" data-action="reset"></button><button type="button" class="tex-filter-apply" data-action="done"></button></div>';
+        '<div class="tex-filter-actions"><button type="button" data-action="reset"></button></div>';
       document.body.append(pop);
       pop.querySelector('h2').textContent=copy.title;
       pop.querySelector('[data-caption="type"]').textContent=copy.type;
       pop.querySelector('[data-caption="status"]').textContent=copy.status;
       pop.querySelector('[data-caption="dates"]').textContent=zh?'时间、大小与排序':'Time, size and sorting';
       pop.querySelector('[data-action="reset"]').textContent=copy.reset;
-      pop.querySelector('.tex-filter-apply').textContent=copy.done;
       const types=pop.querySelector('#tex-filter-types'),statuses=pop.querySelector('#tex-filter-status');
       for(const key of ['project','folder','file']){
         const l=document.createElement('label'),title=document.createElement('span'),check=document.createElement('input');
@@ -223,24 +377,51 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         l.append(span,check);statuses.append(l);
       }
       const dates=pop.querySelector('#tex-filter-dates');
-      const addField=(label,type,key,props={})=>{
-        const row=document.createElement('label'),span=document.createElement('span'),field=document.createElement('input');
-        span.textContent=label;field.type=type;field.dataset.key=key;
-        for(const [k,v]of Object.entries(props))field.setAttribute(k,v);
-        row.append(span,field);dates.append(row);return field;
-      };
-      addField(copy.created,'date','created');
-      addField(copy.modified,'date','modified');
-      addField(copy.size,'number','maxSize',{min:'0',step:'0.1',placeholder:zh?'不限':'Any'});
+      const calendar='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.8" y="5.5" width="16.4" height="15.2" rx="2.2"/><path d="M7.5 3.5v4M16.5 3.5v4M3.8 10.1h16.4M8.1 14h1M12 14h1M16 14h1"/></svg>';
+      const dateFields={};
+      const dateLabel=value=>value ? value.replace(/-/g,'/') : (zh?'选择日期':'Choose date');
+      function addDate(label,key){
+        const row=document.createElement('label'),caption=document.createElement('span'),control=document.createElement('span');
+        caption.textContent=label;control.className='tex-filter-date-control';
+        const picker=document.createElement('input');picker.type='date';picker.dataset.key=key;
+        picker.setAttribute('aria-label',label);
+        const trigger=document.createElement('button');trigger.type='button';
+        trigger.className='tex-filter-date-label';trigger.setAttribute('aria-label',label);
+        const display=document.createElement('span');display.className='tex-date-text';display.textContent=dateLabel('');
+        trigger.append(display);
+        trigger.insertAdjacentHTML('beforeend',calendar);
+        trigger.addEventListener('click',()=>{
+          try{picker.showPicker?.();}catch{picker.focus();picker.click();}
+        });
+        picker.addEventListener('change',()=>{state[key]=picker.value;display.textContent=dateLabel(picker.value);refresh()});
+        control.append(trigger,picker);row.append(caption,control);dates.append(row);
+        dateFields[key]={picker,display};return picker;
+      }
+      addDate(copy.created,'created');addDate(copy.modified,'modified');
+      const sizeRow=document.createElement('label'),sizeTitle=document.createElement('span');
+      sizeTitle.textContent=copy.size;
+      const sizeControl=document.createElement('span');sizeControl.className='tex-filter-size-control';
+      const sizeInput=document.createElement('input');sizeInput.type='number';sizeInput.dataset.key='maxSize';
+      sizeInput.min='0';sizeInput.step='0.1';sizeInput.placeholder=zh?'不限':'Any';
+      sizeInput.setAttribute('aria-label',copy.size);
+      const unit=document.createElement('select');unit.dataset.key='sizeUnit';unit.setAttribute('aria-label',zh?'大小单位':'Size unit');
+      for(const u of ['KB','MB']){
+        const option=document.createElement('option');option.value=u;option.textContent=u;unit.append(option);
+      }
+      sizeControl.append(sizeInput,unit);sizeRow.append(sizeTitle,sizeControl);dates.append(sizeRow);
       const sort=document.createElement('label'),sortTitle=document.createElement('span'),sortSelect=document.createElement('select');
-      sortTitle.textContent=copy.order;for(const [value,label]of [['recent',copy.newest],['name',copy.name]]){
+      sortTitle.textContent=copy.order;sortSelect.className='tex-filter-select';
+      for(const [value,label]of [['recent',copy.newest],['name',copy.name]]){
         const option=document.createElement('option');option.value=value;option.textContent=label;sortSelect.append(option);
       }
       sortSelect.dataset.key='order';sort.append(sortTitle,sortSelect);dates.append(sort);
       const position=()=>{
-        const bounds=box.getBoundingClientRect();
-        pop.style.left=Math.min(Math.max(10,bounds.left),innerWidth-pop.offsetWidth-10)+'px';
-        pop.style.top=Math.max(10,Math.min(innerHeight-pop.offsetHeight-10,bounds.bottom+9))+'px';
+        const bounds=button.getBoundingClientRect();
+        const width=pop.offsetWidth,height=pop.offsetHeight;
+        const left=Math.max(8,Math.min(innerWidth-width-8,bounds.right-width));
+        const beneath=bounds.bottom+8;
+        const top=Math.max(8,Math.min(innerHeight-height-8,beneath));
+        pop.style.left=left+'px';pop.style.top=top+'px';
       };
       const close=()=>{pop.hidden=true;button.setAttribute('aria-expanded','false')};
       button.addEventListener('click',()=>{pop.hidden=!pop.hidden;button.setAttribute('aria-expanded',String(!pop.hidden));if(!pop.hidden)position()});
@@ -248,10 +429,12 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         if(e.target.closest('[data-action="done"]')){close();button.focus()}
         if(e.target.closest('[data-action="reset"]')){
           state.types={project:true,folder:true,file:true};state.status='all';
-          state.created='';state.modified='';state.maxSize='';state.order='recent';
+          state.created='';state.modified='';state.maxSize='';state.sizeUnit='KB';state.order='recent';
           for(const el of pop.querySelectorAll('[data-type]'))el.checked=true;
           for(const el of pop.querySelectorAll('[name="tex-filter-status-choice"]'))el.checked=el.value==='all';
-          for(const el of pop.querySelectorAll('[data-key]'))el.value=el.dataset.key==='order'?'recent':'';
+          for(const el of pop.querySelectorAll('[data-key]'))
+            el.value=el.dataset.key==='order'?'recent':el.dataset.key==='sizeUnit'?'KB':'';
+          for(const field of Object.values(dateFields))field.display.textContent=dateLabel('');
           refresh();
         }
       });
@@ -261,6 +444,9 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         if(el.name==='tex-filter-status-choice')state.status=el.value;
         if(el.dataset.key)state[el.dataset.key]=el.value;
         refresh();
+      });
+      sizeInput.addEventListener('input',()=>{
+        state.maxSize=sizeInput.value;refresh();
       });
       document.addEventListener('pointerdown',e=>{
         if(!pop.hidden&&!pop.contains(e.target)&&!button.contains(e.target))close();
@@ -369,7 +555,8 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         if(state.status!=='all'&&status!==state.status)return false;
         if(state.created&&(!e.created_at||e.created_at.slice(0,10)<state.created))return false;
         if(state.modified&&(!e.updated_at||e.updated_at.slice(0,10)<state.modified))return false;
-        if(state.maxSize!==''&&(!Number.isFinite(e.size_bytes)||e.size_bytes>Number(state.maxSize)*1048576))return false;
+        if(state.maxSize!==''&&(!Number.isFinite(e.size_bytes)||
+          e.size_bytes>Number(state.maxSize)*(state.sizeUnit==='MB'?1048576:1024)))return false;
         const q=input.value.trim().toLocaleLowerCase();
         if(!q)return true;
         return [e.name,e.projectTitle,e.type==='project'?e.preview:'',pathOf(e)]
@@ -390,13 +577,9 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         const content=document.createElement('span');content.className='tex-found-content';
         const title=document.createElement('span');title.className='tex-found-name';
         title.textContent=entry.type==='project'?entry.projectTitle:entry.name.split('/').at(-1);
-        const path=document.createElement('span');path.className='tex-found-path';path.textContent=pathOf(entry);
-        const meta=document.createElement('span');meta.className='tex-found-detail';
-        meta.textContent=copy.dateCreated+': '+dateOf(entry.created_at)+' · '+
-          copy.dateModified+': '+dateOf(entry.updated_at)+' · '+
-          copy.byteSize+': '+formatSize(entry.size_bytes)+' · '+
-          copy.state+': '+(savedStatus(entry)==='unsaved'?copy.unsaved:copy.saved);
-        content.append(title,path,meta);row.append(svg.firstElementChild,content);
+        content.append(title);row.append(svg.firstElementChild,content);
+        row.addEventListener('pointerenter',()=>{row.title=info(entry)});
+        row.addEventListener('focus',()=>{row.title=info(entry)});
         row.addEventListener('click',()=>void openResult(entry));return row;
       }
       function refresh(){

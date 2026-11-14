@@ -42,30 +42,15 @@ for (const zh of [true, false]) {
   assert(WORK_TEX_EXPLORER_STYLE.includes(".tex-tree-folder-children"),
     "Nested directories must have separate collapsible content");
 
-  assert(WORK_TEX_EXPLORER_TREE.includes("function isFilenameClipped(row)") &&
-    WORK_TEX_EXPLORER_TREE.includes("range.selectNodeContents(label)") &&
-    WORK_TEX_EXPLORER_TREE.includes("!isFilenameClipped(row)"),
-    "Tooltip must detect ellipsis even when flexbox reports inaccurate scrollWidth");
   assert(WORK_TEX_EXPLORER_TREE.includes("row.title=name") &&
-    WORK_TEX_EXPLORER_TREE.includes("row.addEventListener('mouseenter'") &&
-    WORK_TEX_EXPLORER_TREE.includes("row.addEventListener('mouseleave'"),
-    "Every project file must have a native tooltip fallback and robust row hover");
+    WORK_TEX_EXPLORER_TREE.includes("function attachFilenameTooltip(row,fullName)"),
+    "Browser-native title is the only file/folder hover tooltip");
   assert(WORK_TEX_EXPLORER_TREE.includes("attachFilenameTooltip(row,asset.name)") &&
     WORK_TEX_EXPLORER_TREE.includes("attachFilenameTooltip(row,prefix)"),
-    "All nested file and folder rows must register their full original names");
-  assert((WORK_TEX_EXPLORER_TREE.includes("filenameTooltip.textContent=name") ||
-      WORK_TEX_EXPLORER_TREE.includes("filenameTooltip.textContent=String(row.dataset.aertexMeta||name)")) &&
-    WORK_TEX_EXPLORER_TREE.includes("setAttribute('role','tooltip')") &&
-    WORK_TEX_EXPLORER_TREE.includes("row.setAttribute('aria-describedby',filenameTooltip.id)"),
-    "Full filenames must be shown safely and accessibly");
-  assert(WORK_TEX_EXPLORER_TREE.includes("list.addEventListener('pointerover'") &&
-    WORK_TEX_EXPLORER_TREE.includes("list.addEventListener('focusin'") &&
-    WORK_TEX_EXPLORER_TREE.includes("list.addEventListener('scroll',hideFilenameTooltip"),
-    "Dynamic tree rows must support pointer, keyboard, and scrolling");
-  assert(WORK_TEX_EXPLORER_STYLE.includes(".tex-tree-name-tooltip") &&
-    WORK_TEX_EXPLORER_STYLE.includes("position:fixed;") &&
-    WORK_TEX_EXPLORER_STYLE.includes("pointer-events:none;"),
-    "Full-name tooltip should appear above the clipped sidebar without intercepting clicks");
+    "All nested file and folder rows must preserve their complete paths");
+  assert(!WORK_TEX_EXPLORER_TREE.includes("filenameTooltip.textContent") &&
+    !WORK_TEX_EXPLORER_TREE.includes("setAttribute('role','tooltip')"),
+    "Do not create a second floating filename tooltip over the browser-native one");
 
   // Supplementary text/PDF/image files must occupy the SAME editor viewport.
   // A second inline card above an unhidden CodeMirror was showing both files at once.
