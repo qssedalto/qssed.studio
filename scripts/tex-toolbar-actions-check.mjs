@@ -162,8 +162,8 @@ for (const zh of [true, false]) {
 // Manual compilation now uses the precise reference circular-play SVG,
  // with dynamic light/dark neutral colors and the original busy accent state.
 const toolbarSource=fs.readFileSync(new URL("../studio/ui-work-tex-compile-toolbar.js",import.meta.url),"utf8");
-assert(toolbarSource.includes('<circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="2.25"/>') &&
-  toolbarSource.includes('d="M10 7.8c0-.59') &&
+assert(toolbarSource.includes('<circle cx="12" cy="12" r="9.55" stroke="currentColor" stroke-width="2.05"/>') &&
+  toolbarSource.includes('d="M10.15 7.85a.87') &&
   toolbarSource.includes('fill="currentColor"') &&
   toolbarSource.includes('.tex-compile-fixed:not(.is-compiling) .tex-compile-vector'),
   "Compile toolbar must use circular-play SVG instead of GitHub Actions artwork");
@@ -181,7 +181,7 @@ for(const zh of [true,false]){
   assert(ui.includes("tex-build-indicator") && ui.includes("tex-build-download-log") &&
     ui.includes("URL.createObjectURL(payload)"),"Compilation must display a vector result and download its error log locally");
   assert(ui.includes("titleStack.append(heading,saveState)") &&
-    ui.includes("titleRow.append(titleStack,indicator,logButton)"),
+    ui.includes("titleRow.append(indicator,titleStack,logButton)"),
     "The original live autosave element must be directly below the static project title");
   assert(ui.includes("#tex-editor>.tex-editor-footer") &&
     ui.includes("display:none!important;height:0!important;min-height:0!important") &&
@@ -263,7 +263,7 @@ for(const zh of [true,false]){
   assert.equal(titleInput.readOnly,true,"Title input may not be edited directly");
   assert.equal(titleInput.hidden,true,"The old title input is not visible");
   const titleRow=saveState.parentElement.parentElement;
-  const indicator=titleRow.children[1];
+  const indicator=titleRow.children[0];
   const logButton=titleRow.children[2];
   assert.equal(indicator.hidden,true,"Cold-page load must start with no success/failure badge");
   assert.equal(logButton.hidden,true,"Cold-page load must not show Download log");

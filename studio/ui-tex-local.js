@@ -1,11 +1,11 @@
 export function enhanceTexWorkbenchLocal(markup, zh) {
   const copy = zh ? {
-    localReady: "本机 TeX 已连接",
+    localReady: "编译服务正常",
     localUnsupported: "本机不支持当前引擎",
     localDetail: "",
     localUnsupportedDetail: "本机 Bridge 当前只开放 XeLaTeX 与 pdfLaTeX。可切换引擎，或在云端编译服务可用时继续使用其他引擎。",
-    cloudReady: "云端编译服务已连接",
-    offline: "编译服务尚未连接",
+    cloudReady: "编译服务正常",
+    offline: "暂时无法编译，请检查设备连接",
     offlineDetail: "未检测到本机 TeX Bridge，云端编译服务也不可用。仍可编辑、自动保存和下载源码。",
     localCompiling: "正在本机编译…",
     localSuccess: "本机编译成功",
@@ -26,12 +26,12 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     mobileNoPdf: "暂无 PDF。需要编译时可使用下方的远程编译功能。",
     mobileSelect: "请选择一个项目文件以查看 PDF。"
   } : {
-    localReady: "Local TeX connected",
+    localReady: "Compiler service ready",
     localUnsupported: "Current engine is not enabled locally",
     localDetail: "",
     localUnsupportedDetail: "The local Bridge currently enables XeLaTeX and pdfLaTeX only. Switch engines or use the cloud compiler when another engine is required.",
-    cloudReady: "Cloud compiler connected",
-    offline: "Compiler not connected",
+    cloudReady: "Compiler service ready",
+    offline: "Compilation unavailable; check the device connection",
     offlineDetail: "Neither the local TeX Bridge nor the cloud compiler is available. Editing, autosave, and source download still work.",
     localCompiling: "Compiling locally…",
     localSuccess: "Local compilation succeeded",
@@ -405,7 +405,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
               previewOpen.hidden = false;
             }
             const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            setPreviewStatus('ready', localCopy.previewUpdated + ' · ' + stamp + ' · ' + Math.round(elapsed) + ' ms');
+            setPreviewStatus('ready', localCopy.previewUpdated + ' · ' + (document.documentElement.lang.startsWith('zh') ? '完成时间：' : 'Completed: ') + stamp + ' · ' + (document.documentElement.lang.startsWith('zh') ? '耗时：' : 'Duration: ') + (Math.max(0,elapsed) / 1000).toFixed(2) + 's');
             return true;
           }
 

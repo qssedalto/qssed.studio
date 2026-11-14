@@ -329,7 +329,32 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
         const editor = document.getElementById('tex-editor');
         if (!root || !source || !editor) return;
         let view = null;
-
+        let wordWrapCompartment = null;
+        const wrapPreference = 'aertex.tex.word-wrap.v1';
+        let wrapEnabled = true;
+        try { wrapEnabled = localStorage.getItem(wrapPreference) !== '0'; } catch {}
+        const setNativeWrap = enabled => {
+          source.wrap = enabled ? 'soft' : 'off';
+          source.style.whiteSpace = enabled ? 'pre-wrap' : 'pre';
+          source.style.overflowWrap = enabled ? 'anywhere' : 'normal';
+          editor.classList.toggle('tex-word-wrap-off', !enabled);
+          const assetInput = editor.querySelector('.tex-inline-file-viewer textarea');
+          if (assetInput) {
+            assetInput.wrap = enabled ? 'soft' : 'off';
+            assetInput.style.whiteSpace = enabled ? 'pre-wrap' : 'pre';
+          }
+        };
+        setNativeWrap(wrapEnabled);
+        document.addEventListener('aertex:tex-word-wrap', event => {
+          if(typeof event.detail?.enabled !== 'boolean') return;
+          wrapEnabled = event.detail.enabled;
+          setNativeWrap(wrapEnabled);
+          if (view && wordWrapCompartment && window.__aertexTexWrapExtension) {
+            try { view.dispatch({ effects: wordWrapCompartment.reconfigure(
+              wrapEnabled ? window.__aertexTexWrapExtension : []
+            ) }); } catch (error) { console.warn('Could not update TeX word wrap', error); }
+          }
+        });
 
         // Work code colors have two independently persisted choices.
         // The SITE controls which choice is active; code colors never
@@ -1075,6 +1100,8 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           // Use Lezer highlight tags, not hardcoded CodeMirror class names:
           // the SAME palette works with TeX and every supplementary file.
           const { Compartment, HighlightStyle, syntaxHighlighting, tags } = cm || {};
+          if (Compartment) wordWrapCompartment = new Compartment();
+          window.__aertexTexWrapExtension = EditorView.lineWrapping;
           if (Compartment && HighlightStyle && syntaxHighlighting && tags) {
             codeThemeCompartment = new Compartment();
             makeCodeThemeExtension = () => {
@@ -1097,11 +1124,14 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
           const paletteExtension = () => codeThemeCompartment
             ? [codeThemeCompartment.of(makeCodeThemeExtension())] : [];
 
+          const wrapExtension = () => wordWrapCompartment
+            ? [wordWrapCompartment.of(wrapEnabled ? EditorView.lineWrapping : [])]
+            : (wrapEnabled ? [EditorView.lineWrapping] : []);
           const baseExtensions = [
             basicSetup,
             theme,
             ...paletteExtension(),
-            EditorView.lineWrapping,
+            ...wrapExtension(),
             EditorView.updateListener.of(publishViewToBridge)
           ];
           let resolvedExtensions = baseExtensions;
@@ -1110,7 +1140,7 @@ export function enhanceWorkTexCodeMirror(markup, zh) {
             if (StreamLanguage && stex) {
               try {
                 extensions = [basicSetup, StreamLanguage.define(stex),
-                  theme, ...paletteExtension(), EditorView.lineWrapping, EditorView.updateListener.of(publishViewToBridge)];
+                  theme, ...paletteExtension(), ...wrapExtension(), EditorView.updateListener.of(publishViewToBridge)];
                 view = new EditorView({ parent: host, doc: nativeValue(), extensions });
               } catch (syntaxError) {
                 // Some CDN bundles load a second @codemirror/state version.

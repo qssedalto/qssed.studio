@@ -88,7 +88,7 @@ for (const required of [
   "credentials: 'omit'",
   "targetAddressSpace: 'loopback'",
   "tex.compile",
-  "本机 TeX 已连接",
+  "编译服务正常",
   "source: sourceText",
   "tex-live-preview-frame",
   "PDF 实时预览",
