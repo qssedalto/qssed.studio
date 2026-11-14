@@ -80,7 +80,7 @@ export async function handleTexGithubApi(request, env, action) {
         repository_error: project?.last_error || null,
         // Existing account-wide repositories are NOT silently attached to
         // every project. Legacy deletion has its own explicit action.
-        legacy_repository_name:row?.repo_id&&row?.repo_state==="ready"?row.repo_name:null,
+        legacy_repository_name:row?.repo_id&&["ready","deleting","error"].includes(row?.repo_state)?row.repo_name:null,
         legacy_repository_state:row?.repo_state||"none",
         active: Boolean(row?.active_nonce && project?.active_nonce===row.active_nonce),
         engine: "xelatex"
@@ -567,7 +567,7 @@ async function deleteRepository(request,env,userId,legacy=false) {
 
 async function deleteLegacyGithubRepository(env,userId,body) {
   const row=await readRow(env,userId);
-  if(!row?.repo_id||!row.repo_name||!["ready","deleting"].includes(row.repo_state))
+  if(!row?.repo_id||!row.repo_name||!["ready","deleting","error"].includes(row.repo_state))
     return fail(404,"No legacy account-level repository remains.");
   if(row.active_nonce)return fail(409,"Wait for the account's running build before deleting.");
   if(body?.confirm!=="DELETE "+row.repo_name)
