@@ -1,0 +1,105 @@
+name: Import verified SSO patch
+on:
+  push:
+    branches: [fix/sso-single-refresh-owner-20261114]
+    paths: ['.sso-transfer/manifest.json']
+permissions:
+  contents: write
+concurrency:
+  group: sso-safe-import-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.x'
+      - name: Verify, apply and clean isolated patch
+        run: |
+          python3 <<'PY'
+          import pathlib,json,gzip,base64,hashlib,re,difflib
+          root=pathlib.Path.cwd()
+          manifest=json.loads((root/'.sso-transfer/manifest.json').read_text())
+          assert re.fullmatch(r'[0-9a-f]{64}',manifest['sha256'])
+          assert 1 <= manifest['parts'] <= 12
+          encoded=''.join((root/f".sso-transfer/chunk-{i}.txt").read_text().strip() for i in range(manifest['parts']))
+          assert len(encoded) < 120000
+          raw=gzip.decompress(base64.b64decode(encoded,validate=True))
+          sha=lambda data:hashlib.sha256(data).hexdigest()
+          assert sha(raw)==manifest['sha256']
+          data=json.loads(raw)
+          touched=[]
+          for change in data['changes']:
+            relative=pathlib.PurePosixPath(change['p'])
+            assert not relative.is_absolute() and '..' not in relative.parts
+            assert relative.parts[0] in ('studio','scripts','docs','cash-web','watch-web') or str(relative) in (
+              'auth-sso.js','auth-worker.js','gpt-worker.js','cash-worker.js','watch-worker.js',
+              '.github/workflows/deploy-production.yml')
+            target=root/relative
+            assert target.resolve().is_relative_to(root) and not target.is_symlink()
+            old=target.read_bytes() if target.exists() else None
+            assert (sha(old) if old is not None else None)==change['o'],f"Base changed: {relative}"
+            if 'c' in change:
+              new=change['c']
+            else:
+              new=old.decode('utf-8')
+              for start,end,replacement in reversed(change['e']):
+                assert 0 <= start <= end <= len(new)
+                new=new[:start]+replacement+new[end:]
+            encodedNew=new.encode('utf-8')
+            assert sha(encodedNew)==change['n'],f"Invalid result: {relative}"
+            target.parent.mkdir(parents=True,exist_ok=True)
+            target.write_bytes(encodedNew)
+            touched.append(str(relative))
+          pathlib.Path('/tmp/sso-patch-files.txt').write_text('\n'.join(touched))
+          print('Verified',len(touched),'files; source hashes preserved.')
+          PY
+          while IFS= read -r file; do git add -- "$file"; done < /tmp/sso-patch-files.txt
+          git rm -r -- .sso-transfer/ .github/workflows/sso-audit-export.yml .github/workflows/sso-import.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(auth): centralize refresh and silently renew product access without passwords'
+          git push origin HEAD:refs/heads/fix/sso-single-refresh-owner-20261114
+          git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
+      - name: Build pinned dependencies
+        run: |
+          npm ci --prefix tex-vendor --no-audit --no-fund
+          node tex-vendor/build.mjs
+      - name: Check SSO, existing regressions and real Chromium flows
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p /tmp/sso-evidence
+          failed=0
+          for file in scripts/*-check.mjs scripts/tex-compile-toolbar-browser.mjs scripts/tex-file-chat-popup-browser.mjs scripts/tex-workbench-browser.mjs; do
+            name=$(basename "$file" .mjs)
+            if timeout -k 10 120 node "$file" > "/tmp/sso-evidence/$name.log" 2>&1; then
+              echo "PASS $name" | tee -a /tmp/sso-evidence/summary.txt
+            else
+              echo "FAIL $name" | tee -a /tmp/sso-evidence/summary.txt
+              tail -35 "/tmp/sso-evidence/$name.log"
+              failed=1
+            fi
+          done
+          cat /tmp/sso-evidence/summary.txt >> "$GITHUB_STEP_SUMMARY"
+          exit "$failed"
+      - name: Verify release bundles without deploying
+        if: always()
+        run: |
+          for config in wrangler.auth.jsonc wrangler.work.jsonc wrangler.jsonc wrangler.gpt.jsonc wrangler.cash.jsonc wrangler.watch.jsonc; do
+            npx --yes wrangler@4.136.3 deploy -c "$config" --dry-run --outdir "/tmp/sso-bundle-$(basename "$config")"
+          done
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: sso-import-regression-${{ github.run_id }}
+          path: |
+            /tmp/sso-evidence/
+            /tmp/aertex-workbench-visual/
+            /tmp/aertex-filechat-visual/
+            /tmp/aertex-compile-toolbar-visual/
+          if-no-files-found: warn
+          retention-days: 7
