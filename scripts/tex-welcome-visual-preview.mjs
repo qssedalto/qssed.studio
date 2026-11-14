@@ -28,6 +28,7 @@ for (const zh of [true,false]) {
     "</main><script>",
     "window.addEventListener('load',()=>{const w=document.querySelector('.qtex-welcome'),card=document.querySelectorAll('.qtex-template'),head=document.querySelector('.qtex-welcome-copy h2'),recent=document.getElementById('qtex-recent-list');",
     "const pass=!!w&&card.length===3&&!!head&&!!recent&&",
+    "head.hasAttribute('data-greeting-index')&&head.textContent.trim()!==(document.documentElement.lang.startsWith('zh')?'欢迎回来':'Welcome back')&&",
     "Math.abs(card[0].getBoundingClientRect().width-card[1].getBoundingClientRect().width)<2&&",
     "head.getBoundingClientRect().right<=w.getBoundingClientRect().right+2&&",
     "w.getBoundingClientRect().width<=document.querySelector('.tex-editor-panel').getBoundingClientRect().width+2;",
@@ -39,7 +40,7 @@ for (const zh of [true,false]) {
   html=polishWorkTexVisualTheme(html);
   html=injectWorkTexHomeLinks(html,zh?"zh-cn":"en-us","https://qsseda.com");
   html=polishWorkTexViewportEdges(html);
-  html=polishWorkTexWelcome(html);
+  html=polishWorkTexWelcome(html,{username:zh?"天国":"qssedalto"});
   const file=path.join(dir,zh?"welcome-zh.html":"welcome-en.html");
   fs.writeFileSync(file,html,"utf8");
   if(!html.includes("qsseda-work-tex-welcome-clean"))throw Error("Isolated stylesheet missing");
