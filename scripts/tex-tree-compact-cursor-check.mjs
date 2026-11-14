@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import fs from 'node:fs';
+import { WORK_TEX_EXPLORER_TREE } from '../studio/ui-work-tex-explorer-tree.js';
+import { enhanceWorkTexUiPolish } from '../studio/ui-work-tex-ui-polish.js';
+
+const code=WORK_TEX_EXPLORER_TREE.replace('__ZH__','true');
+new vm.Script(code);
+assert(code.includes('class="tex-tree-document-icon"'), 'Rendered project files need outlined gray SVG');
+assert(code.includes('M3.4 1.4H15.1L22.3 8.6'), 'Use document outline with folded corner');
+assert(code.includes('M8.1 12.9H17.6 M8.1 16.7H16.1 M8.1 20.4H17.6'), 'Keep the three text lines');
+const expand=code.slice(code.indexOf('  async function expand('),code.indexOf('  let initialExpansionHandled',code.indexOf('  async function expand(')));
+assert(expand.includes('container.replaceChildren()'));
+assert(expand.includes('markTreeBusy(id,true)')&&expand.includes('finally{container.removeAttribute'), 'Busy cursor must stop even after an error');
+assert(expand.includes("container.setAttribute('aria-busy','true')"), 'Assistive tech must receive busy state');
+assert(!expand.includes('正在加载项目文件')&&!expand.includes('Loading project files'), 'No in-page loading placeholder on expansion');
+const source=fs.readFileSync(new URL('../studio/ui-work-tex-explorer-tree.js',import.meta.url),'utf8');
+assert(source.includes("if(ev.pointerType==='mouse')ev.preventDefault()"), 'Mouse clicks should not leave huge focus outlines');
+const html=enhanceWorkTexUiPolish('<html><head></head><body><div class="tex-work-app" data-tex-root></div></body></html>',true);
+assert(html.includes('min-height:30px!important;height:30px!important'), 'File and folder rows should have uniform height');
+assert(html.includes('margin:0 0 1px 14px!important')&&html.includes('margin:0 0 0 13px!important'), 'Each level must have consistent compact indent');
+assert(html.includes('cursor:progress!important'), 'Use native busy-in-background mouse cursor');
+assert(html.includes('color:#9fa5af!important')&&html.includes('color:#606770!important'), 'Gray icons must be legible in both themes');
+const svg=fs.readFileSync(new URL('../studio/assets/tex-document-outline.svg',import.meta.url),'utf8');
+assert(svg.includes('viewBox="0 0 24 26"')&&svg.includes('stroke="#9FA5AF"'));
+console.log('Compact Windows tree, progress cursor, SVG and accessible expansion verified.');
