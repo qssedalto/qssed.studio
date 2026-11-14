@@ -280,7 +280,7 @@ for (const [hour, expected] of [
   assert(actual.text===expected, "Hour "+hour+" must produce "+expected);
 }
 assert(selectWorkTexGreeting({zh:true,username:"普通用户",localHour:19,random:()=>.999}).text ===
-  "今晚想做些什么，普通用户？", "Chinese greeting must remain fully localized.");
+  "接下来想做些什么，普通用户？", "Chinese greeting must remain fully localized.");
 assert(selectWorkTexGreeting({zh:false,username:"qssedalto",localHour:19,random:()=>.999}).text ===
   "Good evening, qssedalto!", "English greeting must use the logged-in username.");
 assert(selectWorkTexGreeting({zh:true,username:"天国",localHour:19,previousIndex:0,random:()=>0}).index !== 0,
