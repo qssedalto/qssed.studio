@@ -194,6 +194,27 @@ for(const invalid of [
   assert.equal(isTexGithubManagedRepositoryName(invalid),false,
     "Unsafe or unrelated repository name: "+invalid);
 }
+// A failing GitHub workflow install must tell the owner what failed, rather
+// than claiming the entire GitHub service is unavailable.
+assert(api.includes("let provisioningStep=\"locate\"") &&
+  api.includes('provisioningStep="workflow"') &&
+  api.includes('last_error:diagnostic') &&
+  api.includes('return fail(Number(error?.status)||503,diagnostic)'),
+  "Creation/retry failures must persist and return their exact safe stage");
+const diagnosticStart=api.indexOf("function githubProvisionDiagnostic(stage,error){");
+const diagnosticEnd=api.indexOf("function httpError(",diagnosticStart);
+assert(diagnosticStart>0&&diagnosticEnd>diagnosticStart,
+  "Authenticated diagnostics need a fixed allowlisted reason mapper");
+const describe=new Function(api.slice(diagnosticStart,diagnosticEnd)+
+  "\nreturn githubProvisionDiagnostic;")();
+assert.match(describe("workflow",{code:"github_403"}),/Workflows: Read and write/,
+  "GitHub workflow permission failures must be actionable");
+assert.match(describe("identity",{code:"github_404"}),/cannot find this repository/,
+  "An inaccessible repository must not be misreported as a global outage");
+assert.match(describe("source",{code:"github_401"}),/credential/,
+  "Expired GitHub credentials must be distinguishable from service downtime");
+assert.doesNotMatch(describe("workflow",{code:"private-secret-information"}),/private-secret-information/,
+  "Untrusted error codes must not appear in user-visible diagnostics");
 assert(api.includes("isTexGithubManagedRepositoryName(repoName)"),
   "GitHub operations must use the shared managed repository name validator");
 const pathStart=api.indexOf("function githubRepoPath(env, repoName) {");
