@@ -276,6 +276,8 @@ assert(texApp.includes('data-tex-start-template="blank"') && texApp.includes('da
 assert(texApp.includes('id="qtex-recent-list"') && texApp.includes('class="qtex-recent"'), "Welcome dashboard must include a recent-project list.");
 assert(texWelcome.includes('qsseda-work-tex-recent-runtime') && texWelcome.includes('current.click()'), "Recent projects must reuse the existing authenticated editor navigation.");
 assert(entry.includes('polishWorkTexWelcome(polishWorkTexViewportEdges(markup), { username: workGreetingName })'), "Welcome must receive authenticated server-side username.");
+assert(entry.includes('enhanceWorkTexComposer(markup, zh)'), "Work TeX must include the interactive ChatGPT-style composer.");
+assert(entry.includes('ui-work-tex-composer.js'), "Composer must have a dedicated isolated module.");
 assert(entry.includes('shellProductLinks.adminHref ? "天国"'), "Admin greeting must use the verified role override, not username matching.");
 assert(texWelcome.includes("qsseda-work-tex-greeting-runtime") && texApp.includes('id="qtex-welcome-greeting"'), "Localized rotating greeting runtime must mount.");
 assert(texApp.includes('startDetail: "选择一种结构，直接进入写作与排版。"'), "Chinese TeX start copy must stay concise and task-focused.");
