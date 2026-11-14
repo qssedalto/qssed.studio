@@ -121,7 +121,7 @@ export async function handleTexGithubApi(request, env, action) {
       action, status, user_id: userId, code: String(error?.code || "backend").slice(0, 40)
     });
     const detail=error?.code==="github_repo_delete_permission_denied" ?
-      "GitHub denied repository deletion. The operator token requires repository Administration write/delete permission, and the organization must allow deletion. The repository remains linked; retry after fixing permissions." :
+      "GitHub denied repository deletion. Fine-grained tokens require Repository Administration: write; classic PATs require delete_repo; organizations may block deletion. The repository is still linked. Update the operator token/organization permissions, then retry." :
       error?.code==="github_404" && (action==="repository" || action==="legacy-repository") && request.method==="DELETE" ?
       "GitHub repository is not visible to the operator token. Deletion cannot be confirmed: the repository may still exist. No local binding was removed; verify GitHub access before retrying." :
       publicError(status);
@@ -540,7 +540,9 @@ async function deleteRepository(request,env,userId,legacy=false) {
   // An explicit delete cancels in-flight GitHub jobs for THIS repo. Refusing
   // the delete until an account-wide quota nonce clears trapped users in a
   // permanent loop when the polling tab had already closed.
-  await verifyOwner(env);
+  // Validate the exact persisted GitHub repository ID and owner below.
+  // Do not gate DELETE on GET /user: GitHub App installation tokens can
+  // have Administration:write access but cannot use the user profile API.
   await writeTexGithubProjectRepository(env,userId,documentId,{
     repo_state:"deleting",last_error:null
   });
@@ -623,7 +625,8 @@ async function deleteLegacyGithubRepository(env,userId,body) {
   const alreadyDeleted=receipt?.confirmed===true&&receipt?.user_id===userId&&
     String(receipt.repo_id)===String(row.repo_id)&&receipt.repo_name===row.repo_name;
   if(!alreadyDeleted){
-    await verifyOwner(env);
+    // Repository owner/name/ID are verified against GitHub before DELETE.
+    // GET /user is not needed and rejects valid GitHub App install tokens.
     await updateRow(env,userId,{repo_state:"deleting"});
     const repoPath=githubRepoPath(env,row.repo_name);
     try{
