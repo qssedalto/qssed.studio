@@ -1,5 +1,5 @@
 {
   "parts": 4,
   "sha256": "0b52ea163d90df26c003a0bbce6d163eb373997692bb92cda064740745c875ba",
-  "retry": "valid YAML workflow"
+  "retry": "reconstructed and individually checksummed segments"
 }
