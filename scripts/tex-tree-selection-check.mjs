@@ -65,7 +65,7 @@ const openProjects=new Set(),openFolders=new Set();
 const script=body+"\nsyncSelectedTree(true);";
 const passive=body+"\nsyncSelectedTree();";
 vm.runInNewContext(script,{activeId:()=>root.dataset.texCollaborationDocumentId,selected,
-  list,openProjects,openFolders},{timeout:1000});
+  list,openProjects,openFolders,persistExpansion:()=>{}},{timeout:1000});
 assert(file.classList.contains("is-active"));
 assert(!main.classList.contains("is-active"));
 assert.equal(file.attrs["aria-current"],"true");
@@ -76,15 +76,18 @@ assert(openProjects.has("project-1"));
 assert(openFolders.has("project-1/chapters") && openFolders.has("project-1/chapters/2026"));
 box.hidden=true;aSub.hidden=true;bSub.hidden=true;
 vm.runInNewContext(passive,{activeId:()=>root.dataset.texCollaborationDocumentId,selected,
-  list,openProjects,openFolders},{timeout:1000});
+  list,openProjects,openFolders,persistExpansion:()=>{}},{timeout:1000});
 assert(box.hidden&&aSub.hidden&&bSub.hidden,"Passive refresh must not reopen collapsed project folders");
 selected.name="main.tex";
 vm.runInNewContext(passive,{activeId:()=>root.dataset.texCollaborationDocumentId,selected,
-  list,openProjects,openFolders},{timeout:1000});
+  list,openProjects,openFolders,persistExpansion:()=>{}},{timeout:1000});
 assert(main.classList.contains("is-active"));
 assert(!file.classList.contains("is-active"));
 assert(!a.classList.contains("is-active-path") && !b.classList.contains("is-active-path"));
 assert(code.includes("sub.hidden=!openFolders.has(key)"));
-assert(code.includes("if(openProjects.has(id)||id===initialId)arrowNode.click();"));
+assert(code.includes("if(openProjects.has(id))arrowNode.click();"),"Only previously opened project folders may expand.");
+assert(code.includes("type==='reload'") && code.includes("saved.pathname!==window.location.pathname"),"State must be restored only on same-route reload.");
+assert(code.includes("if(link)resetExpansion();"),"Home navigation must clear expansion.");
+assert(!code.includes("initialExpansionHandled"),"Fresh visits must never auto-open an arbitrary project.");
 assert(!code.includes("openProjects.size===0&&id===activeId()"));
 console.log("Independent expansion and passive selection refresh passed.");
