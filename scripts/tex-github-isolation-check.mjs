@@ -192,6 +192,26 @@ assert.equal(await readTexGithubProjectRepository(fakeEnv,userA,projectA),null);
 assert.equal((await readTexGithubProjectRepository(fakeEnv,userA,projectB)).repo_id,5678,
   "Deleting one project's binding must not delete another project's repository.");
 
+// Regression: an account-wide active_nonce can belong to a different Work
+// project, and an old GitHub DELETE could succeed before SQL cleanup failed.
+assert(!api.includes('if(row.active_nonce)return fail(409,"Wait for the account'), 
+  "A stale or unrelated compilation reservation must not permanently lock legacy deletion");
+assert(api.includes('binding.active_nonce===row.active_nonce') ||
+       api.includes('latestRow.active_nonce===binding.active_nonce'),
+  "Project deletion may release quota only when the nonce belongs to that project");
+assert(api.includes('legacyDeleteReceiptKey(userId)') &&
+       api.includes('await writeLegacyDeleteReceipt(env,userId,row)') &&
+       api.includes('if(!alreadyDeleted)') &&
+       api.includes('const alreadyDeleted=receipt?.confirmed===true'),
+  "After a confirmed remote delete, retry must finish local cleanup without a second GitHub DELETE");
+assert(api.includes('delete_confirmed:true') &&
+       api.includes('if(!binding.delete_confirmed)') &&
+       api.includes('cleanup_pending:true'),
+  "Project repository deletion must survive an R2 cleanup outage with a verified receipt");
+assert(html.includes('copy.deleteMismatch') && html.includes('copy.deleteCancelled') &&
+       html.includes('copy.cleanupPending') && html.includes('existingForCleanup'),
+  "Deleting, canceling and retrying repositories must have visible feedback even without quota approval");
+
 assert(schema.includes("user_id uuid primary key"), "one quota allocation per user must remain independent of project repositories");
 assert(schema.includes("enable row level security"), "user allocations must enable RLS");
 assert(/revoke all on public\.tex_github_allowances from PUBLIC, anon, authenticated/.test(schema), "no direct user table access");
