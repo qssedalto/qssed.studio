@@ -61,7 +61,13 @@ window.addEventListener('aertex:tex-local-conflict',event=>{
   dirty=true;setSaveState(copy.unsaved,true);showMessage(event.detail.message||copy.error,true);
 });
 window.addEventListener('beforeunload',event=>{
-  if(!dirty&&!saveInFlight)return;
+  // An async request can still be settling after its content is already
+  // identical to the authoritative record; don't show a false warning.
+  const changed=Boolean(activeDocument && (
+    title.value!==String(activeDocument.title||'') ||
+    engine.value!==String(activeDocument.engine||'xelatex') ||
+    source.value!==String(activeDocument.source||'')));
+  if(!changed)return;
   event.preventDefault();event.returnValue='';
 });
 `;
