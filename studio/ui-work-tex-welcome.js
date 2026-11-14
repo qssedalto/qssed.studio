@@ -1,333 +1,180 @@
-// Single-source welcome page presentation. Uses its own qtex classes so
-// legacy TeX editor/preview selectors cannot resize or duplicate elements.
+// Clean Work TeX welcome dashboard. Scoped to the placeholder so editor styling is unaffected.
 export function polishWorkTexWelcome(markup) {
   const source = String(markup || "");
   if (!source.includes('class="qtex-welcome"') || !source.includes("</body>")) return source;
   const style = `<style id="qsseda-work-tex-welcome-clean">
 
 body.os-shell:has(.tex-work-app) .tex-editor-placeholder:has(.qtex-welcome){
-  display:flex!important;
-  flex-direction:column!important;
-  justify-content:flex-start!important;
-  align-items:center!important;
-  gap:12px!important;
-  width:100%!important;
-  height:100%!important;
-  min-height:0!important;
-  overflow-x:hidden!important;
-  overflow-y:auto!important;
-  padding:clamp(35px,6vh,88px) clamp(20px,3.2vw,56px) 40px!important;
-  background:var(--work-panel)!important;
-  text-align:left!important;
-  container:qtex / inline-size;
+  display:block!important;width:100%!important;height:100%!important;min-height:0!important;
+  padding:clamp(34px,5.5vh,76px) clamp(24px,6vw,90px) 80px!important;
+  overflow-x:hidden!important;overflow-y:auto!important;background:var(--work-panel,var(--surface))!important;
+  text-align:left!important;container:qtex / inline-size;
 }
 body.os-shell:has(.tex-work-app) .qtex-welcome,
-body.os-shell:has(.tex-work-app) .qtex-welcome *{
-  box-sizing:border-box;
-}
+body.os-shell:has(.tex-work-app) .qtex-welcome *{box-sizing:border-box}
 body.os-shell:has(.tex-work-app) .qtex-welcome{
-  width:min(100%,1020px);
-  min-width:0;
-  flex:0 0 auto;
-  display:grid;
-  gap:clamp(20px,2.2vw,29px);
-  color:var(--text);
-  font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  font-feature-settings:"ss01" on;
-  -webkit-font-smoothing:antialiased;
-  text-align:left;
+  width:min(100%,860px);margin-inline:auto;display:flex;flex-direction:column;gap:0;
+  color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;text-align:left;
 }
-body.os-shell:has(.tex-work-app) .qtex-welcome-bar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  padding-bottom:15px;
-  border-bottom:1px solid var(--work-line);
-  font:700 10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;
-  letter-spacing:.12em;
-  color:var(--muted);
-}
+body.os-shell:has(.tex-work-app) .qtex-welcome-hero{display:block;margin:0 0 clamp(28px,4.2vh,46px);padding:0}
+body.os-shell:has(.tex-work-app) .qtex-welcome-copy{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
 body.os-shell:has(.tex-work-app) .qtex-welcome-brand{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  white-space:nowrap;
-  color:var(--text);
+  display:inline-flex;align-items:center;gap:9px;margin-bottom:28px;
+  color:var(--muted);font:650 12px/1.4 ui-sans-serif,"Segoe UI",sans-serif;
+  letter-spacing:.005em;
 }
-body.os-shell:has(.tex-work-app) .qtex-welcome-brand i{
-  display:inline-block;
-  width:9px;height:9px;
-  flex:0 0 9px;
-  border-radius:2px;
-  background:#cbf476;
-  box-shadow:12px 0 0 #a9c6ff;
-  margin-right:13px;
-  transform:rotate(-9deg);
-}
-body.os-shell:has(.tex-work-app) .qtex-welcome-brand>span{color:var(--quiet)}
-body.os-shell:has(.tex-work-app) .qtex-welcome-number{color:var(--quiet)}
-body.os-shell:has(.tex-work-app) .qtex-welcome-hero{
-  display:grid;
-  grid-template-columns:minmax(0,1.15fr) minmax(270px,.85fr);
-  align-items:center;
-  gap:clamp(28px,3vw,50px);
-}
-body.os-shell:has(.tex-work-app) .qtex-welcome-copy{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:13px;
-  min-width:0;
-}
-body.os-shell:has(.tex-work-app) .qtex-welcome-kicker{
-  color:var(--muted);
-  font:650 10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;
-  letter-spacing:.08em;
-}
+body.os-shell:has(.tex-work-app) .qtex-brand-dot{display:block;width:8px;height:8px;border-radius:3px;background:var(--primary,#4875df)}
+body.os-shell:has(.tex-work-app) .qtex-brand-divider{opacity:.5}
 body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2{
-  margin:0;
-  font:820 clamp(34px,3.55vw,56px)/1.16 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-  letter-spacing:-.068em;
-  text-wrap:balance;
-}
-body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2>span,
-body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2>em{
-  display:block;
+  margin:0!important;color:var(--text)!important;
+  font:740 clamp(34px,3.6vw,48px)/1.25 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif!important;
+  letter-spacing:-.045em!important;text-wrap:balance;
 }
 body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2>span{
-  font:inherit!important;
-  font-size:inherit!important;
-  line-height:inherit!important;
-  letter-spacing:inherit!important;
-  color:var(--text)!important;
-}
-body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2>em{
-  color:#1b52ec;
-  font-style:normal;
+  display:inline!important;font:inherit!important;letter-spacing:inherit!important;color:inherit!important;
 }
 body.os-shell:has(.tex-work-app) .qtex-welcome-copy p{
-  max-width:40ch;
-  margin:0;
-  color:var(--muted);
-  font:450 clamp(12px,1.03vw,15px)/1.8 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  max-width:none;margin:11px 0 0;color:var(--muted)!important;
+  font:450 14px/1.7 Inter,ui-sans-serif,"Segoe UI","PingFang SC",sans-serif!important;
 }
-body.os-shell:has(.tex-work-app) .qtex-welcome-art{
-  display:grid;
-  align-items:center;
-  min-width:0;
-  padding:12px 0 15px;
+body.os-shell:has(.tex-work-app) .qtex-templates{display:flex;flex-direction:column;gap:13px;min-width:0}
+body.os-shell:has(.tex-work-app) .qtex-templates-header,
+body.os-shell:has(.tex-work-app) .qtex-recent-heading{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0;margin:0;
 }
-body.os-shell:has(.tex-work-app) .qtex-paper{
-  width:100%;
-  max-width:398px;
-  padding:19px 20px 18px;
-  border:1px solid var(--work-line);
-  border-radius:14px;
-  background:var(--work-card);
-  box-shadow:0 16px 40px rgba(17,23,30,.07),0 2px 5px rgba(17,23,30,.025);
-  transform:rotate(1.25deg);
-}
-body.os-shell:has(.tex-work-app) .qtex-paper-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  border-bottom:1px solid var(--work-line);
-  margin-bottom:17px;
-  padding-bottom:13px;
-  font:650 11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;
-  color:var(--muted);
-}
-body.os-shell:has(.tex-work-app) .qtex-paper-header>span:first-child{display:inline-flex;gap:8px;align-items:center}
-body.os-shell:has(.tex-work-app) .qtex-paper-header i{width:7px;height:7px;border-radius:50%;background:#4dc97b}
-body.os-shell:has(.tex-work-app) .qtex-code{
-  display:grid;
-  grid-template-columns:24px minmax(0,1fr);
-  align-items:center;
-  gap:8px;
-  padding:6px 0;
-  min-width:0;
-}
-body.os-shell:has(.tex-work-app) .qtex-code>span{
-  color:var(--quiet);
-  font:500 10px/1.5 ui-monospace,Consolas,monospace;
-}
-body.os-shell:has(.tex-work-app) .qtex-code code{
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  color:var(--text);
-  font:600 clamp(11px,.88vw,13px)/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;
-}
-body.os-shell:has(.tex-work-app) .qtex-code:nth-of-type(3) code{color:#1b52ec}
-body.os-shell:has(.tex-work-app) .qtex-paper-bottom{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:13px;
-  margin-top:18px;
-  padding:10px;
-  border-radius:8px;
-  color:#1c2e18;
-  background:#cbf476;
-  font:750 11px/1.3 ui-monospace,SFMono-Regular,Consolas,monospace;
-  letter-spacing:.07em;
-}
-body.os-shell:has(.tex-work-app) .qtex-paper-bottom span:nth-child(2){font-size:16px}
-body.os-shell:has(.tex-work-app) .qtex-templates{
-  display:grid;
-  gap:14px;
-  min-width:0;
-}
-body.os-shell:has(.tex-work-app) .qtex-templates-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding-top:16px;
-  border-top:1px solid var(--work-line);
-}
-body.os-shell:has(.tex-work-app) .qtex-templates-header strong{
-  font:760 16px/1.4 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif;
-  letter-spacing:-.035em;
-}
-body.os-shell:has(.tex-work-app) .qtex-templates-header>span{
-  color:var(--quiet);
-  font:650 10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;
-  letter-spacing:.08em;
+body.os-shell:has(.tex-work-app) .qtex-templates-header strong,
+body.os-shell:has(.tex-work-app) .qtex-recent-heading strong{
+  font:700 15px/1.4 Inter,ui-sans-serif,"Segoe UI","PingFang SC",sans-serif;letter-spacing:-.025em;color:var(--text);
 }
 body.os-shell:has(.tex-work-app) .qtex-template-grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:13px;
-  min-width:0;
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
 }
 body.os-shell:has(.tex-work-app) .qtex-template{
-  --qtex-accent:#cbf476;
-  appearance:none;
-  position:relative;
-  display:flex;
-  flex-direction:column;
-  align-items:stretch;
-  justify-content:space-between;
-  gap:24px;
-  min-width:0;
-  min-height:152px;
-  padding:18px 19px 17px;
-  border:1px solid var(--work-line);
-  border-radius:14px;
-  background:var(--work-card);
-  color:var(--text);
-  text-align:left;
-  box-shadow:0 8px 24px rgba(17,23,30,.025);
-  cursor:pointer;
-  overflow:hidden;
-  -webkit-tap-highlight-color:transparent;
-  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+  appearance:none;display:grid;grid-template-columns:36px minmax(0,1fr) 14px;
+  align-items:center;gap:12px;min-width:0;min-height:100px;margin:0;
+  padding:16px 14px!important;border:1px solid var(--work-line,var(--border))!important;
+  border-radius:13px!important;background:var(--work-card,var(--surface))!important;
+  text-align:left;box-shadow:none!important;color:var(--text);cursor:pointer;
+  transition:border-color .15s,background-color .15s,transform .15s;
 }
-body.os-shell:has(.tex-work-app) .qtex-template::before{
-  content:"";
-  position:absolute;
-  left:0;top:0;right:0;
-  height:4px;
-  background:var(--qtex-accent);
-}
-body.os-shell:has(.tex-work-app) .qtex-template-article{--qtex-accent:#c9b2ff}
-body.os-shell:has(.tex-work-app) .qtex-template-math{--qtex-accent:#a9c6ff}
-body.os-shell:has(.tex-work-app) .qtex-template-top{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-}
+body.os-shell:has(.tex-work-app) .qtex-template::before{display:none!important}
 body.os-shell:has(.tex-work-app) .qtex-template-icon{
-  display:grid;
-  place-items:center;
-  width:40px;height:40px;
-  border-radius:10px;
-  background:var(--qtex-accent);
-  color:#17201c;
-  font:750 21px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+  display:grid;place-items:center;width:36px;height:36px;border-radius:10px;
+  background:color-mix(in srgb,var(--primary,#4774df) 9%,var(--work-card,var(--surface)));
+  color:var(--text);font-size:18px;
 }
-body.os-shell:has(.tex-work-app) .qtex-template-arrow{
-  font:600 16px/1 ui-sans-serif,sans-serif;
-  color:var(--quiet);
-}
-body.os-shell:has(.tex-work-app) .qtex-template-info{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  min-width:0;
-}
-body.os-shell:has(.tex-work-app) .qtex-template-info>strong{
-  font:770 clamp(15px,1.1vw,19px)/1.4 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif;
-  letter-spacing:-.04em;
-  color:var(--text)!important;
+body.os-shell:has(.tex-work-app) .qtex-template-icon svg{display:block;width:20px;height:20px;stroke:none}
+body.os-shell:has(.tex-work-app) .qtex-template-info{display:flex;flex-direction:column;gap:5px;min-width:0}
+body.os-shell:has(.tex-work-app) .qtex-template-info strong{
+  color:var(--text)!important;font:680 13px/1.4 Inter,ui-sans-serif,"Segoe UI","PingFang SC",sans-serif!important;
+  white-space:nowrap;
 }
 body.os-shell:has(.tex-work-app) .qtex-template-info>span{
-  color:var(--muted);
-  font:450 11px/1.6 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif;
-  text-wrap:pretty;
+  color:var(--muted)!important;font:450 11px/1.5 Inter,ui-sans-serif,"Segoe UI","PingFang SC",sans-serif!important;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+body.os-shell:has(.tex-work-app) .qtex-template-arrow{width:14px;height:14px;flex:0 0 14px;color:var(--muted);opacity:.8}
 body.os-shell:has(.tex-work-app) .qtex-template:hover{
-  border-color:color-mix(in srgb,var(--qtex-accent) 65%,var(--work-line));
-  box-shadow:0 13px 30px rgba(17,23,30,.07);
-  transform:translateY(-3px);
+  border-color:color-mix(in srgb,var(--primary) 35%,var(--work-line,var(--border)))!important;
+  background:color-mix(in srgb,var(--primary) 3%,var(--work-card,var(--surface)))!important;
+  transform:translateY(-1px);
 }
-body.os-shell:has(.tex-work-app) .qtex-template:focus-visible{
-  outline:3px solid var(--primary);
-  outline-offset:2px;
+body.os-shell:has(.tex-work-app) .qtex-template:focus-visible,
+body.os-shell:has(.tex-work-app) .qtex-recent-item:focus-visible{
+  outline:2px solid var(--primary)!important;outline-offset:3px!important;
 }
-body.os-shell:has(.tex-work-app) .qtex-welcome-footer{
-  display:flex;
-  justify-content:flex-start;
-  gap:22px;
-  flex-wrap:wrap;
-  color:var(--quiet);
-  font:600 10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;
-  letter-spacing:.03em;
+body.os-shell:has(.tex-work-app) .qtex-recent{display:flex;flex-direction:column;gap:13px;margin-top:38px}
+body.os-shell:has(.tex-work-app) .qtex-recent-heading span{font-size:11px;color:var(--muted)}
+body.os-shell:has(.tex-work-app) .qtex-recent-list{
+  display:flex;flex-direction:column;overflow:hidden;
+  border:1px solid var(--work-line,var(--border));border-radius:14px;
+  background:var(--work-card,var(--surface));
 }
-body.os-shell:has(.tex-work-app) .qtex-welcome-footer>span::before{
-  content:"";
-  display:inline-block;
-  width:5px;height:5px;
-  margin-right:8px;
-  vertical-align:2px;
-  border-radius:50%;
-  background:var(--qtex-green,#8ab978);
+body.os-shell:has(.tex-work-app) .qtex-recent-item{
+  display:grid;grid-template-columns:22px minmax(0,1fr) 18px;align-items:center;gap:13px;
+  min-height:69px;padding:12px 18px;color:var(--text);text-decoration:none!important;
+  border-bottom:1px solid var(--work-line,var(--border));transition:background .15s;
 }
-@container qtex (max-width:790px){
-  body.os-shell:has(.tex-work-app) .qtex-welcome-hero{grid-template-columns:1fr!important}
-  body.os-shell:has(.tex-work-app) .qtex-welcome-art{display:none!important}
-  body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2{font-size:clamp(31px,5.5cqw,48px)!important}
-}
-@container qtex (max-width:615px){
-  body.os-shell:has(.tex-work-app) .qtex-template-grid{grid-template-columns:1fr!important;gap:10px!important}
-  body.os-shell:has(.tex-work-app) .qtex-template{
-    min-height:103px!important;
-    gap:8px!important;
-    padding:13px 15px!important;
-  }
-  body.os-shell:has(.tex-work-app) .qtex-template-icon{width:32px;height:32px;font-size:17px}
-  body.os-shell:has(.tex-work-app) .qtex-welcome-bar{gap:8px}
-  body.os-shell:has(.tex-work-app) .qtex-welcome-number{display:none}
-  body.os-shell:has(.tex-work-app) .qtex-welcome{gap:18px}
+body.os-shell:has(.tex-work-app) .qtex-recent-item:last-child{border-bottom:0}
+body.os-shell:has(.tex-work-app) .qtex-recent-item:hover{background:color-mix(in srgb,var(--primary) 5%,var(--work-card,var(--surface)))}
+body.os-shell:has(.tex-work-app) .qtex-recent-icon{width:21px;height:21px;display:block;color:var(--muted)}
+body.os-shell:has(.tex-work-app) .qtex-recent-body{min-width:0;display:flex;flex-direction:column;gap:5px}
+body.os-shell:has(.tex-work-app) .qtex-recent-body strong{font-size:13px;font-weight:640;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+body.os-shell:has(.tex-work-app) .qtex-recent-body small{font-size:11px;color:var(--muted);font-weight:400}
+body.os-shell:has(.tex-work-app) .qtex-recent-chevron{width:14px;height:14px;opacity:.7;color:var(--muted)}
+body.os-shell:has(.tex-work-app) .qtex-recent-empty{padding:25px 18px;color:var(--muted);font-size:12px;text-align:center}
+@container qtex (max-width:700px){
+  body.os-shell:has(.tex-work-app) .qtex-template-grid{grid-template-columns:1fr;gap:9px}
+  body.os-shell:has(.tex-work-app) .qtex-template{min-height:76px;padding:12px 14px!important}
+  body.os-shell:has(.tex-work-app) .qtex-recent{margin-top:30px}
 }
 @media(max-width:760px){
-  body.os-shell:has(.tex-work-app) .tex-editor-placeholder:has(.qtex-welcome){
-    justify-content:flex-start!important;
-    min-height:100%!important;
-    padding:26px 18px 80px!important;
-  }
+  body.os-shell:has(.tex-work-app) .tex-editor-placeholder:has(.qtex-welcome){padding:28px 17px 70px!important}
+  body.os-shell:has(.tex-work-app) .qtex-welcome-brand{margin-bottom:22px}
+  body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2{font-size:33px!important}
+  body.os-shell:has(.tex-work-app) .qtex-recent-heading span{display:none}
 }
-:root[data-theme="dark"] body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2>em{color:#99b6ff}
 @media(prefers-reduced-motion:reduce){
-  body.os-shell:has(.tex-work-app) .qtex-template{transition:none}
+  body.os-shell:has(.tex-work-app) .qtex-template,body.os-shell:has(.tex-work-app) .qtex-recent-item{transition:none}
   body.os-shell:has(.tex-work-app) .qtex-template:hover{transform:none}
 }
 
 </style>`;
-  return source.replace("</body>", style + "</body>");
+  const script = `
+<script id="qsseda-work-tex-recent-runtime">
+(() => {
+  const host=document.getElementById("qtex-recent-list");
+  const sidebar=document.getElementById("tex-document-list");
+  if(!host||!sidebar)return;
+  const zh=(document.documentElement.lang||"").toLowerCase().startsWith("zh");
+  const icon='<svg class="qtex-recent-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h4.2l2.1 2.3H18a2.5 2.5 0 0 1 2.5 2.5v8A2.7 2.7 0 0 1 17.8 20H6.2a2.7 2.7 0 0 1-2.7-2.7Z" stroke="currentColor" stroke-width="1.65" stroke-linejoin="round"/></svg>';
+  const arrow='<svg class="qtex-recent-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 5 7 7-7 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  let lastSignature="",scheduled=false;
+  function update(){
+    scheduled=false;
+    const rows=Array.from(sidebar.querySelectorAll(':scope > .tex-document-item[data-tex-document-id]'));
+    const signature=rows.map(row=>[row.dataset.texDocumentId,row.querySelector('strong')?.textContent||'',row.querySelector('time')?.textContent||''].join("|")).join(";");
+    if(signature===lastSignature)return;
+    lastSignature=signature;
+    host.replaceChildren();
+    if(!rows.length){
+      const empty=document.createElement("div");
+      empty.className="qtex-recent-empty";
+      empty.textContent=zh?"还没有最近使用的项目。创建一个项目即可开始。":"No recent projects yet. Create one to get started.";
+      host.append(empty);return;
+    }
+    for(const row of rows.slice(0,6)){
+      const link=document.createElement("a");
+      link.className="qtex-recent-item";
+      link.href=row.href||"#";
+      link.dataset.texRecentId=row.dataset.texDocumentId;
+      const body=document.createElement("span");
+      body.className="qtex-recent-body";
+      const title=document.createElement("strong");
+      title.textContent=row.querySelector("strong")?.textContent|| (zh?"未命名项目":"Untitled project");
+      const meta=document.createElement("small");
+      const time=row.querySelector("time")?.textContent?.trim()||"";
+      meta.textContent=time?(zh?"最近编辑 · ":"Edited · ")+time:(zh?"TeX 项目":"TeX project");
+      body.append(title,meta);
+      link.innerHTML=icon;
+      link.append(body);
+      link.insertAdjacentHTML("beforeend",arrow);
+      link.addEventListener("click",event=>{
+        if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+        const current=Array.from(sidebar.querySelectorAll(':scope > .tex-document-item[data-tex-document-id]'))
+          .find(item=>item.dataset.texDocumentId===link.dataset.texRecentId);
+        if(!current)return;
+        event.preventDefault();
+        current.click();
+      });
+      host.append(link);
+    }
+  }
+  const queue=()=>{if(scheduled)return;scheduled=true;window.requestAnimationFrame(update)};
+  new MutationObserver(queue).observe(sidebar,{childList:true,subtree:true,characterData:true});
+  queue();
+})();
+</script>`;
+  return source.replace("</body>", style + script + "</body>");
 }
