@@ -317,7 +317,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       const copy=zh?{
         title:'过滤条件',type:'包括类型',project:'项目',folder:'文件夹',file:'文件',
         status:'保存状态',saved:'已保存',unsaved:'未保存',created:'创建时间不早于',
-        modified:'最后修改不早于',size:'大小不超过 (MB)',
+        modified:'最后修改不早于',size:'大小不超过',
         order:'排序',newest:'最近修改',name:'名称',
         reset:'重置',done:'完成',searching:'正在检索项目文件',
         noResults:'没有找到符合条件的项目或文件',unknown:'未记录',
@@ -325,7 +325,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       }:{
         title:'Filters',type:'Include types',project:'Projects',folder:'Folders',file:'Files',
         status:'Save status',saved:'Saved',unsaved:'Unsaved',created:'Created since',
-        modified:'Modified since',size:'Maximum size (MB)',
+        modified:'Modified since',size:'Maximum size',
         order:'Sort',newest:'Recently modified',name:'Name',
         reset:'Reset',done:'Done',searching:'Searching project files',
         noResults:'No matching projects or files',unknown:'Not recorded',
@@ -336,7 +336,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         if(!response.ok)throw Error('Search index unavailable');
         return response.json();
       };
-      const state={types:{project:true,folder:true,file:true},status:'all',created:'',modified:'',maxSize:'',order:'recent'};
+      const state={types:{project:true,folder:true,file:true},status:'all',created:'',modified:'',maxSize:'',sizeUnit:'KB',order:'recent'};
       const results=document.createElement('section');
       results.id='tex-search-results';results.hidden=true;results.setAttribute('aria-live','polite');
       list.before(results);
@@ -345,23 +345,26 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       button.setAttribute('title',copy.title);button.setAttribute('aria-expanded','false');
       button.setAttribute('aria-haspopup','dialog');
       button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6.5H21 M6 12H18 M9 17.5H15"/></svg>';
-      box.append(button);
+      const searchRow=document.createElement('div');
+      searchRow.className='tex-explorer-search-row';
+      box.before(searchRow);
+      searchRow.append(box,button);
       const pop=document.createElement('section');
       pop.id='tex-search-filter-panel';pop.hidden=true;
       pop.setAttribute('role','dialog');pop.setAttribute('aria-modal','false');
       pop.setAttribute('aria-label',copy.title);
-      pop.innerHTML='<div class="tex-filter-head"><h2></h2><button type="button" data-action="done">✓</button></div>'+
+      pop.innerHTML='<div class="tex-filter-head"><h2></h2><button type="button" data-action="done" aria-label="'+copy.done+'">'+
+        '<svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>'+
         '<h3 data-caption="type"></h3><div class="tex-filter-group" id="tex-filter-types"></div>'+
         '<h3 data-caption="status"></h3><div class="tex-filter-group" id="tex-filter-status"></div>'+
         '<h3 data-caption="dates"></h3><div class="tex-filter-group" id="tex-filter-dates"></div>'+
-        '<div class="tex-filter-actions"><button type="button" data-action="reset"></button><button type="button" class="tex-filter-apply" data-action="done"></button></div>';
+        '<div class="tex-filter-actions"><button type="button" data-action="reset"></button></div>';
       document.body.append(pop);
       pop.querySelector('h2').textContent=copy.title;
       pop.querySelector('[data-caption="type"]').textContent=copy.type;
       pop.querySelector('[data-caption="status"]').textContent=copy.status;
       pop.querySelector('[data-caption="dates"]').textContent=zh?'时间、大小与排序':'Time, size and sorting';
       pop.querySelector('[data-action="reset"]').textContent=copy.reset;
-      pop.querySelector('.tex-filter-apply').textContent=copy.done;
       const types=pop.querySelector('#tex-filter-types'),statuses=pop.querySelector('#tex-filter-status');
       for(const key of ['project','folder','file']){
         const l=document.createElement('label'),title=document.createElement('span'),check=document.createElement('input');
@@ -374,24 +377,51 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         l.append(span,check);statuses.append(l);
       }
       const dates=pop.querySelector('#tex-filter-dates');
-      const addField=(label,type,key,props={})=>{
-        const row=document.createElement('label'),span=document.createElement('span'),field=document.createElement('input');
-        span.textContent=label;field.type=type;field.dataset.key=key;
-        for(const [k,v]of Object.entries(props))field.setAttribute(k,v);
-        row.append(span,field);dates.append(row);return field;
-      };
-      addField(copy.created,'date','created');
-      addField(copy.modified,'date','modified');
-      addField(copy.size,'number','maxSize',{min:'0',step:'0.1',placeholder:zh?'不限':'Any'});
+      const calendar='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.8" y="5.5" width="16.4" height="15.2" rx="2.2"/><path d="M7.5 3.5v4M16.5 3.5v4M3.8 10.1h16.4M8.1 14h1M12 14h1M16 14h1"/></svg>';
+      const dateFields={};
+      const dateLabel=value=>value ? value.replace(/-/g,'/') : (zh?'选择日期':'Choose date');
+      function addDate(label,key){
+        const row=document.createElement('label'),caption=document.createElement('span'),control=document.createElement('span');
+        caption.textContent=label;control.className='tex-filter-date-control';
+        const picker=document.createElement('input');picker.type='date';picker.dataset.key=key;
+        picker.setAttribute('aria-label',label);
+        const trigger=document.createElement('button');trigger.type='button';
+        trigger.className='tex-filter-date-label';trigger.setAttribute('aria-label',label);
+        const display=document.createElement('span');display.className='tex-date-text';display.textContent=dateLabel('');
+        trigger.append(display);
+        trigger.insertAdjacentHTML('beforeend',calendar);
+        trigger.addEventListener('click',()=>{
+          try{picker.showPicker?.();}catch{picker.focus();picker.click();}
+        });
+        picker.addEventListener('change',()=>{state[key]=picker.value;display.textContent=dateLabel(picker.value);refresh()});
+        control.append(trigger,picker);row.append(caption,control);dates.append(row);
+        dateFields[key]={picker,display};return picker;
+      }
+      addDate(copy.created,'created');addDate(copy.modified,'modified');
+      const sizeRow=document.createElement('label'),sizeTitle=document.createElement('span');
+      sizeTitle.textContent=copy.size;
+      const sizeControl=document.createElement('span');sizeControl.className='tex-filter-size-control';
+      const sizeInput=document.createElement('input');sizeInput.type='number';sizeInput.dataset.key='maxSize';
+      sizeInput.min='0';sizeInput.step='0.1';sizeInput.placeholder=zh?'不限':'Any';
+      sizeInput.setAttribute('aria-label',copy.size);
+      const unit=document.createElement('select');unit.dataset.key='sizeUnit';unit.setAttribute('aria-label',zh?'大小单位':'Size unit');
+      for(const u of ['KB','MB']){
+        const option=document.createElement('option');option.value=u;option.textContent=u;unit.append(option);
+      }
+      sizeControl.append(sizeInput,unit);sizeRow.append(sizeTitle,sizeControl);dates.append(sizeRow);
       const sort=document.createElement('label'),sortTitle=document.createElement('span'),sortSelect=document.createElement('select');
-      sortTitle.textContent=copy.order;for(const [value,label]of [['recent',copy.newest],['name',copy.name]]){
+      sortTitle.textContent=copy.order;sortSelect.className='tex-filter-select';
+      for(const [value,label]of [['recent',copy.newest],['name',copy.name]]){
         const option=document.createElement('option');option.value=value;option.textContent=label;sortSelect.append(option);
       }
       sortSelect.dataset.key='order';sort.append(sortTitle,sortSelect);dates.append(sort);
       const position=()=>{
-        const bounds=box.getBoundingClientRect();
-        pop.style.left=Math.min(Math.max(10,bounds.left),innerWidth-pop.offsetWidth-10)+'px';
-        pop.style.top=Math.max(10,Math.min(innerHeight-pop.offsetHeight-10,bounds.bottom+9))+'px';
+        const bounds=button.getBoundingClientRect();
+        const width=pop.offsetWidth,height=pop.offsetHeight;
+        const left=Math.max(8,Math.min(innerWidth-width-8,bounds.right-width));
+        const beneath=bounds.bottom+8;
+        const top=Math.max(8,Math.min(innerHeight-height-8,beneath));
+        pop.style.left=left+'px';pop.style.top=top+'px';
       };
       const close=()=>{pop.hidden=true;button.setAttribute('aria-expanded','false')};
       button.addEventListener('click',()=>{pop.hidden=!pop.hidden;button.setAttribute('aria-expanded',String(!pop.hidden));if(!pop.hidden)position()});
@@ -399,10 +429,12 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         if(e.target.closest('[data-action="done"]')){close();button.focus()}
         if(e.target.closest('[data-action="reset"]')){
           state.types={project:true,folder:true,file:true};state.status='all';
-          state.created='';state.modified='';state.maxSize='';state.order='recent';
+          state.created='';state.modified='';state.maxSize='';state.sizeUnit='KB';state.order='recent';
           for(const el of pop.querySelectorAll('[data-type]'))el.checked=true;
           for(const el of pop.querySelectorAll('[name="tex-filter-status-choice"]'))el.checked=el.value==='all';
-          for(const el of pop.querySelectorAll('[data-key]'))el.value=el.dataset.key==='order'?'recent':'';
+          for(const el of pop.querySelectorAll('[data-key]'))
+            el.value=el.dataset.key==='order'?'recent':el.dataset.key==='sizeUnit'?'KB':'';
+          for(const field of Object.values(dateFields))field.display.textContent=dateLabel('');
           refresh();
         }
       });
@@ -412,6 +444,9 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         if(el.name==='tex-filter-status-choice')state.status=el.value;
         if(el.dataset.key)state[el.dataset.key]=el.value;
         refresh();
+      });
+      sizeInput.addEventListener('input',()=>{
+        state.maxSize=sizeInput.value;refresh();
       });
       document.addEventListener('pointerdown',e=>{
         if(!pop.hidden&&!pop.contains(e.target)&&!button.contains(e.target))close();
@@ -520,7 +555,8 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         if(state.status!=='all'&&status!==state.status)return false;
         if(state.created&&(!e.created_at||e.created_at.slice(0,10)<state.created))return false;
         if(state.modified&&(!e.updated_at||e.updated_at.slice(0,10)<state.modified))return false;
-        if(state.maxSize!==''&&(!Number.isFinite(e.size_bytes)||e.size_bytes>Number(state.maxSize)*1048576))return false;
+        if(state.maxSize!==''&&(!Number.isFinite(e.size_bytes)||
+          e.size_bytes>Number(state.maxSize)*(state.sizeUnit==='MB'?1048576:1024)))return false;
         const q=input.value.trim().toLocaleLowerCase();
         if(!q)return true;
         return [e.name,e.projectTitle,e.type==='project'?e.preview:'',pathOf(e)]
@@ -541,13 +577,9 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         const content=document.createElement('span');content.className='tex-found-content';
         const title=document.createElement('span');title.className='tex-found-name';
         title.textContent=entry.type==='project'?entry.projectTitle:entry.name.split('/').at(-1);
-        const path=document.createElement('span');path.className='tex-found-path';path.textContent=pathOf(entry);
-        const meta=document.createElement('span');meta.className='tex-found-detail';
-        meta.textContent=copy.dateCreated+': '+dateOf(entry.created_at)+' · '+
-          copy.dateModified+': '+dateOf(entry.updated_at)+' · '+
-          copy.byteSize+': '+formatSize(entry.size_bytes)+' · '+
-          copy.state+': '+(savedStatus(entry)==='unsaved'?copy.unsaved:copy.saved);
-        content.append(title,path,meta);row.append(svg.firstElementChild,content);
+        content.append(title);row.append(svg.firstElementChild,content);
+        row.addEventListener('pointerenter',()=>{row.title=info(entry)});
+        row.addEventListener('focus',()=>{row.title=info(entry)});
         row.addEventListener('click',()=>void openResult(entry));return row;
       }
       function refresh(){
