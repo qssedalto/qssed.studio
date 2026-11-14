@@ -57,7 +57,9 @@ const succeed=(r)=>r.resolve({document:{id:'one',...r.body,storage_revision:'eta
   const h=harness();let prevented=false;
   const event={preventDefault(){prevented=true;}};h.listeners.get('beforeunload')(event);
   assert.equal(prevented,true);assert.equal(event.returnValue,'');
-  h.c.dirty=false;prevented=false;h.listeners.get('beforeunload')(event);assert.equal(prevented,false);
+  h.c.dirty=false;h.c.activeDocument={id:'one',title:'Title',engine:'xelatex',source:'A'};
+  prevented=false;h.listeners.get('beforeunload')(event);assert.equal(prevented,false,
+    'No warning when actual source/title/engine match saved content even if dirty flags were stale');
 }
 const load=f=>fs.readFileSync(new URL('../studio/'+f,import.meta.url),'utf8');
 assert(load('ui-work-tex-document-switch.js').includes('if(force)documentFastFetch.delete(id)'));
