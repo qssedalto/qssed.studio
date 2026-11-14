@@ -54,6 +54,12 @@ export async function handleTexGithubApi(request, env, action) {
       const weeklyUsed = row?.weekly_used || 0;
       const available = admin ? -1 : Math.min(Math.max(0,(row?.quota_total||0)-(row?.quota_used||0)),100-weeklyUsed);
       const documentId=githubProjectId(request);
+      const legacyReceipt=row?.repo_id&&row?.repo_name ?
+        await readLegacyDeleteReceipt(env,userId).catch(()=>null) : null;
+      const legacyDeleteConfirmed=Boolean(legacyReceipt?.confirmed===true &&
+        legacyReceipt?.user_id===userId &&
+        String(legacyReceipt?.repo_id)===String(row?.repo_id) &&
+        legacyReceipt?.repo_name===row?.repo_name);
       let project=null;
       if(documentId){
         if(!await githubProjectOwned(env,userId,documentId))
@@ -78,10 +84,12 @@ export async function handleTexGithubApi(request, env, action) {
         repository_state: project?.repo_state || "none",
         repository_name: project?.repo_id ? project.repo_name : null,
         repository_error: project?.last_error || null,
+        repository_delete_confirmed: Boolean(project?.delete_confirmed),
         // Existing account-wide repositories are NOT silently attached to
         // every project. Legacy deletion has its own explicit action.
         legacy_repository_name:row?.repo_id&&["ready","deleting","error"].includes(row?.repo_state)?row.repo_name:null,
         legacy_repository_state:row?.repo_state||"none",
+        legacy_repository_delete_confirmed:legacyDeleteConfirmed,
         active: Boolean(row?.active_nonce && project?.active_nonce===row.active_nonce),
         engine: "xelatex"
       });
