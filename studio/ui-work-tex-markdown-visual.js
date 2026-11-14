@@ -72,10 +72,10 @@ function markdownVisualRuntime() {
   toolbar.setAttribute('aria-label', zh ? 'Markdown 格式' : 'Markdown formatting');
   const surface = document.createElement('div');
   surface.className = 'tex-markdown-visual-surface';
-  const hint = document.createElement('div');
-  hint.className = 'tex-markdown-visual-hint';
-  hint.textContent = translation.note;
-  panel.append(toolbar, surface, hint);
+  // The secondary formatting strip and redundant instructional footer are
+  // intentionally NOT mounted. Source and visual mode share the primary
+  // editor toolbar, including its single Save action.
+  panel.append(surface);
   editor.insertBefore(panel, editor.querySelector('.tex-editor-footer'));
 
   let visualEditor = null;
@@ -307,7 +307,9 @@ const markdownVisualStyle = `
 .tex-work-app #tex-markdown-visual-panel[hidden]{display:none!important}
 .tex-work-app #tex-editor.md-visual-mode.is-codemirror-asset>.tex-codemirror-host{display:none!important}
 .tex-work-app #tex-editor.md-visual-mode>.tex-markdown-visual-panel{display:flex!important;grid-row:3;grid-column:1;min-width:0;min-height:470px;height:100%;box-sizing:border-box;flex-direction:column;overflow:hidden;background:var(--surface);color:var(--text)}
-.tex-work-app .tex-markdown-formatbar{display:flex;gap:3px;align-items:center;flex:0 0 auto;min-height:42px;padding:4px 12px;border-bottom:1px solid var(--hairline);overflow-x:auto;scrollbar-width:thin}
+.tex-work-app #tex-editor.md-visual-mode .tex-markdown-visual-hint{display:none!important}
+/* The former second Markdown toolbar is not part of the visual UI. */
+.tex-work-app .tex-markdown-formatbar{display:none!important;gap:3px;align-items:center;flex:0 0 auto;min-height:42px;padding:4px 12px;border-bottom:1px solid var(--hairline);overflow-x:auto;scrollbar-width:thin}
 .tex-work-app .tex-markdown-format-button{display:grid;place-items:center;flex:0 0 auto;min-width:30px!important;width:auto!important;height:30px!important;min-height:30px!important;padding:0 8px!important;border:0!important;border-radius:7px!important;background:transparent!important;color:var(--text)!important;font:650 12px/1 system-ui,sans-serif!important;white-space:nowrap;cursor:pointer}
 .tex-work-app .tex-markdown-format-button:hover{background:var(--fill)!important}
 .tex-work-app .tex-markdown-format-button:disabled{opacity:.4;cursor:default}
