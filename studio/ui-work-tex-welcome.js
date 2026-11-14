@@ -1,5 +1,55 @@
+// Time-aware personalized greetings for the TeX workspace.
+// The browser supplies its local hour, so the greeting follows the user's
+// operating-system time zone rather than the UTC/server clock.
+export function selectWorkTexGreeting({ zh = true, username = "", localHour = 12, previousIndex = -1, random = Math.random } = {}) {
+  const name = String(username || (zh ? "朋友" : "there")).trim() || (zh ? "朋友" : "there");
+  const numericHour = Number(localHour);
+  const hour = Number.isFinite(numericHour) ? ((Math.trunc(numericHour) % 24) + 24) % 24 : 12;
+  let chineseTimeGreeting, englishTimeGreeting;
+  if (hour >= 5 && hour < 11) {
+    chineseTimeGreeting = `早上好，${name}！`;
+    englishTimeGreeting = `Good morning, ${name}!`;
+  } else if (hour >= 11 && hour < 14) {
+    chineseTimeGreeting = `中午好，${name}！`;
+    englishTimeGreeting = `Good afternoon, ${name}!`;
+  } else if (hour >= 14 && hour < 18) {
+    chineseTimeGreeting = `下午好，${name}！`;
+    englishTimeGreeting = `Good afternoon, ${name}!`;
+  } else if (hour >= 18 && hour < 24) {
+    chineseTimeGreeting = `晚上好，${name}！`;
+    englishTimeGreeting = `Good evening, ${name}!`;
+  } else {
+    chineseTimeGreeting = `夜深了，${name}。`;
+    englishTimeGreeting = `Working late, ${name}?`;
+  }
+  const lines = zh ? [
+    "我们从哪里开始？",
+    "随时可以开始。",
+    "今天有什么安排？",
+    `很高兴见到你，${name}。`,
+    `${name}，我能帮你做些什么？`,
+    "今天想聊点什么？",
+    chineseTimeGreeting,
+    englishTimeGreeting
+  ] : [
+    "Where should we begin?",
+    "Ready when you are.",
+    "What's on the agenda today?",
+    `Good to see you, ${name}.`,
+    `${name}, what can I help you with?`,
+    "What would you like to work on today?",
+    englishTimeGreeting
+  ];
+  // Avoid repeating the same heading on consecutive refreshes in this tab.
+  const choices = lines.map((_, index) => index).filter(index => index !== previousIndex);
+  const unit = Number(random());
+  const offset = Math.min(choices.length - 1, Math.max(0, Math.floor((Number.isFinite(unit) ? unit : 0) * choices.length)));
+  const index = choices[offset];
+  return { index, text: lines[index] };
+}
+
 // Clean Work TeX welcome dashboard. Scoped to the placeholder so editor styling is unaffected.
-export function polishWorkTexWelcome(markup) {
+export function polishWorkTexWelcome(markup, { username = "" } = {}) {
   const source = String(markup || "");
   if (!source.includes('class="qtex-welcome"') || !source.includes("</body>")) return source;
   const style = `<style id="qsseda-work-tex-welcome-clean">
@@ -120,7 +170,89 @@ body.os-shell:has(.tex-work-app) .qtex-recent-empty{padding:25px 18px;color:var(
   body.os-shell:has(.tex-work-app) .qtex-template:hover{transform:none}
 }
 
+
+/* ChatGPT-inspired composition; the controls remain real TeX actions. */
+body.os-shell:has(.tex-work-app) .qtex-welcome{
+  width:min(100%,1050px)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-welcome-hero{
+  position:relative;display:grid!important;place-items:center;
+  min-height:clamp(220px,31vh,360px);margin:0 0 18px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-welcome-copy{
+  width:100%;min-width:0;align-items:center!important;justify-content:center;
+  padding:46px 8px 0;text-align:center!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-welcome-brand{
+  position:absolute;top:0;left:0;margin:0;opacity:.82;
+}
+body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2{
+  max-width:100%;margin:0 auto!important;
+  font:560 clamp(29px,3.2vw,43px)/1.4 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif!important;
+  letter-spacing:-.024em!important;text-align:center!important;
+  overflow-wrap:anywhere;
+}
+body.os-shell:has(.tex-work-app) .qtex-welcome-copy p{
+  margin-top:9px!important;text-align:center!important;
+  font-size:13px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-templates{gap:12px}
+body.os-shell:has(.tex-work-app) .qtex-template-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+  padding:7px;background:var(--work-card,var(--surface));
+  border:1px solid var(--work-line,var(--border));border-radius:24px;
+}
+body.os-shell:has(.tex-work-app) .qtex-template{
+  min-height:86px;padding:13px 11px!important;
+  border:1px solid transparent!important;border-radius:17px!important;
+  background:transparent!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-template:hover{
+  background:color-mix(in srgb,var(--primary) 6%,var(--work-card,var(--surface)))!important;
+  border-color:color-mix(in srgb,var(--primary) 16%,transparent)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-template-icon{width:36px;height:36px;border-radius:12px}
+body.os-shell:has(.tex-work-app) .qtex-template-info strong{font-size:13px!important}
+body.os-shell:has(.tex-work-app) .qtex-recent{margin-top:clamp(28px,5vh,54px)}
+@container qtex (max-width:700px){
+  body.os-shell:has(.tex-work-app) .qtex-template-grid{grid-template-columns:1fr;gap:2px;padding:6px;border-radius:20px}
+  body.os-shell:has(.tex-work-app) .qtex-template{min-height:69px!important;padding:10px 12px!important;border-radius:14px!important}
+  body.os-shell:has(.tex-work-app) .qtex-recent{margin-top:25px}
+}
+@media(max-width:760px){
+  body.os-shell:has(.tex-work-app) .qtex-welcome-hero{min-height:210px;margin-bottom:8px!important}
+  body.os-shell:has(.tex-work-app) .qtex-welcome-copy{padding:40px 0 0}
+  body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2{font-size:30px!important}
+  body.os-shell:has(.tex-work-app) .qtex-welcome-copy p{font-size:12px!important}
+}
+
 </style>`;
+  const safeName = JSON.stringify(String(username || "").trim().slice(0, 64))
+    .replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026")
+    .replace(/\\u2028/g, "\\\\u2028").replace(/\\u2029/g, "\\\\u2029");
+  const greetingScript = `<script id="qsseda-work-tex-greeting-runtime">
+(() => {
+  const heading = document.getElementById("qtex-welcome-greeting");
+  if (!heading) return;
+  const userName = ${safeName};
+  const zh = (document.documentElement.lang || "").toLowerCase().startsWith("zh");
+  const key = "aertex.work.tex.previous-greeting.v1";
+  let previous = -1;
+  try {
+    const stored = Number(window.sessionStorage.getItem(key));
+    if (Number.isInteger(stored)) previous = stored;
+  } catch {}
+  const choose = (${selectWorkTexGreeting.toString()});
+  // Date#getHours uses the device's configured local time zone, including
+  // its daylight-saving changes. No server UTC or fixed China offset.
+  const localHour = new Date().getHours();
+  const result = choose({ zh, username: userName, localHour, previousIndex: previous });
+  (heading.querySelector("span") || heading).textContent = result.text;
+  try { window.sessionStorage.setItem(key, String(result.index)); } catch {}
+  heading.dataset.greetingIndex = String(result.index);
+  heading.dataset.greetingHour = String(localHour);
+})();
+</script>`;
   const script = `
 <script id="qsseda-work-tex-recent-runtime">
 (() => {
@@ -176,5 +308,5 @@ body.os-shell:has(.tex-work-app) .qtex-recent-empty{padding:25px 18px;color:var(
   queue();
 })();
 </script>`;
-  return source.replace("</body>", style + script + "</body>");
+  return source.replace("</body>", style + greetingScript + script + "</body>");
 }
