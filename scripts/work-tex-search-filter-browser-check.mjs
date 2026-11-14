@@ -41,6 +41,8 @@ window.fetch=async (url)=>{
  created_at:'2026-11-13T13:00:00.000Z',updated_at:'2026-11-14T11:00:00.000Z'}]};
  return {ok:true,json:async()=>String(url).includes('?id=')?{document}:{documents:[project]}};
 };
+window.addEventListener('error',e=>{document.body.dataset.qa='ERROR-'+String(e.message)+'-at-'+e.lineno});
+window.addEventListener('unhandledrejection',e=>{document.body.dataset.qa='REJECTION-'+String(e.reason)});
 window.addEventListener('load',()=>{
  setTimeout(()=>{
   const input=document.querySelector('#tex-search');
@@ -115,6 +117,6 @@ window.addEventListener('load',()=>{
     {encoding:'utf8',timeout:30000,maxBuffer:8*1024*1024});
   assert.equal(result.status,0,result.stderr.slice(-2000));
   const match=result.stdout.match(/data-qa="([^"]+)"/);
-  assert.equal(match?.[1],'PASS',match?.[1]||'Search QA assertion did not execute');
+  assert.equal(match?.[1],'PASS',match?.[1]||('Search QA did not execute: '+result.stdout.slice(-1500)+' | stderr='+result.stderr.slice(-800)));
   console.log('Headless Chromium verified accessible dark calendar, date selection and clearing, KB/MB dropdown, search results and tooltip metadata.');
 }finally{fs.rmSync(dir,{recursive:true,force:true})}
