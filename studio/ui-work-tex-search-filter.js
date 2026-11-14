@@ -3,8 +3,8 @@
 export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account") {
   const css = String.raw`
     /* Local font lookup only; never distribute a user-supplied font binary. */
-    @font-face{font-family:"AERTEX Michelangelus";src:local("Michelangelus Italic"),local("Michelangelus-Italic");font-weight:400;font-style:italic;unicode-range:U+0000-024F}
-    @font-face{font-family:"AERTEX Michelangelus";src:local("Michelangelus Bold Italic"),local("Michelangelus-BoldItalic");font-weight:700;font-style:italic;unicode-range:U+0000-024F}
+    @font-face{font-family:"AERTEX Michelangelus";src:local("Michelangelus Italic"),local("Michelangelus-Italic");font-weight:400;font-style:normal;unicode-range:U+0000-024F}
+    @font-face{font-family:"AERTEX Michelangelus";src:local("Michelangelus Bold Italic"),local("Michelangelus-BoldItalic");font-weight:700;font-style:normal;unicode-range:U+0000-024F}
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file,
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file span,
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-search,
@@ -12,13 +12,13 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-search-results,
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-search-results * {
       font-family:"AERTEX Michelangelus","Segoe UI","Microsoft YaHei UI",sans-serif!important;
-      font-style:italic!important;font-weight:400!important;
+      font-style:normal!important;font-weight:400!important;
     }
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-folder>span:not(.tex-row-menu-trigger),
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list>.tex-document-item>strong,
     body.os-shell:has(.tex-work-app) .tex-work-app .tex-panel-head>strong {
       font-family:"AERTEX Michelangelus","Segoe UI","Microsoft YaHei UI",sans-serif!important;
-      font-weight:700!important;font-style:italic!important;
+      font-weight:700!important;font-style:normal!important;
     }
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file,
     body.os-shell:has(.tex-work-app) .tex-work-app #tex-document-list .tex-tree-file.is-active,
