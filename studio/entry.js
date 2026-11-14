@@ -269,7 +269,18 @@ export default {
       if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin, fullLocale, mainOrigin), workOrigin));
       if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, fullLocale, mainOrigin), zh));
       if (pathname === "/work/tex/setup") markup = replaceOsContent(markup, texGithubSetupContent(zh, fullLocale));
-      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceTexGithubWorkbench(enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); markup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup))); markup = prepareWorkTexDocumentShell(markup, { userId: gate.user?.id, documentId: new URL(request.url).searchParams.get("document"), zh }); markup = enhanceWorkTexCompileToolbar(enhanceWorkTexFileChat(enhanceWorkTexToolbarScroll(enhanceWorkTexDeviceReadiness(enhanceWorkTexMobileFollowup(enhanceWorkTexMobileQa(enhanceTexProjectControls(markup, zh))), zh), zh),zh), zh); markup = enhanceWorkTexUiPolish(markup, zh);
+      if (pathname === "/work/tex") {
+        // Resolve the name from the authenticated session and verified admin
+        // role; a cached browser cookie cannot grant the admin override.
+        const workGreetingName = shellProductLinks.adminHref ? "天国" : (
+          gate.user?.user_metadata?.username ||
+          gate.user?.user_metadata?.preferred_username ||
+          gate.user?.user_metadata?.user_name ||
+          gate.user?.user_metadata?.display_name ||
+          (typeof gate.user?.email === "string" ? gate.user.email.split("@")[0] : "") ||
+          (zh ? "朋友" : "there")
+        );
+        markup = replaceOsContent(markup, enhanceTexGithubWorkbench(enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); markup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup), { username: workGreetingName })); markup = prepareWorkTexDocumentShell(markup, { userId: gate.user?.id, documentId: new URL(request.url).searchParams.get("document"), zh }); markup = enhanceWorkTexCompileToolbar(enhanceWorkTexFileChat(enhanceWorkTexToolbarScroll(enhanceWorkTexDeviceReadiness(enhanceWorkTexMobileFollowup(enhanceWorkTexMobileQa(enhanceTexProjectControls(markup, zh))), zh), zh),zh), zh); markup = enhanceWorkTexUiPolish(markup, zh);
          const verifiedOwnerSlug = shellProductLinks.adminHref ? "admin" :
            (gate.user?.user_metadata?.username || gate.user?.user_metadata?.preferred_username ||
             gate.user?.user_metadata?.user_name || "account");
