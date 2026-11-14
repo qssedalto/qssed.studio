@@ -53,7 +53,8 @@ for (const zh of [true, false]) {
   assert(WORK_TEX_EXPLORER_TREE.includes("attachFilenameTooltip(row,asset.name)") &&
     WORK_TEX_EXPLORER_TREE.includes("attachFilenameTooltip(row,prefix)"),
     "All nested file and folder rows must register their full original names");
-  assert(WORK_TEX_EXPLORER_TREE.includes("filenameTooltip.textContent=name") &&
+  assert((WORK_TEX_EXPLORER_TREE.includes("filenameTooltip.textContent=name") ||
+      WORK_TEX_EXPLORER_TREE.includes("filenameTooltip.textContent=String(row.dataset.aertexMeta||name)")) &&
     WORK_TEX_EXPLORER_TREE.includes("setAttribute('role','tooltip')") &&
     WORK_TEX_EXPLORER_TREE.includes("row.setAttribute('aria-describedby',filenameTooltip.id)"),
     "Full filenames must be shown safely and accessibly");
