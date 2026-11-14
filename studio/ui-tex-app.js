@@ -44,7 +44,7 @@ export function polishTexWorkbenchApp(markup, zh) {
       <div class="qtex-welcome-hero">
         <div class="qtex-welcome-copy">
           <div class="qtex-welcome-brand"><span class="qtex-brand-dot" aria-hidden="true"></span><span>AERTEX</span><span class="qtex-brand-divider" aria-hidden="true">/</span><span>Work</span></div>
-          <h2><span>${zh ? "欢迎回来" : "Welcome back"}</span></h2>
+          <h2 id="qtex-welcome-greeting" aria-live="off"><span>${zh ? "欢迎回来" : "Welcome back"}</span></h2>
           <p>${zh ? "继续你的创作，或从一个新项目开始。" : "Pick up where you left off, or start something new."}</p>
         </div>
       </div>
