@@ -5,13 +5,13 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
     /* English-only optical typefaces; the Chinese fallback stays upright. */
     @font-face{
       font-family:"AERTEX Michelangelus";
-      src:local("Michelangelus Italic"),local("Michelangelus-Italic");
-      font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0020-024F;
+      src:url("/_aertex/fonts/michelangelus-italic-v1.woff2") format("woff2"),local("Michelangelus Italic");
+      font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0020-007E;
     }
     @font-face{
       font-family:"AERTEX Michelangelus";
-      src:local("Michelangelus Bold Italic"),local("Michelangelus-BoldItalic");
-      font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0020-024F;
+      src:url("/_aertex/fonts/michelangelus-bolditalic-v1.woff2") format("woff2"),local("Michelangelus Bold Italic");
+      font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0020-007E;
     }
     body.os-shell:has(.tex-work-app) #tex-document-list .tex-tree-file,
     body.os-shell:has(.tex-work-app) #tex-document-list .tex-tree-file>span,
