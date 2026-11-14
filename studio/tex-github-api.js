@@ -432,117 +432,164 @@ async function verifyOwner(env) {
 }
 
 async function createRepository(request, env, userId, admin = false) {
-  // Publishing source and full Git history is irreversible in practice.
-  // The new public default needs fresh, explicit opt-in by the signed-in user.
-  const acknowledgement = await inputBody(request);
-  if (acknowledgement?.ack_public !== true)
-    return fail(400, "Confirm that source code and compiled PDFs will be publicly visible.");
-  let row = await readRow(env, userId);
-  if(admin && !row){
-    try{await data(env, TABLE, "POST", [{user_id:userId,approval_status:"approved",requested_credits:100,
-      quota_total:0,quota_used:0,weekly_credits:100}]);}catch(error){
-      row = await readRow(env,userId);if(!row)throw error;
-    }
-    row = await readRow(env,userId);
+  const acknowledgement=await inputBody(request);
+  if(acknowledgement?.ack_public!==true)
+    return fail(400,"Confirm that source code and compiled PDFs will be publicly visible.");
+  const documentId=await ownedGithubProject(request,env,userId,acknowledgement);
+  if(!configured(env))return fail(503,"GitHub service credentials are not configured.");
+  let row=await readRow(env,userId);
+  if(admin&&!row){
+    try{await data(env,TABLE,"POST",[{user_id:userId,approval_status:"approved",requested_credits:100,
+      quota_total:0,quota_used:0,weekly_credits:100}]);}
+    catch(error){row=await readRow(env,userId);if(!row)throw error;}
+    row=await readRow(env,userId);
   }
-  if(admin && row?.approval_status!=="approved"){
-    row = await updateRow(env,userId,{approval_status:"approved"});
-  }
-  if (!row || row.approval_status !== "approved") return fail(403, "Compilation approval is required.");
-  if (!configured(env)) return fail(503, "GitHub service credentials are not configured.");
-  if (row.repo_state === "ready") return fail(409, "This account already has a repository.");
-  if (row.repo_state === "deleting") return fail(409, "Repository deletion is in progress.");
-  const name = managedTexRepoName(userId);
-  if (row.repo_name && row.repo_name !== name) return fail(409, "Repository ownership mismatch.");
+  if(admin&&row?.approval_status!=="approved")
+    row=await updateRow(env,userId,{approval_status:"approved"});
+  if(!row||row.approval_status!=="approved")
+    return fail(403,"Compilation approval is required.");
+  // The old per-account repo lives in the quota table. It is NOT reused.
+  // Each project owns one deterministic managed GitHub repository name.
+  const name=texGithubProjectRepositoryName(documentId);
+  let binding=await readTexGithubProjectRepository(env,userId,documentId);
+  if(binding?.repo_state==="ready")return fail(409,"This project already has a repository.");
+  if(binding?.repo_state==="deleting")return fail(409,"Finish deleting this project's repository first.");
   await verifyOwner(env);
-
-  let record = row;
-  if (row.repo_state === "none" || row.repo_state === "error") {
-    record = await updateRow(env, userId, {
-      repo_state: "creating", repo_name: name
-    }, "&repo_state=eq." + row.repo_state);
-    if (!record) return fail(409, "Repository creation already started.");
-  }
-  let repoId = record.repo_id;
-  let branch = record.source_branch || "main";
-  try {
-    if (!repoId) {
-      // Recover a repository created before a transient database/network error.
-      // The deterministic name is scoped to this authenticated user UUID.
-      let created = null;
-      try {
-        created = await github(env, "/repos/" + env.AERTEX_TEX_GITHUB_OWNER + "/" + name);
-      } catch (error) {
-        if (error.status !== 404) throw error;
-      }
-      if (!created) {
-        created = await github(env, "/user/repos", "POST", {
-          name, private: false, auto_init: true,
-          description: "Public compilation-only TeX workspace managed by AERTEX",
-          has_issues: false, has_wiki: false,
-          has_projects: false, allow_auto_merge: false
-        });
-      }
-      if (created?.name !== name || typeof created?.private !== "boolean" ||
-          created.owner?.login?.toLowerCase() !== env.AERTEX_TEX_GITHUB_OWNER.toLowerCase()) {
-        throw httpError(503, "unexpected_repository_owner");
-      }
-      // A resumed creation may discover a legacy private repository. It
-      // stays private until a separately authorized migration is performed.
-      repoId = created.id;
-      branch = created.default_branch || "main";
-      await updateRow(env, userId, { repo_id: repoId, source_branch: branch });
-    }
-    const repoPath = githubRepoPath(env, name);
-    const actual = await github(env, repoPath);
-    verifyManagedRepo(env, actual, repoId, name);
-    await putFile(env, repoPath, "main.tex", INITIAL_TEX_SOURCE, branch);
-    await putFile(env, repoPath, "README.md", INITIAL_TEX_README, branch);
-    await putFile(env, repoPath, MANAGED_TEX_WORKFLOW_PATH, MANAGED_TEX_WORKFLOW, branch);
-    const head = await github(env, repoPath + "/git/ref/heads/" + encodeURIComponent(branch));
-    try {
-      await github(env, repoPath + "/git/refs", "POST", {
-        ref: "refs/heads/pdf-output", sha: head.object.sha
+  binding=await writeTexGithubProjectRepository(env,userId,documentId,{
+    repo_state:"creating",last_error:null,
+    ...(binding?.repo_id?{}:{repo_id:null}),
+    source_branch:binding?.source_branch||"main"
+  });
+  let repoId=binding.repo_id;
+  let branch=binding.source_branch||"main";
+  try{
+    if(!repoId){
+      let created=null;
+      try{created=await github(env,"/repos/"+env.AERTEX_TEX_GITHUB_OWNER+"/"+name);}
+      catch(error){if(error.status!==404)throw error;}
+      if(!created)created=await github(env,"/user/repos","POST",{
+        name,private:false,auto_init:true,
+        description:"Public TeX compilation repository for one AERTEX Work project",
+        has_issues:false,has_wiki:false,has_projects:false,allow_auto_merge:false
       });
-    } catch (error) {
-      if (error.status !== 409) throw error;
-      const exists = await github(env, repoPath + "/git/ref/heads/pdf-output");
-      if (!exists?.object?.sha) throw httpError(503, "pdf_branch_missing");
+      if(created?.name!==name||typeof created?.private!=="boolean"||
+        created.owner?.login?.toLowerCase()!==env.AERTEX_TEX_GITHUB_OWNER.toLowerCase())
+        throw httpError(409,"unexpected_repository_identity");
+      repoId=created.id;branch=created.default_branch||"main";
+      binding=await writeTexGithubProjectRepository(env,userId,documentId,{
+        repo_state:"creating",repo_id:repoId,source_branch:branch,last_error:null
+      });
     }
-    await updateRow(env, userId, { repo_state: "ready", repo_id: repoId, source_branch: branch });
-    return json({ created: true, repository_name: name }, 201);
-  } catch (error) {
-    workerLog("warn", "tex.github.provision.failed", {
-      user_id: userId, code: String(error?.code || "unknown").slice(0, 50)
+    const repoPath=githubRepoPath(env,name);
+    verifyManagedRepo(env,await github(env,repoPath),repoId,name);
+    await putFile(env,repoPath,"main.tex",INITIAL_TEX_SOURCE,branch);
+    await putFile(env,repoPath,"README.md",INITIAL_TEX_README,branch);
+    await putFile(env,repoPath,MANAGED_TEX_WORKFLOW_PATH,MANAGED_TEX_WORKFLOW,branch);
+    const head=await github(env,repoPath+"/git/ref/heads/"+encodeURIComponent(branch));
+    try{
+      await github(env,repoPath+"/git/refs","POST",{ref:"refs/heads/pdf-output",sha:head.object.sha});
+    }catch(error){
+      if(error.status!==409)throw error;
+      const existing=await github(env,repoPath+"/git/ref/heads/pdf-output");
+      if(!existing?.object?.sha)throw httpError(503,"pdf_branch_missing");
+    }
+    await writeTexGithubProjectRepository(env,userId,documentId,{
+      repo_state:"ready",repo_id:repoId,source_branch:branch,last_error:null
+    });
+    return json({created:true,document_id:documentId,repository_name:name,repository_state:"ready"},201);
+  }catch(error){
+    // Preserve the bound repository ID for retry; never create a second repo
+    // when GitHub succeeded but the later workflow provisioning failed.
+    await writeTexGithubProjectRepository(env,userId,documentId,{
+      repo_state:"error",repo_id:repoId||null,source_branch:branch,
+      last_error:"Creation failed; retry provisioning. The existing repository will be checked first."
+    }).catch(()=>{});
+    workerLog("warn","tex.github.project_provision.failed",{
+      user_id:userId,document_id:documentId,code:String(error?.code||"unknown").slice(0,50)
     });
     throw error;
   }
 }
 
-async function deleteRepository(request, env, userId) {
-  const row = await readRow(env, userId);
-  if (!row?.repo_id || !row.repo_name || !["ready", "deleting"].includes(row.repo_state)) {
-    return fail(404, "There is no managed repository to delete.");
+async function deleteRepository(request,env,userId,legacy=false) {
+  const body=await inputBody(request);
+  if(legacy){
+    // Explicitly remove an old shared repository ONLY when specifically
+    // requested. Never interpret it as the current project's repository.
+    return deleteLegacyGithubRepository(env,userId,body);
   }
-  if (row.active_nonce) return fail(409, "Wait for the running compile job before deleting.");
-  const body = await inputBody(request);
-  if (body?.confirm !== "DELETE " + row.repo_name) return fail(400, "Exact repository name confirmation is required.");
-  await updateRow(env, userId, { repo_state: "deleting" });
-  const repoPath = githubRepoPath(env, row.repo_name);
-  try {
-    const actual = await github(env, repoPath);
-    verifyManagedRepo(env, actual, row.repo_id, row.repo_name);
-    await github(env, repoPath, "DELETE");
-  } catch (error) {
-    // A 404 can mean revoked credentials, not necessarily successful deletion.
-    // Keep the DB ownership lock until an administrator reconciles the repository.
-    throw error.status === 404 ? httpError(503, "repository_not_visible") : error;
-  }
-  await updateRow(env, userId, {
-    repo_name: null, repo_id: null, repo_state: "none", source_branch: "main",
-    active_nonce: null, active_run_id: null, active_commit_sha: null, active_since: null
+  const documentId=await ownedGithubProject(request,env,userId,body);
+  const binding=await readTexGithubProjectRepository(env,userId,documentId);
+  if(!binding?.repo_id||!["ready","deleting","error"].includes(binding.repo_state))
+    return fail(404,"This project does not have a managed repository.");
+  if(body?.confirm!=="DELETE "+binding.repo_name)
+    return fail(400,"Exact repository name confirmation is required.");
+  const row=await readRow(env,userId);
+  // Only block deletion for an active build belonging to THIS project.
+  if(row?.active_nonce && Number(binding.active_run_id||0)>0 &&
+      Number(row.active_run_id)===Number(binding.active_run_id))
+    return fail(409,"Wait for this project's running compilation to finish before deleting.");
+  await verifyOwner(env);
+  await writeTexGithubProjectRepository(env,userId,documentId,{
+    repo_state:"deleting",last_error:null
   });
-  return json({ deleted: true });
+  const repoPath=githubRepoPath(env,binding.repo_name);
+  try{
+    let actual=null;
+    try{actual=await github(env,repoPath);}
+    catch(error){
+      if(error.status!==404)throw error;
+      // If a previous DELETE succeeded but its final R2 write failed, the
+      // owner-authenticated GitHub 404 lets a retry finish without leaving
+      // the UI permanently stuck on "Deleting".
+      if(binding.repo_state!=="deleting")throw error;
+    }
+    if(actual){
+      verifyManagedRepo(env,actual,binding.repo_id,binding.repo_name);
+      await github(env,repoPath,"DELETE");
+    }
+    await removeTexGithubProjectRepository(env,userId,documentId);
+    return json({deleted:true,document_id:documentId,repository_name:binding.repo_name,
+      repository_state:"none",message:"GitHub repository deleted successfully."});
+  }catch(error){
+    await writeTexGithubProjectRepository(env,userId,documentId,{
+      repo_state:"deleting",
+      last_error:"Deletion not confirmed. Retry deleting this project's repository; its record was preserved."
+    }).catch(()=>{});
+    workerLog("warn","tex.github.project_delete.failed",{
+      user_id:userId,document_id:documentId,code:String(error?.code||"unknown").slice(0,50)
+    });
+    throw error;
+  }
+}
+
+async function deleteLegacyGithubRepository(env,userId,body) {
+  const row=await readRow(env,userId);
+  if(!row?.repo_id||!row.repo_name||!["ready","deleting"].includes(row.repo_state))
+    return fail(404,"No legacy account-level repository remains.");
+  if(row.active_nonce)return fail(409,"Wait for the account's running build before deleting.");
+  if(body?.confirm!=="DELETE "+row.repo_name)
+    return fail(400,"Exact legacy repository confirmation is required.");
+  await verifyOwner(env);
+  await updateRow(env,userId,{repo_state:"deleting"});
+  const repoPath=githubRepoPath(env,row.repo_name);
+  try{
+    let actual=null;
+    try{actual=await github(env,repoPath);}
+    catch(error){if(error.status!==404||row.repo_state!=="deleting")throw error;}
+    if(actual){
+      verifyManagedRepo(env,actual,row.repo_id,row.repo_name);
+      await github(env,repoPath,"DELETE");
+    }
+    await updateRow(env,userId,{
+      repo_name:null,repo_id:null,repo_state:"none",source_branch:"main",
+      active_nonce:null,active_run_id:null,active_commit_sha:null,active_since:null
+    });
+    return json({deleted:true,legacy:true,repository_name:row.repo_name,repository_state:"none"});
+  }catch(error){
+    workerLog("warn","tex.github.legacy_delete.failed",{user_id:userId,code:String(error?.code||"unknown").slice(0,50)});
+    throw error;
+  }
 }
 
 async function reserveCredit(env, userId, nonce) {
