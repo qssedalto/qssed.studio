@@ -102,9 +102,9 @@ assert(!code.includes('throw httpError(400,"unsafe_project_path")'),"Compiler sh
 
 // One managed repository holds multiple independent TeX projects on branches.
 // Compiling another project must never overwrite the previously built source.
-assert(code.includes("name, private: false, auto_init: true"),
+assert(code.includes("name,private:false,auto_init:true"),
   "New compilation repositories must be public by default");
-assert(code.includes("acknowledgement?.ack_public !== true"),
+assert(code.includes("acknowledgement?.ack_public!==true"),
   "Public repository creation must require explicit user consent");
 assert(!code.includes("|| !actual.private"),
   "Legacy private managed repositories must remain valid until migration");
