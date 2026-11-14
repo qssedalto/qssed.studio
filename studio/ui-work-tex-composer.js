@@ -12,7 +12,7 @@ const ICON = {
   mic: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9.2" y="3.2" width="5.6" height="12.1" rx="2.8" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 11.7a5.5 5.5 0 0 0 11 0M12 17.4v3.2M8.8 20.6h6.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   close: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
 };
-const CSS = String.raw\`
+const CSS = String.raw`
 /* One compact task surface, rather than a second marketing hero. */
 body.os-shell:has(.tex-work-app) .qtex-welcome {width:min(100%,1060px)!important;}
 body.os-shell:has(.tex-work-app) .qtex-welcome-hero {
@@ -229,8 +229,8 @@ body.os-shell:has(.tex-work-app) .qtex-web-badge svg{width:17px;height:17px}
 @media(prefers-reduced-motion:reduce){
   body.os-shell:has(.tex-work-app) .qtex-composer *{transition:none!important}
 }
-\`;
-const RUNTIME = String.raw\`
+`;
+const RUNTIME = String.raw`
 (() => {
   const composer=document.getElementById('qtex-composer');
   if(!composer)return;
@@ -502,7 +502,7 @@ const RUNTIME = String.raw\`
   });
   adjustInput();
 })();
-\`;
+`;
 export function enhanceWorkTexComposer(markup,zh=true){
   const source=String(markup||'');
   if(!source.includes('class="qtex-welcome"') || !source.includes('</body>'))return source;
