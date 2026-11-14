@@ -45,8 +45,8 @@ assert(html.includes("远程编译（不建议）"), "Work must label the option
 assert(html.includes("编译额度管理"), "Administrator must see a quota management link");
 assert(html.includes("ack_public:true") && !html.includes("window.confirm(copy.publicConsent)") && !html.includes("publicConsent"),
   "Repository creation must not show a duplicate confirmation popup; retain the server acknowledgement");
-assert(html.includes("新仓库公开") && html.includes("旧私有仓库在迁移前保持私有"),
-  "Public repository notice must distinguish future public repos from unmigrated private repos");
+assert(html.includes("新仓库公开") && html.includes("当前项目拥有独立 GitHub 编译仓库"),
+  "Public repository notice must explain that every project has an independent repository");
 assert(html.indexOf('id="tex-live-preview-card"') < html.indexOf('id="tex-gh-widget"'), "Remote button belongs below PDF preview");
 assert(html.indexOf('id="tex-gh-widget"') < html.indexOf('class="tex-compiler-card"'), "Remote button belongs above local Bridge card");
 assert(html.includes('id="tex-gh-card" aria-label="GitHub Actions" hidden'), "Remote controls should be collapsed by default");
