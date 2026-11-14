@@ -33,6 +33,28 @@ export async function handleTexGithubApi(request, env, action) {
     return withStudioSessionCookies(fail(403, "Cross-origin mutation blocked."), session.cookies);
   }
   const userId = verified.user.id;
+  // Minimal, account/project-scoped deletion preflight. Unlike compilation
+  // status this reads the authoritative R2 binding even if GitHub, the quota
+  // database or the operator credential is temporarily unavailable.
+  if (action === "project-link" && request.method === "GET") {
+    const documentId=githubProjectId(request);
+    if(!documentId||!await githubProjectOwned(env,userId,documentId))
+      return withStudioSessionCookies(fail(404,"Project not found or inaccessible."),session.cookies);
+    try{
+      const binding=await readTexGithubProjectRepository(env,userId,documentId);
+      return withStudioSessionCookies(json({
+        document_id:documentId,linked:Boolean(binding),
+        repository_name:binding?.repo_name||null,
+        repository_state:binding?.repo_state||"none",
+        repository_delete_confirmed:Boolean(binding?.delete_confirmed)
+      }),session.cookies);
+    }catch(error){
+      workerLog("warn","tex.github.linkage_check.failed",{
+        user_id:userId,document_id:documentId,code:String(error?.code||"backend").slice(0,40)
+      });
+      return withStudioSessionCookies(fail(503,"Unable to verify the project's GitHub repository linkage."),session.cookies);
+    }
+  }
   const admin = await isVerifiedAdmin(session.accessToken);
   const secret = getSupabaseSecret(env);
   if (!secret && action === "status" && request.method === "GET") {
