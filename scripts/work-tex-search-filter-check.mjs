@@ -8,7 +8,7 @@ const zh=enhanceWorkTexSearchFilter(html,true,'admin');
 const en=enhanceWorkTexSearchFilter(html,false,'alice');
 assert(zh.includes('id="aertex-tex-search-filter-css"'));
 assert(zh.includes('id="aertex-tex-search-filter-runtime"'));
-assert(zh.includes('src:local("Michelangelus Italic")')&&zh.includes('src:local("Michelangelus Bold Italic")'));
+assert(zh.includes('/_aertex/fonts/michelangelus-italic-v1.woff2')&&zh.includes('/_aertex/fonts/michelangelus-bolditalic-v1.woff2'), 'Both fonts must be hosted on Work rather than only using local installed faces');
 assert(zh.includes('font-weight:400!important')&&zh.includes('font-weight:700!important'));
 assert(zh.includes('.tex-tree-file.is-active')&&zh.includes('box-shadow:none!important'));
 assert(zh.includes('#tex-project-home')&&zh.includes('background:var(--card)!important'));
@@ -20,7 +20,7 @@ assert(zh.includes('max-height:none!important')&&zh.includes('overflow:visible!i
   'Standard filter sheet must fit within one screen without an internal scrollbar');
 assert(zh.includes('tex-filter-date-control')&&zh.includes('tex-filter-size-control'),
   'Use readable date buttons and an inline KB/MB selector');
-assert(zh.includes('stroke-width:2.2!important')&&zh.includes('stroke:currentColor!important'));
+assert(zh.includes('stroke-width:2.1!important')&&zh.includes('stroke:currentColor!important'));
 const script=zh.match(/<script id="aertex-tex-search-filter-runtime">([\s\S]*?)<\/script>/)?.[1];
 assert(script);
 new vm.Script(script);
