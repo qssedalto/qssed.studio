@@ -114,6 +114,8 @@ export async function handleTexGithubApi(request, env, action) {
     });
     const detail=error?.code==="github_repo_delete_permission_denied" ?
       "GitHub denied repository deletion. The operator token requires repository Administration write/delete permission, and the organization must allow deletion. The repository remains linked; retry after fixing permissions." :
+      error?.code==="github_404" && (action==="repository" || action==="legacy-repository") && request.method==="DELETE" ?
+      "GitHub repository is not visible to the operator token. Deletion cannot be confirmed: the repository may still exist. No local binding was removed; verify GitHub access before retrying." :
       publicError(status);
     return withStudioSessionCookies(fail(status,detail), session.cookies);
   }
