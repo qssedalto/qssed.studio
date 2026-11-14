@@ -52,7 +52,8 @@ export async function handleTexGithubApi(request, env, action) {
         ? await data(env, "rpc/tex_gh_refresh_allowance", "POST", {p_user_id:userId}) : null;
       if(refreshed !== null) row = await readRow(env, userId);
       const weeklyUsed = row?.weekly_used || 0;
-      const available = admin ? -1 : Math.min(Math.max(0,(row?.quota_total||0)-(row?.quota_used||0)),100-weeklyUsed);
+      const weeklyLimit = Math.max(0,row?.weekly_credits||0);
+      const available = admin ? -1 : Math.max(0,weeklyLimit-weeklyUsed);
       const documentId=githubProjectId(request);
       const legacyReceipt=row?.repo_id&&row?.repo_name ?
         await readLegacyDeleteReceipt(env,userId).catch(()=>null) : null;
@@ -78,7 +79,9 @@ export async function handleTexGithubApi(request, env, action) {
         unlimited: admin,
         balance: admin ? null : Math.max(0,(row?.quota_total||0)-(row?.quota_used||0)),
         weekly_used: admin ? null : weeklyUsed,
-        weekly_credits: admin ? null : row?.weekly_credits || 0,
+        weekly_credits: admin ? null : weeklyLimit,
+        quota_progress_used: admin ? null : weeklyUsed,
+        quota_progress_remaining: admin ? null : available,
         week_renews_at: nextChinaMonday(),
         repository_created: Boolean(project?.repo_id && project?.repo_state === "ready"),
         repository_state: project?.repo_state || "none",
@@ -461,15 +464,27 @@ async function createRepository(request, env, userId, admin = false) {
     row=await updateRow(env,userId,{approval_status:"approved"});
   if(!row||row.approval_status!=="approved")
     return fail(403,"Compilation approval is required.");
-  // The old per-account repo lives in the quota table. It is NOT reused.
-  // Each project owns one deterministic managed GitHub repository name.
-  const name=texGithubProjectRepositoryName(documentId);
+  // Immutable project-scoped name. Existing bindings keep their exact name;
+  // renamed project titles do not silently target a different GitHub repo.
   let binding=await readTexGithubProjectRepository(env,userId,documentId);
+  let name=binding?.repo_name||'';
+  if(!name){
+    const raw=await env.STORAGE.get("_system/tex-documents/"+userId+"/"+documentId+".json");
+    const document=raw?await raw.json():null;
+    if(!document||document.owner_id!==userId||document.id!==documentId)
+      return fail(404,"Project not found.");
+    const profileRows=await data(env,"profiles?id=eq."+encodeURIComponent(userId)+"&select=username");
+    const username=Array.isArray(profileRows)?profileRows[0]?.username||'user':'user';
+    name=texGithubProjectRepositoryName(documentId,{
+      title:document.title||'project',username,
+      created_at:new Date().toISOString(),is_admin:admin
+    });
+  }
   if(binding?.repo_state==="ready")return fail(409,"This project already has a repository.");
   if(binding?.repo_state==="deleting")return fail(409,"Finish deleting this project's repository first.");
   await verifyOwner(env);
   binding=await writeTexGithubProjectRepository(env,userId,documentId,{
-    repo_state:"creating",last_error:null,
+    repo_state:"creating",repo_name:name,last_error:null,
     ...(binding?.repo_id?{}:{repo_id:null}),
     source_branch:binding?.source_branch||"main"
   });
