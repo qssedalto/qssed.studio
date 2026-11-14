@@ -171,7 +171,7 @@ async function createDocument(env,userId,title,source,files,type,skipped=[]) {
   if(await countLiveTexDocuments(env.STORAGE,prefix,MAX_DOCS)>=MAX_DOCS)return problem("Project limit reached.",409);
   const now=new Date().toISOString(),id=crypto.randomUUID();
   const record={id,owner_id:userId,title,engine:"xelatex",source,realtime_epoch:"v2",
-    files:files||[],project_type:type,created_at:now,updated_at:now,
+    files:(files||[]).map(file=>({...file,created_at:now,updated_at:now})),project_type:type,created_at:now,updated_at:now,
     main_file_created_at:now,main_file_updated_at:now};
   await putTexDocument(env.STORAGE,prefix+id+".json",record,{
     httpMetadata:{contentType:"application/json;charset=UTF-8"},
