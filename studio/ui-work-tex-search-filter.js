@@ -224,32 +224,131 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       padding:0 6px!important;margin:0!important;
       font:400 11.5px/1.2 "Segoe UI","Microsoft YaHei UI",sans-serif!important;
     }
-    #tex-search-filter-panel .tex-filter-group .tex-filter-date-control{
+    /* A real, visible calendar button. No 1x1 hidden native picker:
+       Chrome anchored that popup to the tiny element and clipped its UI. */
+    #tex-search-filter-panel .tex-filter-group .tex-filter-date-control {
       position:relative!important;padding:0!important;overflow:visible!important;
+      color-scheme:dark;
     }
     #tex-search-filter-panel .tex-filter-date-control>.tex-filter-date-label{
-      flex:1 1 auto!important;display:block!important;height:25px!important;
-      min-width:0!important;text-align:left!important;
-      border:0!important;box-shadow:none!important;
+      box-sizing:border-box!important;display:flex!important;align-items:center!important;
+      justify-content:space-between!important;gap:5px!important;
+      flex:1 1 auto!important;width:100%!important;height:25px!important;
+      min-width:0!important;padding:0 7px!important;margin:0!important;
+      text-align:left!important;border:0!important;border-radius:7px!important;
       background:transparent!important;color:var(--text)!important;
-      padding:0 7px!important;margin:0!important;
-      font:inherit!important;white-space:nowrap!important;
+      font:inherit!important;white-space:nowrap!important;box-shadow:none!important;
       cursor:pointer!important;position:relative!important;
     }
     #tex-search-filter-panel .tex-filter-date-label svg{
-      position:absolute!important;right:5px!important;top:4px!important;
-      width:16px!important;height:16px!important;stroke:currentColor!important;
-      fill:none!important;stroke-width:1.7!important;
+      flex:0 0 16px!important;position:static!important;
+      width:16px!important;height:16px!important;
+      stroke:currentColor!important;fill:none!important;stroke-width:1.8!important;
+      opacity:.93!important;pointer-events:none!important;
     }
     #tex-search-filter-panel .tex-filter-date-label .tex-date-text{
-      display:block!important;margin-right:18px!important;line-height:25px!important;
+      flex:1 1 auto!important;display:block!important;min-width:0!important;
+      margin:0!important;line-height:23px!important;
       white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+      color:inherit!important;
     }
-    #tex-search-filter-panel .tex-filter-date-control input[type="date"]{
-      position:absolute!important;right:1px!important;top:1px!important;
-      width:1px!important;height:1px!important;min-width:1px!important;
-      opacity:0!important;pointer-events:none!important;
-      padding:0!important;margin:0!important;box-shadow:none!important;
+    #tex-search-filter-panel .tex-filter-date-label[aria-expanded="true"]{
+      outline:2px solid var(--primary)!important;outline-offset:0!important;
+    }
+    /* Styled like the adjacent sort dropdown: dark native selects with readable
+       light foreground, matching option colors, and a stable floating calendar. */
+    #tex-search-filter-panel .tex-date-calendar[hidden]{display:none!important}
+    #tex-search-filter-panel .tex-date-calendar{
+      position:fixed!important;z-index:2147480600!important;
+      box-sizing:border-box!important;width:280px!important;max-width:calc(100vw - 16px)!important;
+      padding:11px 10px 9px!important;margin:0!important;
+      overflow:visible!important;border:1px solid var(--border)!important;
+      border-radius:12px!important;background:var(--card,#242426)!important;
+      color:var(--text,#fff)!important;color-scheme:dark;
+      box-shadow:0 15px 34px rgba(0,0,0,.32)!important;
+      font:400 12px/1.35 "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+    }
+    #tex-search-filter-panel .tex-date-calendar-nav{
+      display:grid!important;grid-template-columns:29px minmax(0,1fr) 77px 29px!important;
+      align-items:center!important;gap:5px!important;margin:0 0 7px!important;
+      height:30px!important;
+    }
+    #tex-search-filter-panel .tex-date-calendar-nav button{
+      box-sizing:border-box!important;display:grid!important;place-items:center!important;
+      min-width:0!important;width:29px!important;height:29px!important;min-height:29px!important;
+      padding:0!important;margin:0!important;border:1px solid transparent!important;
+      border-radius:7px!important;background:transparent!important;
+      color:var(--text)!important;font-size:21px!important;line-height:1!important;
+    }
+    #tex-search-filter-panel .tex-date-calendar-nav button:hover,
+    #tex-search-filter-panel .tex-calendar-grid button:not(:disabled):hover,
+    #tex-search-filter-panel .tex-calendar-actions button:hover{
+      background:var(--fill)!important;
+    }
+    #tex-search-filter-panel .tex-date-calendar-nav select{
+      box-sizing:border-box!important;display:block!important;min-width:0!important;
+      max-width:none!important;width:100%!important;height:29px!important;min-height:29px!important;
+      padding:0 5px!important;margin:0!important;border:1px solid var(--border)!important;
+      border-radius:7px!important;background:var(--fill)!important;
+      color:var(--text)!important;box-shadow:none!important;
+      font:400 12px "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+      appearance:auto!important;-webkit-appearance:auto!important;
+      color-scheme:dark!important;
+    }
+    #tex-search-filter-panel .tex-calendar-weekdays,
+    #tex-search-filter-panel .tex-calendar-grid{
+      display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;
+      gap:1px!important;align-items:center!important;
+    }
+    #tex-search-filter-panel .tex-calendar-weekdays span{
+      display:grid!important;place-items:center!important;height:21px!important;
+      color:var(--muted)!important;font-size:10px!important;
+    }
+    #tex-search-filter-panel .tex-calendar-grid button{
+      box-sizing:border-box!important;display:grid!important;place-items:center!important;
+      border:0!important;border-radius:6px!important;
+      width:100%!important;height:29px!important;min-height:29px!important;
+      max-height:29px!important;padding:0!important;margin:0!important;
+      background:transparent!important;color:var(--text)!important;
+      font:400 12px "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+      cursor:pointer!important;
+    }
+    #tex-search-filter-panel .tex-calendar-grid button:disabled{
+      visibility:hidden!important;pointer-events:none!important;
+    }
+    #tex-search-filter-panel .tex-calendar-grid button[aria-selected="true"]{
+      background:var(--primary)!important;color:#fff!important;
+    }
+    #tex-search-filter-panel .tex-calendar-grid button.is-today:not([aria-selected="true"]){
+      box-shadow:inset 0 0 0 1px var(--primary)!important;
+    }
+    #tex-search-filter-panel .tex-calendar-actions{
+      box-sizing:border-box!important;display:flex!important;
+      justify-content:space-between!important;align-items:center!important;
+      gap:7px!important;margin-top:7px!important;padding-top:7px!important;
+      border-top:1px solid var(--border)!important;
+    }
+    #tex-search-filter-panel .tex-calendar-actions button{
+      height:25px!important;min-height:25px!important;
+      padding:0 8px!important;margin:0!important;
+      border:0!important;border-radius:7px!important;
+      background:transparent!important;color:var(--text)!important;
+      font:400 11px "Segoe UI","Microsoft YaHei UI",sans-serif!important;
+    }
+    /* Fix the washed-out or seemingly disabled KB/MB entries in dark mode. */
+    #tex-search-filter-panel .tex-filter-size-control>select,
+    #tex-search-filter-panel select.tex-filter-select{
+      color-scheme:dark!important;
+    }
+    #tex-search-filter-panel select option{
+      color:var(--text,#fff)!important;background:var(--card,#242426)!important;
+      font-style:normal!important;font-weight:400!important;
+    }
+    :root[data-theme="light"] #tex-search-filter-panel .tex-date-calendar,
+    :root[data-theme="light"] #tex-search-filter-panel .tex-date-calendar-nav select,
+    :root[data-theme="light"] #tex-search-filter-panel .tex-filter-size-control>select,
+    :root[data-theme="light"] #tex-search-filter-panel select.tex-filter-select{
+      color-scheme:light!important;
     }
     #tex-search-filter-panel .tex-filter-size-control{
       gap:3px!important;padding:0 3px 0 7px!important;
@@ -380,24 +479,143 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       const calendar='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.8" y="5.5" width="16.4" height="15.2" rx="2.2"/><path d="M7.5 3.5v4M16.5 3.5v4M3.8 10.1h16.4M8.1 14h1M12 14h1M16 14h1"/></svg>';
       const dateFields={};
       const dateLabel=value=>value ? value.replace(/-/g,'/') : (zh?'选择日期':'Choose date');
+      const calendarPop=document.createElement('section');
+      calendarPop.className='tex-date-calendar';
+      calendarPop.id='tex-filter-calendar';
+      calendarPop.hidden=true;
+      calendarPop.setAttribute('role','dialog');
+      calendarPop.setAttribute('aria-label',zh?'选择日期':'Choose date');
+      calendarPop.innerHTML=
+        '<div class="tex-date-calendar-nav">'+
+          '<button type="button" data-month-step="-1" aria-label="'+(zh?'上个月':'Previous month')+'">‹</button>'+
+          '<select data-calendar-month aria-label="'+(zh?'月份':'Month')+'"></select>'+
+          '<select data-calendar-year aria-label="'+(zh?'年份':'Year')+'"></select>'+
+          '<button type="button" data-month-step="1" aria-label="'+(zh?'下个月':'Next month')+'">›</button>'+
+        '</div><div class="tex-calendar-weekdays" aria-hidden="true"></div>'+
+        '<div class="tex-calendar-grid" role="group"></div>'+
+        '<div class="tex-calendar-actions">'+
+          '<button type="button" data-calendar-clear></button>'+
+          '<button type="button" data-calendar-today></button>'+
+        '</div>';
+      pop.append(calendarPop);
+      const monthField=calendarPop.querySelector('[data-calendar-month]');
+      const yearField=calendarPop.querySelector('[data-calendar-year]');
+      const dayGrid=calendarPop.querySelector('.tex-calendar-grid');
+      const todayButton=calendarPop.querySelector('[data-calendar-today]');
+      const clearButton=calendarPop.querySelector('[data-calendar-clear]');
+      todayButton.textContent=zh?'今天':'Today';
+      clearButton.textContent=zh?'清除日期':'Clear';
+      const months=zh
+        ?['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']
+        :['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      for(let m=0;m<12;m++){
+        const option=document.createElement('option');option.value=String(m);
+        option.textContent=months[m];monthField.append(option);
+      }
+      for(let y=1900;y<=2120;y++){
+        const option=document.createElement('option');option.value=String(y);
+        option.textContent=zh?y+' 年':String(y);yearField.append(option);
+      }
+      const weekdayNames=zh?['一','二','三','四','五','六','日']:['M','T','W','T','F','S','S'];
+      for(const label of weekdayNames){
+        const day=document.createElement('span');day.textContent=label;
+        calendarPop.querySelector('.tex-calendar-weekdays').append(day);
+      }
+      let calendarKey='',calendarYear=0,calendarMonth=0;
+      const isoDate=(year,month,day)=>String(year).padStart(4,'0')+'-'+
+        String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      const closeCalendar=()=>{
+        calendarPop.hidden=true;
+        calendarKey='';
+        for(const field of Object.values(dateFields))
+          field.trigger.setAttribute('aria-expanded','false');
+      };
+      const positionCalendar=()=>{
+        if(calendarPop.hidden||!calendarKey)return;
+        const field=dateFields[calendarKey];if(!field)return;
+        const bounds=field.trigger.getBoundingClientRect();
+        const width=calendarPop.offsetWidth,height=calendarPop.offsetHeight;
+        const left=Math.max(8,Math.min(innerWidth-width-8,bounds.right-width));
+        const below=bounds.bottom+6,above=bounds.top-height-6;
+        const top=innerHeight-below>=height||innerHeight-below>=bounds.top-8
+          ?below:above;
+        calendarPop.style.left=left+'px';
+        calendarPop.style.top=Math.max(8,Math.min(innerHeight-height-8,top))+'px';
+      };
+      const applyDate=value=>{
+        const key=calendarKey;
+        if(!key||!dateFields[key])return;
+        state[key]=value;
+        dateFields[key].display.textContent=dateLabel(value);
+        closeCalendar();refresh();
+      };
+      const renderCalendar=()=>{
+        if(calendarPop.hidden)return;
+        monthField.value=String(calendarMonth);
+        yearField.value=String(calendarYear);
+        const first=(new Date(calendarYear,calendarMonth,1).getDay()+6)%7;
+        const days=new Date(calendarYear,calendarMonth+1,0).getDate();
+        const localNow=new Date(),current=isoDate(localNow.getFullYear(),localNow.getMonth(),localNow.getDate());
+        const selected=state[calendarKey]||'';
+        dayGrid.replaceChildren();
+        for(let i=0;i<42;i++){
+          const dayNumber=i-first+1;
+          const day=document.createElement('button');day.type='button';
+          const valid=dayNumber>=1&&dayNumber<=days;
+          day.disabled=!valid;
+          if(valid){
+            const iso=isoDate(calendarYear,calendarMonth,dayNumber);
+            day.textContent=String(dayNumber);
+            day.setAttribute('aria-label',iso);
+            day.setAttribute('aria-selected',String(iso===selected));
+            day.classList.toggle('is-today',iso===current);
+            day.addEventListener('click',()=>applyDate(iso));
+          }else day.setAttribute('aria-hidden','true');
+          dayGrid.append(day);
+        }
+        positionCalendar();
+      };
+      function toggleCalendar(key){
+        if(!calendarPop.hidden&&calendarKey===key){closeCalendar();return}
+        if(!dateFields[key])return;
+        closeCalendar();calendarKey=key;
+        const v=state[key]||'';
+        const d=/^\d{4}-\d{2}-\d{2}$/.test(v)?new Date(v+'T12:00:00'):new Date();
+        calendarYear=d.getFullYear();calendarMonth=d.getMonth();
+        if(calendarYear<1900||calendarYear>2120){calendarYear=new Date().getFullYear();calendarMonth=new Date().getMonth()}
+        calendarPop.setAttribute('aria-label',dateFields[key].label);
+        calendarPop.hidden=false;
+        dateFields[key].trigger.setAttribute('aria-expanded','true');
+        renderCalendar();
+      }
       function addDate(label,key){
         const row=document.createElement('label'),caption=document.createElement('span'),control=document.createElement('span');
         caption.textContent=label;control.className='tex-filter-date-control';
-        const picker=document.createElement('input');picker.type='date';picker.dataset.key=key;
-        picker.setAttribute('aria-label',label);
         const trigger=document.createElement('button');trigger.type='button';
         trigger.className='tex-filter-date-label';trigger.setAttribute('aria-label',label);
+        trigger.setAttribute('aria-haspopup','dialog');trigger.setAttribute('aria-controls','tex-filter-calendar');
+        trigger.setAttribute('aria-expanded','false');
         const display=document.createElement('span');display.className='tex-date-text';display.textContent=dateLabel('');
-        trigger.append(display);
-        trigger.insertAdjacentHTML('beforeend',calendar);
-        trigger.addEventListener('click',()=>{
-          try{picker.showPicker?.();}catch{picker.focus();picker.click();}
-        });
-        picker.addEventListener('change',()=>{state[key]=picker.value;display.textContent=dateLabel(picker.value);refresh()});
-        control.append(trigger,picker);row.append(caption,control);dates.append(row);
-        dateFields[key]={picker,display};return picker;
+        trigger.append(display);trigger.insertAdjacentHTML('beforeend',calendar);
+        trigger.addEventListener('click',()=>toggleCalendar(key));
+        control.append(trigger);row.append(caption,control);dates.append(row);
+        dateFields[key]={trigger,display,label};return trigger;
       }
       addDate(copy.created,'created');addDate(copy.modified,'modified');
+      monthField.addEventListener('change',()=>{calendarMonth=Number(monthField.value);renderCalendar()});
+      yearField.addEventListener('change',()=>{calendarYear=Number(yearField.value);renderCalendar()});
+      calendarPop.addEventListener('click',e=>{
+        const step=e.target.closest('[data-month-step]');
+        if(!step)return;
+        const d=new Date(calendarYear,calendarMonth+Number(step.dataset.monthStep),1);
+        calendarYear=Math.max(1900,Math.min(2120,d.getFullYear()));
+        calendarMonth=d.getMonth();renderCalendar();
+      });
+      todayButton.addEventListener('click',()=>{
+        const today=new Date();
+        applyDate(isoDate(today.getFullYear(),today.getMonth(),today.getDate()));
+      });
+      clearButton.addEventListener('click',()=>applyDate(''));
       const sizeRow=document.createElement('label'),sizeTitle=document.createElement('span');
       sizeTitle.textContent=copy.size;
       const sizeControl=document.createElement('span');sizeControl.className='tex-filter-size-control';
@@ -423,7 +641,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         const top=Math.max(8,Math.min(innerHeight-height-8,beneath));
         pop.style.left=left+'px';pop.style.top=top+'px';
       };
-      const close=()=>{pop.hidden=true;button.setAttribute('aria-expanded','false')};
+      const close=()=>{closeCalendar();pop.hidden=true;button.setAttribute('aria-expanded','false')};
       button.addEventListener('click',()=>{pop.hidden=!pop.hidden;button.setAttribute('aria-expanded',String(!pop.hidden));if(!pop.hidden)position()});
       pop.addEventListener('click',e=>{
         if(e.target.closest('[data-action="done"]')){close();button.focus()}
@@ -435,7 +653,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
           for(const el of pop.querySelectorAll('[data-key]'))
             el.value=el.dataset.key==='order'?'recent':el.dataset.key==='sizeUnit'?'KB':'';
           for(const field of Object.values(dateFields))field.display.textContent=dateLabel('');
-          refresh();
+          closeCalendar();refresh();
         }
       });
       pop.addEventListener('change',e=>{
@@ -449,10 +667,22 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
         state.maxSize=sizeInput.value;refresh();
       });
       document.addEventListener('pointerdown',e=>{
+        if(!calendarPop.hidden&&!calendarPop.contains(e.target)&&
+          !e.target.closest('.tex-filter-date-label'))closeCalendar();
         if(!pop.hidden&&!pop.contains(e.target)&&!button.contains(e.target))close();
       },true);
-      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!pop.hidden){close();button.focus()}});
-      window.addEventListener('resize',()=>{if(!pop.hidden)position()});
+      document.addEventListener('keydown',e=>{
+        if(e.key==='Escape'&&!calendarPop.hidden){
+          const field=dateFields[calendarKey];closeCalendar();field?.trigger.focus();
+          e.stopPropagation();return;
+        }
+        if(e.key==='Escape'&&!pop.hidden){close();button.focus()}
+      });
+      window.addEventListener('resize',()=>{
+        if(!pop.hidden)position();
+        if(!calendarPop.hidden)positionCalendar();
+      });
+      window.addEventListener('scroll',()=>{if(!calendarPop.hidden)positionCalendar()},{passive:true,capture:true});
       window.addEventListener('pagehide',()=>pop.remove(),{once:true});
       let projects=[],listedAt=0,index=new Map(),inflight=new Map(),generation=0,timer=0;
       const textbytes=s=>new TextEncoder().encode(String(s||'')).length;

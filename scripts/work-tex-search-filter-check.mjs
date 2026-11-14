@@ -28,8 +28,15 @@ assert(script.includes('owner="admin"'));
 assert(script.includes('/api/tex/documents?id=')&&script.includes("api('/api/tex/documents')"));
 assert(script.includes('state.types[e.type]')&&script.includes('state.status')&&script.includes('state.maxSize'));
 assert(script.includes('searchRow.append(box,button)')&&script.includes("sizeUnit:'KB'"));
-assert(script.includes("picker.showPicker?.()")&&script.includes("state.sizeUnit==='MB'?1048576:1024"),
-  'Date picker, KB default and MB conversion must remain functional');
+assert(!script.includes('showPicker') && !script.includes("picker.type='date'"),
+  'No hidden 1px date input: it creates a clipped, unreadable native picker');
+assert(script.includes('calendarPop.hidden=false')&&script.includes('renderCalendar()')&&
+  script.includes("dateFields[key].display.textContent=dateLabel(value)")&&
+  script.includes("state.sizeUnit==='MB'?1048576:1024"),
+  'Accessible styled calendar and KB/MB filters must remain functional');
+assert(zh.includes('tex-date-calendar-nav')&&zh.includes('tex-calendar-grid')&&
+  zh.includes('tex-date-calendar[hidden]')&&zh.includes('color-scheme:dark'),
+  'Calendar uses a visible themed day grid and readable selects');
 assert(!script.includes('content.append(title,path,meta)'),
   'Search result paths, timestamps and sizes must not permanently consume sidebar height');
 assert(script.includes('Date.parse')&&script.includes("created_at")&&script.includes("updated_at"));
