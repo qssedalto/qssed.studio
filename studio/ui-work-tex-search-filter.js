@@ -493,7 +493,7 @@ export function enhanceWorkTexSearchFilter(markup, zh=true, ownerSlug="account")
       // lazily when search or a project tooltip actually needs them.
       void loadProjects().then(()=>{if(searchActive())refresh()}).catch(()=>{});
     })();
-  `.replace('__ZH__', zh ? 'true':'false').replace('__OWNER__', JSON.stringify(String(ownerSlug||"account").slice(0,48)));
+  `.replace('__ZH__', zh ? 'true':'false').replace('__OWNER__', JSON.stringify(String(ownerSlug||"account").replace(/[^A-Za-z0-9_.-]/g,"-").slice(0,48)));
   return String(markup||'').replace('</head>','<style id="aertex-tex-search-filter-css">'+css+'</style></head>')
     .replace('</body>','<script id="aertex-tex-search-filter-runtime">'+script+'</script></body>');
 }
