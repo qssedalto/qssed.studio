@@ -208,6 +208,36 @@ function publicError(status) {
   return "The GitHub compilation service is currently unavailable.";
 }
 
+// Expose a small, fixed diagnostic vocabulary to the authenticated project owner.
+ // Avoid leaking GitHub response bodies, request headers, token contents or internal paths.
+function githubProvisionDiagnostic(stage,error){
+  const code=String(error?.code||"");
+  const step={
+    locate:"checking whether the repository already exists",
+    create:"creating the public repository",
+    identity:"validating the repository owner and ID",
+    source:"uploading main.tex",
+    readme:"uploading README.md",
+    workflow:"installing the compilation workflow",
+    head:"reading the repository's default branch",
+    pdf:"creating the PDF output branch",
+    finalize:"saving the repository's ready state"
+  }[stage]||"provisioning the repository";
+  let reason="A service or storage request failed.";
+  if(code==="github_401")reason="GitHub rejected the operator credential. Check the token validity.";
+  else if(code==="github_403")reason=stage==="workflow"?
+    "GitHub denied workflow-file writes. Grant Workflows: Read and write to the repository token.":
+    "GitHub denied this operation. Check the operator token's repository permissions.";
+  else if(code==="github_404")reason="GitHub cannot find this repository or branch with the configured token.";
+  else if(code==="github_422")reason="GitHub rejected the request as invalid or conflicting.";
+  else if(code==="github_429")reason="GitHub rate limiting is active. Retry after the rate limit clears.";
+  else if(/^github_5\d\d$/.test(code))reason="GitHub returned a server error.";
+  else if(code==="invalid_managed_repository_name")reason="The stored repository name failed validation.";
+  else if(code==="credentials_missing")reason="GitHub operator credentials are not configured.";
+  else if(code.startsWith("database_"))reason="The protected account database request failed.";
+  return "Repository setup failed while "+step+". "+reason+" Existing repository data was preserved for retry.";
+}
+
 function httpError(status, code) {
   const error = new Error(code);
   error.status = status;
@@ -496,16 +526,21 @@ async function createRepository(request, env, userId, admin = false) {
   });
   let repoId=binding.repo_id;
   let branch=binding.source_branch||"main";
+  let provisioningStep="locate";
   try{
     if(!repoId){
       let created=null;
       try{created=await github(env,"/repos/"+env.AERTEX_TEX_GITHUB_OWNER+"/"+name);}
       catch(error){if(error.status!==404)throw error;}
-      if(!created)created=await github(env,"/user/repos","POST",{
+      if(!created){
+        provisioningStep="create";
+        created=await github(env,"/user/repos","POST",{
         name,private:false,auto_init:true,
         description:"Public TeX compilation repository for one AERTEX Work project",
         has_issues:false,has_wiki:false,has_projects:false,allow_auto_merge:false
-      });
+        });
+      }
+      provisioningStep="identity";
       if(created?.name!==name||typeof created?.private!=="boolean"||
         created.owner?.login?.toLowerCase()!==env.AERTEX_TEX_GITHUB_OWNER.toLowerCase())
         throw httpError(409,"unexpected_repository_identity");
@@ -514,12 +549,18 @@ async function createRepository(request, env, userId, admin = false) {
         repo_state:"creating",repo_id:repoId,source_branch:branch,last_error:null
       });
     }
+    provisioningStep="identity";
     const repoPath=githubRepoPath(env,name);
     verifyManagedRepo(env,await github(env,repoPath),repoId,name);
+    provisioningStep="source";
     await putFile(env,repoPath,"main.tex",INITIAL_TEX_SOURCE,branch);
+    provisioningStep="readme";
     await putFile(env,repoPath,"README.md",INITIAL_TEX_README,branch);
+    provisioningStep="workflow";
     await putFile(env,repoPath,MANAGED_TEX_WORKFLOW_PATH,MANAGED_TEX_WORKFLOW,branch);
+    provisioningStep="head";
     const head=await github(env,repoPath+"/git/ref/heads/"+encodeURIComponent(branch));
+    provisioningStep="pdf";
     try{
       await github(env,repoPath+"/git/refs","POST",{ref:"refs/heads/pdf-output",sha:head.object.sha});
     }catch(error){
@@ -527,6 +568,7 @@ async function createRepository(request, env, userId, admin = false) {
       const existing=await github(env,repoPath+"/git/ref/heads/pdf-output");
       if(!existing?.object?.sha)throw httpError(503,"pdf_branch_missing");
     }
+    provisioningStep="finalize";
     await writeTexGithubProjectRepository(env,userId,documentId,{
       repo_state:"ready",repo_id:repoId,source_branch:branch,last_error:null
     });
@@ -534,14 +576,17 @@ async function createRepository(request, env, userId, admin = false) {
   }catch(error){
     // Preserve the bound repository ID for retry; never create a second repo
     // when GitHub succeeded but the later workflow provisioning failed.
+    const diagnostic=githubProvisionDiagnostic(provisioningStep,error);
     await writeTexGithubProjectRepository(env,userId,documentId,{
       repo_state:"error",repo_id:repoId||null,source_branch:branch,
-      last_error:"Creation failed; retry provisioning. The existing repository will be checked first."
+      last_error:diagnostic
     }).catch(()=>{});
     workerLog("warn","tex.github.project_provision.failed",{
-      user_id:userId,document_id:documentId,code:String(error?.code||"unknown").slice(0,50)
+      user_id:userId,document_id:documentId,stage:provisioningStep,
+      code:String(error?.code||"unknown").slice(0,50)
     });
-    throw error;
+    // A fixed, non-sensitive diagnostic is safe for this verified project owner.
+    return fail(Number(error?.status)||503,diagnostic);
   }
 }
 
