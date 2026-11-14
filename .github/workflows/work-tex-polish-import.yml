@@ -1,0 +1,68 @@
+name: Import validated Work TeX UI patch
+on:
+  push:
+    branches: [fix/work-tex-visual-consistency-20261114]
+    paths: ['.work-ui-transfer/manifest.json']
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, 'fix(work): polish TeX') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.x'
+      - name: Verify source edits against exact anchors and commit
+        run: |
+          python3 <<'PY'
+          import pathlib,base64,gzip,hashlib,json,re
+          root=pathlib.Path.cwd()
+          manifest=json.loads((root/'.work-ui-transfer/manifest.json').read_text())
+          assert 1<=manifest['parts']<=8
+          chunks=''.join((root/f".work-ui-transfer/chunk-{i}.txt").read_text().strip() for i in range(manifest['parts']))
+          assert len(chunks)<120000
+          raw=gzip.decompress(base64.b64decode(chunks,validate=True))
+          assert hashlib.sha256(raw).hexdigest()==manifest['sha256']
+          package=json.loads(raw)
+          assert package['base_commit']=='1061d834f41f025e51cc51c1a14fc14dc563c523'
+          touched=[]
+          for item in package['changes']:
+            path=pathlib.PurePosixPath(item['p'])
+            assert not path.is_absolute() and '..' not in path.parts
+            assert path.parts[0] in ('studio','scripts')
+            dest=root/path
+            assert dest.resolve().is_relative_to(root) and not dest.is_symlink()
+            if 'create' in item:
+              assert not dest.exists(),str(path)+' already exists'
+              dest.parent.mkdir(parents=True,exist_ok=True)
+              dest.write_text(item['create'])
+            else:
+              current=dest.read_text()
+              for edit in item['edits']:
+                before,after=edit['a'],edit['b']
+                count=current.count(before)
+                assert count==1,f"{path}: expected one anchor, got {count} for {before[:80]!r}"
+                current=current.replace(before,after,1)
+              dest.write_text(current)
+            touched.append(str(path))
+          pathlib.Path('/tmp/work-teX-changed-files').write_text('\n'.join(touched)+'\n')
+          print('Verified and applied',len(touched),'source files without rewriting surrounding content')
+          PY
+          while IFS= read -r file; do git add -- "$file"; done < /tmp/work-teX-changed-files
+          git rm -r -- .work-ui-transfer/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(work): polish TeX SVG toolbar, Markdown header, modal, wrap and PDF'
+          git push origin HEAD:refs/heads/fix/work-tex-visual-consistency-20261114
+      - name: Verify critical Work TeX contracts
+        run: |
+          node scripts/work-tex-ui-polish-check.mjs
+          node scripts/tex-toolbar-actions-check.mjs
+          node scripts/work-local-bridge-check.mjs
+          node --check studio/ui-work-tex-ui-polish.js
+      - name: Save evidence
+        if: always()
+        run: git log -1 --oneline >> "$GITHUB_STEP_SUMMARY"
