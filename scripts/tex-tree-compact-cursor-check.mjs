@@ -22,5 +22,5 @@ assert(html.includes('margin:0 0 1px 14px!important')&&html.includes('margin:0 0
 assert(html.includes('cursor:progress!important'), 'Use native busy-in-background mouse cursor');
 assert(html.includes('color:#9fa5af!important')&&html.includes('color:#606770!important'), 'Gray icons must be legible in both themes');
 const svg=fs.readFileSync(new URL('../studio/assets/tex-document-outline.svg',import.meta.url),'utf8');
-assert(svg.includes('viewBox="0 0 447 447"')&&svg.includes('stroke="#9FA5AF"')&&svg.includes('stroke-width="20"'));
+assert(svg.includes('viewBox="0 0 447 447"')&&svg.includes('stroke="#9FA5AF"')&&svg.includes('stroke-width="43"'));
 console.log('Compact Windows tree, progress cursor, SVG and accessible expansion verified.');

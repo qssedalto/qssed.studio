@@ -37,6 +37,7 @@ import { enhanceWorkTexMobileFollowup } from "./ui-work-tex-mobile-followup.js";
 import { enhanceWorkTexToolbarScroll } from "./ui-work-tex-toolbar-scroll.js";
 import { enhanceWorkTexCompileToolbar } from "./ui-work-tex-compile-toolbar.js";
 import { enhanceWorkTexUiPolish } from "./ui-work-tex-ui-polish.js";
+import { enhanceWorkTexSearchFilter } from "./ui-work-tex-search-filter.js";
 import { enhanceWorkTexFileChat } from "./ui-work-tex-file-chat.js";
 import { enhanceWorkTexDeviceReadiness } from "./ui-work-tex-device-readiness.js";
 import { normalizeFeatureAvailabilityCopy } from "./feature-availability-copy.js";
@@ -268,7 +269,11 @@ export default {
       if (pathname === "/work") markup = replaceOsContent(markup, polishWorkHubTexRoute(workHubContent(zh, workOrigin, fullLocale, mainOrigin), workOrigin));
       if (pathname === "/work/local") markup = replaceOsContent(markup, enhanceWorkLocalBridgeNative(workLocalBridgeContent(zh, fullLocale, mainOrigin), zh));
       if (pathname === "/work/tex/setup") markup = replaceOsContent(markup, texGithubSetupContent(zh, fullLocale));
-      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceTexGithubWorkbench(enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); markup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup))); markup = prepareWorkTexDocumentShell(markup, { userId: gate.user?.id, documentId: new URL(request.url).searchParams.get("document"), zh }); markup = enhanceWorkTexCompileToolbar(enhanceWorkTexFileChat(enhanceWorkTexToolbarScroll(enhanceWorkTexDeviceReadiness(enhanceWorkTexMobileFollowup(enhanceWorkTexMobileQa(enhanceTexProjectControls(markup, zh))), zh), zh),zh), zh); markup = enhanceWorkTexUiPolish(markup, zh); }
+      if (pathname === "/work/tex") { markup = replaceOsContent(markup, enhanceTexGithubWorkbench(enhanceWorkTexCollapsiblePanels(polishTexWorkbenchApp(enhanceTexWorkbenchLocal(texWorkbenchContent(zh), zh), zh), zh), zh)); markup = polishWorkTexVisualTheme(markup); markup = injectWorkTexHomeLinks(markup, fullLocale, mainOrigin); markup = polishWorkTexPdfControls(polishWorkTexWelcome(polishWorkTexViewportEdges(markup))); markup = prepareWorkTexDocumentShell(markup, { userId: gate.user?.id, documentId: new URL(request.url).searchParams.get("document"), zh }); markup = enhanceWorkTexCompileToolbar(enhanceWorkTexFileChat(enhanceWorkTexToolbarScroll(enhanceWorkTexDeviceReadiness(enhanceWorkTexMobileFollowup(enhanceWorkTexMobileQa(enhanceTexProjectControls(markup, zh))), zh), zh),zh), zh); markup = enhanceWorkTexUiPolish(markup, zh);
+         const verifiedOwnerSlug = shellProductLinks.adminHref ? "admin" :
+           (gate.user?.user_metadata?.username || gate.user?.user_metadata?.preferred_username ||
+            gate.user?.user_metadata?.user_name || "account");
+         markup = enhanceWorkTexSearchFilter(markup, zh, verifiedOwnerSlug); }
       // A revoked or nonexistent shared-document deep link returns to the Work
       // start screen with a localized, non-identifying explanation.
       if (pathname === "/work/tex" && new URL(request.url).searchParams.get("notice") === "document-unavailable") {

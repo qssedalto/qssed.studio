@@ -123,9 +123,15 @@ export async function handleRoomSaveValidation(request, state, env, broadcast) {
       if (!commit) return reply({ ok: true, rebase });
       // Preserve the exact files, pins and locks from the CAS-protected R2 read;
       // source saves never import a client-supplied project or attachment list.
-      const document = { ...previous, ...fields(input.candidate),
+      const timestamp = new Date().toISOString();
+      const candidateFields = fields(input.candidate);
+      const document = { ...previous, ...candidateFields,
+        // Source changes in the serialized Durable Object must update the
+        // file clock as well as the general project clock.
+        main_file_updated_at: candidateFields.source !== previous.source
+          ? timestamp : (previous.main_file_updated_at || null),
         realtime_epoch: rebase ? crypto.randomUUID() : texRealtimeEpoch(previous),
-        updated_at: new Date().toISOString() };
+        updated_at: timestamp };
       try {
         await putTexDocument(env.STORAGE, documentKey(document), document,
           writeOptions(document, object.customMetadata), object.etag);

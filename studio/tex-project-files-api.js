@@ -201,6 +201,34 @@ export async function handleTexProjectFiles(request, env, userId) {
     const total = encoder.encode(String(doc.source || "")).length +
       next.reduce((n,f)=>n+sizeOf(f),0);
     if (total > MAX_TOTAL_BYTES) return fail("Project file content cannot exceed 32 MB.", 413);
+    // Record actual timestamps only when a file is created or changed.
+    // Legacy files without a per-file history retain an unknown creation
+    // date; never manufacture one from the project's timestamp.
+    const changeAt = new Date().toISOString();
+    const oldByName = new Map(existing.map(file => [file.name, file]));
+    const renamedFrom = operation === "rename" ? oldByName.get(input.name) : null;
+    const addedNames = new Set(added.map(file => file.name));
+    next = next.map(file => {
+      const before = oldByName.get(file.name) ||
+        (operation === "rename" && file.name === input.new_name ? renamedFrom : null);
+      const changed = (operation === "replace" && addedNames.has(file.name)) ||
+        (operation === "add" && addedNames.has(file.name)) ||
+        (operation === "rename" && file.name === input.new_name);
+      return {
+        ...file,
+        created_at: before?.created_at || (before ? null : changeAt),
+        updated_at: changed ? changeAt : (before?.updated_at || null)
+      };
+    });
+    if (mainEntryRebased) {
+      if (doc.main_deleted) {
+        doc.main_file_created_at = null;
+        doc.main_file_updated_at = null;
+      } else {
+        doc.main_file_created_at = doc.main_file_created_at || (operation === "add" ? changeAt : null);
+        doc.main_file_updated_at = changeAt;
+      }
+    }
     doc.files = next;
     const priorRealtimeEpoch = texRealtimeEpoch(doc);
     // A canonical root-file replacement is a NEW Yjs collaboration history.

@@ -133,9 +133,11 @@ export async function handleTexOrganize(request, env, userId) {
           ? rewriteTexFolderReferences(file.content,name,destination) : file.content;
         if(content!==file.content && blocked(original.name))
           return json({error:"A locked file contains a reference to this folder. Unlock it first."},423);
-        rewrittenFiles.push(content===file.content?file:{...file,content});
+        const changed = file.name !== original.name || content !== original.content;
+        rewrittenFiles.push(changed?{...file,content,updated_at:new Date().toISOString()}:file);
       }
       doc.source=rewrittenMain;
+      if(rewrittenMain!==previousSource)doc.main_file_updated_at=new Date().toISOString();
       doc.files=rewrittenFiles;
       const move = value => value===name?destination:value.startsWith(prefix)?destination+"/"+value.slice(prefix.length):value;
       doc.pinned_files = pinnedFiles.map(move); doc.locked_files = lockedFiles.map(move);
