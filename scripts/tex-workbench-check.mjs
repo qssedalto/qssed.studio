@@ -218,6 +218,21 @@ for (const zh of [true, false]) {
     "Project picker should align to its trigger instead of occupying an unrelated wide space.");
   assert(composerRuntime.includes("menu===actions?312:264"),
     "Project picker must be narrower than the file-action menu.");
+  assert(composerMarkup.includes('width:min(100%,720px)!important') &&
+    composerMarkup.includes('height:54px!important') &&
+    composerMarkup.includes('height:52px!important'),
+    "Welcome composer should match the reference: bounded 720px width and 52–54px one-line height.");
+  assert(composerMarkup.includes('flex:0 0 auto!important;width:auto!important') &&
+    composerMarkup.includes('.qtex-target-btn>span'),
+    "Project/chat choice must keep its full label rather than collapsing to 聊….");
+  assert(composerMarkup.includes('.qtex-composer[data-multiline="true"] .qtex-composer-shell') &&
+    composerMarkup.includes('grid-template-rows:auto 40px!important'),
+    "Only wrapped/multiline text should move actions to a separate bottom row.");
+  assert(composerRuntime.includes("composer.dataset.multiline='false'") &&
+    composerRuntime.includes("composer.dataset.multiline=String(multiline)") &&
+    composerRuntime.includes("window.addEventListener('resize',adjustInput)"),
+    "Composer must adapt to text input and viewport changes without staying enlarged.");
+
   assert(composerMarkup.includes("grid-template-columns:22px minmax(0,1fr) 15px!important") &&
     composerMarkup.includes("height:42px!important"),
     "Project and chat choices must have consistent compact single-line rows.");
