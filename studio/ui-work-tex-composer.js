@@ -580,6 +580,130 @@ body.os-shell:has(.tex-work-app) .qtex-composer[data-keyboard-nav="true"] #qtex-
   }
 }
 
+
+/* GPT reference dimensions: a short centered pill that grows ONLY for wrapped text. */
+body.os-shell:has(.tex-work-app) .qtex-composer{
+  width:min(100%,720px)!important;
+  max-width:100%!important;
+  margin:0 auto clamp(20px,3.5vh,36px)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-composer-shell{
+  display:flex!important;align-items:center!important;
+  flex-wrap:nowrap!important;gap:3px!important;
+  width:100%!important;min-height:54px!important;
+  height:54px!important;max-height:none!important;
+  padding:5px 7px!important;border-radius:999px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-composer-footer{
+  display:contents!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer #qtex-composer-input{
+  flex:1 1 0%!important;align-self:center!important;
+  display:block!important;width:0!important;min-width:0!important;
+  min-height:34px!important;max-height:160px!important;
+  margin:0!important;padding:6px 8px!important;
+  font-size:15px!important;line-height:22px!important;
+  overflow-x:hidden!important;overflow-y:auto!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn{
+  order:-1!important;flex:0 0 36px!important;
+  width:36px!important;height:36px!important;
+  min-width:36px!important;max-width:36px!important;
+  padding:0!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn svg{
+  width:23px!important;height:23px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn{
+  flex:0 0 auto!important;width:auto!important;
+  min-width:0!important;max-width:min(176px,42vw)!important;
+  height:32px!important;min-height:32px!important;
+  padding:0 9px!important;gap:5px!important;
+  white-space:nowrap!important;border-radius:999px!important;
+  background:color-mix(in srgb,var(--text) 5%,transparent)!important;
+  color:var(--muted)!important;
+  font-size:12px!important;line-height:1.3!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn:hover,
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn[aria-expanded="true"]{
+  background:color-mix(in srgb,var(--text) 9%,transparent)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn>span{
+  display:block!important;flex:0 1 auto!important;
+  min-width:0!important;max-width:100%!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn svg{
+  flex:0 0 14px!important;width:14px!important;height:14px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-send-btn{
+  flex:0 0 40px!important;width:40px!important;height:40px!important;
+  min-width:40px!important;max-width:40px!important;
+  min-height:40px!important;max-height:40px!important;
+  aspect-ratio:1/1!important;border-radius:50%!important;
+  margin:0!important;padding:0!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-send-btn svg{
+  width:21px!important;height:21px!important;
+}
+/* When a message wraps, promote the input into a full-width first row, as in GPT. */
+body.os-shell:has(.tex-work-app) .qtex-composer[data-multiline="true"] .qtex-composer-shell{
+  display:grid!important;
+  grid-template-columns:36px minmax(0,1fr) auto 40px!important;
+  grid-template-rows:auto 40px!important;
+  column-gap:5px!important;row-gap:3px!important;
+  height:auto!important;min-height:92px!important;
+  padding:8px 9px 7px!important;border-radius:26px!important;
+  align-items:end!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer[data-multiline="true"] #qtex-composer-input{
+  grid-column:1/-1!important;grid-row:1!important;
+  width:100%!important;min-height:34px!important;
+  align-self:start!important;padding:4px 7px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer[data-multiline="true"] .qtex-plus-btn{
+  grid-column:1!important;grid-row:2!important;order:0!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer[data-multiline="true"] .qtex-target-btn{
+  grid-column:3!important;grid-row:2!important;
+  align-self:center!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer[data-multiline="true"] .qtex-send-btn{
+  grid-column:4!important;grid-row:2!important;
+}
+@media(max-width:760px){
+  body.os-shell:has(.tex-work-app) .qtex-composer{
+    width:min(100%,720px)!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-composer .qtex-composer-shell{
+    height:52px!important;min-height:52px!important;
+    padding:5px 6px!important;gap:1px!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-composer #qtex-composer-input{
+    font-size:14px!important;padding:6px 6px!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn{
+    width:34px!important;height:34px!important;
+    flex-basis:34px!important;min-width:34px!important;max-width:34px!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-composer .qtex-send-btn{
+    flex-basis:38px!important;width:38px!important;height:38px!important;
+    min-width:38px!important;max-width:38px!important;
+    min-height:38px!important;max-height:38px!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn{
+    width:auto!important;min-width:0!important;
+    max-width:min(162px,46vw)!important;
+    font-size:11px!important;height:30px!important;
+    padding:0 6px!important;gap:3px!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-composer[data-multiline="true"] .qtex-composer-shell{
+    height:auto!important;min-height:88px!important;
+    grid-template-columns:34px minmax(0,1fr) auto 38px!important;
+    grid-template-rows:auto 38px!important;
+  }
+}
+
 @media(prefers-reduced-motion:reduce){
   body.os-shell:has(.tex-work-app) .qtex-composer *{transition:none!important}
 }
@@ -607,9 +731,20 @@ const RUNTIME = String.raw`
     status.hidden=!message;
   }
   function adjustInput(){
-    input.style.height='auto';
-    input.style.height=Math.min(180,Math.max(36,input.scrollHeight))+'px';
+    // Empty, one-line input stays a compact pill regardless of placeholder length.
+    // Only actual wrapped/newline text promotes the composer to a taller grid.
+    composer.dataset.multiline='false';
+    input.style.height='34px';
     const hasText=Boolean(input.value.trim());
+    const style=getComputedStyle(input);
+    const lineHeight=parseFloat(style.lineHeight)||22;
+    const verticalPadding=(parseFloat(style.paddingTop)||0)+(parseFloat(style.paddingBottom)||0);
+    const multiline=Boolean(input.value)&&(
+      /\\n/.test(input.value)||input.scrollHeight>lineHeight+verticalPadding+3
+    );
+    composer.dataset.multiline=String(multiline);
+    input.style.height='auto';
+    input.style.height=Math.min(160,Math.max(34,input.scrollHeight))+'px';
     composer.dataset.hasDraft=String(hasText);
     send.disabled=!hasText;
     send.setAttribute('aria-disabled',String(!hasText));
@@ -851,6 +986,7 @@ const RUNTIME = String.raw`
   }
   send.addEventListener('click',()=>{if(!send.disabled)void submit();});
   input.addEventListener('input',adjustInput);
+  window.addEventListener('resize',adjustInput);
   input.addEventListener('keydown',e=>{
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){
       e.preventDefault();void submit();
