@@ -186,6 +186,9 @@ body.os-shell:has(.tex-work-app) .qtex-welcome-copy{
 body.os-shell:has(.tex-work-app) .qtex-welcome-brand{
   position:absolute;top:0;left:0;margin:0;opacity:.82;
 }
+/* The welcome view no longer shows the redundant AERTEX / Work breadcrumb. */
+body.os-shell:has(.tex-work-app) .qtex-welcome-brand{display:none!important}
+
 body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2{
   max-width:100%;margin:0 auto!important;
   font:560 clamp(29px,3.2vw,43px)/1.4 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif!important;
