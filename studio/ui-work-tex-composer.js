@@ -2,14 +2,12 @@
 // does not introduce an unverified AI backend or bypass project-chat Passkeys.
 const ICON = {
   plus: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4.5v15M4.5 12h15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  attach: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8.05 12.8 6.27-6.27a3.55 3.55 0 0 1 5.02 5.02l-8.38 8.38a5.42 5.42 0 0 1-7.67-7.67l8.4-8.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  library: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 5.75h9.2c1.13 0 2.05.92 2.05 2.05v10.35c0 1.13-.92 2.05-2.05 2.05H8c-1.13 0-2.05-.92-2.05-2.05V7.8c0-1.13.92-2.05 2.05-2.05Z" fill="currentColor" opacity=".17"/><path d="M6.85 4.1h8.55M5.25 6.45h9.2M4.65 9.1V18c0 1.17.95 2.12 2.12 2.12h10.5c1.17 0 2.12-.95 2.12-2.12V8.2c0-1.17-.95-2.12-2.12-2.12H7.72c-1.7 0-3.07 1.37-3.07 3.02Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  image: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.3" y="3.8" width="17.4" height="16.4" rx="3.3" fill="currentColor" opacity=".17"/><circle cx="8.5" cy="9" r="2" fill="currentColor"/><path d="m4.3 17.1 4.6-4.8c.69-.72 1.86-.7 2.52.03l2.2 2.43 2.1-2.05a1.8 1.8 0 0 1 2.56.02l2.05 2.1" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><rect x="3.3" y="3.8" width="17.4" height="16.4" rx="3.3" stroke="currentColor" stroke-width="1.5"/></svg>',
-  web: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.85"/><path d="M3.4 12h17.2M12 3c-2.56 2.35-4.03 5.5-4.03 9S9.44 18.65 12 21c2.56-2.35 4.03-5.5 4.03-9S14.56 5.35 12 3Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  attach: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6.45 8.55v7.6a5.55 5.55 0 0 0 11.1 0V7.15a4 4 0 0 0-8 0v8.8a2.25 2.25 0 0 0 4.5 0v-7.4" stroke="#97999B" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  library: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9.25" y="2.15" width="12.2" height="15.7" rx="3.05" transform="rotate(17 9.25 2.15)" fill="#BFC0C1"/><rect x="3.05" y="7.4" width="15.2" height="15.2" rx="3.6" transform="rotate(-5 3.05 7.4)" fill="#DADBDD"/><path d="M9.1 6.95 15.1 13c.32.32.81.38 1.19.13l1.48-.99-.8-2.83-5.58-3.49-2.29 1.13Z" fill="#F1F1F1" opacity=".65"/></svg>',
+  image: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1.7" y="1.7" width="20.6" height="20.6" rx="4.6" fill="#43C7EE"/><circle cx="16.45" cy="8" r="3.35" fill="#FFF3CA"/><path d="M1.7 17.25 6.55 12.4c.89-.89 2.31-.91 3.22-.06L20.5 22.3H6.3a4.6 4.6 0 0 1-4.6-4.6v-.45Z" fill="#FFDE80"/></svg>',
+  web: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.85" fill="#C8F0FB" stroke="#43C5F2" stroke-width="2.35"/><path d="M3.2 12h17.6M12 3.15c-2.6 2.35-4.05 5.55-4.05 8.85S9.4 18.5 12 20.85c2.6-2.35 4.05-5.55 4.05-8.85S14.6 5.5 12 3.15Z" stroke="#43C5F2" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   chevron: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6.75 9.3 5.25 5.35 5.25-5.35" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  arrow: '<svg class="qtex-send-arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19.5V4.5m0 0-6.25 6.25M12 4.5l6.25 6.25" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  wave: '<svg class="qtex-send-wave" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 10v4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
-  mic: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9.2" y="3.2" width="5.6" height="12.1" rx="2.8" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 11.7a5.5 5.5 0 0 0 11 0M12 17.4v3.2M8.8 20.6h6.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  arrow: '<svg class="qtex-send-arrow" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M12 20V4m0 0-6.6 6.6M12 4l6.6 6.6" stroke="currentColor" stroke-width="1.95" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   close: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
 };
 const CSS = String.raw`
@@ -109,17 +107,6 @@ body.os-shell:has(.tex-work-app) .qtex-target-btn[aria-expanded="true"]{
 body.os-shell:has(.tex-work-app) .qtex-target-btn>span{overflow:hidden;text-overflow:ellipsis}
 body.os-shell:has(.tex-work-app) .qtex-target-btn svg{width:15px;height:15px;transition:transform .15s}
 body.os-shell:has(.tex-work-app) .qtex-target-btn[aria-expanded="true"] svg{transform:rotate(180deg)}
-body.os-shell:has(.tex-work-app) .qtex-voice-btn {
-  width:37px;height:39px;display:grid;place-items:center;flex:0 0 37px;
-  padding:0!important;border-radius:12px;background:transparent;
-}
-body.os-shell:has(.tex-work-app) .qtex-voice-btn:hover {
-  background:color-mix(in srgb,var(--text) 8%,transparent);
-}
-body.os-shell:has(.tex-work-app) .qtex-voice-btn[aria-pressed="true"]{
-  color:var(--primary)!important;
-  background:color-mix(in srgb,var(--primary) 11%,transparent);
-}
 body.os-shell:has(.tex-work-app) .qtex-send-btn {
   width:41px;height:41px;padding:0!important;flex:0 0 41px;
   display:grid;place-items:center;border-radius:999px;
@@ -129,9 +116,6 @@ body.os-shell:has(.tex-work-app) .qtex-send-btn {
 body.os-shell:has(.tex-work-app) .qtex-send-btn:hover{filter:brightness(1.1)}
 body.os-shell:has(.tex-work-app) .qtex-send-btn:active{transform:scale(.96)}
 body.os-shell:has(.tex-work-app) .qtex-send-btn svg{width:21px;height:21px}
-body.os-shell:has(.tex-work-app) .qtex-send-btn .qtex-send-arrow{display:none}
-body.os-shell:has(.tex-work-app) .qtex-composer[data-has-draft="true"] .qtex-send-btn .qtex-send-arrow{display:block}
-body.os-shell:has(.tex-work-app) .qtex-composer[data-has-draft="true"] .qtex-send-btn .qtex-send-wave{display:none}
 body.os-shell:has(.tex-work-app) .qtex-composer button:focus-visible,
 body.os-shell:has(.tex-work-app) .qtex-composer-menu button:focus-visible {
   outline:2px solid var(--primary)!important;outline-offset:2px!important;
@@ -222,8 +206,6 @@ body.os-shell:has(.tex-work-app) .qtex-web-badge svg{width:17px;height:17px}
   body.os-shell:has(.tex-work-app) #qtex-composer-input{font-size:14px!important;padding:8px 13px!important}
   body.os-shell:has(.tex-work-app) .qtex-composer-footer{gap:2px}
   body.os-shell:has(.tex-work-app) .qtex-target-btn{max-width:46%;font-size:11px!important;padding:7px!important}
-  body.os-shell:has(.tex-work-app) .qtex-voice-btn{flex-basis:32px;width:32px}
-  body.os-shell:has(.tex-work-app) .qtex-voice-btn svg{width:19px;height:19px}
   body.os-shell:has(.tex-work-app) .qtex-send-btn{width:39px;height:39px;flex-basis:39px}
 }
 
@@ -307,10 +289,7 @@ body.os-shell:has(.tex-work-app) .qtex-composer-files {
   body.os-shell:has(.tex-work-app) .qtex-target-btn {
     max-width:95px;padding:6px 4px!important;
   }
-  body.os-shell:has(.tex-work-app) .qtex-voice-btn {
-    width:30px;flex-basis:30px;
-  }
-  body.os-shell:has(.tex-work-app) .qtex-send-btn {
+    body.os-shell:has(.tex-work-app) .qtex-send-btn {
     flex-basis:39px;width:39px;height:39px;
   }
 }
@@ -318,6 +297,80 @@ body.os-shell:has(.tex-work-app) .qtex-composer-files {
   body.os-shell:has(.tex-work-app) .qtex-target-btn {max-width:35px}
   body.os-shell:has(.tex-work-app) .qtex-target-btn>span {display:none}
 }
+
+/* Compact, inline ChatGPT-style menu rows with ORIGINAL reference icon colors. */
+body.os-shell:has(.tex-work-app) .qtex-welcome-hero{
+  min-height:clamp(105px,17vh,160px)!important;margin-bottom:9px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-welcome-copy{padding:12px 4px 0!important}
+body.os-shell:has(.tex-work-app) .qtex-composer{
+  width:min(100%,920px);margin:0 auto clamp(22px,3.5vh,38px);
+}
+body.os-shell:has(.tex-work-app) .qtex-composer-shell{
+  min-height:62px;border-radius:999px!important;padding:5px 9px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-input{
+  min-height:40px!important;padding:8px 10px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer-footer{
+  gap:5px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn{
+  width:39px;height:39px;flex:0 0 39px;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn svg{width:25px;height:25px}
+body.os-shell:has(.tex-work-app) .qtex-target-btn{
+  max-width:min(235px,60%);padding:7px 8px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-send-btn{
+  width:41px;height:41px;flex:0 0 41px;
+  color:#fff!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-send-btn .qtex-send-arrow{
+  width:23px;height:23px;display:block!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer-menu{
+  padding:5px;border-radius:16px;max-height:min(350px,calc(100dvh - 24px));
+}
+body.os-shell:has(.tex-work-app) .qtex-composer-menu button{
+  min-height:47px!important;gap:10px!important;padding:8px 10px!important;
+  border-radius:10px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-menu-icon{
+  width:26px!important;height:26px!important;flex:0 0 26px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-menu-icon svg{width:24px!important;height:24px!important}
+body.os-shell:has(.tex-work-app) #qtex-composer-menu .qtex-menu-copy{
+  flex:1 1 auto;display:flex;flex-direction:row!important;
+  align-items:baseline!important;gap:9px!important;white-space:nowrap!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-menu .qtex-menu-copy strong{
+  font-size:13px!important;font-weight:630!important;
+  flex:0 0 auto;line-height:1.45;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-menu .qtex-menu-copy small{
+  font-size:11px!important;line-height:1.45!important;flex:0 1 auto;
+  overflow:hidden;text-overflow:ellipsis;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu button{
+  min-height:50px!important;padding:7px 11px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-copy{
+  flex-direction:column!important;gap:1px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-copy strong{font-size:13px!important}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-copy small{font-size:11px!important}
+body.os-shell:has(.tex-work-app) .qtex-target-section{padding:7px 12px 3px!important}
+body.os-shell:has(.tex-work-app) .qtex-composer-menu button:hover{
+  background:color-mix(in srgb,var(--text) 7%,var(--work-card,var(--surface)));
+}
+@media(max-width:760px){
+ body.os-shell:has(.tex-work-app) .qtex-welcome-hero{min-height:120px!important}
+ body.os-shell:has(.tex-work-app) .qtex-composer-shell{min-height:58px;padding:5px 7px!important;border-radius:999px!important}
+ body.os-shell:has(.tex-work-app) .qtex-target-btn{max-width:65%;padding:6px 7px!important}
+ body.os-shell:has(.tex-work-app) .qtex-composer-menu{border-radius:15px}
+}
+
 @media(prefers-reduced-motion:reduce){
   body.os-shell:has(.tex-work-app) .qtex-composer *{transition:none!important}
 }
@@ -332,7 +385,6 @@ const RUNTIME = String.raw`
   const target=document.getElementById('qtex-composer-target');
   const targetText=document.getElementById('qtex-composer-target-text');
   const send=document.getElementById('qtex-composer-send');
-  const mic=document.getElementById('qtex-composer-mic');
   const actions=document.getElementById('qtex-composer-menu');
   const chooser=document.getElementById('qtex-composer-target-menu');
   const status=document.getElementById('qtex-composer-status');
@@ -340,7 +392,7 @@ const RUNTIME = String.raw`
   const filesBox=document.getElementById('qtex-composer-files');
   const webBadge=document.getElementById('qtex-composer-web-badge');
   const sidebar=document.getElementById('tex-document-list');
-  const state={projectId:'',target:'',files:[],web:false,recognition:null};
+  const state={projectId:'',target:'',files:[],web:false};
   function notify(message){
     status.textContent=message||'';
     status.hidden=!message;
@@ -349,7 +401,7 @@ const RUNTIME = String.raw`
     input.style.height='auto';
     input.style.height=Math.min(180,Math.max(36,input.scrollHeight))+'px';
     composer.dataset.hasDraft=String(Boolean(input.value.trim()||state.files.length));
-    send.setAttribute('aria-label',input.value.trim()||state.files.length?t('继续','Continue'):t('语音输入','Voice input'));
+    send.setAttribute('aria-label',t('发送或继续','Send or continue'));
   }
   function closeMenus(){
     actions.hidden=true;chooser.hidden=true;
@@ -368,14 +420,21 @@ const RUNTIME = String.raw`
     const top=rect.top>=height+14?rect.top-height-10:Math.min(vh-height-12,rect.bottom+12);
     menu.style.top=Math.max(12,top)+'px';
   }
+  // Pointer-opened menus should not show an accidental first-row focus ring.
+  // Keyboard-opened menus still move focus to the first actionable item.
+  let openedWithKeyboard=false;
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Tab'||e.key==='Enter'||e.key===' ')openedWithKeyboard=true;
+  },true);
+  document.addEventListener('pointerdown',()=>{openedWithKeyboard=false;},true);
   function toggleMenu(menu,button){
     const opening=menu.hidden;
     closeMenus();
     if(opening){
       menu.hidden=false;button.setAttribute('aria-expanded','true');
       positionMenu(menu,button);
-      menu.querySelector('button')?.focus();
-    }else button.focus();
+      if(openedWithKeyboard)menu.querySelector('button')?.focus();
+    }else if(openedWithKeyboard)button.focus();
   }
   plus.addEventListener('click',()=>toggleMenu(actions,plus));
   target.addEventListener('click',()=>{
@@ -516,26 +575,9 @@ const RUNTIME = String.raw`
     }
     fileInput.value='';
   });
-  const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
-  function voice(){
-    if(!Speech)return notify(t('当前浏览器不支持语音输入。','Voice input is unavailable in this browser.'));
-    if(state.recognition){state.recognition.stop();return;}
-    const recognition=new Speech();recognition.lang=t('zh-CN','en-US');
-    recognition.continuous=false;recognition.interimResults=false;
-    state.recognition=recognition;mic.setAttribute('aria-pressed','true');
-    recognition.addEventListener('result',e=>{
-      const speech=Array.from(e.results).map(r=>r[0]?.transcript||'').join(' ');
-      input.value+=(input.value.trim()?' ':'')+speech;
-      adjustInput();input.focus();
-    });
-    recognition.addEventListener('error',()=>notify(t('语音识别未完成，请检查浏览器麦克风权限。','Voice recognition failed. Check microphone permission.')));
-    recognition.addEventListener('end',()=>{state.recognition=null;mic.setAttribute('aria-pressed','false');});
-    try{recognition.start()}catch{state.recognition=null;mic.setAttribute('aria-pressed','false');}
-  }
-  mic.addEventListener('click',voice);
   async function submit(){
     const draft=input.value.trim();
-    if(!draft&&!state.files.length)return voice();
+    if(!draft&&!state.files.length){input.focus();return;}
     if(state.web&&draft){
       // Explicit user action: open normal search results; no fake AI-generated citations.
       window.open('https://www.google.com/search?q='+encodeURIComponent(draft),'_blank','noopener,noreferrer');
@@ -602,18 +644,18 @@ export function enhanceWorkTexComposer(markup,zh=true){
   if(source.includes('id="qtex-composer"'))return source;
   const c=zh?{
     placeholder:'输入问题或描述你的需求',add:'添加文件等内容',target:'选择项目或聊天',
-    file:'添加文件',fileDesc:'从计算机上传',
-    library:'查找资料库',libraryDesc:'浏览并查看你的文件',
+    file:'添加照片和文件',fileDesc:'从计算机上传',
+    library:'从资料库添加',libraryDesc:'浏览并搜索你的文件',
     image:'添加图像',imageDesc:'从计算机选择图片',
-    web:'网页搜索',webDesc:'查找最新研究与报告',
-    voice:'语音输入',send:'发送或继续'
+    web:'网页搜索',webDesc:'查找实时新闻和信息',
+    send:'发送或继续'
   }:{
     placeholder:'Ask or describe what you need',add:'Add files and more',target:'Choose project or chat',
     file:'Add files',fileDesc:'Upload from computer',
     library:'Browse library',libraryDesc:'Browse your project files',
     image:'Add image',imageDesc:'Choose an image from your computer',
     web:'Web search',webDesc:'Find recent research and reports',
-    voice:'Voice input',send:'Send or continue'
+    send:'Send or continue'
   };
   const item=(action,icon,title,detail)=>'<button type="button" role="menuitem" data-action="'+action+'"><span class="qtex-menu-icon">'+icon+'</span><span class="qtex-menu-copy"><strong>'+title+'</strong><small>'+detail+'</small></span></button>';
   const widget='<section id="qtex-composer" class="qtex-composer" data-locale="'+(zh?'zh':'en')+'" data-has-draft="false" aria-label="'+c.placeholder+'">'+
@@ -625,8 +667,7 @@ export function enhanceWorkTexComposer(markup,zh=true){
         '<button id="qtex-composer-plus" class="qtex-plus-btn" type="button" aria-label="'+c.add+'" title="" aria-haspopup="menu" aria-expanded="false" aria-controls="qtex-composer-menu">'+ICON.plus+'<span class="qtex-plus-tooltip" aria-hidden="true">'+c.add+'</span></button>'+
         '<span class="qtex-composer-spacer"></span>'+
         '<button id="qtex-composer-target" type="button" class="qtex-target-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="qtex-composer-target-menu"><span id="qtex-composer-target-text">'+c.target+'</span>'+ICON.chevron+'</button>'+
-        '<button id="qtex-composer-mic" class="qtex-voice-btn" type="button" aria-label="'+c.voice+'" aria-pressed="false">'+ICON.mic+'</button>'+
-        '<button id="qtex-composer-send" class="qtex-send-btn" type="button" aria-label="'+c.send+'">'+ICON.arrow+ICON.wave+'</button>'+
+        '<button id="qtex-composer-send" class="qtex-send-btn" type="button" aria-label="'+c.send+'">'+ICON.arrow+'</button>'+
       '</div></div>'+
       '<p id="qtex-composer-status" class="qtex-composer-status" role="status" aria-live="polite" hidden></p>'+
       '<input id="qtex-composer-file" type="file" multiple hidden aria-hidden="true">'+
