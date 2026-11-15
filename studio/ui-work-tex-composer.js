@@ -434,7 +434,7 @@ const RUNTIME = String.raw`
       menu.hidden=false;button.setAttribute('aria-expanded','true');
       positionMenu(menu,button);
       if(openedWithKeyboard)menu.querySelector('button')?.focus();
-    }else button.focus();
+    }else if(openedWithKeyboard)button.focus();
   }
   plus.addEventListener('click',()=>toggleMenu(actions,plus));
   target.addEventListener('click',()=>{
