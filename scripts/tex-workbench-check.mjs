@@ -201,8 +201,21 @@ for (const zh of [true, false]) {
     assert(composerMarkup.includes(color), "Reference colored menu icons must be preserved: "+color);
   }
   assert(composerMarkup.includes("flex-direction:row!important") &&
-    composerMarkup.includes("min-height:47px!important"),
-    "Action labels and descriptions must share one compact horizontal row.");
+    composerMarkup.includes("min-height:41px!important"),
+    "Action labels and descriptions must share a shorter, compact horizontal row.");
+  assert(composerMarkup.includes('id="qtex-composer-send"') && composerMarkup.includes('aria-disabled="true" disabled'),
+    "Send must start disabled before the user enters text.");
+  assert(composerRuntime.includes("const hasText=Boolean(input.value.trim())") &&
+    composerRuntime.includes("send.disabled=!hasText"),
+    "Send must activate only for non-whitespace text.");
+  assert(composerMarkup.includes("aspect-ratio:1/1!important") &&
+    composerMarkup.includes("border-radius:50%!important"),
+    "Send button must stay circular, never elliptical.");
+  assert(composerMarkup.includes('qtex-composer[data-keyboard-nav="true"]') &&
+    composerMarkup.includes('border-color:color-mix(in srgb,var(--text) 10%,transparent)!important'),
+    "Pointer clicks must not create unsolicited focus halos; keyboard focus must remain available.");
+  assert(composerRuntime.includes("menu===chooser?rect.right-width:rect.left"),
+    "Project picker should align to its trigger instead of occupying an unrelated wide space.");
   assert(!composerRuntime.includes("SpeechRecognition") && composerRuntime.includes("navigator.clipboard.writeText"),
     "Voice controls have been removed without changing the existing chat handoff.");
 

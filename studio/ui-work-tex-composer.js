@@ -371,6 +371,138 @@ body.os-shell:has(.tex-work-app) .qtex-composer-menu button:hover{
  body.os-shell:has(.tex-work-app) .qtex-composer-menu{border-radius:15px}
 }
 
+
+/* Final reference-geometry contract: compact rows, no pointer focus halo. */
+body.os-shell:has(.tex-work-app) .qtex-composer-shell:focus-within{
+  border-color:color-mix(in srgb,var(--text) 10%,transparent)!important;
+  box-shadow:0 3px 15px rgba(0,0,0,.045)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn{
+  flex:0 1 auto!important;display:inline-flex!important;align-items:center!important;
+  justify-content:center!important;gap:5px!important;
+  width:auto!important;min-width:0!important;max-width:min(185px,38vw)!important;
+  height:36px!important;min-height:0!important;
+  padding:0 7px!important;margin:0!important;
+  border:0!important;border-radius:10px!important;
+  background:transparent!important;box-shadow:none!important;
+  color:var(--muted)!important;font:400 12px/1.2 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif!important;
+  white-space:nowrap!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn:hover{
+  background:color-mix(in srgb,var(--text) 5%,transparent)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn[aria-expanded="true"]{
+  background:transparent!important;color:var(--text)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn>span{
+  flex:0 1 auto!important;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn svg{
+  width:15px!important;height:15px!important;flex:0 0 15px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-send-btn{
+  flex:0 0 44px!important;width:44px!important;height:44px!important;
+  min-width:44px!important;max-width:44px!important;
+  min-height:44px!important;max-height:44px!important;
+  aspect-ratio:1/1!important;box-sizing:border-box!important;
+  display:grid!important;place-items:center!important;
+  padding:0!important;margin:0!important;border:0!important;
+  border-radius:50%!important;
+  background:var(--primary,#4875df)!important;color:#fff!important;
+  box-shadow:none!important;transform:none;opacity:1!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-send-btn[disabled]{
+  background:color-mix(in srgb,var(--text) 17%,var(--qtex-composer-bg))!important;
+  color:color-mix(in srgb,var(--text) 50%,var(--qtex-composer-bg))!important;
+  cursor:default!important;filter:none!important;opacity:1!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-send-btn[disabled]:hover,
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-send-btn[disabled]:active{
+  filter:none!important;transform:none!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-send-btn svg{
+  width:23px!important;height:23px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-menu{
+  max-width:calc(100vw - 24px);border-radius:16px!important;
+  padding:5px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-menu button{
+  min-height:41px!important;height:auto!important;
+  padding:7px 9px!important;gap:10px!important;
+  border-radius:9px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-menu .qtex-menu-copy{
+  flex:1 1 auto!important;display:flex!important;flex-direction:row!important;
+  align-items:center!important;gap:9px!important;min-width:0!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-menu .qtex-menu-copy strong{
+  font:550 13px/1.25 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-menu .qtex-menu-copy small{
+  font:400 11px/1.25 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-menu .qtex-menu-icon,
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-icon{
+  width:24px!important;height:24px!important;flex:0 0 24px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-menu .qtex-menu-icon svg,
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-icon svg{
+  width:22px!important;height:22px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu{
+  border-radius:16px!important;padding:5px!important;
+  max-width:calc(100vw - 24px);
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu button{
+  min-height:46px!important;padding:6px 10px!important;gap:10px!important;
+  border-radius:9px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-copy{
+  gap:0!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-copy strong{
+  font:570 13px/1.3 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-copy small{
+  font:400 11px/1.35 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-target-section{
+  padding:6px 11px 3px!important;font-size:11px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer button:focus,
+body.os-shell:has(.tex-work-app) .qtex-composer button:focus-visible,
+body.os-shell:has(.tex-work-app) .qtex-composer-menu button:focus,
+body.os-shell:has(.tex-work-app) .qtex-composer-menu button:focus-visible{
+  outline:0!important;outline-offset:0!important;box-shadow:none!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer[data-keyboard-nav="true"] button:focus-visible{
+  outline:2px solid var(--primary)!important;outline-offset:2px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer-menu button:hover{
+  background:color-mix(in srgb,var(--text) 5%,var(--work-card,var(--surface)))!important;
+}
+@media(max-width:760px){
+  body.os-shell:has(.tex-work-app) .qtex-composer .qtex-send-btn{
+    width:39px!important;height:39px!important;min-width:39px!important;
+    max-width:39px!important;min-height:39px!important;max-height:39px!important;
+    flex:0 0 39px!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn{
+    max-width:min(145px,35vw)!important;height:34px!important;
+    padding:0 5px!important;font-size:11px!important;
+  }
+  body.os-shell:has(.tex-work-app) #qtex-composer-menu button{min-height:39px!important;padding:6px 8px!important;}
+}
+@media(max-width:480px){
+  body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn{
+    max-width:min(132px,34vw)!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn>span{
+    display:block!important;
+  }
+}
+
 @media(prefers-reduced-motion:reduce){
   body.os-shell:has(.tex-work-app) .qtex-composer *{transition:none!important}
 }
@@ -400,8 +532,11 @@ const RUNTIME = String.raw`
   function adjustInput(){
     input.style.height='auto';
     input.style.height=Math.min(180,Math.max(36,input.scrollHeight))+'px';
-    composer.dataset.hasDraft=String(Boolean(input.value.trim()||state.files.length));
-    send.setAttribute('aria-label',t('发送或继续','Send or continue'));
+    const hasText=Boolean(input.value.trim());
+    composer.dataset.hasDraft=String(hasText);
+    send.disabled=!hasText;
+    send.setAttribute('aria-disabled',String(!hasText));
+    send.setAttribute('aria-label',hasText?t('发送或继续','Send or continue'):t('请输入文字后发送','Type a message to enable send'));
   }
   function closeMenus(){
     actions.hidden=true;chooser.hidden=true;
@@ -411,8 +546,9 @@ const RUNTIME = String.raw`
   function positionMenu(menu,anchor){
     const rect=anchor.getBoundingClientRect();
     const vw=window.innerWidth,vh=window.visualViewport?.height||window.innerHeight;
-    const width=Math.min(355,vw-24);
-    const left=Math.max(12,Math.min(rect.left, vw-width-12));
+    const width=Math.min(menu===actions?312:302,vw-24);
+    const suggestedLeft=menu===chooser?rect.right-width:rect.left;
+    const left=Math.max(12,Math.min(suggestedLeft,vw-width-12));
     menu.style.width=width+'px';
     menu.style.left=left+'px';
     menu.style.top='12px';
@@ -424,9 +560,15 @@ const RUNTIME = String.raw`
   // Keyboard-opened menus still move focus to the first actionable item.
   let openedWithKeyboard=false;
   document.addEventListener('keydown',e=>{
-    if(e.key==='Tab'||e.key==='Enter'||e.key===' ')openedWithKeyboard=true;
+    if(e.key==='Tab'||e.key==='Enter'||e.key===' '||e.key.startsWith('Arrow')){
+      openedWithKeyboard=true;
+      composer.dataset.keyboardNav='true';
+    }
   },true);
-  document.addEventListener('pointerdown',()=>{openedWithKeyboard=false;},true);
+  document.addEventListener('pointerdown',()=>{
+    openedWithKeyboard=false;
+    composer.dataset.keyboardNav='false';
+  },true);
   function toggleMenu(menu,button){
     const opening=menu.hidden;
     closeMenus();
@@ -628,7 +770,7 @@ const RUNTIME = String.raw`
     };
     showChat();
   }
-  send.addEventListener('click',()=>void submit());
+  send.addEventListener('click',()=>{if(!send.disabled)void submit();});
   input.addEventListener('input',adjustInput);
   input.addEventListener('keydown',e=>{
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){
@@ -667,7 +809,7 @@ export function enhanceWorkTexComposer(markup,zh=true){
         '<button id="qtex-composer-plus" class="qtex-plus-btn" type="button" aria-label="'+c.add+'" title="" aria-haspopup="menu" aria-expanded="false" aria-controls="qtex-composer-menu">'+ICON.plus+'<span class="qtex-plus-tooltip" aria-hidden="true">'+c.add+'</span></button>'+
         '<span class="qtex-composer-spacer"></span>'+
         '<button id="qtex-composer-target" type="button" class="qtex-target-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="qtex-composer-target-menu"><span id="qtex-composer-target-text">'+c.target+'</span>'+ICON.chevron+'</button>'+
-        '<button id="qtex-composer-send" class="qtex-send-btn" type="button" aria-label="'+c.send+'">'+ICON.arrow+'</button>'+
+        '<button id="qtex-composer-send" class="qtex-send-btn" type="button" aria-label="'+c.send+'" aria-disabled="true" disabled>'+ICON.arrow+'</button>'+
       '</div></div>'+
       '<p id="qtex-composer-status" class="qtex-composer-status" role="status" aria-live="polite" hidden></p>'+
       '<input id="qtex-composer-file" type="file" multiple hidden aria-hidden="true">'+
