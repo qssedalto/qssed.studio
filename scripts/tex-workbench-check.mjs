@@ -192,8 +192,19 @@ for (const zh of [true, false]) {
     "Attachments and library must reuse the actual TeX file modal.");
   assert(composerRuntime.includes("chat.qsseda.com") && composerRuntime.includes("tex-command-chat-shortcut"),
     "Chat/project choices must reuse existing authenticated flows.");
-  assert(composerRuntime.includes("SpeechRecognition") && composerRuntime.includes("navigator.clipboard.writeText"),
-    "Voice and draft handoff must use explicit browser APIs.");
+  assert(!composerMarkup.includes('id="qtex-composer-mic"') && !composerMarkup.includes("qtex-send-wave"),
+    "Do not render the unwanted microphone or voice-wave action.");
+  assert(composerMarkup.includes('class="qtex-send-arrow"') &&
+    composerMarkup.includes('background:var(--primary,#4875df)'),
+    "The only round submit button must always show the SVG up arrow in the user theme.");
+  for (const color of ["#43C7EE", "#FFDE80", "#43C5F2", "#DADBDD"]) {
+    assert(composerMarkup.includes(color), "Reference colored menu icons must be preserved: "+color);
+  }
+  assert(composerMarkup.includes("flex-direction:row!important") &&
+    composerMarkup.includes("min-height:47px!important"),
+    "Action labels and descriptions must share one compact horizontal row.");
+  assert(!composerRuntime.includes("SpeechRecognition") && composerRuntime.includes("navigator.clipboard.writeText"),
+    "Voice controls have been removed without changing the existing chat handoff.");
 
   assert(workMarkup.includes('id="qtex-welcome-greeting"'), "Welcome must expose a stable accessible greeting heading.");
   const greetingSource = workPageMarkup.match(/<script id="qsseda-work-tex-greeting-runtime">([\s\S]*?)<\/script>/)?.[1];
