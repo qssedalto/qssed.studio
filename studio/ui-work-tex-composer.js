@@ -740,7 +740,7 @@ const RUNTIME = String.raw`
     const lineHeight=parseFloat(style.lineHeight)||22;
     const verticalPadding=(parseFloat(style.paddingTop)||0)+(parseFloat(style.paddingBottom)||0);
     const multiline=Boolean(input.value)&&(
-      /\\n/.test(input.value)||input.scrollHeight>lineHeight+verticalPadding+3
+      /\n/.test(input.value)||input.scrollHeight>lineHeight+verticalPadding+3
     );
     composer.dataset.multiline=String(multiline);
     input.style.height='auto';
