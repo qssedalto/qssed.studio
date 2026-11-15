@@ -216,6 +216,20 @@ for (const zh of [true, false]) {
     "Pointer clicks must not create unsolicited focus halos; keyboard focus must remain available.");
   assert(composerRuntime.includes("menu===chooser?rect.right-width:rect.left"),
     "Project picker should align to its trigger instead of occupying an unrelated wide space.");
+  assert(composerRuntime.includes("menu===actions?312:264"),
+    "Project picker must be narrower than the file-action menu.");
+  assert(composerMarkup.includes("grid-template-columns:22px minmax(0,1fr) 15px!important") &&
+    composerMarkup.includes("height:42px!important"),
+    "Project and chat choices must have consistent compact single-line rows.");
+  assert(composerMarkup.includes("#qtex-composer-target-menu .qtex-menu-copy small{display:none!important"),
+    "Do not display the oversized second-line project descriptions.");
+  assert(composerRuntime.includes("copy.append(title);button.append(icon,copy)") &&
+    composerRuntime.includes("button.setAttribute('aria-label',description?label+"),
+    "Descriptions stay accessible without fragments of AERTEX branding in visible picker rows.");
+  assert(composerMarkup.includes("#qtex-composer-target-menu .qtex-target-entry[aria-checked=") &&
+    composerMarkup.includes('background:transparent!important'),
+    "Selected projects must not create a large unintended highlight.");
+
   assert(!composerRuntime.includes("SpeechRecognition") && composerRuntime.includes("navigator.clipboard.writeText"),
     "Voice controls have been removed without changing the existing chat handoff.");
 

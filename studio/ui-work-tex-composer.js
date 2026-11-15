@@ -503,6 +503,83 @@ body.os-shell:has(.tex-work-app) .qtex-composer-menu button:hover{
   }
 }
 
+
+/* Dense, single-line context picker: do not mirror the tall project cards. */
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu{
+  width:min(264px,calc(100vw - 24px))!important;
+  max-width:calc(100vw - 24px)!important;
+  padding:6px!important;border-radius:14px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-target-entry{
+  display:grid!important;grid-template-columns:22px minmax(0,1fr) 15px!important;
+  justify-content:stretch!important;align-items:center!important;
+  width:100%!important;height:42px!important;min-height:42px!important;
+  max-height:42px!important;
+  padding:0 10px!important;margin:0!important;gap:10px!important;
+  border-radius:9px!important;text-align:left!important;
+  background:transparent!important;box-shadow:none!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-target-entry:hover{
+  background:color-mix(in srgb,var(--text) 5%,var(--work-card,var(--surface)))!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-target-entry[aria-checked="true"]{
+  background:transparent!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-target-entry[aria-checked="true"]:hover{
+  background:color-mix(in srgb,var(--text) 5%,var(--work-card,var(--surface)))!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-target-entry::after{
+  content:"";width:13px;height:13px;display:block;justify-self:center;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-target-entry[aria-checked="true"]::after{
+  content:"✓";font:600 13px/1.1 ui-sans-serif,"Segoe UI",sans-serif;
+  color:var(--primary);
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-icon{
+  display:grid!important;place-items:center!important;
+  width:22px!important;height:22px!important;
+  min-width:22px!important;max-width:22px!important;
+  color:var(--muted)!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-icon svg{
+  width:20px!important;height:20px!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-copy{
+  display:block!important;min-width:0!important;max-width:100%!important;
+  overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;
+  text-align:left!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-copy strong{
+  display:block!important;overflow:hidden!important;
+  white-space:nowrap!important;text-overflow:ellipsis!important;
+  font:560 13px/1.4 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif!important;
+  color:var(--text)!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-menu-copy small{display:none!important}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-target-section{
+  display:flex!important;align-items:center!important;
+  height:28px!important;min-height:28px!important;
+  margin:4px 1px 1px!important;padding:5px 11px 3px!important;
+  border-top:1px solid var(--work-line,var(--border))!important;
+  font:500 11px/1.2 Inter,ui-sans-serif,"PingFang SC","Microsoft YaHei",sans-serif!important;
+  color:var(--muted)!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu button:focus,
+body.os-shell:has(.tex-work-app) #qtex-composer-target-menu button:focus-visible{
+  outline:none!important;box-shadow:none!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer[data-keyboard-nav="true"] #qtex-composer-target-menu button:focus-visible{
+  outline:2px solid var(--primary)!important;outline-offset:-2px!important;
+}
+@media(max-width:480px){
+  body.os-shell:has(.tex-work-app) #qtex-composer-target-menu{
+    width:min(254px,calc(100vw - 20px))!important;
+  }
+  body.os-shell:has(.tex-work-app) #qtex-composer-target-menu .qtex-target-entry{
+    height:40px!important;min-height:40px!important;max-height:40px!important;
+  }
+}
+
 @media(prefers-reduced-motion:reduce){
   body.os-shell:has(.tex-work-app) .qtex-composer *{transition:none!important}
 }
@@ -546,7 +623,7 @@ const RUNTIME = String.raw`
   function positionMenu(menu,anchor){
     const rect=anchor.getBoundingClientRect();
     const vw=window.innerWidth,vh=window.visualViewport?.height||window.innerHeight;
-    const width=Math.min(menu===actions?312:302,vw-24);
+    const width=Math.min(menu===actions?312:264,vw-24);
     const suggestedLeft=menu===chooser?rect.right-width:rect.left;
     const left=Math.max(12,Math.min(suggestedLeft,vw-width-12));
     menu.style.width=width+'px';
@@ -608,8 +685,10 @@ const RUNTIME = String.raw`
         :'<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h4.2l2.1 2.3H18a2.5 2.5 0 0 1 2.5 2.5v8A2.7 2.7 0 0 1 17.8 20H6.2a2.7 2.7 0 0 1-2.7-2.7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>';
       const copy=document.createElement('span');copy.className='qtex-menu-copy';
       const title=document.createElement('strong');title.textContent=label;
-      const sub=document.createElement('small');sub.textContent=description;
-      copy.append(title,sub);button.append(icon,copy);
+      // The former two-line descriptions caused giant, uneven rows and
+      // a fragmented miniature AERTEX wordmark; keep them accessible only.
+      button.setAttribute('aria-label',description?label+'，'+description:label);
+      copy.append(title);button.append(icon,copy);
       button.addEventListener('click',()=>{
         state.target=kind;state.projectId=id||'';
         targetText.textContent=label;
@@ -617,7 +696,7 @@ const RUNTIME = String.raw`
       });
       chooser.append(button);
     };
-    makeButton(t('聊天','Chat'),t('打开 AERTEX Chat','Open AERTEX Chat'),'','chat');
+    makeButton(t('聊天','Chat'),t('打开聊天','Open chat'),'','chat');
     const title=document.createElement('div');title.className='qtex-target-section';
     title.textContent=t('我的项目','My projects');chooser.append(title);
     const rows=sidebar?[...sidebar.querySelectorAll(':scope > .tex-document-item[data-tex-document-id]')]:[];
