@@ -331,13 +331,20 @@ const RUNTIME = String.raw`
     const top=rect.top>=height+14?rect.top-height-10:Math.min(vh-height-12,rect.bottom+12);
     menu.style.top=Math.max(12,top)+'px';
   }
+  // Pointer-opened menus should not show an accidental first-row focus ring.
+  // Keyboard-opened menus still move focus to the first actionable item.
+  let openedWithKeyboard=false;
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Tab'||e.key==='Enter'||e.key===' ')openedWithKeyboard=true;
+  },true);
+  document.addEventListener('pointerdown',()=>{openedWithKeyboard=false;},true);
   function toggleMenu(menu,button){
     const opening=menu.hidden;
     closeMenus();
     if(opening){
       menu.hidden=false;button.setAttribute('aria-expanded','true');
       positionMenu(menu,button);
-      menu.querySelector('button')?.focus();
+      if(openedWithKeyboard)menu.querySelector('button')?.focus();
     }else button.focus();
   }
   plus.addEventListener('click',()=>toggleMenu(actions,plus));
