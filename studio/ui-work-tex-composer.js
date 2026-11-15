@@ -226,6 +226,98 @@ body.os-shell:has(.tex-work-app) .qtex-web-badge svg{width:17px;height:17px}
   body.os-shell:has(.tex-work-app) .qtex-voice-btn svg{width:19px;height:19px}
   body.os-shell:has(.tex-work-app) .qtex-send-btn{width:39px;height:39px;flex-basis:39px}
 }
+
+/* ChatGPT-like compact single-line composer; keep all existing actions wired. */
+body.os-shell:has(.tex-work-app) .qtex-welcome {
+  width:min(100%,960px)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-welcome-hero {
+  min-height:clamp(105px,17vh,170px)!important;
+  margin-bottom:12px!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-welcome-copy {
+  padding:12px 4px 0!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2 {
+  font-size:clamp(25px,2.5vw,34px)!important;
+  font-weight:550!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer {
+  --qtex-composer-bg:var(--work-panel,var(--surface));
+  width:min(100%,920px);
+}
+:root[data-theme="dark"] body.os-shell:has(.tex-work-app) .qtex-composer {
+  --qtex-composer-bg:var(--work-panel,var(--surface));
+}
+body.os-shell:has(.tex-work-app) .qtex-composer-shell {
+  min-height:62px;
+  border-radius:999px;
+  padding:5px 9px!important;
+  background:var(--qtex-composer-bg)!important;
+  border:1px solid color-mix(in srgb,var(--text) 10%,transparent)!important;
+  box-shadow:0 3px 15px rgba(0,0,0,.045)!important;
+  display:flex;
+  align-items:center;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer-input {
+  flex:1 1 auto;
+  min-width:0;
+  min-height:40px;
+  padding:8px 10px!important;
+  font-size:15px!important;
+  align-self:center;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer-footer {
+  display:contents;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn {
+  order:-1;
+  flex:0 0 40px;
+  width:40px;height:40px;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn svg {width:24px;height:24px}
+body.os-shell:has(.tex-work-app) .qtex-composer-spacer {display:none}
+body.os-shell:has(.tex-work-app) .qtex-target-btn {
+  flex:0 1 auto;max-width:200px;
+}
+body.os-shell:has(.tex-work-app) .qtex-send-btn {
+  flex:0 0 44px;width:44px;height:44px;
+}
+body.os-shell:has(.tex-work-app) .qtex-web-badge,
+body.os-shell:has(.tex-work-app) .qtex-composer-files {
+  position:absolute;bottom:calc(100% + 8px);left:12px;
+  max-width:calc(100% - 24px);
+}
+@media(max-width:760px){
+  body.os-shell:has(.tex-work-app) .qtex-welcome-hero {
+    min-height:120px!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-welcome-copy h2 {
+    font-size:clamp(23px,5vw,30px)!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-composer-shell {
+    min-height:58px;padding:5px 7px!important;border-radius:999px;
+  }
+  body.os-shell:has(.tex-work-app) #qtex-composer-input {
+    padding:6px 5px!important;font-size:14px!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn {
+    flex-basis:34px;width:34px;height:34px;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-target-btn {
+    max-width:95px;padding:6px 4px!important;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-voice-btn {
+    width:30px;flex-basis:30px;
+  }
+  body.os-shell:has(.tex-work-app) .qtex-send-btn {
+    flex-basis:39px;width:39px;height:39px;
+  }
+}
+@media(max-width:480px) {
+  body.os-shell:has(.tex-work-app) .qtex-target-btn {max-width:35px}
+  body.os-shell:has(.tex-work-app) .qtex-target-btn>span {display:none}
+}
 @media(prefers-reduced-motion:reduce){
   body.os-shell:has(.tex-work-app) .qtex-composer *{transition:none!important}
 }
