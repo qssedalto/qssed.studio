@@ -197,7 +197,7 @@ for (const zh of [true, false]) {
   assert(composerMarkup.includes('class="qtex-send-arrow"') &&
     composerMarkup.includes('background:var(--primary,#4875df)'),
     "The only round submit button must always show the SVG up arrow in the user theme.");
-  for (const color of ["#50CFF3", "#FFDC71", "#45C7F3", "#DEDEDF"]) {
+  for (const color of ["#43C7EE", "#FFDE80", "#43C5F2", "#DADBDD"]) {
     assert(composerMarkup.includes(color), "Reference colored menu icons must be preserved: "+color);
   }
   assert(composerMarkup.includes("flex-direction:row!important") &&
