@@ -743,8 +743,13 @@ const RUNTIME = String.raw`
       /\n/.test(input.value)||input.scrollHeight>lineHeight+verticalPadding+3
     );
     composer.dataset.multiline=String(multiline);
-    input.style.height='auto';
-    input.style.height=Math.min(160,Math.max(34,input.scrollHeight))+'px';
+    if(!input.value){
+      // Wrapped placeholder text must never enlarge an otherwise empty pill.
+      input.style.height='34px';
+    }else{
+      input.style.height='auto';
+      input.style.height=Math.min(160,Math.max(34,input.scrollHeight))+'px';
+    }
     composer.dataset.hasDraft=String(hasText);
     send.disabled=!hasText;
     send.setAttribute('aria-disabled',String(!hasText));
