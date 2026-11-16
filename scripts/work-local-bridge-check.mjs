@@ -21,6 +21,7 @@ const nativeBridge = fs.readFileSync(new URL("../local-bridge/original-engine/ma
 const bridgeControl = fs.readFileSync(new URL("../local-bridge/installer-control/main_windows.go", import.meta.url), "utf8");
 const installer = fs.readFileSync(new URL("../local-bridge/installer/AERTEX-Bridge.iss", import.meta.url), "utf8");
 const nativeWorkflow = fs.readFileSync(new URL("../.github/workflows/local-bridge-native.yml", import.meta.url), "utf8");
+const macWorkflow = fs.readFileSync(new URL("../.github/workflows/local-bridge-macos.yml", import.meta.url), "utf8");
 const windowsInstall = fs.readFileSync(new URL("../local-bridge/install-windows.ps1", import.meta.url), "utf8");
 const windowsStart = fs.readFileSync(new URL("../local-bridge/start-windows.ps1", import.meta.url), "utf8");
 const windowsUninstall = fs.readFileSync(new URL("../local-bridge/uninstall-windows.ps1", import.meta.url), "utf8");
@@ -56,6 +57,13 @@ assert(zhNativeLocal.includes('id="work-native-mactex-group"') &&
   zhNativeLocal.includes("https://tug.org/mactex/") &&
   zhNativeLocal.includes("macOS 安装包尚未发布"),
   "Mac visitors must see MacTeX and an explicit unpublished-package state");
+assert(zhNativeLocal.includes("未使用 Apple Developer ID 签名或公证") &&
+  zhNativeLocal.includes("隐私与安全性") &&
+  zhNativeLocal.includes("连接组件（未签名）"),
+  "Unsigned macOS package must be identified and per-file security approval explained");
+assert(enNativeLocal.includes("not signed with an Apple Developer ID or notarized") &&
+  enNativeLocal.includes("Open Anyway"),
+  "English macOS installer warning must disclose unsigned status");
 assert(zhNativeLocal.includes('const isMac = !mobile && /Macintosh|Mac OS X/i.test(userAgent)') &&
   zhNativeLocal.includes('macDownload.removeAttribute("href")') &&
   zhNativeLocal.includes('method: "HEAD", cache: "no-store", credentials: "omit"'),
@@ -211,6 +219,14 @@ assert(workApi.includes('"bridge/windows"') && workApi.includes('"bridge/macos"'
   "Site download endpoint must support Windows EXE plus gated macOS PKG and DMG files");
 assert(workApi.includes("_system/releases/local-bridge/windows-amd64/QssedA-Local-Bridge.exe"), "Bridge download must read the fixed hidden R2 release key");
 assert(workApi.includes("application/vnd.microsoft.portable-executable"), "Bridge download must use an executable content type");
+assert(macWorkflow.includes("publish-unsigned:") &&
+  macWorkflow.includes("needs: build-and-smoke") &&
+  macWorkflow.includes("github.ref == 'refs/heads/main'") &&
+  macWorkflow.includes("macos-universal/AERTEX-Bridge-macOS-universal.pkg") &&
+  macWorkflow.includes("macos-universal/AERTEX-Bridge-macOS-universal.dmg") &&
+  !macWorkflow.includes("notarytool") &&
+  !macWorkflow.includes("spctl --master-disable"),
+  "Unsigned macOS release must publish only after the native checks, without notarization or Gatekeeper disabling");
 assert(nativeWorkflow.includes("runs-on: windows-latest"), "Native Bridge installer must build and test on Windows.");
 assert(nativeWorkflow.includes("AERTEX-Bridge-Setup.exe"), "Bridge release must be an actual Setup EXE, not a portable daemon.");
 assert(nativeWorkflow.includes("smoke-windows:") && nativeWorkflow.includes("needs: [build-installer, smoke-windows]"),
