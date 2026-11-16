@@ -12,10 +12,11 @@ for (const locale of ["zh-cn", "en"]) {
   // Regression: a recursive desktop scroll helper used to throw RangeError
   // inside append("user", message), before the AI POST or error UI could run.
   const uiSource = scripts.find(source => source.includes("function scrollChatToBottom()"));
-  const scrollMatch = uiSource?.match(/  function scrollChatToBottom\\(\\)\\{[\\s\\S]*?\\n  \\}\\n  function append\\(/);
-  if (!scrollMatch) throw new Error("GPT scroll helper not found for " + locale);
-  const scrollSource = scrollMatch[0].replace(/\\n  function append\\($/, "");
-  if (/\\bscrollChatToBottom\\(\\)/.test(scrollSource.replace("function scrollChatToBottom()", ""))) {
+  const scrollStart = uiSource?.indexOf("  function scrollChatToBottom(){") ?? -1;
+  const scrollEnd = uiSource?.indexOf("\n  function append(",scrollStart) ?? -1;
+  if (scrollStart < 0 || scrollEnd < 0) throw new Error("GPT scroll helper not found for " + locale);
+  const scrollSource = uiSource.slice(scrollStart,scrollEnd);
+  if (scrollSource.slice(scrollSource.indexOf("{") + 1).includes("scrollChatToBottom();")) {
     throw new Error("GPT desktop scroll must not recursively call itself before sending");
   }
   for (const watch of [false, true]) {
