@@ -687,6 +687,12 @@ async function chat(request, env, session) {
   const requestedProviderId = uuid(b.provider_id) ? b.provider_id : "";
   const requestedModel = cleanModel(b.model);
   let p = requestedProviderId ? providers.find(item => item.id === requestedProviderId) : null;
+  // An explicit provider id is an authorization choice, not a hint.
+  // If a normal user manually submits the OpenAI provider id, never
+  // silently route to Bailian and append a response to an OpenAI chat.
+  if (requestedProviderId && !p) {
+    return json({ error: "This AI provider is reserved for administrators or unavailable to this account.", code: "PROVIDER_NOT_ALLOWED" }, 403);
+  }
   if (!p && requestedModel) {
     p = providers.find(item => models(item.allowed_models).includes(requestedModel));
   }
@@ -723,11 +729,16 @@ async function chat(request, env, session) {
   if (conversationId) {
     const existingConversation = await restData(
       session,
-      "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) + "&select=id&limit=1"
+      "/ai_conversations?id=eq." + conversationId + "&user_id=eq." + encodeURIComponent(session.user.id) + "&select=id,provider_id&limit=1"
     );
     if (!existingConversation.ok) return json({ error: "Unable to verify conversation." }, 502);
     if (!Array.isArray(existingConversation.data) || !existingConversation.data.length) {
       return json({ error: "Conversation not found." }, 404);
+    }
+    // Existing OpenAI transcripts remain readable, but ordinary users may
+    // not append Chinese-model replies into a now-restricted GPT thread.
+    if (existingConversation.data[0].provider_id !== p.id) {
+      return json({ error: "This conversation uses a provider that is no longer available to your account. Start a new Chinese-model conversation.", code: "CONVERSATION_PROVIDER_NOT_ALLOWED" }, 403);
     }
 
     const history = await restData(
