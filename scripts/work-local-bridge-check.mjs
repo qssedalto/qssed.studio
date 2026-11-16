@@ -472,13 +472,14 @@ assert(macNodes.get("work-local-version")?.textContent.includes("macOS"),
 assert(macNodes.get("work-local-tex")?.classList.contains("is-positive"),
   "Site should detect working local XeLaTeX from macOS Bridge");
 assert(macNodes.get("work-native-bridge-download")?.hidden === true &&
-  macNodes.get("work-native-macos-bridge-download")?.hidden === true &&
+  macNodes.get("work-native-macos-bridge-download")?.hidden === false &&
   macNodes.get("work-native-other-versions")?.hidden === false &&
   macNodes.get("work-native-other-windows")?.hidden === false &&
   macNodes.get("work-native-other-macos-pkg")?.hidden === true &&
   macNodes.get("work-native-other-macos-dmg")?.getAttribute("aria-disabled") === "true",
   "Mac platform selector should prioritize the Mac package, show Windows alternative and mark unavailable DMG");
-// A connected service intentionally hides the redundant primary install button.
+// The current-OS installer remains visible for reinstallation, but an
+// unpublished macOS package must not become an active link.
 assert(macNodes.get("work-native-macos-bridge-download")?.getAttribute("aria-disabled") === "true",
   "Unpublished primary macOS installer must never be a live download link");
 assert(macNodes.get("work-macos-install-guide")?.hidden === false,
