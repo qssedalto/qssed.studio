@@ -51,7 +51,7 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
   };
   const setup='https://qsseda.com/'+(zh?'zh-cn':'en-us')+'/work/local';
   const bridge='https://qsseda.com/api/work/bridge/windows';
-  const iso='https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=w9mHFn';
+  const iso='https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=Ek9bsc';
   const macTex='https://tug.org/mactex/';
   const css=`<style id="tex-device-readiness-style">
   .tex-work-app.is-tex-mobile .tex-compiler-card,\n  .tex-work-app.is-tex-mobile #tex-compiler-pill,
