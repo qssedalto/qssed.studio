@@ -1,0 +1,107 @@
+name: Build AERTEX Bridge macOS Packages
+
+on:
+  pull_request:
+    paths:
+      - "local-bridge/macos/**"
+      - ".github/workflows/local-bridge-macos.yml"
+  push:
+    branches: [main]
+    paths:
+      - "local-bridge/macos/**"
+      - ".github/workflows/local-bridge-macos.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BRIDGE_VERSION: "0.5.4-macos"
+
+jobs:
+  build-and-smoke:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: local-bridge/macos/go.mod
+          cache: false
+      - name: Verify portable native engine and macOS behavior
+        working-directory: local-bridge/macos
+        run: |
+          go vet ./...
+          go test -v ./...
+      - name: Build Apple Silicon and Intel executables
+        working-directory: local-bridge/macos
+        run: |
+          set -eu
+          mkdir -p dist
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=$BRIDGE_VERSION" -o dist/AERTEX-Bridge-arm64 .
+          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=$BRIDGE_VERSION" -o dist/AERTEX-Bridge-amd64 .
+          lipo -create -output dist/AERTEX-Bridge dist/AERTEX-Bridge-arm64 dist/AERTEX-Bridge-amd64
+          file dist/AERTEX-Bridge
+          lipo -verify_arch arm64 x86_64 dist/AERTEX-Bridge
+          chmod 755 dist/AERTEX-Bridge
+      - name: Smoke-test actual service, browser restrictions, and TeX status
+        shell: bash
+        working-directory: local-bridge/macos
+        run: |
+          set -euo pipefail
+          ./dist/AERTEX-Bridge --background > /tmp/aertex-bridge-smoke.log 2>&1 &
+          bridge_pid=$!
+          trap 'kill "$bridge_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl -fsS --max-time 1 http://127.0.0.1:32145/health > /tmp/aertex-health.json; then ready=1; break; fi
+            sleep 1
+          done
+          test "$ready" = 1
+          grep -q '"runtime":"native-macos"' /tmp/aertex-health.json
+          grep -q '"service":"qsseda-local-bridge"' /tmp/aertex-health.json
+          ./dist/AERTEX-Bridge --status
+          curl -fsS http://127.0.0.1:32145/tex/status > /tmp/aertex-tex.json
+          grep -q '"platform":"darwin"' /tmp/aertex-tex.json
+          status=$(curl -s -o /dev/null -w '%{http_code}' -H 'Origin: https://not-allowed.invalid' http://127.0.0.1:32145/health)
+          test "$status" = 403
+          status=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:32145/tex/compile)
+          test "$status" = 403
+          status=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: https://work.qsseda.com' -H 'Content-Type: application/json' -d '{"engine":"bash","source":"abc"}' http://127.0.0.1:32145/tex/compile)
+          test "$status" = 400
+      - name: Build native PKG and distributable DMG
+        shell: bash
+        working-directory: local-bridge/macos
+        run: |
+          set -euo pipefail
+          APP_DIR="pkgroot/Library/Application Support/AERTEX Bridge"
+          AGENT_DIR="pkgroot/Library/LaunchAgents"
+          mkdir -p "$APP_DIR" "$AGENT_DIR" pkgscripts dmgroot dist
+          cp dist/AERTEX-Bridge "$APP_DIR/AERTEX-Bridge"
+          cp packaging/uninstall.command "$APP_DIR/uninstall.command"
+          cp packaging/com.aertex.bridge.plist "$AGENT_DIR/com.aertex.bridge.plist"
+          cp packaging/postinstall pkgscripts/postinstall
+          chmod 755 "$APP_DIR/AERTEX-Bridge" "$APP_DIR/uninstall.command" pkgscripts/postinstall
+          chmod 644 "$AGENT_DIR/com.aertex.bridge.plist"
+          plutil -lint "$AGENT_DIR/com.aertex.bridge.plist"
+          pkgbuild --root pkgroot --scripts pkgscripts \
+            --identifier com.aertex.bridge --version 0.5.4 \
+            --install-location / dist/AERTEX-Bridge-macOS-universal.pkg
+          cp dist/AERTEX-Bridge-macOS-universal.pkg dmgroot/
+          cat > dmgroot/README.txt <<'EOF'
+          AERTEX Bridge for macOS (Apple Silicon + Intel)
+          Double-click the .pkg installer in this disk image.
+          Requires macOS 12 or later. Install MacTeX separately to enable XeLaTeX/pdfLaTeX.
+          This development build is NOT Apple Developer ID signed or notarized.
+          EOF
+          hdiutil create -volname "AERTEX Bridge" -srcfolder dmgroot \
+            -format UDZO -ov dist/AERTEX-Bridge-macOS-universal.dmg
+          pkgutil --check-signature dist/AERTEX-Bridge-macOS-universal.pkg || true
+          shasum -a 256 dist/AERTEX-Bridge-macOS-universal.pkg dist/AERTEX-Bridge-macOS-universal.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aertex-bridge-macos-universal
+          path: |
+            local-bridge/macos/dist/AERTEX-Bridge-macOS-universal.pkg
+            local-bridge/macos/dist/AERTEX-Bridge-macOS-universal.dmg
+          if-no-files-found: error
+          retention-days: 30
