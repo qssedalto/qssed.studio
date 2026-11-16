@@ -1,7 +1,8 @@
 import { json } from "./routing.js";
 
-// The macOS objects are intentionally not published by the build workflow.
-// A HEAD/GET request returns 503 until a verified, signed release is uploaded.
+// The macOS binaries are intentionally distributed unsigned. Only the main-branch
+// workflow publishes after source tests and native macOS smoke checks pass.
+// A HEAD/GET request returns 503 until the verified unsigned release is uploaded.
 const BRIDGE_RELEASES = Object.freeze({
   "bridge/windows": {
     key: "_system/releases/local-bridge/windows-amd64/QssedA-Local-Bridge.exe",
