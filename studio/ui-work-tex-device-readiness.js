@@ -27,16 +27,39 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
     hint:'Install TeX Live before starting the Windows Bridge. Allow browser local-network access if requested.',
     warn:'You are opening the TeX Live ISO on Microsoft OneDrive. Additional network access may be needed. Continue?'
   };
+  const macCopy = zh ? {
+    pdfTitle:'PDF 预览',
+    title:'首次编译前，请准备 Mac 本机环境',
+    missing:'尚未检测到可用的 macOS 本机 TeX 环境。请安装 MacTeX，并在 AERTEX 本机连接页面查看 Mac 连接组件发布状态。',
+    cloud:'本机编译暂不可用，但云端编译服务已连接。只有需要本机编译时才需要安装组件。',
+    unsupported:'Mac Bridge 已连接，但当前 TeX 引擎不受支持。请切换 XeLaTeX 或 pdfLaTeX 并重新检测。',
+    noEngine:'Mac Bridge 已连接，但未发现 XeLaTeX。请检查 MacTeX 安装及 /Library/TeX/texbin。',
+    step1:'第 1 步：安装 MacTeX',step2:'第 2 步：查看 Mac 连接组件',
+    iso:'MacTeX 官方下载',bridge:'查看 macOS 安装状态',
+    guide:'查看 AERTEX 本机连接',retry:'重新检测连接',
+    hint:'Mac 上不需要 Windows EXE、PowerShell 或 TeX Live Windows ISO。安装 MacTeX 后，在本机连接页面检查 macOS Bridge 安装包是否已发布。'
+  } : {
+    title:'Prepare your Mac before the first local compile',
+    missing:'No macOS TeX environment was detected. Install MacTeX, then check the AERTEX local connection page for macOS Bridge release status.',
+    cloud:'Local compilation is unavailable, but cloud compilation is connected. Install these only if you need local compilation.',
+    unsupported:'Mac Bridge is connected, but the selected TeX engine is unsupported. Select XeLaTeX or pdfLaTeX and retry.',
+    noEngine:'Mac Bridge is connected, but XeLaTeX was not found. Check MacTeX and /Library/TeX/texbin.',
+    step1:'Step 1: Install MacTeX',step2:'Step 2: Check Mac Bridge availability',
+    iso:'Get MacTeX from the official site',bridge:'Check macOS installer status',
+    guide:'Open AERTEX local connection',retry:'Check connection again',
+    hint:'Mac does not need a Windows EXE, PowerShell, or the Windows TeX Live ISO. Check whether the macOS Bridge installer is published.'
+  };
   const setup='https://qsseda.com/'+(zh?'zh-cn':'en-us')+'/work/local';
   const bridge='https://qsseda.com/api/work/bridge/windows';
   const iso='https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=w9mHFn';
+  const macTex='https://tug.org/mactex/';
   const css=`<style id="tex-device-readiness-style">
   .tex-work-app.is-tex-mobile .tex-compiler-card,\n  .tex-work-app.is-tex-mobile #tex-compiler-pill,
   .tex-work-app.is-tex-mobile .tex-live-preview-toggle,
   .tex-work-app.is-tex-mobile .tex-live-preview-foot>span{display:none!important}
   .tex-work-app.is-tex-mobile .tex-live-preview-foot:has(#tex-live-preview-open[hidden]){display:none!important}
   .tex-work-app.is-tex-mobile .tex-live-preview-head{justify-content:flex-start!important}
-  .tex-work-app.is-tex-windows-setup .tex-compiler-card{display:none!important}\n  .tex-work-app .tex-first-run-windows[hidden],.tex-work-app .tex-windows-steps[hidden]{display:none!important}
+  .tex-work-app.is-tex-windows-setup .tex-compiler-card,.tex-work-app.is-tex-desktop-setup .tex-compiler-card{display:none!important}\n  .tex-work-app .tex-first-run-windows[hidden],.tex-work-app .tex-windows-steps[hidden]{display:none!important}
   .tex-work-app .tex-first-run-windows{display:grid;gap:10px;margin:9px;padding:13px;
    border:1px solid var(--border);border-radius:13px;background:var(--surface);color:var(--text)}
   .tex-work-app .tex-first-run-windows h3{margin:0;font-size:13px;font-weight:700;line-height:1.4}
@@ -55,13 +78,14 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
     outline:2px solid var(--primary);outline-offset:2px}
   </style>`;
   const js=`<script id="tex-device-readiness-script">(() => {
-    const copy=__COPY__;
+    let copy=__COPY__;const macCopy=__MAC_COPY__;
     const root=document.querySelector('.tex-work-app');
     if(!root)return;
     const ua=navigator.userAgent||'';
     const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(ua)||
       (navigator.platform==='MacIntel'&&Number(navigator.maxTouchPoints)>1);
     const windows=/Windows NT/i.test(ua)&&!mobile;
+    const mac=/Macintosh|Mac OS X/i.test(ua)&&!mobile;
     if(mobile){
       root.classList.add('is-tex-mobile');
       const heading=root.querySelector('#tex-live-preview-card .tex-live-preview-head strong');
@@ -72,7 +96,8 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
       if(status)status.textContent=copy.mobileSelect;
       return;
     }
-    if(!windows)return;
+    if(!windows&&!mac)return;
+    if(mac)copy=macCopy;
     const runner=root.querySelector('.tex-runs-panel');
     const preview=root.querySelector('#tex-live-preview-card');
     if(!runner||document.getElementById('tex-first-run-windows'))return;
@@ -91,9 +116,9 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
       const heading=document.createElement('strong');heading.textContent=text;
       el.append(heading,link(label,url));steps.append(el);
     }
-    step(copy.step1,copy.iso,__ISO__);
-    step(copy.step2,copy.bridge,__BRIDGE__);
-    steps.querySelector('a')?.addEventListener('click',event=>{
+    step(copy.step1,copy.iso,mac?__MACTEX__:__ISO__);
+    step(copy.step2,copy.bridge,mac?__SETUP__:__BRIDGE__);
+    if(windows)steps.querySelector('a')?.addEventListener('click',event=>{
       if(!window.confirm(copy.warn))event.preventDefault();
     });
     const actions=document.createElement('div');actions.className='tex-windows-actions';
@@ -110,7 +135,8 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
     function sync(data){
       if(!data||typeof data!=='object')return;
       panel.hidden=Boolean(data.localSupported);
-      root.classList.toggle('is-tex-windows-setup',!data.localSupported && !data.cloudAvailable);
+      root.classList.toggle('is-tex-windows-setup',windows && !data.localSupported && !data.cloudAvailable);
+      root.classList.toggle('is-tex-desktop-setup',mac && !data.localSupported && !data.cloudAvailable);
       if(panel.hidden)return;
       const hasBridge=Boolean(data.localDetected);
       const engineReady=Boolean(data.localEngineReady);
@@ -126,8 +152,10 @@ export function enhanceWorkTexDeviceReadiness(markup, zh) {
     sync(window.__aertexTexCompilerProbe);
   })();</script>`
   .replace('__COPY__',JSON.stringify(copy))
+  .replace('__MAC_COPY__',JSON.stringify(macCopy))
   .replace('__SETUP__',JSON.stringify(setup))
   .replace('__BRIDGE__',JSON.stringify(bridge))
-  .replace('__ISO__',JSON.stringify(iso));
+  .replace('__ISO__',JSON.stringify(iso))
+  .replace('__MACTEX__',JSON.stringify(macTex));
   return String(markup||'').replace('</body>',css+js+'</body>');
 }
