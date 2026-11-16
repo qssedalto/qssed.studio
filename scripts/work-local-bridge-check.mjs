@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import vm from "node:vm";
+import { handleWorkApi } from "../studio/work-api.js";
 import { enhanceWorkTexPreviewSession } from "../studio/ui-work-tex-preview-session.js";
 import { enhanceWorkTexPreviewFastPath } from "../studio/ui-work-tex-preview-fastpath.js";
 import { enhanceWorkTexPreviewDirectCache } from "../studio/ui-work-tex-preview-direct-cache.js";
@@ -20,6 +21,7 @@ const nativeBridge = fs.readFileSync(new URL("../local-bridge/original-engine/ma
 const bridgeControl = fs.readFileSync(new URL("../local-bridge/installer-control/main_windows.go", import.meta.url), "utf8");
 const installer = fs.readFileSync(new URL("../local-bridge/installer/AERTEX-Bridge.iss", import.meta.url), "utf8");
 const nativeWorkflow = fs.readFileSync(new URL("../.github/workflows/local-bridge-native.yml", import.meta.url), "utf8");
+const macWorkflow = fs.readFileSync(new URL("../.github/workflows/local-bridge-macos.yml", import.meta.url), "utf8");
 const windowsInstall = fs.readFileSync(new URL("../local-bridge/install-windows.ps1", import.meta.url), "utf8");
 const windowsStart = fs.readFileSync(new URL("../local-bridge/start-windows.ps1", import.meta.url), "utf8");
 const windowsUninstall = fs.readFileSync(new URL("../local-bridge/uninstall-windows.ps1", import.meta.url), "utf8");
@@ -47,7 +49,82 @@ assert(zhLocal.includes("credentials: \"omit\""), "Local bridge requests must no
 assert(!zhLocal.includes("Authorization"), "Local bridge page must not send a bearer Authorization header");
 assert(enLocal.includes("/tex/status"), "Local bridge page is missing the TeX status probe");
 assert(zhNativeLocal.includes("/api/work/bridge/windows"), "Native Windows Bridge download is missing from the Work page");
-const texliveUrl = "https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=w9mHFn";
+assert(zhNativeLocal.includes('id="work-native-macos-bridge-download"') &&
+  zhNativeLocal.includes('href="/api/work/bridge/macos"') &&
+  zhNativeLocal.includes('download="AERTEX-Bridge-macOS-universal.pkg"'),
+  "macOS Bridge must have a native PKG download target on the local connection page");
+assert(zhNativeLocal.includes('id="work-native-mactex-group"') &&
+  zhNativeLocal.includes("https://tug.org/mactex/") &&
+  zhNativeLocal.includes("macOS 安装包尚未发布"),
+  "Mac visitors must see MacTeX and an explicit unpublished-package state");
+const guideZh = zhNativeLocal.match(/<section class="work-macos-guide"[^>]*>[\s\S]*?<\/section>/)?.[0] || "";
+const guideEn = enNativeLocal.match(/<section class="work-macos-guide"[^>]*>[\s\S]*?<\/section>/)?.[0] || "";
+for (const guide of [guideZh, guideEn]) {
+  assert(guide.includes('id="work-macos-guide-title"') &&
+    guide.includes('aria-labelledby="work-macos-guide-title"') &&
+    guide.includes('hidden') &&
+    (guide.match(/<li>/g) || []).length === 4,
+    "Bilingual macOS guide should have four accessible, Mac-only installation steps");
+  assert(guide.includes('href="https://tug.org/mactex/"') &&
+    guide.includes('href="https://support.apple.com/en-us/102445"') &&
+    guide.includes('id="work-macos-guide-title"') &&
+    guide.includes('curl -fsS http://127.0.0.1:32145/health') &&
+    guide.includes('curl -fsS http://127.0.0.1:32145/tex/status'),
+    "Mac guide must cover official sources, diagnostics and unsigned installation");
+}
+assert(zhNativeLocal.includes("Mac 安装与连接指南") &&
+  zhNativeLocal.includes("系统设置 → 隐私与安全性") &&
+  zhNativeLocal.includes("不要强行绕过") &&
+  zhNativeLocal.includes("文件损坏") &&
+  zhNativeLocal.includes('href="#work-macos-install-guide"'),
+  "Chinese macOS guide must provide localized steps and strong Gatekeeper warnings");
+assert(enNativeLocal.includes("Install and connect on your Mac") &&
+  enNativeLocal.includes("Open Anyway") &&
+  enNativeLocal.includes("Never disable Gatekeeper system-wide"),
+  "English macOS guide must explain safe installation and security restrictions");
+assert(zhNativeLocal.includes('if (macGuide) macGuide.hidden = !isMac') &&
+  zhNativeLocal.includes('.work-macos-guide[hidden]{display:none!important}'),
+  "Mac guide must not appear on Windows or mobile browsers");
+for (const [markup, expectedLabel] of [[zhNativeLocal, "其他版本"], [enNativeLocal, "Other versions"]]) {
+  assert(markup.includes('id="work-native-platform-downloads"') &&
+    markup.includes('id="work-native-other-versions"') &&
+    markup.includes('<summary>' + expectedLabel) &&
+    markup.includes('font-size:11px') &&
+    markup.includes('class="work-native-other-list"'),
+    "Bridge downloads should use one native OS button and a compact, accessible Other versions dropdown");
+  assert(markup.includes('id="work-native-other-windows" href="/api/work/bridge/windows"') &&
+    markup.includes('id="work-native-other-macos-pkg" href="/api/work/bridge/macos"') &&
+    markup.includes('id="work-native-other-macos-dmg" href="/api/work/bridge/macos/dmg"') &&
+    markup.includes('id="work-native-other-macos-guide" href="#work-macos-install-guide"'),
+    "Other versions must expose alternate Windows/Mac installers and Mac installation guide");
+  assert(markup.includes('if (otherWindows) otherWindows.hidden = mobile || isWindows;') &&
+    markup.includes('if (otherMacPkg) otherMacPkg.hidden = mobile || isMac;') &&
+    markup.includes('if (otherVersions) otherVersions.hidden = mobile;') &&
+    markup.includes('if (otherMacGuide) {'),
+    "Only the matching platform should be a primary download, with alternatives behind a disclosure");
+  assert(markup.includes('setMacAlternative(otherMacPkg, macPublished') &&
+    markup.includes('setMacAlternative(otherMacDmg, dmgPublished') &&
+    markup.includes('macDownload.removeAttribute("href")') &&
+    markup.includes('else node.removeAttribute("href");') &&
+    markup.includes('void checkRelease("/api/work/bridge/macos/dmg"'),
+    "Unpublished macOS alternatives should remain disabled on both Windows and Mac");
+}
+assert(zhNativeLocal.includes("未使用 Apple Developer ID 签名或公证") &&
+  zhNativeLocal.includes("隐私与安全性") &&
+  zhNativeLocal.includes("连接组件（未签名）"),
+  "Unsigned macOS package must be identified and per-file security approval explained");
+assert(enNativeLocal.includes("not signed with an Apple Developer ID or notarized") &&
+  enNativeLocal.includes("Open Anyway"),
+  "English macOS installer warning must disclose unsigned status");
+assert(zhNativeLocal.includes('const isMac = !mobile && /Macintosh|Mac OS X/i.test(userAgent)') &&
+  zhNativeLocal.includes('macDownload.removeAttribute("href")') &&
+  zhNativeLocal.includes('method: "HEAD", cache: "no-store", credentials: "omit"'),
+  "Mac download must not offer a dead link while the verified package is missing");
+assert(zhLocal.includes('bridgeRuntime === "native-macos"') &&
+  zhLocal.includes('bridgeRuntime,') &&
+  zhLocal.includes('candidate?.service !== expectedService'),
+  "Website localhost probe must recognize macOS native Bridge and retain the protocol identity check");
+const texliveUrl = "https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=Ek9bsc";
 for (const markup of [zhNativeLocal, enNativeLocal]) {
   assert(markup.includes(`id="work-native-texlive-download" href="${texliveUrl}"`), "TeX Live ISO button must link to the configured OneDrive location");
   assert(markup.includes('target="_blank" rel="noopener noreferrer"'), "TeX Live ISO must open in a secure new tab");
@@ -188,9 +265,20 @@ assert(!nativeBridge.includes("node.exe"), "Native Bridge must not depend on Nod
 
 assert(worker.includes('pathname.startsWith("/api/work/")'), "Worker is missing the Work API boundary");
 assert(!workApi.includes("verifyStudioApiSession") && !workApi.includes("withStudioSessionCookies"), "Public Bridge installer must not require a login or issue session cookies");
-assert(workApi.includes('if (action !== "bridge/windows")'), "Anonymous installer access must remain scoped to the fixed release route");
+assert(workApi.includes('Object.hasOwn(BRIDGE_RELEASES, action)'), "Anonymous Bridge download routes must use an explicit allowlist");
+assert(workApi.includes('"bridge/windows"') && workApi.includes('"bridge/macos"') &&
+  workApi.includes('"bridge/macos/dmg"') && workApi.includes('runtime: "native-macos"'),
+  "Site download endpoint must support Windows EXE plus gated macOS PKG and DMG files");
 assert(workApi.includes("_system/releases/local-bridge/windows-amd64/QssedA-Local-Bridge.exe"), "Bridge download must read the fixed hidden R2 release key");
 assert(workApi.includes("application/vnd.microsoft.portable-executable"), "Bridge download must use an executable content type");
+assert(macWorkflow.includes("publish-unsigned:") &&
+  macWorkflow.includes("needs: build-and-smoke") &&
+  macWorkflow.includes("github.ref == 'refs/heads/main'") &&
+  macWorkflow.includes("macos-universal/AERTEX-Bridge-macOS-universal.pkg") &&
+  macWorkflow.includes("macos-universal/AERTEX-Bridge-macOS-universal.dmg") &&
+  !macWorkflow.includes("notarytool") &&
+  !macWorkflow.includes("spctl --master-disable"),
+  "Unsigned macOS release must publish only after the native checks, without notarization or Gatekeeper disabling");
 assert(nativeWorkflow.includes("runs-on: windows-latest"), "Native Bridge installer must build and test on Windows.");
 assert(nativeWorkflow.includes("AERTEX-Bridge-Setup.exe"), "Bridge release must be an actual Setup EXE, not a portable daemon.");
 assert(nativeWorkflow.includes("smoke-windows:") && nativeWorkflow.includes("needs: [build-installer, smoke-windows]"),
@@ -288,7 +376,168 @@ assert(removedSession && fakeWindow.history.state.someOtherHistoryState === "pre
   !("__qssedaTexPreviewBlobV2" in fakeWindow.history.state),
   "The refresh must clear stale preview blobs without removing unrelated history state");
 
-console.log("Work localhost bridge checks passed.");
+// Real release routes must never pretend a missing macOS installer is downloadable.
+const releaseContent = new Uint8Array([0x78, 0x61, 0x72, 0x21]);
+const releaseStorage = {
+  async get(key) {
+    if (key.endsWith("macOS-universal.pkg") || key.endsWith("macOS-universal.dmg")) {
+      return { body: new Blob([releaseContent]).stream(), size: releaseContent.length, httpEtag: '"mac-test"' };
+    }
+    return null;
+  }
+};
+const pkg = await handleWorkApi(new Request("https://qsseda.com/api/work/bridge/macos", { method:"GET" }),
+  { STORAGE:releaseStorage }, "bridge/macos");
+assert(pkg.status === 200 && pkg.headers.get("x-qsseda-bridge-runtime") === "native-macos" &&
+  pkg.headers.get("content-disposition").includes(".pkg"), "macOS PKG route did not return a proper installer response");
+const macHead = await handleWorkApi(new Request("https://qsseda.com/api/work/bridge/macos", {method:"HEAD"}),
+  { STORAGE:releaseStorage }, "bridge/macos");
+assert(macHead.status === 200 && macHead.body === null, "macOS availability HEAD must not send package bytes");
+const dmg = await handleWorkApi(new Request("https://qsseda.com/api/work/bridge/macos/dmg", {method:"GET"}),
+  { STORAGE:releaseStorage }, "bridge/macos/dmg");
+assert(dmg.status === 200 && dmg.headers.get("x-qsseda-bridge-package") === "macos-dmg",
+  "macOS DMG route must return the macOS disk image");
+const unavailable = await handleWorkApi(new Request("https://qsseda.com/api/work/bridge/macos", {method:"HEAD"}),
+  { STORAGE:{get:async()=>null} }, "bridge/macos");
+assert(unavailable.status === 503, "Missing macOS packages must return explicit 503");
+const unknown = await handleWorkApi(new Request("https://qsseda.com/api/work/bridge/unknown"),
+  { STORAGE:releaseStorage }, "bridge/unknown");
+assert(unknown.status === 404, "Unknown Bridge download path should be rejected");
+
+// Drive the real embedded Work/local script with macOS browser and native-macos
+// health responses, proving website detection is not Windows-only.
+const localClientScript = zhNativeLocal.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+assert(localClientScript, "Local connection JavaScript not found");
+class FakeClassList {
+  constructor(){ this.items = new Set(); }
+  toggle(name, enabled){ if(enabled === undefined) enabled=!this.items.has(name);
+    if(enabled)this.items.add(name);else this.items.delete(name); return enabled; }
+  contains(name){ return this.items.has(name); }
+}
+function fakeNode(){
+  const attributes = new Map();
+  return {
+    textContent:"", disabled:false, hidden:false,
+    classList:new FakeClassList(), children:[],
+    listeners:new Map(),
+    addEventListener(type,handler){this.listeners.set(type,handler)},
+    trigger(type){this.listeners.get(type)?.({type})},
+    appendChild(item){this.children.push(item)},
+    replaceChildren(){this.children=[]},
+    setAttribute(name,value){attributes.set(name,String(value))},
+    removeAttribute(name){attributes.delete(name)},
+    getAttribute(name){return attributes.get(name)||null}
+  };
+}
+const macNodes = new Map();
+const macTimers = [];
+const savedState = new Map();
+const macNavigator = {userAgent:"Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15",
+  platform:"MacIntel", maxTouchPoints:0};
+class MockRequest { constructor(url, options){this.url=url;this.options=options;} }
+const macContext = {
+  document:{
+    getElementById(id){if(!macNodes.has(id))macNodes.set(id,fakeNode());return macNodes.get(id)},
+    createElement(){return fakeNode()}
+  },
+  navigator:macNavigator,
+  window:{
+    sessionStorage:{setItem(k,v){savedState.set(k,v)}},
+    setTimeout(cb,delay){if(delay===260)macTimers.push(cb);return 1},
+    clearTimeout(){}, confirm(){return true}
+  },
+  MutationObserver:class{observe(){}}, Request:MockRequest, AbortController,
+  fetch:async request=>{
+    const url=typeof request==="string"?request:request.url;
+    if(url==="/api/work/bridge/macos")return {ok:false,status:503};
+    if(url.endsWith("/health"))return {ok:true,json:async()=>({
+      service:"qsseda-local-bridge",protocol:1,runtime:"native-macos",version:"0.5.4-macos",
+      capabilities:["health","tex.status","tex.compile","tex.project-files","native.autostart"]
+    })};
+    if(url.endsWith("/tex/status"))return {ok:true,json:async()=>({
+      available:true,engine:"xelatex",engines:["xelatex","pdflatex"],
+      platform:"darwin",runtime:"native-macos"
+    })};
+    throw new Error("unexpected URL: "+url);
+  }
+};
+vm.runInNewContext(localClientScript,macContext);
+assert(macTimers.length === 1,"Desktop Mac must auto-probe Bridge on page load");
+macTimers[0]();
+await new Promise(resolve=>setTimeout(resolve,5));
+assert(macNodes.get("work-local-status-card")?.classList.contains("is-online"),
+  "Website failed to recognize a running native-macos Bridge");
+assert(macNodes.get("work-local-version")?.textContent.includes("macOS"),
+  "Website version details must show that the Mac service was recognized");
+assert(macNodes.get("work-local-tex")?.classList.contains("is-positive"),
+  "Site should detect working local XeLaTeX from macOS Bridge");
+assert(macNodes.get("work-native-bridge-download")?.hidden === true &&
+  macNodes.get("work-native-macos-bridge-download")?.hidden === false &&
+  macNodes.get("work-native-other-versions")?.hidden === false &&
+  macNodes.get("work-native-other-windows")?.hidden === false &&
+  macNodes.get("work-native-other-macos-pkg")?.hidden === true &&
+  macNodes.get("work-native-other-macos-dmg")?.getAttribute("aria-disabled") === "true",
+  "Mac platform selector should prioritize the Mac package, show Windows alternative and mark unavailable DMG");
+// The current-OS installer remains visible for reinstallation, but an
+// unpublished macOS package must not become an active link.
+assert(macNodes.get("work-native-macos-bridge-download")?.getAttribute("aria-disabled") === "true",
+  "Unpublished primary macOS installer must never be a live download link");
+assert(macNodes.get("work-macos-install-guide")?.hidden === false,
+  "Mac-specific installation guide must be visible on desktop macOS");
+// Windows desktop should show its EXE first and offer working Mac PKG/DMG
+// choices only in the small native disclosure, with independent HEAD checks.
+const windowsNodes = new Map();
+const windowsTimers = [];
+const windowsContext = {
+  document: {
+    getElementById(id){if(!windowsNodes.has(id))windowsNodes.set(id,fakeNode());return windowsNodes.get(id)},
+    createElement(){return fakeNode()}
+  },
+  navigator: {userAgent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    platform:"Win32",maxTouchPoints:0},
+  window: {sessionStorage:{setItem(){}},setTimeout(cb,delay){if(delay===260)windowsTimers.push(cb);return 1},
+    clearTimeout(){},confirm(){return true}},
+  MutationObserver:class{observe(){}}, Request:MockRequest, AbortController,
+  fetch:async request=>{
+    const url=typeof request==="string"?request:request.url;
+    if(url==="/api/work/bridge/macos")return {ok:true,status:200};
+    if(url==="/api/work/bridge/macos/dmg")return {ok:false,status:503};
+    if(url.endsWith("/health"))return {ok:true,json:async()=>({
+      service:"qsseda-local-bridge", protocol:1,runtime:"native-windows",
+      version:"0.5.4-windows",capabilities:["health","tex.status","tex.compile"]
+    })};
+    if(url.endsWith("/tex/status"))return {ok:true,json:async()=>({available:true,engine:"xelatex"})};
+    throw new Error("unexpected URL: "+url);
+  }
+};
+vm.runInNewContext(localClientScript,windowsContext);
+assert(windowsTimers.length === 1,"Windows desktop should still auto-probe the local service");
+windowsTimers[0]();
+await new Promise(resolve=>setTimeout(resolve,5));
+assert(windowsNodes.get("work-native-bridge-download")?.hidden === false &&
+  windowsNodes.get("work-native-macos-bridge-download")?.hidden === true &&
+  windowsNodes.get("work-native-other-versions")?.hidden === false &&
+  windowsNodes.get("work-native-other-windows")?.hidden === true &&
+  windowsNodes.get("work-native-other-macos-pkg")?.hidden === false &&
+  windowsNodes.get("work-native-other-macos-dmg")?.hidden === false,
+  "Windows visitors must get Windows as primary and both Mac formats as alternatives");
+assert(windowsNodes.get("work-native-other-macos-pkg")?.getAttribute("href") === "/api/work/bridge/macos" &&
+  windowsNodes.get("work-native-other-macos-pkg")?.getAttribute("aria-disabled") === "false",
+  "Published Mac PKG must be downloadable from a Windows computer");
+assert(windowsNodes.get("work-native-other-macos-dmg")?.getAttribute("href") === null &&
+  windowsNodes.get("work-native-other-macos-dmg")?.getAttribute("aria-disabled") === "true",
+  "Unavailable Mac DMG should be visible but should never navigate to an error response");
+assert(windowsNodes.get("work-macos-install-guide")?.hidden === true,
+  "Cross-platform Mac guide should not clutter the default Windows page");
+windowsNodes.get("work-native-other-macos-guide")?.trigger("click");
+assert(windowsNodes.get("work-macos-install-guide")?.hidden === false,
+  "Windows users must be able to reveal the Mac installation guide from Other versions");
+
+const snapshot=JSON.parse(savedState.get("qsseda.work.local.state.v2")||"{}");
+assert(snapshot.connected && snapshot.bridgeRuntime==="native-macos" && snapshot.texAvailable,
+  "macOS Bridge probe must persist successful connection state");
+
+console.log("Work localhost bridge checks passed, including macOS simulation and download APIs.");
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

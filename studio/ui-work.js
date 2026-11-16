@@ -608,10 +608,14 @@ export function workLocalBridgeContent(zh, locale = "", mainOrigin = "https://qs
 
           const endpoint = connectedBase.replace(/^https?:\\/\\//, "");
           const bridgeVersion = String(health.version || "unknown");
+          const bridgeRuntime = String(health.runtime || "");
+          const platformName = bridgeRuntime === "native-macos" ? "macOS"
+            : bridgeRuntime === "native-windows" ? "Windows" : "";
           setState("online", text.online, text.onlineDetail);
           if (computerLabel) computerLabel.textContent = text.available;
           if (endpointLabel) endpointLabel.textContent = endpoint;
-          if (versionLabel) versionLabel.textContent = "Bridge " + bridgeVersion + " · protocol " + String(health.protocol);
+          if (versionLabel) versionLabel.textContent = "Bridge " + bridgeVersion +
+            (platformName ? " · " + platformName : "") + " · protocol " + String(health.protocol);
           setPositive(computerLabel, true);
           renderCapabilities(health.capabilities || []);
           if (log) log.textContent = text.logOnline;
@@ -633,6 +637,7 @@ export function workLocalBridgeContent(zh, locale = "", mainOrigin = "https://qs
             connected: true,
             endpoint,
             bridgeVersion,
+            bridgeRuntime,
             protocol: Number(health.protocol) || expectedProtocol,
             capabilities: Array.isArray(health.capabilities) ? health.capabilities : [],
             texAvailable,

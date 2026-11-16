@@ -1,0 +1,33 @@
+#!/bin/sh
+set -eu
+
+# This installer runs as root, but Bridge is deliberately a per-user
+# LaunchAgent rather than a privileged daemon.
+PLIST="/Library/LaunchAgents/com.aertex.bridge.plist"
+chmod 644 "$PLIST"
+chown root:wheel "$PLIST"
+APP="/Library/Application Support/AERTEX Bridge/AERTEX-Bridge"
+chmod 755 "$APP"
+
+USER_NAME="$(stat -f '%Su' /dev/console)"
+if [ "$USER_NAME" = "root" ] || [ "$USER_NAME" = "loginwindow" ] || [ -z "$USER_NAME" ]; then
+  # launchd will load /Library/LaunchAgents at the next user login.
+  exit 0
+fi
+UID_NUM="$(id -u "$USER_NAME")"
+# Boot out only our documented launchd job. Never kill by port number.
+launchctl bootout "gui/$UID_NUM" "$PLIST" >/dev/null 2>&1 || true
+launchctl bootstrap "gui/$UID_NUM" "$PLIST"
+launchctl kickstart -k "gui/$UID_NUM/com.aertex.bridge"
+# Verify the precise protocol identity, not merely that TCP port is occupied.
+ATTEMPT=0
+while [ "$ATTEMPT" -lt 20 ]; do
+  if /usr/bin/curl -fsS --max-time 1 http://127.0.0.1:32145/health | /usr/bin/grep -q '"runtime":"native-macos"'; then
+    exit 0
+  fi
+  ATTEMPT=$((ATTEMPT+1))
+  sleep 1
+done
+echo "AERTEX Bridge was installed, but localhost health could not be verified." >&2
+echo "Check ~/Library/Logs/AERTEX Bridge/bridge.log and port 32145." >&2
+exit 1
