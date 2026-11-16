@@ -10,10 +10,10 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
   const texliveButton = `<span class="work-texlive-download-group" id="work-native-texlive-group"><span class="work-texlive-action-row"><a class="work-button secondary" id="work-native-texlive-download" href="https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=Ek9bsc" target="_blank" rel="noopener noreferrer">${zh ? "下载 TeX Live（ISO）" : "Download TeX Live (ISO)"}</a><a class="work-texlive-help-link" id="work-native-texlive-guide" href="${guideHref}" target="_blank" rel="noopener noreferrer">${zh ? "安装前必读：组件使用指南 ↗" : "Setup guide for both components ↗"}</a></span><small class="work-texlive-prerequisite">${zh ? "此为 Windows 连接组件使用的前置条件，请先安装完此内容再打开 Windows 连接组件。" : "This is a prerequisite for the Windows connection component. Please complete the installation before opening the Windows component."}</small></span>`;
   const macButton = `<a class="work-button secondary" id="work-native-macos-bridge-download" href="/api/work/bridge/macos" download="AERTEX-Bridge-macOS-universal.pkg" data-qsseda-native-bridge-download="macos" hidden>${zh ? "安装 macOS 连接组件" : "Install macOS component"}</a>`;
   const macTexButton = `<span id="work-native-mactex-group" class="work-texlive-download-group" hidden><span class="work-texlive-action-row"><a class="work-button secondary" href="https://tug.org/mactex/" target="_blank" rel="noopener noreferrer">${zh ? "获取 MacTeX（官方）" : "Get MacTeX (official)"}</a><a class="work-texlive-help-link" id="work-native-macos-guide-link" href="#work-macos-install-guide">${zh ? "Mac 安装指南 ↓" : "Mac installation guide ↓"}</a></span><small class="work-texlive-prerequisite">${zh ? "Mac 的 TeX 环境由 MacTeX 提供；如果已安装 XeLaTeX，可直接检查本机连接。" : "MacTeX provides the macOS TeX toolchain. If XeLaTeX is already installed, check your connection directly."}</small><small class="work-macos-unsigned-note">${zh ? "此 macOS Bridge 安装包未使用 Apple Developer ID 签名或公证。下载后若被系统阻止，请先核实文件来源，再前往「系统设置 → 隐私与安全性 → 仍要打开」单独允许；不要关闭系统整体安全保护。" : "This macOS Bridge installer is not signed with an Apple Developer ID or notarized. If blocked, verify the source first, then use System Settings → Privacy & Security → Open Anyway for this file only. Do not disable system-wide protections."}</small></span>`;
-  const otherVersions = `<details class="work-native-other-versions" id="work-native-other-versions" hidden><summary>${zh ? "其他版本" : "Other versions"}<span aria-hidden="true">⌄</span></summary><div class="work-native-other-list"><a id="work-native-other-windows" href="/api/work/bridge/windows" download="AERTEX-Bridge-Setup.exe" hidden>${zh ? "Windows · EXE 安装程序" : "Windows · EXE installer"}</a><a id="work-native-other-macos-pkg" href="/api/work/bridge/macos" download="AERTEX-Bridge-macOS-universal.pkg" aria-disabled="true" hidden>${zh ? "macOS · PKG（未签名）" : "macOS · PKG (unsigned)"}</a><a id="work-native-other-macos-dmg" href="/api/work/bridge/macos/dmg" download="AERTEX-Bridge-macOS-universal.dmg" aria-disabled="true">${zh ? "macOS · DMG（未签名）" : "macOS · DMG (unsigned)"}</a></div></details>`;
+  const otherVersions = `<details class="work-native-other-versions" id="work-native-other-versions" hidden><summary>${zh ? "其他版本" : "Other versions"}<span aria-hidden="true">⌄</span></summary><div class="work-native-other-list"><a id="work-native-other-windows" href="/api/work/bridge/windows" download="AERTEX-Bridge-Setup.exe" hidden>${zh ? "Windows · EXE 安装程序" : "Windows · EXE installer"}</a><a id="work-native-other-macos-pkg" href="/api/work/bridge/macos" download="AERTEX-Bridge-macOS-universal.pkg" aria-disabled="true" hidden>${zh ? "macOS · PKG（未签名）" : "macOS · PKG (unsigned)"}</a><a id="work-native-other-macos-dmg" href="/api/work/bridge/macos/dmg" download="AERTEX-Bridge-macOS-universal.dmg" aria-disabled="true">${zh ? "macOS · DMG（未签名）" : "macOS · DMG (unsigned)"}</a><a id="work-native-other-macos-guide" href="#work-macos-install-guide" hidden>${zh ? "查看 Mac 安装指南" : "View Mac installation guide"}</a></div></details>`;
   // One OS-specific primary action, with a compact native disclosure for other
   // platform packages. The alternate Mac links never point to unpublished R2 files.
-  const platformDownloads = `<span class="work-native-platform-downloads" id="work-native-platform-downloads">${nativeButton}${macButton}${otherVersions}</span>`;
+  const platformDownloads = `<div class="work-native-platform-downloads" id="work-native-platform-downloads">${nativeButton}${macButton}${otherVersions}</div>`;
   output = output.replace("<!--QSSedaWorkNativeAction-->", platformDownloads + texliveButton + macTexButton);
   output += `
     <style id="work-texlive-prerequisite-style">
@@ -171,6 +171,7 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
         const otherWindows = document.getElementById("work-native-other-windows");
         const otherMacPkg = document.getElementById("work-native-other-macos-pkg");
         const otherMacDmg = document.getElementById("work-native-other-macos-dmg");
+        const otherMacGuide = document.getElementById("work-native-other-macos-guide");
         const macGuide = document.getElementById("work-macos-install-guide");
         if (!version || !note || !download || !texliveDownload) return;
 
@@ -190,6 +191,14 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
         if (otherWindows) otherWindows.hidden = mobile || isWindows;
         if (otherMacPkg) otherMacPkg.hidden = mobile || isMac;
         if (otherMacDmg) otherMacDmg.hidden = mobile;
+        if (otherMacGuide) {
+          otherMacGuide.hidden = mobile || isMac;
+          otherMacGuide.addEventListener("click", () => {
+            // Windows visitors can read the Mac instructions without spoofing
+            // their browser platform or changing the default Windows action.
+            if (macGuide) macGuide.hidden = false;
+          });
+        }
 
         // Do not navigate away on cancellation; confirmation opens a new tab.
         texliveDownload.addEventListener("click", (event) => {
