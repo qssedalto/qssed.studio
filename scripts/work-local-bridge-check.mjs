@@ -64,7 +64,7 @@ assert(zhLocal.includes('bridgeRuntime === "native-macos"') &&
   zhLocal.includes('bridgeRuntime,') &&
   zhLocal.includes('candidate?.service !== expectedService'),
   "Website localhost probe must recognize macOS native Bridge and retain the protocol identity check");
-const texliveUrl = "https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=w9mHFn";
+const texliveUrl = "https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=Ek9bsc";
 for (const markup of [zhNativeLocal, enNativeLocal]) {
   assert(markup.includes(`id="work-native-texlive-download" href="${texliveUrl}"`), "TeX Live ISO button must link to the configured OneDrive location");
   assert(markup.includes('target="_blank" rel="noopener noreferrer"'), "TeX Live ISO must open in a secure new tab");
