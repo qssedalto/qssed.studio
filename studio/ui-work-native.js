@@ -219,12 +219,14 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
           const incompatible = incompatibleBuilds.some(build => versionText.includes(build));
           const connected = Boolean(statusCard?.classList.contains("is-online"));
           note.hidden = !incompatible;
-          if (isWindows) download.hidden = connected && !incompatible;
+          // Keep the detected OS package visible even after connecting: the
+          // Other versions disclosure is a download choice, not a connection state.
+          download.hidden = !isWindows;
           download.textContent = incompatible
             ? ${JSON.stringify(zh ? "更新 Windows 连接组件" : "Update Windows component")}
             : ${JSON.stringify(zh ? "安装 Windows 连接组件" : "Install Windows component")};
           if (macDownload) {
-            macDownload.hidden = !isMac || (connected && !incompatible);
+            macDownload.hidden = !isMac;
             macDownload.textContent = !macPublished
               ? ${JSON.stringify(zh ? "macOS 安装包尚未发布" : "macOS installer not published")}
               : incompatible
