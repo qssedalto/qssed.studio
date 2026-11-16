@@ -45,7 +45,7 @@ jobs:
                 --window-size="$width,1000" --dump-dom "$target" > "$out/${locale}-${width}.dom" 2> /dev/null
               grep -q 'data-visual-qa="PASS"' "$out/${locale}-${width}.dom" || {
                 echo "Welcome geometry failure for $locale at width $width"
-                grep -Eo 'data-(visual-qa|plus-round|no-sticky-plus|no-sticky-target|plus-rect|plus-radius|plus-bg|target-bg)="[^"]*"' "$out/${locale}-${width}.dom" || true
+                grep -Eo 'data-(visual-qa|plus-round|plus-hover|plus-focus|no-sticky-plus|no-sticky-target|plus-rect|plus-radius|plus-bg|target-bg)="[^"]*"' "$out/${locale}-${width}.dom" || true
                 exit 1
               }
               "$browser" --headless --no-sandbox --disable-dev-shm-usage --disable-gpu \
