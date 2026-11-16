@@ -720,6 +720,7 @@ body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn{
   border:0!important;border-radius:50%!important;
   background:transparent!important;box-shadow:none!important;
   outline:0!important;transform:none!important;
+  transition:none!important;
 }
 body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn:hover{
   background:color-mix(in srgb,var(--text) 9%,transparent)!important;
@@ -745,6 +746,9 @@ body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn:focus-visible{
   background:transparent!important;
   border-color:transparent!important;
   box-shadow:none!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn{
+  transition:none!important;
 }
 body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn:hover{
   background:color-mix(in srgb,var(--text) 6%,transparent)!important;
