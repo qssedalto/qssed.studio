@@ -373,6 +373,16 @@ export async function handleAiAdminApi(request, env, session) {
     if (!state.ok) return json({ error: "Unable to load AI administration." }, 502);
 
     const result = state.data || { providers: [], users: [] };
+    // Admin UI gets the same retired/quota-expired model choices as the
+    // user-facing picker. Historical conversations remain unchanged.
+    if (Array.isArray(result.providers)) {
+      for (const provider of result.providers) {
+        provider.allowed_models = filterSelectableAiModels(provider.provider, models(provider.allowed_models));
+        if (!provider.allowed_models.includes(provider.default_model)) {
+          provider.default_model = provider.allowed_models[0] || null;
+        }
+      }
+    }
     const fast = requestUrl.searchParams.get("fast") === "1";
     if (env.AI_CREDENTIAL_KEY && Array.isArray(result.providers) && result.providers.length) {
       const secretRows = await restData(
