@@ -9,7 +9,7 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
   const guideHref = `https://qsseda.com/${zh ? "zh-cn" : "en-us"}/q/ac429c78-7e82-4cea-9b12-90188b0c0c60`;
   const texliveButton = `<span class="work-texlive-download-group" id="work-native-texlive-group"><span class="work-texlive-action-row"><a class="work-button secondary" id="work-native-texlive-download" href="https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=Ek9bsc" target="_blank" rel="noopener noreferrer">${zh ? "下载 TeX Live（ISO）" : "Download TeX Live (ISO)"}</a><a class="work-texlive-help-link" id="work-native-texlive-guide" href="${guideHref}" target="_blank" rel="noopener noreferrer">${zh ? "安装前必读：组件使用指南 ↗" : "Setup guide for both components ↗"}</a></span><small class="work-texlive-prerequisite">${zh ? "此为 Windows 连接组件使用的前置条件，请先安装完此内容再打开 Windows 连接组件。" : "This is a prerequisite for the Windows connection component. Please complete the installation before opening the Windows component."}</small></span>`;
   const macButton = `<a class="work-button secondary" id="work-native-macos-bridge-download" href="/api/work/bridge/macos" download="AERTEX-Bridge-macOS-universal.pkg" data-qsseda-native-bridge-download="macos" hidden>${zh ? "安装 macOS 连接组件" : "Install macOS component"}</a>`;
-  const macTexButton = `<span id="work-native-mactex-group" class="work-texlive-download-group" hidden><span class="work-texlive-action-row"><a class="work-button secondary" href="https://tug.org/mactex/" target="_blank" rel="noopener noreferrer">${zh ? "获取 MacTeX（官方）" : "Get MacTeX (official)"}</a></span><small class="work-texlive-prerequisite">${zh ? "Mac 的 TeX 环境由 MacTeX 提供；如果已安装 XeLaTeX，可直接检查本机连接。" : "MacTeX provides the macOS TeX toolchain. If XeLaTeX is already installed, check your connection directly."}</small></span>`;
+  const macTexButton = `<span id="work-native-mactex-group" class="work-texlive-download-group" hidden><span class="work-texlive-action-row"><a class="work-button secondary" href="https://tug.org/mactex/" target="_blank" rel="noopener noreferrer">${zh ? "获取 MacTeX（官方）" : "Get MacTeX (official)"}</a></span><small class="work-texlive-prerequisite">${zh ? "Mac 的 TeX 环境由 MacTeX 提供；如果已安装 XeLaTeX，可直接检查本机连接。" : "MacTeX provides the macOS TeX toolchain. If XeLaTeX is already installed, check your connection directly."}</small><small class="work-macos-unsigned-note">${zh ? "此 macOS Bridge 安装包未使用 Apple Developer ID 签名或公证。下载后若被系统阻止，请先核实文件来源，再前往「系统设置 → 隐私与安全性 → 仍要打开」单独允许；不要关闭系统整体安全保护。" : "This macOS Bridge installer is not signed with an Apple Developer ID or notarized. If blocked, verify the source first, then use System Settings → Privacy & Security → Open Anyway for this file only. Do not disable system-wide protections."}</small></span>`;
   output = output.replace("<!--QSSedaWorkNativeAction-->", nativeButton + texliveButton + macButton + macTexButton);
   output += `
     <style id="work-texlive-prerequisite-style">
@@ -85,8 +85,8 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
             macDownload.textContent = !macPublished
               ? ${JSON.stringify(zh ? "macOS 安装包尚未发布" : "macOS installer not published")}
               : incompatible
-                ? ${JSON.stringify(zh ? "更新 macOS 连接组件" : "Update macOS component")}
-                : ${JSON.stringify(zh ? "安装 macOS 连接组件" : "Install macOS component")};
+                ? ${JSON.stringify(zh ? "更新 macOS 连接组件（未签名）" : "Update macOS component (unsigned)")}
+                : ${JSON.stringify(zh ? "安装 macOS 连接组件（未签名）" : "Install macOS component (unsigned)")};
             macDownload.setAttribute("aria-disabled", String(!macPublished));
             if (macPublished) macDownload.setAttribute("href", "/api/work/bridge/macos");
             else macDownload.removeAttribute("href");
