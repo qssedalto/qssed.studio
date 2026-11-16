@@ -1,4 +1,5 @@
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
+import { isAiModelSelectable, filterSelectableAiModels } from "./ai-model-expiration.js";
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -237,7 +238,7 @@ export async function handleAiAdminApi(request, env, session) {
           status
         );
       }
-      return json({ ok: true, provider: cleanProvider(row.provider), models: check.models || [] });
+      return json({ ok: true, provider: cleanProvider(row.provider), models: filterSelectableAiModels(row.provider, check.models || []) });
     } catch {
       return json({ error: "Stored Project API Key cannot be decrypted." }, 503);
     }
@@ -259,6 +260,9 @@ export async function handleAiAdminApi(request, env, session) {
     const b = await body(request);
     const name = String(b.name || "").trim().slice(0, 80);
     const allowedModels = models(b.allowed_models);
+    if (allowedModels.some(model => !isAiModelSelectable(existing.provider, model))) {
+      return json({ error: "A selected model has expired or its free quota deadline has passed.", code: "MODEL_EXPIRED" }, 400);
+    }
     const defaultModel = cleanModel(b.default_model);
     if (!name) return json({ error: "Provider name is required." }, 400);
     if (!allowedModels.length) return json({ error: "Select at least one allowed model." }, 400);
@@ -410,6 +414,9 @@ export async function handleAiAdminApi(request, env, session) {
     const defaultModel = cleanModel(b.default_model) || providerDefault;
     const allowedModels = models(b.allowed_models);
     if (!allowedModels.includes(defaultModel)) allowedModels.unshift(defaultModel);
+    if (allowedModels.some(model => !isAiModelSelectable(provider, model))) {
+      return json({ error: "A selected model has expired or its free quota deadline has passed.", code: "MODEL_EXPIRED" }, 400);
+    }
 
     if (!key || !name) return json({ error: "Provider name and API key are required." }, 400);
 
@@ -505,14 +512,14 @@ export async function handleAiAdminApi(request, env, session) {
       const ids = normalized.map(item => item.provider_id);
       const providerRows = await restData(
         session,
-        "/ai_providers?id=in.(" + ids.join(",") + ")&select=id,allowed_models,is_active"
+        "/ai_providers?id=in.(" + ids.join(",") + ")&select=id,provider,allowed_models,is_active"
       );
       if (!providerRows.ok) return json({ error: "Unable to validate provider access." }, 502);
       const byId = new Map((Array.isArray(providerRows.data) ? providerRows.data : []).map(row => [row.id, row]));
       for (const item of normalized) {
         const provider = byId.get(item.provider_id);
         if (!provider || provider.is_active === false) return json({ error: "One or more providers are unavailable." }, 400);
-        const providerModels = models(provider.allowed_models);
+        const providerModels = filterSelectableAiModels(provider.provider, models(provider.allowed_models));
         if (!item.allowed_models.length) item.allowed_models = [...providerModels];
         if (!item.allowed_models.length || !item.allowed_models.every(model => providerModels.includes(model))) {
           return json({ error: "One or more selected models are not allowed by their provider." }, 400);
@@ -583,13 +590,14 @@ async function userConfig(request, session) {
 
   for (const p of providers) {
     const availability = providerAvailability(p.provider, country);
-    const allowed = models(p.allowed_models);
+    const allowed = filterSelectableAiModels(p.provider, models(p.allowed_models));
+    const activeDefault = allowed.includes(p.default_model) ? p.default_model : (allowed[0] || null);
     publicProviders.push({
       id: p.id,
       name: p.name,
       provider: p.provider,
-      default_model: p.default_model,
-      available: availability.available,
+      default_model: activeDefault,
+      available: availability.available && allowed.length > 0,
       unavailable_code: availability.code || null
     });
     for (const model of allowed) {
@@ -690,10 +698,13 @@ async function chat(request, env, session) {
     );
   }
 
-  const allowed = models(p.allowed_models);
-  const model = requestedModel || cleanModel(p.default_model) || allowed[0];
+  const allowed = filterSelectableAiModels(p.provider, models(p.allowed_models));
+  if (requestedModel && !isAiModelSelectable(p.provider, requestedModel)) {
+    return json({ error: "This model has passed its availability deadline.", code: "MODEL_EXPIRED" }, 410);
+  }
+  const model = requestedModel || (allowed.includes(p.default_model) ? p.default_model : allowed[0]);
   if (!model || !allowed.includes(model)) {
-    return json({ error: "This model is not enabled for your account." }, 403);
+    return json({ error: "This model is not enabled for your account.", code: "MODEL_NOT_ALLOWED" }, 403);
   }
 
   let conversationId = uuid(b.conversation_id) ? b.conversation_id : null;
@@ -1379,8 +1390,10 @@ function sanitizeProvider(row) {
     base_url: row.base_url,
     key_hint: row.key_hint,
     admin_key_hint: row.admin_key_hint,
-    default_model: row.default_model,
-    allowed_models: row.allowed_models,
+    default_model: isAiModelSelectable(row.provider, row.default_model)
+      ? row.default_model
+      : filterSelectableAiModels(row.provider, models(row.allowed_models))[0] || null,
+    allowed_models: filterSelectableAiModels(row.provider, models(row.allowed_models)),
     monthly_budget_usd: row.monthly_budget_usd,
     is_active: row.is_active
   };
