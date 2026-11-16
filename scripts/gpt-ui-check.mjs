@@ -9,6 +9,29 @@ for (const locale of ["zh-cn", "en"]) {
     new vm.Script(source, { filename: `gpt-ui-${locale}-inline-${index}.js` });
   });
 
+  // Regression: a recursive desktop scroll helper used to throw RangeError
+  // inside append("user", message), before the AI POST or error UI could run.
+  const uiSource = scripts.find(source => source.includes("function scrollChatToBottom()"));
+  const scrollStart = uiSource?.indexOf("  function scrollChatToBottom(){") ?? -1;
+  const scrollEnd = uiSource?.indexOf("\n  function append(",scrollStart) ?? -1;
+  if (scrollStart < 0 || scrollEnd < 0) throw new Error("GPT scroll helper not found for " + locale);
+  const scrollSource = uiSource.slice(scrollStart,scrollEnd);
+  if (scrollSource.slice(scrollSource.indexOf("{") + 1).includes("scrollChatToBottom();")) {
+    throw new Error("GPT desktop scroll must not recursively call itself before sending");
+  }
+  for (const watch of [false, true]) {
+    const viewport = { scrollTop: 0, scrollHeight: 317 };
+    const doc = { scrollingElement: { scrollTop: 0, scrollHeight: 429 }, documentElement: { scrollTop: 0, scrollHeight: 500 } };
+    const scroll = new Function("isTinyWatch", "document", "$", scrollSource + "; return scrollChatToBottom;")(
+      () => watch, doc, id => id === "content" ? viewport : null
+    );
+    scroll();
+    if (watch ? doc.scrollingElement.scrollTop !== 429 : viewport.scrollTop !== 317) {
+      throw new Error("GPT " + (watch ? "watch" : "desktop") + " scroll viewport failed");
+    }
+  }
+
+
   for (const required of [
     'option.disabled=item.available===false',
     'option.dataset.providerId=item.provider_id',

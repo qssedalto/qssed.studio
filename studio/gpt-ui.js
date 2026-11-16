@@ -247,7 +247,11 @@ ${richMessageClientScript({ copy: t.copyCode, copied: t.copiedCode, code: t.code
       root.scrollTop=root.scrollHeight;
       return;
     }
-    scrollChatToBottom();
+    // The desktop scroll target is the message viewport, not this helper.
+    // Calling scrollChatToBottom() here recursively crashed send() before
+    // /api/ai/chat was ever requested, so no assistant reply could appear.
+    const viewport=$("content");
+    if(viewport)viewport.scrollTop=viewport.scrollHeight;
   }
   function append(role,content,scroll=true){
     $("emptyState").classList.add("hidden");
