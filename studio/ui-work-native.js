@@ -8,7 +8,9 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
   const nativeButton = `<a class="work-button secondary" id="work-native-bridge-download" href="/api/work/bridge/windows" download="AERTEX-Bridge-Setup.exe" data-qsseda-native-bridge-download="1">${zh ? "安装 Windows 连接组件" : "Install Windows component"}</a>`;
   const guideHref = `https://qsseda.com/${zh ? "zh-cn" : "en-us"}/q/ac429c78-7e82-4cea-9b12-90188b0c0c60`;
   const texliveButton = `<span class="work-texlive-download-group" id="work-native-texlive-group"><span class="work-texlive-action-row"><a class="work-button secondary" id="work-native-texlive-download" href="https://1drv.ms/u/c/45a22b56b9646fc7/IQDExSUns1FzR6M3luj0QRQaAZ8Pc6frUc6zaYEr-Qnexvo?e=w9mHFn" target="_blank" rel="noopener noreferrer">${zh ? "下载 TeX Live（ISO）" : "Download TeX Live (ISO)"}</a><a class="work-texlive-help-link" id="work-native-texlive-guide" href="${guideHref}" target="_blank" rel="noopener noreferrer">${zh ? "安装前必读：组件使用指南 ↗" : "Setup guide for both components ↗"}</a></span><small class="work-texlive-prerequisite">${zh ? "此为 Windows 连接组件使用的前置条件，请先安装完此内容再打开 Windows 连接组件。" : "This is a prerequisite for the Windows connection component. Please complete the installation before opening the Windows component."}</small></span>`;
-  output = output.replace("<!--QSSedaWorkNativeAction-->", nativeButton + texliveButton);
+  const macButton = `<a class="work-button secondary" id="work-native-macos-bridge-download" href="/api/work/bridge/macos" download="AERTEX-Bridge-macOS-universal.pkg" data-qsseda-native-bridge-download="macos" hidden>${zh ? "安装 macOS 连接组件" : "Install macOS component"}</a>`;
+  const macTexButton = `<span id="work-native-mactex-group" class="work-texlive-download-group" hidden><span class="work-texlive-action-row"><a class="work-button secondary" href="https://tug.org/mactex/" target="_blank" rel="noopener noreferrer">${zh ? "获取 MacTeX（官方）" : "Get MacTeX (official)"}</a></span><small class="work-texlive-prerequisite">${zh ? "Mac 的 TeX 环境由 MacTeX 提供；如果已安装 XeLaTeX，可直接检查本机连接。" : "MacTeX provides the macOS TeX toolchain. If XeLaTeX is already installed, check your connection directly."}</small></span>`;
+  output = output.replace("<!--QSSedaWorkNativeAction-->", nativeButton + texliveButton + macButton + macTexButton);
   output += `
     <style id="work-texlive-prerequisite-style">
       #work-local-root .work-actions{align-items:flex-start}
@@ -19,6 +21,8 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
       #work-local-root .work-texlive-help-link:focus-visible{outline:2px solid #007aff;outline-offset:3px;border-radius:4px}
       #work-local-root .work-texlive-prerequisite{display:block;color:var(--muted,#6e6e73);font-size:11px;line-height:1.5;font-weight:400}
       #work-local-root .work-texlive-download-group[hidden]{display:none!important}
+       #work-local-root #work-native-macos-bridge-download[hidden]{display:none!important}
+       #work-local-root #work-native-macos-bridge-download[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
       @media(max-width:560px){
         #work-local-root .work-texlive-download-group{width:100%;flex-basis:100%}
         #work-local-root .work-texlive-action-row{width:100%}
@@ -46,12 +50,20 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
         const download = document.getElementById("work-native-bridge-download");
         const texliveDownload = document.getElementById("work-native-texlive-download");
         const texliveGroup = document.getElementById("work-native-texlive-group");
+        const macDownload = document.getElementById("work-native-macos-bridge-download");
+        const macTexGroup = document.getElementById("work-native-mactex-group");
         if (!version || !note || !download || !texliveDownload) return;
 
-        const isWindows = /Windows/i.test(navigator.userAgent || "");
+        const userAgent = navigator.userAgent || "";
+        const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent) ||
+          (navigator.platform === "MacIntel" && Number(navigator.maxTouchPoints) > 1);
+        const isWindows = !mobile && /Windows NT/i.test(userAgent);
+        const isMac = !mobile && /Macintosh|Mac OS X/i.test(userAgent);
+        let macPublished = false;
         download.hidden = !isWindows;
         texliveDownload.hidden = !isWindows;
         if (texliveGroup) texliveGroup.hidden = !isWindows;
+        if (macTexGroup) macTexGroup.hidden = !isMac;
 
         // Do not navigate away on cancellation; confirmation opens a new tab.
         texliveDownload.addEventListener("click", (event) => {
@@ -68,11 +80,31 @@ export function enhanceWorkLocalBridgeNative(markup, zh) {
           download.textContent = incompatible
             ? ${JSON.stringify(zh ? "更新 Windows 连接组件" : "Update Windows component")}
             : ${JSON.stringify(zh ? "安装 Windows 连接组件" : "Install Windows component")};
+          if (macDownload) {
+            macDownload.hidden = !isMac || (connected && !incompatible);
+            macDownload.textContent = !macPublished
+              ? ${JSON.stringify(zh ? "macOS 安装包尚未发布" : "macOS installer not published")}
+              : incompatible
+                ? ${JSON.stringify(zh ? "更新 macOS 连接组件" : "Update macOS component")}
+                : ${JSON.stringify(zh ? "安装 macOS 连接组件" : "Install macOS component")};
+            macDownload.setAttribute("aria-disabled", String(!macPublished));
+            if (macPublished) macDownload.setAttribute("href", "/api/work/bridge/macos");
+            else macDownload.removeAttribute("href");
+          }
         };
 
         new MutationObserver(syncUpgradeState).observe(version, { childList: true, subtree: true, characterData: true });
         if (statusCard) new MutationObserver(syncUpgradeState).observe(statusCard, { attributes: true, attributeFilter: ["class"] });
         syncUpgradeState();
+        // Never link users to an unpublished R2 object or a 503 response.
+        if (isMac) {
+          fetch("/api/work/bridge/macos", {
+            method: "HEAD", cache: "no-store", credentials: "omit"
+          }).then(response => {
+            macPublished = response.ok;
+            syncUpgradeState();
+          }).catch(() => { macPublished = false; syncUpgradeState(); });
+        }
       })();
     </script>`
   );
