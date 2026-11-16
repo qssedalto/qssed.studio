@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { normalizeHandoffNext } from "../studio/auth-handoff.js";
 import { SUPPORTED_LOCALES } from "../studio/locale.js";
+import { AI_MODEL_EXPIRATION, isAiModelSelectable, filterSelectableAiModels } from "../studio/ai-model-expiration.js";
 
 const read = path => fs.readFileSync(path, "utf8");
 const assert = (condition, message) => {
@@ -241,3 +242,39 @@ assert(aiGateway.includes('"&is_archived=eq.false&select='), "Archived chats mus
 
 console.log("GPT authentication handoff looks valid.");
 
+
+
+// Model expiry must be enforced server-side, not merely hidden by the browser.
+// Official OpenAI retirement is UTC; Aliyun free-quota expiry is at Beijing midnight.
+for (const [provider, model, lastMoment, firstExpired] of [
+  ["openai", "gpt-4.1-nano", "2026-10-22T23:59:59.999Z", "2026-10-23T00:00:00Z"],
+  ["openai", "gpt-5-mini", "2026-12-10T23:59:59.999Z", "2026-12-11T00:00:00Z"],
+  ["openai", "gpt-5-nano", "2026-12-10T23:59:59.999Z", "2026-12-11T00:00:00Z"],
+  ["openai", "gpt-4o-mini", "2027-01-13T23:59:59.999Z", "2027-01-14T00:00:00Z"],
+  ["bailian", "qwen3.7-plus", "2026-12-23T15:59:59.999Z", "2026-12-23T16:00:00Z"],
+  ["bailian", "qwen-max", "2026-12-23T15:59:59.999Z", "2026-12-23T16:00:00Z"],
+  ["bailian", "glm-5", "2026-12-23T15:59:59.999Z", "2026-12-23T16:00:00Z"],
+  ["bailian", "qwen4-max", "2027-02-13T15:59:59.999Z", "2027-02-13T16:00:00Z"]
+]) {
+  assert(isAiModelSelectable(provider, model, Date.parse(lastMoment)), model + " disappeared too early");
+  assert(!isAiModelSelectable(provider, model, Date.parse(firstExpired)), model + " still available after expiry");
+}
+assert(!isAiModelSelectable("openai", "gpt-4.1-nano", Date.parse("2026-11-16T00:00:00Z")), "Retired nano must be unavailable now");
+assert(isAiModelSelectable("openai", "gpt-5-mini", Date.parse("2026-11-16T00:00:00Z")), "Mini must remain usable until December 11");
+assert(isAiModelSelectable("bailian", "qwen4-max", Date.parse("2026-12-24T00:00:00Z")), "Longer-lived qwen4-max quota must remain intact");
+assert(isAiModelSelectable("bailian", "qwen-plus-2025-07-28", Date.parse("2027-03-01T00:00:00Z")), "Models without verified expiry date must remain unaffected");
+assert(AI_MODEL_EXPIRATION.bailian["qwen-vl-ocr-2025-11-20"] !== undefined, "Bailian OCR free quota must be covered");
+assert(
+  JSON.stringify(filterSelectableAiModels("openai", ["gpt-4.1-nano", "gpt-5-mini", "gpt-6-sol"], Date.parse("2026-11-16T00:00:00Z"))) ===
+  JSON.stringify(["gpt-5-mini", "gpt-6-sol"]), "User choices should exclude only retired models"
+);
+for (const required of [
+  'filterSelectableAiModels(p.provider, models(p.allowed_models))',
+  'filterSelectableAiModels(p.provider, models(p.allowed_models));',
+  'if (requestedModel && !isAiModelSelectable(p.provider, requestedModel))',
+  'code: "MODEL_EXPIRED"',
+  'if (allowedModels.some(model => !isAiModelSelectable(existing.provider, model)))',
+  'if (allowedModels.some(model => !isAiModelSelectable(provider, model)))'
+]) {
+  assert(aiGateway.includes(required), "AI gateway must enforce model expiry: " + required);
+}
