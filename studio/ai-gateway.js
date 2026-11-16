@@ -737,7 +737,7 @@ async function chat(request, env, session) {
     }
     // Existing OpenAI transcripts remain readable, but ordinary users may
     // not append Chinese-model replies into a now-restricted GPT thread.
-    if (existingConversation.data[0].provider_id !== p.id) {
+    if (existingConversation.data[0].provider_id && !providers.some(item => item.id === existingConversation.data[0].provider_id)) {
       return json({ error: "This conversation uses a provider that is no longer available to your account. Start a new Chinese-model conversation.", code: "CONVERSATION_PROVIDER_NOT_ALLOWED" }, 403);
     }
 
