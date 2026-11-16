@@ -71,6 +71,10 @@ for (const zh of [true,false]) {
     "document.body.setAttribute('data-plus-round',String(plusRound));",
     "document.body.setAttribute('data-no-sticky-plus',String(noStickyPlus));",
     "document.body.setAttribute('data-no-sticky-target',String(cleanTarget&&noStickyTarget));",
+    "document.body.setAttribute('data-plus-rect',String(plusRect.width.toFixed(1))+'x'+String(plusRect.height.toFixed(1)));",
+    "document.body.setAttribute('data-plus-radius',String(getComputedStyle(plus).borderRadius));",
+    "document.body.setAttribute('data-plus-bg',String(getComputedStyle(plus).backgroundColor));",
+    "document.body.setAttribute('data-target-bg',String(getComputedStyle(target).backgroundColor));",
     "});",
     "</script></body></html>"
   ].join("");
