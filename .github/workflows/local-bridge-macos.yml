@@ -1,4 +1,4 @@
-name: Build AERTEX Bridge macOS Packages
+name: Build AERTEX Bridge macOS Packages (unsigned)
 
 on:
   pull_request:
@@ -68,7 +68,7 @@ jobs:
           test "$status" = 403
           status=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: https://work.qsseda.com' -H 'Content-Type: application/json' -d '{"engine":"bash","source":"abc"}' http://127.0.0.1:32145/tex/compile)
           test "$status" = 400
-      - name: Build native PKG and distributable DMG
+      - name: Build unsigned native PKG and distributable DMG
         shell: bash
         working-directory: local-bridge/macos
         run: |
@@ -91,11 +91,18 @@ jobs:
           AERTEX Bridge for macOS (Apple Silicon + Intel)
           Double-click the .pkg installer in this disk image.
           Requires macOS 12 or later. Install MacTeX separately to enable XeLaTeX/pdfLaTeX.
-          This development build is NOT Apple Developer ID signed or notarized.
+          This build is intentionally unsigned and NOT notarized. macOS may block the installer.
+          If you trust this official AERTEX build, first try opening the PKG, then open
+          System Settings > Privacy & Security > Open Anyway. Do not disable Gatekeeper globally.
           EOF
           hdiutil create -volname "AERTEX Bridge" -srcfolder dmgroot \
             -format UDZO -ov dist/AERTEX-Bridge-macOS-universal.dmg
-          pkgutil --check-signature dist/AERTEX-Bridge-macOS-universal.pkg || true
+          # Deliberately no Developer ID signing or Apple notarization.
+          # The package is distributed as an unsigned build with an explicit warning.
+          if pkgutil --check-signature dist/AERTEX-Bridge-macOS-universal.pkg >/dev/null 2>&1; then
+            echo "Unexpected signed package: verify signing policy before publishing." >&2
+            exit 1
+          fi
           shasum -a 256 dist/AERTEX-Bridge-macOS-universal.pkg dist/AERTEX-Bridge-macOS-universal.dmg
       - uses: actions/upload-artifact@v4
         with:
@@ -105,3 +112,41 @@ jobs:
             local-bridge/macos/dist/AERTEX-Bridge-macOS-universal.dmg
           if-no-files-found: error
           retention-days: 30
+
+  publish-unsigned:
+    # Publishing remains gated behind an actual macOS Go/test/HTTP/build job.
+    # A pull request never publishes packages. The Windows release is untouched.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-and-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: aertex-bridge-macos-universal
+          path: unsigned-macos
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+      - name: Verify unsigned package artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s unsigned-macos/AERTEX-Bridge-macOS-universal.pkg
+          test -s unsigned-macos/AERTEX-Bridge-macOS-universal.dmg
+          sha256sum unsigned-macos/AERTEX-Bridge-macOS-universal.pkg unsigned-macos/AERTEX-Bridge-macOS-universal.dmg
+      - name: Publish tested unsigned DMG and PKG to the existing R2 release paths
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          # Publish DMG first and PKG last: website probes the PKG HEAD route.
+          npx --yes wrangler@4.136.3 r2 object put \
+            qsseda-studio-storage/_system/releases/local-bridge/macos-universal/AERTEX-Bridge-macOS-universal.dmg \
+            --file unsigned-macos/AERTEX-Bridge-macOS-universal.dmg --remote
+          npx --yes wrangler@4.136.3 r2 object put \
+            qsseda-studio-storage/_system/releases/local-bridge/macos-universal/AERTEX-Bridge-macOS-universal.pkg \
+            --file unsigned-macos/AERTEX-Bridge-macOS-universal.pkg --remote
