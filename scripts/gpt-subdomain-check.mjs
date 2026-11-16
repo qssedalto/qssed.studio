@@ -27,6 +27,7 @@ const legacyApi = read("studio/legacy-cookie-api.js");
 const gptUi = read("studio/gpt-ui.js");
 const gptWrangler = JSON.parse(read("wrangler.gpt.jsonc").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""));
 const aiGateway = read("studio/ai-gateway.js");
+const chinaOnlyAiPolicy = read("supabase/migrations/202611162315_ai_chinese_unlimited_admin_openai.sql");
 const huaweiGate = read("studio/huawei-harmony-gate.js");
 const adminApi = read("admin/admin-api.js");
 const deviceExemptionMigration = read("supabase/migrations/202609251510_huawei_device_access_exemptions.sql");
@@ -278,3 +279,24 @@ for (const required of [
 ]) {
   assert(aiGateway.includes(required), "AI gateway must enforce model expiry: " + required);
 }
+
+
+/* AERTEX AI policy regression: ordinary active users get Chinese providers,
+ * no arbitrary per-user USD/token ceilings, and no route to OpenAI.
+ * Admin keeps GPT and its existing approved budget. */
+for (const fragment of [
+  "select role into v_role from public.profiles",
+  "where id = v_user and status = 'active'",
+  "v_role = 'admin' and upa.user_id is not null",
+  "v_role <> 'admin' and p.provider in ('bailian', 'zhipu')",
+  "when v_role = 'admin' and cardinality(upa.allowed_models) > 0",
+  "'daily_limit_usd', case when v_role = 'admin' then v_access.daily_limit_usd else null end",
+  "'monthly_limit_usd', case when v_role = 'admin' then v_access.monthly_limit_usd else null end",
+  "'daily_limit_tokens', case when v_role = 'admin' then v_access.daily_limit_tokens else null end",
+  "'monthly_limit_tokens', case when v_role = 'admin' then v_access.monthly_limit_tokens else null end",
+  "greatest(coalesce(v_access.requests_per_minute, 0), 20)"
+]) {
+  assert(chinaOnlyAiPolicy.includes(fragment), "Chinese unlimited / GPT admin policy missing: " + fragment);
+}
+assert(aiGateway.includes('code: "PROVIDER_NOT_ALLOWED"'), "Forged OpenAI provider id must fail closed");
+assert(aiGateway.includes('code: "CONVERSATION_PROVIDER_NOT_ALLOWED"'), "Previously authorized GPT conversations must be readable but cannot gain new replies after provider revocation");
