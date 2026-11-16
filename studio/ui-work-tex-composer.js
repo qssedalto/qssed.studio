@@ -727,6 +727,17 @@ body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn:hover{
 body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn[aria-expanded="true"]:not(:hover){
   background:transparent!important;
 }
+/* ID-scoped background-color overrides generic Work button/focus rules. */
+body.os-shell:has(.tex-work-app) #qtex-composer #qtex-composer-plus,
+body.os-shell:has(.tex-work-app) #qtex-composer #qtex-composer-plus:focus,
+body.os-shell:has(.tex-work-app) #qtex-composer #qtex-composer-plus[aria-expanded="true"]:not(:hover){
+  background-color:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer #qtex-composer-plus:hover{
+  background-color:color-mix(in srgb,var(--text) 9%,transparent)!important;
+}
 body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn,
 body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn[aria-expanded="true"],
 body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn:focus,
