@@ -57,6 +57,34 @@ assert(zhNativeLocal.includes('id="work-native-mactex-group"') &&
   zhNativeLocal.includes("https://tug.org/mactex/") &&
   zhNativeLocal.includes("macOS 安装包尚未发布"),
   "Mac visitors must see MacTeX and an explicit unpublished-package state");
+const guideZh = zhNativeLocal.match(/<section class="work-macos-guide"[^>]*>[\s\S]*?<\/section>/)?.[0] || "";
+const guideEn = enNativeLocal.match(/<section class="work-macos-guide"[^>]*>[\s\S]*?<\/section>/)?.[0] || "";
+for (const guide of [guideZh, guideEn]) {
+  assert(guide.includes('id="work-macos-guide-title"') &&
+    guide.includes('aria-labelledby="work-macos-guide-title"') &&
+    guide.includes('hidden') &&
+    (guide.match(/<li>/g) || []).length === 4,
+    "Bilingual macOS guide should have four accessible, Mac-only installation steps");
+  assert(guide.includes('href="https://tug.org/mactex/"') &&
+    guide.includes('href="https://support.apple.com/en-us/102445"') &&
+    guide.includes('id="work-macos-guide-title"') &&
+    guide.includes('curl -fsS http://127.0.0.1:32145/health') &&
+    guide.includes('curl -fsS http://127.0.0.1:32145/tex/status'),
+    "Mac guide must cover official sources, diagnostics and unsigned installation");
+}
+assert(zhNativeLocal.includes("Mac 安装与连接指南") &&
+  zhNativeLocal.includes("系统设置 → 隐私与安全性") &&
+  zhNativeLocal.includes("不要强行绕过") &&
+  zhNativeLocal.includes("文件损坏") &&
+  zhNativeLocal.includes('href="#work-macos-install-guide"'),
+  "Chinese macOS guide must provide localized steps and strong Gatekeeper warnings");
+assert(enNativeLocal.includes("Install and connect on your Mac") &&
+  enNativeLocal.includes("Open Anyway") &&
+  enNativeLocal.includes("Never disable Gatekeeper system-wide"),
+  "English macOS guide must explain safe installation and security restrictions");
+assert(zhNativeLocal.includes('if (macGuide) macGuide.hidden = !isMac') &&
+  zhNativeLocal.includes('.work-macos-guide[hidden]{display:none!important}'),
+  "Mac guide must not appear on Windows or mobile browsers");
 assert(zhNativeLocal.includes("未使用 Apple Developer ID 签名或公证") &&
   zhNativeLocal.includes("隐私与安全性") &&
   zhNativeLocal.includes("连接组件（未签名）"),
@@ -416,6 +444,8 @@ assert(macNodes.get("work-local-version")?.textContent.includes("macOS"),
   "Website version details must show that the Mac service was recognized");
 assert(macNodes.get("work-local-tex")?.classList.contains("is-positive"),
   "Site should detect working local XeLaTeX from macOS Bridge");
+assert(macNodes.get("work-macos-install-guide")?.hidden === false,
+  "Mac-specific installation guide must be visible on desktop macOS");
 const snapshot=JSON.parse(savedState.get("qsseda.work.local.state.v2")||"{}");
 assert(snapshot.connected && snapshot.bridgeRuntime==="native-macos" && snapshot.texAvailable,
   "macOS Bridge probe must persist successful connection state");
