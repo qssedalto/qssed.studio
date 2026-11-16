@@ -11,13 +11,25 @@ This is a source-level port of the Go Windows Bridge, not an EXE renamed to DMG.
 - Autostart via `/Library/LaunchAgents/com.aertex.bridge.plist` on user login. No root daemon.
 - Native universal executable (Apple Silicon + Intel); no Node, PowerShell, or Windows emulation.
 
-The existing Windows package remains untouched. The site may still only advertise the Windows download: update the frontend and add a macOS API download route separately after verifying the browser platform logic.
+The existing Windows package and download URL remain untouched. On macOS, the AERTEX Work website recognizes the `native-macos` Bridge over the same localhost API and offers a macOS PKG when it has been published.
 
 ## Build, install and test
 
 A successful `Build AERTEX Bridge macOS Packages` GitHub Actions run uploads `AERTEX-Bridge-macOS-universal.pkg` and `AERTEX-Bridge-macOS-universal.dmg` as build artifacts. The DMG contains the PKG; use either file, not both.
 
-If installing the unsigned development PKG, macOS Gatekeeper may require explicit user approval. No signing or notarization is claimed. For public distribution, supply an Apple Developer ID Installer signing identity and notarize both deliverables.
+**Official release policy for this build: unsigned and not notarized.** We do **not** require a paid Apple Developer Program subscription, Developer ID Application/Installer certificate, notarization credentials, or an Apple ID to build AERTEX Bridge. The macOS workflow deliberately publishes these unsigned binaries after its unit tests and smoke tests pass on the `main` branch; PR builds are downloadable only as GitHub Actions artifacts.
+
+Unsigned packages do **not** receive Apple's developer identity and notarization checks. macOS Gatekeeper can block them by default. Download only from the intended AERTEX/GitHub source, review the build workflow, and check the SHA-256 checksum in the Actions build log before choosing to trust the file.
+
+To install the unsigned PKG without disabling macOS security globally:
+
+1. Double-click `AERTEX-Bridge-macOS-universal.pkg`; a Gatekeeper warning may appear. Dismiss it.
+2. Open **System Settings → Privacy & Security**. If macOS offers **Open Anyway** for this installer, select it, authenticate and follow the prompts. The override is limited to the chosen software. This button typically appears only after an initial blocked launch.
+3. If macOS reports malware or a damaged/tampered installer, **do not bypass the warning**; check the artifact and source instead.
+
+Apple's official instructions: https://support.apple.com/en-us/102445
+
+The DMG contains the same unsigned PKG. There is no need to install both. This release process does **not** run `spctl --master-disable`, remove quarantine attributes automatically, or change system-wide Gatekeeper settings.
 
 The PKG installs the executable at `/Library/Application Support/AERTEX Bridge/AERTEX-Bridge`. Once a logged-in user session is active, `launchctl` loads it through the LaunchAgent. Verify:
 
@@ -31,4 +43,4 @@ curl -fsS http://127.0.0.1:32145/tex/status
 
 For uninstall, run `sudo "/Library/Application Support/AERTEX Bridge/uninstall.command"` (also removes launch-on-login).
 
-**Security scope:** this port preserves the Windows engine's restrictions; it is not a complete operating-system sandbox. TeX should still be treated as processing untrusted documents. The installer is intended to be reviewed and signed before public distribution.
+**Security scope:** this port preserves the Windows engine's restrictions; it is not a complete operating-system sandbox. TeX should still be treated as processing untrusted documents. An unsigned build gives users less verification of publisher identity and software integrity than an Apple-signed/notarized build; this is a deliberate trade-off, not proof of safety.
