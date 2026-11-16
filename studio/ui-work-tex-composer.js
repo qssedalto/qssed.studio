@@ -704,6 +704,68 @@ body.os-shell:has(.tex-work-app) .qtex-composer[data-multiline="true"] .qtex-sen
   }
 }
 
+
+/* Hover/press cleanup: avoid inherited minimum button height turning + into an oval.
+ * Neither an opened popover nor a previously clicked control paints a sticky halo. */
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn{
+  box-sizing:border-box!important;
+  flex:0 0 36px!important;
+  width:36px!important;height:36px!important;
+  min-width:36px!important;max-width:36px!important;
+  min-height:36px!important;max-height:36px!important;
+  aspect-ratio:1/1!important;
+  align-self:center!important;
+  display:grid!important;place-items:center!important;
+  margin:0!important;padding:0!important;
+  border:0!important;border-radius:50%!important;
+  background:transparent!important;box-shadow:none!important;
+  outline:0!important;transform:none!important;
+  transition:none!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn:hover{
+  background:color-mix(in srgb,var(--text) 9%,transparent)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn[aria-expanded="true"]:not(:hover){
+  background:transparent!important;
+}
+/* ID-scoped background-color overrides generic Work button/focus rules. */
+body.os-shell:has(.tex-work-app) #qtex-composer #qtex-composer-plus,
+body.os-shell:has(.tex-work-app) #qtex-composer #qtex-composer-plus:focus,
+body.os-shell:has(.tex-work-app) #qtex-composer #qtex-composer-plus[aria-expanded="true"]:not(:hover){
+  background-color:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+body.os-shell:has(.tex-work-app) #qtex-composer #qtex-composer-plus:hover{
+  background-color:color-mix(in srgb,var(--text) 9%,transparent)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn,
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn[aria-expanded="true"],
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn:focus,
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn:focus-visible{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn{
+  transition:none!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer .qtex-target-btn:hover{
+  background:color-mix(in srgb,var(--text) 6%,transparent)!important;
+}
+body.os-shell:has(.tex-work-app) .qtex-composer-shell:focus-within{
+  border-color:color-mix(in srgb,var(--text) 10%,transparent)!important;
+  box-shadow:0 3px 15px rgba(0,0,0,.045)!important;
+}
+@media(max-width:760px){
+  body.os-shell:has(.tex-work-app) .qtex-composer .qtex-plus-btn{
+    flex:0 0 34px!important;
+    width:34px!important;height:34px!important;
+    min-width:34px!important;max-width:34px!important;
+    min-height:34px!important;max-height:34px!important;
+  }
+}
+
 @media(prefers-reduced-motion:reduce){
   body.os-shell:has(.tex-work-app) .qtex-composer *{transition:none!important}
 }

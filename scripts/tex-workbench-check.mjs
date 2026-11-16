@@ -211,6 +211,13 @@ for (const zh of [true, false]) {
   assert(composerMarkup.includes("aspect-ratio:1/1!important") &&
     composerMarkup.includes("border-radius:50%!important"),
     "Send button must stay circular, never elliptical.");
+  assert(composerMarkup.includes('min-height:36px!important;max-height:36px!important') &&
+    composerMarkup.includes('.qtex-plus-btn[aria-expanded="true"]:not(:hover)'),
+    "Plus hover must be circular and an opened menu must not leave a pill-shaped mark.");
+  assert(composerMarkup.includes('.qtex-target-btn[aria-expanded="true"]') &&
+    composerMarkup.includes('background:transparent!important'),
+    "Project chooser must not keep its default gray hover imprint when not hovered.");
+
   assert(composerMarkup.includes('qtex-composer[data-keyboard-nav="true"]') &&
     composerMarkup.includes('border-color:color-mix(in srgb,var(--text) 10%,transparent)!important'),
     "Pointer clicks must not create unsolicited focus halos; keyboard focus must remain available.");
