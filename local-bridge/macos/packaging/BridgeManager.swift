@@ -8,7 +8,6 @@ struct AERTEXBridgeManagerApp: App {
         WindowGroup("AERTEX Bridge") {
             BridgeManagerView()
         }
-        .windowResizability(.contentSize)
     }
 }
 
