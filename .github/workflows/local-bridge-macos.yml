@@ -81,9 +81,9 @@ jobs:
 
           swift packaging/BridgeIcon.swift dist/BridgeIcon.png
           for n in 16 32 128 256 512; do
-            sips -s format png -z "$n" "$n" dist/BridgeIcon.png --out "icon.iconset/icon_$nx$n.png" >/dev/null
+            sips -s format png -z "$n" "$n" dist/BridgeIcon.png --out "icon.iconset/icon_${n}x${n}.png" >/dev/null
             doubled=$((n * 2))
-            sips -s format png -z "$doubled" "$doubled" dist/BridgeIcon.png --out "icon.iconset/icon_$nx$n@2x.png" >/dev/null
+            sips -s format png -z "$doubled" "$doubled" dist/BridgeIcon.png --out "icon.iconset/icon_${n}x${n}@2x.png" >/dev/null
           done
           iconutil -c icns icon.iconset -o dist/BridgeIcon.icns
 
