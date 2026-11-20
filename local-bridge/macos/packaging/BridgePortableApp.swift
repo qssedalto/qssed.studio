@@ -16,12 +16,13 @@ struct AERTEXPortableApp: App {
 private final class PortableBridge: ObservableObject {
     @Published var serviceStatus = "Checking..."
     @Published var texStatus = "Checking..."
+    @Published var httpsStatus = "Checking..."
     @Published var detail = ""
     @Published var isBusy = false
     @Published var isManaged = false
 
     private let label = "com.aertex.bridge.portable"
-    private let expectedVersion = "0.5.6-macos"
+    private let expectedVersion = "0.5.7-macos"
 
     var chinese: Bool {
         Locale.preferredLanguages.first?.lowercased().hasPrefix("zh") ?? false
@@ -76,6 +77,18 @@ private final class PortableBridge: ObservableObject {
         return value
     }
 
+    private func getHTTPSHealth() async throws -> [String: Any] {
+        guard let url = URL(string: "https://127.0.0.1:32146/health") else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 2
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200,
+              let value = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw URLError(.badServerResponse)
+        }
+        return value
+    }
+
     func refresh() async {
         isBusy = true
         defer { isBusy = false }
@@ -99,6 +112,15 @@ private final class PortableBridge: ObservableObject {
                 detail = localized("端口 32145 正在由版本 ", "Port 32145 belongs to version ") + version +
                     localized(" 使用。请先停止旧版服务再启动便携版。", ". Stop the old service before starting the portable version.")
             }
+            // The HTTPS endpoint is optional. The native manager still uses the
+            // original HTTP listener, so a missing cert never breaks the App.
+            if let tls = try? await getHTTPSHealth(),
+               tls["service"] as? String == "qsseda-local-bridge",
+               tls["runtime"] as? String == "native-macos" {
+                httpsStatus = localized("已启用 · Safari 可连接", "Ready · Safari compatible")
+            } else {
+                httpsStatus = localized("未配置可信本机证书", "Trusted local certificate not configured")
+            }
             let tex = try await getJSON("/tex/status")
             let engines = (tex["engines"] as? [String] ?? []).joined(separator: ", ")
             texStatus = engines.isEmpty
@@ -107,6 +129,7 @@ private final class PortableBridge: ObservableObject {
         } catch {
             serviceStatus = localized("服务未启动", "Service not running")
             texStatus = localized("未检测", "Not checked")
+            httpsStatus = localized("未连接", "Not connected")
             detail = localized("点击「启动服务」，无需管理员密码。", "Click Start Service; no administrator password is required.")
         }
     }
@@ -213,6 +236,12 @@ private struct PortableBridgeView: View {
                 Text(service.localized("桥接服务", "Bridge service")).fontWeight(.semibold)
                 Spacer()
                 Text(service.serviceStatus).foregroundColor(.secondary)
+            }
+            HStack {
+                Text(service.localized("Safari 安全连接", "Safari HTTPS"))
+                    .fontWeight(.semibold)
+                Spacer()
+                Text(service.httpsStatus).foregroundColor(.secondary)
             }
             HStack {
                 Text(service.localized("TeX 环境", "TeX environment")).fontWeight(.semibold)
