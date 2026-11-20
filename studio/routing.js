@@ -32,7 +32,7 @@ function htmlSecurityHeaders(options = {}) {
   // Chrome blocks those fetches and the PDF silently loses Chinese glyphs.
   // Keep unrelated app pages on the original restrictive policy.
   const connectSources = allowLoopback
-    ? `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN} http://127.0.0.1:32145 http://localhost:32145 https://cdn.jsdelivr.net`
+    ? `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN} https://127.0.0.1:32146 https://localhost:32146 http://127.0.0.1:32145 http://localhost:32145 https://cdn.jsdelivr.net`
     : `'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS_ORIGIN}`;
   const localNetworkPolicy = allowLoopback
     ? "local-network-access=(self), local-network=(self), loopback-network=(self)"
