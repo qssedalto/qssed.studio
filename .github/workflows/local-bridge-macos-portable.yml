@@ -39,9 +39,9 @@ jobs:
           set -euo pipefail
           mkdir -p portable/dist
           GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -trimpath \
-            -ldflags="-s -w -X main.version=0.5.6-macos" -o portable/dist/bridge-arm64 .
+            -ldflags="-s -w -X main.version=0.5.7-macos" -o portable/dist/bridge-arm64 .
           GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -trimpath \
-            -ldflags="-s -w -X main.version=0.5.6-macos" -o portable/dist/bridge-amd64 .
+            -ldflags="-s -w -X main.version=0.5.7-macos" -o portable/dist/bridge-amd64 .
           lipo -create -output portable/dist/AERTEX-Bridge \
             portable/dist/bridge-arm64 portable/dist/bridge-amd64
           lipo portable/dist/AERTEX-Bridge -verify_arch arm64 x86_64
@@ -83,7 +83,7 @@ jobs:
             <key>CFBundleDisplayName</key><string>AERTEX Bridge</string>
             <key>CFBundleIconFile</key><string>BridgeIcon</string>
             <key>CFBundlePackageType</key><string>APPL</string>
-            <key>CFBundleShortVersionString</key><string>0.5.6</string>
+            <key>CFBundleShortVersionString</key><string>0.5.7</string>
             <key>CFBundleVersion</key><string>56</string>
             <key>LSMinimumSystemVersion</key><string>12.0</string>
             <key>NSHighResolutionCapable</key><true/>
@@ -101,6 +101,13 @@ jobs:
         run: |
           set -euo pipefail
           BINARY="portable/AERTEX Bridge.app/Contents/Resources/AERTEX-Bridge"
+          TLS_DIR="$HOME/Library/Application Support/AERTEX Bridge/tls"
+          mkdir -p "$TLS_DIR"
+          # Ephemeral CI-only TLS pair: it is never included in the release .app.
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+            -subj "/CN=localhost" -out "$TLS_DIR/localhost.pem" \
+            -keyout "$TLS_DIR/localhost-key.pem" >/dev/null 2>&1
+          chmod 600 "$TLS_DIR/localhost-key.pem"
           "$BINARY" --background > portable/dist/smoke.log 2>&1 &
           pid=$!
           trap 'kill "$pid" 2>/dev/null || true' EXIT
@@ -113,8 +120,15 @@ jobs:
             sleep 1
           done
           test "$ready" = 1
-          grep -q '"version":"0.5.6-macos"' portable/dist/health.json
+          grep -q '"version":"0.5.7-macos"' portable/dist/health.json
           grep -q '"runtime":"native-macos"' portable/dist/health.json
+          # Safari requires a trusted HTTPS loopback endpoint, not plain HTTP.
+          curl -ksS --retry 6 --retry-delay 1 --retry-connrefused \
+            -H 'Origin: https://work.qsseda.com' \
+            https://127.0.0.1:32146/health > portable/dist/health-https.json
+          grep -q '"version":"0.5.7-macos"' portable/dist/health-https.json
+          curl -ksSi -H 'Origin: https://work.qsseda.com' \
+            https://127.0.0.1:32146/health | grep -iq 'access-control-allow-origin: https://work.qsseda.com'
           "$BINARY" --status
 
       - name: Create draggable ZIP and DMG
@@ -123,13 +137,13 @@ jobs:
           set -euo pipefail
           ROOT="portable/AERTEX Bridge.app"
           ditto -c -k --sequesterRsrc --keepParent "$ROOT" \
-            portable/dist/AERTEX-Bridge-0.5.6-macOS-portable.zip
+            portable/dist/AERTEX-Bridge-0.5.7-macOS-portable.zip
 
           mkdir -p portable/dmgroot
           ditto "$ROOT" "portable/dmgroot/AERTEX Bridge.app"
           cp "$ROOT/Contents/Resources/BridgeIcon.icns" portable/dmgroot/.VolumeIcon.icns
           cat > portable/dmgroot/README.txt <<'EOF'
-          AERTEX Bridge 0.5.6 — portable macOS app (Apple Silicon + Intel)
+          AERTEX Bridge 0.5.7 — portable macOS app (Apple Silicon + Intel)
 
           Drag "AERTEX Bridge.app" to ANY location on ANY writable disk.
           No PKG installer. No forced installation on Macintosh HD.
@@ -150,15 +164,15 @@ jobs:
           EOF
           hdiutil create -volname "AERTEX Bridge Portable" \
             -srcfolder portable/dmgroot -format UDZO -ov \
-            portable/dist/AERTEX-Bridge-0.5.6-macOS-portable.dmg
-          shasum -a 256 portable/dist/AERTEX-Bridge-0.5.6-macOS-portable.zip \
-            portable/dist/AERTEX-Bridge-0.5.6-macOS-portable.dmg
+            portable/dist/AERTEX-Bridge-0.5.7-macOS-portable.dmg
+          shasum -a 256 portable/dist/AERTEX-Bridge-0.5.7-macOS-portable.zip \
+            portable/dist/AERTEX-Bridge-0.5.7-macOS-portable.dmg
 
       - uses: actions/upload-artifact@v4
         with:
-          name: aertex-bridge-macos-portable-056
+          name: aertex-bridge-macos-portable-057
           path: |
-            local-bridge/macos/portable/dist/AERTEX-Bridge-0.5.6-macOS-portable.zip
-            local-bridge/macos/portable/dist/AERTEX-Bridge-0.5.6-macOS-portable.dmg
+            local-bridge/macos/portable/dist/AERTEX-Bridge-0.5.7-macOS-portable.zip
+            local-bridge/macos/portable/dist/AERTEX-Bridge-0.5.7-macOS-portable.dmg
           if-no-files-found: error
           retention-days: 30
