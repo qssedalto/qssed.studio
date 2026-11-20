@@ -57,10 +57,10 @@ ctx.fillPath()
 stroke(browser, rgba(0.61, 0.84, 1, 0.93), width: 12)
 for (i, c) in [rgba(1, 0.37, 0.48), rgba(1, 0.83, 0.29), rgba(0.23, 0.93, 0.50)].enumerated() {
     ctx.setFillColor(c)
-    ctx.fillEllipse(in: CGRect(x: 164 + i * 53, y: 563, width: 24, height: 24))
+    ctx.fillEllipse(in: CGRect(x: CGFloat(164 + i * 53), y: 563, width: 24, height: 24))
 }
 for (y, w) in [(478, 220), (422, 168), (366, 120)] {
-    stroke(CGPath(roundedRect: CGRect(x: 165, y: y, width: w, height: 12),
+    stroke(CGPath(roundedRect: CGRect(x: 165, y: CGFloat(y), width: CGFloat(w), height: 12),
                   cornerWidth: 6, cornerHeight: 6, transform: nil),
            rgba(0.82, 0.91, 1, 0.93), width: 9)
 }
