@@ -221,9 +221,12 @@ func runBridge() error {
 	mux.HandleFunc("/tex/status", handleTexStatus)
 	mux.HandleFunc("/tex/compile", handleTexCompile)
 
+	handler := secureHandler(mux)
+	startOptionalLocalHTTPS(handler)
+
 	server := &http.Server{
 		Addr:              net.JoinHostPort(bridgeHost, bridgePort),
-		Handler:           secureHandler(mux),
+		Handler:           handler,
 		ReadHeaderTimeout: 3 * time.Second,
 		ReadTimeout:       8 * time.Second,
 		WriteTimeout:      115 * time.Second,
@@ -236,7 +239,8 @@ func runBridge() error {
 func secureHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		host := strings.ToLower(strings.TrimSpace(r.Host))
-		if host != "127.0.0.1:32145" && host != "localhost:32145" {
+		if host != "127.0.0.1:32145" && host != "localhost:32145" &&
+			host != "127.0.0.1:32146" && host != "localhost:32146" {
 			sendJSON(w, http.StatusMisdirectedRequest, map[string]any{"error": "Unrecognized local host."})
 			return
 		}
