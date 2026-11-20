@@ -85,7 +85,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     <script>
       (() => {
         const localCopy = ${JSON.stringify(copy)};
-        const endpoints = ["http://127.0.0.1:32145", "http://localhost:32145"];
+        const endpoints = ["https://127.0.0.1:32146", "https://localhost:32146", "http://127.0.0.1:32145", "http://localhost:32145"];
         const expectedService = "qsseda-local-bridge";
         const expectedProtocol = 1;
         const localUrls = new Set();
