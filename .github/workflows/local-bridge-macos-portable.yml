@@ -52,9 +52,15 @@ jobs:
           set -euo pipefail
           ROOT="portable/AERTEX Bridge.app"
           mkdir -p "$ROOT/Contents/MacOS" "$ROOT/Contents/Resources" portable/icon.iconset
-          xcrun swiftc -parse-as-library -framework AppKit -framework SwiftUI \
-            -o "$ROOT/Contents/MacOS/AERTEXBridgeManager" \
-            packaging/BridgePortableApp.swift
+          xcrun swiftc -parse-as-library -target arm64-apple-macosx12.0 \
+            -framework AppKit -framework SwiftUI \
+            -o portable/dist/manager-arm64 packaging/BridgePortableApp.swift
+          xcrun swiftc -parse-as-library -target x86_64-apple-macosx12.0 \
+            -framework AppKit -framework SwiftUI \
+            -o portable/dist/manager-amd64 packaging/BridgePortableApp.swift
+          lipo -create -output "$ROOT/Contents/MacOS/AERTEXBridgeManager" \
+            portable/dist/manager-arm64 portable/dist/manager-amd64
+          lipo "$ROOT/Contents/MacOS/AERTEXBridgeManager" -verify_arch arm64 x86_64
           cp portable/dist/AERTEX-Bridge "$ROOT/Contents/Resources/AERTEX-Bridge"
           chmod 755 "$ROOT/Contents/MacOS/AERTEXBridgeManager" "$ROOT/Contents/Resources/AERTEX-Bridge"
           swift packaging/BridgeIcon.swift portable/dist/BridgeIcon.png
