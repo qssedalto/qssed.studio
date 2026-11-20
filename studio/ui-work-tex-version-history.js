@@ -70,7 +70,7 @@ export function enhanceWorkTexVersionHistory(markup, zh) {
         if (window.__qssedaTexVersionHistoryReady) return;
         window.__qssedaTexVersionHistoryReady = true;
         const labels = ${JSON.stringify(copy)};
-        const endpoints = ['http://127.0.0.1:32145', 'http://localhost:32145'];
+        const endpoints = ['https://127.0.0.1:32146', 'https://localhost:32146', 'http://127.0.0.1:32145', 'http://localhost:32145'];
         let loadSequence = 0;
         let rendering = false;
         let scheduled = 0;
