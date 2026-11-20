@@ -1,0 +1,85 @@
+name: Build Windows Collaboration Bundle
+
+on:
+  pull_request:
+    paths:
+      - "desktop/collaboration/windows/**"
+      - "local-bridge/native/**"
+      - ".github/workflows/collaboration-windows.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "desktop/collaboration/windows/**"
+      - "local-bridge/native/**"
+      - ".github/workflows/collaboration-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.x"
+          cache: false
+
+      - name: Vet collaboration launcher
+        working-directory: desktop/collaboration/windows
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: go vet ./...
+
+      - name: Build collaboration launcher
+        working-directory: desktop/collaboration/windows
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags "-s -w -H=windowsgui -X main.version=0.1.0-${GITHUB_SHA::7}" -o dist/QssedA-Collaboration.exe .
+          test -s dist/QssedA-Collaboration.exe
+
+      - name: Vet native bridge
+        working-directory: local-bridge/native
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: go vet ./...
+
+      - name: Build native bridge
+        working-directory: local-bridge/native
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags "-s -w -H=windowsgui -X main.version=0.3.0-${GITHUB_SHA::7}" -o dist/QssedA-Local-Bridge.exe .
+          test -s dist/QssedA-Local-Bridge.exe
+
+      - name: Assemble portable bundle
+        run: |
+          mkdir -p dist/QssedA-Collaboration-Windows-x64
+          cp desktop/collaboration/windows/dist/QssedA-Collaboration.exe dist/QssedA-Collaboration-Windows-x64/
+          cp local-bridge/native/dist/QssedA-Local-Bridge.exe dist/QssedA-Collaboration-Windows-x64/
+          cp desktop/collaboration/windows/README.md dist/QssedA-Collaboration-Windows-x64/README.md
+
+      - name: Upload collaboration bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: qsseda-collaboration-windows-x64
+          path: dist/QssedA-Collaboration-Windows-x64
+          if-no-files-found: error
+          retention-days: 30
