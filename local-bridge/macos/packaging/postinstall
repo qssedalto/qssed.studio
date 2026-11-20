@@ -1,33 +1,46 @@
 #!/bin/sh
 set -eu
 
-# This installer runs as root, but Bridge is deliberately a per-user
-# LaunchAgent rather than a privileged daemon.
+# The installer is privileged, but the Bridge runs only in the logged-in
+# user's GUI domain. The agent starts on future logins even if no GUI user
+# is currently available during installation.
 PLIST="/Library/LaunchAgents/com.aertex.bridge.plist"
-chmod 644 "$PLIST"
-chown root:wheel "$PLIST"
-APP="/Library/Application Support/AERTEX Bridge/AERTEX-Bridge"
-chmod 755 "$APP"
+BRIDGE="/Library/Application Support/AERTEX Bridge/AERTEX-Bridge"
+/bin/chmod 644 "$PLIST"
+/usr/sbin/chown root:wheel "$PLIST"
+/bin/chmod 755 "$BRIDGE"
 
-USER_NAME="$(stat -f '%Su' /dev/console)"
-if [ "$USER_NAME" = "root" ] || [ "$USER_NAME" = "loginwindow" ] || [ -z "$USER_NAME" ]; then
-  # launchd will load /Library/LaunchAgents at the next user login.
+USER_NAME="$(/usr/bin/stat -f '%Su' /dev/console)"
+if [ -z "$USER_NAME" ] || [ "$USER_NAME" = "root" ] || [ "$USER_NAME" = "loginwindow" ]; then
+  echo "AERTEX Bridge installed; LaunchAgent starts when a user logs in."
   exit 0
 fi
-UID_NUM="$(id -u "$USER_NAME")"
-# Boot out only our documented launchd job. Never kill by port number.
-launchctl bootout "gui/$UID_NUM" "$PLIST" >/dev/null 2>&1 || true
-launchctl bootstrap "gui/$UID_NUM" "$PLIST"
-launchctl kickstart -k "gui/$UID_NUM/com.aertex.bridge"
-# Verify the precise protocol identity, not merely that TCP port is occupied.
+
+UID_NUM="$(/usr/bin/id -u "$USER_NAME")"
+DOMAIN="gui/$UID_NUM"
+LABEL="$DOMAIN/com.aertex.bridge"
+
+# Only manage this exact launchd label; never kill arbitrary port owners.
+if /bin/launchctl print "$LABEL" >/dev/null 2>&1; then
+  /bin/launchctl bootout "$DOMAIN" "$PLIST" >/dev/null 2>&1 || true
+fi
+if ! /bin/launchctl bootstrap "$DOMAIN" "$PLIST"; then
+  echo "WARNING: LaunchAgent could not start in the current GUI session." >&2
+  echo "The service is installed and will start on the next login." >&2
+  exit 0
+fi
+/bin/launchctl kickstart -k "$LABEL" >/dev/null 2>&1 || true
+
 ATTEMPT=0
-while [ "$ATTEMPT" -lt 20 ]; do
-  if /usr/bin/curl -fsS --max-time 1 http://127.0.0.1:32145/health | /usr/bin/grep -q '"runtime":"native-macos"'; then
+while [ "$ATTEMPT" -lt 15 ]; do
+  if "$BRIDGE" --status >/dev/null 2>&1; then
+    echo "AERTEX Bridge started successfully in $DOMAIN."
     exit 0
   fi
-  ATTEMPT=$((ATTEMPT+1))
-  sleep 1
+  ATTEMPT=$((ATTEMPT + 1))
+  /bin/sleep 1
 done
-echo "AERTEX Bridge was installed, but localhost health could not be verified." >&2
-echo "Check ~/Library/Logs/AERTEX Bridge/bridge.log and port 32145." >&2
-exit 1
+echo "WARNING: Bridge installed but did not pass its health check." >&2
+echo "Open AERTEX Bridge.app for diagnostics; ~/Library/Logs/AERTEX Bridge/bridge.log." >&2
+echo "Sign out and back in if this GUI session blocked launchd registration." >&2
+exit 0
