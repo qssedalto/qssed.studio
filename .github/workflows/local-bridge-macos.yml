@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 env:
-  BRIDGE_VERSION: "0.5.4-macos"
+  BRIDGE_VERSION: "0.5.5-macos"
 
 jobs:
   build-and-smoke:
@@ -68,38 +68,86 @@ jobs:
           test "$status" = 403
           status=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: https://work.qsseda.com' -H 'Content-Type: application/json' -d '{"engine":"bash","source":"abc"}' http://127.0.0.1:32145/tex/compile)
           test "$status" = 400
-      - name: Build unsigned native PKG and distributable DMG
+      - name: Build branded status manager, icon and installer
         shell: bash
         working-directory: local-bridge/macos
         run: |
           set -euo pipefail
-          APP_DIR="pkgroot/Library/Application Support/AERTEX Bridge"
-          AGENT_DIR="pkgroot/Library/LaunchAgents"
-          mkdir -p "$APP_DIR" "$AGENT_DIR" pkgscripts dmgroot dist
-          cp dist/AERTEX-Bridge "$APP_DIR/AERTEX-Bridge"
-          cp packaging/uninstall.command "$APP_DIR/uninstall.command"
-          cp packaging/com.aertex.bridge.plist "$AGENT_DIR/com.aertex.bridge.plist"
+          rm -rf pkgroot pkgscripts dmgroot installer-resources icon.iconset
+          mkdir -p dist pkgroot/Applications/"AERTEX Bridge.app"/Contents/MacOS \
+            pkgroot/Applications/"AERTEX Bridge.app"/Contents/Resources \
+            pkgroot/Library/"Application Support"/"AERTEX Bridge" \
+            pkgroot/Library/LaunchAgents pkgscripts dmgroot installer-resources icon.iconset
+
+          swift packaging/BridgeIcon.swift dist/BridgeIcon.png
+          for n in 16 32 128 256 512; do
+            sips -s format png -z "$n" "$n" dist/BridgeIcon.png --out "icon.iconset/icon_$nx$n.png" >/dev/null
+            doubled=$((n * 2))
+            sips -s format png -z "$doubled" "$doubled" dist/BridgeIcon.png --out "icon.iconset/icon_$nx$n@2x.png" >/dev/null
+          done
+          iconutil -c icns icon.iconset -o dist/BridgeIcon.icns
+
+          APP="pkgroot/Applications/AERTEX Bridge.app"
+          xcrun swiftc -parse-as-library \
+            -framework AppKit -framework SwiftUI \
+            -o "$APP/Contents/MacOS/BridgeManager" packaging/BridgeManager.swift
+          chmod 755 "$APP/Contents/MacOS/BridgeManager"
+          cp dist/BridgeIcon.icns "$APP/Contents/Resources/BridgeIcon.icns"
+          cat > "$APP/Contents/Info.plist" <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleIdentifier</key><string>com.aertex.bridge.manager</string>
+            <key>CFBundleExecutable</key><string>BridgeManager</string>
+            <key>CFBundleName</key><string>AERTEX Bridge</string>
+            <key>CFBundleDisplayName</key><string>AERTEX Bridge</string>
+            <key>CFBundleIconFile</key><string>BridgeIcon</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleShortVersionString</key><string>0.5.5</string>
+            <key>CFBundleVersion</key><string>55</string>
+            <key>LSMinimumSystemVersion</key><string>13.0</string>
+            <key>NSHighResolutionCapable</key><true/>
+          </dict></plist>
+          EOF
+          plutil -lint "$APP/Contents/Info.plist"
+
+          cp dist/AERTEX-Bridge "pkgroot/Library/Application Support/AERTEX Bridge/AERTEX-Bridge"
+          cp packaging/uninstall.command "pkgroot/Library/Application Support/AERTEX Bridge/uninstall.command"
+          cp packaging/com.aertex.bridge.plist "pkgroot/Library/LaunchAgents/com.aertex.bridge.plist"
           cp packaging/postinstall pkgscripts/postinstall
-          chmod 755 "$APP_DIR/AERTEX-Bridge" "$APP_DIR/uninstall.command" pkgscripts/postinstall
-          chmod 644 "$AGENT_DIR/com.aertex.bridge.plist"
-          plutil -lint "$AGENT_DIR/com.aertex.bridge.plist"
+          chmod 755 "pkgroot/Library/Application Support/AERTEX Bridge/AERTEX-Bridge" \
+            "pkgroot/Library/Application Support/AERTEX Bridge/uninstall.command" pkgscripts/postinstall
+          chmod 644 "pkgroot/Library/LaunchAgents/com.aertex.bridge.plist"
+          plutil -lint "pkgroot/Library/LaunchAgents/com.aertex.bridge.plist"
+
           pkgbuild --root pkgroot --scripts pkgscripts \
-            --identifier com.aertex.bridge --version 0.5.4 \
-            --install-location / dist/AERTEX-Bridge-macOS-universal.pkg
+            --identifier com.aertex.bridge --version 0.5.5 \
+            --install-location / dist/AERTEX-Bridge-component.pkg
+          cp packaging/Welcome.html installer-resources/
+          cp dist/BridgeIcon.png installer-resources/
+          sed 's/@VERSION@/0.5.5/g' packaging/Distribution.xml > dist/Distribution.xml
+          productbuild --distribution dist/Distribution.xml \
+            --resources installer-resources --package-path dist \
+            dist/AERTEX-Bridge-macOS-universal.pkg
+
+          pkgutil --check-signature dist/AERTEX-Bridge-macOS-universal.pkg || true
+          pkgutil --expand dist/AERTEX-Bridge-macOS-universal.pkg dist/pkg-inspection
+          test -f dist/pkg-inspection/Distribution
+          rm -rf dist/pkg-inspection
+
           cp dist/AERTEX-Bridge-macOS-universal.pkg dmgroot/
+          cp dist/BridgeIcon.icns dmgroot/.VolumeIcon.icns
           cat > dmgroot/README.txt <<'EOF'
-          AERTEX Bridge for macOS (Apple Silicon + Intel)
-          Double-click the .pkg installer in this disk image.
-          Requires macOS 12 or later. Install MacTeX separately to enable XeLaTeX/pdfLaTeX.
-          This build is intentionally unsigned and NOT notarized. macOS may block the installer.
-          If you trust this official AERTEX build, first try opening the PKG, then open
-          System Settings > Privacy & Security > Open Anyway. Do not disable Gatekeeper globally.
+          AERTEX Bridge 0.5.5 for macOS (Apple Silicon + Intel)
+          Double-click the .pkg installer.
+          The installer also adds AERTEX Bridge.app in Applications for status checks.
+          The background LaunchAgent starts at login; the window need not stay open.
+          Install MacTeX separately to enable XeLaTeX / pdfLaTeX.
+          This is an unsigned, non-notarized preview build.
+          Use Apple's per-file Open Anyway procedure only when you trust its source.
           EOF
           hdiutil create -volname "AERTEX Bridge" -srcfolder dmgroot \
             -format UDZO -ov dist/AERTEX-Bridge-macOS-universal.dmg
-          # Deliberately no Developer ID signing or Apple notarization.
-          # The package is distributed as an unsigned build with an explicit warning.
-          pkgutil --check-signature dist/AERTEX-Bridge-macOS-universal.pkg || true
           shasum -a 256 dist/AERTEX-Bridge-macOS-universal.pkg dist/AERTEX-Bridge-macOS-universal.dmg
       - uses: actions/upload-artifact@v4
         with:
@@ -113,7 +161,7 @@ jobs:
   publish-unsigned:
     # Publishing remains gated behind an actual macOS Go/test/HTTP/build job.
     # A pull request never publishes packages. The Windows release is untouched.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: false # Preview only: do not overwrite production R2 until real-Mac validation.
     needs: build-and-smoke
     runs-on: ubuntu-latest
     steps:
