@@ -217,6 +217,47 @@ assert.doesNotMatch(describe("workflow",{code:"private-secret-information"}),/pr
   "Untrusted error codes must not appear in user-visible diagnostics");
 assert(api.includes("isTexGithubManagedRepositoryName(repoName)"),
   "GitHub operations must use the shared managed repository name validator");
+// Regression: upstream permission errors must never masquerade as quota exhaustion.
+const classifyStart=api.indexOf("function githubNumericHeader(");
+const classifyEnd=api.indexOf("async function github(env,",classifyStart);
+assert(classifyStart>=0&&classifyEnd>classifyStart);
+const classify=new Function("httpError",api.slice(classifyStart,classifyEnd)+
+  "\nreturn classifyGithubFailure;")(
+    (status,code)=>Object.assign(new Error(code),{status,code})
+  );
+const diagnosticStart2=api.indexOf("function githubRequestDiagnostic(");
+const diagnosticEnd2=api.indexOf("// Expose a small, fixed diagnostic",diagnosticStart2);
+const explain=new Function(api.slice(diagnosticStart2,diagnosticEnd2)+"\nreturn githubRequestDiagnostic;")();
+for(const [method,upstream,headers,message,status,code] of [
+  ["GET",403,{"x-ratelimit-remaining":"4999"},"Resource not accessible by integration",403,"github_403"],
+  ["GET",403,{"x-ratelimit-remaining":"0"},"API rate limit exceeded",429,"github_429"],
+  ["DELETE",403,{"retry-after":"30"},"Secondary rate limit",429,"github_429"],
+  ["GET",403,{},"You have exceeded a secondary rate limit.",429,"github_429"],
+  ["DELETE",403,{},"Resource not accessible by integration",403,"github_repo_delete_permission_denied"],
+  ["DELETE",401,{},"Bad credentials",403,"github_401"],
+  ["GET",429,{"retry-after":"60"},"Too many requests",429,"github_429"],
+  ["GET",404,{},"Not Found",404,"github_404"],
+  ["POST",422,{},"Validation Failed",409,"github_422"],
+  ["GET",500,{},"Upstream error",503,"github_500"]
+]){
+  const error=await classify(new Response(JSON.stringify({message}),{status:upstream,headers}),method);
+  assert.equal(error.status,status,method+" "+upstream+" "+message);
+  assert.equal(error.code,code);
+  assert.equal(error.githubDiagnostic.github_status,upstream);
+  assert.equal(error.githubDiagnostic.github_method,method);
+  assert(!JSON.stringify(error.githubDiagnostic).includes(message),"Provider body must not be logged");
+}
+assert.match(explain({code:"github_403"},true),/verification request before deletion/);
+assert.match(explain({code:"github_429"},true),/GitHub API rate limit/);
+assert.match(explain({code:"github_401"},true),/operator credential/);
+assert.match(explain({code:"github_404"},true),/No local binding was removed/);
+const deleteStart=api.indexOf("async function deleteRepository(");
+const deleteEnd=api.indexOf("// Legacy deletion",deleteStart);
+const deleteSource=api.slice(deleteStart,deleteEnd);
+assert(!deleteSource.includes("reserveCredit("),"Deletion must not reserve compilation credits");
+assert(deleteSource.indexOf("verifyManagedRepo(env,actual")<deleteSource.indexOf('await github(env,repoPath,"DELETE")'));
+assert(deleteSource.indexOf('await github(env,repoPath,"DELETE")')<deleteSource.indexOf("delete_confirmed:true"));
+
 const pathStart=api.indexOf("function githubRepoPath(env, repoName) {");
 const pathEnd=api.indexOf("// Bind every operation",pathStart);
 assert(pathStart>0&&pathEnd>pathStart,"Repository path guard must be present");
