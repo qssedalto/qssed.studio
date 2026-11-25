@@ -145,14 +145,18 @@ export async function handleTexGithubApi(request, env, action) {
   } catch (error) {
     const status = Number(error?.status) || 503;
     workerLog("warn", "tex.github.request.failed", {
-      action, status, user_id: userId, code: String(error?.code || "backend").slice(0, 40)
+      action, status, user_id: userId, code: String(error?.code || "backend").slice(0, 40),
+      request_method:request.method,
+      ...(error?.githubDiagnostic || {})
     });
-    const detail=error?.code==="github_repo_delete_permission_denied" ?
-      "GitHub denied repository deletion. Fine-grained tokens require Repository Administration: write; classic PATs require delete_repo; organizations may block deletion. The repository is still linked. Update the operator token/organization permissions, then retry." :
-      error?.code==="github_404" && (action==="repository" || action==="legacy-repository") && request.method==="DELETE" ?
-      "GitHub repository is not visible to the operator token. Deletion cannot be confirmed: the repository may still exist. No local binding was removed; verify GitHub access before retrying." :
-      publicError(status);
-    return withStudioSessionCookies(fail(status,detail), session.cookies);
+    const deleting=(action==="repository" || action==="legacy-repository") && request.method==="DELETE";
+    const detail=githubRequestDiagnostic(error, deleting) || publicError(status);
+    const failure=fail(status,detail);
+    if(status===429 && error?.githubDiagnostic?.github_retry_after!==null &&
+       error?.githubDiagnostic?.github_retry_after!==undefined){
+      failure.headers.set("Retry-After",String(error.githubDiagnostic.github_retry_after));
+    }
+    return withStudioSessionCookies(failure, session.cookies);
   }
 }
 
@@ -226,8 +230,29 @@ function publicError(status) {
   if (status === 403) return "Not authorized for this operation.";
   if (status === 404) return "Not found.";
   if (status === 409) return "A conflicting operation is already in progress.";
-  if (status === 429) return "Compilation quota or rate limit reached.";
+  if (status === 429) return "Request rate limit reached. Please retry later.";
   return "The GitHub compilation service is currently unavailable.";
+}
+
+// Keep upstream GitHub failures distinct from AERTEX compilation-credit errors.
+// Never expose provider bodies, credentials, repository paths or raw headers.
+function githubRequestDiagnostic(error, deleting){
+  const code=error?.code;
+  if(code==="github_429")
+    return deleting ?
+      "GitHub API rate limit reached while checking or deleting the repository. Retry after the limit resets. Deletion has not been confirmed; the project remains linked." :
+      "GitHub API rate limit reached. Retry after the limit resets.";
+  if(code==="github_401")
+    return "GitHub rejected the operator credential. Check or renew the configured GitHub token; this is not an AERTEX compilation quota error.";
+  if(code==="github_repo_delete_permission_denied")
+    return "GitHub denied repository deletion. Fine-grained tokens require Repository Administration: write; classic PATs require delete_repo; organizations may block deletion. The repository is still linked. Update the operator token/organization permissions, then retry.";
+  if(code==="github_403")
+    return deleting ?
+      "GitHub denied the repository verification request before deletion. Check the operator token's repository access and organization restrictions. No deletion was confirmed; the project remains linked." :
+      "GitHub denied this operation. Check the operator token's repository permissions and organization restrictions.";
+  if(code==="github_404" && deleting)
+    return "GitHub repository is not visible to the operator token. Deletion cannot be confirmed: the repository may still exist. No local binding was removed; verify GitHub access before retrying.";
+  return null;
 }
 
 // Expose a small, fixed diagnostic vocabulary to the authenticated project owner.
@@ -350,6 +375,47 @@ async function adminReview(request, env) {
   return json({ approved: next.approval_status === "approved", user_id: userId });
 }
 
+function githubNumericHeader(response,name){
+  const value=response.headers.get(name);
+  if(value===null || !/^\d{1,10}$/.test(value))return null;
+  const number=Number(value);
+  return Number.isSafeInteger(number)?number:null;
+}
+
+async function classifyGithubFailure(response,method){
+  const upstream=response.status;
+  const remaining=githubNumericHeader(response,"x-ratelimit-remaining");
+  const retryAfter=githubNumericHeader(response,"retry-after");
+  const reset=githubNumericHeader(response,"x-ratelimit-reset");
+  // GitHub may signal secondary limits with 403 and no Retry-After header.
+  // Inspect only the error message for the classification; never log it.
+  let rateLimited=upstream===429 ||
+    (upstream===403 && (remaining===0 || retryAfter!==null));
+  if(upstream===403 && !rateLimited){
+    try{
+      const body=await response.json();
+      rateLimited=typeof body?.message==="string" &&
+        /\b(?:rate[ -]limit(?:ed|ing|s)?|abuse detection)\b/i.test(body.message);
+    }catch{}
+  }
+  const code=rateLimited?"github_429":
+    upstream===403 && method==="DELETE"?"github_repo_delete_permission_denied":
+    "github_"+upstream;
+  // Upstream 401 is an operator credential problem, not an expired Work session.
+  const status=rateLimited?429:
+    upstream===401||upstream===403?403:
+    upstream===404?404:upstream===422?409:503;
+  const error=httpError(status,code);
+  error.githubDiagnostic={
+    github_method:method,
+    github_status:upstream,
+    github_rate_remaining:remaining,
+    github_retry_after:retryAfter,
+    github_rate_reset:reset
+  };
+  return error;
+}
+
 async function github(env, path, method = "GET", body = undefined) {
   if (!configured(env)) throw httpError(503, "credentials_missing");
   if (!path.startsWith("/") || path.startsWith("//")) throw httpError(400, "bad_path");
@@ -366,12 +432,7 @@ async function github(env, path, method = "GET", body = undefined) {
     redirect: "manual"
   });
   if (response.status >= 300 && response.status < 400) throw httpError(502, "unexpected_redirect");
-  if (!response.ok) {
-    if(method==="DELETE"&&(response.status===403||response.status===401))
-      throw httpError(403,"github_repo_delete_permission_denied");
-    const status = response.status === 404 ? 404 : response.status === 422 ? 409 : response.status === 403 ? 429 : 503;
-    throw httpError(status, "github_" + response.status);
-  }
+  if (!response.ok) throw await classifyGithubFailure(response,method);
   if (response.status === 204 || response.status === 202) return null;
   return response.json();
 }
