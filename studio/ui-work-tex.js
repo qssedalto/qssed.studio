@@ -281,7 +281,7 @@ export function polishWorkTexNavigation(markup, zh, pathname, workOrigin = "http
 
           async function loopbackFetch(base, path) {
             const controller = new AbortController();
-            const timer = window.setTimeout(() => controller.abort(), 3000);
+            const timer = window.setTimeout(() => controller.abort(), path === '/tex/status' ? 6000 : 3000);
             try {
               return await fetch(new Request(base + path, {
                 method: 'GET',

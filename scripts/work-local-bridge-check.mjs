@@ -48,6 +48,20 @@ assert(zhLocal.includes("targetAddressSpace: \"loopback\""), "Local bridge reque
 assert(zhLocal.includes("credentials: \"omit\""), "Local bridge requests must not send browser credentials");
 assert(!zhLocal.includes("Authorization"), "Local bridge page must not send a bearer Authorization header");
 assert(enLocal.includes("/tex/status"), "Local bridge page is missing the TeX status probe");
+
+ // The native engine's version subprocess can itself take 2200 ms.
+ // Every browser probe must allow that budget plus network/launch overhead.
+ const workTexSource=fs.readFileSync(new URL("../studio/ui-work-tex.js",import.meta.url),"utf8");
+ assert(zhLocal.includes('path === "/tex/status" ? 6000 : 3000'),
+   "Local connection page must allow the native TeX status deadline");
+ assert(zhTexLocal.includes("path === '/tex/status' ? 6000 : 3000") &&
+   zhTexLocal.includes("options.method === 'POST' ? 110000"),
+   "Workbench must allow slow status detection without shortening compilation");
+ assert(workTexSource.includes("path === '/tex/status' ? 6000 : 3000"),
+   "Manual connection check must use the same TeX status budget");
+ assert(!zhTexLocal.includes("https://qsseda.com/api/work/bridge/windows"),
+   "Multi-file capability errors must not send Mac users to a Windows installer");
+
 assert(zhNativeLocal.includes("/api/work/bridge/windows"), "Native Windows Bridge download is missing from the Work page");
 assert(zhNativeLocal.includes('id="work-native-macos-bridge-download"') &&
   zhNativeLocal.includes('href="/api/work/bridge/macos"') &&

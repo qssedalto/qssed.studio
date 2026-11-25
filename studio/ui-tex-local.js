@@ -1,5 +1,6 @@
 export function enhanceTexWorkbenchLocal(markup, zh) {
   const copy = zh ? {
+    projectFilesUnsupported: "当前 AERTEX Bridge 版本不支持多文件 TeX 工程。请前往本机连接页面，安装适合当前操作系统的新版 Bridge 后重试。",
     localReady: "编译服务正常",
     localUnsupported: "本机不支持当前引擎",
     localDetail: "",
@@ -26,6 +27,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
     mobileNoPdf: "暂无 PDF。需要编译时可使用下方的远程编译功能。",
     mobileSelect: "请选择一个项目文件以查看 PDF。"
   } : {
+    projectFilesUnsupported: "This AERTEX Bridge does not support multi-file TeX projects. Open the local connection page and install the current version for your operating system.",
     localReady: "Compiler service ready",
     localUnsupported: "Current engine is not enabled locally",
     localDetail: "",
@@ -158,7 +160,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
 
           async function loopbackFetch(base, path, options = {}) {
             const controller = new AbortController();
-            const timer = window.setTimeout(() => controller.abort(), options.method === 'POST' ? 110000 : 1800);
+            const timer = window.setTimeout(() => controller.abort(), options.method === 'POST' ? 110000 : path === '/tex/status' ? 6000 : 3000);
             try {
               const headers = { Accept: options.accept || 'application/json', ...(options.body ? { 'Content-Type': 'application/json;charset=UTF-8' } : {}), ...(options.headers || {}) };
               const request = new Request(base + path, {
@@ -451,7 +453,7 @@ export function enhanceTexWorkbenchLocal(markup, zh) {
             if (files.length) {
               const health = await readJson(await loopbackFetch(localBase, '/health'));
               if (!Array.isArray(health?.capabilities) || !health.capabilities.includes('tex.project-files')) {
-                throw new Error("当前 AERTEX Bridge 版本不支持多文件 TeX 工程。请从 https://qsseda.com/api/work/bridge/windows 安装新版 Bridge 后重试。");
+                throw new Error(localCopy.projectFilesUnsupported);
               }
             }
             const response = await loopbackFetch(localBase, '/tex/compile', {
