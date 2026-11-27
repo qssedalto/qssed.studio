@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+  <title>AERTEX Bridge</title>
+  <options customize="never" require-scripts="false" rootVolumeOnly="true"/>
+  <welcome file="Welcome.html" mime-type="text/html"/>
+  <choices-outline>
+    <line choice="default"/>
+  </choices-outline>
+  <choice id="default" title="AERTEX Bridge" description="Local LaTeX compilation bridge">
+    <pkg-ref id="com.aertex.bridge"/>
+  </choice>
+  <pkg-ref id="com.aertex.bridge" version="@VERSION@" onConclusion="none">AERTEX-Bridge-component.pkg</pkg-ref>
+</installer-gui-script>
